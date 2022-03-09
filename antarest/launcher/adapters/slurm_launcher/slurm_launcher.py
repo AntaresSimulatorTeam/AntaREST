@@ -27,7 +27,6 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -138,18 +137,17 @@ class SlurmLauncher(AbstractLauncher):
             return Path(self.slurm_config.local_workspace)
 
     def _retrieve_running_jobs(self) -> None:
-        with db():
-            for study in self.data_repo_tinydb.get_list_of_studies():
-                job_result = self.callbacks.get_job_result(study.name)
-                if job_result:
-                    logger.info(
-                        f"Adding job/study mapping for launch id {study.name}"
-                    )
-                    self.job_id_to_study_id[study.name] = job_result.study_id
-                else:
-                    logger.warning(
-                        f"Failed to retrieve job result for job launch {study.name}"
-                    )
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            study_id = self.callbacks.get_job_study_id(study.name)
+            if study_id:
+                logger.info(
+                    f"Adding job/study mapping for launch id {study.name}"
+                )
+                self.job_id_to_study_id[study.name] = study_id
+            else:
+                logger.warning(
+                    f"Failed to retrieve job result for job launch {study.name}"
+                )
         if len(self.job_id_to_study_id) > 0:
             self.start()
 
@@ -320,24 +318,23 @@ class SlurmLauncher(AbstractLauncher):
                     self.log_tail_manager.stop_tracking(
                         SlurmLauncher._get_log_path(study)
                     )
-                    with db():
-                        output_id: Optional[str] = None
-                        try:
-                            if not study.with_error:
-                                output_id = self._import_study_output(
-                                    study.name,
-                                    study.xpansion_mode,
-                                    study.job_log_dir,
-                                )
-                        finally:
-                            self.callbacks.update_status(
+                    output_id: Optional[str] = None
+                    try:
+                        if not study.with_error:
+                            output_id = self._import_study_output(
                                 study.name,
-                                JobStatus.FAILED
-                                if study.with_error or output_id is None
-                                else JobStatus.SUCCESS,
-                                None,
-                                output_id,
+                                study.xpansion_mode,
+                                study.job_log_dir,
                             )
+                    finally:
+                        self.callbacks.update_status(
+                            study.name,
+                            JobStatus.FAILED
+                            if study.with_error or output_id is None
+                            else JobStatus.SUCCESS,
+                            None,
+                            output_id,
+                        )
                 except Exception as e:
                     logger.error(
                         f"Failed to finalize study {study.name} launch",
@@ -430,54 +427,51 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: Optional[JSON],
         version: str,
     ) -> None:
-        with db():
-            study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
+        study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
 
-            self.job_id_to_study_id[str(launch_uuid)] = study_uuid
+        self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
-            try:
-                # export study
-                with self.antares_launcher_lock:
-                    self.callbacks.export_study(
-                        launch_uuid, study_uuid, study_path, launcher_params
-                    )
-
-                    self._assert_study_version_is_supported(version)
-
-                    launcher_args = self._check_and_apply_launcher_params(
-                        launcher_params
-                    )
-                    self.callbacks.append_before_log(
-                        launch_uuid, f"Submitting study to slurm launcher"
-                    )
-                    run_with(
-                        launcher_args, self.launcher_params, show_banner=False
-                    )
-                    self.callbacks.append_before_log(
-                        launch_uuid, f"Study submitted"
-                    )
-                    logger.info("Study exported and run with launcher")
-
-                self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.RUNNING, None, None
+        try:
+            # export study
+            with self.antares_launcher_lock:
+                self.callbacks.export_study(
+                    launch_uuid, study_uuid, study_path, launcher_params
                 )
-            except Exception as e:
-                logger.error(
-                    f"Failed to launch study {study_uuid}", exc_info=e
-                )
-                self.callbacks.append_after_log(
-                    launch_uuid,
-                    f"Unexpected error when launching study : {str(e)}",
-                )
-                self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.FAILED, str(e), None
-                )
-                self._clean_up_study(str(launch_uuid))
 
-            if not self.thread:
-                self.start()
+                self._assert_study_version_is_supported(version)
 
-            self._delete_workspace_file(study_path)
+                launcher_args = self._check_and_apply_launcher_params(
+                    launcher_params
+                )
+                self.callbacks.append_before_log(
+                    launch_uuid, f"Submitting study to slurm launcher"
+                )
+                run_with(
+                    launcher_args, self.launcher_params, show_banner=False
+                )
+                self.callbacks.append_before_log(
+                    launch_uuid, f"Study submitted"
+                )
+                logger.info("Study exported and run with launcher")
+
+            self.callbacks.update_status(
+                str(launch_uuid), JobStatus.RUNNING, None, None
+            )
+        except Exception as e:
+            logger.error(f"Failed to launch study {study_uuid}", exc_info=e)
+            self.callbacks.append_after_log(
+                launch_uuid,
+                f"Unexpected error when launching study : {str(e)}",
+            )
+            self.callbacks.update_status(
+                str(launch_uuid), JobStatus.FAILED, str(e), None
+            )
+            self._clean_up_study(str(launch_uuid))
+
+        if not self.thread:
+            self.start()
+
+        self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: Optional[JSON]

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional, Any, Dict, List
-from uuid import UUID
+from typing import Callable, NamedTuple, Optional, Dict
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import (
@@ -12,8 +11,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.launcher.model import JobStatus, LogType, JobResult
-from antarest.study.service import StudyService
+from antarest.launcher.model import JobStatus, LogType
 
 
 class LauncherInitException(Exception):
@@ -29,7 +27,7 @@ class LauncherCallbacks(NamedTuple):
     export_study: Callable[[str, str, Path, Optional[JSON]], None]
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
-    get_job_result: Callable[[str], Optional[JobResult]]
+    get_job_study_id: Callable[[str], Optional[str]]
     # args: job_id, output_path, additional_logs
     import_output: Callable[[str, Path, Dict[str, Path]], Optional[str]]
 

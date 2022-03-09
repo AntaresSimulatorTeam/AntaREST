@@ -22,7 +22,6 @@ class FactoryLauncher:
     def build_launcher(
         self,
         config: Config,
-        storage_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> Dict[str, AbstractLauncher]:

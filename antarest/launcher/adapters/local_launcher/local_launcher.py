@@ -5,17 +5,14 @@ import subprocess
 import tempfile
 import threading
 import time
-from multiprocessing import Process
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Callable, cast, IO
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -23,7 +20,6 @@ from antarest.launcher.adapters.abstractlauncher import (
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LogType
-from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +108,12 @@ class LocalLauncher(AbstractLauncher):
                 export_path,
                 process,
             )
-            with db():
-                self.callbacks.update_status(
-                    str(uuid),
-                    JobStatus.RUNNING,
-                    None,
-                    None,
-                )
+            self.callbacks.update_status(
+                str(uuid),
+                JobStatus.RUNNING,
+                None,
+                None,
+            )
 
             thread = threading.Thread(
                 target=lambda: LogTailManager.follow(
@@ -149,26 +144,25 @@ class LocalLauncher(AbstractLauncher):
                         ["Rscript", "post-processing.R"], cwd=export_path
                     )
 
+            output_id: Optional[str] = None
             try:
-                with db():
-                    output_id = self.callbacks.import_output(
-                        str(uuid), export_path / "output", {}
-                    )
+                output_id = self.callbacks.import_output(
+                    str(uuid), export_path / "output", {}
+                )
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
                     exc_info=e,
                 )
             del self.job_id_to_study_id[str(uuid)]
-            with db():
-                self.callbacks.update_status(
-                    str(uuid),
-                    JobStatus.FAILED
-                    if (not process.returncode == 0) or not output_id
-                    else JobStatus.SUCCESS,
-                    None,
-                    output_id,
-                )
+            self.callbacks.update_status(
+                str(uuid),
+                JobStatus.FAILED
+                if (not process.returncode == 0) or not output_id
+                else JobStatus.SUCCESS,
+                None,
+                output_id,
+            )
         except Exception as e:
             logger.error(
                 f"Unexpected error happend during launch {uuid}", exc_info=e

@@ -89,7 +89,6 @@ class LauncherService:
         self.task_service = task_service
         self.launchers = factory_launcher.build_launcher(
             config,
-            study_service,
             LauncherCallbacks(
                 update_status=lambda jobid, status, msg, output_id: self.update(
                     jobid, status, msg, output_id
@@ -103,9 +102,7 @@ class LauncherService:
                 append_after_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.AFTER
                 ),
-                get_job_result=lambda jobid: self.job_result_repository.get(
-                    jobid
-                ),
+                get_job_study_id=lambda jobid: self._get_job_study_id(jobid),
                 import_output=lambda jobid, output_path, additional_logs: self._import_output(
                     jobid, output_path, additional_logs
                 ),
@@ -152,26 +149,30 @@ class LauncherService:
         msg: Optional[str],
         output_id: Optional[str],
     ) -> None:
-        logger.info(f"Setting study with job id {job_uuid} status to {status}")
-        job_result = self.job_result_repository.get(job_uuid)
-        if job_result is not None:
-            job_result.job_status = status
-            job_result.msg = msg
-            job_result.output_id = output_id
-            final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
-            if final_status:
-                job_result.completion_date = datetime.utcnow()
-            self.job_result_repository.save(job_result)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_JOB_COMPLETED
-                    if final_status
-                    else EventType.STUDY_JOB_STATUS_UPDATE,
-                    payload=job_result.to_dto().dict(),
-                    channel=EventChannelDirectory.JOB_STATUS + job_result.id,
-                )
+        with db():
+            logger.info(
+                f"Setting study with job id {job_uuid} status to {status}"
             )
-        logger.info(f"Study status set")
+            job_result = self.job_result_repository.get(job_uuid)
+            if job_result is not None:
+                job_result.job_status = status
+                job_result.msg = msg
+                job_result.output_id = output_id
+                final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
+                if final_status:
+                    job_result.completion_date = datetime.utcnow()
+                self.job_result_repository.save(job_result)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_JOB_COMPLETED
+                        if final_status
+                        else EventType.STUDY_JOB_STATUS_UPDATE,
+                        payload=job_result.to_dto().dict(),
+                        channel=EventChannelDirectory.JOB_STATUS
+                        + job_result.id,
+                    )
+                )
+            logger.info(f"Study status set")
 
     def append_log(
         self, job_id: str, message: str, log_type: JobLogType
@@ -279,6 +280,13 @@ class LauncherService:
         )
 
         return job_status
+
+    def _get_job_study_id(self, jobid: str) -> Optional[str]:
+        with db():
+            job_result = self.job_result_repository.get(jobid)
+            if job_result:
+                return str(job_result.study_id)
+        return None
 
     def _filter_from_user_permission(
         self, job_results: List[JobResult], user: Optional[JWTUser]
@@ -459,19 +467,20 @@ class LauncherService:
     def _import_output(
         self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
     ) -> Optional[str]:
-        job_result = self.job_result_repository.get(job_id)
-        if job_result:
-            try:
-                return self.study_service.import_output(
-                    job_result.study_id,
-                    output_path,
-                    RequestParameters(DEFAULT_ADMIN_USER),
-                    additional_logs,
-                )
-            except StudyNotFoundError:
-                return self._import_fallback_output(
-                    job_id, output_path, additional_logs
-                )
+        with db():
+            job_result = self.job_result_repository.get(job_id)
+            if job_result:
+                try:
+                    return self.study_service.import_output(
+                        job_result.study_id,
+                        output_path,
+                        RequestParameters(DEFAULT_ADMIN_USER),
+                        additional_logs,
+                    )
+                except StudyNotFoundError:
+                    return self._import_fallback_output(
+                        job_id, output_path, additional_logs
+                    )
         raise JobNotFound()
 
     def _download_fallback_output(
