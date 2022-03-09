@@ -162,6 +162,7 @@ const SettingsForm = (props: PropType) => {
                 value={currentSettings.yearly_weight || ''}
                 onChange={(e) => handleChange('yearly_weight', e.target.value as string)}
               >
+                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
                 {constraints.map((item) => (
                   <MenuItem value={item} key={item}>{item}</MenuItem>
                 ))}
@@ -178,6 +179,7 @@ const SettingsForm = (props: PropType) => {
                 value={currentSettings['additional-constraints'] || ''}
                 onChange={(e) => handleChange('additional-constraints', e.target.value as string)}
               >
+                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
                 {constraints.map((item) => (
                   <MenuItem value={item} key={item}>{item}</MenuItem>
                 ))}

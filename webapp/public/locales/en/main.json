@@ -33,5 +33,6 @@
   "onGetMessageInfoError": "Unable to retrieve message info",
   "onGetMaintenanceError": "Unable to retrieve maintenance status",
   "search": "Search",
-  "files": "Files"
+  "files": "Files",
+  "none": "None"
 }

@@ -34,5 +34,6 @@
   "onGetMessageInfoError": "Impossible de récupérer le message d'info",
   "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application",
   "search": "Rechercher",
-  "files": "Fichiers"
+  "files": "Fichiers",
+  "none": "Aucun"
 }

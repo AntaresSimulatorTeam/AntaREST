@@ -20,6 +20,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate } from './types';
 import { LinkCreationInfo } from '../MapView/types';
+import { transformNameToId } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -133,6 +134,8 @@ const CandidateForm = (props: PropType) => {
     }
   }, [candidate]);
 
+  console.log(currentCandidate.link.split(' - ').map((item) => transformNameToId(item)).join(' - '));
+
   return (
     <Box>
       <Box>
@@ -198,6 +201,7 @@ const CandidateForm = (props: PropType) => {
                 value={currentCandidate['link-profile'] || ''}
                 onChange={(e) => handleChange('link-profile', e.target.value as string)}
               >
+                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
                 {capacities.map((item) => (
                   <MenuItem value={item} key={item}>{item}</MenuItem>
                 ))}
@@ -214,6 +218,7 @@ const CandidateForm = (props: PropType) => {
                 value={currentCandidate['already-installed-link-profile'] || ''}
                 onChange={(e) => handleChange('already-installed-link-profile', e.target.value as string)}
               >
+                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
                 {capacities.map((item) => (
                   <MenuItem value={item} key={item}>{item}</MenuItem>
                 ))}

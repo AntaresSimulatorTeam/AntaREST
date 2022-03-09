@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-import { Box, Button } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Box, Button } from '@material-ui/core';
 import XpansionPropsView from './XpansionPropsView';
 import { MatrixType, StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
@@ -17,6 +17,26 @@ import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import XpansionTableModal from './XpansionTableModal';
 import MatrixView from '../../ui/MatrixView';
 
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    create: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      flexGrow: 1,
+    },
+    createButton: {
+      width: '140px',
+      border: `2px solid ${theme.palette.primary.main}`,
+      '&:hover': {
+        border: `2px solid ${theme.palette.secondary.main}`,
+        color: theme.palette.secondary.main,
+      },
+      fontWeight: 'bold',
+    },
+  }));
+
 interface Props {
     study: StudyMetadata;
 }
@@ -24,6 +44,7 @@ interface Props {
 const XpansionView = (props: Props) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const classes = useStyles();
   const { study } = props;
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<XpansionCandidate | XpansionSettings | Array<string>>();
@@ -44,6 +65,7 @@ const XpansionView = (props: Props) => {
         const tempSettings = await getXpansionSettings(study.id);
         setSettings(tempSettings);
         const tempCandidates = await getAllCandidates(study.id);
+        // map temp pour changer chaque link avec transformnametoid
         setCandidates(tempCandidates);
         const tempConstraints = await getAllConstraints(study.id);
         setConstraints(tempConstraints);
@@ -188,8 +210,8 @@ const XpansionView = (props: Props) => {
   return (
     <>
       {loaded ? createConfigView && (
-        <Box>
-          <Button onClick={createXpansion}>Créer</Button>
+        <Box className={classes.create}>
+          <Button className={classes.createButton} color="primary" variant="outlined" onClick={createXpansion}>Nouvelle configuration Xpansion</Button>
         </Box>
       ) : (
         <SimpleLoader />
