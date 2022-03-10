@@ -1,5 +1,8 @@
 import logging
-from datetime import datetime
+import os
+import shutil
+import time
+from datetime import datetime, timedelta
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
@@ -10,16 +13,21 @@ from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
     EventChannelDirectory,
 )
-from antarest.core.jwt import JWTUser
+from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
+    UserHasNotPermissionError,
 )
+from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
@@ -35,6 +43,7 @@ from antarest.launcher.model import (
     JobLogType,
 )
 from antarest.launcher.repository import JobResultRepository
+from antarest.study.model import ExportFormat
 from antarest.study.service import StudyService
 from antarest.core.model import (
     StudyPermissionType,
@@ -44,6 +53,8 @@ from antarest.core.model import (
 from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
+    extract_output_name,
+    fix_study_root,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,6 +72,9 @@ class LauncherServiceNotAvailableException(HTTPException):
         )
 
 
+ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
+
+
 class LauncherService:
     def __init__(
         self,
@@ -68,31 +82,28 @@ class LauncherService:
         study_service: StudyService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
+        file_transfer_manager: FileTransferManager,
+        task_service: ITaskService,
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
         self.study_service = study_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
+        self.file_transfer_manager = file_transfer_manager
+        self.task_service = task_service
         self.launchers = factory_launcher.build_launcher(
             config,
-            study_service,
             LauncherCallbacks(
-                update_status=lambda jobid, status, msg, output_id: self.update(
-                    jobid, status, msg, output_id
-                ),
-                after_export_flat=lambda job_id, study_id, study_path, launcher_opts: self.after_export_flat_hooks(
-                    job_id, study_id, study_path, launcher_opts
-                ),
+                update_status=self.update,
+                export_study=self._export_study,
                 append_before_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.BEFORE
                 ),
                 append_after_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.AFTER
                 ),
-                get_job_result=lambda jobid: self.job_result_repository.get(
-                    jobid
-                ),
+                import_output=self._import_output,
             ),
             event_bus,
         )
@@ -136,26 +147,30 @@ class LauncherService:
         msg: Optional[str],
         output_id: Optional[str],
     ) -> None:
-        logger.info(f"Setting study with job id {job_uuid} status to {status}")
-        job_result = self.job_result_repository.get(job_uuid)
-        if job_result is not None:
-            job_result.job_status = status
-            job_result.msg = msg
-            job_result.output_id = output_id
-            final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
-            if final_status:
-                job_result.completion_date = datetime.utcnow()
-            self.job_result_repository.save(job_result)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_JOB_COMPLETED
-                    if final_status
-                    else EventType.STUDY_JOB_STATUS_UPDATE,
-                    payload=job_result.to_dto().dict(),
-                    channel=EventChannelDirectory.JOB_STATUS + job_result.id,
-                )
+        with db():
+            logger.info(
+                f"Setting study with job id {job_uuid} status to {status}"
             )
-        logger.info(f"Study status set")
+            job_result = self.job_result_repository.get(job_uuid)
+            if job_result is not None:
+                job_result.job_status = status
+                job_result.msg = msg
+                job_result.output_id = output_id
+                final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
+                if final_status:
+                    job_result.completion_date = datetime.utcnow()
+                self.job_result_repository.save(job_result)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_JOB_COMPLETED
+                        if final_status
+                        else EventType.STUDY_JOB_STATUS_UPDATE,
+                        payload=job_result.to_dto().dict(),
+                        channel=EventChannelDirectory.JOB_STATUS
+                        + job_result.id,
+                    )
+                )
+            logger.info(f"Study status set")
 
     def append_log(
         self, job_id: str, message: str, log_type: JobLogType
@@ -270,6 +285,9 @@ class LauncherService:
         if not user:
             return []
 
+        orphan_visibility_threshold = datetime.utcnow() - timedelta(
+            days=ORPHAN_JOBS_VISIBILITY_THRESHOLD
+        )
         allowed_job_results = []
         for job_result in job_results:
             try:
@@ -281,10 +299,11 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                logger.info(
-                    f"Removing job result {job_result.id} because of missing study"
-                )
-                self.job_result_repository.delete(job_result.id)
+                if (
+                    (user and user.is_site_admin())
+                    or job_result.creation_date >= orphan_visibility_threshold
+                ):
+                    allowed_job_results.append(job_result)
         return allowed_job_results
 
     def get_result(
@@ -307,14 +326,30 @@ class LauncherService:
 
         raise JobNotFound()
 
+    def remove_job(self, job_id: str, params: RequestParameters) -> None:
+        if params.user and params.user.is_site_admin():
+            logger.info(f"Deleting job {job_id}")
+            job_output = self._get_job_output_fallback_path(job_id)
+            if job_output.exists():
+                logger.info(f"Deleting job output {job_id}")
+                shutil.rmtree(job_output, ignore_errors=True)
+            self.job_result_repository.delete(job_id)
+            return
+        raise UserHasNotPermissionError()
+
     def get_jobs(
-        self, study_uid: Optional[str], params: RequestParameters
+        self,
+        study_uid: Optional[str],
+        params: RequestParameters,
+        filter_orphans: bool = True,
     ) -> List[JobResult]:
 
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
-            job_results = self.job_result_repository.get_all()
+            job_results = self.job_result_repository.get_all(
+                filter_orphan=filter_orphans
+            )
 
         return self._filter_from_user_permission(
             job_results=job_results, user=params.user
@@ -387,6 +422,132 @@ class LauncherService:
                 )
             return launcher_logs
 
+        raise JobNotFound()
+
+    def _export_study(
+        self,
+        job_id: str,
+        study_id: str,
+        target_path: Path,
+        launcher_params: Optional[JSON],
+    ) -> None:
+        with db():
+            self.append_log(
+                job_id, f"Extracting study {study_id}", JobLogType.BEFORE
+            )
+            self.study_service.export_study_flat(
+                study_id,
+                RequestParameters(DEFAULT_ADMIN_USER),
+                target_path,
+                outputs=False,
+            )
+            self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
+            self.after_export_flat_hooks(
+                job_id, study_id, target_path, launcher_params
+            )
+
+    def _get_job_output_fallback_path(self, job_id: str) -> Path:
+        return self.config.storage.tmp_dir / f"output_{job_id}"
+
+    def _import_fallback_output(
+        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+    ) -> Optional[str]:
+        output_name: Optional[str] = None
+        job_output_path = self._get_job_output_fallback_path(job_id)
+        try:
+            os.mkdir(job_output_path)
+            imported_output = job_output_path / "imported"
+            shutil.copytree(output_path, imported_output)
+            fix_study_root(imported_output)
+            output_name = extract_output_name(imported_output)
+            imported_output.rename(Path(job_output_path, output_name))
+            if additional_logs:
+                for log_name, log_path in additional_logs.items():
+                    shutil.copyfile(
+                        log_path, Path(job_output_path, output_name) / log_name
+                    )
+        except Exception as e:
+            logger.error(
+                "Failed to import output in fallback mode", exc_info=e
+            )
+            shutil.rmtree(job_output_path, ignore_errors=True)
+        return output_name
+
+    def _import_output(
+        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+    ) -> Optional[str]:
+        with db():
+            job_result = self.job_result_repository.get(job_id)
+            if job_result:
+                try:
+                    return self.study_service.import_output(
+                        job_result.study_id,
+                        output_path,
+                        RequestParameters(DEFAULT_ADMIN_USER),
+                        additional_logs,
+                    )
+                except StudyNotFoundError:
+                    return self._import_fallback_output(
+                        job_id, output_path, additional_logs
+                    )
+        raise JobNotFound()
+
+    def _download_fallback_output(
+        self, job_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
+        output_path = self._get_job_output_fallback_path(job_id)
+        if output_path.exists():
+            logger.info(f"Exporting {job_id} fallback output")
+            export_name = f"Job output {output_path.name} export"
+            export_file_download = self.file_transfer_manager.request_download(
+                f"{job_id}.zip",
+                export_name,
+                params.user,
+            )
+            export_path = Path(export_file_download.path)
+            export_id = export_file_download.id
+
+            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+                try:
+                    shutil.make_archive(
+                        base_name=os.path.splitext(export_path)[0],
+                        format="zip",
+                        root_dir=output_path,
+                    )
+                    self.file_transfer_manager.set_ready(export_id)
+                    return TaskResult(success=True, message="")
+                except Exception as e:
+                    self.file_transfer_manager.fail(export_id, str(e))
+                    raise e
+
+            task_id = self.task_service.add_task(
+                export_task,
+                export_name,
+                task_type=TaskType.EXPORT,
+                ref_id=None,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return FileDownloadTaskDTO(
+                file=export_file_download.to_dto(), task=task_id
+            )
+
+        raise FileNotFoundError()
+
+    def download_output(
+        self, job_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
+        job_result = self.job_result_repository.get(job_id)
+        if job_result and job_result.output_id:
+            if self._get_job_output_fallback_path(job_id).exists():
+                return self._download_fallback_output(job_id, params)
+            self.study_service.get_study(job_result.study_id)
+            return self.study_service.export_output(
+                job_result.study_id,
+                job_result.output_id,
+                params,
+            )
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:

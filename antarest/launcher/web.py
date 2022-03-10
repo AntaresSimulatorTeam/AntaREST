@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
@@ -62,6 +63,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_job(
         study: Optional[str] = None,
+        filter_orphans: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -69,7 +71,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return [job.to_dto() for job in service.get_jobs(study, params)]
+        return [
+            job.to_dto()
+            for job in service.get_jobs(study, params, filter_orphans)
+        ]
 
     @bp.get(
         "/launcher/jobs/{job_id}/logs",
@@ -86,6 +91,23 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
         params = RequestParameters(user=current_user)
         return service.get_log(job_id, log_type, params)
+
+    @bp.get(
+        "/launcher/jobs/{job_id}/output",
+        tags=[APITag.launcher],
+        summary="Export job output",
+        response_model=FileDownloadTaskDTO,
+    )
+    def export_job_output(
+        job_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Exporting output for job {job_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return service.download_output(job_id, params)
 
     @bp.post(
         "/launcher/jobs/{job_id}/kill",
@@ -118,6 +140,19 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
         params = RequestParameters(user=current_user)
         return service.get_result(job_id, params).to_dto()
+
+    @bp.delete(
+        "/launcher/jobs/{job_id}",
+        tags=[APITag.launcher],
+        summary="Retrieve job info from job id",
+        response_model=JobResultDTO,
+    )
+    def remove_result(
+        job_id: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        logger.info(f"Removing job {job_id}", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        service.remove_job(job_id, params)
 
     @bp.get(
         "/launcher/engines",

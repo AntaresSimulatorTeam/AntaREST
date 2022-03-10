@@ -28,6 +28,7 @@ from antarest.study.model import (
     MatrixIndex,
     StudyDownloadLevelDTO,
 )
+from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -105,6 +106,25 @@ def fix_study_root(study_path: Path) -> None:
         for item in os.listdir(root_path):
             shutil.move(str(root_path / item), str(study_path))
         shutil.rmtree(sub_root_path)
+
+
+def extract_output_name(path_output: Path) -> str:
+    ini_reader = IniReader()
+    info_antares_output = ini_reader.read(path_output / "info.antares-output")[
+        "general"
+    ]
+
+    date = datetime.fromtimestamp(
+        int(info_antares_output["timestamp"])
+    ).strftime("%Y%m%d-%H%M")
+
+    mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
+    name = (
+        f"-{info_antares_output['name']}"
+        if info_antares_output["name"]
+        else ""
+    )
+    return f"{date}{mode}{name}"
 
 
 def is_managed(study: Study) -> bool:

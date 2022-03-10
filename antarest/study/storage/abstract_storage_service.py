@@ -37,7 +37,11 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
-from antarest.study.storage.utils import fix_study_root, remove_from_cache
+from antarest.study.storage.utils import (
+    fix_study_root,
+    remove_from_cache,
+    extract_output_name,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -263,24 +267,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 extract_zip(output, path_output)
 
             fix_study_root(path_output)
-
-            ini_reader = IniReader()
-            info_antares_output = ini_reader.read(
-                path_output / "info.antares-output"
-            )["general"]
-
-            date = datetime.fromtimestamp(
-                int(info_antares_output["timestamp"])
-            ).strftime("%Y%m%d-%H%M")
-
-            mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-            name = (
-                f"-{info_antares_output['name']}"
-                if info_antares_output["name"]
-                else ""
-            )
-
-            output_name = f"{date}{mode}{name}"
+            output_name = extract_output_name(path_output)
             path_output = path_output.rename(
                 Path(path_output.parent, output_name)
             )

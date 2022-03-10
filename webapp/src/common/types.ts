@@ -269,7 +269,6 @@ export interface WSMessage {
 export interface WSLogMessage {
   log: string;
   job_id: string;
-  study_id: string;
 }
 
 export type Components = {

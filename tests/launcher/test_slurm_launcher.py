@@ -63,7 +63,6 @@ def test_init_slurm_launcher_arguments(tmp_path: Path):
 
     slurm_launcher = SlurmLauncher(
         config=config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -114,7 +113,6 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
 
     slurm_launcher = SlurmLauncher(
         config=config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -153,7 +151,6 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     )
     slurm_launcher = SlurmLauncher(
         config=config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -176,7 +173,6 @@ def test_slurm_launcher_delete_function(tmp_path: str):
 def test_extra_parameters(launcher_config: Config):
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -244,16 +240,8 @@ def test_run_study(
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    study_metadata_dto = Mock(spec=StudyMetadataDTO)
-    study_metadata_dto.version = version
-    storage_service = Mock()
-
-    storage_service.get_study_information = Mock(
-        return_value=study_metadata_dto
-    )
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -268,11 +256,11 @@ def test_run_study(
     slurm_launcher._delete_workspace_file = Mock()
 
     slurm_launcher._run_study(
-        study_uuid, str(uuid.uuid4()), None, params=params
+        study_uuid, str(uuid.uuid4()), None, str(version)
     )
 
     #    slurm_launcher._clean_local_workspace.assert_called_once()
-    storage_service.export_study_flat.assert_called_once()
+    slurm_launcher.callbacks.export_study.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
         ANY, job_status, ANY, None
     )
@@ -283,18 +271,8 @@ def test_run_study(
 
 @pytest.mark.unit_test
 def test_check_state(tmp_path: Path, launcher_config: Config):
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    storage_service = Mock()
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -304,17 +282,15 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 
     study1 = Mock()
     study1.done = True
-    study1.name = "study1"
+    study1.name = "job_id1"
     study1.with_error = False
-    study1.job_log_dir = tmp_path / "study1"
-    slurm_launcher.job_id_to_study_id["study1"] = "job_id1"
+    study1.job_log_dir = tmp_path / "job_id1"
 
     study2 = Mock()
     study2.done = True
-    study2.name = "study2"
+    study2.name = "job_id2"
     study2.with_error = True
-    study2.job_log_dir = tmp_path / "study2"
-    slurm_launcher.job_id_to_study_id["study2"] = "job_id2"
+    study2.job_log_dir = tmp_path / "job_id2"
 
     data_repo_tinydb = Mock()
     data_repo_tinydb.get_list_of_studies = Mock(return_value=[study1, study2])
@@ -346,7 +322,6 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -363,23 +338,20 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
 def test_import_study_output(launcher_config, tmp_path):
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
     )
-    slurm_launcher.job_id_to_study_id["1"] = "2"
-    slurm_launcher.storage_service.import_output.return_value = "output"
+    slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1")
 
-    slurm_launcher.storage_service.import_output.assert_called_once_with(
-        "2",
+    slurm_launcher.callbacks.import_output.assert_called_once_with(
+        "1",
         launcher_config.launcher.slurm.local_workspace
         / "OUTPUT"
         / "1"
         / "output",
-        params=ANY,
-        additional_logs={},
+        {},
     )
     assert res == "output"
 
@@ -411,10 +383,6 @@ def test_import_study_output(launcher_config, tmp_path):
         / "output_name"
     )
     output_dir.mkdir(parents=True)
-    slurm_launcher.storage_service.get_study.side_effect = [
-        Mock(spec=RawStudy, version="800"),
-        Mock(spec=RawStudy, version="700"),
-    ]
     assert not (output_dir / "updated_links" / "something").exists()
     assert not (output_dir / "updated_links" / "something").exists()
 
@@ -433,16 +401,15 @@ def test_import_study_output(launcher_config, tmp_path):
     log_error = log_dir / "antares-err-xxxx.txt"
     log_info.touch()
     log_error.touch()
-    slurm_launcher.storage_service.import_output.reset_mock()
+    slurm_launcher.callbacks.import_output.reset_mock()
     slurm_launcher._import_study_output("1", None, str(log_dir))
-    slurm_launcher.storage_service.import_output.assert_called_once_with(
-        "2",
+    slurm_launcher.callbacks.import_output.assert_called_once_with(
+        "1",
         launcher_config.launcher.slurm.local_workspace
         / "OUTPUT"
         / "1"
         / "output",
-        params=ANY,
-        additional_logs={
+        {
             "antares-out.log": log_info,
             "antares-err.log": log_error,
         },
@@ -466,7 +433,6 @@ def test_kill_job(
 
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -515,20 +481,11 @@ def test_kill_job(
 def test_launcher_workspace_init(
     run_with_mock, tmp_path: Path, launcher_config: Config
 ):
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    callbacks = Mock(get_job_result=lambda x: JobResult(study_id="study_id"))
+    callbacks = Mock()
     (tmp_path / LOG_DIR_NAME).mkdir()
 
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
@@ -552,7 +509,6 @@ def test_launcher_workspace_init(
     # will use existing private workspace
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
@@ -561,15 +517,12 @@ def test_launcher_workspace_init(
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
         == 1
     )
-    assert len(slurm_launcher.job_id_to_study_id) == 1
-    assert slurm_launcher.job_id_to_study_id["somepath"] == "study_id"
     run_with_mock.assert_called()
 
     run_with_mock.reset_mock()
     # will create a new one since there is a lock on previous one
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        study_service=Mock(),
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
@@ -578,5 +531,4 @@ def test_launcher_workspace_init(
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
         == 2
     )
-    assert len(slurm_launcher.job_id_to_study_id) == 0
     run_with_mock.assert_not_called()

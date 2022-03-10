@@ -11,7 +11,7 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
-import { getStudyJobLog, killStudy } from '../../services/api/study';
+import { downloadJobOutput, getStudyJobLog, killStudy } from '../../services/api/study';
 import { convertUTCToLocalTime, useNotif } from '../../services/utils';
 import SimpleLoader from '../ui/loaders/SimpleLoader';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
@@ -147,6 +147,14 @@ const JobView = (props: PropTypes) => {
     return <div />;
   };
 
+  const exportJobOutput = async (jobId: string): Promise<void> => {
+    try {
+      await downloadJobOutput(jobId);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+    }
+  };
+
   const killTask = (jobId: string) => {
     (async () => {
       try {
@@ -179,13 +187,16 @@ const JobView = (props: PropTypes) => {
           </Link>
           )}
           {!study && (
-          <Typography className={classes.title}>
-            {t('main:unknown')}
-          </Typography>
+            <Typography className={classes.title}>
+              {`${t('main:unknown')} (${job.id})`}
+            </Typography>
           )}
         </div>
         <div>
           {job.status === 'running' ? <Button variant="contained" color="primary" onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
+        </div>
+        <div>
+          {job.status === 'success' ? <Button variant="contained" color="secondary" onClick={() => exportJobOutput(job.id)}>{t('jobs:download')}</Button> : <div />}
         </div>
         <div className={classes.dateandicon}>
           <div className={classes.dateblock}>

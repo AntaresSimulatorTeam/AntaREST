@@ -22,19 +22,17 @@ class FactoryLauncher:
     def build_launcher(
         self,
         config: Config,
-        storage_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
         if config.launcher.local is not None:
             dict_launchers["local"] = LocalLauncher(
-                config, storage_service, callbacks, event_bus
+                config, callbacks, event_bus
             )
         if config.launcher.slurm is not None:
             dict_launchers["slurm"] = SlurmLauncher(
                 config,
-                storage_service,
                 callbacks,
                 event_bus,
                 retrieve_existing_jobs=True,

@@ -26,7 +26,6 @@ def test_compute(tmp_path: Path):
     storage_service = Mock()
     local_launcher = LocalLauncher(
         Config(),
-        storage_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
     )
@@ -35,7 +34,7 @@ def test_compute(tmp_path: Path):
     local_launcher.job_id_to_study_id = {
         str(uuid): ("study-id", tmp_path / "run", Mock())
     }
-    storage_service.import_output.return_value = "some output"
+    local_launcher.callbacks.import_output.return_value = "some output"
     local_launcher._compute(
         antares_solver_path="echo",
         study_uuid="study-id",

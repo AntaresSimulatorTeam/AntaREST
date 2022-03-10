@@ -16,13 +16,11 @@ from antarest.study.model import (
     PublicMode,
 )
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 def test_cyclelife():
     engine = create_engine("sqlite:///:memory:", echo=True)
-    sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    )
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
@@ -45,7 +43,7 @@ def test_cyclelife():
             owner=user,
             groups=[group],
         )
-        b = Study(
+        b = RawStudy(
             name="b",
             version="43",
             author="Morpheus",
@@ -55,12 +53,39 @@ def test_cyclelife():
             owner=user,
             groups=[group],
         )
+        c = RawStudy(
+            name="c",
+            version="43",
+            author="Trinity",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            public_mode=PublicMode.FULL,
+            owner=user,
+            groups=[group],
+            missing=datetime.utcnow(),
+        )
+        d = VariantStudy(
+            name="d",
+            version="43",
+            author="Mr. Anderson",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            public_mode=PublicMode.FULL,
+            owner=user,
+            groups=[group],
+        )
 
         a = repo.save(a)
         b = repo.save(b)
+        repo.save(c)
+        repo.save(d)
         assert b.id
         c = repo.get(a.id)
         assert a == c
+
+        assert len(repo.get_all()) == 3
+        assert len(repo.get_all_raw(show_missing=True)) == 2
+        assert len(repo.get_all_raw(show_missing=False)) == 1
 
         repo.delete(a.id)
         assert repo.get(a.id) is None
