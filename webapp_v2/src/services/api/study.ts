@@ -1,17 +1,17 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties, LaunchJobDTO } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties, LaunchJobDTO, StudyMetadataPatchDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
 
-const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
-  const res = await client.get('/v1/studies?summary=true');
+const getStudiesRaw = async (summary = true): Promise<{[sid: string]: StudyMetadataDTO}> => {
+  const res = await client.get(`/v1/studies?summary=${summary}`);
   return res.data;
 };
 
-export const getStudies = async (): Promise<StudyMetadata[]> => {
-  const rawStudyList = await getStudiesRaw();
+export const getStudies = async (summary = true): Promise<StudyMetadata[]> => {
+  const rawStudyList = await getStudiesRaw(summary);
   return Object.keys(rawStudyList).map((sid) => {
     const study = rawStudyList[sid];
     return convertStudyDtoToMetadata(sid, study);
@@ -232,6 +232,11 @@ export const renameStudy = async (studyId: string, name: string): Promise<void> 
   const res = await client.put(`/v1/studies/${studyId}`, {
     name,
   });
+  return res.data;
+};
+
+export const updateStudyMetadata = async (studyId: string, data: StudyMetadataPatchDTO): Promise<void> => {
+  const res = await client.put(`/v1/studies/${studyId}`, data);
   return res.data;
 };
 

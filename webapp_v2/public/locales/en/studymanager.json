@@ -50,5 +50,11 @@
   "tag": "Tag",
   "enterTag": "Enter a tag",
   "exploreButton": "Explore",
-  "copyID": "Copy ID"
+  "copyID": "Copy ID",
+  "studies": "studies",
+  "versionsLabel": "Versions",
+  "usersLabel": "Users",
+  "groupsLabel": "Groups",
+  "tagsLabel": "Tags"
+
 }

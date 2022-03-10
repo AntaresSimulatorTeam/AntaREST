@@ -55,6 +55,11 @@ export interface StudyMetadataDTO {
   groups: Array<{ id: string; name: string }>;
   public_mode: StudyPublicMode;
   folder?: string;
+  horizon?: string;
+  scenario?: string;
+  status?: string;
+  doc?: string;
+  tags?: Array<string>;
 }
 
 export interface StudyMetadata {
@@ -71,6 +76,19 @@ export interface StudyMetadata {
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
   folder?: string;
+  horizon?: string;
+  scenario?: string;
+  status?: string;
+  doc?: string;
+  tags?: Array<string>;
+}
+
+export interface StudyMetadataPatchDTO {
+  horizon?: string;
+  scenario?: string;
+  status?: string;
+  doc?: string;
+  tags?: Array<string>;
 }
 
 export interface StudyOutput {

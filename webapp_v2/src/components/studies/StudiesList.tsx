@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon } from '@mui/material';
+import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon, Button, Tooltip, FormControl, InputLabel } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
@@ -10,7 +10,8 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { areEqual, FixedSizeGrid, FixedSizeGridProps, GridChildComponentProps } from 'react-window';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { areEqual, FixedSizeGrid, GridChildComponentProps } from 'react-window';
 import { GenericInfo, StudyMetadata, SortElement, SortItem, SortStatus } from '../../common/types';
 import StudyCard from './StudyCard';
 import { scrollbarStyle, STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from '../../theme';
@@ -64,11 +65,12 @@ interface OwnProps {
   onFavoriteClick: (value: GenericInfo) => void;
   sortItem: SortItem;
   setSortItem: (value: SortItem) => void;
+  refresh: () => void;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 function StudiesList(props: PropTypes) {
-  const { studies, folder, sortItem, setFolder, favorite, setSortItem, onFavoriteClick, removeStudy } = props;
+  const { studies, folder, sortItem, setFolder, favorite, setSortItem, onFavoriteClick, removeStudy, refresh } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [folderList, setFolderList] = useState<Array<string>>([]);
@@ -165,86 +167,107 @@ function StudiesList(props: PropTypes) {
         alignItems="center"
         boxSizing="border-box"
       >
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
-          {
-            folderList.map((elm, index) => (
-              index === 0 ? (
-                <HomeIcon
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${elm}-${index}`}
-                  sx={{
-                    color: 'text.primary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      color: 'primary.main',
-                    },
-                  }}
-                  onClick={() => setFolder('root')}
-                />
-              ) : (
-                <Typography
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${elm}-${index}`}
-                  sx={{
-                    color: 'text.primary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      color: 'primary.main',
-                    },
-                  }}
-                  onClick={() => setFolder(folderList.slice(0, index + 1).join('/'))}
-                >
-                  {elm}
-                </Typography>
-              )
-            ))}
-        </Breadcrumbs>
-        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" boxSizing="border-box">
-          <Typography sx={{ mt: 1, p: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>{t('studymanager:sortBy')}</Typography>
-          <Select
-            labelId={`single-checkbox-label-${t('studymanager:sortBy')}`}
-            id={`single-checkbox-${t('studymanager:sortBy')}`}
-            value={`${sortItem.element}-${sortItem.status}`}
-            variant="filled"
-            onChange={(e: SelectChangeEvent<string>) => setSortItem(getSortItem(e.target.value as string))}
-            sx={{
-              width: '230px',
-              height: '50px',
-              '.MuiSelect-select': {
-                display: 'flex',
-                flexFlow: 'row nowrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-              },
-              background: 'rgba(255, 255, 255, 0)',
-              borderRadius: '4px 4px 0px 0px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
-              '.MuiSelect-icon': {
-                backgroundColor: '#222333',
-              },
-            }}
-          >
-            {filterList.map(({ element, name, status }) => {
-              const value = `${element}-${status}`;
-              return (
-                <MenuItem
-                  key={value}
-                  value={value}
-                  sx={{
-                    display: 'flex',
-                    flexFlow: 'row nowrap',
-                    justifyContent: 'center',
-                    alignItems: 'center' }}
-                >
-                  <ListItemIcon sx={{ minWidth: '30px' }}>
-                    {status === SortStatus.INCREASE ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
-                  </ListItemIcon>
-                  <ListItemText primary={name} />
-                </MenuItem>
-              );
-            })}
-          </Select>
+        <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
+            {
+              folderList.map((elm, index) => (
+                index === 0 ? (
+                  <HomeIcon
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`${elm}-${index}`}
+                    sx={{
+                      color: 'text.primary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
+                    onClick={() => setFolder('root')}
+                  />
+                ) : (
+                  <Typography
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`${elm}-${index}`}
+                    sx={{
+                      color: 'text.primary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: 'primary.main',
+                      },
+                    }}
+                    onClick={() => setFolder(folderList.slice(0, index + 1).join('/'))}
+                  >
+                    {elm}
+                  </Typography>
+                )
+              ))}
+          </Breadcrumbs>
+          <Typography mx={2} sx={{ color: 'white' }}>
+            (
+            {`${studies.length} ${t('studymanager:studies').toLowerCase()}`}
+            )
+          </Typography>
+        </Box>
+        <Box display="flex" flexDirection="row" justifyContent="center" alignItems="center" boxSizing="border-box">
+          <Tooltip title={t('studymanager:refresh') as string} sx={{ mr: 4 }}>
+            <Button
+              color="primary"
+              onClick={refresh}
+              variant="outlined"
+            >
+              <RefreshIcon />
+            </Button>
+          </Tooltip>
+          <FormControl sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+            <InputLabel variant="standard" htmlFor={`single-checkbox-${t('studymanager:sortBy')}`}>
+              {t('studymanager:sortBy')}
+            </InputLabel>
+            <Select
+              labelId={`single-checkbox-label-${t('studymanager:sortBy')}`}
+              id={`single-checkbox-${t('studymanager:sortBy')}`}
+              value={`${sortItem.element}-${sortItem.status}`}
+              label={t('studymanager:sortBy')}
+              variant="filled"
+              onChange={(e: SelectChangeEvent<string>) => setSortItem(getSortItem(e.target.value as string))}
+              sx={{
+                width: '230px',
+                height: '45px',
+                '.MuiSelect-select': {
+                  display: 'flex',
+                  flexFlow: 'row nowrap',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                background: 'rgba(255, 255, 255, 0)',
+                borderRadius: '4px 4px 0px 0px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
+                '.MuiSelect-icon': {
+                  backgroundColor: '#222333',
+                },
+              }}
+            >
+              {filterList.map(({ element, name, status }) => {
+                const value = `${element}-${status}`;
+                return (
+                  <MenuItem
+                    key={value}
+                    value={value}
+                    sx={{
+                      display: 'flex',
+                      flexFlow: 'row nowrap',
+                      justifyContent: 'center',
+                      alignItems: 'center' }}
+                  >
+                    <ListItemIcon sx={{ minWidth: '30px' }}>
+                      {status === SortStatus.INCREASE ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+                    </ListItemIcon>
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
         </Box>
       </Box>
       <Box
@@ -265,7 +288,7 @@ function StudiesList(props: PropTypes) {
                 columnWidth={itemWidth}
                 height={height}
                 rowCount={Math.ceil(studies.length / columnCount)}
-                rowHeight={210}
+                rowHeight={260}
                 width={width}
                 itemData={{ studies, importStudy, onLaunchClick, columnCount, itemWidth, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy }}
               >

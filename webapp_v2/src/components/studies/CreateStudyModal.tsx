@@ -13,10 +13,12 @@ import { convertVersions } from '../../services/utils';
 import FilledTextInput from '../common/FilledTextInput';
 import { GenericInfo, GroupDTO, StudyMetadata, StudyPublicMode } from '../../common/types';
 import TextSeparator from '../common/TextSeparator';
-import { changePublicMode, createStudy, getStudyMetadata } from '../../services/api/study';
+import { changePublicMode, createStudy, getStudyMetadata, updateStudyMetadata } from '../../services/api/study';
 import { addStudies, initStudiesVersion } from '../../store/study';
 import { getGroups } from '../../services/api/user';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
+import TagTextInput from '../common/TagTextInput';
+import { scrollbarStyle } from '../../theme';
 
 const logErr = debug('antares:createstudyform:error');
 
@@ -42,7 +44,10 @@ function CreateStudyModal(props: PropTypes) {
   const { versions, open, addStudy, onClose } = props;
   const { enqueueSnackbar } = useSnackbar();
   const versionList = convertVersions(versions || []);
-  const tagList: Array<GenericInfo> = []; // Replace by ??
+
+  // NOTE: GET TAG LIST FROM BACKEND
+  const tagList: Array<string> = [];
+
   const [version, setVersion] = useState<string>(versionList[versionList.length - 1].id.toString());
   const [studyName, setStudyName] = useState<string>('');
   const [publicMode, setPublicMode] = useState<StudyPublicMode>('NONE');
@@ -61,6 +66,7 @@ function CreateStudyModal(props: PropTypes) {
         const sid = await createStudy(studyName, vrs, group);
         const metadata = await getStudyMetadata(sid);
         await changePublicMode(sid, publicMode);
+        if (tags.length > 0) await updateStudyMetadata(sid, { tags });
         addStudy(metadata);
         enqueueSnackbar(t('studymanager:createStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
@@ -101,9 +107,9 @@ function CreateStudyModal(props: PropTypes) {
       closeButtonLabel={t('main:cancelButton')}
       actionButtonLabel={t('main:create')}
       onActionButtonClick={onSubmit}
-      rootStyle={{ width: '600px', height: '500px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
+      rootStyle={{ width: '600px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
     >
-      <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" p={2} boxSizing="border-box">
+      <Box width="100%" height="400px" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" p={2} boxSizing="border-box" sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}>
         <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
           <FilledTextInput
             label={`${t('studymanager:studyName')} *`}
@@ -140,13 +146,12 @@ function CreateStudyModal(props: PropTypes) {
         <Box width="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
           <TextSeparator text="Metadata" />
           <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
-            <MultiSelect
-              name={t('studymanager:tag')}
-              placeholder={t('studymanager:enterTag')}
-              list={tagList}
-              data={tags}
-              setValue={setTags}
-              sx={{ flexGrow: 1 }}
+            <TagTextInput
+              label={`${t('studymanager:enterTag')} *`}
+              sx={{ flexGrow: 1, mr: 2 }}
+              value={tags}
+              onChange={setTags}
+              tagList={tagList}
             />
           </Box>
         </Box>
