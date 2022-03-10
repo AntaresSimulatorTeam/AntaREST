@@ -37,7 +37,7 @@ class MatrixEditor:
     @staticmethod
     def _operation_to_operator(
         operation: str,
-    ) -> function:
+    ) -> Any:
         operation_dict = {
             "+": operator.add,
             "-": operator.sub,
