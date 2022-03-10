@@ -1156,7 +1156,9 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
         if not Path(study.path).exists():
-            raise StudyNotFoundError()
+            raise StudyNotFoundError(
+                f"Study files were not found for study {uuid}"
+            )
 
         res = self.storage_service.get_storage(study).import_output(
             study, output

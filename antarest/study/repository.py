@@ -50,7 +50,7 @@ class StudyMetadataRepository:
         )
         return metadatas
 
-    def get_all_raw(self, show_missing: bool = True):
+    def get_all_raw(self, show_missing: bool = True) -> List[RawStudy]:
         query = db.session.query(RawStudy)
         if not show_missing:
             query = query.filter(RawStudy.missing.is_(None))
