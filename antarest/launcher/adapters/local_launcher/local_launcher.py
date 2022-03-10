@@ -118,7 +118,7 @@ class LocalLauncher(AbstractLauncher):
             thread = threading.Thread(
                 target=lambda: LogTailManager.follow(
                     cast(IO[str], process.stdout),
-                    self.create_update_log(str(uuid), study_uuid),
+                    self.create_update_log(str(uuid)),
                     stop_reading_output,
                     None,
                 ),
@@ -178,10 +178,8 @@ class LocalLauncher(AbstractLauncher):
             end = True
             shutil.rmtree(tmp_path)
 
-    def create_update_log(
-        self, job_id: str, study_id: str
-    ) -> Callable[[str], None]:
-        base_func = super().create_update_log(job_id, study_id)
+    def create_update_log(self, job_id: str) -> Callable[[str], None]:
+        base_func = super().create_update_log(job_id)
         self.logs[job_id] = ""
 
         def append_to_log(log_line: str) -> None:
