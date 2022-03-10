@@ -1,5 +1,6 @@
 import operator
-from typing import Optional, Any, Callable, List, cast
+from enum import Enum
+from typing import Optional, Any, List, cast
 
 import xarray as xr
 from pydantic import BaseModel, validator
@@ -28,29 +29,35 @@ class MatrixSlice(BaseModel):
         return v
 
 
+class Operator(Enum):
+    ADD = "+"
+    SUB = "-"
+    MUL = "*"
+    DIV = "/"
+    ABS = "ABS"
+    EQ = "="
+
+
 class Operation(BaseModel):
-    operation: str
+    operation: Operator
     value: float
+
+    @property
+    def operator(self):
+        operation_dict = {
+            Operator.ADD: operator.add,
+            Operator.SUB: operator.sub,
+            Operator.MUL: operator.mul,
+            Operator.DIV: operator.truediv,
+            Operator.ABS: abs,
+            Operator.EQ: lambda x, y: y,
+        }
+        return operation_dict[self.operation]
 
 
 class MatrixEditor:
     @staticmethod
-    def _operation_to_operator(
-        operation: str,
-    ) -> Any:
-        operation_dict = {
-            "+": operator.add,
-            "-": operator.sub,
-            "*": operator.mul,
-            "/": operator.truediv,
-            "=": lambda x, y: y,
-            "ABS": abs,
-        }
-        return operation_dict[operation]
-
-    @classmethod
     def update_matrix_content_with_slices(
-        cls,
         matrix_data: List[List[MatrixData]],
         slices: List[MatrixSlice],
         operation: Operation,
@@ -67,11 +74,9 @@ class MatrixEditor:
                 & (data_array.coords["col"] <= matrix_slice.column_to)
             )
 
-        operator_func = cls._operation_to_operator(operation.operation)
-
         new_matrix_data = xr.where(
             mask,
-            operator_func(data_array, operation.value),  # type:ignore
+            operation.operator(data_array, operation.value),  # type:ignore
             data_array,
         ).data.tolist()
         return new_matrix_data  # type:ignore

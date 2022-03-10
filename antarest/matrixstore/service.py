@@ -28,11 +28,6 @@ from antarest.core.tasks.service import (
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
-from antarest.matrixstore.business.matrix_editor import (
-    MatrixEditor,
-    Operation,
-    MatrixSlice,
-)
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
@@ -474,14 +469,3 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         if matrix:
             write_tsv_matrix_to_file(matrix, str(tmp_file))
-
-    def update_matrix(
-        self,
-        matrix_data: List[List[MatrixData]],
-        slices: List[MatrixSlice],
-        operation: Operation,
-    ) -> str:
-        new_matrix_data = MatrixEditor.update_matrix_content_with_slices(
-            matrix_data=matrix_data, slices=slices, operation=operation
-        )
-        return self.create(new_matrix_data)
