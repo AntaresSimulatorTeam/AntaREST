@@ -135,8 +135,8 @@ const XpansionTable = (props: PropType) => {
             <Table className={classes.table} aria-label="simple table">
               <TableHead>
                 <TableRow>
-                  <TableCell>Nom du fichier</TableCell>
-                  <TableCell align="right">Options</TableCell>
+                  <TableCell>{t('xpansion:fileName')}</TableCell>
+                  <TableCell align="right">{t('xpansion:options')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

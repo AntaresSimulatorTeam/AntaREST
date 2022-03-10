@@ -27,5 +27,16 @@
     "fileName": "Nom du fichier",
     "options": "Options",
     "deleteFile": "Êtes-vous sûr de vouloir supprimer ce fichier?",
-    "extra": "Extra"
+    "extra": "Extra",
+    "xpansionError": "Échec lors du chargement de la configuration de Xpansion",
+    "createXpansionError": "Échec lors de la création de la configuration de Xpansion",
+    "deleteXpansionError": "Échec lors de la suppression de la configuration de Xpansion",
+    "createCandidateError": "Échec lors de la création du candidat",
+    "deleteCandidateError": "Échec lors de la suppression du candidat",
+    "updateCandidateError": "Échec lors de la modification du candidat",
+    "updateSettingsError": "Échec lors de la modification des paramètres",
+    "getFileError": "Échec lors de la récupération du fichier",
+    "deleteFileError": "Échec lors de la suppression du fichier",
+    "newXpansionConfig": "Nouvelle configuration Xpansion",
+    "newCandidate": "Nouveau candidat"
 }

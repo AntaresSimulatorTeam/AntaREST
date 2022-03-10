@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-  candidateList?: Array<XpansionCandidate>;
+  candidateList: Array<XpansionCandidate>;
   settings: XpansionSettings | undefined;
   constraints: Array<string> | undefined;
   capacities: Array<string> | undefined;
@@ -116,10 +116,6 @@ const XpansionPropsView = (props: PropsType) => {
       )}
     </>
   );
-};
-
-XpansionPropsView.defaultProps = {
-  candidateList: undefined,
 };
 
 export default XpansionPropsView;

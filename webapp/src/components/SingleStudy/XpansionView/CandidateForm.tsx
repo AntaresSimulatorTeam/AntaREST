@@ -20,7 +20,6 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate } from './types';
 import { LinkCreationInfo } from '../MapView/types';
-import { transformNameToId } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -133,8 +132,6 @@ const CandidateForm = (props: PropType) => {
       setSaveAllowed(false);
     }
   }, [candidate]);
-
-  console.log(currentCandidate.link.split(' - ').map((item) => transformNameToId(item)).join(' - '));
 
   return (
     <Box>

@@ -1,9 +1,6 @@
 import React, { PropsWithChildren } from 'react';
-import { createStyles, makeStyles, Theme, Button, Paper, Typography, Box } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Button, Paper, Typography, Box, Modal, Backdrop, Fade } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import Modal from '@material-ui/core/Modal';
-import Backdrop from '@material-ui/core/Backdrop';
-import Fade from '@material-ui/core/Fade';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -63,7 +60,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     open: boolean;
     title: string;
-    handleClose?: () => void;
+    handleClose: () => void;
 }
 
 const ConstraintModal = (props: PropsWithChildren<PropTypes>) => {
@@ -114,10 +111,6 @@ const ConstraintModal = (props: PropsWithChildren<PropTypes>) => {
       </Fade>
     </Modal>
   );
-};
-
-ConstraintModal.defaultProps = {
-  handleClose: undefined,
 };
 
 export default ConstraintModal;

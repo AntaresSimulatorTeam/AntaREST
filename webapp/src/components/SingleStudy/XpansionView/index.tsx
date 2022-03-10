@@ -16,6 +16,7 @@ import { LinkCreationInfo } from '../MapView/types';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import XpansionTableModal from './XpansionTableModal';
 import MatrixView from '../../ui/MatrixView';
+import { transformNameToId } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -65,7 +66,9 @@ const XpansionView = (props: Props) => {
         const tempSettings = await getXpansionSettings(study.id);
         setSettings(tempSettings);
         const tempCandidates = await getAllCandidates(study.id);
-        // map temp pour changer chaque link avec transformnametoid
+        for (let i = 0; i < tempCandidates.length; i += 1) {
+          tempCandidates[i].link = tempCandidates.map((item) => item.link.split(' - ').map((index) => transformNameToId(index)).join(' - '))[i];
+        }
         setCandidates(tempCandidates);
         const tempConstraints = await getAllConstraints(study.id);
         setConstraints(tempConstraints);
@@ -80,17 +83,17 @@ const XpansionView = (props: Props) => {
         after();
       }
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:xpansionError'), e as AxiosError);
     } finally {
       setLoaded(true);
     }
-  }, [study.id, enqueueSnackbar]);
+  }, [study.id, enqueueSnackbar, t]);
 
   const createXpansion = async () => {
     try {
       await createXpansionConfiguration(study.id);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createXpansionError'), e as AxiosError);
     } finally {
       setCreateConfigView(false);
       setLoaded(true);
@@ -102,7 +105,7 @@ const XpansionView = (props: Props) => {
     try {
       await deleteXpansionConfiguration(study.id);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:deleteXpansionError'), e as AxiosError);
     } finally {
       setCreateConfigView(true);
     }
@@ -110,11 +113,10 @@ const XpansionView = (props: Props) => {
 
   const createCandidate = async (name: string, link: string) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/camelcase
       await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 });
       setOpenModal(false);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createCandidateError'), e as AxiosError);
     } finally {
       init(() => setSelectedItem({ name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 }));
     }
@@ -124,13 +126,11 @@ const XpansionView = (props: Props) => {
     if (candidates) {
       const obj = candidates.filter((o) => o.name !== name);
       try {
+        await deleteCandidate(study.id, name);
         setCandidates(obj);
         setSelectedItem(undefined);
-        await deleteCandidate(study.id, name);
       } catch (e) {
-        setSelectedItem(candidates.find((o) => o.name === name));
-        setCandidates([...candidates]);
-        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:deleteCandidateError'), e as AxiosError);
       } finally {
         init();
       }
@@ -141,7 +141,7 @@ const XpansionView = (props: Props) => {
     try {
       await updateCandidate(study.id, name, value);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
       init(() => setSelectedItem(value));
     }
@@ -151,7 +151,7 @@ const XpansionView = (props: Props) => {
     try {
       await updateXpansionSettings(study.id, value);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateSettingsError'), e as AxiosError);
     } finally {
       init(() => setSelectedItem(value));
     }
@@ -162,7 +162,7 @@ const XpansionView = (props: Props) => {
       const content = await getConstraint(study.id, filename);
       setSingleConstraint({ filename, content });
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:getFileError'), e as AxiosError);
     }
   };
 
@@ -174,7 +174,7 @@ const XpansionView = (props: Props) => {
         setConstraints(tempConstraints);
         setSelectedItem(tempConstraints);
       } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:deleteFileError'), e as AxiosError);
       }
     }
   };
@@ -184,7 +184,7 @@ const XpansionView = (props: Props) => {
       const content = await getCapacity(study.id, filename);
       setSingleCapa({ filename, content });
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:getFileError'), e as AxiosError);
     }
   };
 
@@ -196,7 +196,7 @@ const XpansionView = (props: Props) => {
         setCapacities(tempCapa);
         setSelectedItem(tempCapa);
       } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:deleteFileError'), e as AxiosError);
       }
     }
   };
@@ -211,7 +211,7 @@ const XpansionView = (props: Props) => {
     <>
       {loaded ? createConfigView && (
         <Box className={classes.create}>
-          <Button className={classes.createButton} color="primary" variant="outlined" onClick={createXpansion}>Nouvelle configuration Xpansion</Button>
+          <Button className={classes.createButton} color="primary" variant="outlined" onClick={createXpansion}>{t('xpansion:newXpansionConfig')}</Button>
         </Box>
       ) : (
         <SimpleLoader />
@@ -220,7 +220,7 @@ const XpansionView = (props: Props) => {
         <SplitLayoutView
           title={t('singlestudy:xpansion')}
           left={
-            <XpansionPropsView candidateList={candidates} settings={settings} constraints={constraints} capacities={capacities} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
+            <XpansionPropsView candidateList={candidates || []} settings={settings} constraints={constraints} capacities={capacities} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
           }
           right={
             selectedItem && (

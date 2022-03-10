@@ -45,7 +45,7 @@ const CreateCandidateModal = (props: PropType) => {
       open={open}
       handleClose={onClose}
       handleAction={() => onSave(name, link)}
-      title="Nouveau candidat"
+      title={t('xpansion:newCandidate')}
     >
       <Box className={classes.newCandidate}>
         <TextField
