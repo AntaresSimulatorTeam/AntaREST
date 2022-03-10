@@ -10,6 +10,12 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
 logger = logging.getLogger(__name__)
 
 
+def get_config(config_path: Path) -> Config:
+    res = get_local_path() / "resources"
+    config_obj = Config.from_yaml_file(res=res, file=config_path)
+    return config_obj
+
+
 def clean_locks_from_config(config: Config) -> None:
     if config.launcher.slurm:
         slurm_workspace = config.launcher.slurm.local_workspace
@@ -25,6 +31,20 @@ def clean_locks_from_config(config: Config) -> None:
 
 def clean_locks(config: Path) -> None:
     """Clean app locks"""
-    res = get_local_path() / "resources"
-    config_obj = Config.from_yaml_file(res=res, file=config)
+    config_obj = get_config(config)
     clean_locks_from_config(config_obj)
+
+
+def reindex_table(config: Path) -> None:
+    import sqlalchemy  # type: ignore
+    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT  # type: ignore
+
+    config_obj = get_config(config)
+    engine = sqlalchemy.create_engine(config_obj.db.db_admin_url, echo=True)
+    connection = engine.raw_connection()
+    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = connection.cursor()
+    cursor.execute("VACUUM ANALYSE study")
+    cursor.execute("REINDEX INDEX study_pkey")
+    cursor.execute("VACUUM ANALYSE rawstudy")
+    cursor.execute("REINDEX INDEX rawstudy_pkey")
