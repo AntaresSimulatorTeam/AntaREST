@@ -313,9 +313,10 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                if user and user.is_site_admin():
-                    allowed_job_results.append(job_result)
-                elif job_result.creation_date >= orphan_visibility_threshold:
+                if (
+                    (user and user.is_site_admin())
+                    or job_result.creation_date >= orphan_visibility_threshold
+                ):
                     allowed_job_results.append(job_result)
         return allowed_job_results
 
