@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme, Button, Tooltip } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme, Button } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
