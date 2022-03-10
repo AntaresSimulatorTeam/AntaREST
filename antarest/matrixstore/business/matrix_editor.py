@@ -29,8 +29,8 @@ class MatrixSlice(BaseModel):
 
 
 class Operation(BaseModel):
-    value: float
     operation: str
+    value: float
 
 
 class MatrixEditor:
@@ -56,7 +56,7 @@ class MatrixEditor:
 
         data_array = xr.DataArray(matrix_data, dims=["row", "col"])
 
-        mask = xr.zeros_like(data_array)
+        mask = xr.zeros_like(data_array, dtype=bool)
         for matrix_slice in slices:
             mask |= (
                 (data_array.coords["row"] >= matrix_slice.row_from)
