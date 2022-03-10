@@ -291,6 +291,7 @@ class LauncherService:
             job_result = self.job_result_repository.get(jobid)
             if job_result:
                 return str(job_result.study_id)
+                return str(job_result.study_id)
         return None
 
     def _filter_from_user_permission(
@@ -554,15 +555,14 @@ class LauncherService:
     ) -> FileDownloadTaskDTO:
         job_result = self.job_result_repository.get(job_id)
         if job_result and job_result.output_id:
-            try:
-                self.study_service.get_study(job_result.study_id)
-                return self.study_service.export_output(
-                    job_result.study_id,
-                    job_result.output_id,
-                    params,
-                )
-            except StudyNotFoundError:
+            if self._get_job_output_fallback_path(job_id).exists():
                 return self._download_fallback_output(job_id, params)
+            self.study_service.get_study(job_result.study_id)
+            return self.study_service.export_output(
+                job_result.study_id,
+                job_result.output_id,
+                params,
+            )
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:

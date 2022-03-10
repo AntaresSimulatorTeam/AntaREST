@@ -528,7 +528,7 @@ def test_get_logs():
     )
 
 
-def test_import_output(tmp_path: Path):
+def test_manage_output(tmp_path: Path):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -563,6 +563,7 @@ def test_import_output(tmp_path: Path):
     launcher_service.job_result_repository.get.side_effect = [
         None,
         JobResult(id=job_id, study_id=study_id),
+        JobResult(id=job_id, study_id=study_id, output_id="some id"),
         JobResult(id=job_id, study_id=study_id),
         JobResult(id=job_id, study_id=study_id),
     ]
@@ -576,6 +577,11 @@ def test_import_output(tmp_path: Path):
     )
     assert not launcher_service._get_job_output_fallback_path(job_id).exists()
     launcher_service.study_service.import_output.assert_called()
+
+    launcher_service.download_output(
+        "job_id", RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    launcher_service.study_service.export_output.assert_called()
 
     launcher_service.study_service.import_output.side_effect = [
         StudyNotFoundError(""),
@@ -606,18 +612,12 @@ def test_import_output(tmp_path: Path):
     launcher_service.job_result_repository.get.reset_mock()
     launcher_service.job_result_repository.get.side_effect = [
         None,
-        JobResult(id=job_id, study_id=study_id, output_id="some id"),
         JobResult(id=job_id, study_id=study_id, output_id=output_name),
     ]
     with pytest.raises(JobNotFound):
         launcher_service.download_output(
             "job_id", RequestParameters(DEFAULT_ADMIN_USER)
         )
-
-    launcher_service.download_output(
-        "job_id", RequestParameters(DEFAULT_ADMIN_USER)
-    )
-    launcher_service.study_service.export_output.assert_called()
 
     study_service.get_study.reset_mock()
     study_service.get_study.side_effect = StudyNotFoundError("")
