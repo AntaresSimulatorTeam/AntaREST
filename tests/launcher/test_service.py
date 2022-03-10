@@ -631,3 +631,8 @@ def test_import_output(tmp_path: Path):
     assert launcher_service.download_output(
         "job_id", RequestParameters(DEFAULT_ADMIN_USER)
     ) == FileDownloadTaskDTO(task="some id", file=export_file)
+
+    launcher_service.remove_job(
+        job_id, RequestParameters(user=DEFAULT_ADMIN_USER)
+    )
+    assert not launcher_service._get_job_output_fallback_path(job_id).exists()

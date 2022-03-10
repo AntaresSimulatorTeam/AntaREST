@@ -343,6 +343,10 @@ class LauncherService:
     def remove_job(self, job_id: str, params: RequestParameters) -> None:
         if params.user and params.user.is_site_admin():
             logger.info(f"Deleting job {job_id}")
+            job_output = self._get_job_output_fallback_path(job_id)
+            if job_output.exists():
+                logger.info(f"Deleting job output {job_id}")
+                shutil.rmtree(job_output, ignore_errors=True)
             self.job_result_repository.delete(job_id)
             return
         raise UserHasNotPermissionError()
