@@ -35,6 +35,7 @@
     "deleteCandidateError": "Échec lors de la suppression du candidat",
     "updateCandidateError": "Échec lors de la modification du candidat",
     "updateSettingsError": "Échec lors de la modification des paramètres",
+    "addFileError": "Échec lors de l'ajout du fichier",
     "getFileError": "Échec lors de la récupération du fichier",
     "deleteFileError": "Échec lors de la suppression du fichier",
     "newXpansionConfig": "Nouvelle configuration Xpansion",

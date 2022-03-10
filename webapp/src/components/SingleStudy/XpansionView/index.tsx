@@ -144,6 +144,7 @@ const XpansionView = (props: Props) => {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
       init(() => setSelectedItem(value));
+      enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
     }
   };
 
@@ -154,6 +155,21 @@ const XpansionView = (props: Props) => {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateSettingsError'), e as AxiosError);
     } finally {
       init(() => setSelectedItem(value));
+      enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+    }
+  };
+
+  const addOneConstraint = async (file: File) => {
+    if (constraints) {
+      try {
+        await addConstraints(study.id, file);
+        // setConstraints([...constraints, file.name]);
+        // setSelectedItem([...constraints, file.name]);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:addFileError'), e as AxiosError);
+      } finally {
+        init(() => setSelectedItem([...constraints, file.name].sort()));
+      }
     }
   };
 
@@ -224,7 +240,7 @@ const XpansionView = (props: Props) => {
           }
           right={
             selectedItem && (
-              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={handleUpdateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} addCapacity={(file) => addCapacity(study.id, file)} addConstraint={(file) => addConstraints(study.id, file)} />
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={handleUpdateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} addConstraint={addOneConstraint} addCapacity={(file) => addCapacity(study.id, file)} />
             )
           }
         />

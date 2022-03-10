@@ -54,6 +54,9 @@ const XpansionForm = (props: PropType) => {
   const [t] = useTranslation();
   const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings, deleteConstraint, deleteCapa, getConstraint, getCapacity, addConstraint, addCapacity } = props;
 
+  console.log(selectedItem);
+  console.log(constraints);
+
   return (
     <>
       {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (

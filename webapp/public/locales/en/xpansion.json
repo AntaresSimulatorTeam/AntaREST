@@ -35,6 +35,7 @@
     "deleteCandidateError": "Failed to delete the candidate",
     "updateCandidateError": "Failed to update the candidate",
     "updateSettingsError": "Failed to update settings",
+    "addFileError": "Failed to add the file",
     "getFileError": "Failed to retrieve the file",
     "deleteFileError": "Failed to delete the file",
     "newXpansionConfig": "New Xpansion configuration",
