@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, Outlet } from 'react-router-dom';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import maintheme from './theme';
@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Api from './pages/Api';
 import LoginWrapper from './pages/wrappers/LoginWrapper';
 import MaintenanceWrapper from './pages/wrappers/MaintenanceWrapper';
+import SingleStudy from './pages/SingleStudy';
 
 function App() {
   return (
@@ -22,7 +23,13 @@ function App() {
             <LoginWrapper>
               <MenuWrapper>
                 <Routes>
-                  <Route path="/studies" element={<Studies />} />
+                  <Route path="/studies" element={<Outlet />}>
+                    <Route index element={<Studies />} />
+                    <Route path=":studyId" element={<Outlet />}>
+                      <Route index element={<SingleStudy />} />
+                      <Route path="explore" element={<div style={{ width: '100%', height: '100%', backgroundColor: 'red' }} />} />
+                    </Route>
+                  </Route>
                   <Route path="/data" element={<Data />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/settings" element={<Settings />} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +48,7 @@ export default function StudyCard(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
+  const navigate = useNavigate();
 
   const handleFavoriteClick = () => {
     onFavoriteClick({ id: study.id, name: study.name });
@@ -167,7 +169,7 @@ export default function StudyCard(props: Props) {
         </Box>
       </CardContent>
       <CardActions>
-        <Button size="small" color="primary">{t('studymanager:exploreButton')}</Button>
+        <Button size="small" color="primary" onClick={() => navigate(`/studies/${study.id}`)}>{t('studymanager:exploreButton')}</Button>
         <Button
           size="small"
           aria-controls="menu-elements"
