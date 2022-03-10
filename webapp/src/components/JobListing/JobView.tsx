@@ -196,7 +196,7 @@ const JobView = (props: PropTypes) => {
           {job.status === 'running' ? <Button variant="contained" color="primary" onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
         </div>
         <div>
-          {job.status === 'success' ? <Button variant="contained" color="secondary" onClick={() => exportJobOutput(job.id)}>{t('launcher:download')}</Button> : <div />}
+          {job.status === 'success' ? <Button variant="contained" color="secondary" onClick={() => exportJobOutput(job.id)}>{t('jobs:download')}</Button> : <div />}
         </div>
         <div className={classes.dateandicon}>
           <div className={classes.dateblock}>
