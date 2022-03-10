@@ -1,5 +1,5 @@
 import operator
-from typing import Optional, Any, Callable, List
+from typing import Optional, Any, Callable, List, cast
 
 import xarray as xr
 from pydantic import BaseModel, validator
@@ -18,13 +18,13 @@ class MatrixSlice(BaseModel):
     @validator("row_to", always=True)
     def set_row_to(cls, v: Optional[int], values: Any) -> int:
         if v is None:
-            return values["row_from"]
+            return cast(int, values["row_from"])
         return v
 
     @validator("column_to", always=True)
     def set_column_to(cls, v: Optional[int], values: Any) -> int:
         if v is None:
-            return values["column_from"]
+            return cast(int, values["column_from"])
         return v
 
 
@@ -35,7 +35,9 @@ class Operation(BaseModel):
 
 class MatrixEditor:
     @staticmethod
-    def _operation_to_operator(operation: str) -> Callable:
+    def _operation_to_operator(
+        operation: str,
+    ) -> Callable[[float, float], float]:
         operation_dict = {
             "+": operator.add,
             "-": operator.sub,
@@ -71,5 +73,5 @@ class MatrixEditor:
             mask,
             operator_func(data_array, operation.value),
             data_array,
-        ).data.tolist()
+        ).data.tolist()  # type: ignore
         return new_matrix_data

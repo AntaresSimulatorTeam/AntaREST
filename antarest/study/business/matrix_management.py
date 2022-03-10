@@ -13,7 +13,7 @@ from antarest.study.storage.variantstudy.model.command.utils import (
 
 
 class MatrixManager:
-    def __init__(self, storage_service: StudyStorageService):
+    def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
     def update_matrix(
@@ -22,7 +22,7 @@ class MatrixManager:
         path: str,
         slices: List[MatrixSlice],
         operation: Operation,
-    ):
+    ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         matrix_service = (
             self.storage_service.variant_study_service.command_factory.command_context.matrix_service
