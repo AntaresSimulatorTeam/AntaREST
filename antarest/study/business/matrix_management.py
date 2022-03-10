@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, cast
 
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
+from antarest.matrixstore.service import MatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -27,6 +28,7 @@ class MatrixManager:
         matrix_service = (
             self.storage_service.variant_study_service.command_factory.command_context.matrix_service
         )
+        assert type(matrix_service) is MatrixService
 
         whole_matrix = self.storage_service.get_storage(study).get(
             metadata=study, url=path

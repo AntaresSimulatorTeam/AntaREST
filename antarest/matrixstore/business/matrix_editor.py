@@ -37,7 +37,7 @@ class MatrixEditor:
     @staticmethod
     def _operation_to_operator(
         operation: str,
-    ) -> Callable[[float, float], float]:
+    ) -> function:
         operation_dict = {
             "+": operator.add,
             "-": operator.sub,
@@ -71,7 +71,7 @@ class MatrixEditor:
 
         new_matrix_data = xr.where(
             mask,
-            operator_func(data_array, operation.value),
+            operator_func(data_array, operation.value),  # type:ignore
             data_array,
-        ).data.tolist()  # type: ignore
-        return new_matrix_data
+        ).data.tolist()
+        return new_matrix_data  # type:ignore
