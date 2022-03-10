@@ -291,7 +291,6 @@ class LauncherService:
             job_result = self.job_result_repository.get(jobid)
             if job_result:
                 return str(job_result.study_id)
-                return str(job_result.study_id)
         return None
 
     def _filter_from_user_permission(
