@@ -569,7 +569,7 @@ class StudyService:
             ):
                 if not study.missing:
                     logger.info(
-                        "Study %s at %s is not present in disk and will be mark for deletion in %i days",
+                        "Study %s at %s is not present in disk and will be marked for deletion in %i days",
                         study.id,
                         study.path,
                         MAX_MISSING_STUDY_TIMEOUT,

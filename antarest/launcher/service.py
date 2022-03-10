@@ -95,21 +95,15 @@ class LauncherService:
         self.launchers = factory_launcher.build_launcher(
             config,
             LauncherCallbacks(
-                update_status=lambda jobid, status, msg, output_id: self.update(
-                    jobid, status, msg, output_id
-                ),
-                export_study=lambda job_id, study_id, target_path, launcher_opts: self._export_study(
-                    job_id, study_id, target_path, launcher_opts
-                ),
+                update_status=self.update,
+                export_study=self._export_study,
                 append_before_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.BEFORE
                 ),
                 append_after_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.AFTER
                 ),
-                import_output=lambda jobid, output_path, additional_logs: self._import_output(
-                    jobid, output_path, additional_logs
-                ),
+                import_output=self._import_output,
             ),
             event_bus,
         )
