@@ -108,7 +108,7 @@ interface PropType {
     candidate: XpansionCandidate;
     links: Array<LinkCreationInfo>;
     capacities: Array<string>;
-    deleteCandidate: (name: string) => void;
+    deleteCandidate: (name: string) => Promise<void>;
     updateCandidate: (name: string, value: XpansionCandidate) => Promise<void>;
     onRead: (filename: string) => Promise<void>;
 }

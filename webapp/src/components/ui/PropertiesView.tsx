@@ -41,15 +41,15 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-    content: ReactNode | undefined;
-    filter: ReactNode;
-    onChange: (value: string) => void;
+    mainContent: ReactNode | undefined;
+    secondaryContent: ReactNode;
+    onSearchFilterChange: (value: string) => void;
     onAdd: () => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { onAdd, onChange, content, filter } = props;
+  const { onAdd, onSearchFilterChange, mainContent, secondaryContent } = props;
   const [t] = useTranslation();
 
   return (
@@ -65,10 +65,10 @@ const PropertiesView = (props: PropsType) => {
             </InputAdornment>
           ),
         }}
-        onChange={(e) => onChange(e.target.value as string)}
+        onChange={(e) => onSearchFilterChange(e.target.value as string)}
       />
-      {content}
-      {filter}
+      {mainContent}
+      {secondaryContent}
       <AddIcon className={classes.button} onClick={onAdd} />
     </div>
   );

@@ -8,7 +8,7 @@ import {
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import PropertiesView from '../../ui/PropertiesView';
-import { XpansionCandidate, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionRenderView } from './types';
 import CandidateListing from './CandidateListing';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 
@@ -43,19 +43,17 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
-  settings: XpansionSettings | undefined;
-  constraints: Array<string> | undefined;
-  capacities: Array<string> | undefined;
-  selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
-  setSelectedItem: (item: XpansionCandidate | XpansionSettings | Array<string>) => void;
+  selectedItem: string;
+  setSelectedItem: (item: string) => void;
   onAdd: () => void;
   deleteXpansion: () => void;
+  setView: (item: XpansionRenderView | undefined) => void;
 }
 
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { candidateList, settings, constraints, capacities, selectedItem, setSelectedItem, onAdd, deleteXpansion } = props;
+  const { candidateList, selectedItem, setSelectedItem, onAdd, deleteXpansion, setView } = props;
   const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
@@ -78,31 +76,31 @@ const XpansionPropsView = (props: PropsType) => {
   return (
     <>
       <PropertiesView
-        content={
+        mainContent={
           !filteredCandidates && (
           <Box className={classes.list}>
-            <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
+            <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} setView={setView} />
             <Box className={classes.buttons}>
-              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('main:files')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.settings)}>{t('main:settings')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.files)}>{t('main:files')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.capacities)}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </Box>
           )}
-        filter={
+        secondaryContent={
           filteredCandidates && (
           <Box className={classes.list}>
-            <CandidateListing candidates={filteredCandidates} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
+            <CandidateListing candidates={filteredCandidates} selectedItem={selectedItem} setSelectedItem={setSelectedItem} setView={setView} />
             <Box className={classes.buttons}>
-              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('main:files')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.settings)}>{t('main:settings')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.files)}>{t('main:files')}</Button>
+              <Button className={classes.button} size="small" onClick={() => setView(XpansionRenderView.capacities)}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </Box>
           )}
-        onChange={(e) => onChange(e as string)}
+        onSearchFilterChange={(e) => onChange(e as string)}
         onAdd={onAdd}
       />
       {openConfirmationModal && candidateList && (

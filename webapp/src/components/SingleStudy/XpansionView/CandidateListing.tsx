@@ -10,7 +10,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
-import { XpansionCandidate, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionRenderView } from './types';
 
 const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 40;
@@ -60,18 +60,19 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
     candidates: Array<XpansionCandidate> | undefined;
-    selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
-    setSelectedItem: (item: XpansionCandidate | XpansionSettings | Array<string>) => void;
+    selectedItem: string;
+    setSelectedItem: (item: string) => void;
+    setView: (item: XpansionRenderView | undefined) => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { candidates, setSelectedItem, selectedItem } = data;
+  const { candidates, setSelectedItem, selectedItem, setView } = data;
   const candidate = candidates[index];
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-    <Box style={selectedItem && selectedItem.name === candidate.name ? { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style, textDecoration: 'underline' } : { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style }} onClick={() => setSelectedItem(candidate)}>
+    <Box style={selectedItem && selectedItem.name === candidate.name ? { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style, textDecoration: 'underline' } : { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style }} onClick={() => { setSelectedItem(candidate.name); setView(XpansionRenderView.candidate); }}>
       <Typography style={{ display: 'block', width: '200px', textOverflow: 'ellipsis', overflow: 'hidden', paddingLeft: '30px' }}>{candidate.name}</Typography>
       <ArrowRightIcon style={selectedItem && selectedItem.name === candidate.name ? { color: '#B26A00' } : { color: '#FF9800' }} />
     </Box>
@@ -80,7 +81,7 @@ const Row = React.memo((props: ListChildComponentProps) => {
 
 const CandidateListing = (props: PropsType) => {
   const classes = useStyles();
-  const { candidates = [], selectedItem, setSelectedItem } = props;
+  const { candidates = [], selectedItem, setSelectedItem, setView } = props;
 
   return (
     <>
@@ -95,7 +96,7 @@ const CandidateListing = (props: PropsType) => {
                   width={width}
                   itemCount={candidates.length}
                   itemSize={ROW_ITEM_SIZE}
-                  itemData={{ candidates, setSelectedItem, selectedItem }}
+                  itemData={{ candidates, setSelectedItem, selectedItem, setView }}
                   className={classes.list}
                 >
                   {Row}

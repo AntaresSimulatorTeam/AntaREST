@@ -60,7 +60,7 @@ const MapPropsView = (props: PropsType) => {
 
   return (
     <PropertiesView
-      content={
+      mainContent={
         item && isNode(item) && onDelete ? (
           <div className={classes.list}>
             <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
@@ -72,12 +72,12 @@ const MapPropsView = (props: PropsType) => {
             <PanelView link={item as LinkProperties} nodes={nodeList} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
           </div>
         ))}
-      filter={
+      secondaryContent={
         filteredNodes && !item && (
           <NodeListing nodes={filteredNodes} setSelectedItem={setSelectedItem} />
         )
       }
-      onChange={(e) => onChange(e as string)}
+      onSearchFilterChange={(e) => onChange(e as string)}
       onAdd={onArea}
     />
   );

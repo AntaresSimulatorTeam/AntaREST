@@ -27,4 +27,11 @@ export interface XpansionCandidate {
     'already-installed-link-profile'?: string;
 }
 
+export enum XpansionRenderView {
+    candidate='candidate',
+    settings='settings',
+    files='files',
+    capacities='capacities'
+  }
+
 export default {};
