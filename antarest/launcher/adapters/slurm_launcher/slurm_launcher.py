@@ -8,7 +8,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict, Awaitable
+from typing import Callable, Optional, Dict, Awaitable, List
 
 from filelock import FileLock
 
@@ -76,7 +76,7 @@ class SlurmLauncher(AbstractLauncher):
             self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST]
         )
         self.thread: Optional[threading.Thread] = None
-        self.job_id_to_study_id: Dict[str, str] = {}
+        self.job_list: List[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
         with FileLock(LOCK_FILE_NAME):
@@ -137,18 +137,8 @@ class SlurmLauncher(AbstractLauncher):
             return Path(self.slurm_config.local_workspace)
 
     def _retrieve_running_jobs(self) -> None:
-        for study in self.data_repo_tinydb.get_list_of_studies():
-            study_id = self.callbacks.get_job_study_id(study.name)
-            if study_id:
-                logger.info(
-                    f"Adding job/study mapping for launch id {study.name}"
-                )
-                self.job_id_to_study_id[study.name] = study_id
-            else:
-                logger.warning(
-                    f"Failed to retrieve job result for job launch {study.name}"
-                )
-        if len(self.job_id_to_study_id) > 0:
+        if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
+            logger.info("Old job retrieved, starting loop")
             self.start()
 
     def _loop(self) -> None:
@@ -306,12 +296,6 @@ class SlurmLauncher(AbstractLauncher):
         all_done = True
 
         for study in study_list:
-            if study.name not in self.job_id_to_study_id:
-                logger.warning(
-                    f"Antares launcher job {study.name} not found in local job list !"
-                )
-                continue
-
             all_done = all_done and (study.finished or study.with_error)
             if study.done:
                 try:
@@ -345,9 +329,7 @@ class SlurmLauncher(AbstractLauncher):
             else:
                 self.log_tail_manager.track(
                     SlurmLauncher._get_log_path(study),
-                    self.create_update_log(
-                        study.name, self.job_id_to_study_id[study.name]
-                    ),
+                    self.create_update_log(study.name),
                 )
 
         if all_done:
@@ -418,7 +400,6 @@ class SlurmLauncher(AbstractLauncher):
                     f"finished_{launch_id}_\\d+", finished_zip.name
                 ):
                     self._delete_workspace_file(finished_zip)
-        del self.job_id_to_study_id[launch_id]
 
     def _run_study(
         self,
@@ -428,8 +409,6 @@ class SlurmLauncher(AbstractLauncher):
         version: str,
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
-
-        self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
         try:
             # export study

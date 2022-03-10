@@ -107,7 +107,6 @@ class LauncherService:
                 append_after_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.AFTER
                 ),
-                get_job_study_id=lambda jobid: self._get_job_study_id(jobid),
                 import_output=lambda jobid, output_path, additional_logs: self._import_output(
                     jobid, output_path, additional_logs
                 ),
@@ -285,13 +284,6 @@ class LauncherService:
         )
 
         return job_status
-
-    def _get_job_study_id(self, jobid: str) -> Optional[str]:
-        with db():
-            job_result = self.job_result_repository.get(jobid)
-            if job_result:
-                return str(job_result.study_id)
-        return None
 
     def _filter_from_user_permission(
         self, job_results: List[JobResult], user: Optional[JWTUser]

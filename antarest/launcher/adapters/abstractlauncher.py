@@ -27,7 +27,6 @@ class LauncherCallbacks(NamedTuple):
     export_study: Callable[[str, str, Path, Optional[JSON]], None]
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
-    get_job_study_id: Callable[[str], Optional[str]]
     # args: job_id, output_path, additional_logs
     import_output: Callable[[str, Path, Dict[str, Path]], Optional[str]]
 
@@ -62,9 +61,7 @@ class AbstractLauncher(ABC):
     def kill_job(self, job_id: str) -> None:
         raise NotImplementedError()
 
-    def create_update_log(
-        self, job_id: str, study_id: str
-    ) -> Callable[[str], None]:
+    def create_update_log(self, job_id: str) -> Callable[[str], None]:
         def update_log(log_line: str) -> None:
             self.event_bus.push(
                 Event(
@@ -72,7 +69,6 @@ class AbstractLauncher(ABC):
                     payload={
                         "log": log_line,
                         "job_id": job_id,
-                        "study_id": study_id,
                     },
                     channel=EventChannelDirectory.JOB_LOGS + job_id,
                 )

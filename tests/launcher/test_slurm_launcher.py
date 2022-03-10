@@ -271,14 +271,6 @@ def test_run_study(
 
 @pytest.mark.unit_test
 def test_check_state(tmp_path: Path, launcher_config: Config):
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         callbacks=Mock(),
@@ -290,17 +282,15 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 
     study1 = Mock()
     study1.done = True
-    study1.name = "study1"
+    study1.name = "job_id1"
     study1.with_error = False
-    study1.job_log_dir = tmp_path / "study1"
-    slurm_launcher.job_id_to_study_id["study1"] = "job_id1"
+    study1.job_log_dir = tmp_path / "job_id1"
 
     study2 = Mock()
     study2.done = True
-    study2.name = "study2"
+    study2.name = "job_id2"
     study2.with_error = True
-    study2.job_log_dir = tmp_path / "study2"
-    slurm_launcher.job_id_to_study_id["study2"] = "job_id2"
+    study2.job_log_dir = tmp_path / "job_id2"
 
     data_repo_tinydb = Mock()
     data_repo_tinydb.get_list_of_studies = Mock(return_value=[study1, study2])
@@ -352,7 +342,6 @@ def test_import_study_output(launcher_config, tmp_path):
         event_bus=Mock(),
         use_private_workspace=False,
     )
-    slurm_launcher.job_id_to_study_id["1"] = "2"
     slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1")
 
@@ -492,7 +481,7 @@ def test_kill_job(
 def test_launcher_workspace_init(
     run_with_mock, tmp_path: Path, launcher_config: Config
 ):
-    callbacks = Mock(get_job_study_id=lambda x: "study_id")
+    callbacks = Mock()
     (tmp_path / LOG_DIR_NAME).mkdir()
 
     slurm_launcher = SlurmLauncher(
@@ -528,8 +517,6 @@ def test_launcher_workspace_init(
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
         == 1
     )
-    assert len(slurm_launcher.job_id_to_study_id) == 1
-    assert slurm_launcher.job_id_to_study_id["somepath"] == "study_id"
     run_with_mock.assert_called()
 
     run_with_mock.reset_mock()
@@ -544,5 +531,4 @@ def test_launcher_workspace_init(
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
         == 2
     )
-    assert len(slurm_launcher.job_id_to_study_id) == 0
     run_with_mock.assert_not_called()
