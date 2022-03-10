@@ -102,6 +102,7 @@ class RawStudy(Study):
     content_status = Column(Enum(StudyContentStatus))
     workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     folder = Column(String, nullable=True)
+    missing = Column(DateTime, nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

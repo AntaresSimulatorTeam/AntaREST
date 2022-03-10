@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
@@ -129,6 +129,8 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
 class StudyService:
@@ -549,7 +551,11 @@ class StudyService:
         Returns:
 
         """
-        all_studies = self.repository.get_all()
+        now = datetime.utcnow()
+        clean_up_missing_studies_threshold = now - timedelta(
+            days=MAX_MISSING_STUDY_TIMEOUT
+        )
+        all_studies = self.repository.get_all_raw()
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in all_studies:
@@ -561,43 +567,72 @@ class StudyService:
                     and study.path not in paths
                 )
             ):
-                logger.info(
-                    "Study %s at %s is not present in disk and will be deleted",
-                    study.id,
-                    study.path,
-                )
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_DELETED,
-                        payload=study.to_json_summary(),
-                        permissions=create_permission_from_study(study),
+                if not study.missing:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be mark for deletion in %i days",
+                        study.id,
+                        study.path,
+                        MAX_MISSING_STUDY_TIMEOUT,
                     )
-                )
-                self.repository.delete(study.id)
+                    study.missing = now
+                    self.repository.save(study)
+                elif study.missing < clean_up_missing_studies_threshold:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be deleted",
+                        study.id,
+                        study.path,
+                    )
+                    self.event_bus.push(
+                        Event(
+                            type=EventType.STUDY_DELETED,
+                            payload=study.to_json_summary(),
+                            permissions=create_permission_from_study(study),
+                        )
+                    )
+                    self.repository.delete(study.id)
 
         # Add new studies
         study_paths = [
-            study.path for study in all_studies if isinstance(study, RawStudy)
+            study.path for study in all_studies if study.missing is None
         ]
+        missing_studies = {
+            study.path: study
+            for study in all_studies
+            if study.missing is not None
+        }
         for folder in folders:
             if str(folder.path) not in study_paths:
                 try:
-                    base_path = self.config.storage.workspaces[
-                        folder.workspace
-                    ].path
-                    dir_name = folder.path.relative_to(base_path)
-                    study = RawStudy(
-                        id=str(uuid4()),
-                        name=folder.path.name,
-                        path=str(folder.path),
-                        folder=str(dir_name),
-                        workspace=folder.workspace,
-                        owner=None,
-                        groups=folder.groups,
-                        public_mode=PublicMode.FULL
-                        if len(folder.groups) == 0
-                        else PublicMode.NONE,
-                    )
+                    if str(folder.path) not in missing_studies.keys():
+                        base_path = self.config.storage.workspaces[
+                            folder.workspace
+                        ].path
+                        dir_name = folder.path.relative_to(base_path)
+                        study = RawStudy(
+                            id=str(uuid4()),
+                            name=folder.path.name,
+                            path=str(folder.path),
+                            folder=str(dir_name),
+                            workspace=folder.workspace,
+                            owner=None,
+                            groups=folder.groups,
+                            public_mode=PublicMode.FULL
+                            if len(folder.groups) == 0
+                            else PublicMode.NONE,
+                        )
+                        logger.info(
+                            "Study at %s appears on disk and will be added as %s",
+                            study.path,
+                            study.id,
+                        )
+                    else:
+                        study = missing_studies[str(folder.path)]
+                        study.missing = None
+                        logger.info(
+                            "Study at %s re appears on disk and will be added as %s",
+                            study.path,
+                            study.id,
+                        )
 
                     self.storage_service.raw_study_service.update_from_raw_meta(
                         study, fallback_on_default=True
@@ -607,11 +642,6 @@ class StudyService:
                     # TODO re enable this on an async worker
                     # study.content_status = self._analyse_study(study)
 
-                    logger.info(
-                        "Study at %s appears on disk and will be added as %s",
-                        study.path,
-                        study.id,
-                    )
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_CREATED,
@@ -1125,6 +1155,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
+        if not Path(study.path).exists():
+            raise StudyNotFoundError()
 
         res = self.storage_service.get_storage(study).import_output(
             study, output

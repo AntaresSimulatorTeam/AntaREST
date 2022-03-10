@@ -6,7 +6,7 @@ from sqlalchemy.orm import with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study
+from antarest.study.model import Study, RawStudy
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +44,17 @@ class StudyMetadataRepository:
         return metadata
 
     def get_all(self) -> List[Study]:
-        metadatas: List[Study] = db.session.query(
-            with_polymorphic(Study, "*")
-        ).all()
+        entity = with_polymorphic(Study, "*")
+        metadatas: List[Study] = (
+            db.session.query(entity).filter(RawStudy.missing.is_(None)).all()
+        )
+        return metadatas
+
+    def get_all_raw(self, show_missing: bool = True):
+        query = db.session.query(RawStudy)
+        if not show_missing:
+            query = query.filter(RawStudy.missing.is_(None))
+        metadatas: List[RawStudy] = query.all()
         return metadatas
 
     def delete(self, id: str) -> None:
