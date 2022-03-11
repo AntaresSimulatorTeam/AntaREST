@@ -7,11 +7,11 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode, DEFAULT_INI_VALIDATOR,
+    IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
 class ExpansionCandidate(IniFileNode):
-
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         super().__init__(context, config, validator=DEFAULT_INI_VALIDATOR)
