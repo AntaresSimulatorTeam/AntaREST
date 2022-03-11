@@ -76,7 +76,7 @@ class XpansionCandidateDTO(BaseModel):
     # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
-    annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
+    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw")
     unit_size: Optional[float] = Field(None, alias="unit-size")
     max_units: Optional[int] = Field(None, alias="max-units")
     max_investment: Optional[float] = Field(None, alias="max-investment")
@@ -648,16 +648,14 @@ class XpansionManager:
         )
         file_study.tree.delete(["user", "expansion", "capa", filename])
 
-    def get_single_capa(self, study: Study, filename: str) -> bytes:
+    def get_single_capa(self, study: Study, filename: str) -> JSON:
         logger.info(
             f"Getting xpansion capacities file '{filename}' from study '{study.id}'"
         )
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        return cast(
-            bytes, file_study.tree.get(["user", "expansion", "capa", filename])
-        )
+        return file_study.tree.get(["user", "expansion", "capa", filename])
 
     def get_all_capa(self, study: Study) -> List[str]:
         logger.info(

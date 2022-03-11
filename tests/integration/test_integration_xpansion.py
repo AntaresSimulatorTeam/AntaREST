@@ -139,7 +139,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 404
 
     files = {
-        "files": (
+        "file": (
             filename_constraints1,
             StringIO(content_constraints1),
             "image/jpeg",
@@ -160,24 +160,13 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         / filename_constraints1
     ).open().read() == content_constraints1
 
-    files = [
-        (
-            "files",
-            (
-                filename_constraints1,
-                StringIO(content_constraints1),
-                "image/jpeg",
-            ),
+    files = {
+        "file": (
+            filename_constraints1,
+            StringIO(content_constraints1),
+            "image/jpeg",
         ),
-        (
-            "files",
-            (
-                filename_constraints2,
-                StringIO(content_constraints2),
-                "image/jpeg",
-            ),
-        ),
-    ]
+    }
 
     res = client.post(
         f"{xpansion_base_url}/constraints",
@@ -186,49 +175,26 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     )
     assert res.status_code == 409
 
-    files = [
-        (
-            "files",
-            (
-                filename_constraints2,
-                StringIO(content_constraints2),
-                "image/jpeg",
-            ),
+    files = {
+        "file": (
+            filename_constraints2,
+            StringIO(content_constraints2),
+            "image/jpeg",
         ),
-        (
-            "files",
-            (
-                filename_constraints2,
-                StringIO(content_constraints2),
-                "image/jpeg",
-            ),
-        ),
-    ]
+    }
     res = client.post(
         f"{xpansion_base_url}/constraints",
         headers=headers,
         files=files,
     )
-    assert res.status_code == 409
 
-    files = [
-        (
-            "files",
-            (
-                filename_constraints2,
-                StringIO(content_constraints2),
-                "image/jpeg",
-            ),
+    files = {
+        "file": (
+            filename_constraints3,
+            StringIO(content_constraints3),
+            "image/jpeg",
         ),
-        (
-            "files",
-            (
-                filename_constraints3,
-                StringIO(content_constraints3),
-                "image/jpeg",
-            ),
-        ),
-    ]
+    }
     res = client.post(
         f"{xpansion_base_url}/constraints",
         headers=headers,
@@ -314,14 +280,14 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     filename_capa1 = "filename_capa1.txt"
     filename_capa2 = "filename_capa2.txt"
     filename_capa3 = "filename_capa3.txt"
-    content_capa1 = "content_capa1"
-    content_capa2 = "content_capa2"
-    content_capa3 = "content_capa3"
+    content_capa1 = "0"
+    content_capa2 = "1"
+    content_capa3 = "2"
     files = {
-        "files": (
+        "file": (
             filename_capa1,
             StringIO(content_capa1),
-            "image/jpeg",
+            "txt/csv",
         )
     }
     res = client.post(
@@ -347,24 +313,27 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     )
     assert res.status_code == 409
 
-    files = [
-        (
-            "files",
-            (
-                filename_capa2,
-                StringIO(content_capa2),
-                "image/jpeg",
-            ),
-        ),
-        (
-            "files",
-            (
-                filename_capa3,
-                StringIO(content_capa3),
-                "image/jpeg",
-            ),
-        ),
-    ]
+    files = {
+        "file": (
+            filename_capa2,
+            StringIO(content_capa2),
+            "txt/csv",
+        )
+    }
+    res = client.post(
+        f"{xpansion_base_url}/capacities",
+        headers=headers,
+        files=files,
+    )
+    assert res.status_code == 200
+
+    files = {
+        "file": (
+            filename_capa3,
+            StringIO(content_capa3),
+            "txt/csv",
+        )
+    }
     res = client.post(
         f"{xpansion_base_url}/capacities",
         headers=headers,
@@ -378,7 +347,11 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         headers=headers,
     )
     assert res.status_code == 200
-    assert res.json() == content_capa1
+    assert res.json() == {
+        "columns": [0],
+        "data": [[0.0]],
+        "index": [0],
+    }
 
     res = client.get(
         f"{xpansion_base_url}/capacities",

@@ -42,14 +42,12 @@ class BucketNode(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
-        default_file_node: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ] = RawFileNode,
+        default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,
     ):
         super().__init__(context, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
         self.default_file_node: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+            ..., INode[Any, Any, Any]
         ] = default_file_node
 
     def _get_registered_file(self, key: str) -> Optional[RegisteredFile]:

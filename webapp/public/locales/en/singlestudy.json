@@ -5,6 +5,7 @@
   "runStudy": "Run study",
   "xpansionMode": "Xpansion mode",
   "useXpansionVersionR": "Use the R legacy Xpansion mode",
+  "xpansion": "Xpansion",
   "postProcessing": "Post processing",
   "timeLimit": "Time limit",
   "timeLimitHelper": "Time limit (in hours). Max: 240h.",

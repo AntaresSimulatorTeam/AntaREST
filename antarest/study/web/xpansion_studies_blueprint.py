@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, UploadFile, File
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -215,7 +215,7 @@ def create_xpansion_routes(
     )
     def add_constraints(
         uuid: str,
-        files: List[UploadFile],
+        file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -223,7 +223,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.add_xpansion_constraints(uuid, files, params)
+        return study_service.add_xpansion_constraints(uuid, file, params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/constraints/{filename}",
@@ -287,7 +287,7 @@ def create_xpansion_routes(
     )
     def add_capa(
         uuid: str,
-        files: List[UploadFile],
+        file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -295,7 +295,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.add_capa(uuid, files, params)
+        return study_service.add_capa(uuid, file, params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
