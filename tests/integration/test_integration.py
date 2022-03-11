@@ -1163,9 +1163,9 @@ def test_edit_matrix(app: FastAPI):
     )
     new_data = res.json()["data"]
     assert new_data != initial_data
-    assert [[a[i] for a in new_data[2:5]] for i in range(2, 5)] == [
-        [42] * 3
-    ] * 3
-    assert [[a[i] for a in new_data[9:16]] for i in range(1, 4)] == [
-        [42] * 7
-    ] * 3
+    assert [[a[i] for a in new_data[2:4]] for i in range(2, 4)] == [
+        [42] * 2
+    ] * 2
+    assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [
+        [42] * 6
+    ] * 2
