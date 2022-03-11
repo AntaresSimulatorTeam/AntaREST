@@ -47,6 +47,12 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'flex-start',
       overflow: 'auto',
     },
+    contentView: {
+      width: '100%',
+      height: '100%',
+      padding: theme.spacing(2),
+      boxSizing: 'border-box',
+    },
   }));
 
 interface Props {
@@ -338,7 +344,11 @@ const XpansionView = (props: Props) => {
           left={
             <XpansionPropsView candidateList={candidates || []} onAdd={() => setCandidateCreationModal(true)} selectedItem={selectedItem || ''} setView={setView} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
           }
-          right={renderView()}
+          right={(
+            <Box className={classes.contentView}>
+              {renderView()}
+            </Box>
+          )}
         />
       )}
 

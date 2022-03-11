@@ -37,12 +37,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   content: {
     flex: '1',
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     overflow: 'hidden',
   },
   footer: {

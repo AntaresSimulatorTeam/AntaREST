@@ -31,16 +31,17 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       overflow: 'hidden',
       width: '100%',
-      flexGrow: 1,
+      height: '100%',
       flexDirection: 'column',
     },
     main: {
       backgroundColor: 'white',
-      width: '98%',
-      height: '98%',
+      width: '100%',
+      flexGrow: 1,
       display: 'flex',
       flexFlow: 'column nowrap',
       alignItems: 'center',
+      overflow: 'auto',
     },
     title: {
       color: theme.palette.primary.main,
@@ -51,16 +52,6 @@ const useStyles = makeStyles((theme: Theme) =>
     import: {
       display: 'flex',
       justifyContent: 'flex-end',
-    },
-    content: {
-      flex: '1',
-      padding: theme.spacing(2),
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      alignItems: 'flex-start',
-
     },
     divider: {
       marginTop: theme.spacing(1),
@@ -130,31 +121,29 @@ const XpansionTable = (props: PropType) => {
         <ImportForm text={t('main:import')} onImport={onImport} />
       </Box>
       <Box className={classes.main}>
-        <Box className={classes.content}>
-          <TableContainer component={Box}>
-            <Table className={classes.table} aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('xpansion:fileName')}</TableCell>
-                  <TableCell align="right">{t('xpansion:options')}</TableCell>
+        <TableContainer component={Box}>
+          <Table className={classes.table} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>{t('xpansion:fileName')}</TableCell>
+                <TableCell align="right">{t('xpansion:options')}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {content.map((row) => (
+                <TableRow key={row}>
+                  <TableCell component="th" scope="row">
+                    {row}
+                  </TableCell>
+                  <TableCell align="right" className={classes.buttons}>
+                    <VisibilityIcon className={classes.icon} color="primary" onClick={() => onRead(row)} />
+                    <DeleteIcon className={classes.delete} color="primary" onClick={() => setOpenConfirmationModal(row)} />
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {content.map((row) => (
-                  <TableRow key={row}>
-                    <TableCell component="th" scope="row">
-                      {row}
-                    </TableCell>
-                    <TableCell align="right" className={classes.buttons}>
-                      <VisibilityIcon className={classes.icon} color="primary" onClick={() => onRead(row)} />
-                      <DeleteIcon className={classes.delete} color="primary" onClick={() => setOpenConfirmationModal(row)} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
       {openConfirmationModal && openConfirmationModal.length > 0 && (
         <ConfirmationModal

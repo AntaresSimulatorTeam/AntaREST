@@ -53,9 +53,10 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       alignItems: 'flex-start',
       justifyContent: 'center',
-      width: '76%',
-      height: '98%',
+      width: '78%',
+      height: '100%',
       position: 'relative',
+      overflow: 'hidden',
     },
     left: {
       display: 'block',
