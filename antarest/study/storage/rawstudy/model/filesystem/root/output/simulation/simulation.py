@@ -50,8 +50,16 @@ class OutputSimulation(FolderNode):
             "info": OutputSimulationInfoAntaresOutput(
                 self.context, self.config.next_file("info.antares-output")
             ),
+            "antares-out": RawFileNode(
+                self.context, self.config.next_file("antares-out.log")
+            ),
+            "antares-err": RawFileNode(
+                self.context, self.config.next_file("antares-err.log")
+            ),
         }
+
         if not self.simulation.error:
+
             children["annualSystemCost"] = RawFileNode(
                 self.context, self.config.next_file("annualSystemCost.txt")
             )

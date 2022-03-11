@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal
+from unittest.mock import Mock, seal, call
 from uuid import uuid4
 
 import pytest
@@ -38,7 +38,11 @@ from antarest.study.model import (
     ExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import StudyService, UserHasNotPermissionError
+from antarest.study.service import (
+    StudyService,
+    UserHasNotPermissionError,
+    MAX_MISSING_STUDY_TIMEOUT,
+)
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -243,6 +247,7 @@ def test_study_listing() -> None:
 
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
+    now = datetime.utcnow()
     ma = RawStudy(id="a", path="a")
     fa = StudyFolder(path=Path("a"), workspace="", groups=[])
     mb = RawStudy(id="b", path="b")
@@ -254,12 +259,29 @@ def test_sync_studies_from_disk() -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=User(id=0),
     )
+    md = RawStudy(
+        id="d",
+        path="d",
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+    )
+    me = RawStudy(
+        id="e",
+        path="e",
+        created_at=now,
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+    )
     fc = StudyFolder(
         path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
     )
+    fe = StudyFolder(
+        path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    ff = StudyFolder(
+        path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
 
     repository = Mock()
-    repository.get_all.side_effect = [[ma, mb], [ma]]
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(
         storage=StorageConfig(
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -267,10 +289,16 @@ def test_sync_studies_from_disk() -> None:
     )
     service = build_study_service(Mock(), repository, config)
 
-    service.sync_studies_on_disk([fa, fc])
+    service.sync_studies_on_disk([fa, fc, fe, ff])
 
-    repository.delete.assert_called_once_with(mb.id)
-    repository.save.assert_called_once()
+    repository.delete.assert_called_once_with(md.id)
+    repository.save.assert_has_calls(
+        [
+            call(RawStudy(id="b", path="b", missing=True)),
+            call(RawStudy(id="e", path="e", created_at=now, missing=None)),
+            call(RawStudy(id="f", path="f", workspace=DEFAULT_WORKSPACE_NAME)),
+        ]
+    )
 
 
 @pytest.mark.unit_test

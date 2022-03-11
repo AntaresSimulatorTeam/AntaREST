@@ -1,5 +1,6 @@
 {
   "connexion": "Connexion",
+  "general": "General",
   "settings": "Settings",
   "logout": "Logout",
   "password": "Password",
@@ -31,5 +32,7 @@
   "comeBackLater": "Please come back later.",
   "onGetMessageInfoError": "Unable to retrieve message info",
   "onGetMaintenanceError": "Unable to retrieve maintenance status",
-  "search": "Search"
+  "search": "Search",
+  "files": "Files",
+  "none": "None"
 }

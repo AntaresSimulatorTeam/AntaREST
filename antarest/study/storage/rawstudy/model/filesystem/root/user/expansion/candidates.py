@@ -12,12 +12,4 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 
 class ExpansionCandidates(IniFileNode):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        IniFileNode.__init__(
-            self,
-            context,
-            config,
-            types={},
-            reader=IniReader(),
-            writer=IniWriter(),
-        )
+    pass

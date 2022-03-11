@@ -3,8 +3,15 @@ from typing import Optional
 
 from fastapi import HTTPException
 from markupsafe import escape
+from ratelimit import Rule  # type: ignore
 
 from antarest.core.jwt import JWTUser
+
+RATE_LIMIT_CONFIG = {
+    r"^/v1/launcher/run": [
+        Rule(second=1, minute=20),
+    ],
+}
 
 
 @dataclass

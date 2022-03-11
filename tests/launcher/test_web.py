@@ -26,6 +26,9 @@ def create_app(service: Mock) -> FastAPI:
 
     build_launcher(
         app,
+        study_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
         service_launcher=service,
         config=Config(security=SecurityConfig(disabled=True)),
     )
@@ -38,7 +41,7 @@ def test_run() -> None:
     study = "my-study"
 
     service = Mock()
-    service.run_study.return_value = job
+    service.run_study.return_value = str(job)
 
     app = create_app(service)
     client = TestClient(app)
@@ -102,8 +105,8 @@ def test_jobs() -> None:
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
         [
-            call(str(study_id), RequestParameters(DEFAULT_ADMIN_USER)),
-            call(None, RequestParameters(DEFAULT_ADMIN_USER)),
+            call(str(study_id), RequestParameters(DEFAULT_ADMIN_USER), True),
+            call(None, RequestParameters(DEFAULT_ADMIN_USER), True),
         ]
     )
 

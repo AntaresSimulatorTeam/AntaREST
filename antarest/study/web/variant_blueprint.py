@@ -1,10 +1,9 @@
 import logging
-from typing import List, Dict, Union
+from typing import List
 
 from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
-from antarest.core.model import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -14,9 +13,7 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
-from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.model import (
-    GenerationResultInfoDTO,
     CommandDTO,
     VariantTreeDTO,
 )

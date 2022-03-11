@@ -1,22 +1,46 @@
+import os
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.core.config import (
     Config,
     LauncherConfig,
     SlurmConfig,
     LocalConfig,
+    StorageConfig,
+)
+from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.filetransfer.model import (
+    FileDownloadTaskDTO,
+    FileDownloadDTO,
+    FileDownload,
 )
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo
-from antarest.core.requests import RequestParameters
-from antarest.launcher.model import JobResult, JobStatus
-from antarest.launcher.service import LauncherService
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
+from antarest.launcher.model import (
+    JobResult,
+    JobStatus,
+    LogType,
+    JobLog,
+    JobLogType,
+)
+from antarest.launcher.service import (
+    LauncherService,
+    ORPHAN_JOBS_VISIBILITY_THRESHOLD,
+    JobNotFound,
+)
 from antarest.login.auth import Auth
+from antarest.login.model import User
 from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
 
 
@@ -43,7 +67,6 @@ def test_service_run_study(get_current_user_mock):
 
     uuid = uuid4()
     launcher_mock = Mock()
-    launcher_mock.run_study.return_value = uuid
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = {
         "local": launcher_mock
@@ -66,7 +89,10 @@ def test_service_run_study(get_current_user_mock):
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=event_bus,
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
+    launcher_service._generate_new_id = lambda: str(uuid)
 
     job_id = launcher_service.run_study(
         "study_uuid",
@@ -81,7 +107,7 @@ def test_service_run_study(get_current_user_mock):
         ),
     )
 
-    assert job_id == uuid
+    assert job_id == str(uuid)
     repository.save.assert_called_once_with(pending)
     event_bus.push.assert_called_once_with(
         Event(
@@ -122,6 +148,8 @@ def test_service_get_result_from_launcher():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     job_id = uuid4()
@@ -163,6 +191,8 @@ def test_service_get_result_from_database():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     assert (
@@ -176,12 +206,42 @@ def test_service_get_result_from_database():
 @pytest.mark.unit_test
 def test_service_get_jobs_from_database():
     launcher_mock = Mock()
+    now = datetime.utcnow()
     fake_execution_result = [
         JobResult(
             id=str(uuid4()),
             job_status=JobStatus.SUCCESS,
             msg="Hello, World!",
             exit_code=0,
+        )
+    ]
+    returned_faked_execution_results = [
+        JobResult(
+            id="1",
+            study_id="a",
+            job_status=JobStatus.SUCCESS,
+            msg="Hello, World!",
+            exit_code=0,
+            creation_date=now,
+        ),
+        JobResult(
+            id="2",
+            study_id="b",
+            job_status=JobStatus.SUCCESS,
+            msg="Hello, World!",
+            exit_code=0,
+            creation_date=now,
+        ),
+    ]
+    all_faked_execution_results = returned_faked_execution_results + [
+        JobResult(
+            id="3",
+            study_id="c",
+            job_status=JobStatus.SUCCESS,
+            msg="Hello, World!",
+            exit_code=0,
+            creation_date=now
+            - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
         )
     ]
     launcher_mock.get_result.return_value = None
@@ -192,12 +252,23 @@ def test_service_get_jobs_from_database():
 
     repository = Mock()
     repository.find_by_study.return_value = fake_execution_result
-    repository.get_all.return_value = fake_execution_result
+    repository.get_all.return_value = all_faked_execution_results
 
     study_service = Mock()
-    study_service.get_study.return_value = Mock(
-        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
-    )
+    study_service.get_study.side_effect = [
+        Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE),
+        Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE),
+        StudyNotFoundError(""),
+        StudyNotFoundError(""),
+        Mock(
+            spec=Study,
+            groups=[],
+            owner=User(id=2),
+            public_mode=PublicMode.NONE,
+        ),
+        StudyNotFoundError(""),
+        StudyNotFoundError(""),
+    ]
 
     launcher_service = LauncherService(
         config=Config(),
@@ -205,6 +276,8 @@ def test_service_get_jobs_from_database():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     study_id = uuid4()
@@ -219,9 +292,40 @@ def test_service_get_jobs_from_database():
         launcher_service.get_jobs(
             None, params=RequestParameters(user=DEFAULT_ADMIN_USER)
         )
-        == fake_execution_result
+        == all_faked_execution_results
     )
-    repository.get_all.assert_called_once()
+    assert (
+        launcher_service.get_jobs(
+            None,
+            params=RequestParameters(
+                user=JWTUser(
+                    id=2,
+                    impersonator=2,
+                    type="users",
+                    groups=[],
+                )
+            ),
+        )
+        == returned_faked_execution_results
+    )
+
+    with pytest.raises(UserHasNotPermissionError):
+        launcher_service.remove_job(
+            "some job",
+            RequestParameters(
+                user=JWTUser(
+                    id=2,
+                    impersonator=2,
+                    type="users",
+                    groups=[],
+                )
+            ),
+        )
+
+    launcher_service.remove_job(
+        "some job", RequestParameters(user=DEFAULT_ADMIN_USER)
+    )
+    repository.delete.assert_called_with("some job")
 
 
 @pytest.mark.unit_test
@@ -256,6 +360,8 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
         job_result_repository=Mock(),
         factory_launcher=Mock(),
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     assert expected_output == launcher_service.get_versions(params=Mock())
@@ -274,6 +380,8 @@ def test_service_kill_job():
         job_result_repository=Mock(),
         event_bus=Mock(),
         factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -297,3 +405,234 @@ def test_service_kill_job():
     launcher_service.job_result_repository.save.assert_called_once_with(
         job_status
     )
+
+
+def test_append_logs():
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+    launcher = "slurm"
+    job_id = "job_id"
+    job_result_mock = Mock()
+    job_result_mock.id = job_id
+    job_result_mock.study_id = "study_id"
+    job_result_mock.output_id = None
+    job_result_mock.launcher = launcher
+    job_result_mock.logs = []
+    launcher_service.job_result_repository.get.return_value = job_result_mock
+
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    launcher_service.append_log(job_id, "test", JobLogType.BEFORE)
+    launcher_service.job_result_repository.save.assert_called_with(
+        job_result_mock
+    )
+    assert job_result_mock.logs[0].message == "test"
+    assert job_result_mock.logs[0].job_id == "job_id"
+    assert job_result_mock.logs[0].log_type == str(JobLogType.BEFORE)
+
+
+def test_get_logs():
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+    launcher = "slurm"
+    job_id = "job_id"
+    job_result_mock = Mock()
+    job_result_mock.id = job_id
+    job_result_mock.study_id = "study_id"
+    job_result_mock.output_id = None
+    job_result_mock.launcher = launcher
+    job_result_mock.logs = [
+        JobLog(message="first message", log_type=str(JobLogType.BEFORE)),
+        JobLog(message="second message", log_type=str(JobLogType.BEFORE)),
+        JobLog(message="last message", log_type=str(JobLogType.AFTER)),
+    ]
+    launcher_service.job_result_repository.get.return_value = job_result_mock
+    slurm_launcher = Mock()
+    launcher_service.launchers = {"slurm": slurm_launcher}
+    slurm_launcher.get_log.return_value = "launcher logs"
+
+    logs = launcher_service.get_log(
+        job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "first message\nsecond message\nlauncher logs\nlast message"
+    logs = launcher_service.get_log(
+        job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "launcher logs"
+
+    study_service.get.side_effect = [b"", b"some sim log", b"error log"]
+    job_result_mock.output_id = "some id"
+    logs = launcher_service.get_log(
+        job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "first message\nsecond message\nsome sim log\nlast message"
+
+    logs = launcher_service.get_log(
+        job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "error log"
+
+    study_service.get.assert_has_calls(
+        [
+            call(
+                "study_id",
+                f"/output/some id/antares-out",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+            call(
+                "study_id",
+                f"/output/some id/simulation",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+            call(
+                "study_id",
+                f"/output/some id/antares-err",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+        ]
+    )
+
+
+def test_manage_output(tmp_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+
+    output_path = tmp_path / "new_output"
+    os.mkdir(output_path)
+    (output_path / "log").touch()
+    (output_path / "data").touch()
+    additional_log = tmp_path / "output.log"
+    additional_log.write_text("some log")
+    job_id = "job_id"
+    study_id = "study_id"
+    launcher_service.job_result_repository.get.side_effect = [
+        None,
+        JobResult(id=job_id, study_id=study_id),
+        JobResult(id=job_id, study_id=study_id, output_id="some id"),
+        JobResult(id=job_id, study_id=study_id),
+        JobResult(id=job_id, study_id=study_id),
+    ]
+    with pytest.raises(JobNotFound):
+        launcher_service._import_output(
+            job_id, output_path, {"out.log": additional_log}
+        )
+
+    launcher_service._import_output(
+        job_id, output_path, {"out.log": additional_log}
+    )
+    assert not launcher_service._get_job_output_fallback_path(job_id).exists()
+    launcher_service.study_service.import_output.assert_called()
+
+    launcher_service.download_output(
+        "job_id", RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    launcher_service.study_service.export_output.assert_called()
+
+    launcher_service.study_service.import_output.side_effect = [
+        StudyNotFoundError(""),
+        StudyNotFoundError(""),
+    ]
+
+    assert (
+        launcher_service._import_output(
+            job_id, output_path, {"out.log": additional_log}
+        )
+        is None
+    )
+
+    (output_path / "info.antares-output").write_text(
+        f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}"
+    )
+    output_name = launcher_service._import_output(
+        job_id, output_path, {"out.log": additional_log}
+    )
+    assert output_name is not None
+    assert launcher_service._get_job_output_fallback_path(job_id).exists()
+    assert (
+        launcher_service._get_job_output_fallback_path(job_id)
+        / output_name
+        / "out.log"
+    ).exists()
+
+    launcher_service.job_result_repository.get.reset_mock()
+    launcher_service.job_result_repository.get.side_effect = [
+        None,
+        JobResult(id=job_id, study_id=study_id, output_id=output_name),
+    ]
+    with pytest.raises(JobNotFound):
+        launcher_service.download_output(
+            "job_id", RequestParameters(DEFAULT_ADMIN_USER)
+        )
+
+    study_service.get_study.reset_mock()
+    study_service.get_study.side_effect = StudyNotFoundError("")
+
+    export_file = FileDownloadDTO(id="a", name="a", filename="a", ready=True)
+    launcher_service.file_transfer_manager.request_download.return_value = (
+        FileDownload(id="a", name="a", filename="a", ready=True, path="a")
+    )
+    launcher_service.task_service.add_task.return_value = "some id"
+
+    assert launcher_service.download_output(
+        "job_id", RequestParameters(DEFAULT_ADMIN_USER)
+    ) == FileDownloadTaskDTO(task="some id", file=export_file)
+
+    launcher_service.remove_job(
+        job_id, RequestParameters(user=DEFAULT_ADMIN_USER)
+    )
+    assert not launcher_service._get_job_output_fallback_path(job_id).exists()

@@ -111,7 +111,7 @@ def test_revert(command_context: CommandContext):
         [Mock()],
     )
     base.command_context.command_extractor.extract_area.side_effect = (
-        ChildNotFoundError()
+        ChildNotFoundError("")
     )
     base.revert([], study)
     base.command_context.command_extractor.extract_area.assert_called_with(

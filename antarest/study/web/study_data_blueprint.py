@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional, List, Dict, Union, cast
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -10,6 +10,7 @@ from antarest.core.requests import (
 )
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.matrixstore.business.matrix_editor import MatrixSlice, Operation
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.model import PatchCluster, PatchArea
 from antarest.study.service import StudyService
@@ -197,5 +198,20 @@ def create_study_data_routes(
         params = RequestParameters(user=current_user)
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
+
+    @bp.put(
+        "/studies/{uuid}/matrix",
+        tags=[APITag.study_data],
+        summary="Edit matrix",
+    )
+    def edit_matrix(
+        uuid: str,
+        path: str,
+        slices: List[MatrixSlice] = Body(...),
+        operation: Operation = Body(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_service.update_matrix(uuid, path, slices, operation, params)
 
     return bp

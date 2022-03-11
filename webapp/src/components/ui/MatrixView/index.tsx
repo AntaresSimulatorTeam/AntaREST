@@ -13,6 +13,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    flexGrow: 1,
   },
   buttongroup: {
     width: '100%',

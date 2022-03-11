@@ -4,4 +4,4 @@ line-length = 79
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
-omit = ["antarest/tools/cli.py"]
+omit = ["antarest/tools/cli.py", "antarest/tools/admin.py"]

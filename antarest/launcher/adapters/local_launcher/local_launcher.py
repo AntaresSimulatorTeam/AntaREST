@@ -5,17 +5,14 @@ import subprocess
 import tempfile
 import threading
 import time
-from multiprocessing import Process
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Callable, cast, IO
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -23,7 +20,6 @@ from antarest.launcher.adapters.abstractlauncher import (
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LogType
-from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +36,10 @@ class LocalLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
-        storage_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
-        super().__init__(config, storage_service, callbacks, event_bus)
+        super().__init__(config, callbacks, event_bus)
         self.tmpdir = config.storage.tmp_dir
         self.job_id_to_study_id: Dict[  # type: ignore
             str, Tuple[str, Path, subprocess.Popen]
@@ -54,10 +49,11 @@ class LocalLauncher(AbstractLauncher):
     def run_study(
         self,
         study_uuid: str,
+        job_id: str,
         version: str,
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
-    ) -> UUID:
+    ) -> None:
         if self.config.launcher.local is None:
             raise LauncherInitException()
 
@@ -65,19 +61,17 @@ class LocalLauncher(AbstractLauncher):
         if antares_solver_path is None:
             raise StudyVersionNotSupported()
         else:
-            uuid = uuid4()
             job = threading.Thread(
                 target=LocalLauncher._compute,
                 args=(
                     self,
                     antares_solver_path,
                     study_uuid,
-                    uuid,
+                    job_id,
                     launcher_parameters,
                 ),
             )
             job.start()
-            return uuid
 
     def _compute(
         self,
@@ -98,16 +92,9 @@ class LocalLauncher(AbstractLauncher):
         )
         export_path = Path(tmp_path) / "export"
         try:
-            with db():
-                self.storage_service.export_study_flat(
-                    study_uuid,
-                    RequestParameters(DEFAULT_ADMIN_USER),
-                    export_path,
-                    outputs=False,
-                )
-                self.callbacks.after_export_flat(
-                    str(uuid), study_uuid, export_path, launcher_parameters
-                )
+            self.callbacks.export_study(
+                str(uuid), study_uuid, export_path, launcher_parameters
+            )
 
             process = subprocess.Popen(
                 [antares_solver_path, export_path],
@@ -121,18 +108,17 @@ class LocalLauncher(AbstractLauncher):
                 export_path,
                 process,
             )
-            with db():
-                self.callbacks.update_status(
-                    str(uuid),
-                    JobStatus.RUNNING,
-                    None,
-                    None,
-                )
+            self.callbacks.update_status(
+                str(uuid),
+                JobStatus.RUNNING,
+                None,
+                None,
+            )
 
             thread = threading.Thread(
                 target=lambda: LogTailManager.follow(
                     cast(IO[str], process.stdout),
-                    self.create_update_log(str(uuid), study_uuid),
+                    self.create_update_log(str(uuid)),
                     stop_reading_output,
                     None,
                 ),
@@ -158,24 +144,25 @@ class LocalLauncher(AbstractLauncher):
                         ["Rscript", "post-processing.R"], cwd=export_path
                     )
 
+            output_id: Optional[str] = None
             try:
-                with db():
-                    output_id = self._import_output(study_uuid, export_path)
+                output_id = self.callbacks.import_output(
+                    str(uuid), export_path / "output", {}
+                )
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
                     exc_info=e,
                 )
             del self.job_id_to_study_id[str(uuid)]
-            with db():
-                self.callbacks.update_status(
-                    str(uuid),
-                    JobStatus.FAILED
-                    if (not process.returncode == 0) or not output_id
-                    else JobStatus.SUCCESS,
-                    None,
-                    output_id,
-                )
+            self.callbacks.update_status(
+                str(uuid),
+                JobStatus.FAILED
+                if (not process.returncode == 0) or not output_id
+                else JobStatus.SUCCESS,
+                None,
+                output_id,
+            )
         except Exception as e:
             logger.error(
                 f"Unexpected error happend during launch {uuid}", exc_info=e
@@ -191,19 +178,8 @@ class LocalLauncher(AbstractLauncher):
             end = True
             shutil.rmtree(tmp_path)
 
-    def _import_output(
-        self, study_id: str, study_launch_path: Path
-    ) -> Optional[str]:
-        return self.storage_service.import_output(
-            study_id,
-            study_launch_path / "output",
-            params=RequestParameters(DEFAULT_ADMIN_USER),
-        )
-
-    def create_update_log(
-        self, job_id: str, study_id: str
-    ) -> Callable[[str], None]:
-        base_func = super().create_update_log(job_id, study_id)
+    def create_update_log(self, job_id: str) -> Callable[[str], None]:
+        base_func = super().create_update_log(job_id)
         self.logs[job_id] = ""
 
         def append_to_log(log_line: str) -> None:

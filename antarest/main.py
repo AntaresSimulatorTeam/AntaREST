@@ -7,8 +7,11 @@ from typing import Tuple, Any, Optional, Dict, cast
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
+from ratelimit import RateLimitMiddleware  # type: ignore
+from ratelimit.backends.redis import RedisBackend  # type: ignore
+from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -22,13 +25,17 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.exceptions import UnknownModuleError
 from antarest.core.filetransfer.main import build_filetransfer_service
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
+from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import (
     get_default_config_path,
@@ -49,6 +56,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +188,15 @@ def init_db(
 
 def create_core_services(
     application: Optional[FastAPI], config: Config
-) -> Tuple[ICache, IEventBus, LoginService, MatrixService, StudyService]:
+) -> Tuple[
+    ICache,
+    IEventBus,
+    ITaskService,
+    FileTransferManager,
+    LoginService,
+    MatrixService,
+    StudyService,
+]:
     redis_client = (
         new_redis_instance(config.redis) if config.redis is not None else None
     )
@@ -212,6 +228,8 @@ def create_core_services(
     return (
         cache,
         event_bus,
+        task_service,
+        filetransfer_service,
         login_service,
         matrix_service,
         study_service,
@@ -226,7 +244,9 @@ def create_watcher(
     if study_service:
         return Watcher(config=config, service=study_service)
     else:
-        _, _, _, _, study_service = create_core_services(application, config)
+        _, _, _, _, _, _, study_service = create_core_services(
+            application, config
+        )
 
         return Watcher(config=config, service=study_service)
 
@@ -245,7 +265,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, matrix_service, study_service = create_core_services(
+        _, _, _, _, _, matrix_service, study_service = create_core_services(
             application, config
         )
         return MatrixGarbageCollector(
@@ -263,6 +283,8 @@ def create_services(
     (
         cache,
         event_bus,
+        task_service,
+        file_transfer_manager,
         user_service,
         matrix_service,
         study_service,
@@ -277,6 +299,8 @@ def create_services(
         config,
         study_service=study_service,
         event_bus=event_bus,
+        task_service=task_service,
+        file_transfer_manager=file_transfer_manager,
     )
 
     if Module.WATCHER.value in config.server.services or create_all:
@@ -427,6 +451,17 @@ def fastapi_app(
             status_code=500,
         )
 
+    # rate limiter
+    auth_manager = Auth(config)
+    application.add_middleware(
+        RateLimitMiddleware,
+        authenticate=auth_manager.create_auth_function(),
+        backend=RedisBackend(config.redis.host, config.redis.port, 1)
+        if config.redis is not None
+        else MemoryBackend(),
+        config=RATE_LIMIT_CONFIG,
+    )
+
     services = create_services(config, application)
 
     if Module.WATCHER.value in config.server.services:
@@ -455,6 +490,7 @@ if __name__ == "__main__":
         sys.exit()
     else:
         if module == Module.APP:
+            clean_locks(config_file)
             app, _ = fastapi_app(
                 config_file,
                 mount_front=not no_front,

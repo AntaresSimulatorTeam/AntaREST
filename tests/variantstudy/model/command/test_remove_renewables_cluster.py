@@ -127,8 +127,8 @@ def test_revert(command_context: CommandContext):
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.extract_renewables_cluster.side_effect = (
-        ChildNotFoundError()
+    base.command_context.command_extractor.extract_renewables_cluster.side_effect = ChildNotFoundError(
+        ""
     )
     base.revert([], study)
     base.command_context.command_extractor.extract_renewables_cluster.assert_called_with(

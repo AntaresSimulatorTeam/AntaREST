@@ -447,7 +447,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": [],
             "thermals": None,
@@ -463,7 +463,7 @@ def test_area_management(app: FastAPI):
         json={
             "name": "area 1",
             "type": AreaType.AREA.value,
-            "metadata": {"country": "FR"},
+            "metadata": {"country": "FR", "tags": ["a"]},
         },
     )
     res = client.post(
@@ -504,7 +504,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "area 1",
-            "metadata": {"country": "FR"},
+            "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
             "thermals": [],
@@ -512,7 +512,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "area 2",
-            "metadata": {"country": "DE"},
+            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [],
@@ -520,7 +520,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ANY,  # because some time the order is not the same
             "thermals": None,
@@ -597,7 +597,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "area 2",
-            "metadata": {"country": "DE"},
+            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [],
@@ -605,7 +605,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ["area 2"],
             "thermals": None,
@@ -1019,3 +1019,153 @@ def test_maintenance(app: FastAPI):
     )
     assert res.status_code == 200
     assert res.json() == message
+
+
+def test_edit_matrix(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+    headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
+
+    created = client.post(
+        "/v1/studies?name=foo",
+        headers=headers,
+    )
+    study_id = created.json()
+
+    area1_name = "area1"
+    area2_name = "area2"
+    client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers=headers,
+        json={
+            "name": area1_name,
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
+    )
+    client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers=headers,
+        json={
+            "name": area2_name,
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "DE"},
+        },
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/links",
+        headers=headers,
+        json={
+            "area1": area1_name,
+            "area2": area2_name,
+        },
+    )
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    assert res.status_code == 200
+    initial_data = res.json()["data"]
+
+    # only one cell
+    res = client.put(
+        f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+        json={
+            "slices": [{"row_from": 0, "column_from": 0}],
+            "operation": {
+                "operation": "+",
+                "value": 1,
+            },
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    new_data = res.json()["data"]
+    assert new_data != initial_data
+    assert new_data[0][0] == 1
+
+    res = client.put(
+        f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+        json={
+            "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
+            "operation": {
+                "operation": "=",
+                "value": 1,
+            },
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    new_data = res.json()["data"]
+    assert new_data != initial_data
+    assert new_data[0] == [1] * 6
+
+    res = client.put(
+        f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+        json={
+            "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
+            "operation": {
+                "operation": "=",
+                "value": 1,
+            },
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    new_data = res.json()["data"]
+    assert new_data != initial_data
+    assert [a[0] for a in new_data] == [1] * 8760
+
+    res = client.put(
+        f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+        json={
+            "slices": [
+                {"row_from": 2, "row_to": 4, "column_from": 2, "column_to": 4},
+                {
+                    "row_from": 9,
+                    "row_to": 15,
+                    "column_from": 1,
+                    "column_to": 3,
+                },
+            ],
+            "operation": {
+                "operation": "=",
+                "value": 42,
+            },
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    new_data = res.json()["data"]
+    assert new_data != initial_data
+    assert [[a[i] for a in new_data[2:4]] for i in range(2, 4)] == [
+        [42] * 2
+    ] * 2
+    assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [
+        [42] * 6
+    ] * 2

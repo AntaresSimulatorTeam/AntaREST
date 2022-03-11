@@ -68,21 +68,24 @@ class MatrixGarbageCollector:
             CommandBlock
         ] = self.variant_study_service.repository.get_all_commandblocks()
 
-        def transform_to_icommand(command_dto: CommandDTO) -> List[ICommand]:
+        def transform_to_icommand(
+            command_dto: CommandDTO, study_ref: str
+        ) -> List[ICommand]:
             try:
                 return self.variant_study_service.command_factory.to_icommand(
                     command_dto
                 )
             except Exception as e:
                 logger.warning(
-                    f"Failed to parse command {command_dto} !", exc_info=e
+                    f"Failed to parse command {command_dto} (from study {study_ref}) !",
+                    exc_info=e,
                 )
             return []
 
         variant_study_commands = [
             icommand
             for c in command_blocks
-            for icommand in transform_to_icommand(c.to_dto())
+            for icommand in transform_to_icommand(c.to_dto(), c.study_id)
         ]
         matrices = {
             matrix

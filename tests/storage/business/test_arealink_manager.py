@@ -296,7 +296,7 @@ def test_get_all_area():
         {
             "name": "a1",
             "type": AreaType.AREA,
-            "metadata": {"country": "fr"},
+            "metadata": {"country": "fr", "tags": []},
             "set": None,
             "thermals": [
                 {
@@ -321,7 +321,7 @@ def test_get_all_area():
         {
             "name": "a2",
             "type": AreaType.AREA,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a2",
@@ -329,7 +329,7 @@ def test_get_all_area():
         {
             "name": "a3",
             "type": AreaType.AREA,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a3",
@@ -342,7 +342,7 @@ def test_get_all_area():
         {
             "name": "s1",
             "type": AreaType.DISTRICT,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": ["a1"],
             "thermals": None,
             "id": "s1",
@@ -356,7 +356,7 @@ def test_get_all_area():
         {
             "name": "a1",
             "type": AreaType.AREA,
-            "metadata": {"country": "fr"},
+            "metadata": {"country": "fr", "tags": []},
             "set": None,
             "thermals": [],
             "id": "a1",
@@ -364,7 +364,7 @@ def test_get_all_area():
         {
             "name": "a2",
             "type": AreaType.AREA,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a2",
@@ -372,7 +372,7 @@ def test_get_all_area():
         {
             "name": "a3",
             "type": AreaType.AREA,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a3",
@@ -380,7 +380,7 @@ def test_get_all_area():
         {
             "name": "s1",
             "type": AreaType.DISTRICT,
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "set": ["a1"],
             "thermals": None,
             "id": "s1",
@@ -453,7 +453,7 @@ def test_update_area():
         study, "a1", PatchArea(country="fr")
     )
     assert new_area_info.id == "a1"
-    assert new_area_info.metadata == {"country": "fr"}
+    assert new_area_info.metadata == {"country": "fr", "tags": []}
 
 
 def test_update_clusters():

@@ -64,7 +64,9 @@ class FileDownload(Base):  # type: ignore
             name=self.name,
             filename=self.filename,
             ready=self.ready,
-            expiration_date=str(self.expiration_date),
+            expiration_date=str(self.expiration_date)
+            if self.expiration_date is not None
+            else None,
             failed=self.failed or False,
             error_message=self.error_message or "",
         )

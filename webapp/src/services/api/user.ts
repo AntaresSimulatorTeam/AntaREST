@@ -22,7 +22,7 @@ export const getUsers = async (): Promise<Array<UserDTO>> => {
   return res.data;
 };
 
-export const createNewUser = async (name: string, password: string): Promise<any> => {
+export const createNewUser = async (name: string, password: string): Promise<UserDTO> => {
   const data = { name, password };
   const res = await client.post('/v1/users', data);
   return res.data;

@@ -4,14 +4,14 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
 from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
 
@@ -49,6 +49,7 @@ from antarest.core.tasks.service import (
 )
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
 from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
@@ -58,6 +59,12 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.xpansion_management import (
+    XpansionManager,
+    XpansionSettingsDTO,
+    XpansionCandidateDTO,
+)
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -67,7 +74,6 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     StudySimResultDTO,
     CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
@@ -125,6 +131,8 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 
 logger = logging.getLogger(__name__)
 
+MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
 
 class StudyService:
     """
@@ -153,6 +161,8 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service)
         self.links = LinkManager(self.storage_service)
+        self.xpansion_manager = XpansionManager(self.storage_service)
+        self.matrix_manager = MatrixManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -348,7 +358,10 @@ class StudyService:
             ).get_study_information(study, summary)
         except Exception as e:
             logger.warning(
-                "Failed to build study %s metadata", study.id, exc_info=e
+                "Failed to build study %s (%s) metadata",
+                study.id,
+                study.path,
+                exc_info=e,
             )
         return None
 
@@ -540,9 +553,14 @@ class StudyService:
         Returns:
 
         """
+        now = datetime.utcnow()
+        clean_up_missing_studies_threshold = now - timedelta(
+            days=MAX_MISSING_STUDY_TIMEOUT
+        )
+        all_studies = self.repository.get_all_raw()
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
-        for study in self.repository.get_all():
+        for study in all_studies:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
@@ -551,44 +569,72 @@ class StudyService:
                     and study.path not in paths
                 )
             ):
-                logger.info(
-                    "Study=%s is not present in disk and will be deleted",
-                    study.id,
-                )
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_DELETED,
-                        payload=study.to_json_summary(),
-                        permissions=create_permission_from_study(study),
+                if not study.missing:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be marked for deletion in %i days",
+                        study.id,
+                        study.path,
+                        MAX_MISSING_STUDY_TIMEOUT,
                     )
-                )
-                self.repository.delete(study.id)
+                    study.missing = now
+                    self.repository.save(study)
+                elif study.missing < clean_up_missing_studies_threshold:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be deleted",
+                        study.id,
+                        study.path,
+                    )
+                    self.event_bus.push(
+                        Event(
+                            type=EventType.STUDY_DELETED,
+                            payload=study.to_json_summary(),
+                            permissions=create_permission_from_study(study),
+                        )
+                    )
+                    self.repository.delete(study.id)
 
         # Add new studies
-        paths = [
-            study.path
-            for study in self.repository.get_all()
-            if isinstance(study, RawStudy)
+        study_paths = [
+            study.path for study in all_studies if study.missing is None
         ]
+        missing_studies = {
+            study.path: study
+            for study in all_studies
+            if study.missing is not None
+        }
         for folder in folders:
-            if str(folder.path) not in paths:
+            if str(folder.path) not in study_paths:
                 try:
-                    base_path = self.config.storage.workspaces[
-                        folder.workspace
-                    ].path
-                    dir_name = folder.path.relative_to(base_path)
-                    study = RawStudy(
-                        id=str(uuid4()),
-                        name=folder.path.name,
-                        path=str(folder.path),
-                        folder=str(dir_name),
-                        workspace=folder.workspace,
-                        owner=None,
-                        groups=folder.groups,
-                        public_mode=PublicMode.FULL
-                        if len(folder.groups) == 0
-                        else PublicMode.NONE,
-                    )
+                    if str(folder.path) not in missing_studies.keys():
+                        base_path = self.config.storage.workspaces[
+                            folder.workspace
+                        ].path
+                        dir_name = folder.path.relative_to(base_path)
+                        study = RawStudy(
+                            id=str(uuid4()),
+                            name=folder.path.name,
+                            path=str(folder.path),
+                            folder=str(dir_name),
+                            workspace=folder.workspace,
+                            owner=None,
+                            groups=folder.groups,
+                            public_mode=PublicMode.FULL
+                            if len(folder.groups) == 0
+                            else PublicMode.NONE,
+                        )
+                        logger.info(
+                            "Study at %s appears on disk and will be added as %s",
+                            study.path,
+                            study.id,
+                        )
+                    else:
+                        study = missing_studies[str(folder.path)]
+                        study.missing = None
+                        logger.info(
+                            "Study at %s re appears on disk and will be added as %s",
+                            study.path,
+                            study.id,
+                        )
 
                     self.storage_service.raw_study_service.update_from_raw_meta(
                         study, fallback_on_default=True
@@ -598,9 +644,6 @@ class StudyService:
                     # TODO re enable this on an async worker
                     # study.content_status = self._analyse_study(study)
 
-                    logger.info(
-                        "Study=%s appears on disk and will be added", study.id
-                    )
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_CREATED,
@@ -1098,7 +1141,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[List[Path]] = None,
+        additional_logs: Optional[Dict[str, Path]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1114,14 +1157,18 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
+        if not Path(study.path).exists():
+            raise StudyNotFoundError(
+                f"Study files were not found for study {uuid}"
+            )
 
         res = self.storage_service.get_storage(study).import_output(
             study, output
         )
         if res is not None and additional_logs:
-            for log_path in additional_logs:
+            for log_name, log_path in additional_logs.items():
                 shutil.copyfile(
-                    log_path, Path(study.path) / "output" / res / log_path.name
+                    log_path, Path(study.path) / "output" / res / log_name
                 )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
@@ -1713,3 +1760,187 @@ class StudyService:
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
         return list(STUDY_REFERENCE_TEMPLATES.keys())
+
+    def create_xpansion_configuration(
+        self, uuid: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.xpansion_manager.create_xpansion_configuration(study)
+
+    def delete_xpansion_configuration(
+        self, uuid: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.xpansion_manager.delete_xpansion_configuration(study)
+
+    def get_xpansion_settings(
+        self, uuid: str, params: RequestParameters
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_xpansion_settings(study)
+
+    def update_xpansion_settings(
+        self,
+        uuid: str,
+        xpansion_settings_dto: XpansionSettingsDTO,
+        params: RequestParameters,
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_settings(
+            study, xpansion_settings_dto
+        )
+
+    def add_candidate(
+        self,
+        uuid: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_candidate(
+            study, xpansion_candidate_dto
+        )
+
+    def get_candidate(
+        self, uuid: str, candidate_name: str, params: RequestParameters
+    ) -> XpansionCandidateDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_candidate(study, candidate_name)
+
+    def get_candidates(
+        self, uuid: str, params: RequestParameters
+    ) -> List[XpansionCandidateDTO]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_candidates(study)
+
+    def update_xpansion_candidate(
+        self,
+        uuid: str,
+        candidate_name: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_candidate(
+            study, candidate_name, xpansion_candidate_dto
+        )
+
+    def delete_xpansion_candidate(
+        self, uuid: str, candidate_name: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_candidate(study, candidate_name)
+
+    def update_xpansion_constraints_settings(
+        self,
+        uuid: str,
+        constraints_file_name: Optional[str],
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_constraints_settings(
+            study, constraints_file_name
+        )
+
+    def add_xpansion_constraints(
+        self,
+        uuid: str,
+        file: UploadFile,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_xpansion_constraints(study, [file])
+
+    def delete_xpansion_constraints(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_xpansion_constraints(
+            study, filename
+        )
+
+    def get_single_xpansion_constraints(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> bytes:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_single_xpansion_constraints(
+            study, filename
+        )
+
+    def get_all_xpansion_constraints(
+        self, uuid: str, params: RequestParameters
+    ) -> List[str]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_xpansion_constraints(study)
+
+    def add_capa(
+        self, uuid: str, file: UploadFile, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_capa(study, [file])
+
+    def delete_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_capa(study, filename)
+
+    def get_single_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> JSON:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_single_capa(study, filename)
+
+    def get_all_capa(self, uuid: str, params: RequestParameters) -> List[str]:
+
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_capa(study)
+
+    def update_matrix(
+        self,
+        uuid: str,
+        path: str,
+        slices: List[MatrixSlice],
+        operation: Operation,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.matrix_manager.update_matrix(study, path, slices, operation)

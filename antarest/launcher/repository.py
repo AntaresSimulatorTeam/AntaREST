@@ -4,7 +4,8 @@ from typing import Optional, List
 from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult
+from antarest.launcher.model import JobResult, JobLogType, JobLog
+from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,12 @@ class JobResultRepository:
         job: JobResult = db.session.query(JobResult).get(id)
         return job
 
-    def get_all(self) -> List[JobResult]:
+    def get_all(self, filter_orphan: bool = False) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
-        job_results: List[JobResult] = db.session.query(JobResult).all()
+        query = db.session.query(JobResult)
+        if filter_orphan:
+            query = query.join(Study, JobResult.study_id == Study.id)
+        job_results: List[JobResult] = query.all()
         return job_results
 
     def find_by_study(self, study_id: str) -> List[JobResult]:

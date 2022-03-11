@@ -5,8 +5,6 @@ import {
   makeStyles,
   createStyles,
   Theme,
-  Paper,
-  Typography,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
@@ -15,53 +13,20 @@ import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig, UpdateAreaUi, isNode } from './types';
 import CreateAreaModal from './CreateAreaModal';
-import PropertiesView from './PropertiesView';
+import PropertiesView from './MapPropsView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
 import GraphView from './GraphView';
 import { createArea, createLink, deleteArea, deleteLink, updateAreaUI } from '../../../services/api/studydata';
+import SplitLayoutView from '../../ui/SplitLayoutView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      width: '99%',
-      height: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      backgroundColor: 'white',
-      margin: theme.spacing(1),
-      boxSizing: 'border-box',
-    },
-    header: {
-      width: '100%',
-      height: '40px',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexFlow: 'row nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      backgroundColor: theme.palette.primary.main,
-      borderTopLeftRadius: theme.shape.borderRadius,
-      borderTopRightRadius: theme.shape.borderRadius,
-      paddingLeft: theme.spacing(2),
-    },
-    title: {
-      fontWeight: 'bold',
-      color: 'white',
-    },
     autosizer: {
       display: 'block',
-      width: '80%',
+      width: '100%',
       height: '100%',
       position: 'relative',
-    },
-    popup: {
-      position: 'absolute',
-      right: '30px',
-      top: '100px',
-      width: '200px',
     },
     graph: {
       '& svg[name="svg-container-graph-id"]': {
@@ -322,33 +287,35 @@ const MapView = (props: Props) => {
   }, [selectedItem, linkData]);
 
   return (
-    <Paper className={classes.root}>
-      <div className={classes.header}>
-        <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
-      </div>
-      <div className={classes.graphView}>
-        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} updateUI={updateUI} />
-        <div className={`${classes.autosizer} ${classes.graph}`}>
-          {loaded ? (
-            <AutoSizer>
-              {
-                ({ height, width }) => (
-                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} onNodePositionChange={handleUpdatePosition} />
-                )
+    <>
+      <SplitLayoutView
+        title={t('singlestudy:map')}
+        left={
+          <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} updateUI={updateUI} />
+        }
+        right={(
+          <div className={`${classes.autosizer} ${classes.graph}`}>
+            {loaded ? (
+              <AutoSizer>
+                {
+                  ({ height, width }) => (
+                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} onNodePositionChange={handleUpdatePosition} />
+                  )
+              }
+              </AutoSizer>
+            ) : <SimpleLoader />
             }
-            </AutoSizer>
-          ) : <SimpleLoader />
-          }
-          <div className={classes.areaCount}>
-            <p>
-              {`${nodeData.length} ${t('singlestudy:area')}`}
-            </p>
-            <p>
-              {`${linkData.length} ${t('singlestudy:link')}`}
-            </p>
+            <div className={classes.areaCount}>
+              <p>
+                {`${nodeData.length} ${t('singlestudy:area')}`}
+              </p>
+              <p>
+                {`${linkData.length} ${t('singlestudy:link')}`}
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      />
       {openModal && (
         <CreateAreaModal
           open={openModal}
@@ -356,7 +323,7 @@ const MapView = (props: Props) => {
           onSave={onSave}
         />
       )}
-    </Paper>
+    </>
   );
 };
 

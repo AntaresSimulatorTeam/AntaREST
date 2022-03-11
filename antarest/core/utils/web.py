@@ -3,12 +3,14 @@ class APITag:
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
     study_management = "Manage Studies"
+    xpansion_study_management = "Manage Expansion Studies"
     study_data = "Manage Study Data"
     study_variant_management = "Manage Study Variant"
     study_raw_data = "Manage Study Raw File Data"
     study_outputs = "Manage Outputs"
     downloads = "Manage downloads"
     matrix = "Manage Matrix"
+    tasks = "Manage tasks"
     misc = "Miscellaneous"
 
 
@@ -29,6 +31,9 @@ tags_metadata = [
         "name": APITag.launcher,
     },
     {
+        "name": APITag.xpansion_study_management,
+    },
+    {
         "name": APITag.study_outputs,
     },
     {
@@ -36,6 +41,9 @@ tags_metadata = [
     },
     {
         "name": APITag.downloads,
+    },
+    {
+        "name": APITag.tasks,
     },
     {
         "name": APITag.study_permissions,
