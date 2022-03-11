@@ -153,7 +153,7 @@ const SingleStudyView = (props: PropTypes) => {
         }
       }
     } else {
-      history.replace({ pathname: `/study/${studyId}/xpansion` });
+      history.replace({ pathname: `/study/${studyId}/informations` });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId, history, tab, query]);

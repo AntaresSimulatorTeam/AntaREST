@@ -14,8 +14,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   main: {
     backgroundColor: 'white',
-    width: '80%',
-    height: '70%',
+    maxWidth: '80%',
+    maxHeight: '70%',
     display: 'flex',
     flexFlow: 'column nowrap',
     alignItems: 'center',
@@ -37,8 +37,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   content: {
     flex: '1',
-    padding: theme.spacing(1),
-    width: '98%',
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
     alignItems: 'flex-start',

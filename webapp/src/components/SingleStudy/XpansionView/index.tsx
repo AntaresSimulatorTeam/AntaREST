@@ -39,13 +39,13 @@ const useStyles = makeStyles((theme: Theme) =>
       fontWeight: 'bold',
     },
     content: {
-      flex: '1',
       padding: theme.spacing(1),
-      width: '100%',
+      width: '900px',
+      height: '600px',
       display: 'flex',
       flexFlow: 'column nowrap',
       alignItems: 'flex-start',
-      overflow: 'hidden',
+      overflow: 'auto',
     },
   }));
 
