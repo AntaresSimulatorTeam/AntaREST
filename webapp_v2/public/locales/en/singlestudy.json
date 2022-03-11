@@ -92,5 +92,8 @@
   "filterIn": "Filter In",
   "filterOut": "Filter Out",
   "area1": "Area 1",
-  "area2": "Area 2"
+  "area2": "Area 2",
+  "managedStudy": "Managed study",
+  "properties": "Properties",
+  "validate": "Validate"
 }

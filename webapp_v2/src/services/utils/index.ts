@@ -153,6 +153,11 @@ export const getInitMessageInfo = async (): Promise<string> => {
 
 export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') === '';
 
+export const arrayEquals = <T> (a: Array<T>, b: Array<T>) : boolean => Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index]);
+
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);
   const red = r / 255;
