@@ -49,6 +49,7 @@ from antarest.core.tasks.service import (
 )
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
 from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
@@ -58,6 +59,7 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.matrix_management import MatrixManager
 from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
@@ -72,7 +74,6 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     StudySimResultDTO,
     CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
@@ -161,6 +162,7 @@ class StudyService:
         self.areas = AreaManager(self.storage_service)
         self.links = LinkManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
+        self.matrix_manager = MatrixManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -1929,3 +1931,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.get_all_capa(study)
+
+    def update_matrix(
+        self,
+        uuid: str,
+        path: str,
+        slices: List[MatrixSlice],
+        operation: Operation,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.matrix_manager.update_matrix(study, path, slices, operation)

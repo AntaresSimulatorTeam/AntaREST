@@ -33,3 +33,4 @@ click~=8.0.3
 PyQt5~=5.15.6
 plyer~=2.0.0
 asgi-ratelimit[redis]
+xarray
