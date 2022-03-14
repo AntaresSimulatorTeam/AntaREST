@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
 import debug from 'debug';
+import { TFunction } from 'react-i18next';
 import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo } from '../../common/types';
 import { getMaintenanceMode, getMessageInfo } from '../api/maintenance';
 import { getConfig } from '../config';
@@ -157,6 +158,22 @@ export const arrayEquals = <T> (a: Array<T>, b: Array<T>) : boolean => Array.isA
     Array.isArray(b) &&
     a.length === b.length &&
     a.every((val, index) => val === b[index]);
+
+export const buildModificationDate = (date: string, t: TFunction<'translation', undefined>) : string => {
+  const duration = modificationDate(date);
+  const days = duration.days() > 0 ? `${duration.days().toString()} ${t('main:daysSymbol')}` : '';
+  const hours = duration.hours() > 0 ? `${duration.hours().toString()} ${t('main:hoursSymbol')}` : '';
+  const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
+  const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
+
+  if (days !== '') { return `${days}`; }
+
+  if (hours !== '') { return `${hours}`; }
+
+  if (minutes !== '') { return `${minutes}`; }
+
+  return `${seconds}`;
+};
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);

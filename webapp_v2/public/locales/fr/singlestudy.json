@@ -95,5 +95,8 @@
   "area2": "Zone 2",
   "managedStudy": "Étude managée",
   "properties": "Propriétés",
-  "validate": "Valider"
+  "validate": "Valider",
+  "parentStudy": "Mon étude original",
+  "publicModeAnybody": "Tout le monde",
+  "publicModeNone": "Seulement moi"
 }

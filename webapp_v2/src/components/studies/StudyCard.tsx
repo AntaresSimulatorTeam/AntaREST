@@ -22,7 +22,7 @@ import FileCopyOutlinedIcon from '@mui/icons-material/FileCopyOutlined';
 import { GenericInfo, StudyMetadata } from '../../common/types';
 import { exportStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
-import { convertUTCToLocalTime, modificationDate } from '../../services/utils';
+import { buildModificationDate, convertUTCToLocalTime, modificationDate } from '../../services/utils';
 import { scrollbarStyle } from '../../theme';
 
 interface Props {
@@ -62,22 +62,6 @@ export default function StudyCard(props: Props) {
   const handleClose = () => {
     setAnchorEl(null);
     setOpenMenu('');
-  };
-
-  const buildModificationDate = () : string => {
-    const duration = modificationDate(study.modificationDate);
-    const days = duration.days() > 0 ? `${duration.days().toString()} ${t('main:daysSymbol')}` : '';
-    const hours = duration.hours() > 0 ? `${duration.hours().toString()} ${t('main:hoursSymbol')}` : '';
-    const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
-    const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
-
-    if (days !== '') { return `${days}`; }
-
-    if (hours !== '') { return `${hours}`; }
-
-    if (minutes !== '') { return `${minutes}`; }
-
-    return `${seconds}`;
   };
 
   const copyId = (): void => {
@@ -130,7 +114,7 @@ export default function StudyCard(props: Props) {
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
             <TinyText>
-              {buildModificationDate()}
+              {buildModificationDate(study.modificationDate, t)}
             </TinyText>
           </Box>
         </Box>

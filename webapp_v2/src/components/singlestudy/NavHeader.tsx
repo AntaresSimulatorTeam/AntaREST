@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
-import { Box, Button, Chip, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
+import { Box, Button, Chip, Divider, ListItemIcon, ListItemText, Menu, MenuItem, styled, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
@@ -12,11 +12,17 @@ import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
+import UpdateOutlinedIcon from '@mui/icons-material/UpdateOutlined';
+import AltRouteOutlinedIcon from '@mui/icons-material/AltRouteOutlined';
+import LanOutlinedIcon from '@mui/icons-material/LanOutlined';
+import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
-import moment from 'moment';
-import { StudyMetadata } from '../../common/types';
+import { StudyMetadata, VariantTree } from '../../common/types';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import { deleteStudy as callDeleteStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy, exportStudy } from '../../services/api/study';
@@ -24,8 +30,26 @@ import { AppState } from '../../store/reducers';
 import { removeStudies } from '../../store/study';
 import LauncherModal from '../studies/LauncherModal';
 import PropertiesModal from './PropertiesModal';
+import { buildModificationDate, convertUTCToLocalTime } from '../../services/utils';
 
 const logError = debug('antares:singlestudy:navheader:error');
+
+const TinyText = styled(Typography)(({ theme }) => ({
+  fontSize: '14px',
+  color: theme.palette.text.secondary,
+}));
+
+const LinkText = styled(Link)(({ theme }) => ({
+  fontSize: '14px',
+  color: theme.palette.secondary.main,
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+  margin: theme.spacing(0, 1),
+  width: '1px',
+  height: '20px',
+  backgroundColor: theme.palette.divider,
+}));
 
 const mapState = (state: AppState) => ({
 });
@@ -38,12 +62,14 @@ const connector = connect(mapState, mapDispatch);
   type PropsFromRedux = ConnectedProps<typeof connector>;
   interface OwnProps {
     study: StudyMetadata | undefined;
+    parent: StudyMetadata | undefined;
+    childrenTree: VariantTree | undefined;
     isExplorer?: boolean;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 function NavHeader(props: PropTypes) {
-  const { study, isExplorer, removeStudy } = props;
+  const { study, parent, childrenTree, isExplorer, removeStudy } = props;
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -124,7 +150,6 @@ function NavHeader(props: PropTypes) {
             variant="outlined"
             color="primary"
             sx={{ width: 'auto', minWidth: 0, mx: 2 }}
-            onClick={() => console.log('HISTORY : ', study?.name)}
           >
             <HistoryOutlinedIcon />
           </Button>
@@ -204,7 +229,50 @@ function NavHeader(props: PropTypes) {
           </Menu>
         </Box>
       </Box>
-      <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box" />
+      {study && (
+      <Box my={2} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
+        <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <ScheduleOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <TinyText>
+            {convertUTCToLocalTime(study.creationDate)}
+          </TinyText>
+        </Box>
+        <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <TinyText>
+            {buildModificationDate(study.modificationDate, t)}
+          </TinyText>
+        </Box>
+        <StyledDivider />
+        {parent && (
+        <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <AltRouteOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <LinkText to={`/studies/${parent.id}`}>{t('singlestudy:parentStudy')}</LinkText>
+        </Box>
+        )}
+        {childrenTree && (
+        <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <AccountTreeOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <TinyText>
+            {childrenTree.children.length}
+          </TinyText>
+        </Box>
+        )}
+        <StyledDivider />
+        <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <PersonOutlineOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <TinyText>
+            {study?.owner.name}
+          </TinyText>
+        </Box>
+        <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+          <SecurityOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          <TinyText>
+            {study?.publicMode === 'NONE' ? t('singlestudy:publicModeAnybody') : t('singlestudy:publicModeNone')}
+          </TinyText>
+        </Box>
+      </Box>
+      )}
       {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={study} onClose={() => setOpenLauncherModal(false)} />}
       {openPropertiesModal && study && <PropertiesModal open={openPropertiesModal} onClose={() => setOpenPropertiesModal(false)} study={study as StudyMetadata} />}
     </Box>
