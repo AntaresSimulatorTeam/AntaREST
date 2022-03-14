@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes, Outlet } from 'react-router-dom';
 import { CssBaseline, ThemeProvider } from '@mui/material';
@@ -12,6 +14,13 @@ import Api from './pages/Api';
 import LoginWrapper from './pages/wrappers/LoginWrapper';
 import MaintenanceWrapper from './pages/wrappers/MaintenanceWrapper';
 import SingleStudy from './pages/SingleStudy';
+import Modelization from './components/singlestudy/explore/Modelization';
+import Results from './components/singlestudy/explore/Results';
+import Configuration from './components/singlestudy/explore/Configuration';
+import BindingContraint from './components/singlestudy/explore/Modelization/BindingContraint';
+import Links from './components/singlestudy/explore/Modelization/Links';
+import Area from './components/singlestudy/explore/Modelization/Area';
+import Map from './components/singlestudy/explore/Modelization/Map';
 
 function App() {
   return (
@@ -27,7 +36,32 @@ function App() {
                     <Route index element={<Studies />} />
                     <Route path=":studyId" element={<Outlet />}>
                       <Route index element={<SingleStudy />} />
-                      <Route path="explore" element={<div style={{ width: '100%', height: '100%', backgroundColor: 'red' }} />} />
+                      <Route path="explore" element={<SingleStudy isExplorer />}>
+                        <Route path="modelization" element={<Modelization />}>
+                          <Route path="map" element={<Map />} />
+                          <Route path="area" element={<Area />} />
+                          <Route path="links" element={<Links />} />
+                          <Route path="bindingcontraint" element={<BindingContraint />} />
+                          <Route
+                            index
+                            element={<Navigate to="map" />}
+                          />
+                          <Route
+                            path="*"
+                            element={<Navigate to="map" />}
+                          />
+                        </Route>
+                        <Route path="configuration" element={<Configuration />} />
+                        <Route path="results" element={<Results />} />
+                        <Route
+                          index
+                          element={<Navigate to="modelization" />}
+                        />
+                        <Route
+                          path="*"
+                          element={<Navigate to="modelization" />}
+                        />
+                      </Route>
                     </Route>
                   </Route>
                   <Route path="/data" element={<Data />} />

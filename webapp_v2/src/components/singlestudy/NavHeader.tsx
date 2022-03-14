@@ -137,6 +137,7 @@ function NavHeader(props: PropTypes) {
           {study?.managed && <Chip label={t('singlestudy:managedStudy')} variant="outlined" color="secondary" sx={{ mx: 2 }} />}
         </Box>
         <Box display="flex" flexDirection="row" justifyContent="center" alignItems="center" boxSizing="border-box">
+          {isExplorer === true && (
           <Button
             size="small"
             variant="contained"
@@ -145,6 +146,8 @@ function NavHeader(props: PropTypes) {
           >
             {t('main:launch')}
           </Button>
+          )}
+          {isExplorer === true && (
           <Button
             size="small"
             variant="outlined"
@@ -153,6 +156,7 @@ function NavHeader(props: PropTypes) {
           >
             <HistoryOutlinedIcon />
           </Button>
+          )}
           <Button
             size="small"
             aria-controls="menu-study"
