@@ -49,9 +49,14 @@ class AdequacyPatchExtension(ILauncherExtension):
         launcher_opts: Any,
     ) -> None:
         logger.info("Applying adequacy patch postprocessing script")
-        post_processing_file = (
-            Path(__file__).parent / "resources" / "post-processing.R"
-        )
+        if "adq_patch_legacy" in launcher_opts:
+            post_processing_file = (
+                Path(__file__).parent / "resources" / "post-processing-legacy.R"
+            )
+        else:
+            post_processing_file = (
+                    Path(__file__).parent / "resources" / "post-processing.R"
+            )
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"
         )
@@ -60,7 +65,7 @@ class AdequacyPatchExtension(ILauncherExtension):
             study_export_path, study_id, use_cache=False
         )
         user_config = study.tree.get(["user"])
-        assert_this("flowbased" in user_config or "Flowbased" in user_config)
+        assert_this("flowbased" in user_config)
         adequacy_patch_config = yaml.safe_load(
             cast(
                 bytes, study.tree.get(["user", "adequacypatch", "config.yml"])
