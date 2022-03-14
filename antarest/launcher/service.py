@@ -29,6 +29,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (

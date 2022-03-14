@@ -13,7 +13,7 @@ from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip, StopWatch
+from antarest.core.utils.utils import extract_zip, StopWatch, assert_this
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -304,7 +304,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
-            assert target.name.endswith(".zip")
+            assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()

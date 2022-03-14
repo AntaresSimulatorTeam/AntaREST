@@ -4,6 +4,7 @@ from typing import List, Tuple, Dict, Any
 
 from pydantic import BaseModel
 
+from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -90,7 +91,7 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     def create_diff(self, other: "ICommand") -> List["ICommand"]:
-        assert self.match(other)
+        assert_this(self.match(other))
         return self._create_diff(other)
 
     @abstractmethod

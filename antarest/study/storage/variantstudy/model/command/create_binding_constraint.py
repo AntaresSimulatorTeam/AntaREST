@@ -2,6 +2,7 @@ from typing import Dict, List, Union, Any, Optional, cast, Tuple
 
 from pydantic import validator
 
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -65,7 +66,7 @@ class CreateBindingConstraint(ICommand):
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        assert isinstance(self.values, str)
+        assert_this(isinstance(self.values, str))
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -158,6 +159,6 @@ class CreateBindingConstraint(ICommand):
 
     def get_inner_matrices(self) -> List[str]:
         if self.values is not None:
-            assert isinstance(self.values, str)
+            assert_this(isinstance(self.values, str))
             return [strip_matrix_protocol(self.values)]
         return []

@@ -3,6 +3,7 @@ from typing import Dict, List, Union, Any, Optional, cast, Tuple
 from pydantic import validator
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
@@ -330,12 +331,12 @@ class CreateLink(ICommand):
     def get_inner_matrices(self) -> List[str]:
         list_matrices = []
         if self.series:
-            assert isinstance(self.series, str)
+            assert_this(isinstance(self.series, str))
             list_matrices.append(strip_matrix_protocol(self.series))
         if self.direct:
-            assert isinstance(self.direct, str)
+            assert_this(isinstance(self.direct, str))
             list_matrices.append(strip_matrix_protocol(self.direct))
         if self.indirect:
-            assert isinstance(self.indirect, str)
+            assert_this(isinstance(self.indirect, str))
             list_matrices.append(strip_matrix_protocol(self.indirect))
         return list_matrices

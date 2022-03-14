@@ -3,7 +3,7 @@ import logging
 from typing import Optional, List, Tuple, Union, cast
 
 from antarest.core.model import JSON
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
@@ -276,7 +276,7 @@ class CommandExtraction(ICommandExtractor):
                 cluster_name = cluster.name
                 break
 
-        assert cluster_name is not None
+        assert_this(cluster_name is not None)
         study_commands.append(
             create_cluster_command(
                 area_id=area_id,

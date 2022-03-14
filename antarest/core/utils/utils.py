@@ -114,3 +114,8 @@ def retry(
             time.sleep(interval)
             catched_exception = e
     raise catched_exception or ShouldNotHappenException()
+
+
+def assert_this(b: Any) -> None:
+    if not b:
+        raise AssertionError

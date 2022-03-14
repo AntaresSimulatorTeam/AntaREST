@@ -27,6 +27,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -102,7 +103,7 @@ class SlurmLauncher(AbstractLauncher):
             self._retrieve_running_jobs()
 
     def _check_config(self) -> None:
-        assert (
+        assert_this(
             self.slurm_config.local_workspace.exists()
             and self.slurm_config.local_workspace.is_dir()
         )  # and check write permission

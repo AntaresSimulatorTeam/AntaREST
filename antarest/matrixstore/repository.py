@@ -9,6 +9,7 @@ from sqlalchemy.orm import aliased  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,
@@ -123,7 +124,7 @@ class MatrixContentRepository:
         if matrix_content.index is None:
             matrix_content.index = list(range(0, len(matrix_content.data)))
         else:
-            assert len(matrix_content.index) == len(matrix_content.data)
+            assert_this(len(matrix_content.index) == len(matrix_content.data))
         if matrix_content.columns is None:
             if len(matrix_content.data) > 0:
                 matrix_content.columns = list(
@@ -133,11 +134,11 @@ class MatrixContentRepository:
                 matrix_content.columns = []
         else:
             if len(matrix_content.data) > 0:
-                assert len(matrix_content.columns) == len(
-                    matrix_content.data[0]
+                assert_this(
+                    len(matrix_content.columns) == len(matrix_content.data[0])
                 )
             else:
-                assert len(matrix_content.columns) == 0
+                assert_this(len(matrix_content.columns) == 0)
 
     @staticmethod
     def _compute_hash(data: str) -> str:

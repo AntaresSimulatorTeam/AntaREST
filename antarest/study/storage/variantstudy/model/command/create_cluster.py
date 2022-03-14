@@ -3,6 +3,7 @@ from typing import Dict, Union, List, Any, Optional, cast, Tuple
 from pydantic import validator
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
@@ -236,9 +237,9 @@ class CreateCluster(ICommand):
     def get_inner_matrices(self) -> List[str]:
         matrices: List[str] = []
         if self.prepro:
-            assert isinstance(self.prepro, str)
+            assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))
         if self.modulation:
-            assert isinstance(self.modulation, str)
+            assert_this(isinstance(self.modulation, str))
             matrices.append(strip_matrix_protocol(self.modulation))
         return matrices

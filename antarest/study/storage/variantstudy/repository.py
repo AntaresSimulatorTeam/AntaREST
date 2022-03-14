@@ -3,6 +3,7 @@ from typing import List
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import assert_this
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
