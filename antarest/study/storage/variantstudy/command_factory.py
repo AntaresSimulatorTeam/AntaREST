@@ -1,6 +1,7 @@
 from typing import List
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -86,7 +87,7 @@ class CommandFactory:
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
-        assert isinstance(args, dict)
+        assert_this(isinstance(args, dict))
         if action == CommandName.CREATE_AREA.value:
             return CreateArea(
                 **args,

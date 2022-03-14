@@ -7,6 +7,7 @@ from fastapi import HTTPException
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import assert_this
 
 
 class TaskJobRepository:
@@ -30,7 +31,7 @@ class TaskJobRepository:
 
     @staticmethod
     def _combine_clauses(where_clauses: List[Any]) -> Any:
-        assert len(where_clauses) > 0
+        assert_this(len(where_clauses) > 0)
         if len(where_clauses) > 1:
             return and_(
                 where_clauses[0],

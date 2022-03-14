@@ -1,6 +1,7 @@
 from typing import Union, List, Any
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
