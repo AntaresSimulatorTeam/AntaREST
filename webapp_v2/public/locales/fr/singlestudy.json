@@ -97,6 +97,6 @@
   "properties": "Propriétés",
   "validate": "Valider",
   "parentStudy": "Etude parente",
-  "modifiedStudySuccess": "L'étude {{studyname}} a été modifié avec succès",
+  "modifiedStudySuccess": "L'étude {{studyname}} a été modifiée avec succès",
   "modifiedStudyFailed": "Erreur lors de la modification de l'étude {{studyname}}"
 }

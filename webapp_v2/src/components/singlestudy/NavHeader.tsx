@@ -79,11 +79,11 @@ function NavHeader(props: PropTypes) {
   const { enqueueSnackbar } = useSnackbar();
 
   const publicModeList: Array<GenericInfo> = [
-    { id: 'NONE', name: t('singlestudy:nonePublicMode') },
-    { id: 'READ', name: t('singlestudy:readPublicMode') },
-    { id: 'EXECUTE', name: t('singlestudy:executePublicMode') },
-    { id: 'EDIT', name: t('singlestudy:editPublicMode') },
-    { id: 'FULL', name: t('singlestudy:fullPublicMode') }];
+    { id: 'NONE', name: t('singlestudy:nonePublicModeText') },
+    { id: 'READ', name: t('singlestudy:readPublicModeText') },
+    { id: 'EXECUTE', name: t('singlestudy:executePublicModeText') },
+    { id: 'EDIT', name: t('singlestudy:editPublicModeText') },
+    { id: 'FULL', name: t('singlestudy:fullPublicModeText') }];
 
   const getPublicModeLabel = useMemo(() : string => {
     const publicModeLabel = publicModeList.find((elm) => elm.id === study?.publicMode);
