@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
 import debug from 'debug';
+import { TFunction } from 'react-i18next';
 import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo } from '../../common/types';
 import { getMaintenanceMode, getMessageInfo } from '../api/maintenance';
 import { getConfig } from '../config';
@@ -152,6 +153,11 @@ export const getInitMessageInfo = async (): Promise<string> => {
 };
 
 export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') === '';
+
+export const buildModificationDate = (date: string, t: TFunction<'translation', undefined>, language = 'en') : string => {
+  const duration = modificationDate(date);
+  return duration.locale(language.substring(0, 2) === 'fr' ? 'fr' : 'en').humanize();
+};
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);

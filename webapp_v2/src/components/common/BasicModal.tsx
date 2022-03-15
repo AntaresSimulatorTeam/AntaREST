@@ -21,11 +21,12 @@ interface Props {
     closeButtonLabel?: string;
     actionButtonLabel?: string;
     onActionButtonClick?: () => void;
+    actionButtonDisabled?: boolean;
     rootStyle: SxProps<Theme> | undefined;
 }
 
 function BasicModal(props: PropsWithChildren<Props>) {
-  const { title, open, onClose, closeButtonLabel, actionButtonLabel, onActionButtonClick, rootStyle, children } = props;
+  const { title, open, onClose, actionButtonDisabled, closeButtonLabel, actionButtonLabel, onActionButtonClick, rootStyle, children } = props;
   const [t] = useTranslation();
 
   return (
@@ -47,7 +48,7 @@ function BasicModal(props: PropsWithChildren<Props>) {
             {closeButtonLabel !== undefined ? closeButtonLabel : t('main:closeButton')}
           </Button>
           {actionButtonLabel !== undefined && onActionButtonClick !== undefined && (
-            <Button sx={{ mx: 2 }} color="success" variant="contained" onClick={onActionButtonClick}>
+            <Button disabled={actionButtonDisabled} sx={{ mx: 2 }} color="success" variant="contained" onClick={onActionButtonClick}>
               {actionButtonLabel !== undefined ? actionButtonLabel : t('main:save')}
             </Button>
           )}
@@ -61,6 +62,7 @@ BasicModal.defaultProps = {
   closeButtonLabel: undefined,
   actionButtonLabel: undefined,
   onActionButtonClick: undefined,
+  actionButtonDisabled: undefined,
 };
 
 export default BasicModal;

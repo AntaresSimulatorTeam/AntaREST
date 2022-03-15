@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +22,7 @@ import FileCopyOutlinedIcon from '@mui/icons-material/FileCopyOutlined';
 import { GenericInfo, StudyMetadata } from '../../common/types';
 import { exportStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
-import { convertUTCToLocalTime, modificationDate } from '../../services/utils';
+import { buildModificationDate, convertUTCToLocalTime, modificationDate } from '../../services/utils';
 import { scrollbarStyle } from '../../theme';
 
 interface Props {
@@ -43,10 +44,11 @@ const TinyText = styled(Typography)(({ theme }) => ({
 
 export default function StudyCard(props: Props) {
   const { study, width, favorite, onFavoriteClick, onLaunchClick, onImportStudy, onUnarchiveClick, onArchiveClick, onDeleteClick } = props;
-  const [t] = useTranslation();
+  const [t, i18n] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
+  const navigate = useNavigate();
 
   const handleFavoriteClick = () => {
     onFavoriteClick({ id: study.id, name: study.name });
@@ -60,22 +62,6 @@ export default function StudyCard(props: Props) {
   const handleClose = () => {
     setAnchorEl(null);
     setOpenMenu('');
-  };
-
-  const buildModificationDate = () : string => {
-    const duration = modificationDate(study.modificationDate);
-    const days = duration.days() > 0 ? `${duration.days().toString()} ${t('main:daysSymbol')}` : '';
-    const hours = duration.hours() > 0 ? `${duration.hours().toString()} ${t('main:hoursSymbol')}` : '';
-    const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
-    const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
-
-    if (days !== '') { return `${days}`; }
-
-    if (hours !== '') { return `${hours}`; }
-
-    if (minutes !== '') { return `${minutes}`; }
-
-    return `${seconds}`;
   };
 
   const copyId = (): void => {
@@ -128,7 +114,7 @@ export default function StudyCard(props: Props) {
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
             <TinyText>
-              {buildModificationDate()}
+              {buildModificationDate(study.modificationDate, t, i18n.language)}
             </TinyText>
           </Box>
         </Box>
@@ -167,7 +153,7 @@ export default function StudyCard(props: Props) {
         </Box>
       </CardContent>
       <CardActions>
-        <Button size="small" color="primary">{t('studymanager:exploreButton')}</Button>
+        <Button size="small" color="primary" onClick={() => navigate(`/studies/${study.id}`)}>{t('studymanager:exploreButton')}</Button>
         <Button
           size="small"
           aria-controls="menu-elements"

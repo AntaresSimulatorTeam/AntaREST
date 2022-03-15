@@ -92,5 +92,11 @@
   "filterIn": "Filtre d'inclusion (Regex)",
   "filterOut": "Filtre d'exclusion (Regex)",
   "area1": "Zone 1",
-  "area2": "Zone 2"
+  "area2": "Zone 2",
+  "managedStudy": "Étude managée",
+  "properties": "Propriétés",
+  "validate": "Valider",
+  "parentStudy": "Etude parente",
+  "modifiedStudySuccess": "L'étude {{studyname}} a été modifiée avec succès",
+  "modifiedStudyFailed": "Erreur lors de la modification de l'étude {{studyname}}"
 }

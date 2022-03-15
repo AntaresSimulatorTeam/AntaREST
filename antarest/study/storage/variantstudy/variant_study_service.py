@@ -446,6 +446,27 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             output_list = output_list[1:]
         return output_list
 
+    def get_direct_parent(
+        self, id: str, params: RequestParameters
+    ) -> Optional[StudyMetadataDTO]:
+        study = self._get_variant_study(id, params, raw_study_accepted=True)
+        if study.parent_id is not None:
+            parent = self._get_variant_study(
+                study.parent_id, params, raw_study_accepted=True
+            )
+            return (
+                self.get_study_information(
+                    parent,
+                    summary=True,
+                )
+                if isinstance(parent, VariantStudy)
+                else self.raw_study_service.get_study_information(
+                    parent,
+                    summary=True,
+                )
+            )
+        return None
+
     def _get_variants_parents(
         self, id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:

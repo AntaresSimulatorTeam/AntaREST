@@ -12,6 +12,12 @@ export const getVariantParents = async (id: string): Promise<StudyMetadata[]> =>
   return res.data.map((elm: StudyMetadataDTO) => convertStudyDtoToMetadata(elm.id, elm));
 };
 
+export const getDirectParent = async (id: string): Promise<StudyMetadata | undefined> => {
+  const res = await client.get(`/v1/studies/${id}/parents?direct=true`);
+  if (res.data) { return convertStudyDtoToMetadata(res.data.id, res.data); }
+  return undefined;
+};
+
 export const createVariant = async (id: string, name: string): Promise<string> => {
   const res = await client.post(`/v1/studies/${id}/variants?name=${encodeURIComponent(name)}`);
   return res.data;

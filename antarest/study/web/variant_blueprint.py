@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Depends, Body
 
@@ -105,16 +105,21 @@ def create_study_variant_routes(
     )
     def get_parents(
         uuid: str,
+        direct: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[StudyMetadataDTO]:
+    ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
         logger.info(
             f"Fetching variant parents of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_variants_parents(
-            sanitized_uuid, params
+        return (
+            variant_study_service.get_variants_parents(sanitized_uuid, params)
+            if not direct
+            else variant_study_service.get_direct_parent(
+                sanitized_uuid, params
+            )
         )
 
     @bp.get(
