@@ -55,7 +55,11 @@ class JobResultRepository:
 
     def delete_by_study_id(self, study_id: str) -> None:
         logger.debug(f"Deleting JobResults from_study {study_id}")
-        db.session.query(JobResult).filter(
-            JobResult.study_id == study_id
-        ).delete()
+        jobs = (
+            db.session.query(JobResult)
+            .filter(JobResult.study_id == study_id)
+            .all()
+        )
+        for job in jobs:
+            db.session.delete(job)
         db.session.commit()
