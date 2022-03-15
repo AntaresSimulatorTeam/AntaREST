@@ -36,3 +36,4 @@ class FileDownloadRepository:
         download = self.get(download_id)
         if download:
             db.session.delete(download)
+            db.session.commit()
