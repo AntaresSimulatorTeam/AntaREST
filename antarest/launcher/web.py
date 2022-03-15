@@ -144,7 +144,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.delete(
         "/launcher/jobs/{job_id}",
         tags=[APITag.launcher],
-        summary="Retrieve job info from job id",
+        summary="Remove job",
         response_model=JobResultDTO,
     )
     def remove_result(
