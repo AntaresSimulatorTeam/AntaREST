@@ -44,7 +44,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
 
 export default function StudyCard(props: Props) {
   const { study, width, favorite, onFavoriteClick, onLaunchClick, onImportStudy, onUnarchiveClick, onArchiveClick, onDeleteClick } = props;
-  const [t] = useTranslation();
+  const [t, i18n] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
@@ -114,7 +114,7 @@ export default function StudyCard(props: Props) {
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
             <TinyText>
-              {buildModificationDate(study.modificationDate, t)}
+              {buildModificationDate(study.modificationDate, t, i18n.language)}
             </TinyText>
           </Box>
         </Box>

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import debug from 'debug';
 import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
@@ -22,7 +22,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
-import { StudyMetadata, VariantTree } from '../../common/types';
+import { GenericInfo, StudyMetadata, VariantTree } from '../../common/types';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import { deleteStudy as callDeleteStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy, exportStudy } from '../../services/api/study';
@@ -70,13 +70,26 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 function NavHeader(props: PropTypes) {
   const { study, parent, childrenTree, isExplorer, removeStudy } = props;
-  const [t] = useTranslation();
+  const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
   const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const [openPropertiesModal, setOpenPropertiesModal] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
+
+  const publicModeList: Array<GenericInfo> = [
+    { id: 'NONE', name: t('singlestudy:nonePublicMode') },
+    { id: 'READ', name: t('singlestudy:readPublicMode') },
+    { id: 'EXECUTE', name: t('singlestudy:executePublicMode') },
+    { id: 'EDIT', name: t('singlestudy:editPublicMode') },
+    { id: 'FULL', name: t('singlestudy:fullPublicMode') }];
+
+  const getPublicModeLabel = useMemo(() : string => {
+    const publicModeLabel = publicModeList.find((elm) => elm.id === study?.publicMode);
+    if (publicModeLabel) return publicModeLabel.name;
+    return '';
+  }, [study]);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -244,14 +257,14 @@ function NavHeader(props: PropTypes) {
         <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
           <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
           <TinyText>
-            {buildModificationDate(study.modificationDate, t)}
+            {buildModificationDate(study.modificationDate, t, i18n.language)}
           </TinyText>
         </Box>
         <StyledDivider />
         {parent && (
         <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
           <AltRouteOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
-          <LinkText to={`/studies/${parent.id}`}>{t('singlestudy:parentStudy')}</LinkText>
+          <LinkText to={`/studies/${parent.id}`}>{parent.name}</LinkText>
         </Box>
         )}
         {childrenTree && (
@@ -272,7 +285,7 @@ function NavHeader(props: PropTypes) {
         <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
           <SecurityOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
           <TinyText>
-            {study?.publicMode === 'NONE' ? t('singlestudy:publicModeAnybody') : t('singlestudy:publicModeNone')}
+            {getPublicModeLabel}
           </TinyText>
         </Box>
       </Box>

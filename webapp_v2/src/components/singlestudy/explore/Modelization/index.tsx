@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import debug from 'debug';
 import { StudyMetadata } from '../../../../common/types';
-import TabWrapper from '../../../common/TabWrapper';
+import TabWrapper from '../TabWrapper';
 
 const logError = debug('antares:singlestudy:error');
 

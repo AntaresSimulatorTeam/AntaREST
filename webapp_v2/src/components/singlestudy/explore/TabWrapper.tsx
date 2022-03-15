@@ -5,7 +5,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { StudyMetadata } from '../../common/types';
+import { StudyMetadata } from '../../../common/types';
 
 export const StyledTab = styled(Tabs, { shouldForwardProp: (prop) => prop !== 'border' && prop !== 'tabStyle' })<{border?: boolean, tabStyle?: 'normal' | 'withoutBorder'}>(({ theme, border, tabStyle }) => ({
   width: '98%',
@@ -42,8 +42,7 @@ function BasicTabs(props: Props) {
     if (study) {
       setValue(getDefaultIndex);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [study, tabList]);
+  }, [location.pathname, study, tabList]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -55,7 +54,7 @@ function BasicTabs(props: Props) {
       <StyledTab border={border === true} tabStyle={tabStyle} value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ width: '98%', ...(border === true ? { borderBottom: 1, borderColor: 'divider' } : {}) }}>
         {
             tabList.map((elm) => (
-              <Tab label={elm.label} />))
+              <Tab key={elm.path} label={elm.label} />))
         }
       </StyledTab>
       <Outlet context={{ study }} />

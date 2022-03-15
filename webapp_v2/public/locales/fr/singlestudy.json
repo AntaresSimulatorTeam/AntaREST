@@ -96,7 +96,7 @@
   "managedStudy": "Étude managée",
   "properties": "Propriétés",
   "validate": "Valider",
-  "parentStudy": "Mon étude original",
-  "publicModeAnybody": "Tout le monde",
-  "publicModeNone": "Seulement moi"
+  "parentStudy": "Etude parente",
+  "modifiedStudySuccess": "L'étude {{studyname}} a été modifié avec succès",
+  "modifiedStudyFailed": "Erreur lors de la modification de l'étude {{studyname}}"
 }

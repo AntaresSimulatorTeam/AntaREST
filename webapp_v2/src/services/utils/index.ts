@@ -154,25 +154,9 @@ export const getInitMessageInfo = async (): Promise<string> => {
 
 export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') === '';
 
-export const arrayEquals = <T> (a: Array<T>, b: Array<T>) : boolean => Array.isArray(a) &&
-    Array.isArray(b) &&
-    a.length === b.length &&
-    a.every((val, index) => val === b[index]);
-
-export const buildModificationDate = (date: string, t: TFunction<'translation', undefined>) : string => {
+export const buildModificationDate = (date: string, t: TFunction<'translation', undefined>, language = 'en') : string => {
   const duration = modificationDate(date);
-  const days = duration.days() > 0 ? `${duration.days().toString()} ${t('main:daysSymbol')}` : '';
-  const hours = duration.hours() > 0 ? `${duration.hours().toString()} ${t('main:hoursSymbol')}` : '';
-  const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
-  const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
-
-  if (days !== '') { return `${days}`; }
-
-  if (hours !== '') { return `${hours}`; }
-
-  if (minutes !== '') { return `${minutes}`; }
-
-  return `${seconds}`;
+  return duration.locale(language.substring(0, 2) === 'fr' ? 'fr' : 'en').humanize();
 };
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {

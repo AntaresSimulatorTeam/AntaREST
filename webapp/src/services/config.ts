@@ -36,7 +36,7 @@ let config: Config = {
 
 if (process.env.NODE_ENV === 'development') {
   config.applicationHome = '';
-  config.baseUrl = 'http://localhost:3001';
+  config.baseUrl = 'http://localhost:3000';
   config.wsUrl = 'ws://localhost:8080';
   config.downloadHostUrl = 'http://localhost:8080';
   localStorage.setItem('debug', 'antares:*');

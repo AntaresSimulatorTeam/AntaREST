@@ -9,7 +9,7 @@ import { StudyMetadata, VariantTree } from '../../common/types';
 import { getStudyMetadata } from '../../services/api/study';
 import NavHeader from '../../components/singlestudy/NavHeader';
 import { getDirectParent, getVariantChildren } from '../../services/api/variant';
-import TabWrapper from '../../components/common/TabWrapper';
+import TabWrapper from '../../components/singlestudy/explore/TabWrapper';
 
 const logError = debug('antares:singlestudy:error');
 

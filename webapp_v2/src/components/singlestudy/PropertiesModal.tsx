@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { isEqual } from 'lodash';
 import debug from 'debug';
 import { useSnackbar } from 'notistack';
 import { Box } from '@mui/material';
@@ -15,7 +16,6 @@ import { getGroups } from '../../services/api/user';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import TagTextInput from '../common/TagTextInput';
 import { scrollbarStyle } from '../../theme';
-import { arrayEquals } from '../../services/utils';
 
 const logErr = debug('antares:createstudyform:error');
 
@@ -48,7 +48,7 @@ function PropertiesModal(props: Props) {
   const tagChanged = useMemo(() : boolean => {
     let tpmTagsChanged = false;
     if (initTags) {
-      tpmTagsChanged = tags ? !arrayEquals(initTags, tags) : true;
+      tpmTagsChanged = tags ? !isEqual(initTags, tags) : true;
     } else {
       tpmTagsChanged = tags.length > 0;
     }
@@ -79,7 +79,7 @@ function PropertiesModal(props: Props) {
         if (initPublicMode !== publicMode) { await changePublicMode(sid, publicMode); }
 
         // Update group
-        if (!arrayEquals(initGroup, group)) {
+        if (!isEqual(initGroup, group)) {
           await Promise.all(initGroup.map(async (elm) => {
             if (group.findIndex((item) => item === elm) < 0) {
               await deleteStudyGroup(sid, elm);
@@ -92,10 +92,10 @@ function PropertiesModal(props: Props) {
             }
           }));
         }
-        enqueueSnackbar(t('studymanager:createStudySuccess', { studyname: studyName }), { variant: 'success' });
+        enqueueSnackbar(t('studymanager:modifiedStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
-        logErr('Failed to create new study', studyName, e);
-        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:createStudyFailed', { studyname: studyName }), e as AxiosError);
+        logErr('Failed to modify study', studyName, e);
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:modifiedStudyFailed', { studyname: studyName }), e as AxiosError);
       }
       onClose();
     } else {
@@ -133,7 +133,7 @@ function PropertiesModal(props: Props) {
   }, [study]);
 
   useEffect(() => {
-    setDataChanged(initStudyName !== studyName || initPublicMode !== publicMode || !arrayEquals(initGroup, group) || tagChanged);
+    setDataChanged(initStudyName !== studyName || initPublicMode !== publicMode || !isEqual(initGroup, group) || tagChanged);
   }, [studyName, publicMode, group, tags, initStudyName, initPublicMode, initGroup, tagChanged]);
 
   return (

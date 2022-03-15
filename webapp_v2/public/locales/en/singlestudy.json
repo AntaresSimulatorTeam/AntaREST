@@ -96,7 +96,7 @@
   "managedStudy": "Managed study",
   "properties": "Properties",
   "validate": "Validate",
-  "parentStudy": "My parent study",
-  "publicModeAnybody": "Anybody",
-  "publicModeNone": "None"
+  "parentStudy": "Parent study",
+  "modifiedStudySuccess": "Study {{studyname}} updated successfully",
+  "modifiedStudyFailed": "Study {{studyname}} not updated"
 }

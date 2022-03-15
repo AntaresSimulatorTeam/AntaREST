@@ -44,22 +44,22 @@ function App() {
                           <Route path="bindingcontraint" element={<BindingContraint />} />
                           <Route
                             index
-                            element={<Navigate to="map" />}
+                            element={<Map />}
                           />
                           <Route
                             path="*"
-                            element={<Navigate to="map" />}
+                            element={<Map />}
                           />
                         </Route>
                         <Route path="configuration" element={<Configuration />} />
                         <Route path="results" element={<Results />} />
                         <Route
                           index
-                          element={<Navigate to="modelization" />}
+                          element={<Modelization />}
                         />
                         <Route
                           path="*"
-                          element={<Navigate to="modelization" />}
+                          element={<Modelization />}
                         />
                       </Route>
                     </Route>
