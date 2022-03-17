@@ -10,7 +10,7 @@ export const STUDIES_FILTER_WIDTH = 300;
 
 export const scrollbarStyle = {
   '&::-webkit-scrollbar': {
-    width: 7,
+    width: '7px',
   },
   '&::-webkit-scrollbar-track': {
     boxShadow: 'inset 0 0 6px rgba(0, 0, 0, 0.3)',
