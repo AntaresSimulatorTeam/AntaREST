@@ -1,6 +1,7 @@
-import React, { ReactNode } from 'react';
-import { makeStyles, createStyles, Theme, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import React from 'react';
+import { makeStyles, createStyles, Theme, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { JobsType } from './types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -16,12 +17,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     height: '100%',
   },
 }));
-
-interface JobsType {
-    name: ReactNode;
-    date: ReactNode;
-    action: ReactNode;
-}
 
 interface PropType {
     content: Array<JobsType>;
@@ -39,6 +34,7 @@ const JobTableView = (props: PropType) => {
           <TableHead>
             <TableRow>
               <TableCell>Tâches</TableCell>
+              <TableCell align="right">Type</TableCell>
               <TableCell align="right">{t('main:date')}</TableCell>
               <TableCell align="right">Action</TableCell>
             </TableRow>
@@ -49,7 +45,8 @@ const JobTableView = (props: PropType) => {
                 <TableCell component="th" scope="row">
                   {row.name}
                 </TableCell>
-                <TableCell align="right">{row.date}</TableCell>
+                <TableCell align="right">{t(`jobs:${row.type}`)}</TableCell>
+                <TableCell align="right">{row.dateView}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
             ))}

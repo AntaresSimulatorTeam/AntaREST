@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import debug from 'debug';
@@ -14,16 +14,18 @@ import InfoIcon from '@material-ui/icons/Info';
 import MainContentLoader from '../ui/loaders/MainContentLoader';
 import DownloadLink from '../ui/DownloadLink';
 import LogModal from '../ui/LogModal';
-import { addListener, removeListener } from '../../ducks/websockets';
+import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../ducks/websockets';
 import JobTableView from './JobTableView';
 import { convertUTCToLocalTime, useNotif } from '../../services/utils';
 import { AppState } from '../../App/reducers';
 import { downloadJobOutput, killStudy, getStudyJobs, getStudies } from '../../services/api/study';
 import { convertFileDownloadDTO, FileDownload, getDownloadUrl, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
 import { initStudies } from '../../ducks/study';
-import { LaunchJob, WSEvent, WSMessage } from '../../common/types';
+import { LaunchJob, TaskDTO, TaskEventPayload, WSEvent, WSMessage } from '../../common/types';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import { getAllMiscRunningTasks, getTask } from '../../services/api/tasks';
+import { TaskType } from './types';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -42,6 +44,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   title: {
     color: theme.palette.primary.main,
+    fontSize: '0.95rem',
   },
   dateblock: {
     color: theme.palette.grey[500],
@@ -89,20 +92,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-interface JobsType {
-    name: JSX.Element;
-    date: JSX.Element;
-    action: JSX.Element;
-}
-
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
 });
 
 const mapDispatch = ({
   loadStudies: initStudies,
+  addWsListener: addListener,
+  removeWsListener: removeListener,
+  subscribeChannel: subscribe,
+  unsubscribeChannel: unsubscribe,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -110,14 +109,14 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const JobsListing = (props: PropTypes) => {
-  const { studies, loadStudies, addWsListener, removeWsListener } = props;
+  const { studies, loadStudies, addWsListener, removeWsListener, subscribeChannel, unsubscribeChannel } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  const [jobs, setJobs] = useState<LaunchJob[]>();
-  const [downloads, setDownloads] = useState<FileDownload[]>();
-  const [content, setContent] = useState<Array<JobsType>>();
+  const [jobs, setJobs] = useState<LaunchJob[]>([]);
+  const [downloads, setDownloads] = useState<FileDownload[]>([]);
+  const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
   const createNotif = useNotif();
   const [loaded, setLoaded] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<string | undefined>();
@@ -134,6 +133,9 @@ const JobsListing = (props: PropTypes) => {
       setJobs(allJobs);
       const dlList = await getDownloadsList();
       setDownloads(dlList);
+      const allTasks = await getAllMiscRunningTasks();
+      const dateThreshold = moment().subtract(1, 'm');
+      setTasks(allTasks.filter((task) => !task.completion_date_utc || moment.utc(task.completion_date_utc).isAfter(dateThreshold)));
     } catch (e) {
       logError('woops', e);
       enqueueErrorSnackbar(createNotif, 'ça marche pas', e as AxiosError);
@@ -151,7 +153,7 @@ const JobsListing = (props: PropTypes) => {
     } else if (job.status === 'running') {
       color = theme.palette.warning.main;
     }
-    return (<div className={classes.dot} style={{ backgroundColor: color }} />);
+    return (<Box className={classes.dot} style={{ backgroundColor: color }} />);
   };
 
   const exportJobOutput = async (jobId: string): Promise<void> => {
@@ -205,108 +207,153 @@ const JobsListing = (props: PropTypes) => {
   }, [addWsListener, removeWsListener, downloads]);
 
   useEffect(() => {
-    if (jobs) {
-      const tab: Array<JobsType> = jobs
-        .sort((a, b) => (moment(a.completionDate || a.creationDate).isAfter(moment(b.completionDate || b.creationDate)) ? -1 : 1))
-        .reduce((prevVal, curVal) => { if (prevVal.find((el) => el.studyId === curVal.studyId)) { return prevVal; } return prevVal.concat([curVal]); }, [] as LaunchJob[])
-        .map((job) => ({
-          name: (
-            <Box className={classes.titleblock}>
-              {renderStatus(job)}
-              <Link to={`/study/${encodeURI(job.studyId)}`}>
-                <Typography className={classes.title}>
-                  {studies.find((s) => s.id === job.studyId)?.name}
-                </Typography>
-              </Link>
-            </Box>
-          ),
-          date: (
-            <Box className={classes.dateblock}>
-              <Box>
-                <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
-                {convertUTCToLocalTime(job.creationDate)}
-              </Box>
-              <Box>
-                {job.completionDate && (
-                  <>
-                    <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
-                    {convertUTCToLocalTime(job.completionDate)}
-                  </>
-                )}
-              </Box>
-            </Box>
-          ),
-          action: (
-            <Box>
-              <Box className={classes.actionButton}>
-                {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
-              </Box>
-              <Box>
-                {job.status === 'success' ? <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
-              </Box>
-            </Box>
-          ),
-        }));
-
-      console.log(tab);
-      //   if (tab.length > 1) {
-      //     if (content) {
-      //       setContent([...content, ...tab]);
-      //     } else {
-      setContent(tab);
-    //     }
-    //   }
-    }
-  }, [jobs]);
-
-  useEffect(() => {
-    if (downloads) {
-      const tab = downloads
-        .sort((a, b) => (moment(a.expirationDate).isAfter(moment(b.expirationDate)) ? -1 : 1))
-        .map((download) => ({
-          name: (
-            <Box className={classes.title}>
-              {download.name}
-            </Box>
-          ),
-          date: (
-            <Box className={classes.dateblock}>
-              {`(${t('downloads:expirationDate')} : ${convertUTCToLocalTime(download.expirationDate)})`}
-            </Box>
-          ),
-          action: (
-            download.failed ? (
-              <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
-            ) : (
-              <Box>
-                {download.ready ? (
-                  <DownloadLink url={getDownloadUrl(download.id)}>
-                    <FontAwesomeIcon className={classes.downloadIcon} icon="download" />
-                  </DownloadLink>
-                ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
-              </Box>
-            )
-          ),
-        }));
-
-      if (tab.length > 1) {
-        if (content) {
-          setContent([...tab, ...content]);
-        } else {
-          setContent(tab);
+    const listener = async (ev: WSMessage) => {
+      if (ev.type === WSEvent.TASK_COMPLETED || ev.type === WSEvent.TASK_FAILED) {
+        const taskId = (ev.payload as TaskEventPayload).id;
+        if (tasks?.find((task) => task.id === taskId)) {
+          try {
+            const updatedTask = await getTask(taskId);
+            setTasks(tasks.filter((task) => task.id !== updatedTask.id).concat([updatedTask]));
+          } catch (error) {
+            logError(error);
+          }
         }
       }
+    };
+    addWsListener(listener);
+    return () => removeWsListener(listener);
+  }, [addWsListener, removeWsListener, tasks, setTasks]);
+
+  useEffect(() => {
+    if (tasks) {
+      tasks.forEach((task) => {
+        subscribeChannel(WsChannel.TASK + task.id);
+      });
+      return () => {
+        tasks.forEach((task) => {
+          unsubscribeChannel(WsChannel.TASK + task.id);
+        });
+      };
     }
-  }, [downloads]);
+    return () => { /* noop */ };
+  }, [tasks, subscribeChannel, unsubscribeChannel]);
 
   useEffect(() => {
     init();
   }, []);
 
+  const content =
+  useMemo(() => jobs.reduce((prevVal, curVal) => { if (prevVal.find((el) => el.studyId === curVal.studyId)) { return prevVal; } return prevVal.concat([curVal]); }, [] as LaunchJob[])
+    .map((job) => ({
+      name: (
+        <Box className={classes.titleblock}>
+          {renderStatus(job)}
+          <Link to={`/study/${encodeURI(job.studyId)}`}>
+            <Typography className={classes.title}>
+              {studies.find((s) => s.id === job.studyId)?.name}
+            </Typography>
+          </Link>
+        </Box>
+      ),
+      dateView: (
+        <Box className={classes.dateblock}>
+          <Box>
+            <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
+            {convertUTCToLocalTime(job.creationDate)}
+          </Box>
+          <Box>
+            {job.completionDate && (
+              <>
+                <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
+                {convertUTCToLocalTime(job.completionDate)}
+              </>
+            )}
+          </Box>
+        </Box>
+      ),
+      action: (
+        <Box>
+          <Box className={classes.actionButton}>
+            {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
+          </Box>
+          <Box>
+            {job.status === 'success' ? <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
+          </Box>
+        </Box>
+      ),
+      date: job.completionDate || job.creationDate,
+      type: TaskType.LAUNCH,
+    })), [jobs]).concat(
+    useMemo(() => downloads.map((download) => ({
+      name: (
+        <Box className={classes.title}>
+          {download.name}
+        </Box>
+      ),
+      dateView: (
+        <Box className={classes.dateblock}>
+          {`(${t('downloads:expirationDate')} : ${convertUTCToLocalTime(download.expirationDate)})`}
+        </Box>
+      ),
+      action: (
+        download.failed ? (
+          <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
+        ) : (
+          <Box>
+            {download.ready ? (
+              <DownloadLink url={getDownloadUrl(download.id)}>
+                <FontAwesomeIcon className={classes.downloadIcon} icon="download" />
+              </DownloadLink>
+            ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
+          </Box>
+        )
+      ),
+      date: moment(download.expirationDate).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss'),
+      type: TaskType.DOWNLOAD,
+    })), [downloads]),
+  ).concat(
+    useMemo(() => tasks.map((task) => ({
+      name: (
+        <Typography className={classes.title}>
+          {task.name}
+        </Typography>
+      ),
+      dateView: (
+        <Box className={classes.dateblock}>
+          <Box>
+            <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
+            {convertUTCToLocalTime(task.creation_date_utc)}
+          </Box>
+          <Box>
+            {task.completion_date_utc && (
+              <>
+                <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
+                {convertUTCToLocalTime(task.completion_date_utc)}
+              </>
+            )}
+          </Box>
+        </Box>
+      ),
+      action: (
+        <Box>
+          {
+            !task.completion_date_utc &&
+            <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+          }
+          {
+            task.completion_date_utc && !task.result?.success && <InfoIcon className={classes.errorIcon} />
+          }
+        </Box>
+      ),
+      date: task.completion_date_utc || task.creation_date_utc,
+      type: ((task.type === TaskType.COPY) && TaskType.COPY) || ((task.type === TaskType.ARCHIVE) && TaskType.ARCHIVE) || ((task.type === TaskType.UNARCHIVE) && TaskType.UNARCHIVE) || TaskType.COPY,
+    })), [tasks]),
+  );
+
   return (
     <Box className={classes.root}>
       {!loaded && <MainContentLoader />}
-      {loaded && <JobTableView content={content || []} />}
+      {loaded && <JobTableView content={content?.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? -1 : 1)) || []} />}
       {openConfirmationModal && (
         <ConfirmationModal
           open={!!openConfirmationModal}

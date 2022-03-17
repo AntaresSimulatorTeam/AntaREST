@@ -42,8 +42,7 @@ const Jobs = () => {
 
 export default connector(Jobs);
 
-/*
-import React, { useEffect, useState } from 'react';
+/* import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, Breadcrumbs } from '@material-ui/core';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -122,5 +121,4 @@ const Jobs = () => {
   );
 };
 
-export default connector(Jobs);
-*/
+export default connector(Jobs);*/

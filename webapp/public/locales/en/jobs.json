@@ -6,5 +6,7 @@
   "launches": "Launches",
   "exports": "Exports",
   "download": "Download",
-  "others": "Others"
+  "others": "Others",
+  "DOWNLOAD": "Download",
+  "LAUNCH": "Launch"
 }
