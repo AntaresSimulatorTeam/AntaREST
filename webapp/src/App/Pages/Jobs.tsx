@@ -121,4 +121,4 @@ const Jobs = () => {
   );
 };
 
-export default connector(Jobs);*/
+export default connector(Jobs); */

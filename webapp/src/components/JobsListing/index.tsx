@@ -26,6 +26,7 @@ import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import { getAllMiscRunningTasks, getTask } from '../../services/api/tasks';
 import { TaskType } from './types';
+import LogView from './LogView';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -242,118 +243,119 @@ const JobsListing = (props: PropTypes) => {
     init();
   }, []);
 
-  const content =
-  useMemo(() => jobs.reduce((prevVal, curVal) => { if (prevVal.find((el) => el.studyId === curVal.studyId)) { return prevVal; } return prevVal.concat([curVal]); }, [] as LaunchJob[])
-    .map((job) => ({
-      name: (
-        <Box className={classes.titleblock}>
-          {renderStatus(job)}
-          <Link to={`/study/${encodeURI(job.studyId)}`}>
-            <Typography className={classes.title}>
-              {studies.find((s) => s.id === job.studyId)?.name}
-            </Typography>
-          </Link>
-        </Box>
-      ),
-      dateView: (
-        <Box className={classes.dateblock}>
-          <Box>
-            <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
-            {convertUTCToLocalTime(job.creationDate)}
-          </Box>
-          <Box>
-            {job.completionDate && (
-              <>
-                <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
-                {convertUTCToLocalTime(job.completionDate)}
-              </>
-            )}
-          </Box>
-        </Box>
-      ),
-      action: (
+  const jobsMemo = useMemo(() => jobs.map((job) => ({
+    name: (
+      <Box className={classes.titleblock}>
+        {renderStatus(job)}
+        <Link to={`/study/${encodeURI(job.studyId)}`}>
+          <Typography className={classes.title}>
+            {studies.find((s) => s.id === job.studyId)?.name}
+          </Typography>
+        </Link>
+      </Box>
+    ),
+    dateView: (
+      <Box className={classes.dateblock}>
         <Box>
-          <Box className={classes.actionButton}>
-            {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
-          </Box>
-          <Box>
-            {job.status === 'success' ? <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
-          </Box>
+          <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
+          {convertUTCToLocalTime(job.creationDate)}
         </Box>
-      ),
-      date: job.completionDate || job.creationDate,
-      type: TaskType.LAUNCH,
-    })), [jobs]).concat(
-    useMemo(() => downloads.map((download) => ({
-      name: (
-        <Box className={classes.title}>
-          {download.name}
-        </Box>
-      ),
-      dateView: (
-        <Box className={classes.dateblock}>
-          {`(${t('downloads:expirationDate')} : ${convertUTCToLocalTime(download.expirationDate)})`}
-        </Box>
-      ),
-      action: (
-        download.failed ? (
-          <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
-        ) : (
-          <Box>
-            {download.ready ? (
-              <DownloadLink url={getDownloadUrl(download.id)}>
-                <FontAwesomeIcon className={classes.downloadIcon} icon="download" />
-              </DownloadLink>
-            ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
-          </Box>
-        )
-      ),
-      date: moment(download.expirationDate).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss'),
-      type: TaskType.DOWNLOAD,
-    })), [downloads]),
-  ).concat(
-    useMemo(() => tasks.map((task) => ({
-      name: (
-        <Typography className={classes.title}>
-          {task.name}
-        </Typography>
-      ),
-      dateView: (
-        <Box className={classes.dateblock}>
-          <Box>
-            <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
-            {convertUTCToLocalTime(task.creation_date_utc)}
-          </Box>
-          <Box>
-            {task.completion_date_utc && (
-              <>
-                <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
-                {convertUTCToLocalTime(task.completion_date_utc)}
-              </>
-            )}
-          </Box>
-        </Box>
-      ),
-      action: (
         <Box>
-          {
-            !task.completion_date_utc &&
-            <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
-          }
-          {
-            task.completion_date_utc && !task.result?.success && <InfoIcon className={classes.errorIcon} />
-          }
+          {job.completionDate && (
+            <>
+              <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
+              {convertUTCToLocalTime(job.completionDate)}
+            </>
+          )}
         </Box>
-      ),
-      date: task.completion_date_utc || task.creation_date_utc,
-      type: ((task.type === TaskType.COPY) && TaskType.COPY) || ((task.type === TaskType.ARCHIVE) && TaskType.ARCHIVE) || ((task.type === TaskType.UNARCHIVE) && TaskType.UNARCHIVE) || TaskType.COPY,
-    })), [tasks]),
-  );
+      </Box>
+    ),
+    action: (
+      <Box>
+        <Box className={classes.actionButton}>
+          {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
+        </Box>
+        <Box>
+          {job.status === 'success' ? <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
+        </Box>
+        <LogView job={job} logButton="Logs" logErrorButton="Logs d'erreurs" />
+      </Box>
+    ),
+    date: job.completionDate || job.creationDate,
+    type: TaskType.LAUNCH,
+  })), [jobs]);
+
+  const downloadsMemo = useMemo(() => downloads.map((download) => ({
+    name: (
+      <Box className={classes.title}>
+        {download.name}
+      </Box>
+    ),
+    dateView: (
+      <Box className={classes.dateblock}>
+        {`(${t('downloads:expirationDate')} : ${convertUTCToLocalTime(download.expirationDate)})`}
+      </Box>
+    ),
+    action: (
+      download.failed ? (
+        <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
+      ) : (
+        <Box>
+          {download.ready ? (
+            <DownloadLink url={getDownloadUrl(download.id)}>
+              <FontAwesomeIcon className={classes.downloadIcon} icon="download" />
+            </DownloadLink>
+          ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
+        </Box>
+      )
+    ),
+    date: moment(download.expirationDate).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss'),
+    type: TaskType.DOWNLOAD,
+  })), [downloads]);
+
+  const tasksMemo = useMemo(() => tasks.map((task) => ({
+    name: (
+      <Typography className={classes.title}>
+        {task.name}
+      </Typography>
+    ),
+    dateView: (
+      <Box className={classes.dateblock}>
+        <Box>
+          <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
+          {convertUTCToLocalTime(task.creation_date_utc)}
+        </Box>
+        <Box>
+          {task.completion_date_utc && (
+            <>
+              <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
+              {convertUTCToLocalTime(task.completion_date_utc)}
+            </>
+          )}
+        </Box>
+      </Box>
+    ),
+    action: (
+      <Box>
+        {
+          !task.completion_date_utc &&
+          <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+        }
+        {
+          task.completion_date_utc && !task.result?.success && <InfoIcon className={classes.errorIcon} />
+        }
+      </Box>
+    ),
+    date: task.completion_date_utc || task.creation_date_utc,
+    type: ((task.type === TaskType.COPY) && TaskType.COPY) || ((task.type === TaskType.ARCHIVE) && TaskType.ARCHIVE) || ((task.type === TaskType.UNARCHIVE) && TaskType.UNARCHIVE) || TaskType.COPY,
+  })), [tasks]);
+
+  const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
 
   return (
     <Box className={classes.root}>
       {!loaded && <MainContentLoader />}
-      {loaded && <JobTableView content={content?.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? -1 : 1)) || []} />}
+      {loaded && <JobTableView content={content || []} />}
       {openConfirmationModal && (
         <ConfirmationModal
           open={!!openConfirmationModal}

@@ -7,6 +7,10 @@
   "exports": "Exports",
   "download": "Download",
   "others": "Others",
+  "action": "Action",
   "DOWNLOAD": "Download",
-  "LAUNCH": "Launch"
+  "LAUNCH": "Launch",
+  "COPY": "Copy",
+  "ARCHIVE": "Archive",
+  "UNARCHIVE": "Unarchive"
 }
