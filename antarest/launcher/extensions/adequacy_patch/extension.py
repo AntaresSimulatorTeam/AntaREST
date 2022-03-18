@@ -49,13 +49,17 @@ class AdequacyPatchExtension(ILauncherExtension):
         launcher_opts: Any,
     ) -> None:
         logger.info("Applying adequacy patch postprocessing script")
-        if "adq_patch_legacy" in launcher_opts:
+        if "legacy" in launcher_opts and launcher_opts["legacy"]:
+            logger.info("Using legacy quadratic mode")
             post_processing_file = (
-                Path(__file__).parent / "resources" / "post-processing-legacy.R"
+                Path(__file__).parent
+                / "resources"
+                / "post-processing-legacy.R"
             )
         else:
+            logger.info("Using linearized mode")
             post_processing_file = (
-                    Path(__file__).parent / "resources" / "post-processing.R"
+                Path(__file__).parent / "resources" / "post-processing.R"
             )
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"

@@ -105,11 +105,10 @@ const LauncherModal = (props: PropTypes) => {
     }
   };
 
-  const handleChange = (field: string, value: number | string | boolean) => {
-    const val = field === 'adequacy_patch' ? {} : value;
+  const handleChange = (field: string, value: number | string | boolean | object | undefined) => {
     setOptions({
       ...options,
-      [field]: val,
+      [field]: value,
     });
   };
 
@@ -178,7 +177,8 @@ const LauncherModal = (props: PropTypes) => {
               <FormControlLabel control={<Checkbox checked={!!options.batch_mode} onChange={(e, checked) => { handleChange('batch_mode', checked); }} />} label={t('singlestudy:batchMode')} />
               <FormControlLabel control={<Checkbox checked={!!options.xpansion} onChange={(e, checked) => { handleChange('xpansion', checked); }} />} label={t('singlestudy:xpansionMode')} />
               <FormControlLabel control={<Checkbox checked={!!options.xpansion && !!options.xpansion_r_version} onChange={(e, checked) => handleChange('xpansion_r_version', checked)} />} label={t('singlestudy:useXpansionVersionR')} />
-              <FormControlLabel control={<Checkbox checked={!!options.adequacy_patch} onChange={(e, checked) => handleChange('adequacy_patch', checked)} />} label="Adequacy Patch" />
+              <FormControlLabel control={<Checkbox checked={!!options.adequacy_patch} onChange={(e, checked) => handleChange('adequacy_patch', checked ? {} : undefined)} />} label="Adequacy Patch" />
+              <FormControlLabel control={<Checkbox checked={!!options.adequacy_patch?.legacy} onChange={(e, checked) => handleChange('adequacy_patch', { legacy: checked })} />} label="Adequacy Patch R" />
             </FormGroup>
           </div>
           <div className={classes.footer}>
