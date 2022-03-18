@@ -36,7 +36,7 @@ function HomeView(props: Props) {
       }}
     >
       <Box height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box" overflow="hidden">
-        <StudyTreeView />
+        <StudyTreeView study={study} parents={parents} childrenTree={childrenTree} />
       </Box>
       <Box height="100%" display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box" overflow="hidden">
         <InformationView study={study} />

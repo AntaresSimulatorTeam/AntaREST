@@ -1,11 +1,13 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
 import { alpha, styled } from '@mui/material/styles';
 import TreeView from '@mui/lab/TreeView';
 import TreeItem, { TreeItemProps, treeItemClasses } from '@mui/lab/TreeItem';
 import Collapse from '@mui/material/Collapse';
 import { TransitionProps } from '@mui/material/transitions';
+import { StudyMetadata, VariantTree } from '../../../../common/types';
+import { StudyTree, getTreeNodes } from './utils';
 
 function Circle(props: SvgIconProps & { circleColor: string }) {
   const { circleColor } = props;
@@ -23,9 +25,10 @@ function Circle(props: SvgIconProps & { circleColor: string }) {
   );
 }
 
-const StyledTreeItem = styled((props: TreeItemProps) => (
-  <TreeItem {...props} />
-))(({ theme }) => ({
+const StyledTreeItem = styled((props: TreeItemProps & { lineColor: string }) => {
+  const { lineColor, ...other } = props;
+  return <TreeItem {...other} />;
+})(({ theme, lineColor }) => ({
   [`& .${treeItemClasses.iconContainer}`]: {
     '& .close': {
       opacity: 0.9,
@@ -34,34 +37,147 @@ const StyledTreeItem = styled((props: TreeItemProps) => (
   [`& .${treeItemClasses.group}`]: {
     marginLeft: 15,
     paddingLeft: 18,
-    borderLeft: '3px solid #8e4699',
+    borderLeft: `3px solid ${lineColor}`,
   },
 }));
 
-export default function CustomizedTreeView() {
+const fakeTree : StudyTree = {
+  name: 'Root',
+  attributes: {
+    id: 'root',
+    modificationDate: Date.now().toString(),
+  },
+  children: [
+    {
+      name: 'Node 1',
+      attributes: {
+        id: 'node1',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+        {
+          name: 'Node 1.1',
+          attributes: {
+            id: 'node1.1',
+            modificationDate: Date.now().toString(),
+          },
+          children: [
+            {
+              name: 'Node 1.1.1',
+              attributes: {
+                id: 'node1.1.1',
+                modificationDate: Date.now().toString(),
+              },
+              children: [
+
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Node 2',
+      attributes: {
+        id: 'node2',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+
+      ],
+    },
+    {
+      name: 'Node 3',
+      attributes: {
+        id: 'node3',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+
+      ],
+    },
+    {
+      name: 'Node 4',
+      attributes: {
+        id: 'node4',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+        {
+          name: 'Node 4.1',
+          attributes: {
+            id: 'node4.1',
+            modificationDate: Date.now().toString(),
+          },
+          children: [
+
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+interface Props {
+  study: StudyMetadata | undefined;
+  parents: Array<StudyMetadata>;
+  childrenTree: VariantTree | undefined;
+}
+
+export default function CustomizedTreeView(props: Props) {
+  const { study, parents, childrenTree } = props;
+  const [studyTree, setStudyTree] = useState<StudyTree>(fakeTree);
+  let currentColorIndex = 0;
+
+  const colors = [
+    '#00B2FF',//'#A5B6C7',
+    '#F56637',
+    '#335622',
+    '#56B667',
+    '#793467',
+    '#039944',
+    '#297887',
+    '#77A688',
+    '#227878',
+    '#676045',
+  ];
+
+  const renderTree = (tree: StudyTree) : React.ReactNode => {
+    const colorIndex = currentColorIndex;
+    //currentColorIndex += 1;
+    return (
+      <StyledTreeItem
+        key={tree.attributes.id}
+        nodeId={tree.attributes.id}
+        label={tree.name}
+        lineColor={colors[colorIndex]}
+        expandIcon={<Circle circleColor={colors[colorIndex]} />}
+        collapseIcon={<Circle circleColor={colors[colorIndex]} />}
+        endIcon={<Circle circleColor={colors[colorIndex]} />}
+      >
+        {tree.children.length > 0 && tree.children.map((elm) => renderTree(elm))}
+      </StyledTreeItem>
+    );
+  };
+
+  useEffect(() => {
+    const buildStudyTree = async () => {
+      if (study && childrenTree) {
+        const tmp = await getTreeNodes(study, parents, childrenTree);
+        //setStudyTree(tmp);
+      }
+    };
+
+    buildStudyTree();
+  }, [study, parents, childrenTree]);
+
   return (
     <TreeView
       aria-label="customized"
       defaultExpanded={['1']}
-      defaultCollapseIcon={<Circle circleColor="#8e4699" />}
-      defaultExpandIcon={<Circle circleColor="#0cf07a" />}
-      defaultEndIcon={<Circle circleColor="#5d69ba" />}
       sx={{ width: '100%', flexGrow: 1, overflowY: 'auto' }}
     >
-      <StyledTreeItem nodeId="1" label="Main">
-        <StyledTreeItem nodeId="2" label="Hello" />
-        <StyledTreeItem nodeId="3" label="Subtree with children">
-          <StyledTreeItem nodeId="6" label="Hello" />
-          <StyledTreeItem nodeId="7" label="Sub-subtree with children">
-            <StyledTreeItem nodeId="9" label="Child 1" />
-            <StyledTreeItem nodeId="10" label="Child 2" />
-            <StyledTreeItem nodeId="11" label="Child 3" />
-          </StyledTreeItem>
-          <StyledTreeItem nodeId="8" label="Hello" />
-        </StyledTreeItem>
-        <StyledTreeItem nodeId="4" label="World" />
-        <StyledTreeItem nodeId="5" label="Something something" />
-      </StyledTreeItem>
+      {studyTree && renderTree(studyTree)}
     </TreeView>
   );
 }
