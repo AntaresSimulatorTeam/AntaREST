@@ -445,6 +445,28 @@ def create_study_routes(
         return study_metadata
 
     @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/variables",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data variables",
+    )
+    def output_variables_information(
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Fetching whole output of the simulation {output_id} for study {study_id}"
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.output_variables_information(
+            study_uuid=study_id,
+            output_uuid=output_id,
+            params=params,
+        )
+
+    @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
         tags=[APITag.study_outputs],
         summary="Get outputs data",

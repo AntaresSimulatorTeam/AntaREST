@@ -841,6 +841,23 @@ class StudyService:
             file=export_file_download.to_dto(), task=task_id
         )
 
+    def output_variables_information(
+        self,
+        study_uuid: str,
+        output_uuid: str,
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Returns information about output variables using thematic and geographic trimming information
+        Args:
+            study_uuid: study id
+            output_uuid: output id
+            params: request parameters
+        """
+        study = self.get_study(study_uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+
     def export_output(
         self,
         study_uuid: str,

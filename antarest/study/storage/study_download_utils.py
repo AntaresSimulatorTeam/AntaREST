@@ -446,3 +446,13 @@ class StudyDownloader:
                         info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
                         info.size = file_size
                         output_data.addfile(tarinfo=info, fileobj=data_file)
+
+
+def get_output_variables_information(study: FileStudy, output_name: str):
+    params = study.tree.get(
+        ["output", output_name, "about-the-study", "parameters"]
+    )
+    if "variables selection" in params:
+        params["variables selection"]
+        "selected_vars_reset"
+        "selected_var"
