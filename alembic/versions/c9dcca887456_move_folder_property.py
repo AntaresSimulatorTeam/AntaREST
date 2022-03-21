@@ -39,9 +39,9 @@ def downgrade():
 
     # data migration
     connexion: Connection = op.get_bind()
-    raw_studies = connexion.execute("SELECT study.id,study.folder FROM study JOIN raw_study ON study.id = raw_study.id")
+    raw_studies = connexion.execute("SELECT study.id,study.folder FROM study JOIN rawstudy ON study.id = rawstudy.id")
     for raw_study in raw_studies:
-        connexion.execute(text(f"UPDATE raw_study SET folder= :folder WHERE id='{raw_study[0]}'"),
+        connexion.execute(text(f"UPDATE rawstudy SET folder= :folder WHERE id='{raw_study[0]}'"),
                           folder=raw_study[1])
     # end of data migration
 
