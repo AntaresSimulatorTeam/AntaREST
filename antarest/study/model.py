@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
@@ -277,10 +277,42 @@ class MatrixIndex(BaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
+class TimeSerie(BaseModel):
+    name: str
+    unit: str
+    data: List[Optional[float]] = list()
+
+
+class TimeSeriesData(BaseModel):
+    type: StudyDownloadType
+    name: str
+    data: Dict[str, List[TimeSerie]] = dict()
+
+
+class MatrixAggregationResultDTO(BaseModel):
+    index: MatrixIndex
+    data: List[TimeSeriesData]
+    warnings: List[str]
+
+
 class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
-    data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
+    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
     warnings: List[str]
+
+    def to_dto(self) -> MatrixAggregationResultDTO:
+        return MatrixAggregationResultDTO(
+            index=self.index,
+            data=[
+                TimeSeriesData(
+                    type=key_type,
+                    name=key_name,
+                    data=self.data[(key_type, key_name)],
+                )
+                for key_type, key_name in self.data
+            ],
+            warnings=self.warnings,
+        )
 
 
 class ReferenceStudy(BaseModel):

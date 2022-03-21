@@ -43,6 +43,9 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
     OwnerInfo,
+    MatrixAggregationResultDTO,
+    TimeSerie,
+    TimeSeriesData,
 )
 from tests.storage.conftest import SimpleFileTransferManager
 
@@ -514,9 +517,23 @@ def test_validate() -> None:
 def test_output_download(tmp_path: Path) -> None:
     mock_service = Mock()
 
-    output_data = MatrixAggregationResult(
+    output_data = MatrixAggregationResultDTO(
         index=MatrixIndex(),
-        data={"td3_37_de-38_pl": {"1": {"H. VAL|Euro/MWh": [0.5, 0.6, 0.7]}}},
+        data=[
+            TimeSeriesData(
+                name="td3_37_de^38_pl",
+                type=StudyDownloadType.LINK,
+                data={
+                    "1": [
+                        TimeSerie(
+                            name="H. VAL",
+                            unit="Euro/MWh",
+                            data=[0.5, 0.6, 0.7],
+                        )
+                    ]
+                },
+            )
+        ],
         warnings=[],
     )
     mock_service.download_outputs.return_value = output_data

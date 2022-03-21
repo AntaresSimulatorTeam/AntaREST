@@ -15,6 +15,8 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyDownloadType,
     ExportFormat,
+    MatrixAggregationResultDTO,
+    TimeSerie,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -41,7 +43,7 @@ class StudyDownloader:
     def read_columns(
         matrix: MatrixAggregationResult,
         year: int,
-        area_name: str,
+        target: Tuple[StudyDownloadType, str],
         study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
@@ -62,32 +64,36 @@ class StudyDownloader:
                     ):
                         continue
 
-                    if area_name not in matrix.data:
-                        matrix.data[area_name] = dict()
+                    if target not in matrix.data:
+                        matrix.data[target] = dict()
 
                     year_str = str(year)
-                    if year_str not in matrix.data[area_name]:
-                        matrix.data[area_name][year_str] = dict()
+                    if year_str not in matrix.data[target]:
+                        matrix.data[target][year_str] = []
 
-                    matrix.data[area_name][year_str][column_name] = [
-                        row[index] for row in rows
-                    ]
+                    matrix.data[target][year_str].append(
+                        TimeSerie(
+                            name=column_name,
+                            unit=column[1] if len(column) > 1 else "",
+                            data=[row[index] for row in rows],
+                        )
+                    )
                 else:
                     logger.warning(
                         f"Found an output column with no elements at {url}"
                     )
 
         except (ChildNotFoundError, FilterError) as e:
-            matrix.warnings.append(f"{area_name} has no child")
+            matrix.warnings.append(f"{target} has no child")
             logger.warning(
-                f"Failed to retrieve matrix data for {area_name}", exc_info=e
+                f"Failed to retrieve matrix data for {target}", exc_info=e
             )
 
     @staticmethod
     def level_output_filter(
         matrix: MatrixAggregationResult,
         year: int,
-        area_name: str,
+        target: Tuple[StudyDownloadType, str],
         study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
@@ -99,19 +105,18 @@ class StudyDownloader:
 
         files_matcher = (
             [f"values-{data.level.value}", cluster_details]
-            if data.includeClusters
+            if data.includeClusters and target[0] != StudyDownloadType.LINK
             else [f"values-{data.level.value}"]
         )
         for elm in files_matcher:
             tmp_url = f"{url}/{elm}"
             StudyDownloader.read_columns(
-                matrix, year, area_name, study, tmp_url, data
+                matrix, year, target, study, tmp_url, data
             )
 
     @staticmethod
     def apply_type_filters(
         matrix: MatrixAggregationResult,
-        prefix: str,
         year: int,
         type_elm: Any,
         elm: str,
@@ -133,14 +138,14 @@ class StudyDownloader:
                             StudyDownloader.level_output_filter(
                                 matrix,
                                 year,
-                                f"{elm}^{out_link}",
+                                (data.type, f"{elm}^{out_link}"),
                                 study,
                                 link_url,
                                 data,
                             )
             else:
                 StudyDownloader.level_output_filter(
-                    matrix, year, elm, study, url, data
+                    matrix, year, (data.type, elm), study, url, data
                 )
 
     @staticmethod
@@ -156,7 +161,6 @@ class StudyDownloader:
     @staticmethod
     def select_filter(
         matrix: MatrixAggregationResult,
-        prefix: str,
         year: int,
         type_elm: Any,
         study: FileStudyTree,
@@ -179,7 +183,6 @@ class StudyDownloader:
                         flt_1, flt_2 = tuple(tmp_filters[:2])
                         StudyDownloader.apply_type_filters(
                             matrix,
-                            prefix,
                             year,
                             type_elm,
                             elm,
@@ -192,7 +195,6 @@ class StudyDownloader:
                     else:
                         StudyDownloader.apply_type_filters(
                             matrix,
-                            prefix,
                             year,
                             type_elm,
                             elm,
@@ -232,7 +234,6 @@ class StudyDownloader:
 
                 StudyDownloader.apply_type_filters(
                     matrix,
-                    prefix,
                     year,
                     type_elm,
                     elm,
@@ -246,7 +247,6 @@ class StudyDownloader:
     @staticmethod
     def type_output_filter(
         matrix: MatrixAggregationResult,
-        prefix: str,
         year: int,
         config: FileStudyTreeConfig,
         study: FileStudyTree,
@@ -255,12 +255,11 @@ class StudyDownloader:
     ) -> None:
         if data.type == StudyDownloadType.AREA:
             StudyDownloader.select_filter(
-                matrix, prefix, year, config.areas, study, f"{url}/areas", data
+                matrix, year, config.areas, study, f"{url}/areas", data
             )
         elif data.type == StudyDownloadType.DISTRICT:
             StudyDownloader.select_filter(
                 matrix,
-                prefix,
                 year,
                 {k: v for k, v in config.sets.items() if v.output},
                 study,
@@ -269,7 +268,7 @@ class StudyDownloader:
             )
         else:
             StudyDownloader.select_filter(
-                matrix, prefix, year, config.areas, study, f"{url}/links", data
+                matrix, year, config.areas, study, f"{url}/links", data
             )
 
     @staticmethod
@@ -286,7 +285,7 @@ class StudyDownloader:
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
                 StudyDownloader.type_output_filter(
-                    matrix, prefix, year, config, study, tmp_url, data
+                    matrix, year, config, study, tmp_url, data
                 )
         else:
             years = config.outputs[output_id].nbyears
@@ -294,7 +293,7 @@ class StudyDownloader:
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
                 StudyDownloader.type_output_filter(
-                    matrix, prefix, year, config, study, tmp_url, data
+                    matrix, year, config, study, tmp_url, data
                 )
 
     @staticmethod
@@ -302,7 +301,7 @@ class StudyDownloader:
         file_study: FileStudy,
         output_id: str,
         data: StudyDownloadDTO,
-    ) -> MatrixAggregationResult:
+    ) -> MatrixAggregationResultDTO:
         """
         Download outputs
         Args:
@@ -335,7 +334,6 @@ class StudyDownloader:
                     url += "/mc-all"
                     StudyDownloader.type_output_filter(
                         matrix,
-                        "",
                         0,
                         file_study.config,
                         file_study.tree,
@@ -352,24 +350,26 @@ class StudyDownloader:
                         url,
                         data,
                     )
-        return matrix
+        return matrix.to_dto()
 
     @staticmethod
     def export_infos(
-        data: Dict[str, Dict[str, List[Optional[float]]]]
+        data: Dict[str, List[TimeSerie]]
     ) -> Tuple[int, List[str]]:
         years = list(data.keys())
         if len(years) > 0:
-            columns: List[str] = list(data[years[0]].keys())
+            columns: List[str] = list(
+                map(lambda x: f"{x.name}", data[years[0]])
+            )
             if len(columns) > 0:
-                return len(data[years[0]][columns[0]]), (
+                return len(data[years[0]][0].data), (
                     ["Time", "Version"] + columns
                 )
         return -1, []
 
     @staticmethod
     def export(
-        matrix: MatrixAggregationResult,
+        matrix: MatrixAggregationResultDTO,
         filetype: ExportFormat,
         target_file: Path,
     ) -> None:
@@ -381,29 +381,29 @@ class StudyDownloader:
         ) as output_data:
 
             # 2 - Create CSV files
-            for area_name in matrix.data.keys():
+            for ts_data in matrix.data:
                 output = StringIO()
                 writer = csv.writer(output, quoting=csv.QUOTE_NONE)
                 nb_rows, csv_titles = StudyDownloader.export_infos(
-                    matrix.data[area_name]
+                    ts_data.data
                 )
                 if nb_rows == -1:
                     raise Exception(
-                        f"Outputs export:  No rows for  {area_name} csv"
+                        f"Outputs export:  No rows for  {ts_data.name} csv"
                     )
                 writer.writerow(csv_titles)
                 row_date = datetime.strptime(
                     matrix.index.start_date, "%Y-%m-%d %H:%M:%S"
                 )
-                for year in matrix.data[area_name].keys():
+                for year in ts_data.data:
                     for i in range(0, nb_rows):
-                        columns = matrix.data[area_name][year]
+                        columns = ts_data.data[year]
                         csv_row: List[Optional[Union[int, float, str]]] = [
                             str(row_date),
                             int(year),
                         ]
                         csv_row.extend(
-                            [columns[name][i] for name in columns.keys()]
+                            [column_data.data[i] for column_data in columns]
                         )
                         writer.writerow(csv_row)
                         if (
@@ -418,12 +418,12 @@ class StudyDownloader:
 
                 bytes_data = str.encode(output.getvalue(), "utf-8")
                 if isinstance(output_data, ZipFile):
-                    output_data.writestr(f"{area_name}.csv", bytes_data)
+                    output_data.writestr(f"{ts_data.name}.csv", bytes_data)
                 else:
                     data_file = BytesIO(bytes_data)
                     data_file.seek(0, os.SEEK_END)
                     file_size = data_file.tell()
                     data_file.seek(0)
-                    info = tarfile.TarInfo(name=f"{area_name}.csv")
+                    info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
                     info.size = file_size
                     output_data.addfile(tarinfo=info, fileobj=data_file)

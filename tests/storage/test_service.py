@@ -36,6 +36,9 @@ from antarest.study.model import (
     OwnerInfo,
     StudyDownloadLevelDTO,
     ExportFormat,
+    MatrixAggregationResultDTO,
+    TimeSerie,
+    TimeSeriesData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
@@ -511,7 +514,11 @@ def test_download_output() -> None:
     )
     service = build_study_service(study_service, repository, config)
 
-    res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
+    res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
+    res_study_details = {
+        "columns": [["some cluster", "Euro/MWh"]],
+        "data": [[0.8]],
+    }
     study_service.get_raw.return_value = FileStudy(
         config=file_config, tree=study
     )
@@ -526,27 +533,39 @@ def test_download_output() -> None:
     study.get.side_effect = [
         output_config,
         res_study,
+        res_study_details,
+        output_config,
+        res_study,
+        res_study_details,
+        output_config,
         res_study,
         output_config,
         res_study,
-        res_study,
-        output_config,
-        res_study,
-        res_study,
-        output_config,
-        res_study,
-        res_study,
+        res_study_details,
     ]
 
     # AREA TYPE
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="east",
+                type=StudyDownloadType.AREA,
+                data={
+                    1: [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
+                        TimeSerie(
+                            name="some cluster", unit="Euro/MWh", data=[0.8]
+                        ),
+                    ]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -557,7 +576,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -592,14 +611,22 @@ def test_download_output() -> None:
     # LINK TYPE
     input_data.type = StudyDownloadType.LINK
     input_data.filter = ["east>west"]
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="east^west",
+                type=StudyDownloadType.LINK,
+                data={
+                    1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -610,20 +637,33 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
     input_data.filter = []
     input_data.filterIn = "n"
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="north",
+                type=StudyDownloadType.DISTRICT,
+                data={
+                    1: [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
+                        TimeSerie(
+                            name="some cluster", unit="Euro/MWh", data=[0.8]
+                        ),
+                    ]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -634,7 +674,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
 
 @pytest.mark.unit_test
