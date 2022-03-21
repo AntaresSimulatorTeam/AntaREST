@@ -43,7 +43,7 @@ class AdequacyPatchExtension(ILauncherExtension):
             study_config,
             study_tree,
         ) = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            study_export_path, study_id
+            study_export_path, study_id, use_cache=False
         )
         user_config = study_tree.get(["user"])
         assert_this("flowbased" in user_config or "Flowbased" in user_config)
