@@ -36,7 +36,9 @@ def test_output_downloads_export(tmp_path: Path):
                     ],
                     "2": [
                         TimeSerie(name="A", unit="", data=[10, 11, 12, 13]),
-                        TimeSerie(name="B", unit="", data=[14, None, None, 15]),
+                        TimeSerie(
+                            name="B", unit="", data=[14, None, None, 15]
+                        ),
                     ],
                 },
             ),
