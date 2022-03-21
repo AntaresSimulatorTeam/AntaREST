@@ -19,6 +19,7 @@ from antarest.study.model import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
+    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
@@ -87,8 +88,12 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
 
+        cluster_details = [f"details-{data.level.value}"]
+        if study.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+            cluster_details += [f"details-res-{data.level.value}"]
+
         files_matcher = (
-            [f"values-{data.level.value}", f"details-{data.level.value}"]
+            [f"values-{data.level.value}", cluster_details]
             if data.includeClusters
             else [f"values-{data.level.value}"]
         )
