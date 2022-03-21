@@ -13,36 +13,50 @@ from antarest.study.model import (
     MatrixIndex,
     StudyDownloadLevelDTO,
     ExportFormat,
+    TimeSeriesData,
+    StudyDownloadType,
+    TimeSerie,
+    MatrixAggregationResultDTO,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_start_date
 
 
 def test_output_downloads_export(tmp_path: Path):
-    matrix = MatrixAggregationResult(
+    matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(start_date="2000-01-01 00:00:00"),
-        data={
-            "a1": {
-                "1": {
-                    "A": [1, 2, 3, 4],
-                    "B": [5, 6, 7, 8],
+        data=[
+            TimeSeriesData(
+                name="a1",
+                type=StudyDownloadType.AREA,
+                data={
+                    "1": [
+                        TimeSerie(name="A", unit="", data=[1, 2, 3, 4]),
+                        TimeSerie(name="B", unit="", data=[5, 6, 7, 8]),
+                    ],
+                    "2": [
+                        TimeSerie(name="A", unit="", data=[10, 11, 12, 13]),
+                        TimeSerie(
+                            name="B", unit="", data=[14, None, None, 15]
+                        ),
+                    ],
                 },
-                "2": {
-                    "A": [10, 11, 12, 13],
-                    "B": [14, None, None, 15],
+            ),
+            TimeSeriesData(
+                name="a2",
+                type=StudyDownloadType.AREA,
+                data={
+                    "1": [
+                        TimeSerie(name="A", unit="", data=[16, 17, 18, 19]),
+                        TimeSerie(name="B", unit="", data=[20, 21, 22, 23]),
+                    ],
+                    "2": [
+                        TimeSerie(name="A", unit="", data=[24, None, 25, 26]),
+                        TimeSerie(name="B", unit="", data=[27, 28, 29, 30]),
+                    ],
                 },
-            },
-            "a2": {
-                "1": {
-                    "A": [16, 17, 18, 19],
-                    "B": [20, 21, 22, 23],
-                },
-                "2": {
-                    "A": [24, None, 25, 26],
-                    "B": [27, 28, 29, 30],
-                },
-            },
-        },
+            ),
+        ],
         warnings=[],
     )
     zip_file = tmp_path / "output.zip"
