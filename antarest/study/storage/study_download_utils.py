@@ -53,24 +53,29 @@ class StudyDownloader:
             rows = elm["data"]
 
             for index, column in enumerate(columns):
-                column_name = "|".join([c for c in column if c.strip()])
-                if (
-                    data.columns
-                    and len(data.columns) > 0
-                    and not (column_name in data.columns)
-                ):
-                    continue
+                if len(column) > 0:
+                    column_name = column[0]
+                    if (
+                        data.columns
+                        and len(data.columns) > 0
+                        and not (column_name in data.columns)
+                    ):
+                        continue
 
-                if area_name not in matrix.data:
-                    matrix.data[area_name] = dict()
+                    if area_name not in matrix.data:
+                        matrix.data[area_name] = dict()
 
-                year_str = str(year)
-                if year_str not in matrix.data[area_name]:
-                    matrix.data[area_name][year_str] = dict()
+                    year_str = str(year)
+                    if year_str not in matrix.data[area_name]:
+                        matrix.data[area_name][year_str] = dict()
 
-                matrix.data[area_name][year_str][column_name] = [
-                    row[index] for row in rows
-                ]
+                    matrix.data[area_name][year_str][column_name] = [
+                        row[index] for row in rows
+                    ]
+                else:
+                    logger.warning(
+                        f"Found an output column with no elements at {url}"
+                    )
 
         except (ChildNotFoundError, FilterError) as e:
             matrix.warnings.append(f"{area_name} has no child")
