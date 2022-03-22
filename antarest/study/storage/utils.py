@@ -33,6 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
 
@@ -224,19 +225,7 @@ def get_start_date(
         level: granularity of the steps
 
     """
-    config = (
-        file_study.tree.get(
-            [
-                "output",
-                output_id,
-                "about-the-study",
-                "parameters",
-                "general",
-            ]
-        )
-        if output_id is not None
-        else file_study.tree.get(["settings", "generaldata", "general"])
-    )
+    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
     starting_month = cast(str, config.get("first-month-in-year"))
     starting_day = cast(str, config.get("january.1st"))
     leapyear = cast(bool, config.get("leapyear"))
