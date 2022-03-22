@@ -1009,13 +1009,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return None
 
     def get_raw(
-        self, metadata: VariantStudy, use_cache: bool = True
+        self,
+        metadata: VariantStudy,
+        use_cache: bool = True,
+        output_dir: Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
             use_cache: use cache
+            output_dir: optional output dir override
         Returns: the config and study tree object
         """
         self._safe_generation(metadata)
@@ -1024,7 +1028,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study_config, study_tree = self.study_factory.create_from_fs(
             study_path,
             metadata.id,
-            Path(metadata.path) / "output",
+            output_dir or Path(metadata.path) / "output",
             use_cache=use_cache,
         )
         return FileStudy(config=study_config, tree=study_tree)

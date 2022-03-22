@@ -19,3 +19,13 @@ class ILauncherExtension(ABC):
         ext_opts: Any,
     ) -> None:
         pass
+
+    @abstractmethod
+    def before_import_hook(
+        self,
+        job_id: str,
+        study_id: str,
+        study_output_path: Path,
+        ext_opts: Any,
+    ) -> None:
+        pass

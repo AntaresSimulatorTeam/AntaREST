@@ -60,3 +60,9 @@ def prepare_batch_study(
     shutil.move(str(raw_study_path), str(workspace / sub_job_id))
     sub_jobs.append(sub_job_id)
     return sub_jobs
+
+
+def merge_outputs(
+    job_ids: List[str], outputs_dir: Path, output_target_dir: Path
+) -> None:
+    pass

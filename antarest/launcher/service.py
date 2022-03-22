@@ -112,14 +112,14 @@ class LauncherService:
 
     def _init_extensions(self) -> Dict[str, ILauncherExtension]:
         adequacy_patch_ext = AdequacyPatchExtension(
-            self.study_service.storage_service
+            self.study_service, self.config
         )
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def after_export_flat_hooks(
+    def _after_export_flat_hooks(
         self,
         job_id: str,
         study_id: str,
@@ -138,6 +138,28 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_exported_path,
+                    launcher_opts.get(ext),
+                )
+
+    def _before_import_hooks(
+        self,
+        job_id: str,
+        study_id: str,
+        study_output_path: Path,
+        launcher_opts: Optional[JSON],
+    ) -> None:
+        for ext in self.extensions:
+            if (
+                launcher_opts is not None
+                and launcher_opts.get(ext, None) is not None
+            ):
+                logger.info(
+                    f"Applying extension {ext} before_import_hook on job {job_id}"
+                )
+                self.extensions[ext].before_import_hook(
+                    job_id,
+                    study_id,
+                    study_output_path,
                     launcher_opts.get(ext),
                 )
 
@@ -446,7 +468,7 @@ class LauncherService:
                 outputs=False,
             )
             self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-            self.after_export_flat_hooks(
+            self._after_export_flat_hooks(
                 job_id, study_id, target_path, launcher_params
             )
 
@@ -487,6 +509,10 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
+                # todo find output_path true root
+                self._before_import_hooks(
+                    job_id, job_result.study_id, output_path, None
+                )
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
