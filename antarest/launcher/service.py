@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -251,6 +252,9 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
+            launcher_params=json.dumps(launcher_parameters)
+            if launcher_parameters
+            else None,
         )
         self.job_result_repository.save(job_status)
 
@@ -511,7 +515,12 @@ class LauncherService:
             if job_result:
                 # todo find output_path true root
                 self._before_import_hooks(
-                    job_id, job_result.study_id, output_path, None
+                    job_id,
+                    job_result.study_id,
+                    output_path,
+                    json.loads(job_result.launcher_params)
+                    if job_result.launcher_params
+                    else None,
                 )
                 try:
                     return self.study_service.import_output(
