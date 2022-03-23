@@ -20,6 +20,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.utils import assert_this
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -107,6 +108,12 @@ def fix_study_root(study_path: Path) -> None:
         for item in os.listdir(root_path):
             shutil.move(str(root_path / item), str(study_path))
         shutil.rmtree(sub_root_path)
+
+
+def find_single_output_path(all_output_path: Path) -> Path:
+    children = os.listdir(all_output_path)
+    assert_this(len(children) == 1)
+    return all_output_path / children[0]
 
 
 def extract_output_name(path_output: Path) -> str:

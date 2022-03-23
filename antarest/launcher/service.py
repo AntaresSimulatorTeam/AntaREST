@@ -108,6 +108,7 @@ class LauncherService:
                 import_output=self._import_output,
             ),
             event_bus,
+            study_service.storage_service.raw_study_service.study_factory,
         )
         self.extensions = self._init_extensions()
 
@@ -480,7 +481,10 @@ class LauncherService:
         return self.config.storage.tmp_dir / f"output_{job_id}"
 
     def _import_fallback_output(
-        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+        self,
+        job_id: str,
+        output_path: Path,
+        additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(
             f"Trying to import output in fallback tmp space for job {job_id}"
@@ -495,10 +499,14 @@ class LauncherService:
             output_name = extract_output_name(imported_output)
             imported_output.rename(Path(job_output_path, output_name))
             if additional_logs:
-                for log_name, log_path in additional_logs.items():
-                    shutil.copyfile(
-                        log_path, Path(job_output_path, output_name) / log_name
-                    )
+                for log_name, log_paths in additional_logs.items():
+                    with open(
+                        Path(job_output_path, output_name) / log_name, "w"
+                    ) as fh:
+                        for log_path in log_paths:
+                            with open(log_path, "r") as infile:
+                                for line in infile:
+                                    fh.write(line)
         except Exception as e:
             logger.error(
                 "Failed to import output in fallback mode", exc_info=e
@@ -507,7 +515,10 @@ class LauncherService:
         return output_name
 
     def _import_output(
-        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+        self,
+        job_id: str,
+        output_path: Path,
+        additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(f"Importing output for job {job_id}")
         with db():

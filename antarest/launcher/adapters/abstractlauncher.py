@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional, Dict
+from typing import Callable, NamedTuple, Optional, Dict, List
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import (
@@ -28,7 +28,7 @@ class LauncherCallbacks(NamedTuple):
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
     # args: job_id, output_path, additional_logs
-    import_output: Callable[[str, Path, Dict[str, Path]], Optional[str]]
+    import_output: Callable[[str, Path, Dict[str, List[Path]]], Optional[str]]
 
 
 class AbstractLauncher(ABC):

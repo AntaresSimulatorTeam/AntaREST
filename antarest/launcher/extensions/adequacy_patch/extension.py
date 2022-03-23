@@ -103,7 +103,7 @@ class AdequacyPatchExtension(ILauncherExtension):
         with FileLock(self.tmp_dir / "data.lock"):
             with db():
                 key = "ADEQUACY_PATCH_DATA"
-                data = json.loads(self.config_data_repo.get(key, 0) or "{}")
+                data = self.config_data_repo.get_json(key) or {}
                 data[job_id] = original_area_status
                 self.config_data_repo.save(
                     ConfigData(owner=0, key=key, value=json.dumps(data))
@@ -120,7 +120,7 @@ class AdequacyPatchExtension(ILauncherExtension):
         with FileLock(self.tmp_dir / "data.lock"):
             with db():
                 key = "ADEQUACY_PATCH_DATA"
-                data = json.loads(self.config_data_repo.get(key, 0) or "{}")
+                data = self.config_data_repo.get_json(key) or {}
                 original_area_status = data.get(job_id, {})
                 if job_id in data:
                     del data[job_id]
