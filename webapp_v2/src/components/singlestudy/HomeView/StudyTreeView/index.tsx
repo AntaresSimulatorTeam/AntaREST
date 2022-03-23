@@ -1,43 +1,25 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useEffect, useState } from 'react';
-import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
-import { alpha, styled } from '@mui/material/styles';
-import TreeView from '@mui/lab/TreeView';
-import TreeItem, { TreeItemProps, treeItemClasses } from '@mui/lab/TreeItem';
-import Collapse from '@mui/material/Collapse';
-import { TransitionProps } from '@mui/material/transitions';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, styled } from '@mui/material';
 import { StudyMetadata, VariantTree } from '../../../../common/types';
 import { StudyTree, getTreeNodes } from './utils';
 
-function Circle(props: SvgIconProps & { circleColor: string }) {
-  const { circleColor } = props;
-  return (
-    <SvgIcon
-      className="close"
-      fontSize="inherit"
-      style={{ width: 14, height: 14, color: circleColor }}
-      {...props}
-    >
-      {/* tslint:disable-next-line: max-line-length */}
-      {/* <path d="M17.485 17.512q-.281.281-.682.281t-.696-.268l-4.12-4.147-4.12 4.147q-.294.268-.696.268t-.682-.281-.281-.682.294-.669l4.12-4.147-4.12-4.147q-.294-.268-.294-.669t.281-.682.682-.281.696 .268l4.12 4.147 4.12-4.147q.294-.268.696-.268t.682.281 .281.669-.294.682l-4.12 4.147 4.12 4.147q.294.268 .294.669t-.281.682zM22.047 22.074v0 0-20.147 0h-20.12v0 20.147 0h20.12zM22.047 24h-20.12q-.803 0-1.365-.562t-.562-1.365v-20.147q0-.776.562-1.351t1.365-.575h20.147q.776 0 1.351.575t.575 1.351v20.147q0 .803-.575 1.365t-1.378.562v0z" /> */}
-      <circle cx="12" cy="12" r="12" />
-    </SvgIcon>
-  );
-}
-
-const StyledTreeItem = styled((props: TreeItemProps & { lineColor: string }) => {
-  const { lineColor, ...other } = props;
-  return <TreeItem {...other} />;
-})(({ theme, lineColor }) => ({
-  [`& .${treeItemClasses.iconContainer}`]: {
-    '& .close': {
-      opacity: 0.9,
-    },
+export const Circle = styled(
+  'circle',
+  { shouldForwardProp: (prop) => prop !== 'hoverColor' },
+)<{hoverColor: string }>(({ theme, hoverColor }) => ({
+  cursor: 'pointer',
+  '&:hover': {
+    fill: hoverColor,
   },
-  [`& .${treeItemClasses.group}`]: {
-    marginLeft: 15,
-    paddingLeft: 18,
-    borderLeft: `3px solid ${lineColor}`,
+}));
+export const Rect = styled(
+  'rect',
+  { shouldForwardProp: (prop) => prop !== 'hoverColor' },
+)<{hoverColor: string }>(({ theme, hoverColor }) => ({
+  cursor: 'pointer',
+  '&:hover': {
+    fill: hoverColor,
   },
 }));
 
@@ -47,12 +29,20 @@ const fakeTree : StudyTree = {
     id: 'root',
     modificationDate: Date.now().toString(),
   },
+  drawOptions: {
+    height: 4,
+    nbAllChildrens: 7,
+  },
   children: [
     {
       name: 'Node 1',
       attributes: {
         id: 'node1',
         modificationDate: Date.now().toString(),
+      },
+      drawOptions: {
+        height: 3,
+        nbAllChildrens: 2,
       },
       children: [
         {
@@ -61,12 +51,20 @@ const fakeTree : StudyTree = {
             id: 'node1.1',
             modificationDate: Date.now().toString(),
           },
+          drawOptions: {
+            height: 2,
+            nbAllChildrens: 1,
+          },
           children: [
             {
               name: 'Node 1.1.1',
               attributes: {
                 id: 'node1.1.1',
                 modificationDate: Date.now().toString(),
+              },
+              drawOptions: {
+                height: 1,
+                nbAllChildrens: 0,
               },
               children: [
 
@@ -82,6 +80,10 @@ const fakeTree : StudyTree = {
         id: 'node2',
         modificationDate: Date.now().toString(),
       },
+      drawOptions: {
+        height: 1,
+        nbAllChildrens: 0,
+      },
       children: [
 
       ],
@@ -91,6 +93,10 @@ const fakeTree : StudyTree = {
       attributes: {
         id: 'node3',
         modificationDate: Date.now().toString(),
+      },
+      drawOptions: {
+        height: 1,
+        nbAllChildrens: 0,
       },
       children: [
 
@@ -102,12 +108,20 @@ const fakeTree : StudyTree = {
         id: 'node4',
         modificationDate: Date.now().toString(),
       },
+      drawOptions: {
+        height: 2,
+        nbAllChildrens: 1,
+      },
       children: [
         {
           name: 'Node 4.1',
           attributes: {
             id: 'node4.1',
             modificationDate: Date.now().toString(),
+          },
+          drawOptions: {
+            height: 1,
+            nbAllChildrens: 0,
           },
           children: [
 
@@ -122,15 +136,15 @@ interface Props {
   study: StudyMetadata | undefined;
   parents: Array<StudyMetadata>;
   childrenTree: VariantTree | undefined;
+  onClick: (studyId: string) => void;
 }
 
 export default function CustomizedTreeView(props: Props) {
-  const { study, parents, childrenTree } = props;
+  const { study, parents, childrenTree, onClick } = props;
   const [studyTree, setStudyTree] = useState<StudyTree>(fakeTree);
-  let currentColorIndex = 0;
 
   const colors = [
-    '#00B2FF',//'#A5B6C7',
+    '#00B2FF', // '#A5B6C7',
     '#F56637',
     '#335622',
     '#56B667',
@@ -142,21 +156,73 @@ export default function CustomizedTreeView(props: Props) {
     '#676045',
   ];
 
+  const TILE_SIZE = 100;
+  const TILE_SIZE_2 = TILE_SIZE / 2;
+  const CIRCLE_RADIUS = 25;
+  const DCX = TILE_SIZE / 2;
+  const DCY = TILE_SIZE - CIRCLE_RADIUS;
+  const STROKE_WIDTH = 10;
+  const STROKE_WIDTH_2 = STROKE_WIDTH / 2;
+  const treeWidth = useMemo(() => {
+    const { drawOptions } = studyTree;
+    const { nbAllChildrens } = drawOptions;
+    return TILE_SIZE * (nbAllChildrens + 1);
+  }, [studyTree]);
+
+  const RECT_WIDTH = treeWidth / 2;
+  const RECT_X_SPACING = 10;
+  const RECT_Y_SPACING = 5;
+  const RECT_DECORATION = 5;
+  const TEXT_SPACING = 30;
+  const TEXT_SIZE = RECT_WIDTH / 16;
+
+  const buildRecursiveTree = (tree: StudyTree, i = 0, j = 0) : Array<React.ReactNode> => {
+    const { drawOptions, name, attributes, children } = tree;
+    const { id, modificationDate } = attributes;
+    const { nbAllChildrens } = drawOptions;
+    const hoverColor = colors[i % colors.length];
+    const color = `${hoverColor}BB`;
+    const rectColor = `${hoverColor}22`;
+    const rectHoverColor = `${hoverColor}44`;
+    const verticalLineColor = `${colors[(i + 1) % colors.length]}BB`;
+    let verticalLineEnd = 0;
+
+    if (children.length > 0) {
+      verticalLineEnd = nbAllChildrens - children[children.length - 1].drawOptions.nbAllChildrens;
+      verticalLineEnd = (j + 1 + verticalLineEnd) * TILE_SIZE - CIRCLE_RADIUS;
+    }
+
+    const cx = i * TILE_SIZE + DCX;
+    const cy = j * TILE_SIZE + DCY;
+    let res : Array<React.ReactNode> = [<Circle key={`circle-${i}-${j}`} cx={cx} cy={cy} r={CIRCLE_RADIUS} fill={color} hoverColor={hoverColor} onClick={() => console.log('NODE: ', tree.name)} />,
+      <Rect key={`rect-${i}-${j}`} x="0" y={cy - TILE_SIZE_2} width={RECT_WIDTH} height={TILE_SIZE - RECT_Y_SPACING} fill={rectColor} hoverColor={rectHoverColor} />,
+      <Rect key={`rect-for-name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_2} width={RECT_WIDTH} height={TILE_SIZE - RECT_Y_SPACING} fill={rectColor} hoverColor={hoverColor} onClick={() => onClick(id)} />,
+      <Rect key={`rect-for-name-deco-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_2} width={RECT_DECORATION} height={TILE_SIZE - RECT_Y_SPACING} fill={hoverColor} hoverColor={hoverColor} />,
+      <text key={`name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING} y={cy} fill="white" fontSize={TEXT_SIZE}>{name}</text>];
+    if (verticalLineEnd > 0) { res.push(<path key={`verticalLine-${i}-${j}`} d={`M ${cx} ${cy + CIRCLE_RADIUS} L ${cx} ${verticalLineEnd}`} fill={verticalLineColor} stroke={verticalLineColor} strokeWidth={`${STROKE_WIDTH}`} />); }
+    if (i > 0) { res.push(<path key={`horizontalLine-${i}-${j}`} d={`M ${cx - CIRCLE_RADIUS} ${cy} L ${cx - TILE_SIZE - (STROKE_WIDTH_2)} ${cy}`} fill={color} stroke={color} strokeWidth={`${STROKE_WIDTH}`} />); }
+
+    let recursiveHeight = 1;
+    res = res.concat(children.map((elm, index) => {
+      if (index === 0) recursiveHeight = j + 1;
+      else recursiveHeight = recursiveHeight + children[index - 1].drawOptions.nbAllChildrens + 1;
+      return buildRecursiveTree(elm, i + 1, recursiveHeight);
+    }));
+    return res;
+  };
+
   const renderTree = (tree: StudyTree) : React.ReactNode => {
-    const colorIndex = currentColorIndex;
-    //currentColorIndex += 1;
+    const { drawOptions } = tree;
+    const { height, nbAllChildrens } = drawOptions;
+    /*
+    NOTES:
+    Width = 2*TILE_SIZE*treeHeight + RECT_X_SPACING (why 2* ? Because we reserve a section for text => name of study)
+    Height = (nbAllChildrens + 1)  + TILE_SIZE_2;
+    */
     return (
-      <StyledTreeItem
-        key={tree.attributes.id}
-        nodeId={tree.attributes.id}
-        label={tree.name}
-        lineColor={colors[colorIndex]}
-        expandIcon={<Circle circleColor={colors[colorIndex]} />}
-        collapseIcon={<Circle circleColor={colors[colorIndex]} />}
-        endIcon={<Circle circleColor={colors[colorIndex]} />}
-      >
-        {tree.children.length > 0 && tree.children.map((elm) => renderTree(elm))}
-      </StyledTreeItem>
+      <svg viewBox={`0 0 ${2 * TILE_SIZE * height + RECT_X_SPACING} ${TILE_SIZE * (nbAllChildrens + 1) + TILE_SIZE_2}`}>
+        {buildRecursiveTree(tree, 0, 0) }
+      </svg>
     );
   };
 
@@ -164,7 +230,7 @@ export default function CustomizedTreeView(props: Props) {
     const buildStudyTree = async () => {
       if (study && childrenTree) {
         const tmp = await getTreeNodes(study, parents, childrenTree);
-        //setStudyTree(tmp);
+        // setStudyTree(tmp);
       }
     };
 
@@ -172,12 +238,10 @@ export default function CustomizedTreeView(props: Props) {
   }, [study, parents, childrenTree]);
 
   return (
-    <TreeView
-      aria-label="customized"
-      defaultExpanded={['1']}
-      sx={{ width: '100%', flexGrow: 1, overflowY: 'auto' }}
-    >
-      {studyTree && renderTree(studyTree)}
-    </TreeView>
+    <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" sx={{ width: '100%', flexGrow: 1, overflowY: 'auto' }}>
+      <Box flexGrow={1} height="600px" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start">
+        {studyTree && renderTree(studyTree)}
+      </Box>
+    </Box>
   );
 }

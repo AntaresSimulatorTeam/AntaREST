@@ -8,6 +8,10 @@ export interface StudyTree {
         id: string;
         modificationDate: string;
     }
+    drawOptions: {
+        height: number;
+        nbAllChildrens: number;
+    },
     children: Array<StudyTree>;
 }
 
@@ -17,6 +21,10 @@ const buildNodeFromMetadata = (study: StudyMetadata): StudyTree =>
     attributes: {
       id: study.id,
       modificationDate: convertUTCToLocalTime(study.modificationDate),
+    },
+    drawOptions: {
+      height: 0,
+      nbAllChildrens: 0,
     },
     children: [],
   });

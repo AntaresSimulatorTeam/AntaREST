@@ -1,0 +1,246 @@
+/* eslint-disable react/jsx-props-no-spreading */
+import React, { useEffect, useState } from 'react';
+import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
+import { alpha, styled } from '@mui/material/styles';
+import TreeView from '@mui/lab/TreeView';
+import TreeItem, { TreeItemProps, treeItemClasses } from '@mui/lab/TreeItem';
+import Collapse from '@mui/material/Collapse';
+import { TransitionProps } from '@mui/material/transitions';
+import { StudyMetadata, VariantTree } from '../../../../common/types';
+import { StudyTree, getTreeNodes } from './utils';
+
+function Circle(props: SvgIconProps & { circleColor: string }) {
+  const { circleColor } = props;
+  return (
+    <SvgIcon
+      className="close"
+      fontSize="inherit"
+      viewBox="0 0 100 50"
+      style={{ width: '50px', height: '25px', color: circleColor, backgroundColor: 'black' }}
+      {...props}
+    >
+      {/* tslint:disable-next-line: max-line-length */}
+      {/* <path d="M17.485 17.512q-.281.281-.682.281t-.696-.268l-4.12-4.147-4.12 4.147q-.294.268-.696.268t-.682-.281-.281-.682.294-.669l4.12-4.147-4.12-4.147q-.294-.268-.294-.669t.281-.682.682-.281.696 .268l4.12 4.147 4.12-4.147q.294-.268.696-.268t.682.281 .281.669-.294.682l-4.12 4.147 4.12 4.147q.294.268 .294.669t-.281.682zM22.047 22.074v0 0-20.147 0h-20.12v0 20.147 0h20.12zM22.047 24h-20.12q-.803 0-1.365-.562t-.562-1.365v-20.147q0-.776.562-1.351t1.365-.575h20.147q.776 0 1.351.575t.575 1.351v20.147q0 .803-.575 1.365t-1.378.562v0z" /> */}
+      <path d="M 100 25 L 20 25 L 20 0" />
+      <circle cx="80" cy="25" r="20" />
+    </SvgIcon>
+  );
+}
+
+function CircleTest(props: { circleColor: string, type: 'root' | 'node' | 'leaf' }) {
+  const { circleColor, type } = props;
+  switch (type) {
+    case 'root':
+      return (
+        <svg viewBox="0 0 100 100" style={{ backgroundColor: '#0000' }}>
+          <circle cx="50" cy="50" r="50" fill={circleColor} />
+        </svg>
+      );
+    case 'leaf':
+      return (
+        <svg viewBox="0 0 100 100">
+          <circle cx="75" cy="75" r="25" fill={circleColor} />
+          <path d="M 100 75 L 5 75 M 10 75 L 10 0" fill={circleColor} stroke={circleColor} strokeWidth="10" />
+        </svg>
+      );
+    default:
+      break;
+  }
+
+  return (
+    <svg viewBox="0 0 100 100">
+      <circle cx="75" cy="50" r="25" fill={circleColor} />
+      <path d="M 100 50 L 5 50 M 10 50 L 10 0 M 10 50 L 10 100" fill={circleColor} stroke={circleColor} strokeWidth="10" />
+    </svg>
+  );
+}
+
+export const NewTreeItem = styled(
+  TreeItem,
+  { shouldForwardProp: (prop) => prop !== 'lineColor' && prop !== 'treeHeight' },
+)<{lineColor: string, treeHeight: number}>(({ theme, lineColor, treeHeight = 0 }) => ({
+  [`& .${treeItemClasses.iconContainer}`]: {
+    '& .close': {
+      opacity: 0.9,
+    },
+    backgroundColor: 'black',
+    width: '34px',
+    height: '34px',
+    margin: 0,
+    marginLeft: `${treeHeight * 25}px`, // 100 => 34 px for svg |  so circle 25 => 8.5 px | so margin = 34px - 8.5px = 25.5px
+    padding: 0,
+  },
+  [`& .${treeItemClasses.group}`]: {
+    border: `1px solid ${lineColor}`,
+    margin: 0,
+    padding: 0,
+    backgroundColor: 'red',
+  },
+  [`& .${treeItemClasses.content}`]: {
+    height: '34px',
+    margin: 0,
+    padding: 0,
+    backgroundColor: 'blue',
+  },
+}));
+
+const StyledTreeItem = styled((props: TreeItemProps & { lineColor: string }) => {
+  const { lineColor, ...other } = props;
+  return <TreeItem {...other} />;
+})(({ theme, lineColor }) => ({
+  [`& .${treeItemClasses.iconContainer}`]: {
+    '& .close': {
+      opacity: 0.9,
+    },
+  },
+  [`& .${treeItemClasses.group}`]: {
+    marginLeft: 0,
+    paddingLeft: 0,
+    borderLeft: `0px solid ${lineColor}`,
+  },
+}));
+
+const fakeTree : StudyTree = {
+  name: 'Root',
+  attributes: {
+    id: 'root',
+    modificationDate: Date.now().toString(),
+  },
+  children: [
+    {
+      name: 'Node 1',
+      attributes: {
+        id: 'node1',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+        {
+          name: 'Node 1.1',
+          attributes: {
+            id: 'node1.1',
+            modificationDate: Date.now().toString(),
+          },
+          children: [
+            {
+              name: 'Node 1.1.1',
+              attributes: {
+                id: 'node1.1.1',
+                modificationDate: Date.now().toString(),
+              },
+              children: [
+
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Node 2',
+      attributes: {
+        id: 'node2',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+
+      ],
+    },
+    {
+      name: 'Node 3',
+      attributes: {
+        id: 'node3',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+
+      ],
+    },
+    {
+      name: 'Node 4',
+      attributes: {
+        id: 'node4',
+        modificationDate: Date.now().toString(),
+      },
+      children: [
+        {
+          name: 'Node 4.1',
+          attributes: {
+            id: 'node4.1',
+            modificationDate: Date.now().toString(),
+          },
+          children: [
+
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+interface Props {
+  study: StudyMetadata | undefined;
+  parents: Array<StudyMetadata>;
+  childrenTree: VariantTree | undefined;
+}
+
+export default function CustomizedTreeView(props: Props) {
+  const { study, parents, childrenTree } = props;
+  const [studyTree, setStudyTree] = useState<StudyTree>(fakeTree);
+
+  const colors = [
+    '#00B2FF', // '#A5B6C7',
+    '#F56637',
+    '#335622',
+    '#56B667',
+    '#793467',
+    '#039944',
+    '#297887',
+    '#77A688',
+    '#227878',
+    '#676045',
+  ];
+
+  const renderTree = (tree: StudyTree, index: number, isLeaf = false) : React.ReactNode => {
+    let type : 'node' | 'root' | 'leaf' = 'node';
+    if (isLeaf) {
+      type = 'leaf';
+    } else {
+      type = (index === 0 ? 'root' : 'node');
+    }
+    return (
+      <NewTreeItem
+        key={tree.attributes.id}
+        nodeId={tree.attributes.id}
+        label={tree.name}
+        lineColor={colors[index]}
+        treeHeight={index}
+        expandIcon={<CircleTest circleColor={colors[index % colors.length]} type={type} />}
+        collapseIcon={<CircleTest circleColor={colors[index % colors.length]} type={type} />}
+        endIcon={<CircleTest circleColor={colors[index % colors.length]} type={type} />}
+      >
+        {tree.children.length > 0 && tree.children.map((elm, idx) => renderTree(elm, index + 1, tree.children.length === 1 || (tree.children.length - 1) === idx))}
+      </NewTreeItem>
+    );
+  };
+
+  useEffect(() => {
+    const buildStudyTree = async () => {
+      if (study && childrenTree) {
+        const tmp = await getTreeNodes(study, parents, childrenTree);
+        // setStudyTree(tmp);
+      }
+    };
+
+    buildStudyTree();
+  }, [study, parents, childrenTree]);
+
+  return (
+    <TreeView
+      aria-label="customized"
+      defaultExpanded={['1']}
+      sx={{ width: '100%', flexGrow: 1, overflowY: 'auto' }}
+    >
+      {studyTree && renderTree(studyTree, 0)}
+    </TreeView>
+  );
+}
