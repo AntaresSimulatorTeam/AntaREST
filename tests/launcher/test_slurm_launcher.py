@@ -256,7 +256,7 @@ def test_run_study(
     slurm_launcher._delete_workspace_file = Mock()
     slurm_launcher.batch_jobs = Mock()
     slurm_launcher.batch_jobs.prepare_batch_study.return_value = ["some id"]
-
+    slurm_launcher.batch_jobs.get_batch_job_children.return_value = ["some id"]
     slurm_launcher._run_study(
         study_uuid, str(uuid.uuid4()), None, str(version)
     )
