@@ -10,6 +10,7 @@ from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigData
 from antarest.core.configdata.repository import ConfigDataRepository
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
@@ -26,54 +27,66 @@ BATCH_SIZE = 100
 
 
 class BatchJobManager:
-    def __init__(self, workspace_id: str, config: Config):
+    def __init__(
+        self, workspace_id: str, study_factory: StudyFactory, config: Config
+    ):
         self.config_data_repo = ConfigDataRepository()
+        self.study_factory = study_factory
         self.lock_file = config.storage.tmp_dir / "batchjobmanager.lock"
         self.workspace_id = workspace_id
         self.cache: Dict[str, str] = {}
-        self._init()
 
-    def _init(self) -> None:
+    def refresh_cache(self) -> None:
         self.cache = self.get_batch_jobs()
 
     def get_batch_jobs(self) -> Dict[str, str]:
-        all_jobs = (
-            self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY) or {}
-        )
-        return all_jobs.get(self.workspace_id, {})
+        with db():
+            all_jobs = (
+                self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY)
+                or {}
+            )
+            return all_jobs.get(self.workspace_id, {})
 
     def add_batch_job(
         self, parent_job_id: str, batch_job_ids: List[str]
     ) -> None:
         with FileLock(self.lock_file):
-            all_jobs = (
-                self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY)
-                or {}
-            )
-            workspace_jobs = all_jobs.get(self.workspace_id, {})
-            for batch_job_id in batch_job_ids:
-                workspace_jobs[batch_job_id] = parent_job_id
-            all_jobs[self.workspace_id] = workspace_jobs
-            self.config_data_repo.put_json(
-                key=BATCH_JOB_CONFIG_DATA_KEY, data=all_jobs
-            )
+            with db():
+                all_jobs = (
+                    self.config_data_repo.get_json(
+                        key=BATCH_JOB_CONFIG_DATA_KEY
+                    )
+                    or {}
+                )
+                workspace_jobs = all_jobs.get(self.workspace_id, {})
+                for batch_job_id in batch_job_ids:
+                    workspace_jobs[batch_job_id] = parent_job_id
+                all_jobs[self.workspace_id] = workspace_jobs
+                self.config_data_repo.put_json(
+                    key=BATCH_JOB_CONFIG_DATA_KEY, data=all_jobs
+                )
+                self.cache = workspace_jobs
 
     def remove_batch_job(self, parent_job_id: str) -> None:
         with FileLock(self.lock_file):
-            all_jobs = (
-                self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY)
-                or {}
-            )
-            workspace_jobs = all_jobs.get(self.workspace_id, {})
-            workspace_jobs = {
-                job_id: parent_id
-                for job_id, parent_id in workspace_jobs.items()
-                if parent_id != parent_job_id
-            }
-            all_jobs[self.workspace_id] = workspace_jobs
-            self.config_data_repo.put_json(
-                key=BATCH_JOB_CONFIG_DATA_KEY, data=all_jobs
-            )
+            with db():
+                all_jobs = (
+                    self.config_data_repo.get_json(
+                        key=BATCH_JOB_CONFIG_DATA_KEY
+                    )
+                    or {}
+                )
+                workspace_jobs = all_jobs.get(self.workspace_id, {})
+                workspace_jobs = {
+                    job_id: parent_id
+                    for job_id, parent_id in workspace_jobs.items()
+                    if parent_id != parent_job_id
+                }
+                all_jobs[self.workspace_id] = workspace_jobs
+                self.config_data_repo.put_json(
+                    key=BATCH_JOB_CONFIG_DATA_KEY, data=all_jobs
+                )
+                self.cache = workspace_jobs
 
     def get_batch_job_parent(self, batch_job_id: str) -> Optional[str]:
         return self.cache.get(batch_job_id, None)
@@ -102,26 +115,27 @@ class BatchJobManager:
             return batchs
         return [playlist]
 
-    @staticmethod
     def prepare_batch_study(
+        self,
         job_id: str,
         raw_study_path: Path,
-        study_factory: StudyFactory,
         workspace: Path,
     ) -> List[str]:
-        study_config, study_tree = study_factory.create_from_fs(
+        study_config, study_tree = self.study_factory.create_from_fs(
             raw_study_path, study_id=job_id
         )
         study = FileStudy(study_config, study_tree)
         batch_params = BatchJobManager.compute_batch_params(study)
-        assert_this(len(batch_params) > 0)
-        FileStudyHelpers.set_playlist(study, batch_params[0])
 
+        if len(batch_params) <= 1:
+            return [job_id]
+
+        FileStudyHelpers.set_playlist(study, batch_params[0])
         sub_jobs = []
         for playlist in batch_params[1:]:
             sub_job_id = str(uuid.uuid4())
             shutil.copytree(raw_study_path, workspace / sub_job_id)
-            study_config, study_tree = study_factory.create_from_fs(
+            study_config, study_tree = self.study_factory.create_from_fs(
                 workspace / sub_job_id, study_id=job_id
             )
             study = FileStudy(study_config, study_tree)

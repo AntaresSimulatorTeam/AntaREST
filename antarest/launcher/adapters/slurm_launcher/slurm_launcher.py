@@ -90,7 +90,9 @@ class SlurmLauncher(AbstractLauncher):
         with FileLock(LOCK_FILE_NAME):
             self.local_workspace = self._init_workspace(use_private_workspace)
 
-        self.batch_jobs = BatchJobManager(self.local_workspace.name, config)
+        self.batch_jobs = BatchJobManager(
+            self.local_workspace.name, self.study_factory, config
+        )
         self.log_tail_manager = LogTailManager(
             Path(self.slurm_config.local_workspace)
         )
@@ -146,6 +148,7 @@ class SlurmLauncher(AbstractLauncher):
             return Path(self.slurm_config.local_workspace)
 
     def _retrieve_running_jobs(self) -> None:
+        self.batch_jobs.refresh_cache()
         if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
             logger.info("Old job retrieved, starting loop")
             self.start()
@@ -470,22 +473,14 @@ class SlurmLauncher(AbstractLauncher):
                 )
 
                 # batch mode (export studies split in different folders with special playlist set)
-                study_config, study_tree = self.study_factory.create_from_fs(
-                    study_path, study_uuid
-                )
-                batch_params = BatchJobManager.compute_batch_params(
-                    FileStudy(study_config, study_tree)
-                )
                 # if there is a need for multiple batch,
                 # the first study export is moved to a new folder and other batch are copied from this export
                 # this generate new sub ids for each batch
-                if len(batch_params) > 1:
-                    sub_job_ids = BatchJobManager.prepare_batch_study(
-                        launch_uuid,
-                        study_path,
-                        self.study_factory,
-                        Path(self.launcher_args.studies_in),
-                    )
+                sub_job_ids = self.batch_jobs.prepare_batch_study(
+                    launch_uuid,
+                    study_path,
+                    Path(self.launcher_args.studies_in),
+                )
                 # even if there is one batch the job is added as a batch job
                 self.batch_jobs.add_batch_job(launch_uuid, sub_job_ids)
 

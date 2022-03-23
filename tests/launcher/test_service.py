@@ -590,7 +590,7 @@ def test_manage_output(tmp_path: Path):
 
     assert (
         launcher_service._import_output(
-            job_id, output_path, {"out.log": additional_log}
+            job_id, output_path, {"out.log": [additional_log]}
         )
         is None
     )
@@ -599,7 +599,7 @@ def test_manage_output(tmp_path: Path):
         f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}"
     )
     output_name = launcher_service._import_output(
-        job_id, output_path, {"out.log": additional_log}
+        job_id, output_path, {"out.log": [additional_log]}
     )
     assert output_name is not None
     assert launcher_service._get_job_output_fallback_path(job_id).exists()

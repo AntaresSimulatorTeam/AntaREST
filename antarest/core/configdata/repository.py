@@ -22,7 +22,7 @@ class ConfigDataRepository:
             db.session.query(ConfigData)
             .filter(
                 and_(
-                    ConfigData.owner == owner or DEFAULT_ADMIN_USER.id,
+                    ConfigData.owner == (owner or DEFAULT_ADMIN_USER.id),
                     ConfigData.key == key,
                 )
             )
