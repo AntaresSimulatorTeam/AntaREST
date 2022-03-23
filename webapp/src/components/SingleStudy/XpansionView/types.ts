@@ -4,7 +4,7 @@ export interface XpansionSettings {
     master: string;
     optimality_gap: number;
     max_iteration?: number;
-    yearly_weight?: string;
+    'yearly-weights': string;
     'additional-constraints'?: string;
     'relaxed-optimality-gap'?: number;
     cut_type?: string;

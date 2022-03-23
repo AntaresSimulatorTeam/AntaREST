@@ -159,8 +159,8 @@ const SettingsForm = (props: PropType) => {
               <Select
                 labelId="yearly-weight-label"
                 id="yearly-weight-select-filled"
-                value={currentSettings.yearly_weight || ''}
-                onChange={(e) => handleChange('yearly_weight', e.target.value as string)}
+                value={currentSettings['yearly-weights'] || ''}
+                onChange={(e) => handleChange('yearly-weights', e.target.value as string)}
               >
                 <MenuItem value="" key="None">{t('main:none')}</MenuItem>
                 {constraints.map((item) => (
@@ -168,7 +168,7 @@ const SettingsForm = (props: PropType) => {
                 ))}
               </Select>
             </FormControl>
-            <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentSettings.yearly_weight && onRead(currentSettings.yearly_weight || '')} />
+            <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentSettings['yearly-weights'] && onRead(currentSettings['yearly-weights'] || '')} />
           </Box>
           <Box className={classes.select}>
             <FormControl variant="filled" className={classes.formControl}>

@@ -43,6 +43,7 @@ class CutType(str, Enum):
 class Solver(str, Enum):
     CBC = "Cbc"
     COIN = "Coin"
+    XPRESS = "Xpress"
 
 
 class MaxIteration(str, Enum):
@@ -54,7 +55,7 @@ class XpansionSettingsDTO(BaseModel):
     max_iteration: Optional[Union[int, MaxIteration]] = None
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
-    yearly_weight: Optional[str] = None
+    yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
     additional_constraints: Optional[str] = Field(
         None, alias="additional-constraints"
     )
