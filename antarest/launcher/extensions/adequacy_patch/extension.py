@@ -55,9 +55,7 @@ class AdequacyPatchExtension(ILauncherExtension):
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"
         )
-        self._check_config(study_id, study_export_path)
 
-    def _check_config(self, study_id: str, study_export_path: Path) -> JSON:
         (
             study_config,
             study_tree,
@@ -72,7 +70,11 @@ class AdequacyPatchExtension(ILauncherExtension):
             )
         )
         assert_this("areas" in adequacy_patch_config)
-        return cast(JSON, adequacy_patch_config)
+        self.prepare_study_for_adq_patch(
+            job_id, FileStudy(study_config, study_tree), adequacy_patch_config
+        )
+        # todo
+        # modify post-processing.R so to remove unwanted results
 
     def prepare_study_for_adq_patch(
         self, job_id: str, study: FileStudy, adq_patch_config: JSON
@@ -117,6 +119,8 @@ class AdequacyPatchExtension(ILauncherExtension):
         study_output_path: Path,
         ext_opts: Any,
     ) -> None:
+        # todo
+        # should not need this method since it can/must be done in the post-processing script directly on the remote cluster
         with FileLock(self.tmp_dir / "data.lock"):
             with db():
                 key = "ADEQUACY_PATCH_DATA"
