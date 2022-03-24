@@ -466,6 +466,8 @@ class SlurmLauncher(AbstractLauncher):
         sub_job_ids = [launch_uuid]
 
         try:
+            self._assert_study_version_is_supported(version)
+
             with self.antares_launcher_lock:
                 # export study
                 self.callbacks.export_study(
@@ -481,10 +483,6 @@ class SlurmLauncher(AbstractLauncher):
                     study_path,
                     Path(self.launcher_args.studies_in),
                 )
-                # even if there is one batch the job is added as a batch job
-                self.batch_jobs.add_batch_job(launch_uuid, sub_job_ids)
-
-                self._assert_study_version_is_supported(version)
 
                 launcher_args = self._check_and_apply_launcher_params(
                     launcher_params

@@ -57,6 +57,7 @@ from antarest.study.storage.utils import (
     create_permission_from_study,
     extract_output_name,
     fix_study_root,
+    find_single_output_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -524,11 +525,11 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
-                # todo find output_path true root
+                output_true_path = find_single_output_path(output_path)
                 self._before_import_hooks(
                     job_id,
                     job_result.study_id,
-                    output_path,
+                    output_true_path,
                     json.loads(job_result.launcher_params)
                     if job_result.launcher_params
                     else None,
@@ -536,13 +537,13 @@ class LauncherService:
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
-                        output_path,
+                        output_true_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
                         additional_logs,
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
-                        job_id, output_path, additional_logs
+                        job_id, output_true_path, additional_logs
                     )
         raise JobNotFound()
 

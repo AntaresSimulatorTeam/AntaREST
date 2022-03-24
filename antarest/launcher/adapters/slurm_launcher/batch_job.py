@@ -1,8 +1,11 @@
 import logging
+import math
+import os
 import shutil
 import uuid
+from functools import reduce
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 from filelock import FileLock
 
@@ -23,13 +26,13 @@ from antarest.study.storage.utils import find_single_output_path
 logger = logging.getLogger(__name__)
 
 BATCH_JOB_CONFIG_DATA_KEY = "BATCH_JOBS"
-BATCH_SIZE = 100
 
 
 class BatchJobManager:
     def __init__(
         self, workspace_id: str, study_factory: StudyFactory, config: Config
     ):
+        self.batch_size = config.launcher.batch_size
         self.config_data_repo = ConfigDataRepository()
         self.study_factory = study_factory
         self.lock_file = config.storage.tmp_dir / "batchjobmanager.lock"
@@ -99,18 +102,20 @@ class BatchJobManager:
         ]
 
     @staticmethod
-    def compute_batch_params(study: FileStudy) -> List[List[int]]:
+    def compute_batch_params(
+        study: FileStudy, batch_size: int
+    ) -> List[List[int]]:
         playlist = FileStudyHelpers.get_playlist(study)
         playlist_len = len(playlist)
         if playlist_len > 100:
             batchs = []
             i = 0
             while True:
-                upper_bound = BATCH_SIZE * (1 + i)
+                upper_bound = batch_size * (1 + i)
                 if upper_bound >= playlist_len:
-                    batchs.append(playlist[BATCH_SIZE * i : playlist_len])
+                    batchs.append(playlist[batch_size * i : playlist_len])
                     break
-                batchs.append(playlist[BATCH_SIZE * i : upper_bound])
+                batchs.append(playlist[batch_size * i : upper_bound])
                 i += 1
             return batchs
         return [playlist]
@@ -125,9 +130,12 @@ class BatchJobManager:
             raw_study_path, study_id=job_id
         )
         study = FileStudy(study_config, study_tree)
-        batch_params = BatchJobManager.compute_batch_params(study)
+        batch_params = BatchJobManager.compute_batch_params(
+            study, self.batch_size
+        )
 
         if len(batch_params) <= 1:
+            self.add_batch_job(job_id, [job_id])
             return [job_id]
 
         FileStudyHelpers.set_playlist(study, batch_params[0])
@@ -145,6 +153,7 @@ class BatchJobManager:
         sub_job_id = str(uuid.uuid4())
         shutil.move(str(raw_study_path), str(workspace / sub_job_id))
         sub_jobs.append(sub_job_id)
+        self.add_batch_job(job_id, sub_jobs)
         return sub_jobs
 
     def merge_outputs(
@@ -167,7 +176,7 @@ class BatchJobManager:
                     output_dir = batch_output_dir
                 else:
                     BatchJobManager.merge_output_data(
-                        batch_output_dir, output_dir
+                        batch_output_dir, output_dir, batch_parts
                     )
             elif not allow_part_failure:
                 logger.warning(
@@ -183,9 +192,72 @@ class BatchJobManager:
         return output_dir
 
     @staticmethod
-    def merge_output_data(batch_output_dir: Path, output_dir: Path) -> None:
-        pass
+    def merge_std_deviation(
+        stats: List[Tuple[float, float, int]]
+    ) -> Tuple[float, float]:
+        def compute_stats(
+            agg: Tuple[float, float, int], el: Tuple[float, float, int]
+        ) -> Tuple[float, float, int]:
+            agg_x, agg_mean, agg_total = agg
+            avg, sqr_root_std_dev, n = el
+            return (
+                agg_x + n * (math.pow(sqr_root_std_dev, 2) + math.pow(avg, 2)),
+                agg_mean + avg * n,
+                agg_total + n,
+            )
+
+        e_x2, e_total, n = reduce(compute_stats, stats, (0.0, 0.0, 0))
+        sqrt_root_std_deviation = math.sqrt(
+            (e_x2 / n) - math.pow(e_total / n, 2)
+        )
+        mean = e_total / n
+        return sqrt_root_std_deviation, mean
+
+    @staticmethod
+    def merge_output_data(
+        batch_output_dir: Path, output_dir: Path, batch_index: int
+    ) -> None:
+        mode = "economy"
+        if not (batch_output_dir / mode).exists():
+            mode = "adequacy"
+        # mc-ind
+        data_dir = batch_output_dir / mode / "mc-ind"
+        if not data_dir.exists():
+            logger.warning(
+                f"Failed to find data dir in output {batch_output_dir}"
+            )
+            return
+        for mc_year in os.listdir(data_dir):
+            shutil.move(
+                str(data_dir / mc_year), output_dir / mode / "mc-ind" / mc_year
+            )
+        # logs
+        shutil.move(
+            str(batch_output_dir / "simulation.log"),
+            output_dir / f"simulation.log.{batch_index}",
+        )
+
+        # temporary summary files
+        os.makedirs(output_dir / "tmp_summaries", exist_ok=True)
+        shutil.move(
+            str(data_dir / "mc-all"),
+            output_dir / "tmp_summaries" / f"mc-all-{batch_index}",
+        )
+        shutil.move(
+            str(batch_output_dir / "checkIntegrity.txt"),
+            output_dir / "tmp_summaries" / f"checkIntegrity.txt-{batch_index}",
+        )
+        shutil.move(
+            str(batch_output_dir / "annualSystemCost.txt"),
+            output_dir
+            / "tmp_summaries"
+            / f"annualSystemCost.txt-{batch_index}",
+        )
 
     @staticmethod
     def reconstruct_synthesis(output_dir: Path) -> None:
+        # todo
+        # change playlist using mc-ind dir list info
+        # construct mc-all
+        # construct summary files (checkIntegrity.txt, annualSystemCost.txt)
         pass
