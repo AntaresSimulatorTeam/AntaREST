@@ -481,6 +481,8 @@ class SlurmLauncher(AbstractLauncher):
                     launch_uuid,
                     study_path,
                     Path(self.launcher_args.studies_in),
+                    "xpansion" in launcher_params
+                    or not launcher_params.get("batch_mode", False),
                 )
 
                 launcher_args = self._check_and_apply_launcher_params(

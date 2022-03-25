@@ -172,6 +172,8 @@ export interface LaunchOptions {
   post_processing?: boolean;
   // eslint-disable-next-line camelcase
   adequacy_patch?: object;
+  // eslint-disable-next-line camelcase
+  batch_mode?: boolean;
 }
 
 export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {

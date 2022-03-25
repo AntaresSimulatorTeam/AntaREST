@@ -4,6 +4,7 @@
   "variants": "Variant management",
   "runStudy": "Run study",
   "xpansionMode": "Xpansion mode",
+  "batchMode": "Batch mode",
   "useXpansionVersionR": "Use the R legacy Xpansion mode",
   "xpansion": "Xpansion",
   "postProcessing": "Post processing",
