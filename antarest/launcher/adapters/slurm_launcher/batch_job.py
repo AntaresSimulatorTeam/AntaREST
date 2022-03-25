@@ -110,7 +110,7 @@ class BatchJobManager:
         """
         playlist = FileStudyHelpers.get_playlist(study)
         playlist_len = len(playlist)
-        if playlist_len > 100:
+        if playlist_len > batch_size:
             batchs = []
             i = 0
             while True:

@@ -112,8 +112,9 @@ def fix_study_root(study_path: Path) -> None:
 
 def find_single_output_path(all_output_path: Path) -> Path:
     children = os.listdir(all_output_path)
-    assert_this(len(children) == 1)
-    return all_output_path / children[0]
+    if len(children) == 1:
+        return find_single_output_path(all_output_path / children[0])
+    return all_output_path
 
 
 def extract_output_name(path_output: Path) -> str:
