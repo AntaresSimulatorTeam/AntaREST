@@ -303,8 +303,8 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
     slurm_launcher.launcher_params = Mock()
     slurm_launcher.launcher_args = Mock()
     slurm_launcher.data_repo_tinydb = data_repo_tinydb
-    slurm_launcher.batch_jobs.add_batch_job("job_id1", ["job_id1"])
-    slurm_launcher.batch_jobs.add_batch_job("job_id2", ["job_id2"])
+    slurm_launcher.batch_jobs._add_batch_job("job_id1", ["job_id1"])
+    slurm_launcher.batch_jobs._add_batch_job("job_id2", ["job_id2"])
     slurm_launcher._check_studies_state()
 
     assert slurm_launcher.callbacks.update_status.call_count == 2

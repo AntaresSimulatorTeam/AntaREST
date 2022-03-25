@@ -40,9 +40,9 @@ class BatchJobManager:
         self.cache: Dict[str, str] = {}
 
     def refresh_cache(self) -> None:
-        self.cache = self.get_batch_jobs()
+        self.cache = self._get_batch_jobs()
 
-    def get_batch_jobs(self) -> Dict[str, str]:
+    def _get_batch_jobs(self) -> Dict[str, str]:
         with db():
             all_jobs = (
                 self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY)
@@ -50,7 +50,7 @@ class BatchJobManager:
             )
             return all_jobs.get(self.workspace_id, {})
 
-    def add_batch_job(
+    def _add_batch_job(
         self, parent_job_id: str, batch_job_ids: List[str]
     ) -> None:
         with FileLock(self.lock_file):
@@ -105,6 +105,9 @@ class BatchJobManager:
     def compute_batch_params(
         study: FileStudy, batch_size: int
     ) -> List[List[int]]:
+        """
+        Compute list of playlist years which count do not exceed a configured batch size.
+        """
         playlist = FileStudyHelpers.get_playlist(study)
         playlist_len = len(playlist)
         if playlist_len > 100:
@@ -125,17 +128,28 @@ class BatchJobManager:
         job_id: str,
         raw_study_path: Path,
         workspace: Path,
+        force_single_batch: bool = False,
     ) -> List[str]:
+        """
+        Split a study into multiple batches using playlist to control which year to run.
+        The study is copied into a new directory named after the sub job id and generaldata playlist is updated.
+        The the array of sub job is registered with reference to the original job_id as parent.
+
+        If the configured playlist / number of year to run is less than a batch configured size or forced to use a single batch
+        nothing is done and the sub job id is the same as the parent id
+        """
         study_config, study_tree = self.study_factory.create_from_fs(
             raw_study_path, study_id=job_id
         )
         study = FileStudy(study_config, study_tree)
-        batch_params = BatchJobManager.compute_batch_params(
-            study, self.batch_size
+        batch_params = (
+            BatchJobManager.compute_batch_params(study, self.batch_size)
+            if not force_single_batch
+            else []
         )
 
         if len(batch_params) <= 1:
-            self.add_batch_job(job_id, [job_id])
+            self._add_batch_job(job_id, [job_id])
             return [job_id]
 
         FileStudyHelpers.set_playlist(study, batch_params[0])
@@ -153,7 +167,7 @@ class BatchJobManager:
         sub_job_id = str(uuid.uuid4())
         shutil.move(str(raw_study_path), str(workspace / sub_job_id))
         sub_jobs.append(sub_job_id)
-        self.add_batch_job(job_id, sub_jobs)
+        self._add_batch_job(job_id, sub_jobs)
         return sub_jobs
 
     def merge_outputs(
@@ -163,6 +177,14 @@ class BatchJobManager:
         workspace: Path,
         allow_part_failure: bool = True,
     ) -> Optional[Path]:
+        """
+        Merge the output of study run batches.
+        The first output directory found (study done with no error) is taken as the main output where everything will be merged.
+        This way, in the case of a single batch, nothing is done.
+        Merging is done in two steps:
+        - copying each output data in the correct place (mc-ind) or temporary places (mc-all, synthesis files, parameters)
+        - merging the synthesis
+        """
         assert_this(len(launcher_studies) > 0)
         output_dir: Optional[Path] = None
         batch_parts = 0
@@ -175,7 +197,7 @@ class BatchJobManager:
                 if not output_dir:
                     output_dir = batch_output_dir
                 else:
-                    BatchJobManager.merge_output_data(
+                    self.merge_output_data(
                         batch_output_dir, output_dir, batch_parts
                     )
             elif not allow_part_failure:
@@ -188,7 +210,7 @@ class BatchJobManager:
                     f"Sub job {study.name} failed within job {job_id}. Skipping importing this part."
                 )
         if batch_parts > 1 and output_dir:
-            BatchJobManager.reconstruct_synthesis(output_dir)
+            self.reconstruct_synthesis(output_dir)
         return output_dir
 
     @staticmethod
@@ -217,6 +239,10 @@ class BatchJobManager:
     def merge_output_data(
         batch_output_dir: Path, output_dir: Path, batch_index: int
     ) -> None:
+        f"""
+        Copy a batch output data into a merged output directory.
+        Some data is copied into their final destination, some in temporary location to be merged later by {BatchJobManager.reconstruct_synthesis.__name__}
+        """
         mode = "economy"
         if not (batch_output_dir / mode).exists():
             mode = "adequacy"
@@ -253,11 +279,17 @@ class BatchJobManager:
             / "tmp_summaries"
             / f"annualSystemCost.txt-{batch_index}",
         )
+        shutil.move(
+            str(batch_output_dir / "about-the-study" / "parameters.ini"),
+            output_dir / "tmp_summaries" / f"parameters.ini-{batch_index}",
+        )
 
-    @staticmethod
-    def reconstruct_synthesis(output_dir: Path) -> None:
+    def reconstruct_synthesis(self, output_dir: Path) -> None:
+        """
+        Merge all synthesis data:
+        - mc-all
+        - parameters (playlist)
+        - summary files (checkIntegrity.txt, annualSystemCost.txt)
+        """
         # todo
-        # change playlist using mc-ind dir list info
-        # construct mc-all
-        # construct summary files (checkIntegrity.txt, annualSystemCost.txt)
         pass
