@@ -7,6 +7,7 @@ on:
 
 jobs:
   binary:
+    name: test_name
     runs-on: windows-latest
 
     steps:
