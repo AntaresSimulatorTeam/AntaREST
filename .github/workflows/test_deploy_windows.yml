@@ -7,11 +7,7 @@ on:
 
 jobs:
   binary:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      max-parallel: 3
-      matrix:
-        os: [windows-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -56,5 +52,5 @@ jobs:
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
-          name: dist-${{ matrix.os }}
+          name: dist-windows-latest
           path: dist/*
