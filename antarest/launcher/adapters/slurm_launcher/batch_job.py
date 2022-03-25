@@ -265,24 +265,30 @@ class BatchJobManager:
 
         # temporary summary files
         os.makedirs(output_dir / "tmp_summaries", exist_ok=True)
-        shutil.move(
-            str(data_dir / "mc-all"),
-            output_dir / "tmp_summaries" / f"mc-all-{batch_index}",
-        )
-        shutil.move(
-            str(batch_output_dir / "checkIntegrity.txt"),
-            output_dir / "tmp_summaries" / f"checkIntegrity.txt-{batch_index}",
-        )
-        shutil.move(
-            str(batch_output_dir / "annualSystemCost.txt"),
-            output_dir
-            / "tmp_summaries"
-            / f"annualSystemCost.txt-{batch_index}",
-        )
-        shutil.move(
-            str(batch_output_dir / "about-the-study" / "parameters.ini"),
-            output_dir / "tmp_summaries" / f"parameters.ini-{batch_index}",
-        )
+        for src, target in [
+            (
+                batch_output_dir / mode / "mc-all",
+                output_dir / "tmp_summaries" / f"mc-all-{batch_index}",
+            ),
+            (
+                batch_output_dir / "checkIntegrity.txt",
+                output_dir
+                / "tmp_summaries"
+                / f"checkIntegrity.txt-{batch_index}",
+            ),
+            (
+                batch_output_dir / "annualSystemCost.txt",
+                output_dir
+                / "tmp_summaries"
+                / f"annualSystemCost.txt-{batch_index}",
+            ),
+            (
+                batch_output_dir / "about-the-study" / "parameters.ini",
+                output_dir / "tmp_summaries" / f"parameters.ini-{batch_index}",
+            ),
+        ]:
+            if src.exists():
+                shutil.move(str(src), target)
 
     def reconstruct_synthesis(self, output_dir: Path) -> None:
         """

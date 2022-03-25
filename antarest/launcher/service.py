@@ -30,7 +30,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import assert_this, concat_files
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -501,13 +501,10 @@ class LauncherService:
             imported_output.rename(Path(job_output_path, output_name))
             if additional_logs:
                 for log_name, log_paths in additional_logs.items():
-                    with open(
-                        Path(job_output_path, output_name) / log_name, "w"
-                    ) as fh:
-                        for log_path in log_paths:
-                            with open(log_path, "r") as infile:
-                                for line in infile:
-                                    fh.write(line)
+                    concat_files(
+                        log_paths,
+                        Path(job_output_path, output_name) / log_name,
+                    )
         except Exception as e:
             logger.error(
                 "Failed to import output in fallback mode", exc_info=e

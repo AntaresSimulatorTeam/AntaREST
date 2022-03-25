@@ -48,7 +48,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
@@ -1216,13 +1216,9 @@ class StudyService:
         )
         if res is not None and additional_logs:
             for log_name, log_paths in additional_logs.items():
-                with open(
-                    Path(study.path) / "output" / res / log_name, "w"
-                ) as fh:
-                    for log_path in log_paths:
-                        with open(log_path, "r") as infile:
-                            for line in infile:
-                                fh.write(line)
+                concat_files(
+                    log_paths, Path(study.path) / "output" / res / log_name
+                )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
