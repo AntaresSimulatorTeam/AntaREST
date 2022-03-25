@@ -88,9 +88,13 @@ def test_parse_outputs(tmp_path: Path) -> None:
     [general]
     nbyears = 1
     year-by-year = true
+    user-playlist = true
     
     [output]
     synthesis = true
+    
+    [playlist]
+    playlist_year + = 0
     """
     file.write_text(content)
 
@@ -111,6 +115,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
                 synthesis=True,
                 by_year=True,
                 error=False,
+                playlist=[0],
             )
         },
     )
