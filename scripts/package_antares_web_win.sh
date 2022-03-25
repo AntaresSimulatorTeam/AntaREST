@@ -35,12 +35,12 @@ echo "Create symbolic link to antares_solver"
 cd ../dist
 ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
 
-echo "Zip the package"
-7z a  AntaresWebServer.zip *
+#echo "Zip the package"
+#7z a  AntaresWebServer.zip *
 
-echo "Cleaning up"
-shopt -s extglob
-rm -rf !(*.zip)
+#echo "Cleaning up"
+#shopt -s extglob
+#rm -rf !(*.zip)
 
 echo "Done"
 
