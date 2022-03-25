@@ -57,21 +57,28 @@ class LocalLauncher(AbstractLauncher):
         if self.config.launcher.local is None:
             raise LauncherInitException()
 
-        antares_solver_path = self.config.launcher.local.binaries[version]
-        if antares_solver_path is None:
-            raise StudyVersionNotSupported()
+        if version in self.config.launcher.local.binaries:
+            antares_solver_path = self.config.launcher.local.binaries[version]
         else:
-            job = threading.Thread(
-                target=LocalLauncher._compute,
-                args=(
-                    self,
-                    antares_solver_path,
-                    study_uuid,
-                    job_id,
-                    launcher_parameters,
-                ),
-            )
-            job.start()
+            keys = self.config.launcher.local.binaries.keys()
+            keys_sup = [k for k in keys if k > version]
+            best_existing_version = min(keys_sup) if keys_sup else max(keys)
+            antares_solver_path = self.config.launcher.local.binaries[
+                best_existing_version
+            ]
+            logger.warning(f"Launching")
+
+        job = threading.Thread(
+            target=LocalLauncher._compute,
+            args=(
+                self,
+                antares_solver_path,
+                study_uuid,
+                job_id,
+                launcher_parameters,
+            ),
+        )
+        job.start()
 
     def _compute(
         self,

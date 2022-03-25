@@ -117,7 +117,7 @@ def get_default_config_path_or_raise() -> Path:
     config_path = get_default_config_path()
     if not config_path:
         raise ValueError(
-            "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
+            "Config file not found. Set it by '-c' with command line or place it at ./config.yaml, ../config.yaml or ~/.antares/config.yaml"
         )
     return config_path
 

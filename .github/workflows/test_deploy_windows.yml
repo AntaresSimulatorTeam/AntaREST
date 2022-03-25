@@ -1,0 +1,60 @@
+name: deploy
+on:
+  push:
+    branches:
+      - 'master'
+
+
+jobs:
+  binary:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 3
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Checkout github repo (+ download lfs dependencies)
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
+      - name: Build
+        run: bash ./build-front.sh
+        working-directory: scripts
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - name: Copy build to app resources
+        run: cp -r webapp/build resources/webapp
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic --no-binary pydantic
+          pip install -r requirements-dev.txt
+      - name: Fix symlink for windows
+        run: |
+          rm antareslauncher
+          ln -s antares-launcher\antareslauncher antareslauncher
+      - name: Generate binary Windows
+        run: |
+          git log -1 HEAD --format=%H > .\resources\commit_id
+          pyinstaller antarest\gui.py --windowed --icon=resources/webapp/favicon.ico -n AntaresWebServer --hidden-import='cmath' --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.win' --hidden-import='plyer.platforms.win.notification' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini"
+          dist\AntaresTool.exe --help
+      -name: Packaging
+        run: bash ./package_antares_web_win.sh
+        working-directory: scripts
+      - name: Archive binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/*
