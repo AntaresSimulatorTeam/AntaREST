@@ -184,12 +184,12 @@ class LocalVariantGenerator(IVariantGenerator):
         )
         if result.success:
             logger.info("Building new study tree")
-            config, study_tree = study_factory.create_from_fs(
+            study = study_factory.create_from_fs(
                 self.output_path, study_id="", use_cache=False
             )
             logger.info("Denormalizing study")
             stopwatch.reset_current()
-            study_tree.denormalize()
+            study.tree.denormalize()
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Denormalized done in {x}s")
             )
@@ -223,12 +223,12 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         cache=LocalCache(CacheConfig()),
     )
 
-    study_config, study_tree = study_factory.create_from_fs(
+    study = study_factory.create_from_fs(
         study_path, str(study_path), use_cache=False
     )
     local_matrix_service = SimpleMatrixService(matrices_dir)
     extractor = VariantCommandsExtractor(local_matrix_service)
-    command_list = extractor.extract(FileStudy(study_config, study_tree))
+    command_list = extractor.extract(study)
 
     with open(commands_output_dir / COMMAND_FILE, "w") as fh:
         json.dump(
@@ -271,8 +271,7 @@ def generate_diff(
         path_resources=get_local_path() / "resources",
     )
 
-    config, tree = study_factory.create_from_fs(path_study, study_id)
-    empty_study = FileStudy(config=config, tree=tree)
+    empty_study = study_factory.create_from_fs(path_study, study_id)
 
     base_command_file = base / COMMAND_FILE
     if not base_command_file.exists():

@@ -1,12 +1,17 @@
 from pathlib import Path
 from typing import cast
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call
 
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, LauncherConfig
 from antarest.launcher.adapters.slurm_launcher.batch_job import BatchJobManager
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
+    FileStudyTree,
+)
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 import numpy as np
+
+from tests.conftest import with_db_context
 
 
 @patch.object(FileStudyHelpers, "get_playlist")
@@ -50,6 +55,71 @@ def test_merge_stats():
     )
     assert f"{res[0]:.8f}" == f"{mean:.8f}"
     assert f"{res[1]:.8f}" == f"{variance:.8f}"
+
+
+@with_db_context
+def test_prepare_batch(tmp_path: Path):
+    batch_job_manager = BatchJobManager(
+        "someworkspace", Mock(), Config(launcher=LauncherConfig(batch_size=4))
+    )
+    batch_job_manager.study_factory = Mock()
+
+    some_study = tmp_path / "jobid"
+    some_study.mkdir()
+    (some_study / "somedata").touch()
+
+    filestudy = Mock()
+    batch_job_manager.study_factory.create_from_fs.return_value = filestudy
+
+    filestudy.tree.get.side_effect = lambda x: {
+        "general": {
+            "nbyears": 10,
+        }
+    }
+    assert batch_job_manager.prepare_batch_study(
+        "jobid", some_study, tmp_path, force_single_batch=True
+    ) == ["jobid"]
+
+    jobs = batch_job_manager.prepare_batch_study("jobid", some_study, tmp_path)
+    assert len(jobs) == 3
+    assert not some_study.exists()
+    assert (tmp_path / jobs[0] / "somedata").exists()
+    assert (tmp_path / jobs[1] / "somedata").exists()
+    assert (tmp_path / jobs[2] / "somedata").exists()
+    filestudy.tree.save.assert_has_calls(
+        [
+            call(
+                {
+                    "general": {"nbyears": 10, "user-playlist": True},
+                    "playlist": {
+                        "playlist_reset": False,
+                        "playlist_year +": [0, 1, 2, 3],
+                    },
+                },
+                ["settings", "generaldata"],
+            ),
+            call(
+                {
+                    "general": {"nbyears": 10, "user-playlist": True},
+                    "playlist": {
+                        "playlist_reset": False,
+                        "playlist_year +": [4, 5, 6, 7],
+                    },
+                },
+                ["settings", "generaldata"],
+            ),
+            call(
+                {
+                    "general": {"nbyears": 10, "user-playlist": True},
+                    "playlist": {
+                        "playlist_reset": False,
+                        "playlist_year +": [8, 9],
+                    },
+                },
+                ["settings", "generaldata"],
+            ),
+        ]
+    )
 
 
 def test_merge_outputs(tmp_path: Path):

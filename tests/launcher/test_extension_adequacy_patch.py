@@ -21,9 +21,11 @@ def test_hooks(tmp_path: Path):
 
     study_tree = Mock()
     study_config = Mock()
+    filestudy = Mock()
+    filestudy.tree = study_tree
+    filestudy.config = study_config
     study_service.storage_service.raw_study_service.study_factory.create_from_fs.return_value = (
-        study_config,
-        study_tree,
+        filestudy
     )
 
     study_tree.get.side_effect = [{}, {"flowbased": {}}, '{"areas": []}']

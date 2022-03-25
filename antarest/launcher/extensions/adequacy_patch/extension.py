@@ -56,23 +56,18 @@ class AdequacyPatchExtension(ILauncherExtension):
             post_processing_file, study_export_path / "post-processing.R"
         )
 
-        (
-            study_config,
-            study_tree,
-        ) = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
+        study = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
             study_export_path, study_id, use_cache=False
         )
-        user_config = study_tree.get(["user"])
+        user_config = study.tree.get(["user"])
         assert_this("flowbased" in user_config or "Flowbased" in user_config)
         adequacy_patch_config = yaml.safe_load(
             cast(
-                bytes, study_tree.get(["user", "adequacypatch", "config.yml"])
+                bytes, study.tree.get(["user", "adequacypatch", "config.yml"])
             )
         )
         assert_this("areas" in adequacy_patch_config)
-        self.prepare_study_for_adq_patch(
-            job_id, FileStudy(study_config, study_tree), adequacy_patch_config
-        )
+        self.prepare_study_for_adq_patch(job_id, study, adequacy_patch_config)
         # todo
         # modify post-processing.R so to remove unwanted results
 

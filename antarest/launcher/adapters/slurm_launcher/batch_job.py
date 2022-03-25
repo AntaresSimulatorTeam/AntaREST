@@ -138,10 +138,9 @@ class BatchJobManager:
         If the configured playlist / number of year to run is less than a batch configured size or forced to use a single batch
         nothing is done and the sub job id is the same as the parent id
         """
-        study_config, study_tree = self.study_factory.create_from_fs(
+        study = self.study_factory.create_from_fs(
             raw_study_path, study_id=job_id
         )
-        study = FileStudy(study_config, study_tree)
         batch_params = (
             BatchJobManager.compute_batch_params(study, self.batch_size)
             if not force_single_batch
@@ -157,10 +156,9 @@ class BatchJobManager:
         for playlist in batch_params[1:]:
             sub_job_id = str(uuid.uuid4())
             shutil.copytree(raw_study_path, workspace / sub_job_id)
-            study_config, study_tree = self.study_factory.create_from_fs(
+            study = self.study_factory.create_from_fs(
                 workspace / sub_job_id, study_id=job_id
             )
-            study = FileStudy(study_config, study_tree)
             FileStudyHelpers.set_playlist(study, playlist)
             sub_jobs.append(sub_job_id)
 

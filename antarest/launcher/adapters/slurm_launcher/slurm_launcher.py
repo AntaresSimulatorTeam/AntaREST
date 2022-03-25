@@ -339,7 +339,6 @@ class SlurmLauncher(AbstractLauncher):
                     if parent_job not in batch_jobs:
                         batch_jobs[parent_job] = []
                     batch_jobs[parent_job].append(study)
-                    continue
             elif not self.log_tail_manager.is_tracking(
                 SlurmLauncher._get_log_path(study)
             ):
