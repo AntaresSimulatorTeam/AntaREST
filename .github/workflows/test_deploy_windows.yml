@@ -1,8 +1,8 @@
-name: deploy
+name: deploy_test_windows
 on:
   push:
     branches:
-      - 'master'
+      - '**'
 
 
 jobs:
