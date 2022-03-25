@@ -477,12 +477,17 @@ class SlurmLauncher(AbstractLauncher):
                 # if there is a need for multiple batch,
                 # the first study export is moved to a new folder and other batch are copied from this export
                 # this generate new sub ids for each batch
+                force_single_batch = (
+                    "xpansion" in launcher_params
+                    or not launcher_params.get("batch_mode", False)
+                    if launcher_params
+                    else True
+                )
                 sub_job_ids = self.batch_jobs.prepare_batch_study(
                     launch_uuid,
                     study_path,
                     Path(self.launcher_args.studies_in),
-                    "xpansion" in launcher_params
-                    or not launcher_params.get("batch_mode", False),
+                    force_single_batch,
                 )
 
                 launcher_args = self._check_and_apply_launcher_params(
