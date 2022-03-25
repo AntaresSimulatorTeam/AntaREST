@@ -214,9 +214,17 @@ class BatchJobManager:
         return output_dir
 
     @staticmethod
-    def merge_std_deviation(
+    def merge_stats(
         stats: List[Tuple[float, float, int]]
     ) -> Tuple[float, float]:
+        """
+        Merge statistical data (mean and square root variance)
+        Args:
+            stats: list of statistical data containing tuples of mean, square root variance and dataset count
+        Returns:
+            a tuple containing the merged mean and square root variance
+        """
+
         def compute_stats(
             agg: Tuple[float, float, int], el: Tuple[float, float, int]
         ) -> Tuple[float, float, int]:
@@ -233,7 +241,7 @@ class BatchJobManager:
             (e_x2 / n) - math.pow(e_total / n, 2)
         )
         mean = e_total / n
-        return sqrt_root_std_deviation, mean
+        return mean, sqrt_root_std_deviation
 
     @staticmethod
     def merge_output_data(
@@ -257,34 +265,33 @@ class BatchJobManager:
             shutil.move(
                 str(data_dir / mc_year), output_dir / mode / "mc-ind" / mc_year
             )
-        # logs
-        shutil.move(
-            str(batch_output_dir / "simulation.log"),
-            output_dir / f"simulation.log.{batch_index}",
-        )
 
-        # temporary summary files
+        # temporary summary files and logs
         os.makedirs(output_dir / "tmp_summaries", exist_ok=True)
         for src, target in [
             (
+                batch_output_dir / "simulation.log",
+                output_dir / f"simulation.log.{batch_index}",
+            ),
+            (
                 batch_output_dir / mode / "mc-all",
-                output_dir / "tmp_summaries" / f"mc-all-{batch_index}",
+                output_dir / "tmp_summaries" / f"mc-all.{batch_index}",
             ),
             (
                 batch_output_dir / "checkIntegrity.txt",
                 output_dir
                 / "tmp_summaries"
-                / f"checkIntegrity.txt-{batch_index}",
+                / f"checkIntegrity.txt.{batch_index}",
             ),
             (
                 batch_output_dir / "annualSystemCost.txt",
                 output_dir
                 / "tmp_summaries"
-                / f"annualSystemCost.txt-{batch_index}",
+                / f"annualSystemCost.txt.{batch_index}",
             ),
             (
                 batch_output_dir / "about-the-study" / "parameters.ini",
-                output_dir / "tmp_summaries" / f"parameters.ini-{batch_index}",
+                output_dir / "tmp_summaries" / f"parameters.ini.{batch_index}",
             ),
         ]:
             if src.exists():
