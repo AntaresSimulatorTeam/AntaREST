@@ -14,6 +14,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -61,7 +62,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
     study_service = RawStudyService(
         config=build_config(path_to_studies),
@@ -99,7 +100,7 @@ def test_get_cache(tmp_path: str) -> None:
     study.get.return_value = data
 
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
     cache = Mock()
     cache.get.return_value = None
@@ -131,7 +132,7 @@ def test_check_errors():
     study.check_errors.return_value = ["Hello"]
 
     factory = Mock()
-    factory.create_from_fs.return_value = None, study
+    factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(Path())
     study_service = RawStudyService(
         config=config,
@@ -216,7 +217,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     study.get.return_value = data
 
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(path_studies)
     study_service = RawStudyService(
         config=config,
@@ -253,7 +254,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     study.get.return_value = data
 
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(path_studies)
     study_service = RawStudyService(
         config=config,
@@ -402,7 +403,7 @@ def test_copy_study(
     study_factory = Mock()
 
     config = Mock()
-    study_factory.create_from_fs.return_value = config, study
+    study_factory.create_from_fs.return_value = FileStudy(config, study)
     study_factory.create_from_config.return_value = study
 
     url_engine = Mock()

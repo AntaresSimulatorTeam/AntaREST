@@ -17,6 +17,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
 from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -67,7 +68,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
     study_service = VariantStudyService(
         raw_study_service=Mock(),
@@ -142,7 +143,7 @@ def test_get_cache(tmp_path: str) -> None:
     study.get.return_value = data
 
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = (None, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
     cache = Mock()
     cache.get.return_value = None

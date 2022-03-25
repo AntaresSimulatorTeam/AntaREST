@@ -262,7 +262,10 @@ def test_run_study(
     )
 
     #    slurm_launcher._clean_local_workspace.assert_called_once()
-    slurm_launcher.callbacks.export_study.assert_called_once()
+    if version != 99:
+        slurm_launcher.callbacks.export_study.assert_called_once()
+    else:
+        slurm_launcher.callbacks.export_study.assert_not_called()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
         ANY, job_status, ANY, None
     )
