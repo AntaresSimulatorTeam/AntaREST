@@ -88,8 +88,8 @@
     "xml-js": "^1.6.11"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "react-scripts --max_old_space_size=4096 start",
+    "build": "react-scripts --max_old_space_size=4096 build",
     "check": "bash -c scripts/test_extracted_srclib.sh",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "test": " react-scripts test",
