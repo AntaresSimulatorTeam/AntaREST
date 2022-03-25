@@ -14,7 +14,7 @@ echo "Downloading AntaresSimulator from $LINK"
 wget -q $LINK
 
 echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINATION"
-unzip -q $ANTARES_SOLVER_ZIPFILE_NAME
+7z x $ANTARES_SOLVER_ZIPFILE_NAME
 mkdir $DESTINATION
 
 mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
@@ -36,7 +36,7 @@ cd ../dist
 ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
 
 echo "Zip the package"
-zip --symlinks -r -q AntaresWebServer *
+7z a  AntaresWebServer.zip *
 
 echo "Cleaning up"
 shopt -s extglob
