@@ -26,10 +26,17 @@ class FileStudyHelpers:
     @staticmethod
     def get_playlist(study: FileStudy) -> List[int]:
         config = FileStudyHelpers.get_config(study)
-        nb_years = cast(int, config.get("general", {}).get("nbyears"))
-        playlist_reset = config.get("playlist_reset", True)
-        added = config.get("playlist_year +", [])
-        removed = config.get("playlist_year -", [])
+        general_config = config.get("general", {})
+        nb_years = cast(int, general_config.get("nbyears"))
+        playlist_activated = cast(
+            bool, general_config.get("user-playlist", False)
+        )
+        if not playlist_activated:
+            return list(range(0, nb_years))
+        playlist_config = config.get("playlist", {})
+        playlist_reset = playlist_config.get("playlist_reset", True)
+        added = playlist_config.get("playlist_year +", [])
+        removed = playlist_config.get("playlist_year -", [])
         if playlist_reset:
             return [year for year in range(0, nb_years) if year not in removed]
         return [year for year in added if year not in removed]
@@ -41,12 +48,22 @@ class FileStudyHelpers:
         assert_this(general_config is not None)
         general_config = cast(JSON, general_config)
         nb_years = cast(int, general_config.get("nbyears"))
-        if len(playlist) > nb_years / 2:
-            general_config["playlist_reset"] = True
-            general_config["playlist_year -"] = [
-                year for year in range(0, nb_years) if year not in playlist
-            ]
+        if len(playlist) == nb_years:
+            general_config["user-playlist"] = False
         else:
-            general_config["playlist_reset"] = False
-            general_config["playlist_year +"] = playlist
+            playlist_config = config.get("playlist", {})
+            general_config["user-playlist"] = True
+            if len(playlist) > nb_years / 2:
+                playlist_config["playlist_reset"] = True
+                if "playlist_year +" in playlist_config:
+                    del playlist_config["playlist_year +"]
+                playlist_config["playlist_year -"] = [
+                    year for year in range(0, nb_years) if year not in playlist
+                ]
+            else:
+                playlist_config["playlist_reset"] = False
+                if "playlist_year -" in playlist_config:
+                    del playlist_config["playlist_year -"]
+                playlist_config["playlist_year +"] = playlist
+            config["playlist"] = playlist_config
         FileStudyHelpers.save_config(study, config)
