@@ -177,7 +177,9 @@ class ConfigPathBuilder:
             path / "about-the-study/parameters.ini"
         )
         nb_years = par["general"]["nbyears"]
-        playlist_activated = cast(bool, par.get("user-playlist", False))
+        playlist_activated = cast(
+            bool, par["general"].get("user-playlist", False)
+        )
         playlist = list(range(0, nb_years))
         if playlist_activated:
             playlist_config = par.get("playlist", {})
