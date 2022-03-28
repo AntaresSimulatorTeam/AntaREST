@@ -493,6 +493,7 @@ def test_download_output() -> None:
         synthesis=True,
         by_year=True,
         error=False,
+        playlist=[0],
     )
     file_config = FileStudyTreeConfig(
         study_path=input_study.path,

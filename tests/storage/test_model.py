@@ -36,6 +36,7 @@ def test_file_study_tree_config_dto():
                 synthesis=True,
                 by_year=True,
                 error=True,
+                playlist=[0],
             )
         },
         bindings=["b1"],

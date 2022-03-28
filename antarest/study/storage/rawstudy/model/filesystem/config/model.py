@@ -89,6 +89,7 @@ class Simulation(BaseModel):
     synthesis: bool
     by_year: bool
     error: bool
+    playlist: List[int]
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}

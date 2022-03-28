@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Tuple, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader import (
@@ -16,6 +16,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
     transform_name_to_id,
     Cluster,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    DUPLICATE_KEYS,
 )
 
 logger = logging.getLogger(__name__)
@@ -148,6 +151,7 @@ class ConfigPathBuilder:
                 nbyears,
                 by_year,
                 synthesis,
+                playlist,
             ) = ConfigPathBuilder._parse_outputs_parameters(path)
             return Simulation(
                 date=regex.group(1),
@@ -157,6 +161,7 @@ class ConfigPathBuilder:
                 by_year=by_year,
                 synthesis=synthesis,
                 error=not (path / "checkIntegrity.txt").exists(),
+                playlist=playlist,
             )
         except Exception as e:
             logger.warning(
@@ -165,14 +170,33 @@ class ConfigPathBuilder:
         return None
 
     @staticmethod
-    def _parse_outputs_parameters(path: Path) -> Tuple[int, bool, bool]:
-        par: JSON = MultipleSameKeysIniReader(["+", "-"]).read(
+    def _parse_outputs_parameters(
+        path: Path,
+    ) -> Tuple[int, bool, bool, List[int]]:
+        par: JSON = MultipleSameKeysIniReader(DUPLICATE_KEYS).read(
             path / "about-the-study/parameters.ini"
         )
+        nb_years = par["general"]["nbyears"]
+        playlist_activated = cast(
+            bool, par["general"].get("user-playlist", False)
+        )
+        playlist = list(range(0, nb_years))
+        if playlist_activated:
+            playlist_config = par.get("playlist", {})
+            playlist_reset = playlist_config.get("playlist_reset", True)
+            added = playlist_config.get("playlist_year +", [])
+            removed = playlist_config.get("playlist_year -", [])
+            if playlist_reset:
+                playlist = [
+                    year for year in range(0, nb_years) if year not in removed
+                ]
+            else:
+                playlist = [year for year in added if year not in removed]
         return (
             par["general"]["nbyears"],
             par["general"]["year-by-year"],
             par["output"]["synthesis"],
+            playlist,
         )
 
     @staticmethod
