@@ -2,6 +2,9 @@ from typing import Optional, List, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    ConfigPathBuilder,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -24,22 +27,11 @@ class FileStudyHelpers:
         return study.tree.save(config, config_path)
 
     @staticmethod
-    def get_playlist(study: FileStudy) -> List[int]:
-        config = FileStudyHelpers.get_config(study)
-        general_config = config.get("general", {})
-        nb_years = cast(int, general_config.get("nbyears"))
-        playlist_activated = cast(
-            bool, general_config.get("user-playlist", False)
-        )
-        if not playlist_activated:
-            return list(range(0, nb_years))
-        playlist_config = config.get("playlist", {})
-        playlist_reset = playlist_config.get("playlist_reset", True)
-        added = playlist_config.get("playlist_year +", [])
-        removed = playlist_config.get("playlist_year -", [])
-        if playlist_reset:
-            return [year for year in range(0, nb_years) if year not in removed]
-        return [year for year in added if year not in removed]
+    def get_playlist(
+        study: FileStudy, output_id: Optional[str] = None
+    ) -> List[int]:
+        config = FileStudyHelpers.get_config(study, output_id)
+        return ConfigPathBuilder.get_playlist(config)
 
     @staticmethod
     def set_playlist(study: FileStudy, playlist: List[int]) -> None:
