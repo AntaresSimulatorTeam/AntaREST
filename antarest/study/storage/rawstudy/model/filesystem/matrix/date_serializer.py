@@ -221,7 +221,9 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
         # Extract left part with date
         date = df.iloc[:, 2:3]
         date.columns = ["month"]
-        date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
+        date.loc["month"] = date.loc[:, "month"].map(
+            IDateMatrixSerializer._MONTHS
+        )
 
         # Extract right part with data
         to_remove = df.columns[0:3]

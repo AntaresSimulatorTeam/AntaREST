@@ -505,6 +505,14 @@ def fastapi_app(
     return application, services
 
 
+def create_env(config_file: Path):
+    res = get_local_path() / "resources"
+    config = Config.from_yaml_file(res=res, file=config_file)
+    configure_logger(config)
+    init_db(config_file, config, False, None)
+    return create_services(config, None)
+
+
 if __name__ == "__main__":
     (
         config_file,

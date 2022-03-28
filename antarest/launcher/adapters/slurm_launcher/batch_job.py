@@ -1,13 +1,15 @@
 import logging
 import math
 import os
+import re
 import shutil
 import uuid
 from functools import reduce
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, cast, Any
 
 from filelock import FileLock
+from pandas import Series, MultiIndex, DataFrame
 
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config
@@ -19,6 +21,16 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    AreaOutputSeriesMatrix,
+    OutputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.mcall import (
+    OutputSimulationModeMcAll,
+)
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import find_single_output_path
 
@@ -26,6 +38,7 @@ from antarest.study.storage.utils import find_single_output_path
 logger = logging.getLogger(__name__)
 
 BATCH_JOB_CONFIG_DATA_KEY = "BATCH_JOBS"
+TMP_SUMMARIES_DIR = "tmp_summaries"
 
 
 class BatchJobManager:
@@ -185,7 +198,9 @@ class BatchJobManager:
         """
         assert_this(len(launcher_studies) > 0)
         output_dir: Optional[Path] = None
+        output_info: Optional[Tuple[Path, str]] = None
         batch_parts = 0
+        merged_batches = {}
         for study in launcher_studies:
             if not study.with_error:
                 batch_parts += 1
@@ -194,10 +209,15 @@ class BatchJobManager:
                 )
                 if not output_dir:
                     output_dir = batch_output_dir
+                    output_info = (
+                        workspace / study.name,
+                        batch_output_dir.name,
+                    )
                 else:
-                    self.merge_output_data(
+                    batch_size = self.merge_output_data(
                         batch_output_dir, output_dir, batch_parts
                     )
+                    merged_batches[batch_parts] = batch_size
             elif not allow_part_failure:
                 logger.warning(
                     f"Sub job {study.name} failed within job {job_id}. Importing nothing."
@@ -207,9 +227,43 @@ class BatchJobManager:
                 logger.warning(
                     f"Sub job {study.name} failed within job {job_id}. Skipping importing this part."
                 )
-        if batch_parts > 1 and output_dir:
-            self.reconstruct_synthesis(output_dir)
+        if batch_parts > 1 and output_info:
+            self.reconstruct_synthesis(
+                output_info[0], output_info[1], merged_batches
+            )
         return output_dir
+
+    @staticmethod
+    def merge_series_stats(
+        stats: List[Tuple[Series, Series, int]]
+    ) -> Tuple[Series, Series]:
+        def compute_stats(
+            agg: Optional[Tuple[Series, Series, int]],
+            el: Tuple[Series, Series, int],
+        ) -> Tuple[Series, Series, int]:
+            avg, sqr_root_std_dev, n = el
+            if agg:
+                agg_x, agg_mean, agg_total = agg
+                return (
+                    agg_x.add(
+                        (sqr_root_std_dev.pow(2) + avg.pow(2)).multiply(n)
+                    ),
+                    agg_mean.add(avg.multiply(n)),
+                    agg_total + n,
+                )
+            else:
+                return (
+                    (sqr_root_std_dev.pow(2) + avg.pow(2)).multiply(n),
+                    avg.multiply(n),
+                    n,
+                )
+
+        e_x2, e_total, n = reduce(compute_stats, stats, None)
+        sqrt_root_std_deviation = (
+            e_x2.divide(n).sub(e_total.divide(n).pow(2)).pow(0.5)
+        )
+        mean = e_total / n
+        return mean, sqrt_root_std_deviation
 
     @staticmethod
     def merge_stats(
@@ -244,7 +298,7 @@ class BatchJobManager:
     @staticmethod
     def merge_output_data(
         batch_output_dir: Path, output_dir: Path, batch_index: int
-    ) -> None:
+    ) -> int:
         f"""
         Copy a batch output data into a merged output directory.
         Some data is copied into their final destination, some in temporary location to be merged later by {BatchJobManager.reconstruct_synthesis.__name__}
@@ -258,14 +312,15 @@ class BatchJobManager:
             logger.warning(
                 f"Failed to find data dir in output {batch_output_dir}"
             )
-            return
-        for mc_year in os.listdir(data_dir):
+            return 0
+        mc_years = os.listdir(data_dir)
+        for mc_year in mc_years:
             shutil.move(
                 str(data_dir / mc_year), output_dir / mode / "mc-ind" / mc_year
             )
 
         # temporary summary files and logs
-        os.makedirs(output_dir / "tmp_summaries", exist_ok=True)
+        os.makedirs(output_dir / TMP_SUMMARIES_DIR, exist_ok=True)
         for src, target in [
             (
                 batch_output_dir / "simulation.log",
@@ -273,34 +328,205 @@ class BatchJobManager:
             ),
             (
                 batch_output_dir / mode / "mc-all",
-                output_dir / "tmp_summaries" / f"mc-all.{batch_index}",
+                output_dir / TMP_SUMMARIES_DIR / f"mc-all.{batch_index}",
             ),
             (
                 batch_output_dir / "checkIntegrity.txt",
                 output_dir
-                / "tmp_summaries"
+                / TMP_SUMMARIES_DIR
                 / f"checkIntegrity.txt.{batch_index}",
             ),
             (
                 batch_output_dir / "annualSystemCost.txt",
                 output_dir
-                / "tmp_summaries"
+                / TMP_SUMMARIES_DIR
                 / f"annualSystemCost.txt.{batch_index}",
             ),
             (
                 batch_output_dir / "about-the-study" / "parameters.ini",
-                output_dir / "tmp_summaries" / f"parameters.ini.{batch_index}",
+                output_dir
+                / TMP_SUMMARIES_DIR
+                / f"parameters.ini.{batch_index}",
             ),
         ]:
             if src.exists():
                 shutil.move(str(src), target)
 
-    def reconstruct_synthesis(self, output_dir: Path) -> None:
+        return len(mc_years)
+
+    def reconstruct_synthesis(
+        self,
+        study_dir: Path,
+        output_name: str,
+        batches_indices_size: Dict[int, int],
+    ) -> None:
         """
         Merge all synthesis data:
         - mc-all
-        - parameters (playlist)
-        - summary files (checkIntegrity.txt, annualSystemCost.txt)
+        - todo parameters (playlist)
+        - todo summary files (checkIntegrity.txt, annualSystemCost.txt)
         """
-        # todo
-        pass
+        study = self.study_factory.create_from_fs(
+            study_dir, "", use_cache=False
+        )
+
+        config = study.config.at_file(
+            study.config.study_path
+            / "output"
+            / output_name
+            / "economy"
+            / f"mc-all"
+        )
+        mc_all = OutputSimulationModeMcAll(study.tree.context, config)
+        mc_alls = [mc_all]
+        mc_alls_size = [self.batch_size]
+        for batch_index in batches_indices_size:
+            config = study.config.at_file(
+                study.config.study_path
+                / "output"
+                / output_name
+                / TMP_SUMMARIES_DIR
+                / f"mc-all-{batch_index}"
+            )
+            mc_all = OutputSimulationModeMcAll(study.tree.context, config)
+            mc_alls.append(mc_all)
+            mc_alls_size.append(batches_indices_size[batch_index])
+
+        mc_data: Dict[str, Dict[str, Dict[str, List[OutputSeriesMatrix]]]] = {
+            "areas": {},
+            "links": {},
+        }
+        for batch_data in mc_alls:
+            for key, child in (
+                cast(FolderNode, batch_data.get_node(["areas"]))
+                .build()
+                .items()
+            ):
+                if key not in mc_data["areas"]:
+                    mc_data["areas"][key] = {}
+                for data_key, data in cast(FolderNode, child).build().items():
+                    if data_key not in mc_data["areas"][key]:
+                        mc_data["areas"][key][data_key] = []
+                    mc_data["areas"][key][data_key].append(
+                        cast(OutputSeriesMatrix, data)
+                    )
+            for child_key_0, child0 in (
+                cast(FolderNode, batch_data.get_node(["links"]))
+                .build()
+                .items()
+            ):
+                for child_key_1, child1 in (
+                    cast(FolderNode, child0).build().items()
+                ):
+                    child_key = f"{child_key_0} - {child_key_1}"
+                    if child_key not in mc_data["links"]:
+                        mc_data["links"][child_key] = {}
+                    for data_key, data in (
+                        cast(FolderNode, child1).build().items()
+                    ):
+                        if data_key not in mc_data["links"][child_key]:
+                            mc_data["links"][child_key][data_key] = []
+                        mc_data["links"][child_key][data_key].append(
+                            cast(OutputSeriesMatrix, data)
+                        )
+
+        def reduce_types(
+            agg: Dict[str, List[Tuple[str, str]]], el: Tuple[str, str, str]
+        ) -> Dict[str, List[Tuple[str, str]]]:
+            if el[2] == "EXP" or el[2] == "std":
+                if el[:2] in agg["tmp_avg_and_std"]:
+                    agg["avg_and_std"].append(el[:2])
+                    agg["tmp_avg_and_std"].remove(el[:2])
+                agg["tmp_avg_and_std"].append(el[:2])
+            elif el[2] == "values":
+                agg["vals"].append(el[:2])
+            elif el[2] == "min":
+                agg["min"].append(el[:2])
+            elif el[2] == "max":
+                agg["max"].append(el[:2])
+            return agg
+
+        def process_data(
+            data_nodes: Dict[str, List[OutputSeriesMatrix]], stat_name: str
+        ) -> None:
+            if "values" in stat_name or "details" in stat_name:
+                dfs = [
+                    data_node.parse_dataframe()
+                    for data_node in data_nodes[stat_name]
+                ]
+                dfs_id: List[DataFrame] = []
+                if "values" in stat_name:
+                    freq_match = re.match("values-(\\w+)", stat_name)
+                    dfs_id = [
+                        data_node.parse_dataframe()
+                        for data_node in data_nodes[
+                            f"values-{freq_match.group(1)}"
+                        ]
+                    ]
+                df_main = dfs[0]
+                vals_types = reduce(
+                    reduce_types,
+                    df_main.columns.values.tolist(),
+                    {
+                        "avg_and_std": [],
+                        "tmp_avg_and_std": [],
+                        "min": [],
+                        "max": [],
+                        "vals": [],
+                    },
+                )
+                for val_type in vals_types["avg_and_std"]:
+                    merged_data = BatchJobManager.merge_series_stats(
+                        [
+                            (
+                                cast(
+                                    Series,
+                                    df[(val_type[0], val_type[1], "EXP")],
+                                ),
+                                cast(
+                                    Series,
+                                    df[(val_type[0], val_type[1], "std")],
+                                ),
+                                mc_alls_size[i],
+                            )
+                            for i, df in enumerate(dfs)
+                        ]
+                    )
+                    df_main[(val_type[0], val_type[1], "EXP")] = merged_data[0]
+                    df_main[(val_type[0], val_type[1], "std")] = merged_data[1]
+                for val_type in vals_types["min"]:
+                    for df in dfs[1:]:
+                        col_key = (val_type[0], val_type[1], "min")
+                        df_main[col_key] = DataFrame(
+                            {"1": df_main[col_key], "2": df[col_key]}
+                        ).min(axis=1)
+                    # todo fetch the correct df id from dfs_id
+                for val_type in vals_types["max"]:
+                    for df in dfs[1:]:
+                        col_key = (val_type[0], val_type[1], "min")
+                        df_main[col_key] = DataFrame(
+                            {"1": df_main[col_key], "2": df[col_key]}
+                        ).max(axis=1)
+                    # todo fetch the correct df id from dfs_id
+                for val_type_name in ["tmp_avg_and_std", "vals"]:
+                    col_type_name = (
+                        "EXP"
+                        if val_type_name == "tmp_avg_and_std"
+                        else "values"
+                    )
+                    for val_type in vals_types[val_type_name]:
+                        col_key = (val_type[0], val_type[1], col_type_name)
+                        logger.info(col_key)
+                        df_main[col_key] = DataFrame(
+                            {i: df[col_key] for i, df in enumerate(dfs)}
+                        ).mean(axis=1)
+
+                data_nodes[stat_name][0].save(df_main.to_dict(orient="split"))
+
+        for item_type in ["areas", "links"]:
+            for item in mc_data[item_type]:
+                for stat_element in mc_data[item_type][item]:
+                    logger.info(
+                        f"Processing {stat_element} for {item_type} {item}"
+                    )
+                    process_data(mc_data[item_type][item], stat_element)
