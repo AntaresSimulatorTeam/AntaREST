@@ -33,7 +33,7 @@ sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/antares_solver
 
 echo "Create symbolic link to antares_solver"
 cd ../dist
-ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
+# ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
 
 #echo "Zip the package"
 #7z a  AntaresWebServer.zip *
