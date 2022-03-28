@@ -53,3 +53,4 @@ jobs:
         with:
           name: dist-windows-latest
           path: dist/*
+          follow-symlink: false
