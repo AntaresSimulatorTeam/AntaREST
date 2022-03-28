@@ -48,9 +48,11 @@ jobs:
       - name: Packaging
         run: bash ./package_antares_web_win.sh
         working-directory: scripts
+      - name: creating shortcut
+        run: cscript create_shortcut.vbs
+        working-directory: scripts
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
           name: dist-windows-latest
           path: dist/*
-          follow-symlink: false
