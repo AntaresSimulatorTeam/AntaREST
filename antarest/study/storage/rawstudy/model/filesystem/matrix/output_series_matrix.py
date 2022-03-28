@@ -3,6 +3,7 @@ from typing import List, Optional, cast, Union
 
 import numpy as np
 import pandas as pd  # type: ignore
+from pandas import DataFrame
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -15,6 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
     FactoryDateSerializer,
+    rename_unnamed,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     HeadWriter,
@@ -53,16 +55,16 @@ class OutputSeriesMatrix(
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
-    def parse(
-        self,
-    ) -> JSON:
+    def parse_dataframe(self) -> DataFrame:
         df = pd.read_csv(
             self.config.path,
             sep="\t",
             skiprows=4,
+            header=[0, 1, 2],
             na_values="N/A",
             float_precision="legacy",
         )
+        rename_unnamed(df)
 
         date, body = self.date_serializer.extract_date(df)
 
@@ -76,7 +78,12 @@ class OutputSeriesMatrix(
         matrix = matrix.where(pd.notna(matrix), None)
         matrix.index = date
         matrix.columns = header
+        return matrix
 
+    def parse(
+        self,
+    ) -> JSON:
+        matrix = self.parse_dataframe()
         return cast(JSON, matrix.to_dict(orient="split"))
 
     def _dump_json(self, data: JSON) -> None:
