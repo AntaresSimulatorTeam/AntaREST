@@ -24,7 +24,7 @@ export const TILE_SIZE_Y_2 = TILE_SIZE_Y / 2;
 export const CIRCLE_RADIUS = 16;
 export const DCX = TILE_SIZE_X_2;
 export const DCY = TILE_SIZE_Y - CIRCLE_RADIUS;
-export const STROKE_WIDTH = 1;
+export const STROKE_WIDTH = 4;
 export const STROKE_WIDTH_2 = STROKE_WIDTH / 2;
 
 export const RECT_X_SPACING = 12;
@@ -33,7 +33,12 @@ export const RECT_Y_SPACING_2 = RECT_Y_SPACING / 2;
 export const RECT_DECORATION = 3;
 export const TEXT_SPACING = 10;
 export const TEXT_SIZE = 20;
-export const ZOOM_OUT = 1.5;
+export const TEXT_SIZE_2 = TEXT_SIZE / 2;
+export const ZOOM_OUT = 1.2;
+export const MIN_WIDTH = 350;
+export const RECT_TEXT_WIDTH = 350;
+export const DEPTH_OFFSET = 1;
+export const CURVE_OFFSET = 4;
 
 export const fakeTree : StudyTree = {
   name: 'Root',
@@ -42,7 +47,7 @@ export const fakeTree : StudyTree = {
     modificationDate: Date.now().toString(),
   },
   drawOptions: {
-    height: 5,
+    depth: 5,
     nbAllChildrens: 8,
   },
   children: [
@@ -53,7 +58,7 @@ export const fakeTree : StudyTree = {
         modificationDate: Date.now().toString(),
       },
       drawOptions: {
-        height: 4,
+        depth: 4,
         nbAllChildrens: 3,
       },
       children: [
@@ -64,7 +69,7 @@ export const fakeTree : StudyTree = {
             modificationDate: Date.now().toString(),
           },
           drawOptions: {
-            height: 3,
+            depth: 3,
             nbAllChildrens: 2,
           },
           children: [
@@ -75,7 +80,7 @@ export const fakeTree : StudyTree = {
                 modificationDate: Date.now().toString(),
               },
               drawOptions: {
-                height: 2,
+                depth: 2,
                 nbAllChildrens: 1,
               },
               children: [
@@ -86,7 +91,7 @@ export const fakeTree : StudyTree = {
                     modificationDate: Date.now().toString(),
                   },
                   drawOptions: {
-                    height: 1,
+                    depth: 1,
                     nbAllChildrens: 0,
                   },
                   children: [
@@ -106,7 +111,7 @@ export const fakeTree : StudyTree = {
         modificationDate: Date.now().toString(),
       },
       drawOptions: {
-        height: 1,
+        depth: 1,
         nbAllChildrens: 0,
       },
       children: [
@@ -120,7 +125,7 @@ export const fakeTree : StudyTree = {
         modificationDate: Date.now().toString(),
       },
       drawOptions: {
-        height: 1,
+        depth: 1,
         nbAllChildrens: 0,
       },
       children: [
@@ -134,7 +139,7 @@ export const fakeTree : StudyTree = {
         modificationDate: Date.now().toString(),
       },
       drawOptions: {
-        height: 2,
+        depth: 2,
         nbAllChildrens: 1,
       },
       children: [
@@ -145,7 +150,7 @@ export const fakeTree : StudyTree = {
             modificationDate: Date.now().toString(),
           },
           drawOptions: {
-            height: 1,
+            depth: 1,
             nbAllChildrens: 0,
           },
           children: [

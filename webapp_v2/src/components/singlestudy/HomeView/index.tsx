@@ -28,17 +28,17 @@ function HomeView(props: Props) {
   return (
     <Split
       className="split"
-      gutterSize={2}
+      gutterSize={4}
       snapOffset={0}
       style={{
         display: 'flex',
         flexDirection: 'row',
       }}
     >
-      <Box height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box" overflow="hidden">
+      <Box display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box" overflow="hidden">
         <StudyTreeView study={study} parents={parents} childrenTree={childrenTree} onClick={(studyId: string) => navigate(`/studies/${studyId}`)} />
       </Box>
-      <Box height="100%" display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box" overflow="hidden">
+      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box" overflow="hidden">
         <InformationView study={study} />
       </Box>
     </Split>

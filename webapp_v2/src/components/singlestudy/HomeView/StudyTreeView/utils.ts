@@ -10,7 +10,7 @@ export interface StudyTree {
         modificationDate: string;
     }
     drawOptions: {
-        height: number;
+        depth: number;
         nbAllChildrens: number;
     },
     children: Array<StudyTree>;
@@ -24,7 +24,7 @@ const buildNodeFromMetadata = (study: StudyMetadata): StudyTree =>
       modificationDate: convertUTCToLocalTime(study.modificationDate),
     },
     drawOptions: {
-      height: 0,
+      depth: 0,
       nbAllChildrens: 0,
     },
     children: [],
@@ -33,12 +33,12 @@ const buildNodeFromMetadata = (study: StudyMetadata): StudyTree =>
 const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
   const nodeDatum = buildNodeFromMetadata(tree.node);
   if (tree.children.length === 0) {
-    nodeDatum.drawOptions.height = 1;
+    nodeDatum.drawOptions.depth = 1;
     nodeDatum.drawOptions.nbAllChildrens = 0;
     nodeDatum.children = [];
   } else {
     nodeDatum.children = (tree.children || []).map((el: VariantTree) => convertVariantTreeToStudyTree(el));
-    nodeDatum.drawOptions.height = 1 + Math.max(...nodeDatum.children.map((elm) => elm.drawOptions.height));
+    nodeDatum.drawOptions.depth = 1 + Math.max(...nodeDatum.children.map((elm) => elm.drawOptions.depth));
     nodeDatum.drawOptions.nbAllChildrens = nodeDatum.children.map((elm) => 1 + elm.drawOptions.nbAllChildrens)
       .reduce((acc, curr) => acc + curr);
   }
@@ -48,7 +48,7 @@ const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
 
 const buildTree = async (node: StudyTree, childrenTree: VariantTree) : Promise<void> => {
   if ((childrenTree.children || []).length === 0) {
-    node.drawOptions.height = 1;
+    node.drawOptions.depth = 1;
     node.drawOptions.nbAllChildrens = 0;
     return;
   }
@@ -67,7 +67,7 @@ export const getTreeNodes = async (study: StudyMetadata, parentsStudy: Array<Stu
 
     for (let i = 0; i < parents.length; i += 1) {
       const elmNode = buildNodeFromMetadata(parents[i]);
-      elmNode.drawOptions.height = 1 + prevNode.drawOptions.height;
+      elmNode.drawOptions.depth = 1 + prevNode.drawOptions.depth;
       elmNode.drawOptions.nbAllChildrens = 1 + prevNode.drawOptions.nbAllChildrens;
       if (prevNode.children !== undefined) elmNode.children.push(prevNode);
       prevNode = elmNode;
