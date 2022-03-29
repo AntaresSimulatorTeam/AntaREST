@@ -13,16 +13,16 @@ db:
   url: "sqlite:///database.db"
 
 storage:
-  tmp_dir: ../tmp
-  matrixstore: ../matrices
-  archive_dir: ../examples/archives
+  tmp_dir: ./tmp
+  matrixstore: ./matrices
+  archive_dir: ./examples/archives
   workspaces:
     default: # required, no filters applied, this folder is not watched
-      path: ../examples/internal_studies/
+      path: ./examples/internal_studies/
     # other workspaces can be added
     # if a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
     tmp:
-      path: ../examples/studies/
+      path: ./examples/studies/
       # filter_in: ['.*'] # default to '.*'
       # filter_out: [] # default to empty
       # groups: [] # default empty

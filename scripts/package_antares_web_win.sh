@@ -24,7 +24,7 @@ mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
 echo "Copy basic configuration files"
 cp -r ../resources/deploy/* ../dist/
 cp ../README.md ../dist/
-sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
 cp ../resources/AntaresWebServerShortcut.lnk ../dist/
 
 echo "Cleaning up"
