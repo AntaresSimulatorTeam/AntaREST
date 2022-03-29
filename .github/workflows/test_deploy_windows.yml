@@ -14,9 +14,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Install stack and wget
-        run: |
-          choco install wget --no-progress
+      - name: Install wget
+        run: choco install wget --no-progress
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
@@ -47,7 +46,7 @@ jobs:
       - name: Generate binary Windows
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller antarest\gui.py --icon=resources/webapp/favicon.ico --hidden-import cmath --hidden-import antarest.dbmodel --hidden-import plyer.platforms.win --hidden-import plyer.platforms.win.notification  --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini" -n AntaresWebServer
+          pyinstaller --noconsole antarest\gui.py --icon=resources/webapp/favicon.ico --hidden-import cmath --hidden-import antarest.dbmodel --hidden-import plyer.platforms.win --hidden-import plyer.platforms.win.notification  --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini" -n AntaresWebServer
       - name: Packaging
         run: bash ./package_antares_web_win.sh
         working-directory: scripts

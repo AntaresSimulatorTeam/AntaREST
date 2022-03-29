@@ -17,16 +17,9 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
 7z x $ANTARES_SOLVER_ZIPFILE_NAME
 mkdir $DESTINATION
 
-echo $(pwd)
-echo $(ls -l)
 mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
 mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
 mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
-
-
-echo "Cleaning up"
-rm $ANTARES_SOLVER_ZIPFILE_NAME
-rm -rf $ANTARES_SOLVER_FOLDER_NAME
 
 echo "Copy basic configuration files"
 cp -r ../resources/deploy/* ../dist/
@@ -34,17 +27,7 @@ cp ../README.md ../dist/
 sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
 cp ../resources/AntaresWebServerShortcut.lnk ../dist/
 
-# echo "Create symbolic link to antares_solver"
-# cd ../dist
-# ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
-
-#echo "Zip the package"
-#7z a  AntaresWebServer.zip *
-
-#echo "Cleaning up"
-#shopt -s extglob
-#rm -rf !(*.zip)
-
-# echo "Done"
-
+echo "Cleaning up"
+rm $ANTARES_SOLVER_ZIPFILE_NAME
+rm -rf $ANTARES_SOLVER_FOLDER_NAME
 
