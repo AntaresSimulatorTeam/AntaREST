@@ -11,12 +11,14 @@ LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/downloa
 DESTINATION="../dist/AntaresWebServer/antares_solver"
 
 echo "Downloading AntaresSimulator from $LINK"
-wget -q $LINK
+wget $LINK
 
 echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINATION"
 7z x $ANTARES_SOLVER_ZIPFILE_NAME
 mkdir $DESTINATION
 
+echo $(pwd)
+echo $(ls -l)
 mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
 mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
 mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
