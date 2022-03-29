@@ -6,8 +6,9 @@ import shutil
 import uuid
 from functools import reduce
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple, cast, Any
+from typing import Dict, Optional, List, Tuple, cast, Any, Callable
 
+import numpy as np
 from filelock import FileLock
 from pandas import Series, MultiIndex, DataFrame  # type: ignore
 
@@ -397,6 +398,7 @@ class BatchJobManager:
             "links": {},
         }
         for batch_data in mc_alls:
+            # fetch all area and set output series matrix nodes
             for key, child in (
                 cast(FolderNode, batch_data.get_node(["areas"]))
                 .build()
@@ -410,6 +412,8 @@ class BatchJobManager:
                     mc_data["areas"][key][data_key].append(
                         cast(OutputSeriesMatrix, data)
                     )
+
+            # fetch all links output series matrix nodes
             for child_key_0, child0 in (
                 cast(FolderNode, batch_data.get_node(["links"]))
                 .build()
@@ -446,6 +450,22 @@ class BatchJobManager:
                 agg["max"].append(el[:2])
             return agg
 
+        def compare_min(series: Series) -> Any:
+            series_list = series.to_list()
+            min_val = series_list[0]
+            for el in series_list[1:]:
+                if el[0] < min_val[0]:
+                    min_val = el
+            return min_val
+
+        def compare_max(series: Series) -> Any:
+            series_list = series.to_list()
+            max_val = series_list[0]
+            for el in series_list[1:]:
+                if el[0] > max_val[0]:
+                    max_val = el
+            return max_val
+
         def process_data(
             data_nodes: Dict[str, List[OutputSeriesMatrix]], stat_name: str
         ) -> None:
@@ -454,16 +474,6 @@ class BatchJobManager:
                     data_node.parse_dataframe()
                     for data_node in data_nodes[stat_name]
                 ]
-                dfs_id: List[DataFrame] = []
-                if "values" in stat_name:
-                    freq_match = re.match("values-(\\w+)", stat_name)
-                    if freq_match:
-                        dfs_id = [
-                            data_node.parse_dataframe()
-                            for data_node in data_nodes[
-                                f"values-{freq_match.group(1)}"
-                            ]
-                        ]
                 df_main = dfs[0]
                 vals_types: Dict[str, List[Tuple[str, str]]] = reduce(
                     reduce_types,
@@ -476,6 +486,22 @@ class BatchJobManager:
                         "vals": [],
                     },
                 )
+
+                dfs_id_main: Optional[DataFrame] = None
+                dfs_id: List[DataFrame] = []
+                df_id_datanode_name: Optional[str] = None
+                if "values" in stat_name:
+                    freq_match = re.match("values-(\\w+)", stat_name)
+                    if freq_match:
+                        dfs_id = [
+                            data_node.parse_dataframe()
+                            for data_node in data_nodes[
+                                f"id-{freq_match.group(1)}"
+                            ]
+                        ]
+                        dfs_id_main = dfs_id[0]
+                        df_id_datanode_name = f"id-{freq_match.group(1)}"
+
                 for val_type in vals_types["avg_and_std"]:
                     merged_data = BatchJobManager.merge_series_stats(
                         [
@@ -496,19 +522,45 @@ class BatchJobManager:
                     df_main[(val_type[0], val_type[1], "EXP")] = merged_data[0]
                     df_main[(val_type[0], val_type[1], "std")] = merged_data[1]
                 for val_type in vals_types["min"]:
-                    for df in dfs[1:]:
-                        col_key = (val_type[0], val_type[1], "min")
+                    col_key = (val_type[0], val_type[1], "min")
+                    if dfs_id_main is not None:
+                        df_tmp = DataFrame(
+                            {i: df[col_key] for i, df in enumerate(dfs)}
+                        ).combine(
+                            DataFrame(
+                                {i: df[col_key] for i, df in enumerate(dfs_id)}
+                            ),
+                            lambda x, y: x.combine(y, lambda a, b: (a, b)),
+                        )
+                        df_res = df_tmp.apply(
+                            compare_min, result_type="expand", axis=1
+                        )
+                        df_main[col_key] = df_res.iloc[:, 0]
+                        dfs_id_main[col_key] = df_res.iloc[:, 1]
+                    else:
                         df_main[col_key] = DataFrame(
-                            {"1": df_main[col_key], "2": df[col_key]}
+                            {i: df[col_key] for i, df in enumerate(dfs)}
                         ).min(axis=1)
-                    # todo fetch the correct df id from dfs_id
                 for val_type in vals_types["max"]:
-                    for df in dfs[1:]:
-                        col_key = (val_type[0], val_type[1], "min")
+                    col_key = (val_type[0], val_type[1], "max")
+                    if dfs_id_main is not None:
+                        df_tmp = DataFrame(
+                            {i: df[col_key] for i, df in enumerate(dfs)}
+                        ).combine(
+                            DataFrame(
+                                {i: df[col_key] for i, df in enumerate(dfs_id)}
+                            ),
+                            lambda x, y: x.combine(y, lambda a, b: (a, b)),
+                        )
+                        df_res = df_tmp.apply(
+                            compare_max, result_type="expand", axis=1
+                        )
+                        df_main[col_key] = df_res.iloc[:, 0]
+                        dfs_id_main[col_key] = df_res.iloc[:, 1]
+                    else:
                         df_main[col_key] = DataFrame(
-                            {"1": df_main[col_key], "2": df[col_key]}
+                            {i: df[col_key] for i, df in enumerate(dfs)}
                         ).max(axis=1)
-                    # todo fetch the correct df id from dfs_id
                 for val_type_name in ["tmp_avg_and_std", "vals"]:
                     col_type_name = (
                         "EXP"
@@ -518,11 +570,22 @@ class BatchJobManager:
                     for val_type in vals_types[val_type_name]:
                         col_key = (val_type[0], val_type[1], col_type_name)
                         logger.info(col_key)
-                        df_main[col_key] = DataFrame(
-                            {i: df[col_key] for i, df in enumerate(dfs)}
-                        ).mean(axis=1)
+                        df_main[col_key] = (
+                            DataFrame(
+                                {
+                                    i: df[col_key].mul(mc_alls_size[i])
+                                    for i, df in enumerate(dfs)
+                                }
+                            )
+                            .sum(axis=1, skipna=False)
+                            .div(np.sum(mc_alls_size))
+                        )
 
                 data_nodes[stat_name][0].save(df_main.to_dict(orient="split"))
+                if dfs_id_main is not None and df_id_datanode_name:
+                    data_nodes[df_id_datanode_name][0].save(
+                        dfs_id_main.to_dict(orient="split")
+                    )
 
         for item_type in ["areas", "links"]:
             for item in mc_data[item_type]:

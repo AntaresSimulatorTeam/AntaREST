@@ -49,7 +49,7 @@ def test_build_hourly(tmp_path: Path):
         {
             0: ["DE", "", "", "", ""],
             1: ["hourly", "", "index", 1, 2],
-            2: ["", "", "day", "1", "1"],
+            2: ["", "", "day", "01", "1"],
             3: ["", "", "month", "JAN", "JAN"],
             4: ["", "", "hour", "00:00", "01:00"],
         }
@@ -96,7 +96,7 @@ def test_build_daily(tmp_path: Path):
         {
             0: ["DE", "", "", "", ""],
             1: ["daily", "", "index", 1, 2],
-            2: ["", "", "day", "1", "2"],
+            2: ["", "", "day", "01", "02"],
             3: ["", "", "month", "JAN", "JAN"],
         }
     )
