@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Optional, List, Tuple, cast, Any
 
 from filelock import FileLock
-from pandas import Series, MultiIndex, DataFrame
+from pandas import Series, MultiIndex, DataFrame  # type: ignore
 
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config
@@ -258,7 +258,7 @@ class BatchJobManager:
                     n,
                 )
 
-        e_x2, e_total, n = reduce(compute_stats, stats, None)
+        e_x2, e_total, n = reduce(compute_stats, stats, None)  # type: ignore
         sqrt_root_std_deviation = (
             e_x2.divide(n).sub(e_total.divide(n).pow(2)).pow(0.5)
         )
@@ -457,14 +457,15 @@ class BatchJobManager:
                 dfs_id: List[DataFrame] = []
                 if "values" in stat_name:
                     freq_match = re.match("values-(\\w+)", stat_name)
-                    dfs_id = [
-                        data_node.parse_dataframe()
-                        for data_node in data_nodes[
-                            f"values-{freq_match.group(1)}"
+                    if freq_match:
+                        dfs_id = [
+                            data_node.parse_dataframe()
+                            for data_node in data_nodes[
+                                f"values-{freq_match.group(1)}"
+                            ]
                         ]
-                    ]
                 df_main = dfs[0]
-                vals_types = reduce(
+                vals_types: Dict[str, List[Tuple[str, str]]] = reduce(
                     reduce_types,
                     df_main.columns.values.tolist(),
                     {

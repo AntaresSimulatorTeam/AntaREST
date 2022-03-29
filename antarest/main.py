@@ -505,7 +505,10 @@ def fastapi_app(
     return application, services
 
 
-def create_env(config_file: Path):
+def create_env(config_file: Path) -> Dict[str, Any]:
+    """
+    Create application services env for testing and scripting purpose
+    """
     res = get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
