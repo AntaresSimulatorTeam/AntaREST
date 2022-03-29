@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd  # type: ignore
 from pandas import DataFrame
@@ -57,14 +57,14 @@ class IDateMatrixSerializer(ABC):
 
 
 def rename_unnamed(df: DataFrame) -> DataFrame:
-    for i, columns in enumerate(df.columns.levels):
-        columns = columns.tolist()
-        for j, row in enumerate(columns):
-            if "Unnamed: " in row:
-                columns[j] = ""
-        df.columns.set_levels(
-            columns, verify_integrity=False, level=i, inplace=True
-        )
+    unnamed_cols: List[str] = []
+    for i in range(0, df.columns.nlevels):
+        unnamed_cols += [
+            name
+            for name in df.columns.get_level_values(i).values
+            if "Unnamed:" in name
+        ]
+    df.rename(columns={name: "" for name in unnamed_cols}, inplace=True)
     return df
 
 
