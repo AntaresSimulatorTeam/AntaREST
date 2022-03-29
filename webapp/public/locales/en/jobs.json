@@ -12,5 +12,7 @@
   "LAUNCH": "Launch",
   "COPY": "Copy",
   "ARCHIVE": "Archive",
-  "UNARCHIVE": "Unarchive"
+  "UNARCHIVE": "Unarchive",
+  "typeFilter": "Filter by type",
+  "all": "All"
 }

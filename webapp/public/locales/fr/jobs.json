@@ -12,5 +12,7 @@
   "LAUNCH": "Lancements",
   "COPY": "Copie",
   "ARCHIVE": "Archivage",
-  "UNARCHIVE": "Désarchivage"
+  "UNARCHIVE": "Désarchivage",
+  "typeFilter": "Filtrer par type",
+  "all": "Tous"
 }

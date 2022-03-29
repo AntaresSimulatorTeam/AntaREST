@@ -63,6 +63,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     borderRadius: '50%',
     marginRight: theme.spacing(1),
   },
+  actions: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
   actionButton: {
     display: 'flex',
     alignItems: 'center',
@@ -77,6 +82,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   downloadIcon: {
     cursor: 'pointer',
+    margin: theme.spacing(0.5),
     color: theme.palette.primary.main,
     '&:hover': {
       color: theme.palette.secondary.main,
@@ -177,8 +183,18 @@ const JobsListing = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    const listener = (ev: WSMessage) => {
-      if (ev.type === WSEvent.DOWNLOAD_CREATED) {
+    const listener = async (ev: WSMessage) => {
+      if (ev.type === WSEvent.TASK_COMPLETED || ev.type === WSEvent.TASK_FAILED) {
+        const taskId = (ev.payload as TaskEventPayload).id;
+        if (tasks?.find((task) => task.id === taskId)) {
+          try {
+            const updatedTask = await getTask(taskId);
+            setTasks(tasks.filter((task) => task.id !== updatedTask.id).concat([updatedTask]));
+          } catch (error) {
+            logError(error);
+          }
+        }
+      } else if (ev.type === WSEvent.DOWNLOAD_CREATED) {
         setDownloads((downloads || []).concat([convertFileDownloadDTO(ev.payload as FileDownloadDTO)]));
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
         setDownloads((downloads || []).map((d) => {
@@ -205,25 +221,7 @@ const JobsListing = (props: PropTypes) => {
     };
     addWsListener(listener);
     return () => { removeWsListener(listener); };
-  }, [addWsListener, removeWsListener, downloads]);
-
-  useEffect(() => {
-    const listener = async (ev: WSMessage) => {
-      if (ev.type === WSEvent.TASK_COMPLETED || ev.type === WSEvent.TASK_FAILED) {
-        const taskId = (ev.payload as TaskEventPayload).id;
-        if (tasks?.find((task) => task.id === taskId)) {
-          try {
-            const updatedTask = await getTask(taskId);
-            setTasks(tasks.filter((task) => task.id !== updatedTask.id).concat([updatedTask]));
-          } catch (error) {
-            logError(error);
-          }
-        }
-      }
-    };
-    addWsListener(listener);
-    return () => removeWsListener(listener);
-  }, [addWsListener, removeWsListener, tasks, setTasks]);
+  }, [addWsListener, removeWsListener, downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
@@ -271,14 +269,14 @@ const JobsListing = (props: PropTypes) => {
       </Box>
     ),
     action: (
-      <Box>
+      <Box className={classes.actions}>
         <Box className={classes.actionButton}>
           {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
         </Box>
         <Box>
-          {job.status === 'success' ? <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
+          {job.status === 'success' ? <FontAwesomeIcon size="lg" className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
         </Box>
-        <LogView job={job} logButton="Logs" logErrorButton="Logs d'erreurs" />
+        <LogView job={job} logButton logErrorButton />
       </Box>
     ),
     date: job.completionDate || job.creationDate,

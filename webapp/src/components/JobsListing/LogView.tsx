@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { Box, createStyles, makeStyles, Theme, Button } from '@material-ui/core';
+import { Box, createStyles, makeStyles, Theme } from '@material-ui/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import ErrorIcon from '@material-ui/icons/Error';
 import { getStudyJobLog } from '../../services/api/study';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import LogModal from '../ui/LogModal';
@@ -10,15 +12,46 @@ import { LaunchJob } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-
+    logButtons: {
+      display: 'flex',
+    },
+    logIcon: {
+      cursor: 'pointer',
+      margin: theme.spacing(0.5),
+      color: theme.palette.primary.main,
+      '&:hover': {
+        color: theme.palette.secondary.main,
+      },
+    },
+    logError: {
+      position: 'relative',
+      cursor: 'pointer',
+      margin: theme.spacing(0.5),
+      '& svg:first-of-type': {
+        color: theme.palette.primary.main,
+      },
+      '& svg:last-of-type': {
+        position: 'absolute',
+        bottom: -2,
+        right: -3,
+        fontSize: 12,
+        color: theme.palette.secondary.main,
+      },
+      '&:hover': {
+        '& svg:first-of-type': {
+          color: theme.palette.secondary.main,
+        },
+        '& svg:last-of-type': {
+          color: theme.palette.primary.main,
+        },
+      },
     },
   }));
 
 interface PropsType {
   job: LaunchJob;
-  logButton?: string;
-  logErrorButton?: string;
+  logButton?: boolean;
+  logErrorButton?: boolean;
 }
 
 const LogView = (props: PropsType) => {
@@ -48,13 +81,16 @@ const LogView = (props: PropsType) => {
   };
 
   return (
-    <Box className={classes.root}>
-      {!!logButton &&
-        <Button onClick={() => openLogView(job.id)}>{logButton}</Button>
+    <Box className={classes.logButtons}>
+      {logButton &&
+        <FontAwesomeIcon size="lg" className={classes.logIcon} onClick={() => openLogView(job.id)} icon="file" />
       }
-      {!!logErrorButton &&
-        <Button onClick={() => openLogView(job.id, true)}>{logErrorButton}</Button>
-      }
+      {logErrorButton && (
+      <Box className={classes.logError} onClick={() => openLogView(job.id, true)}>
+        <FontAwesomeIcon size="lg" icon="file" />
+        <ErrorIcon />
+      </Box>
+      )}
       <LogModal
         isOpen={!!jobIdDetail}
         title={t('singlestudy:taskLog')}
@@ -69,8 +105,8 @@ const LogView = (props: PropsType) => {
 };
 
 LogView.defaultProps = {
-  logButton: undefined,
-  logErrorButton: undefined,
+  logButton: false,
+  logErrorButton: false,
 };
 
 export default LogView;

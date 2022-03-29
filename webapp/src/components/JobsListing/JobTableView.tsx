@@ -67,25 +67,32 @@ const JobTableView = (props: PropType) => {
     }
   }, [content, type]);
 
+  const filterList = [
+    'all',
+    TaskType.DOWNLOAD,
+    TaskType.LAUNCH,
+    TaskType.COPY,
+    TaskType.ARCHIVE,
+    TaskType.UNARCHIVE,
+  ];
+
   return (
     <Box className={classes.root}>
       <FormControl variant="outlined" className={classes.formControl}>
-        <InputLabel id="select-outlined-label">Filtrer par type</InputLabel>
+        <InputLabel id="jobsView-select-outlined-label">{t('jobs:typeFilter')}</InputLabel>
         <Select
-          labelId="select-outlined-label"
-          id="select-outlined"
+          labelId="jobsView-select-outlined-label"
+          id="jobsView-select-outlined"
           value={type}
           onChange={handleChange}
-          label="Filtrer par type"
+          label={t('jobs:typeFilter')}
         >
-          <MenuItem value="">
-            Tous
-          </MenuItem>
-          <MenuItem value={TaskType.DOWNLOAD} key={TaskType.DOWNLOAD}>{t(`jobs:${TaskType.DOWNLOAD}`)}</MenuItem>
-          <MenuItem value={TaskType.LAUNCH} key={TaskType.LAUNCH}>{t(`jobs:${TaskType.LAUNCH}`)}</MenuItem>
-          <MenuItem value={TaskType.COPY} key={TaskType.COPY}>{t(`jobs:${TaskType.COPY}`)}</MenuItem>
-          <MenuItem value={TaskType.ARCHIVE} key={TaskType.ARCHIVE}>{t(`jobs:${TaskType.ARCHIVE}`)}</MenuItem>
-          <MenuItem value={TaskType.UNARCHIVE} key={TaskType.UNARCHIVE}>{t(`jobs:${TaskType.UNARCHIVE}`)}</MenuItem>
+          {filterList.map((item) =>
+            (
+              <MenuItem value={item === 'all' ? '' : item} key={item}>
+                {t(`jobs:${item}`)}
+              </MenuItem>
+            ))}
         </Select>
       </FormControl>
       <TableContainer component={Paper}>
