@@ -86,7 +86,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
             [
                 [self.area.upper(), "hourly", "", "", ""],
                 ["", "", "", "", ""],
-                ["", "index", "day", "month", "hourly"],
+                ["", "index", "day", "month", "hour"],
             ]
         )
 
