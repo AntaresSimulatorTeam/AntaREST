@@ -16,7 +16,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 
 def test_get(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    file.write_text("\n\n\n\nmock\tfile")
+    file.write_text(
+        "\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy"
+    )
     config = FileStudyTreeConfig(
         study_path=file, path=file, study_id="id", version=-1
     )
@@ -26,8 +28,8 @@ def test_get(tmp_path: Path):
         pd.Index(["01/02", "01/01"]),
         pd.DataFrame(
             data={
-                "01_solar": ["MWh", "EXP", "27000", "48000"],
-                "02_wind_on": ["MWh", "EXP", "600", "34400"],
+                ("01_solar", "MWh", "EXP"): [27000, 48000],
+                ("02_wind_on", "MWh", "EXP"): [600, 34400],
             }
         ),
     )

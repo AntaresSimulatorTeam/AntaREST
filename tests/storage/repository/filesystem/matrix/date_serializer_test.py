@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
@@ -8,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
     HourlyMatrixSerializer,
     WeeklyMatrixSerializer,
     AnnualMatrixSerializer,
+    rename_unnamed,
 )
 
 
@@ -22,7 +24,7 @@ DE	hourly				01_solar	02_wind_on
     """
     file.write_text(content)
 
-    df = pd.read_csv(file, sep="\t")
+    df = pd.read_csv(file, header=[0, 1, 2], sep="\t")
     df.fillna("", inplace=True)
 
     serializer = HourlyMatrixSerializer(area="de")
@@ -32,15 +34,14 @@ DE	hourly				01_solar	02_wind_on
         date, pd.Index(["01/01 00:00", "01/01 01:00"])
     )
 
-    pd.testing.assert_frame_equal(
-        body,
-        pd.DataFrame(
-            data={
-                "01_solar": ["MWh", "", "0", "100"],
-                "02_wind_on": ["MWh", "", "0", "0"],
-            }
-        ),
+    rename_unnamed(body)
+    expected = pd.DataFrame(
+        data={
+            ("01_solar", "MWh", ""): [0, 100],
+            ("02_wind_on", "MWh", ""): [0, 0],
+        }
     )
+    pd.testing.assert_frame_equal(body, expected)
 
 
 def test_build_hourly(tmp_path: Path):
@@ -50,7 +51,7 @@ def test_build_hourly(tmp_path: Path):
             1: ["hourly", "", "index", 1, 2],
             2: ["", "", "day", "1", "1"],
             3: ["", "", "month", "JAN", "JAN"],
-            4: ["", "", "hourly", "00:00", "01:00"],
+            4: ["", "", "hour", "00:00", "01:00"],
         }
     )
 
@@ -72,7 +73,7 @@ DE	daily			01_solar	02_wind_on
     """
     file.write_text(content)
 
-    df = pd.read_csv(file, sep="\t")
+    df = pd.read_csv(file, header=[0, 1, 2], sep="\t")
 
     serializer = DailyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
@@ -83,8 +84,8 @@ DE	daily			01_solar	02_wind_on
         body,
         pd.DataFrame(
             data={
-                "01_solar": ["MWh", "EXP", "27000", "48000"],
-                "02_wind_on": ["MWh", "EXP", "600", "34400"],
+                ("01_solar", "MWh", "EXP"): [27000, 48000],
+                ("02_wind_on", "MWh", "EXP"): [600, 34400],
             }
         ),
     )
@@ -117,20 +118,20 @@ DE	weekly	01_solar	02_wind_on
     """
     file.write_text(content)
 
-    df = pd.read_csv(file, sep="\t")
+    df = pd.read_csv(file, header=[0, 1, 2], sep="\t")
     df.fillna("", inplace=True)
 
     serializer = WeeklyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(date, pd.Index(["1"], name="weekly"))
-
+    pd.testing.assert_index_equal(date, pd.Index([1], name="weekly"))
+    rename_unnamed(body)
     pd.testing.assert_frame_equal(
         body,
         pd.DataFrame(
             data={
-                "01_solar": ["MWh", "", "315000"],
-                "02_wind_on": ["MWh", "", "275000"],
+                ("01_solar", "MWh", ""): [315000],
+                ("02_wind_on", "MWh", ""): [275000],
             }
         ),
     )
@@ -161,19 +162,19 @@ DE	monthly		01_solar	02_wind_on
     """
     file.write_text(content)
 
-    df = pd.read_csv(file, sep="\t")
+    df = pd.read_csv(file, header=[0, 1, 2], sep="\t")
 
     serializer = MonthlyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
     pd.testing.assert_index_equal(date, pd.Index(["01"], name="month"))
-
+    rename_unnamed(body)
     pd.testing.assert_frame_equal(
         body,
         pd.DataFrame(
             data={
-                "01_solar": ["MWh", "EXP", "315000"],
-                "02_wind_on": ["MWh", "EXP", "275000"],
+                ("01_solar", "MWh", "EXP"): [315000],
+                ("02_wind_on", "MWh", "EXP"): [275000],
             }
         ),
     )
@@ -205,20 +206,20 @@ DE	annual	01_solar	02_wind_on
     """
     file.write_text(content)
 
-    df = pd.read_csv(file, sep="\t")
+    df = pd.read_csv(file, header=[0, 1, 2], sep="\t")
     df.fillna("", inplace=True)
 
     serializer = AnnualMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
     pd.testing.assert_index_equal(date, pd.Index(["Annual"], name="annual"))
-
+    rename_unnamed(body)
     pd.testing.assert_frame_equal(
         body,
         pd.DataFrame(
             data={
-                "01_solar": ["MWh", "", "315000"],
-                "02_wind_on": ["MWh", "", "275000"],
+                ("01_solar", "MWh", ""): [315000],
+                ("02_wind_on", "MWh", ""): [275000],
             }
         ),
     )
