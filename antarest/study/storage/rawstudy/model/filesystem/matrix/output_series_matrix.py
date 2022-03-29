@@ -67,12 +67,6 @@ class OutputSeriesMatrix(
 
         date, body = self.date_serializer.extract_date(df)
 
-        # header = body.iloc[:2]
-        # header.fillna("", inplace=True)
-        # header = np.array(
-        #     [header.columns, header.iloc[0], header.iloc[1]]
-        # ).tolist()
-
         matrix = rename_unnamed(body).astype(float)
         matrix = matrix.where(pd.notna(matrix), None)
         matrix.index = date
