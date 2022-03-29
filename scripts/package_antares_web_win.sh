@@ -30,9 +30,10 @@ echo "Copy basic configuration files"
 cp -r ../resources/deploy/* ../dist/
 cp ../README.md ../dist/
 sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+cp ../resources/AntaresWebServerShortcut.lnk ../dist/
 
-echo "Create symbolic link to antares_solver"
-cd ../dist
+# echo "Create symbolic link to antares_solver"
+# cd ../dist
 # ln -s AntaresWebServer/AntaresWebServer.exe AntaresWebServer.exe
 
 #echo "Zip the package"
@@ -42,6 +43,6 @@ cd ../dist
 #shopt -s extglob
 #rm -rf !(*.zip)
 
-echo "Done"
+# echo "Done"
 
 
