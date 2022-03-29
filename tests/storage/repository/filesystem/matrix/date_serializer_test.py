@@ -51,7 +51,7 @@ def test_build_hourly(tmp_path: Path):
             1: ["hourly", "", "index", 1, 2],
             2: ["", "", "day", "1", "1"],
             3: ["", "", "month", "JAN", "JAN"],
-            4: ["", "", "hourly", "00:00", "01:00"],
+            4: ["", "", "hour", "00:00", "01:00"],
         }
     )
 
