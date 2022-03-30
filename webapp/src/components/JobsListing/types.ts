@@ -15,7 +15,7 @@ export interface JobsType {
     dateView: ReactNode;
     action: ReactNode;
     date: string;
-    type: TaskType | string;
+    type: TaskType;
 }
 
 export default {};

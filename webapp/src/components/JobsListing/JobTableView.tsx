@@ -36,9 +36,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     marginRight: theme.spacing(3),
     minWidth: 160,
   },
-  selectEmpty: {
-    marginTop: theme.spacing(2),
-  },
 }));
 
 interface PropType {

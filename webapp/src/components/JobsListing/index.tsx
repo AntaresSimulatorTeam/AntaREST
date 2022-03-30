@@ -54,9 +54,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   dateicon: {
     marginRight: '0.5em',
   },
-  killButtonHide: {
-    display: 'none',
-  },
   dot: {
     width: '0.5em',
     height: '0.5em',
@@ -301,7 +298,7 @@ const JobsListing = (props: PropTypes) => {
         <Box>
           {download.ready ? (
             <DownloadLink url={getDownloadUrl(download.id)}>
-              <FontAwesomeIcon className={classes.downloadIcon} icon="download" />
+              <FontAwesomeIcon size="lg" className={classes.downloadIcon} icon="download" />
             </DownloadLink>
           ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
         </Box>
