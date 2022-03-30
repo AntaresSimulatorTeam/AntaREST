@@ -10,6 +10,7 @@ import { StudyMetadata, VariantTree } from '../../../common/types';
 import './Split.css';
 import StudyTreeView from './StudyTreeView';
 import InformationView from './InformationView';
+import { MIN_WIDTH, RECT_TEXT_WIDTH, RECT_X_SPACING, ZOOM_OUT } from './StudyTreeView/treeconfig';
 
 const logError = debug('antares:singlestudy:error');
 
@@ -30,12 +31,13 @@ function HomeView(props: Props) {
       className="split"
       gutterSize={4}
       snapOffset={0}
+      sizes={[36, 64]}
       style={{
         display: 'flex',
         flexDirection: 'row',
       }}
     >
-      <Box display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box" overflow="hidden">
+      <Box display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box" overflow="hidden" p={2}>
         <StudyTreeView study={study} parents={parents} childrenTree={childrenTree} onClick={(studyId: string) => navigate(`/studies/${studyId}`)} />
       </Box>
       <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box" overflow="hidden">
