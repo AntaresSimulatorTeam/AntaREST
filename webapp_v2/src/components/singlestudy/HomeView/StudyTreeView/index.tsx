@@ -1,29 +1,21 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, styled } from '@mui/material';
 import { StudyMetadata, VariantTree } from '../../../../common/types';
 import { StudyTree, getTreeNodes } from './utils';
 import { scrollbarStyle } from '../../../../theme';
-import { CIRCLE_RADIUS, colors, DCX, DCY, DEPTH_OFFSET, fakeTree, MIN_WIDTH, RECT_DECORATION, RECT_TEXT_WIDTH, RECT_X_SPACING, RECT_Y_SPACING, RECT_Y_SPACING_2, STROKE_WIDTH, STROKE_WIDTH_2, TEXT_SIZE, TEXT_SPACING, TILE_SIZE_X, TILE_SIZE_X_2, TILE_SIZE_Y, TILE_SIZE_Y_2, ZOOM_OUT, CURVE_OFFSET } from './treeconfig';
+import { CIRCLE_RADIUS, colors, DCX, DCY, DEPTH_OFFSET, MIN_WIDTH, RECT_DECORATION, RECT_TEXT_WIDTH, RECT_X_SPACING, RECT_Y_SPACING, RECT_Y_SPACING_2, STROKE_WIDTH, TEXT_SIZE, TEXT_SPACING, TILE_SIZE_X, TILE_SIZE_Y, TILE_SIZE_Y_2, ZOOM_OUT, CURVE_OFFSET } from './treeconfig';
 
-export const SVGCircle = styled(
-  'circle',
-  { shouldForwardProp: (prop) => prop !== 'hoverColor' },
-)<{hoverColor: string }>(({ theme, hoverColor }) => ({
+export const SVGCircle = styled('circle')({
   cursor: 'pointer',
-  '&:hover': {
-    fill: hoverColor,
-  },
-}));
-export const SVGRect = styled(
-  'rect',
-  { shouldForwardProp: (prop) => prop !== 'hoverColor' },
-)<{hoverColor: string }>(({ theme, hoverColor }) => ({
+});
+export const SVGRect = styled('rect')({
   cursor: 'pointer',
-  '&:hover': {
-    fill: hoverColor,
-  },
-}));
+});
+
+export const SVGText = styled('text')({
+  cursor: 'pointer',
+});
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -34,9 +26,11 @@ interface Props {
 
 export default function CustomizedTreeView(props: Props) {
   const { study, parents, childrenTree, onClick } = props;
-  const [studyTree, setStudyTree] = useState<StudyTree>(fakeTree);
+  const [studyTree, setStudyTree] = useState<StudyTree>();
+  const [hoverId, setHoverId] = useState<string>('');
 
   const RECT_WIDTH = useMemo(() => {
+    if (studyTree === undefined) return 0;
     const { drawOptions } = studyTree;
     const { depth } = drawOptions;
     return Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
@@ -45,11 +39,20 @@ export default function CustomizedTreeView(props: Props) {
   const treeWidth = RECT_WIDTH + RECT_TEXT_WIDTH + RECT_X_SPACING;
 
   const treeHeight = useMemo(() => {
+    if (studyTree === undefined) return 0;
     const { drawOptions } = studyTree;
     const { nbAllChildrens } = drawOptions;
     return TILE_SIZE_Y * (nbAllChildrens + 1) + TILE_SIZE_Y_2;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyTree]);
+
+  const onMouseOver = (hId: string) => {
+    setHoverId(hId);
+  };
+
+  const onMouseOut = () => {
+    setHoverId('');
+  };
 
   const buildRecursiveTree = (tree: StudyTree, i = 0, j = 0) : Array<React.ReactNode> => {
     const { drawOptions, name, attributes, children } = tree;
@@ -61,30 +64,19 @@ export default function CustomizedTreeView(props: Props) {
     const rectHoverColor = `${hoverColor}44`;
     const verticalLineColor = `${colors[(i + 1) % colors.length]}`;
     let verticalLineEnd = 0;
-    let fillText = 'white';
 
     if (children.length > 0) {
       verticalLineEnd = nbAllChildrens - children[children.length - 1].drawOptions.nbAllChildrens;
       verticalLineEnd = (j + verticalLineEnd) * TILE_SIZE_Y + CIRCLE_RADIUS;
     }
 
-    const onMouseOver = (event: React.MouseEvent<SVGRectElement>) => {
-      fillText = 'black';
-      console.log('FILL TEXT ', name, ' : black');
-    };
-
-    const onMouseOut = (event: React.MouseEvent<SVGRectElement>) => {
-      fillText = 'white';
-      console.log('FILL TEXT ', name, ' : white');
-    };
-
     const cx = i * TILE_SIZE_X + DCX;
     const cy = j * TILE_SIZE_Y + DCY;
-    let res : Array<React.ReactNode> = [<SVGCircle key={`circle-${i}-${j}`} cx={cx} cy={cy} r={CIRCLE_RADIUS} fill={color} hoverColor={hoverColor} onClick={() => console.log('NODE: ', tree.name)} />,
-      <SVGRect key={`rect-${i}-${j}`} x="0" y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={rectColor} hoverColor={rectHoverColor} />,
-      <SVGRect key={`rect-for-name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_TEXT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={rectColor} hoverColor={hoverColor} onClick={() => onClick(id)} onMouseOver={onMouseOver} onMouseOut={onMouseOut} />,
-      <SVGRect key={`rect-for-name-deco-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_DECORATION} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverColor} hoverColor={hoverColor} />,
-      <text key={`name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING} y={cy + RECT_Y_SPACING_2} fill={fillText} fontSize={TEXT_SIZE}>{name}</text>];
+    let res : Array<React.ReactNode> = [<SVGCircle key={`circle-${i}-${j}`} cx={cx} cy={cy} r={CIRCLE_RADIUS} fill={color} />,
+      <SVGRect key={`rect-${i}-${j}`} x="0" y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? rectHoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
+      <SVGRect key={`rect-for-name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_TEXT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? hoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
+      <SVGRect key={`rect-for-name-deco-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_DECORATION} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverColor} />,
+      <SVGText key={`name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING} y={cy + RECT_Y_SPACING_2} fill={hoverId === id ? 'black' : 'white'} fontSize={TEXT_SIZE} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)}>{name}</SVGText>];
     if (verticalLineEnd > 0) { res.push(<path key={`verticalLine-${i}-${j}`} d={`M ${cx} ${cy + CIRCLE_RADIUS} L ${cx} ${verticalLineEnd}`} fill={verticalLineColor} stroke={verticalLineColor} strokeWidth={`${STROKE_WIDTH}`} />); }
     if (i > 0) { res.push(<path key={`horizontalLine-${i}-${j}`} d={`M ${cx - CIRCLE_RADIUS - CURVE_OFFSET},${cy} C ${cx - TILE_SIZE_X},${cy} ${cx - TILE_SIZE_X},${cy} ${cx - TILE_SIZE_X},${cy - TILE_SIZE_Y + 2 * CIRCLE_RADIUS} M ${cx - CIRCLE_RADIUS},${cy} L ${cx - CIRCLE_RADIUS - CURVE_OFFSET},${cy}`} fill="transparent" stroke={color} strokeWidth={`${STROKE_WIDTH}`} />); }
 

@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import { StudyMetadata, VariantTree } from '../../../../common/types';
-import { getVariantChildren, getVariantParents } from '../../../../services/api/variant';
 import { convertUTCToLocalTime } from '../../../../services/utils';
 
 export interface StudyTree {
@@ -57,8 +56,7 @@ const buildTree = async (node: StudyTree, childrenTree: VariantTree) : Promise<v
   node.children = children.children;
 };
 
-export const getTreeNodes = async (study: StudyMetadata, parentsStudy: Array<StudyMetadata>, childrenTree: VariantTree): Promise<StudyTree> => {
-  const parents = parentsStudy;// parentsStudy.reverse();
+export const getTreeNodes = async (study: StudyMetadata, parents: Array<StudyMetadata>, childrenTree: VariantTree): Promise<StudyTree> => {
   const currentNode = buildNodeFromMetadata(study);
   await buildTree(currentNode, childrenTree);
 
