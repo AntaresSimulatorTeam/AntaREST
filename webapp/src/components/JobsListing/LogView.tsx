@@ -16,11 +16,16 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
     },
     logIcon: {
+      position: 'relative',
       cursor: 'pointer',
       margin: theme.spacing(0.5),
-      color: theme.palette.primary.main,
+      '& svg:first-of-type': {
+        color: theme.palette.primary.main,
+      },
       '&:hover': {
-        color: theme.palette.secondary.main,
+        '& svg:first-of-type': {
+          color: theme.palette.secondary.main,
+        },
       },
     },
     logError: {
@@ -82,9 +87,11 @@ const LogView = (props: PropsType) => {
 
   return (
     <Box className={classes.logButtons}>
-      {logButton &&
-        <FontAwesomeIcon size="lg" className={classes.logIcon} onClick={() => openLogView(job.id)} icon="file" />
-      }
+      {logButton && (
+      <Box className={classes.logIcon}>
+        <FontAwesomeIcon size="lg" onClick={() => openLogView(job.id)} icon="file" />
+      </Box>
+      )}
       {logErrorButton && (
       <Box className={classes.logError} onClick={() => openLogView(job.id, true)}>
         <FontAwesomeIcon size="lg" icon="file" />

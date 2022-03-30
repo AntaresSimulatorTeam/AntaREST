@@ -116,7 +116,7 @@ const JobTableView = (props: PropType) => {
           </TableHead>
           <TableBody>
             {!sorted && (sorted !== 'date') && currentContent ? currentContent.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? -1 : 1)).map((row) => (
-              <TableRow>
+              <TableRow key={`${row.name}-name-${row.date}`}>
                 <TableCell component="th" scope="row">
                   {row.name}
                 </TableCell>
@@ -125,7 +125,7 @@ const JobTableView = (props: PropType) => {
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
             )) : (currentContent && currentContent.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? 1 : -1)).map((row) => (
-              <TableRow>
+              <TableRow key={`${row.name}-name-${row.date}`}>
                 <TableCell component="th" scope="row">
                   {row.name}
                 </TableCell>
