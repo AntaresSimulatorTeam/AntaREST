@@ -58,7 +58,7 @@ function GraphView(props: GraphViewProps) {
           viewGenerator: (node) => <NodeView node={node} linkCreation={onLink} />,
         },
         link: {
-          color: '#d3d3d3',
+          color: '#a3a3a3',
           strokeWidth: 2,
         },
       }}

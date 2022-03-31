@@ -7,16 +7,20 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import { LinkProperties, NodeProperties } from '../../../../../common/types';
+import { scrollbarStyle } from '../../../../../theme';
 
 const ROW_ITEM_SIZE = 30;
 
-const StyledList = styled(FixedSizeList)(() => ({
+const StyledList = styled(FixedSizeList)(({ theme }) => ({
   '&> div > div': {
+    color: theme.palette.text.secondary,
     cursor: 'pointer',
     '&:hover': {
+      color: theme.palette.text.primary,
       textDecoration: 'underline',
     },
   },
+  ...scrollbarStyle,
 }));
 
 interface PropsType {

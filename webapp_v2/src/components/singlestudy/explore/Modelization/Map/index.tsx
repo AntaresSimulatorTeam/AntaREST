@@ -17,10 +17,11 @@ import SimpleLoader from '../../../../common/loaders/SimpleLoader';
 import GraphView from './GraphView';
 import MapPropsView from './MapPropsView';
 import CreateAreaModal from './CreateAreaModal';
+import mapbackground from '../../../../../assets/mapbackground.png';
 
 const logError = debug('antares:singlestudy:modelization:map:error');
 
-const FONT_SIZE = 15;
+const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
 
 const calculateSize = (text: string): number => {
@@ -51,7 +52,7 @@ const GraphViewMemo = React.memo(GraphView);
 function Map() {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [loaded, setLoaded] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<NodeProperties | LinkProperties>();
   const [selectedNodeLinks, setSelectedNodeLinks] = React.useState<Array<LinkProperties>>();
@@ -96,16 +97,18 @@ function Map() {
   const onSave = async (name: string, posX: number, posY: number, color: string) => {
     setOpenModal(false);
     try {
-      const area = await createArea(study.id, name);
-      setNodeData([...nodeData, {
-        id: area.id,
-        name: area.name,
-        x: posX,
-        y: posY,
-        color,
-        rgbColor: color.slice(4, -1).split(',').map(Number),
-        size: { width: calculateSize(name), height: NODE_HEIGHT },
-      }]);
+      if (study) {
+        const area = await createArea(study.id, name);
+        setNodeData([...nodeData, {
+          id: area.id,
+          name: area.name,
+          x: posX,
+          y: posY,
+          color,
+          rgbColor: color.slice(4, -1).split(',').map(Number),
+          size: { width: calculateSize(name), height: NODE_HEIGHT },
+        }]);
+      }
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createAreaError'), e as AxiosError);
     }
@@ -128,7 +131,9 @@ function Map() {
             color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
             rgbColor: [value.color_rgb[0], value.color_rgb[1], value.color_rgb[2]],
           }]);
-          await updateAreaUI(study.id, id, value);
+          if (study) {
+            await updateAreaUI(study.id, id, value);
+          }
         }
       } catch (e) {
         setNodeData([...nodeData]);
@@ -150,84 +155,89 @@ function Map() {
       // eslint-disable-next-line no-underscore-dangle
       currentGraph._setNodeHighlightedValue(id, false);
     }
-
-    setTimeout(async () => {
-      if (target && linkData) {
-        try {
-          const links = linkData.filter((o) => o.source !== id || o.target !== target);
-          setLinkData(links);
-          setSelectedItem(undefined);
-          await deleteLink(study.id, id, target);
-        } catch (e) {
-          setLinkData([...linkData]);
-          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
+    if (study) {
+      setTimeout(async () => {
+        if (target && linkData) {
+          try {
+            const links = linkData.filter((o) => o.source !== id || o.target !== target);
+            setLinkData(links);
+            setSelectedItem(undefined);
+            await deleteLink(study.id, id, target);
+          } catch (e) {
+            setLinkData([...linkData]);
+            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
+          }
+        } else if (nodeData && linkData && !target) {
+          const obj = nodeData.filter((o) => o.id !== id);
+          const links = linkData.filter((o) => o.source !== id && o.target !== id);
+          try {
+            setSelectedItem(undefined);
+            setLinkData(links);
+            setNodeData(obj);
+            await deleteArea(study.id, id);
+          } catch (e) {
+            setLinkData([...linkData]);
+            setNodeData([...nodeData]);
+            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
+          }
         }
-      } else if (nodeData && linkData && !target) {
-        const obj = nodeData.filter((o) => o.id !== id);
-        const links = linkData.filter((o) => o.source !== id && o.target !== id);
-        try {
-          setSelectedItem(undefined);
-          setLinkData(links);
-          setNodeData(obj);
-          await deleteArea(study.id, id);
-        } catch (e) {
-          setLinkData([...linkData]);
-          setNodeData([...nodeData]);
-          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
-        }
-      }
-    }, 0);
+      }, 0);
+    }
   };
 
   useEffect(() => {
-    const init = async () => {
-      if (firstNode && secondNode) {
-        try {
-          setLinkData([...linkData, ...[{
-            source: firstNode,
-            target: secondNode,
-          }]]);
-          setFirstNode(undefined);
-          setSecondNode(undefined);
-          await createLink(study.id, { area1: firstNode, area2: secondNode });
-        } catch (e) {
-          setLinkData(linkData.filter((o) => o.source !== firstNode || o.target !== secondNode));
-          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createLinkError'), e as AxiosError);
+    if (study) {
+      const init = async () => {
+        if (firstNode && secondNode) {
+          try {
+            setLinkData([...linkData, ...[{
+              source: firstNode,
+              target: secondNode,
+            }]]);
+            setFirstNode(undefined);
+            setSecondNode(undefined);
+            await createLink(study.id, { area1: firstNode, area2: secondNode });
+          } catch (e) {
+            setLinkData(linkData.filter((o) => o.source !== firstNode || o.target !== secondNode));
+            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createLinkError'), e as AxiosError);
+          }
         }
-      }
-    };
-    init();
-  }, [enqueueSnackbar, t, firstNode, secondNode, study.id, linkData]);
+      };
+      init();
+    }
+  }, [enqueueSnackbar, t, firstNode, secondNode, study?.id, linkData]);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const data = await getSynthesis(study.id);
-        const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
-        const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
-        const tempNodeData = Object.keys(areas).map((areaId) => ({
-          id: areaId,
-          name: data.areas[areaId].name,
-          x: areas[areaId].ui.x,
-          y: areas[areaId].ui.y,
-          color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-          rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
-          size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-        }));
-        setNodeData(tempNodeData);
-        setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
-          links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
-            source: currentAreaId,
-            target: linkId,
-          }))), [] as Array<LinkProperties>));
-      } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
-      } finally {
-        setLoaded(true);
-      }
-    };
-    init();
-  }, [enqueueSnackbar, study.id, t]);
+    if (study) {
+      const init = async () => {
+        try {
+          const data = await getSynthesis(study.id);
+          const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
+          const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
+          const tempNodeData = Object.keys(areas).map((areaId) => ({
+            id: areaId,
+            name: data.areas[areaId].name,
+            x: areas[areaId].ui.x,
+            y: areas[areaId].ui.y,
+            color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+            rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
+            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
+          }));
+          setNodeData(tempNodeData);
+          setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
+            links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
+              source: currentAreaId,
+              target: linkId,
+            }))), [] as Array<LinkProperties>));
+        } catch (e) {
+          enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
+        } finally {
+          setLoaded(true);
+        }
+      };
+      init();
+    }
+  }, [enqueueSnackbar, study?.id, t]);
 
   useEffect(() => {
     if (selectedItem && isNode(selectedItem)) {
@@ -261,8 +271,7 @@ function Map() {
             height="100%"
             position="relative"
             sx={{ '& svg[name="svg-container-graph-id"]': {
-              backgroundColor: '#fefefe',
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'8\' viewBox=\'0 0 8 8\'%3E%3Cg fill=\'%23dedede\' fill-opacity=\'0.4\'%3E%3Cpath fill-rule=\'evenodd\' d=\'M0 0h4v4H0V0zm4 4h4v4H4V4z\'/%3E%3C/g%3E%3C/svg%3E")',
+              backgroundImage: `url("${mapbackground}")`,
             } }}
           >
             {loaded ? (
@@ -275,7 +284,7 @@ function Map() {
               </AutoSizer>
             ) : <SimpleLoader />
             }
-            <Box width="12%" display="flex" justifyContent="space-between" alignItems="center" position="absolute" right="16px">
+            <Box width="14%" display="flex" justifyContent="space-between" alignItems="center" position="absolute" right="16px" top="10px">
               <Typography>
                 {`${nodeData.length} ${t('singlestudy:area')}`}
               </Typography>
