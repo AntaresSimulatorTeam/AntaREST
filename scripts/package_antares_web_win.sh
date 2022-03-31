@@ -27,7 +27,7 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
 
     mkdir $DESTINATION
 
-    if [[ "$OSTYPE" != "msys"* ]]; then
+    if [[ "$OSTYPE" == "msys"* ]]; then
         mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
