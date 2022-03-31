@@ -7,6 +7,7 @@ import { StudyMetadata, VariantTree } from '../../../../common/types';
 import { StudyTree, getTreeNodes } from './utils';
 import { scrollbarStyle } from '../../../../theme';
 import { CIRCLE_RADIUS, colors, DCX, DCY, DEPTH_OFFSET, MIN_WIDTH, RECT_DECORATION, RECT_TEXT_WIDTH, RECT_X_SPACING, RECT_Y_SPACING, RECT_Y_SPACING_2, STROKE_WIDTH, TEXT_SIZE, TEXT_SPACING, TILE_SIZE_X, TILE_SIZE_Y, TILE_SIZE_Y_2, ZOOM_OUT, CURVE_OFFSET } from './treeconfig';
+import CreateVariantModal from './CreateVariantModal';
 
 export const SVGCircle = styled('circle')({
   cursor: 'pointer',
@@ -30,6 +31,7 @@ export default function CustomizedTreeView(props: Props) {
   const { study, parents, childrenTree, onClick } = props;
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>('');
+  const [openVariantModal, setOpenVariantModal] = useState<boolean>(false);
 
   const rectWidth = useMemo(() => {
     if (studyTree === undefined) return 0;
@@ -115,9 +117,10 @@ export default function CustomizedTreeView(props: Props) {
       <Box minWidth={treeWidth / ZOOM_OUT} minHeight={treeHeight / ZOOM_OUT} display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start">
         {studyTree && renderTree(studyTree)}
       </Box>
-      <Fab variant="circular" color="primary" aria-label="add" sx={{ position: 'absolute', bottom: '34px' }}>
+      <Fab variant="circular" color="primary" aria-label="add" sx={{ position: 'absolute', bottom: '34px' }} onClick={() => setOpenVariantModal(true)}>
         <AddIcon />
       </Fab>
+      {study && openVariantModal && <CreateVariantModal open={openVariantModal} onClose={() => setOpenVariantModal(false)} parentId={study.id} />}
     </Box>
   );
 }

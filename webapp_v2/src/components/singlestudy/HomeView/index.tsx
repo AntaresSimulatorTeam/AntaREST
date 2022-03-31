@@ -2,15 +2,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import debug from 'debug';
 import Split from 'react-split';
 import { StudyMetadata, VariantTree } from '../../../common/types';
 import './Split.css';
 import StudyTreeView from './StudyTreeView';
 import InformationView from './InformationView';
-
-const logError = debug('antares:singlestudy:error');
 
 interface Props {
     study: StudyMetadata | undefined;
@@ -19,7 +15,6 @@ interface Props {
 }
 
 function HomeView(props: Props) {
-  const [t] = useTranslation();
   const navigate = useNavigate();
   const { study, parents, childrenTree } = props;
 

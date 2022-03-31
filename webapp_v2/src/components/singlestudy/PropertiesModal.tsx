@@ -92,10 +92,10 @@ function PropertiesModal(props: Props) {
             }
           }));
         }
-        enqueueSnackbar(t('studymanager:modifiedStudySuccess', { studyname: studyName }), { variant: 'success' });
+        enqueueSnackbar(t('singlestudy:modifiedStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
         logErr('Failed to modify study', studyName, e);
-        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:modifiedStudyFailed', { studyname: studyName }), e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:modifiedStudyFailed', { studyname: studyName }), e as AxiosError);
       }
       onClose();
     } else {
