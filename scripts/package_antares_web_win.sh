@@ -14,7 +14,7 @@ echo "Downloading AntaresSimulator from $LINK"
 wget $LINK
 
 echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINATION"
-unzip x $ANTARES_SOLVER_ZIPFILE_NAME
+unzip $ANTARES_SOLVER_ZIPFILE_NAME
 mkdir $DESTINATION
 
 mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
@@ -29,7 +29,7 @@ sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServ
 if [[ "$OSTYPE" == "msys"* ]]; then
 cp ../resources/AntaresWebServerShortcut.lnk ../dist/
 else
-ln -s ../dist/AntaresWebServer ../dist/AntaresWeb/AntaresWebServer
+ln -s ../dist/AntaresWeb/AntaresWebServer ../dist/AntaresWebServer
 fi
 
 echo "Cleaning up"
