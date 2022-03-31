@@ -38,7 +38,12 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
 
 echo "Copy basic configuration files"
     cp -r ../resources/deploy/* ../dist/
-    sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+    if [[ "$OSTYPE" == "msys"* ]]; then
+        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+    else
+        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" ../dist/config.yaml
+    fi
+
 
 
 echo "Creating shortcuts"

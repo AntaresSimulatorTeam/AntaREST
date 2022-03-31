@@ -67,7 +67,7 @@ server:
     
 logging:
   level: INFO
-#  logfile: /tmp/antarest.log
+  logfile: ./tmp/antarest.log
 #  json: false
 
 # Uncomment these lines to use redis as a backend for the eventbus
