@@ -21,24 +21,35 @@ export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
 }));
 
 const StyledHuePicker = styled(HuePicker)(({ theme }) => ({
-  width: '100% !important',
+  width: '95% !important',
   margin: theme.spacing(1),
 }));
 
-const StyledMaterialPicker = styled(MaterialPicker)(({ theme }) => ({
-  width: 'unset !important',
-  maxWidth: '230px !important',
-  fontFamily: '"Inter", sans-serif !important',
-  boxShadow: 'none',
-  border: '1px solid rgba(0,0,0,.12)',
+const StyledMaterialPicker = styled(Box)(({ theme }) => ({
+  '& > div > div:first-of-type': {
+    backgroundColor: 'rgba(0, 0, 0, 0.12) !important',
+    boxShadow: 'none !important',
+  },
+  '& > div > div:last-of-type > div': {
+    width: 'unset !important',
+    height: '120px !important',
+    maxWidth: '255px !important',
+    fontFamily: '"Inter", sans-serif !important',
+    boxShadow: 'none',
+    '& > div > input, > div > div > div > input': {
+      backgroundColor: 'rgba(0,0,0,0)',
+      color: `${theme.palette.text.secondary} !important`,
+    },
+  },
 }));
 
 const StyledLinkTypo = styled(Typography)(({ theme }) => ({
   cursor: 'pointer',
-  color: 'white',
+  color: theme.palette.text.secondary,
   padding: theme.spacing(1),
   '&:hover': {
     textDecoration: 'underline',
+    color: 'white',
   },
 }));
 
@@ -79,14 +90,16 @@ function PanelView(props: PropType) {
 
   return (
     <>
-      <Box width="94%" display="flex" justifyContent="flex-start" alignItems="center" flexDirection="column" padding="8px" flexGrow={1} marginBottom="76px">
+      <Box width="94%" display="flex" justifyContent="flex-start" alignItems="center" flexDirection="column" flexGrow={1} marginBottom="76px">
         {node && (
           <>
             <TextField sx={{ mt: 1 }} label={t('singlestudy:areaName')} variant="filled" value={node.name} disabled />
             <TextField sx={{ mt: 1 }} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             <TextField sx={{ mt: 1 }} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
             <StyledHuePicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
-            <StyledMaterialPicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            <StyledMaterialPicker>
+              <MaterialPicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            </StyledMaterialPicker>
           </>
         )}
         {links && node && (
@@ -94,20 +107,20 @@ function PanelView(props: PropType) {
         )}
         {link && (
         <Box width="100%" display="flex" flexDirection="column" alignItems="flex-start">
-          <Typography sx={{ width: '90%', color: 'white', display: 'flex', flexFlow: 'row nowrap', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box', textDecoration: 'underline', my: 1 }}>{t('singlestudy:link')}</Typography>
+          <Typography sx={{ width: '90%', display: 'flex', flexFlow: 'row nowrap', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box', textDecoration: 'underline', my: 1, color: 'text.secondary' }}>{t('singlestudy:link')}</Typography>
           <Box width="90%" display="flex" justifyContent="flex-start" alignItems="baseline" boxSizing="border-box" marginBottom="8px">
-            <Typography sx={{ fontWeight: 'bold' }}>{t('singlestudy:area1')}</Typography>
+            <Typography sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('singlestudy:area1')}</Typography>
             <StyledLinkTypo variant="body2" onClick={() => handleClick(link.source)}>
               {link.source}
             </StyledLinkTypo>
           </Box>
           <Box width="90%" display="flex" justifyContent="flex-start" alignItems="baseline" boxSizing="border-box" marginBottom="8px">
-            <Typography sx={{ fontWeight: 'bold' }}>{t('singlestudy:area2')}</Typography>
+            <Typography sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('singlestudy:area2')}</Typography>
             <StyledLinkTypo variant="body2" onClick={() => handleClick(link.target)}>
               {link.target}
             </StyledLinkTypo>
           </Box>
-          <Box width="100%" display="flex" justifyContent="flex-end" alignItems="center">
+          <Box width="90%" display="flex" justifyContent="flex-end" alignItems="center">
             <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
           </Box>
         </Box>
@@ -122,9 +135,9 @@ function PanelView(props: PropType) {
           actionButtonLabel={t('main:yesButton')}
           onActionButtonClick={() => { onDelete(node.id); setOpenConfirmationModal(false); }}
           onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}
+          rootStyle={{ maxWidth: '800px', maxHeight: '800px', display: 'flex', flexFlow: 'column nowrap', alignItems: 'center' }}
         >
-          <Typography>
+          <Typography sx={{ p: 3 }}>
             {t('singlestudy:confirmDeleteArea')}
           </Typography>
         </BasicModal>
@@ -137,9 +150,9 @@ function PanelView(props: PropType) {
           actionButtonLabel={t('main:yesButton')}
           onActionButtonClick={() => { onDelete(link.source, link.target); setOpenConfirmationModal(false); }}
           onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}
+          rootStyle={{ maxWidth: '800px', maxHeight: '800px', display: 'flex', flexFlow: 'column nowrap', alignItems: 'center' }}
         >
-          <Typography>
+          <Typography sx={{ p: 3 }}>
             {t('singlestudy:confirmDeleteLink')}
           </Typography>
         </BasicModal>

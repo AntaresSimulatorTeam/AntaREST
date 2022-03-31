@@ -109,7 +109,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
   }
 
   return (
-    <Box display="flex" height="100vh" sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}>
+    <Box display="flex" height="100vh" sx={{ background: 'radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)' }}>
       <Box position="absolute" top="0px" right="0px" display="flex" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
         <img src={topRightBackground} alt="logo" style={{ height: 'auto' }} />
       </Box>

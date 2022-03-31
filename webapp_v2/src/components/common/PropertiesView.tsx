@@ -9,19 +9,20 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '@mui/icons-material/Add';
 
-const StyledAddButton = styled(AddIcon)(({ theme }) => ({
-  position: 'absolute',
-  left: '20px',
-  bottom: '25px',
+const StyledAddIcon = styled(AddIcon)(({ theme }) => ({
   cursor: 'pointer',
-  borderRadius: '50px',
-  padding: '16px',
+  color: 'black',
+  width: '40px',
+  height: '40px',
+  position: 'absolute',
+  left: '5%',
+  bottom: '25px',
+  borderRadius: '30px',
+  padding: '8px',
   backgroundColor: theme.palette.primary.main,
-  color: 'white',
   '&:hover': {
     backgroundColor: theme.palette.primary.dark,
   },
-  height: '25px',
 }));
 
 interface PropsType {
@@ -38,7 +39,8 @@ function PropertiesView(props: PropsType) {
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
       <TextField
-        sx={{ margin: '16px' }}
+        sx={{ m: 2, '& .MuiOutlinedInput-root': { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.09)' } } }}
+        color="primary"
         label={t('main:search')}
         variant="outlined"
         InputProps={{
@@ -52,7 +54,7 @@ function PropertiesView(props: PropsType) {
       />
       {mainContent}
       {secondaryContent}
-      <StyledAddButton onClick={onAdd} />
+      <StyledAddIcon onClick={onAdd} />
     </Box>
   );
 }

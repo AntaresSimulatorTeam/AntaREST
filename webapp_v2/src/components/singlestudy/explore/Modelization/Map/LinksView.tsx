@@ -11,15 +11,10 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { areEqual, FixedSizeList, ListChildComponentProps } from 'react-window';
 import { LinkProperties, NodeProperties } from '../../../../../common/types';
 import { StyledDeleteIcon } from './PanelView';
+import { scrollbarStyle } from '../../../../../theme';
 
 const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 50;
-
-const hoverStyle = () => ({
-  '&:hover': {
-    textDecoration: 'underline',
-  },
-});
 
 const StyledList = styled(FixedSizeList)(() => ({
   '&> div > li > div': {
@@ -28,6 +23,7 @@ const StyledList = styled(FixedSizeList)(() => ({
       textDecoration: 'underline',
     },
   },
+  ...scrollbarStyle,
 }));
 
 interface PropsType {
@@ -45,7 +41,7 @@ const Row = React.memo((props: ListChildComponentProps) => {
 
   return (
     <ListItem key={index} style={style}>
-      <ListItemText primary={link} onClick={() => setSelectedItem(linkData)} style={{ width: '100%', ...hoverStyle }} />
+      <ListItemText primary={link} onClick={() => setSelectedItem(linkData)} sx={{ width: '100%', color: 'text.secondary', '&:hover': { textDecoration: 'underline', color: 'text.primary' } }} />
     </ListItem>
   );
 }, areEqual);
@@ -55,9 +51,9 @@ function LinksView(props: PropsType) {
   const [t] = useTranslation();
 
   return (
-    <Box width="100%" flexGrow={1} flexShrink={1} minHeight="100px" padding="8px">
+    <Box width="100%" flexGrow={1} flexShrink={1} minHeight="100px" padding="8px" marginTop="4px">
       {links.length >= 1 && (
-      <Typography sx={{ width: '90%', marginBottom: '8px', boxSizing: 'border-box', fontWeight: 'bold' }}>
+      <Typography sx={{ width: '90%', mb: 1, color: 'text.secondary', boxSizing: 'border-box', fontWeight: 'bold' }}>
         {t('singlestudy:link')}
       </Typography>
       )}
