@@ -1,24 +1,18 @@
 # Antares Web
 
-## Test Server
+| WARNING: AntaresWeb/AntaresWebServer and AntaresWeb/antares_solver/antares-<version>-solver must be set as executable on *LINUX* |
+|----------------------------------------------------------------------------------------------------------------------------------|
 
-To launch the test server, run the command
+To launch the Antares Web, run the command
 ```
-./TestServer --auto-upgrade-db
+./AntaresWeb/AntaresWebServer
 ```
 Then go to http://localhost:8080
-
-## Daemon Server
-
-To launch the test server, run the command
-```
-./AntaresWebServer
-```
 
 ## Variant manager tool
 
 To use the variant manager tool, run the command
 ```
-./AntaresTool
+./AntaresWeb/AntaresTool
 ```
 Further instruction will be provided by the command output.
