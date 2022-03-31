@@ -59,7 +59,7 @@ jobs:
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller AntaresWebLinux.spec
-          chmod +x dist/AntaresWeb/AntaresWebServer
+          chmod 777 dist/AntaresWeb/AntaresWebServer
       - name: Packaging
         run: bash ./package_antares_web_win.sh
         working-directory: scripts

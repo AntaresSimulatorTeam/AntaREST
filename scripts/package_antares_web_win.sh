@@ -32,6 +32,7 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
     else
+        chmod 777 "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver"
         mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver" $DESTINATION
     fi
 
@@ -39,9 +40,9 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
 echo "Copy basic configuration files"
     cp -r ../resources/deploy/* ../dist/
     if [[ "$OSTYPE" == "msys"* ]]; then
-        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
     else
-        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWebServer\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" ../dist/config.yaml
+        sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" ../dist/config.yaml
     fi
 
 
