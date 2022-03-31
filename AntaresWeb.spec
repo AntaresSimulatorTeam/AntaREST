@@ -3,10 +3,10 @@
 
 block_cipher = None
 
-antares_web_server_a = Analysis(['antarest\\gui.py'],
+antares_web_server_a = Analysis(['antarest/gui.py'],
              pathex=[],
-             binaries=[('.\\alembic.ini', '.\\alembic.ini')],
-             datas=[('.\\resources', '.\\resources'), ('.\\alembic', '.\\alembic')],
+             binaries=[('./alembic.ini', './alembic.ini')],
+             datas=[('./resources', './resources'), ('./alembic', './alembic')],
              hiddenimports=['cmath', 'antarest.dbmodel', 'plyer.platforms.win', 'plyer.platforms.win.notification'],
              hookspath=['extra-hooks'],
              hooksconfig={},
@@ -31,13 +31,13 @@ antares_web_server_exe = EXE(antares_web_server_pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None , icon='resources\\webapp\\favicon.ico')
+          entitlements_file=None , icon='resources/webapp/favicon.ico')
 
 
-antares_tool_a = Analysis(['antarest\\tools\\cli.py'],
+antares_tool_a = Analysis(['antarest/tools/cli.py'],
              pathex=[],
              binaries=[],
-             datas=[('.\\resources', '.\\resources')],
+             datas=[('./resources', './resources')],
              hiddenimports=['cmath', 'sqlalchemy.sql.default_comparator', 'sqlalchemy.ext.baked'],
              hookspath=['extra-hooks'],
              hooksconfig={},
