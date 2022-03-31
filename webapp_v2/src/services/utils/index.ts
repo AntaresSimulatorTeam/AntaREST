@@ -159,21 +159,13 @@ export const buildModificationDate = (date: string, t: TFunction<'translation', 
   return duration.locale(language.substring(0, 2) === 'fr' ? 'fr' : 'en').humanize();
 };
 
-export function generateRandom(min = 0, max = 100): number {
-  // find diff
-  const difference = max - min;
-
-  // generate random number
-  let rand = Math.random();
-
-  // multiply with difference
-  rand = Math.floor(rand * difference);
-
-  // add with min value
-  rand += min;
-
-  return rand;
-}
+export const countAllCHildrens = (tree: VariantTree) : number => {
+  if (tree.children.length > 0) {
+    return tree.children.map((elm) => 1 + countAllCHildrens(elm))
+      .reduce((acc, curr) => acc + curr);
+  }
+  return 0;
+};
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);

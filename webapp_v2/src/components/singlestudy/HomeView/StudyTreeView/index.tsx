@@ -1,6 +1,8 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, styled } from '@mui/material';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
 import { StudyMetadata, VariantTree } from '../../../../common/types';
 import { StudyTree, getTreeNodes } from './utils';
 import { scrollbarStyle } from '../../../../theme';
@@ -29,21 +31,20 @@ export default function CustomizedTreeView(props: Props) {
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>('');
 
-  const RECT_WIDTH = useMemo(() => {
+  const rectWidth = useMemo(() => {
     if (studyTree === undefined) return 0;
     const { drawOptions } = studyTree;
     const { depth } = drawOptions;
     return Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
   }, [studyTree]);
 
-  const treeWidth = RECT_WIDTH + RECT_TEXT_WIDTH + RECT_X_SPACING;
+  const treeWidth = rectWidth + RECT_TEXT_WIDTH + RECT_X_SPACING;
 
   const treeHeight = useMemo(() => {
     if (studyTree === undefined) return 0;
     const { drawOptions } = studyTree;
     const { nbAllChildrens } = drawOptions;
     return TILE_SIZE_Y * (nbAllChildrens + 1) + TILE_SIZE_Y_2;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyTree]);
 
   const onMouseOver = (hId: string) => {
@@ -73,10 +74,10 @@ export default function CustomizedTreeView(props: Props) {
     const cx = i * TILE_SIZE_X + DCX;
     const cy = j * TILE_SIZE_Y + DCY;
     let res : Array<React.ReactNode> = [<SVGCircle key={`circle-${i}-${j}`} cx={cx} cy={cy} r={CIRCLE_RADIUS} fill={color} />,
-      <SVGRect key={`rect-${i}-${j}`} x="0" y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? rectHoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
-      <SVGRect key={`rect-for-name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_TEXT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? hoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
-      <SVGRect key={`rect-for-name-deco-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_DECORATION} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverColor} />,
-      <SVGText key={`name-${i}-${j}`} x={RECT_WIDTH + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING} y={cy + RECT_Y_SPACING_2} fill={hoverId === id ? 'black' : 'white'} fontSize={TEXT_SIZE} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)}>{name}</SVGText>];
+      <SVGRect key={`rect-${i}-${j}`} x="0" y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={rectWidth} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? rectHoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
+      <SVGRect key={`rect-for-name-${i}-${j}`} x={rectWidth + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_TEXT_WIDTH} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverId === id ? hoverColor : rectColor} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)} onMouseOut={onMouseOut} />,
+      <SVGRect key={`rect-for-name-deco-${i}-${j}`} x={rectWidth + RECT_X_SPACING} y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2} width={RECT_DECORATION} height={TILE_SIZE_Y - RECT_Y_SPACING} fill={hoverColor} />,
+      <SVGText key={`name-${i}-${j}`} x={rectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING} y={cy + RECT_Y_SPACING_2} fill={hoverId === id ? 'black' : 'white'} fontSize={TEXT_SIZE} onClick={() => onClick(id)} onMouseOver={(e) => onMouseOver(id)}>{name}</SVGText>];
     if (verticalLineEnd > 0) { res.push(<path key={`verticalLine-${i}-${j}`} d={`M ${cx} ${cy + CIRCLE_RADIUS} L ${cx} ${verticalLineEnd}`} fill={verticalLineColor} stroke={verticalLineColor} strokeWidth={`${STROKE_WIDTH}`} />); }
     if (i > 0) { res.push(<path key={`horizontalLine-${i}-${j}`} d={`M ${cx - CIRCLE_RADIUS - CURVE_OFFSET},${cy} C ${cx - TILE_SIZE_X},${cy} ${cx - TILE_SIZE_X},${cy} ${cx - TILE_SIZE_X},${cy - TILE_SIZE_Y + 2 * CIRCLE_RADIUS} M ${cx - CIRCLE_RADIUS},${cy} L ${cx - CIRCLE_RADIUS - CURVE_OFFSET},${cy}`} fill="transparent" stroke={color} strokeWidth={`${STROKE_WIDTH}`} />); }
 
@@ -110,13 +111,13 @@ export default function CustomizedTreeView(props: Props) {
   }, [study, parents, childrenTree]);
 
   return (
-    <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" sx={{ width: '100%', flexGrow: 1, overflowY: 'auto', ...scrollbarStyle }}>
+    <Box display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" sx={{ width: '100%', flexGrow: 1, overflowY: 'auto', ...scrollbarStyle }}>
       <Box minWidth={treeWidth / ZOOM_OUT} minHeight={treeHeight / ZOOM_OUT} display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start">
         {studyTree && renderTree(studyTree)}
       </Box>
-      <Box height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center">
-        {studyTree && renderTree(studyTree)}
-      </Box>
+      <Fab variant="circular" color="primary" aria-label="add" sx={{ position: 'absolute', bottom: '34px' }}>
+        <AddIcon />
+      </Fab>
     </Box>
   );
 }

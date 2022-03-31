@@ -30,7 +30,7 @@ import { AppState } from '../../store/reducers';
 import { removeStudies } from '../../store/study';
 import LauncherModal from '../studies/LauncherModal';
 import PropertiesModal from './PropertiesModal';
-import { buildModificationDate, convertUTCToLocalTime } from '../../services/utils';
+import { buildModificationDate, convertUTCToLocalTime, countAllCHildrens } from '../../services/utils';
 
 const logError = debug('antares:singlestudy:navheader:error');
 
@@ -271,7 +271,7 @@ function NavHeader(props: PropTypes) {
         <Box mx={3} display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
           <AccountTreeOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
           <TinyText>
-            {childrenTree.children.length}
+            {countAllCHildrens(childrenTree)}
           </TinyText>
         </Box>
         )}

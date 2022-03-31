@@ -1,16 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useSnackbar } from 'notistack';
 import debug from 'debug';
 import Split from 'react-split';
 import { StudyMetadata, VariantTree } from '../../../common/types';
 import './Split.css';
 import StudyTreeView from './StudyTreeView';
 import InformationView from './InformationView';
-import { MIN_WIDTH, RECT_TEXT_WIDTH, RECT_X_SPACING, ZOOM_OUT } from './StudyTreeView/treeconfig';
 
 const logError = debug('antares:singlestudy:error');
 
@@ -23,7 +21,6 @@ interface Props {
 function HomeView(props: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
   const { study, parents, childrenTree } = props;
 
   return (
