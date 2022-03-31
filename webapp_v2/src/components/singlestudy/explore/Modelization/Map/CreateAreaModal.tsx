@@ -44,6 +44,8 @@ function CreateAreaModal(props: PropType) {
     >
       <Box sx={{ m: 2 }}>
         <TextField
+          sx={{ '& .MuiOutlinedInput-root': { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.09)' } } }}
+          color="primary"
           label={t('main:name')}
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}

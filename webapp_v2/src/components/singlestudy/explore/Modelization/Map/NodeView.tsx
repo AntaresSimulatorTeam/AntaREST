@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { Box, styled } from '@mui/material';
-import LinkIcon from '@mui/icons-material/Link';
+import AddLinkIcon from '@mui/icons-material/AddLink';
 import { NodeProperties } from '../../../../../common/types';
 import { rgbToHsl } from '../../../../../services/utils';
 
 const nodeStyle = {
-  opacity: '.8',
+  opacity: '.9',
   minWidth: '40px',
   textAlign: 'center',
   padding: '4px',
@@ -21,7 +21,7 @@ const nodeStyle = {
   fontSize: '16px',
 };
 
-const StyledLink = styled(LinkIcon)(({ theme }) => ({
+const StyledLink = styled(AddLinkIcon)(({ theme }) => ({
   marginLeft: theme.spacing(1),
   color: theme.palette.secondary.main,
   '&:hover': {
@@ -64,7 +64,7 @@ function NodeView(props: PropType) {
     <Box ref={nodeRef} width="100%" height="100%" display="flex" padding="4px" marginTop="2px" marginLeft="2px">
       {node.highlighted ? (
         <>
-          <Box sx={{ ...nodeStyle, bgcolor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 75 && hslColors[2] >= 50) ? 'black' : 'white', boxShadow: `0px 0px 4px 2px hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)` }}>
+          <Box sx={{ ...nodeStyle, opacity: 1, bgcolor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 75 && hslColors[2] >= 50) ? 'black' : 'white', boxShadow: `0px 0px 4px 2px hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)` }}>
             {node.name}
           </Box>
           <StyledLink onClick={(e) => { e.preventDefault(); e.stopPropagation(); linkCreation(node.id); }} />
