@@ -7,7 +7,11 @@ on:
 
 jobs:
   binary:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 3
+      matrix:
+        os: [windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -40,10 +44,11 @@ jobs:
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
       - name: Fix symlink for windows
+        if: matrix.os == 'windows-latest'
         run: |
           rm antareslauncher
           ln -s antares-launcher\antareslauncher antareslauncher
-      - name: Generate binary Windows
+      - name: Generate binary
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller AntaresWeb.spec
@@ -53,5 +58,5 @@ jobs:
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
-          name: dist-windows-latest
+          name: AntaresWeb-${{ matrix.os }}
           path: dist/*
