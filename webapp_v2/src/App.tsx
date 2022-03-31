@@ -54,13 +54,14 @@ function App() {
                         <Route path="configuration" element={<Configuration />} />
                         <Route path="results" element={<Results />} />
                         <Route
-                          index
-                          element={<Modelization />}
-                        />
-                        <Route
                           path="*"
                           element={<Modelization />}
-                        />
+                        >
+                          <Route
+                            index
+                            element={<Map />}
+                          />
+                        </Route>
                       </Route>
                     </Route>
                   </Route>
