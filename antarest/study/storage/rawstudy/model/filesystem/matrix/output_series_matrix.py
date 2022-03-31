@@ -178,6 +178,6 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
             context,
             config=config,
             date_serializer=FactoryDateSerializer.create(freq, area),
-            head_writer=AreaHeadWriter(area, freq),
+            head_writer=AreaHeadWriter(area, config.path.name[:2], freq),
             freq=freq,
         )

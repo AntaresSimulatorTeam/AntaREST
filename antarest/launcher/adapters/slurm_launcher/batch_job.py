@@ -387,7 +387,7 @@ class BatchJobManager:
                 / "output"
                 / output_name
                 / TMP_SUMMARIES_DIR
-                / f"mc-all-{batch_index}"
+                / f"mc-all.{batch_index}"
             )
             mc_all = OutputSimulationModeMcAll(study.tree.context, config)
             mc_alls.append(mc_all)
@@ -581,10 +581,10 @@ class BatchJobManager:
                             .div(np.sum(mc_alls_size))
                         )
 
-                data_nodes[stat_name][0].save(df_main.to_dict(orient="split"))
+                data_nodes[stat_name][0].save(df_main.astype('int64', errors='ignore').to_dict(orient="split"))
                 if dfs_id_main is not None and df_id_datanode_name:
                     data_nodes[df_id_datanode_name][0].save(
-                        dfs_id_main.to_dict(orient="split")
+                        dfs_id_main.astype('int64', errors='ignore').to_dict(orient="split")
                     )
 
         for item_type in ["areas", "links"]:

@@ -5,10 +5,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
 
 
 def test_area():
-    writer = AreaHeadWriter(area="de", freq="hourly")
+    writer = AreaHeadWriter(area="de", data_type="va", freq="hourly")
     assert (
         writer.build(var=3, start=2, end=4)
-        == "DE\tarea\tde\thourly\n\tVARIABLES\tBEGIN\tEND\n\t3\t2\t4\n\n"
+        == "DE\tarea\tva\thourly\n\tVARIABLES\tBEGIN\tEND\n\t3\t2\t4\n\n"
     )
 
 

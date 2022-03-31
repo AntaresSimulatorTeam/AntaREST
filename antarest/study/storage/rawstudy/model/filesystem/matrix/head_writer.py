@@ -26,8 +26,8 @@ class AreaHeadWriter(HeadWriter):
     Implementation for area head matrix.
     """
 
-    def __init__(self, area: str, freq: str):
-        self.head = f"""{area.upper()}\tarea\t{area.lower()}\t{freq}
+    def __init__(self, area: str, data_type: str, freq: str):
+        self.head = f"""{area.upper()}\tarea\t{data_type}\t{freq}
 \tVARIABLES\tBEGIN\tEND
 """
 

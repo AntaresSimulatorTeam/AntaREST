@@ -11,8 +11,8 @@ mc_alls = bjm.reconstruct_synthesis(
     Path(
         "/home/buiquangpau/scratch/antares_workspace_internal/8e4e8916-348b-4949-bd2c-8109fe5a75aa"
     ),
-    "20220325-1603eco",
-    {2: 1, 3: 5},
+    "20220331-1642eco",
+    {i: 1 for i in range(2, 12)},
 )
 
 # from pathlib import Path
