@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import (
     IniWriter,
@@ -25,12 +27,33 @@ class InputAreasSets(IniFileNode):
     + = bonjour
     """
 
+    jsonschema_validator = Draft7Validator(
+        {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "caption": {"type": "string"},
+                    "comments": {"type": "string"},
+                    "output": {"type": "boolean"},
+                    "apply-filter": {
+                        "type": "string",
+                        "enum": ["add-all", "remove-all"],
+                    },
+                    "+": {"type": "array", "items": {"type": "string"}},
+                    "-": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        }
+    )
+
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         IniFileNode.__init__(
             self,
             context,
             config,
-            validator=DEFAULT_INI_VALIDATOR,
+            validator=InputAreasSets.jsonschema_validator,
             reader=MultipleSameKeysIniReader(["+", "-"]),
             writer=IniWriter(special_keys=["+", "-"]),
         )

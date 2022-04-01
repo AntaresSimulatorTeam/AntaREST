@@ -50,13 +50,19 @@ class OutputSimulation(FolderNode):
             "info": OutputSimulationInfoAntaresOutput(
                 self.context, self.config.next_file("info.antares-output")
             ),
-            "antares-out": RawFileNode(
-                self.context, self.config.next_file("antares-out.log")
-            ),
-            "antares-err": RawFileNode(
-                self.context, self.config.next_file("antares-err.log")
-            ),
         }
+
+        antares_out_config = self.config.next_file("antares-out.log")
+        if antares_out_config.path.exists():
+            children["antares-out"] = RawFileNode(
+                self.context, antares_out_config
+            )
+
+        antares_err_config = self.config.next_file("antares-err.log")
+        if antares_err_config.path.exists():
+            children["antares-err"] = RawFileNode(
+                self.context, antares_err_config
+            )
 
         if not self.simulation.error:
 

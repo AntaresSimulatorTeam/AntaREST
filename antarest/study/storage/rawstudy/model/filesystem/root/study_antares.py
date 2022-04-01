@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -25,16 +27,35 @@ class StudyAntares(IniFileNode):
 
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        types = {
-            "antares": {
-                "version": int,
-                "caption": str,
-                "created": int,
-                "lastsave": int,
-                "author": str,
-            }
+    json_validator = Draft7Validator(
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "antares": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "version": {"type": "integer", "minimum": 0},
+                        "caption": {"type": "string"},
+                        "created": {"type": "number", "minimum": 0},
+                        "lastsave": {"type": "number", "minimum": 0},
+                        "author": {"type": "string"},
+                    },
+                    "required": [
+                        "version",
+                        "caption",
+                        "created",
+                        "lastsave",
+                        "author",
+                    ],
+                }
+            },
+            "required": ["antares"],
         }
+    )
+
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         IniFileNode.__init__(
-            self, context, config, validator=DEFAULT_INI_VALIDATOR
+            self, context, config, validator=StudyAntares.json_validator
         )

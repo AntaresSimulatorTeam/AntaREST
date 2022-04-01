@@ -40,20 +40,10 @@ class InputAreasOptimization(IniFileNode):
                         "dispatchable-hydro-power": {"type": "boolean"},
                         "other-dispatchable-power": {"type": "boolean"},
                         "spread-unsupplied-energy-cost": {
-                            "type": "array",
-                            "prefixItems": [
-                                {"type": "integer"},
-                                {"type": "number"},
-                            ],
-                            "items": False,
+                            "type": "number",
                         },
                         "spread-spilled-energy-cost": {
-                            "type": "array",
-                            "prefixItems": [
-                                {"type": "integer"},
-                                {"type": "number"},
-                            ],
-                            "items": False,
+                            "type": "number",
                         },
                         "additionalProperties": False,
                     },

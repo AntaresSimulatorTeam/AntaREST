@@ -38,6 +38,9 @@ class IniReaderError(Exception):
         super(IniReaderError, self).__init__(f"Error read node {name} = {mes}")
 
 
+LAZY_PREFIX = "json://"
+
+
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
@@ -65,7 +68,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             return self
 
         if depth <= -1 and expanded:
-            return f"json://{self.config.path.name}"
+            return f"{LAZY_PREFIX}{self.config.path.name}"
 
         if depth == 0:
             return {}
@@ -146,7 +149,13 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        errors = [error.message for error in self.validator.iter_errors(data)]
+        data_to_validate = data
+        if isinstance(data, str) and data.startswith(LAZY_PREFIX):
+            data_to_validate = self._get([], -1, expanded=False)
+        errors = [
+            error.message
+            for error in self.validator.iter_errors(data_to_validate)
+        ]
         if raising and errors:
             raise ValueError("\n".join(errors))
         return errors

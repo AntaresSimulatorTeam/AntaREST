@@ -71,6 +71,11 @@ def assert_with_errors(
     )
 
 
+def test_validators(storage_service: StudyService):
+    output = storage_service.check_errors("STA-mini")
+    assert output == []
+
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
