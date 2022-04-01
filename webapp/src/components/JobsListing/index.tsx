@@ -6,11 +6,12 @@ import debug from 'debug';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import moment from 'moment';
-import { makeStyles, createStyles, Theme, useTheme, Typography, Box, CircularProgress } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, useTheme, Typography, Box, CircularProgress, Tooltip, IconButton } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import BlockIcon from '@material-ui/icons/Block';
 import InfoIcon from '@material-ui/icons/Info';
+import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
 import MainContentLoader from '../ui/loaders/MainContentLoader';
 import DownloadLink from '../ui/DownloadLink';
 import LogModal from '../ui/LogModal';
@@ -54,12 +55,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   dateicon: {
     marginRight: '0.5em',
   },
-  dot: {
-    width: '0.5em',
-    height: '0.5em',
-    borderRadius: '50%',
-    marginRight: theme.spacing(1),
-  },
   actions: {
     display: 'flex',
     alignItems: 'center',
@@ -78,10 +73,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
   },
   downloadIcon: {
-    cursor: 'pointer',
-    margin: theme.spacing(0.5),
-    color: theme.palette.primary.main,
-    '&:hover': {
+    '& > span > svg': {
+      margin: theme.spacing(0.5),
+      color: theme.palette.primary.main,
+    },
+    '&:hover > span > svg': {
       color: theme.palette.secondary.main,
     },
   },
@@ -157,7 +153,7 @@ const JobsListing = (props: PropTypes) => {
     } else if (job.status === 'running') {
       color = theme.palette.warning.main;
     }
-    return (<Box className={classes.dot} style={{ backgroundColor: color }} />);
+    return (<FiberManualRecordIcon style={{ color, fontSize: '10px', marginRight: '8px' }} />);
   };
 
   const exportJobOutput = async (jobId: string): Promise<void> => {
@@ -268,10 +264,20 @@ const JobsListing = (props: PropTypes) => {
     action: (
       <Box className={classes.actions}>
         <Box className={classes.actionButton}>
-          {job.status === 'running' ? <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} /> : <Box />}
+          {job.status === 'running' ? (
+            <Tooltip title={t('singlestudy:killStudy') as string}>
+              <BlockIcon className={classes.blockIcon} onClick={() => setOpenConfirmationModal(job.id)} />
+            </Tooltip>
+          ) : <Box />}
         </Box>
         <Box>
-          {job.status === 'success' ? <FontAwesomeIcon size="lg" className={classes.downloadIcon} icon="download" onClick={() => exportJobOutput(job.id)} /> : <Box />}
+          {job.status === 'success' ? (
+            <Tooltip title={t('jobs:download') as string}>
+              <IconButton size="small" className={classes.downloadIcon}>
+                <FontAwesomeIcon size="1x" icon="download" onClick={() => exportJobOutput(job.id)} />
+              </IconButton>
+            </Tooltip>
+          ) : <Box />}
         </Box>
         <LogView job={job} logButton logErrorButton />
       </Box>
@@ -293,14 +299,24 @@ const JobsListing = (props: PropTypes) => {
     ),
     action: (
       download.failed ? (
-        <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
+        <Tooltip title={t('singlestudy:failedToExportOutput') as string}>
+          <InfoIcon className={classes.errorIcon} onClick={() => setMessageModalOpen(download.errorMessage)} />
+        </Tooltip>
       ) : (
         <Box>
           {download.ready ? (
             <DownloadLink url={getDownloadUrl(download.id)}>
-              <FontAwesomeIcon size="lg" className={classes.downloadIcon} icon="download" />
+              <Tooltip title={t('jobs:download') as string}>
+                <IconButton size="small" className={classes.downloadIcon}>
+                  <FontAwesomeIcon size="1x" icon="download" />
+                </IconButton>
+              </Tooltip>
             </DownloadLink>
-          ) : <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />}
+          ) : (
+            <Tooltip title={t('jobs:loading') as string}>
+              <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+            </Tooltip>
+          )}
         </Box>
       )
     ),
@@ -333,8 +349,11 @@ const JobsListing = (props: PropTypes) => {
     action: (
       <Box>
         {
-          !task.completion_date_utc &&
-          <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+          !task.completion_date_utc && (
+          <Tooltip title={t('jobs:loading') as string}>
+            <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+          </Tooltip>
+          )
         }
         {
           task.completion_date_utc && !task.result?.success && <InfoIcon className={classes.errorIcon} />

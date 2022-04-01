@@ -47,8 +47,8 @@ const JobTableView = (props: PropType) => {
   const [t] = useTranslation();
   const classes = useStyles();
   const [sorted, setSorted] = useState<string>();
-  const [type, setType] = React.useState('');
-  const [currentContent, setCurrentContent] = useState<JobsType[]>();
+  const [type, setType] = useState<string>('all');
+  const [currentContent, setCurrentContent] = useState<JobsType[]>([]);
 
   const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setType(event.target.value as string);
@@ -56,7 +56,7 @@ const JobTableView = (props: PropType) => {
 
   useEffect(() => {
     if (content) {
-      if (type) {
+      if (type !== 'all') {
         setCurrentContent(content.filter((o) => o.type === type));
       } else {
         setCurrentContent(content);
@@ -86,7 +86,7 @@ const JobTableView = (props: PropType) => {
         >
           {filterList.map((item) =>
             (
-              <MenuItem value={item === 'all' ? '' : item} key={item}>
+              <MenuItem value={item} key={item}>
                 {t(`jobs:${item}`)}
               </MenuItem>
             ))}
@@ -115,7 +115,12 @@ const JobTableView = (props: PropType) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!sorted && (sorted !== 'date') && currentContent ? currentContent.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? -1 : 1)).map((row) => (
+            {currentContent.sort((a, b) => {
+              if (!sorted && (sorted !== 'date')) {
+                return (moment(a.date).isAfter(moment(b.date)) ? -1 : 1);
+              }
+              return (moment(a.date).isAfter(moment(b.date)) ? 1 : -1);
+            }).map((row) => (
               <TableRow key={`${row.name}-name-${row.date}`}>
                 <TableCell component="th" scope="row">
                   {row.name}
@@ -124,16 +129,7 @@ const JobTableView = (props: PropType) => {
                 <TableCell align="right">{row.dateView}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
-            )) : (currentContent && currentContent.sort((a, b) => (moment(a.date).isAfter(moment(b.date)) ? 1 : -1)).map((row) => (
-              <TableRow key={`${row.name}-name-${row.date}`}>
-                <TableCell component="th" scope="row">
-                  {row.name}
-                </TableCell>
-                <TableCell align="right">{t(`jobs:${row.type}`)}</TableCell>
-                <TableCell align="right">{row.dateView}</TableCell>
-                <TableCell align="right">{row.action}</TableCell>
-              </TableRow>
-            )))}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>

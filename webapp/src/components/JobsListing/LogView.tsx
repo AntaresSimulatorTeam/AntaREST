@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { Box, createStyles, makeStyles, Theme } from '@material-ui/core';
+import { Box, createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ErrorIcon from '@material-ui/icons/Error';
 import { getStudyJobLog } from '../../services/api/study';
@@ -88,15 +88,19 @@ const LogView = (props: PropsType) => {
   return (
     <Box className={classes.logButtons}>
       {logButton && (
-      <Box className={classes.logIcon}>
-        <FontAwesomeIcon size="lg" onClick={() => openLogView(job.id)} icon="file" />
-      </Box>
+        <Tooltip title={t('singlestudy:taskLog') as string}>
+          <Box className={classes.logIcon}>
+            <FontAwesomeIcon size="lg" onClick={() => openLogView(job.id)} icon="file" />
+          </Box>
+        </Tooltip>
       )}
       {logErrorButton && (
-      <Box className={classes.logError} onClick={() => openLogView(job.id, true)}>
-        <FontAwesomeIcon size="lg" icon="file" />
-        <ErrorIcon />
-      </Box>
+        <Tooltip title={t('singlestudy:taskErrorLog') as string}>
+          <Box className={classes.logError} onClick={() => openLogView(job.id, true)}>
+            <FontAwesomeIcon size="lg" icon="file" />
+            <ErrorIcon />
+          </Box>
+        </Tooltip>
       )}
       <LogModal
         isOpen={!!jobIdDetail}
