@@ -159,6 +159,14 @@ export const buildModificationDate = (date: string, t: TFunction<'translation', 
   return duration.locale(language.substring(0, 2) === 'fr' ? 'fr' : 'en').humanize();
 };
 
+export const countAllCHildrens = (tree: VariantTree) : number => {
+  if (tree.children.length > 0) {
+    return tree.children.map((elm) => 1 + countAllCHildrens(elm))
+      .reduce((acc, curr) => acc + curr);
+  }
+  return 0;
+};
+
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);
   const red = r / 255;

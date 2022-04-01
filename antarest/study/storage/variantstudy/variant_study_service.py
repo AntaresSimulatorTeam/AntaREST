@@ -410,6 +410,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     metadata=variant_study, update_modification_date=True
                 )
 
+    def has_children(self, study: VariantStudy) -> bool:
+        return len(self.repository.get_children(parent_id=study.id)) > 0
+
     def get_all_variants_children(
         self,
         parent_id: str,
