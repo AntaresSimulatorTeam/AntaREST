@@ -14,6 +14,7 @@ import {
   Tooltip,
   FormControl,
   InputLabel,
+  styled,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -50,6 +51,14 @@ import {
 import LauncherModal from "./LauncherModal";
 
 const logError = debug("antares:studieslist:error");
+
+const StyledGrid = styled(FixedSizeGrid)(({ theme }) => ({
+  ...scrollbarStyle,
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.secondary.main,
+    outline: '1px solid slategrey',
+  },
+}));
 
 const StudyCardCell = memo((props: GridChildComponentProps) => {
   const { data, columnIndex, rowIndex, style } = props;
@@ -384,7 +393,7 @@ function StudiesList(props: PropTypes) {
         width="100%"
         height="100%"
         boxSizing="border-box"
-        sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+        sx={{ overflowX: 'hidden', overflowY: 'auto' }}
       >
         <AutoSizer>
           {({ height, width }) => {
@@ -392,7 +401,7 @@ function StudiesList(props: PropTypes) {
             const itemWidth = paddedWidth / Math.round(paddedWidth / 400);
             const columnCount = Math.floor(paddedWidth / itemWidth);
             return (
-              <FixedSizeGrid
+              <StyledGrid
                 columnCount={columnCount}
                 columnWidth={itemWidth}
                 height={height}
@@ -413,7 +422,7 @@ function StudiesList(props: PropTypes) {
                 }}
               >
                 {StudyCardCell}
-              </FixedSizeGrid>
+              </StyledGrid>
             );
           }}
         </AutoSizer>
