@@ -120,7 +120,7 @@ export default function CustomizedTreeView(props: Props) {
       <Fab variant="circular" color="primary" aria-label="add" sx={{ position: 'absolute', bottom: '34px' }} onClick={() => setOpenVariantModal(true)}>
         <AddIcon />
       </Fab>
-      {study && openVariantModal && <CreateVariantModal open={openVariantModal} onClose={() => setOpenVariantModal(false)} parentId={study.id} />}
+      {study && studyTree && openVariantModal && <CreateVariantModal open={openVariantModal} onClose={() => setOpenVariantModal(false)} studyTree={studyTree} parentId={study.id} />}
     </Box>
   );
 }

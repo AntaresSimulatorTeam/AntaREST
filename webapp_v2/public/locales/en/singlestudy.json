@@ -98,5 +98,6 @@
   "validate": "Validate",
   "parentStudy": "Parent study",
   "modifiedStudySuccess": "Study {{studyname}} updated successfully",
-  "modifiedStudyFailed": "Study {{studyname}} not updated"
+  "modifiedStudyFailed": "Study {{studyname}} not updated",
+  "versionSource": "Version source"
 }

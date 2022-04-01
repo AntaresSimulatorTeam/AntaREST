@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { StudyMetadata, VariantTree } from '../../../../common/types';
+import { GenericInfo, StudyMetadata, VariantTree } from '../../../../common/types';
 import { convertUTCToLocalTime } from '../../../../services/utils';
 
 export interface StudyTree {
@@ -75,6 +75,16 @@ export const getTreeNodes = async (study: StudyMetadata, parents: Array<StudyMet
 
   await buildTree(currentNode, childrenTree);
   return currentNode;
+};
+
+export const createListFromTree = (tree: StudyTree) : Array<GenericInfo> => {
+  const { name, attributes, children } = tree;
+  const { id } = attributes;
+  let res : Array<GenericInfo> = [{ id, name }];
+  children.forEach((elm) => {
+    res = res.concat(createListFromTree(elm));
+  });
+  return res;
 };
 
 export default {};

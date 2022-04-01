@@ -98,5 +98,6 @@
   "validate": "Valider",
   "parentStudy": "Etude parente",
   "modifiedStudySuccess": "L'étude {{studyname}} a été modifiée avec succès",
-  "modifiedStudyFailed": "Erreur lors de la modification de l'étude {{studyname}}"
+  "modifiedStudyFailed": "Erreur lors de la modification de l'étude {{studyname}}",
+  "versionSource": "Source"
 }
