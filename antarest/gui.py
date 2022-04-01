@@ -6,7 +6,6 @@ from multiprocessing import Process
 from pathlib import Path
 
 import requests
-from plyer import notification  # type: ignore
 
 from antarest import __version__
 
@@ -47,13 +46,24 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
 
-    notification.notify(
-        title="AntaresWebServer",
-        message="Antares Web Server started, you can manage the application within the systray app",
-        app_name="AntaresWebServer",
-        app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
-        timeout=600,
-    )
+    if sys.platform.system() == "Windows":
+        from win10toast import ToastNotifier
+
+        toaster = ToastNotifier()
+        toaster.show_toast("AntaresWebServer",
+                           "Antares Web Server started, you can manage the application within the systray app",
+                           icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
+                           duration=600)
+    else:
+        from plyer import notification  # type: ignore
+
+        notification.notify(
+            title="AntaresWebServer",
+            message="Antares Web Server started, you can manage the application within the systray app",
+            app_name="AntaresWebServer",
+            app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
+            timeout=600,
+        )
 
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)
