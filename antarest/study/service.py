@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     UnsupportedOperationOnArchivedStudy,
     NotAManagedStudyException,
     CommandApplicationError,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
@@ -872,6 +873,15 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
+        elif isinstance(
+            study, VariantStudy
+        ) and self.storage_service.variant_study_service.has_children(
+            cast(VariantStudy, study)
+        ):
+            raise StudyDeletionNotAllowed(
+                study.id, "Study has variant children"
+            )
+
         self.repository.delete(study.id)
 
         self.event_bus.push(
