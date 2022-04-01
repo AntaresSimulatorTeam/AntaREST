@@ -83,7 +83,7 @@ class StudyDeletionNotAllowed(HTTPException):
     def __init__(self, uuid: str, message: Optional[str] = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"
         if message:
-            msg += f"\n{msg}"
+            msg += f"\n{message}"
         super().__init__(
             HTTPStatus.FORBIDDEN,
             msg,
