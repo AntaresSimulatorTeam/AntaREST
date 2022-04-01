@@ -93,7 +93,7 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>((props: Props, ref) 
                 </Grid>
                 <Grid item xs={6}>
                   <Label>Description : </Label>
-                  <Typography>{details.response.data.description}</Typography>
+                  <Typography sx={{ whiteSpace: 'pre-wrap' }}>{details.response.data.description}</Typography>
                 </Grid>
               </Grid>
             </Paper>
