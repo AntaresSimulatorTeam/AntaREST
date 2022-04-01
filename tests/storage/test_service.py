@@ -936,6 +936,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     raw_study_service = RawStudyService(
         Config(), Mock(), Mock(), Mock(), Mock()
     )
+    variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
@@ -943,7 +944,7 @@ def test_delete_with_prefetch(tmp_path: Path):
         Mock(),
         Mock(),
         Mock(),
-        Mock(),
+        variant_study_repository,
         Mock(),
         Mock(),
     )
@@ -998,6 +999,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
+    variant_study_repository.get_children.return_value = []
 
     # if this fails, it may means the study metadata mock is missing some definition
     # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
