@@ -35,5 +35,6 @@
   "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application",
   "search": "Rechercher",
   "files": "Fichiers",
-  "none": "Aucun"
+  "none": "Aucun",
+  "date": "Date"
 }
