@@ -16,7 +16,7 @@ import { scrollbarStyle } from '../../../../../theme';
 const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 50;
 
-const StyledList = styled(FixedSizeList)(() => ({
+const StyledList = styled(FixedSizeList)(({ theme }) => ({
   '&> div > li > div': {
     cursor: 'pointer',
     '&:hover': {
@@ -24,6 +24,10 @@ const StyledList = styled(FixedSizeList)(() => ({
     },
   },
   ...scrollbarStyle,
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.secondary.main,
+    outline: '1px solid slategrey',
+  },
 }));
 
 interface PropsType {

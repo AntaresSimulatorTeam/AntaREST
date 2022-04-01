@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon, Button, Tooltip, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, ListItemIcon, Button, Tooltip, FormControl, InputLabel, styled } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
@@ -22,6 +22,14 @@ import { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStud
 import LauncherModal from './LauncherModal';
 
 const logError = debug('antares:studieslist:error');
+
+const StyledGrid = styled(FixedSizeGrid)(({ theme }) => ({
+  ...scrollbarStyle,
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.secondary.main,
+    outline: '1px solid slategrey',
+  },
+}));
 
 const StudyCardCell = React.memo((props: GridChildComponentProps) => {
   const { data, columnIndex, rowIndex, style } = props;
@@ -274,7 +282,7 @@ function StudiesList(props: PropTypes) {
         width="100%"
         height="100%"
         boxSizing="border-box"
-        sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}
+        sx={{ overflowX: 'hidden', overflowY: 'auto' }}
       >
         <AutoSizer>
           { ({ height, width }) => {
@@ -283,7 +291,7 @@ function StudiesList(props: PropTypes) {
             const itemWidth = (paddedWidth / Math.round(paddedWidth / 400));
             const columnCount = Math.floor(paddedWidth / itemWidth);
             return (
-              <FixedSizeGrid
+              <StyledGrid
                 columnCount={columnCount}
                 columnWidth={itemWidth}
                 height={height}
@@ -293,7 +301,7 @@ function StudiesList(props: PropTypes) {
                 itemData={{ studies, importStudy, onLaunchClick, columnCount, itemWidth, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy }}
               >
                 {StudyCardCell}
-              </FixedSizeGrid>
+              </StyledGrid>
             );
           }
         }
