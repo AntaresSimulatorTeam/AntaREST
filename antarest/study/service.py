@@ -875,9 +875,7 @@ class StudyService:
             _ = study.workspace
         elif isinstance(
             study, VariantStudy
-        ) and self.storage_service.variant_study_service.has_children(
-            cast(VariantStudy, study)
-        ):
+        ) and self.storage_service.variant_study_service.has_children(study):
             raise StudyDeletionNotAllowed(
                 study.id, "Study has variant children"
             )
