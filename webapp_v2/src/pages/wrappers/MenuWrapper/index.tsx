@@ -17,6 +17,7 @@ import Divider from "@mui/material/Divider";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
+import GpsFixedIcon from "@mui/icons-material/GpsFixedOutlined";
 
 import ApiIcon from "@mui/icons-material/Api";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
@@ -45,11 +46,13 @@ interface MenuItem {
   id: string;
   link: string;
   newTab?: boolean;
+  strict?: boolean;
   icon: FunctionComponent<SvgIconProps>;
 }
 
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
+  currentStudy: state.study.current,
 });
 
 const mapDispatch = {
@@ -61,30 +64,24 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function MenuWrapper(props: PropsWithChildren<PropTypes>) {
-  const { children, extended, setExtended } = props;
+  const { children, extended, setExtended, currentStudy } = props;
   const theme = useTheme();
   const [t] = useTranslation();
   const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
 
-  const navigation: Array<MenuItem> = [
-    { id: "studies", link: "/studies", icon: TravelExploreOutlinedIcon },
+  let navigation: Array<MenuItem> = [
+    { id: 'studies', link: '/studies', strict: true, icon: TravelExploreOutlinedIcon },
     { id: "tasks", link: "/tasks", icon: PlaylistAddCheckOutlinedIcon },
     { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
-    { id: "api", link: "/api", icon: ApiIcon },
-    {
-      id: "documentation",
-      link: "https://antares-web.readthedocs.io/en/latest",
-      newTab: true,
-      icon: ClassOutlinedIcon,
-    },
-    {
-      id: "github",
-      link: "https://github.com/AntaresSimulatorTeam/AntaREST",
-      newTab: true,
-      icon: GitHubIcon,
-    },
-    { id: "settings", link: "/settings", icon: SettingsOutlinedIcon },
+    { id: 'api', link: '/api', icon: ApiIcon },
+    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: ClassOutlinedIcon },
+    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: GitHubIcon },
+    { id: 'settings', link: '/settings', icon: SettingsOutlinedIcon },
   ];
+
+  if (currentStudy) {
+    navigation = ([{ id: 'studies', link: `/studies/${currentStudy}`, icon: GpsFixedIcon }] as MenuItem[]).concat(navigation);
+  }
 
   const settings = navigation[navigation.length - 1];
 
@@ -100,6 +97,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       ) : (
         <NavInternalLink
           to={elm.link}
+          end={elm.strict}
           style={({ isActive }) => ({
             background: isActive
               ? theme.palette.primary.outlinedHoverBackground
@@ -114,6 +112,8 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       )}
     </NavListItem>
   );
+
+  const topMenuLastIndexOffset = currentStudy ? 1 : 0;
 
   return (
     <Box
@@ -179,14 +179,14 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
           sx={{ boxSizing: "border-box" }}
         >
           <List>
-            {navigation
-              .slice(0, 3)
-              .map((elm: MenuItem, index) => drawMenuItem(elm))}
+            {navigation.slice(0, 3 + topMenuLastIndexOffset).map((elm: MenuItem, index) => (
+              drawMenuItem(elm)
+            ))}
           </List>
           <List>
-            {navigation
-              .slice(3, 6)
-              .map((elm: MenuItem, index) => drawMenuItem(elm))}
+            {navigation.slice(3 + topMenuLastIndexOffset, 6 + topMenuLastIndexOffset).map((elm: MenuItem, index) => (
+              drawMenuItem(elm)
+            ))}
           </List>
         </Box>
         <Divider />
