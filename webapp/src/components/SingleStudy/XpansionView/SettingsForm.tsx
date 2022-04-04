@@ -8,16 +8,13 @@ import {
   Divider,
   Theme,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Button,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import SaveIcon from '@material-ui/icons/Save';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import { XpansionSettings } from './types';
+import SelectBasic from '../../ui/SelectBasic';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -47,6 +44,7 @@ const useStyles = makeStyles((theme: Theme) =>
     select: {
       display: 'flex',
       alignItems: 'center',
+      width: '276px',
     },
     selectBox: {
       display: 'flex',
@@ -101,6 +99,10 @@ const SettingsForm = (props: PropType) => {
   const [currentSettings, setCurrentSettings] = useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
 
+  const ucType = ['expansion_fast', 'expansion_accurate'];
+  const master = ['relaxed', 'integer'];
+  const solver = ['Cbc', 'Xpress'];
+
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
     setCurrentSettings({ ...currentSettings, [key]: value });
@@ -134,8 +136,12 @@ const SettingsForm = (props: PropType) => {
         </Box>
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
-          <TextField label={t('xpansion:ucType')} variant="filled" value={currentSettings.uc_type} onChange={(e) => handleChange('uc_type', e.target.value)} />
-          <TextField label={t('xpansion:master')} variant="filled" value={currentSettings.master} onChange={(e) => handleChange('master', e.target.value)} />
+          <Box className={classes.select}>
+            <SelectBasic name={t('xpansion:ucType')} items={ucType} label="uc_type" value={currentSettings.uc_type} handleChange={handleChange} />
+          </Box>
+          <Box className={classes.select}>
+            <SelectBasic name={t('xpansion:master')} items={master} label="master" value={currentSettings.master} handleChange={handleChange} />
+          </Box>
           <TextField type="number" label={t('xpansion:optimalyGap')} variant="filled" value={currentSettings.optimality_gap} onChange={(e) => handleChange('optimality_gap', parseFloat(e.target.value))} />
           <TextField label={t('xpansion:maxIteration')} variant="filled" value={currentSettings.max_iteration || ''} onChange={(e) => handleChange('max_iteration', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={currentSettings['relaxed-optimality-gap'] || ''} onChange={(e) => handleChange('relaxed-optimality-gap', parseFloat(e.target.value))} />
@@ -145,6 +151,9 @@ const SettingsForm = (props: PropType) => {
           <TextField type="number" label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || ''} onChange={(e) => handleChange('ampl.solve_bounds_frequency', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:relativeGap')} variant="filled" value={currentSettings.relative_gap || ''} onChange={(e) => handleChange('relative_gap', parseFloat(e.target.value))} />
           <TextField label={t('xpansion:solver')} variant="filled" value={currentSettings.solver || ''} onChange={(e) => handleChange('solver', e.target.value)} />
+          <Box className={classes.select}>
+            <SelectBasic name={t('xpansion:solver')} items={solver} label="solver" value={currentSettings.solver || ''} handleChange={handleChange} optional />
+          </Box>
         </Box>
       </Box>
       <Box>
@@ -154,37 +163,11 @@ const SettingsForm = (props: PropType) => {
         <Divider className={classes.divider} />
         <Box className={classes.selectBox}>
           <Box className={classes.select}>
-            <FormControl variant="filled" className={classes.formControl}>
-              <InputLabel id="link-label">{t('xpansion:yearlyWeight')}</InputLabel>
-              <Select
-                labelId="yearly-weight-label"
-                id="yearly-weight-select-filled"
-                value={currentSettings['yearly-weights'] || ''}
-                onChange={(e) => handleChange('yearly-weights', e.target.value as string)}
-              >
-                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
-                {constraints.map((item) => (
-                  <MenuItem value={item} key={item}>{item}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SelectBasic name={t('xpansion:yearlyWeight')} items={constraints} label="yearly-weights" value={currentSettings['yearly-weights'] || ''} handleChange={handleChange} optional />
             <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentSettings['yearly-weights'] && onRead(currentSettings['yearly-weights'] || '')} />
           </Box>
           <Box className={classes.select}>
-            <FormControl variant="filled" className={classes.formControl}>
-              <InputLabel id="link-label">{t('xpansion:additionalConstraints')}</InputLabel>
-              <Select
-                labelId="additional-constraints-label"
-                id="additional-constraints-select-filled"
-                value={currentSettings['additional-constraints'] || ''}
-                onChange={(e) => handleChange('additional-constraints', e.target.value as string)}
-              >
-                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
-                {constraints.map((item) => (
-                  <MenuItem value={item} key={item}>{item}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SelectBasic name={t('xpansion:additionalConstraints')} items={constraints} label="additional-constraints" value={currentSettings['additional-constraints'] || ''} handleChange={handleChange} optional />
             <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentSettings['additional-constraints'] && onRead(currentSettings['additional-constraints'] || '')} />
           </Box>
         </Box>

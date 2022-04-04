@@ -7,10 +7,6 @@ import {
   Box,
   Divider,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Button,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +16,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate } from './types';
 import { LinkCreationInfo } from '../MapView/types';
+import SelectBasic from '../../ui/SelectBasic';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -60,6 +57,7 @@ const useStyles = makeStyles((theme: Theme) =>
     select: {
       display: 'flex',
       alignItems: 'center',
+      width: '276px',
     },
     deleteIcon: {
       cursor: 'pointer',
@@ -121,6 +119,8 @@ const CandidateForm = (props: PropType) => {
   const [currentCandidate, setCurrentCandidate] = useState<XpansionCandidate>(candidate);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
 
+  const tabLinks = links.map((item) => `${item.area1} - ${item.area2}`);
+
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
     setCurrentCandidate({ ...currentCandidate, [key]: value });
@@ -158,19 +158,9 @@ const CandidateForm = (props: PropType) => {
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
           <TextField label={t('main:name')} variant="filled" value={currentCandidate.name} onChange={(e) => handleChange('name', e.target.value)} />
-          <FormControl variant="filled" className={classes.formControl}>
-            <InputLabel id="link-label">{t('xpansion:link')}</InputLabel>
-            <Select
-              labelId="link-label"
-              id="link-select-filled"
-              value={currentCandidate.link}
-              onChange={(e) => handleChange('link', e.target.value as string)}
-            >
-              {links.map((item) => (
-                <MenuItem key={`${item.area1} - ${item.area2}`} value={`${item.area1} - ${item.area2}`}>{`${item.area1} - ${item.area2}`}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box className={classes.select}>
+            <SelectBasic name={t('xpansion:link')} label="link" items={tabLinks} value={currentCandidate.link} handleChange={handleChange} />
+          </Box>
         </Box>
       </Box>
       <Box>
@@ -193,37 +183,11 @@ const CandidateForm = (props: PropType) => {
         <Divider className={classes.divider} />
         <Box className={classes.selectBox}>
           <Box className={classes.select}>
-            <FormControl variant="filled" className={classes.formControl}>
-              <InputLabel id="link-label">{t('xpansion:linkProfile')}</InputLabel>
-              <Select
-                labelId="link-profile-label"
-                id="link-profile-select-filled"
-                value={currentCandidate['link-profile'] || ''}
-                onChange={(e) => handleChange('link-profile', e.target.value as string)}
-              >
-                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
-                {capacities.map((item) => (
-                  <MenuItem value={item} key={item}>{item}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SelectBasic name={t('xpansion:linkProfile')} label="link-profile" items={capacities} value={currentCandidate['link-profile'] || ''} handleChange={handleChange} optional />
             <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentCandidate['link-profile'] && onRead(currentCandidate['link-profile'] || '')} />
           </Box>
           <Box className={classes.select}>
-            <FormControl variant="filled" className={classes.alreadyInstalled}>
-              <InputLabel id="link-label">{t('xpansion:alreadyILinkProfile')}</InputLabel>
-              <Select
-                labelId="already-installed-link-label"
-                id="already-installed-link-select-filled"
-                value={currentCandidate['already-installed-link-profile'] || ''}
-                onChange={(e) => handleChange('already-installed-link-profile', e.target.value as string)}
-              >
-                <MenuItem value="" key="None">{t('main:none')}</MenuItem>
-                {capacities.map((item) => (
-                  <MenuItem value={item} key={item}>{item}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SelectBasic name={t('xpansion:alreadyILinkProfile')} label="already-installed-link-profile" items={capacities} value={currentCandidate['already-installed-link-profile'] || ''} handleChange={handleChange} optional />
             <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentCandidate['already-installed-link-profile'] && onRead(currentCandidate['already-installed-link-profile'] || '')} />
           </Box>
         </Box>

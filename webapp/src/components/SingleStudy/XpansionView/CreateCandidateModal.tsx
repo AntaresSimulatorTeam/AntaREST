@@ -5,14 +5,11 @@ import {
   Theme,
   TextField,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../../ui/GenericModal';
 import { LinkCreationInfo } from '../MapView/types';
+import SelectBasic from '../../ui/SelectBasic';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -40,6 +37,12 @@ const CreateCandidateModal = (props: PropType) => {
   const [name, setName] = useState<string>('');
   const [link, setLink] = useState<string>('');
 
+  const tabLinks = links.map((item) => `${item.area1} - ${item.area2}`);
+
+  const handleChange = (key: string, value: string | number) => {
+    setLink(value as string);
+  };
+
   return (
     <GenericModal
       open={open}
@@ -55,19 +58,7 @@ const CreateCandidateModal = (props: PropType) => {
           value={name}
           size="small"
         />
-        <FormControl variant="outlined">
-          <InputLabel id="link-label">{t('xpansion:link')}</InputLabel>
-          <Select
-            labelId="link-label"
-            id="link-select-outlined"
-            value={link}
-            onChange={(e) => setLink(e.target.value as string)}
-          >
-            {links.map((item) => (
-              <MenuItem key={`${item.area1} - ${item.area2}`} value={`${item.area1} - ${item.area2}`}>{`${item.area1} - ${item.area2}`}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SelectBasic name={t('xpansion:link')} label="link" items={tabLinks} value={link} handleChange={handleChange} variant="outlined" />
       </Box>
     </GenericModal>
   );
