@@ -6,7 +6,8 @@
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:react/recommended",
+        "plugin:react/jsx-runtime",
         "airbnb",
         "airbnb/hooks"
     ],
@@ -33,8 +34,7 @@
     },
     "plugins": [
         "react",
-        "@typescript-eslint",
-        "react-hooks"
+        "@typescript-eslint"
     ],
     "rules": {
         "import/extensions": [
