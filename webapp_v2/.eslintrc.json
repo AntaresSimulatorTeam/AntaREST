@@ -35,7 +35,14 @@
   },
   "plugins": ["react", "@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["error"],
+    "@typescript-eslint/no-shadow": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "args": "none",
+        "ignoreRestSiblings": true
+      }
+    ],
     "import/extensions": [
       "error",
       "ignorePackages",
@@ -46,8 +53,12 @@
         "tsx": "never"
       }
     ],
+    "no-shadow": "off",
     "no-unused-vars": "off",
-    "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }]
+    "no-use-before-define": ["error", { "functions": false }],
+    "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off"
   },
   "overrides": [
     {
