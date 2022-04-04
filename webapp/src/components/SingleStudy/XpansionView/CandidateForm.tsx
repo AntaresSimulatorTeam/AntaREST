@@ -69,9 +69,9 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     buttons: {
-      position: 'absolute',
-      right: '20px',
-      bottom: '20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     divider: {
       marginTop: theme.spacing(1),
@@ -97,7 +97,7 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
       height: '30px',
-      marginBottom: theme.spacing(1),
+      marginRight: theme.spacing(1),
     },
     buttonElement: {
       margin: theme.spacing(0.2),
@@ -140,17 +140,20 @@ const CandidateForm = (props: PropType) => {
           <Typography className={classes.title}>
             {t('main:general')}
           </Typography>
-          <Button
-            variant="outlined"
-            color="primary"
-            className={classes.saveButton}
-            style={{ border: '2px solid' }}
-            onClick={() => { updateCandidate(currentCandidate.name, currentCandidate); setSaveAllowed(false); }}
-            disabled={!saveAllowed}
-          >
-            <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />
-            <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>{t('main:save')}</Typography>
-          </Button>
+          <Box className={classes.buttons}>
+            <Button
+              variant="outlined"
+              color="primary"
+              className={classes.saveButton}
+              style={{ border: '2px solid' }}
+              onClick={() => { updateCandidate(currentCandidate.name, currentCandidate); setSaveAllowed(false); }}
+              disabled={!saveAllowed}
+            >
+              <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />
+              <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>{t('main:save')}</Typography>
+            </Button>
+            <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
+          </Box>
         </Box>
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
@@ -224,9 +227,6 @@ const CandidateForm = (props: PropType) => {
             <VisibilityIcon className={classes.icon} color="primary" onClick={() => currentCandidate['already-installed-link-profile'] && onRead(currentCandidate['already-installed-link-profile'] || '')} />
           </Box>
         </Box>
-      </Box>
-      <Box className={classes.buttons}>
-        <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
       </Box>
       {openConfirmationModal && candidate && (
         <ConfirmationModal
