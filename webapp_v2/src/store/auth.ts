@@ -1,14 +1,14 @@
 /* eslint-disable camelcase */
-import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-import jwt_decode from 'jwt-decode';
-import lodash from 'lodash';
-import moment from 'moment';
-import { loadState, saveState } from '../services/utils/localStorage';
-import { UserInfo } from '../common/types';
-import { setAuth } from '../services/api/client';
-import { AppState } from './reducers';
-import { reconnectWebsocket } from './websockets';
+import { Action } from "redux";
+import { ThunkAction } from "redux-thunk";
+import jwt_decode from "jwt-decode";
+import lodash from "lodash";
+import moment from "moment";
+import { loadState, saveState } from "../services/utils/localStorage";
+import { UserInfo } from "../common/types";
+import { setAuth } from "../services/api/client";
+import { AppState } from "./reducers";
+import { reconnectWebsocket } from "./websockets";
 
 /** ******************************************* */
 /* State                                        */
@@ -19,7 +19,7 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: loadState('auth.user'),
+  user: loadState("auth.user"),
 };
 
 const ref = JSON.parse(JSON.stringify(initialState));
@@ -29,7 +29,7 @@ export const persistState = (state: AuthState): void => {
     delete user.expirationDate;
   }
   if (!lodash.isEqual(ref.user, user)) {
-    saveState('auth.user', user);
+    saveState("auth.user", user);
     ref.user = user;
   }
 };
@@ -41,28 +41,33 @@ setAuth(initialState.user?.accessToken);
 /** ******************************************* */
 
 export interface LoginAction extends Action {
-  type: 'AUTH/LOGIN';
+  type: "AUTH/LOGIN";
   payload: UserInfo;
 }
 
-export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
-  const tokenData = jwt_decode(user.accessToken);
-  setAuth(user.accessToken);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updatedUser = { ...user, expirationDate: moment.unix((tokenData as any).exp) };
-  dispatch({
-    type: 'AUTH/LOGIN',
-    payload: updatedUser,
-  });
-  dispatch(reconnectWebsocket(updatedUser));
-};
+export const loginUser =
+  (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> =>
+  (dispatch): void => {
+    const tokenData = jwt_decode(user.accessToken);
+    setAuth(user.accessToken);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updatedUser = {
+      ...user,
+      expirationDate: moment.unix((tokenData as any).exp),
+    };
+    dispatch({
+      type: "AUTH/LOGIN",
+      payload: updatedUser,
+    });
+    dispatch(reconnectWebsocket(updatedUser));
+  };
 
 export interface LogoutAction extends Action {
-  type: 'AUTH/LOGOUT';
+  type: "AUTH/LOGOUT";
 }
 
 export const logoutAction = (): LogoutAction => ({
-  type: 'AUTH/LOGOUT',
+  type: "AUTH/LOGOUT",
 });
 
 type AuthAction = LoginAction | LogoutAction;
@@ -78,12 +83,12 @@ type AuthAction = LoginAction | LogoutAction;
 // eslint-disable-next-line default-param-last
 export default (state = initialState, action: AuthAction): AuthState => {
   switch (action.type) {
-    case 'AUTH/LOGIN':
+    case "AUTH/LOGIN":
       return {
         ...state,
         user: action.payload,
       };
-    case 'AUTH/LOGOUT': {
+    case "AUTH/LOGOUT": {
       setAuth(undefined);
       return {};
     }

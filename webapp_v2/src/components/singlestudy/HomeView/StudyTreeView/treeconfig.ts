@@ -1,11 +1,6 @@
-import { StudyTree } from './utils';
+import { StudyTree } from "./utils";
 
-export const colors = [
-  '#24CF9D',
-  '#F3C918',
-  '#E317DA',
-  '#00B2FF',
-];
+export const colors = ["#24CF9D", "#F3C918", "#E317DA", "#00B2FF"];
 
 export const TILE_SIZE_X = 50;
 export const TILE_SIZE_Y = 60;

@@ -1,8 +1,8 @@
-import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-import { AppState } from './reducers';
-import { StudyMetadata } from '../common/types';
-import { getStudyVersions } from '../services/api/study';
+import { Action } from "redux";
+import { ThunkAction } from "redux-thunk";
+import { AppState } from "./reducers";
+import { StudyMetadata } from "../common/types";
+import { getStudyVersions } from "../services/api/study";
 
 /** ******************************************* */
 /* State                                        */
@@ -19,7 +19,7 @@ export interface StudyState {
 const initialState: StudyState = {
   studies: [],
   scrollPosition: 0,
-  directory: 'root',
+  directory: "root",
 };
 
 /** ******************************************* */
@@ -27,85 +27,97 @@ const initialState: StudyState = {
 /** ******************************************* */
 
 interface UpdateScrollPositionAction extends Action {
-  type: 'STUDY/SCROLL_POSITION';
+  type: "STUDY/SCROLL_POSITION";
   payload: number;
 }
 
-export const updateScrollPosition = (scrollPosition: number): UpdateScrollPositionAction => ({
-  type: 'STUDY/SCROLL_POSITION',
+export const updateScrollPosition = (
+  scrollPosition: number
+): UpdateScrollPositionAction => ({
+  type: "STUDY/SCROLL_POSITION",
   payload: scrollPosition,
 });
 
 interface FolderPositionAction extends Action {
-  type: 'STUDY/FOLDER_POSITION';
+  type: "STUDY/FOLDER_POSITION";
   payload: string;
 }
 
 export const updateFolderPosition = (dir: string): FolderPositionAction => ({
-  type: 'STUDY/FOLDER_POSITION',
+  type: "STUDY/FOLDER_POSITION",
   payload: dir,
 });
 
 interface InitStudyListAction extends Action {
-  type: 'STUDY/INIT_STUDY_LIST';
+  type: "STUDY/INIT_STUDY_LIST";
   payload: StudyMetadata[];
 }
 
 export const initStudies = (studies: StudyMetadata[]): InitStudyListAction => ({
-  type: 'STUDY/INIT_STUDY_LIST',
+  type: "STUDY/INIT_STUDY_LIST",
   payload: studies,
 });
 
 interface InitStudiesVersionAction extends Action {
-  type: 'STUDY/INIT_STUDIES_VERSION';
+  type: "STUDY/INIT_STUDIES_VERSION";
   payload: Array<string>;
 }
 
-export const initStudiesVersion = (): ThunkAction<void, AppState, unknown, InitStudiesVersionAction> => async (dispatch): Promise<void> => {
-  const versions = await getStudyVersions();
-  dispatch({
-    type: 'STUDY/INIT_STUDIES_VERSION',
-    payload: versions,
-  });
-};
+export const initStudiesVersion =
+  (): ThunkAction<void, AppState, unknown, InitStudiesVersionAction> =>
+  async (dispatch): Promise<void> => {
+    const versions = await getStudyVersions();
+    dispatch({
+      type: "STUDY/INIT_STUDIES_VERSION",
+      payload: versions,
+    });
+  };
 
 interface ViewStudyAction extends Action {
-  type: 'STUDY/VIEW_STUDY';
+  type: "STUDY/VIEW_STUDY";
   payload: string;
 }
 
 export const viewStudy = (studyId: string): ViewStudyAction => ({
-  type: 'STUDY/VIEW_STUDY',
+  type: "STUDY/VIEW_STUDY",
   payload: studyId,
 });
 
 interface RemoveStudyAction extends Action {
-  type: 'STUDY/REMOVE_STUDIES';
+  type: "STUDY/REMOVE_STUDIES";
   payload: string[];
 }
 
 export const removeStudies = (studyIds: string[]): RemoveStudyAction => ({
-  type: 'STUDY/REMOVE_STUDIES',
+  type: "STUDY/REMOVE_STUDIES",
   payload: studyIds,
 });
 
 interface AddStudyAction extends Action {
-  type: 'STUDY/ADD_STUDIES';
+  type: "STUDY/ADD_STUDIES";
   payload: StudyMetadata[];
 }
 
 export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
-  type: 'STUDY/ADD_STUDIES',
+  type: "STUDY/ADD_STUDIES",
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction | FolderPositionAction | InitStudiesVersionAction;
+type StudyAction =
+  | ViewStudyAction
+  | InitStudyListAction
+  | RemoveStudyAction
+  | AddStudyAction
+  | UpdateScrollPositionAction
+  | FolderPositionAction
+  | InitStudiesVersionAction;
 
 /** ******************************************* */
 /* Selectors                                    */
 /** ******************************************* */
 
-export const getCurrentStudy = (state: AppState): StudyMetadata | undefined => state.study.studies.find((s) => s.id === state.study.current);
+export const getCurrentStudy = (state: AppState): StudyMetadata | undefined =>
+  state.study.studies.find((s) => s.id === state.study.current);
 
 /** ******************************************* */
 /* Reducer                                      */
@@ -114,27 +126,33 @@ export const getCurrentStudy = (state: AppState): StudyMetadata | undefined => s
 // eslint-disable-next-line default-param-last
 export default (state = initialState, action: StudyAction): StudyState => {
   switch (action.type) {
-    case 'STUDY/VIEW_STUDY':
+    case "STUDY/VIEW_STUDY":
       return {
         ...state,
         current: action.payload,
       };
-    case 'STUDY/INIT_STUDY_LIST':
+    case "STUDY/INIT_STUDY_LIST":
       return {
         ...state,
         studies: action.payload,
       };
-    case 'STUDY/REMOVE_STUDIES':
+    case "STUDY/REMOVE_STUDIES":
       return {
         ...state,
-        studies: state.studies.filter((s) => action.payload.indexOf(s.id) === -1),
+        studies: state.studies.filter(
+          (s) => action.payload.indexOf(s.id) === -1
+        ),
       };
-    case 'STUDY/ADD_STUDIES':
+    case "STUDY/ADD_STUDIES":
       return {
         ...state,
-        studies: state.studies.filter((s) => action.payload.map((study) => study.id).indexOf(s.id) === -1).concat(action.payload),
+        studies: state.studies
+          .filter(
+            (s) => action.payload.map((study) => study.id).indexOf(s.id) === -1
+          )
+          .concat(action.payload),
       };
-    case 'STUDY/SCROLL_POSITION':
+    case "STUDY/SCROLL_POSITION":
       if (state.scrollPosition !== action.payload) {
         return {
           ...state,
@@ -142,7 +160,7 @@ export default (state = initialState, action: StudyAction): StudyState => {
         };
       }
       return state;
-    case 'STUDY/FOLDER_POSITION':
+    case "STUDY/FOLDER_POSITION":
       if (state.directory !== action.payload) {
         return {
           ...state,
@@ -150,7 +168,7 @@ export default (state = initialState, action: StudyAction): StudyState => {
         };
       }
       return state;
-    case 'STUDY/INIT_STUDIES_VERSION':
+    case "STUDY/INIT_STUDIES_VERSION":
       return {
         ...state,
         versionList: action.payload,
