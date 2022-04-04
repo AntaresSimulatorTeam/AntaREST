@@ -207,6 +207,7 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
         bgcolor="inherit"
         height="100vh"
         overflow="hidden"
+        zIndex={1}
       >
         {children}
       </Box>

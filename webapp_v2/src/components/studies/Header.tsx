@@ -30,14 +30,6 @@ const Root = styled("div")(({ theme }) => ({
   boxSizing: "border-box",
 }));
 
-const Searchbar = styled(TextField)(({ theme }) => ({
-  color: theme.palette.grey[400],
-  "& .MuiOutlinedInput-root": {
-    height: "40px",
-    "&.Mui-focused fieldset": {},
-  },
-}));
-
 interface Props {
   inputValue: string;
   setInputValue: (value: string) => void;
@@ -111,11 +103,10 @@ function Header(props: Props) {
       </Box>
       <Box display="flex" width="100%" alignItems="center" py={2} px={3}>
         <Box display="flex" width="100%" alignItems="center">
-          <Searchbar
+          <TextField
             id="standard-basic"
             value={inputValue}
             variant="outlined"
-            sx={{ height: "40px" }}
             onChange={(event) => setInputValue(event.target.value as string)}
             label={t("main:search")}
             InputProps={{
@@ -124,28 +115,6 @@ function Header(props: Props) {
                   <SearchOutlinedIcon />
                 </InputAdornment>
               ),
-              sx: {
-                ".MuiOutlinedInput-root": {
-                  "&.MuiOutlinedInput-notchedOutline": {
-                    borderColor: `${theme.palette.primary.main} !important`,
-                  },
-                },
-                ".Mui-focused": {
-                  // borderColor: `${theme.palette.primary.main} !important`
-                },
-                ".MuiOutlinedInput-notchedOutline": {
-                  borderWidth: "1px",
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                },
-              },
-            }}
-            InputLabelProps={{
-              sx: {
-                ".MuiInputLabel-root": {
-                  color: theme.palette.text.secondary,
-                },
-                ".Mui-focused": {},
-              },
             }}
           />
           <Divider

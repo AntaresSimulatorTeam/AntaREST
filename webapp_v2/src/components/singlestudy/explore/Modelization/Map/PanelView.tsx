@@ -4,6 +4,8 @@ import {
   Box,
   Typography,
   TextField,
+  Button,
+  Divider,
   styled,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +35,7 @@ const StyledMaterialPicker = styled(Box)(({ theme }) => ({
   '& > div > div:last-of-type > div': {
     width: 'unset !important',
     height: '120px !important',
-    maxWidth: '255px !important',
+    maxWidth: '275px !important',
     fontFamily: '"Inter", sans-serif !important',
     boxShadow: 'none',
     '& > div > input, > div > div > div > input': {
@@ -90,9 +92,9 @@ function PanelView(props: PropType) {
 
   return (
     <>
-      <Box width="94%" display="flex" justifyContent="flex-start" alignItems="center" flexDirection="column" flexGrow={1} marginBottom="76px">
+      <Box width="90%" display="flex" flexDirection="column" alignItems="center" flexGrow={1} marginBottom="120px">
         {node && (
-          <>
+          <Box width="100%" display="flex" flexDirection="column" alignItems="center">
             <TextField sx={{ mt: 1 }} label={t('singlestudy:areaName')} variant="filled" value={node.name} disabled />
             <TextField sx={{ mt: 1 }} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             <TextField sx={{ mt: 1 }} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
@@ -100,13 +102,13 @@ function PanelView(props: PropType) {
             <StyledMaterialPicker>
               <MaterialPicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
             </StyledMaterialPicker>
-          </>
+          </Box>
         )}
         {links && node && (
           <LinksView links={links} node={node} onDelete={() => setOpenConfirmationModal(true)} setSelectedItem={setSelectedItem} />
         )}
         {link && (
-        <Box width="100%" display="flex" flexDirection="column" alignItems="flex-start">
+        <Box width="100%" display="flex" flexDirection="column" alignItems="center">
           <Typography sx={{ width: '90%', display: 'flex', flexFlow: 'row nowrap', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box', textDecoration: 'underline', my: 1, color: 'text.secondary' }}>{t('singlestudy:link')}</Typography>
           <Box width="90%" display="flex" justifyContent="flex-start" alignItems="baseline" boxSizing="border-box" marginBottom="8px">
             <Typography sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('singlestudy:area1')}</Typography>
@@ -120,7 +122,9 @@ function PanelView(props: PropType) {
               {link.target}
             </StyledLinkTypo>
           </Box>
-          <Box width="90%" display="flex" justifyContent="flex-end" alignItems="center">
+          <Divider sx={{ height: '1px', width: '90%', mt: 1, mb: 1.5 }} />
+          <Box width="90%" display="flex" justifyContent="space-between" alignItems="center">
+            <Button color="primary" size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
             <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
           </Box>
         </Box>

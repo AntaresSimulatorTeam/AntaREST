@@ -44,13 +44,11 @@ function MapPropsView(props: PropsType) {
     <PropertiesView
       mainContent={
         item && isNode(item) && onDelete ? (
-          <Box minWidth="94%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start">
-            <Button color="primary" size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
+          <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center">
             <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
           </Box>
         ) : (item && onDelete && (
-          <Box minWidth="94%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start">
-            <Button color="primary" size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
+          <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center">
             <PanelView link={item as LinkProperties} nodes={nodeList} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
           </Box>
         ))}

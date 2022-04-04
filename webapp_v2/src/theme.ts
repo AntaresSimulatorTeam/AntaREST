@@ -70,6 +70,22 @@ const theme = createTheme({
         },
       ],
     },
+    MuiTextField: {
+      variants: [
+        {
+          props: { variant: 'outlined' },
+          style: {
+            margin: '8px',
+            '& .MuiOutlinedInput-root': {
+              height: '50px',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'rgba(255,255,255,0.09)',
+              },
+            },
+          },
+        },
+      ],
+    },
   },
 
   typography: {

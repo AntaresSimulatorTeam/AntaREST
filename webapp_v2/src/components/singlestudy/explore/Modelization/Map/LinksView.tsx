@@ -4,6 +4,8 @@ import {
   ListItem,
   Typography,
   Box,
+  Button,
+  Divider,
   styled,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +16,7 @@ import { StyledDeleteIcon } from './PanelView';
 import { scrollbarStyle } from '../../../../../theme';
 
 const ROW_ITEM_SIZE = 40;
-const BUTTONS_SIZE = 50;
+const BUTTONS_SIZE = 40;
 
 const StyledList = styled(FixedSizeList)(({ theme }) => ({
   '&> div > li > div': {
@@ -70,7 +72,9 @@ function LinksView(props: PropsType) {
                 <StyledList height={idealHeight > height - BUTTONS_SIZE ? height - BUTTONS_SIZE : idealHeight} width={width} itemSize={ROW_ITEM_SIZE} itemCount={links.length} itemData={{ links, node, setSelectedItem }}>
                   {Row}
                 </StyledList>
-                <Box width="100%" height={BUTTONS_SIZE} display="flex" justifyContent="flex-end" alignItems="center" style={{ width }}>
+                <Divider sx={{ height: '1px', width, mt: 2, mb: 1, backgroundColor: 'divider' }} />
+                <Box width="100%" height={BUTTONS_SIZE} display="flex" justifyContent="space-between" alignItems="center" style={{ width }}>
+                  <Button color="primary" size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
                   <StyledDeleteIcon onClick={onDelete} />
                 </Box>
               </>
