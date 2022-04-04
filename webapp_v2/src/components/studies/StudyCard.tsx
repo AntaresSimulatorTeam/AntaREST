@@ -24,6 +24,7 @@ import { exportStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import { buildModificationDate, convertUTCToLocalTime, modificationDate } from '../../services/utils';
 import { scrollbarStyle } from '../../theme';
+import DeleteStudyModal from './DeleteStudyModal';
 
 interface Props {
   study: StudyMetadata;
@@ -48,6 +49,7 @@ export default function StudyCard(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
+  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const handleFavoriteClick = () => {
@@ -71,6 +73,11 @@ export default function StudyCard(props: Props) {
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
     }
+  };
+
+  const onDeleteStudy = () => {
+    onDeleteClick(study);
+    setOpenDeleteModal(false);
   };
 
   return (
@@ -221,7 +228,7 @@ export default function StudyCard(props: Props) {
           )}
           {
               study.managed && (
-              <MenuItem onClick={() => { onDeleteClick(study); handleClose(); }}>
+              <MenuItem onClick={() => { setOpenDeleteModal(true); handleClose(); }}>
                 <ListItemIcon>
                   <DeleteOutlinedIcon sx={{ color: 'error.light', width: '24px', height: '24px' }} />
                 </ListItemIcon>
@@ -232,6 +239,7 @@ export default function StudyCard(props: Props) {
               )}
         </Menu>
       </CardActions>
+      {openDeleteModal && <DeleteStudyModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)} onYesClick={onDeleteStudy} />}
     </Card>
   );
 }
