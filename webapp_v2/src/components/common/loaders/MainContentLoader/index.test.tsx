@@ -1,4 +1,3 @@
-import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { screen } from "@testing-library/react";
 import MainContentLoader from "./index";

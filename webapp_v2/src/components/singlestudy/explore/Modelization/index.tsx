@@ -1,18 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import debug from "debug";
 import { StudyMetadata } from "../../../../common/types";
 import TabWrapper from "../TabWrapper";
 
-const logError = debug("antares:singlestudy:error");
-
 function Modelization() {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   const tabList = useMemo(

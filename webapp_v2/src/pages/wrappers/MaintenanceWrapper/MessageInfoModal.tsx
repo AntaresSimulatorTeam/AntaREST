@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -29,10 +29,6 @@ function MessageInfoModal(props: PropTypes) {
   const { enqueueSnackbar } = useSnackbar();
   const { user, messageInfo, setMessage } = props;
   const [open, setOpen] = useState(false);
-
-  const handleClose = (): void => {
-    setOpen(false);
-  };
 
   useEffect(() => {
     const init = async () => {

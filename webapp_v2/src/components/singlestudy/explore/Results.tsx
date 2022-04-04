@@ -1,17 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React from "react";
 import { useOutletContext } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import debug from "debug";
 import { StudyMetadata } from "../../../common/types";
 
-const logError = debug("antares:singlestudy:results:error");
-
 function Results() {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   return (

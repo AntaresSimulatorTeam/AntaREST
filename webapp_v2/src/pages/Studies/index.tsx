@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";

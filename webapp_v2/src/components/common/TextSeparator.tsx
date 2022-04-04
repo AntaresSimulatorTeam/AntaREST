@@ -1,4 +1,3 @@
-import React from "react";
 import { SxProps, Theme, Divider, Typography, Box } from "@mui/material";
 
 interface Props {

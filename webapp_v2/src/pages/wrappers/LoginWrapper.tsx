@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { PropsWithChildren, useState, useEffect } from "react";
+import { PropsWithChildren, useState, useEffect } from "react";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { ConnectedProps, connect } from "react-redux";

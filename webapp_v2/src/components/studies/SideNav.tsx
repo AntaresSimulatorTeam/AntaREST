@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
 import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from "../../theme";
 import StudyTree from "./StudyTree";

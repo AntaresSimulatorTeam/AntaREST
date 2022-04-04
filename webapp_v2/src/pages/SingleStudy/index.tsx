@@ -1,15 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, Outlet } from "react-router-dom";
-import { Box, Button, Divider, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { StudyMetadata, VariantTree } from "../../common/types";
 import { getStudyMetadata } from "../../services/api/study";
 import NavHeader from "../../components/singlestudy/NavHeader";
 import {
-  getDirectParent,
   getVariantChildren,
   getVariantParents,
 } from "../../services/api/variant";
@@ -24,9 +21,6 @@ interface Props {
 
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
-  const [t] = useTranslation();
-  const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
   const { isExplorer } = props;
 
   const [study, setStudy] = useState<StudyMetadata>();

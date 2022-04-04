@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as React from "react";
 import { Box, styled } from "@mui/material";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";

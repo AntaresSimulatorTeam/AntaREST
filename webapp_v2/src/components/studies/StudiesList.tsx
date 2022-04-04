@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
 import {
   Box,
-  Grid,
   Typography,
   Breadcrumbs,
   Select,
   MenuItem,
   ListItemText,
   SelectChangeEvent,
-  Popover,
   ListItemIcon,
   Button,
   Tooltip,
@@ -53,7 +51,7 @@ import LauncherModal from "./LauncherModal";
 
 const logError = debug("antares:studieslist:error");
 
-const StudyCardCell = React.memo((props: GridChildComponentProps) => {
+const StudyCardCell = memo((props: GridChildComponentProps) => {
   const { data, columnIndex, rowIndex, style } = props;
   const {
     studies,
@@ -125,13 +123,9 @@ function StudiesList(props: PropTypes) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [folderList, setFolderList] = useState<Array<string>>([]);
-  const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
+  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
-  const [anchorCardMenuEl, setCardMenuAnchorEl] =
-    useState<HTMLButtonElement | null>(null);
 
-  const open = Boolean(anchorCardMenuEl);
-  const id = open ? "simple-popover" : undefined;
   const filterList: Array<SortItem & { name: string }> = [
     {
       element: SortElement.NAME,
@@ -395,7 +389,6 @@ function StudiesList(props: PropTypes) {
         <AutoSizer>
           {({ height, width }) => {
             const paddedWidth = width - 20;
-            const baseColumnCount = Math.floor(paddedWidth / 400);
             const itemWidth = paddedWidth / Math.round(paddedWidth / 400);
             const columnCount = Math.floor(paddedWidth / itemWidth);
             return (
@@ -425,9 +418,9 @@ function StudiesList(props: PropTypes) {
           }}
         </AutoSizer>
       </Box>
-      {openLaunncherModal && (
+      {openLauncherModal && (
         <LauncherModal
-          open={openLaunncherModal}
+          open={openLauncherModal}
           study={currentLaunchStudy}
           onClose={() => setOpenLauncherModal(false)}
         />

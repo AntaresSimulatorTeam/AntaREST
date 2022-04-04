@@ -1,6 +1,5 @@
 import { AxiosError } from "axios";
 import { OptionsObject, SnackbarKey, SnackbarMessage } from "notistack";
-import React from "react";
 import SnackErrorMessage from "./SnackErrorMessage";
 
 export type SnackbarDetails = {

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import debug from "debug";
+import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router";
 import { Box } from "@mui/material";

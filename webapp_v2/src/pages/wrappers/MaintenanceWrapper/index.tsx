@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { PropsWithChildren, useEffect } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectedProps, connect } from "react-redux";
 import debug from "debug";

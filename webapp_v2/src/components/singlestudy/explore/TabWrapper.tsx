@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+import * as React from "react";
 import { styled } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";

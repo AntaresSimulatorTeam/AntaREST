@@ -1,11 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
 import topRightBackground from "../../../assets/top-right-background.png";
 
 function AppLoader() {
-  const [t] = useTranslation();
   return (
     <Box
       display="flex"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import { purple, indigo } from "@mui/material/colors";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";

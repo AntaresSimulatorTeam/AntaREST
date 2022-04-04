@@ -1,5 +1,6 @@
 /* eslint-disable quote-props */
-import React, { useState, forwardRef, useCallback } from "react";
+import { useState, forwardRef, useCallback } from "react";
+import * as React from "react";
 import { useSnackbar, SnackbarContent } from "notistack";
 import { AxiosError } from "axios";
 import {

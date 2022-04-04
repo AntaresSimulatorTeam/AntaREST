@@ -1,6 +1,3 @@
-/* eslint-disable react/no-unstable-nested-components */
-/* eslint-disable react/jsx-props-no-spreading */
-import React from "react";
 import {
   BrowserRouter as Router,
   Navigate,

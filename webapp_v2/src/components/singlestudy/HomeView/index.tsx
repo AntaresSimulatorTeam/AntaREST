@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import Split from "react-split";

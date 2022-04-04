@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-use-before-define */
-import React from "react";
+import * as React from "react";
 import Chip from "@mui/material/Chip";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";

@@ -322,8 +322,8 @@ type WebsocketAction =
 /* Reducer                                      */
 /** ******************************************* */
 
-// eslint-disable-next-line default-param-last
 export default (
+  // eslint-disable-next-line default-param-last
   state = initialState,
   action: WebsocketAction
 ): WebsocketState => {

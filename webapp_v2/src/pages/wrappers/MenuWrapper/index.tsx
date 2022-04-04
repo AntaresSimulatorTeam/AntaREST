@@ -1,5 +1,5 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import React, { PropsWithChildren, useState } from "react";
+import { useState } from "react";
+import * as React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
@@ -16,7 +16,6 @@ import ApiIcon from "@mui/icons-material/Api";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import GitHubIcon from "@mui/icons-material/GitHub";
 
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
@@ -55,7 +54,7 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
-function MenuWrapper(props: PropsWithChildren<PropTypes>) {
+function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
   const { children, extended, setExtended } = props;
   const theme = useTheme();
   const [t] = useTranslation();
