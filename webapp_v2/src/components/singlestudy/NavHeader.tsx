@@ -31,6 +31,7 @@ import { removeStudies } from '../../store/study';
 import LauncherModal from '../studies/LauncherModal';
 import PropertiesModal from './PropertiesModal';
 import { buildModificationDate, convertUTCToLocalTime, countAllCHildrens } from '../../services/utils';
+import DeleteStudyModal from '../studies/DeleteStudyModal';
 
 const logError = debug('antares:singlestudy:navheader:error');
 
@@ -76,6 +77,7 @@ function NavHeader(props: PropTypes) {
   const [openMenu, setOpenMenu] = useState<string>('');
   const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const [openPropertiesModal, setOpenPropertiesModal] = useState<boolean>(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
 
   const publicModeList: Array<GenericInfo> = [
@@ -134,6 +136,12 @@ function NavHeader(props: PropTypes) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
       logError('Failed to delete study', study, e);
     }
+  };
+
+  const onDeleteStudy = () => {
+    if (study) deleteStudy(study);
+    setOpenDeleteModal(false);
+    navigate('/studies');
   };
 
   return (
@@ -234,7 +242,7 @@ function NavHeader(props: PropTypes) {
             )}
             {
               study?.managed && (
-              <MenuItem onClick={() => { deleteStudy(study); handleClose(); }}>
+              <MenuItem onClick={() => { setOpenDeleteModal(true); handleClose(); }}>
                 <ListItemIcon>
                   <DeleteOutlinedIcon sx={{ color: 'error.light', width: '24px', height: '24px' }} />
                 </ListItemIcon>
@@ -292,6 +300,7 @@ function NavHeader(props: PropTypes) {
       )}
       {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={study} onClose={() => setOpenLauncherModal(false)} />}
       {openPropertiesModal && study && <PropertiesModal open={openPropertiesModal} onClose={() => setOpenPropertiesModal(false)} study={study as StudyMetadata} />}
+      {openDeleteModal && <DeleteStudyModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)} onYesClick={onDeleteStudy} />}
     </Box>
   );
 }
