@@ -4,9 +4,8 @@ import { purple, indigo } from '@mui/material/colors';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Divider, InputAdornment, Typography, Chip } from '@mui/material';
+import { Box, Button, Divider, InputAdornment, Typography, Chip, TextField } from '@mui/material';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 import ImportStudy from './ImportStudy';
 import CreateStudyModal from './CreateStudyModal';
@@ -14,22 +13,13 @@ import { GenericInfo, GroupDTO, UserDTO } from '../../common/types';
 
 const Root = styled('div')(({ theme }) => ({
   width: '100%',
-  height: `${STUDIES_HEIGHT_HEADER}px`,
+  height: `${STUDIES_HEIGHT_HEADER + 40}px`,
   display: 'flex',
   flexFlow: 'column nowrap',
   justifyContent: 'flex-start',
   alignItems: 'center',
   padding: theme.spacing(2, 0),
   boxSizing: 'border-box',
-}));
-
-const Searchbar = styled(TextField)(({ theme }) => ({
-  color: theme.palette.grey[400],
-  '& .MuiOutlinedInput-root': {
-    height: '40px',
-    '&.Mui-focused fieldset': {
-    },
-  },
 }));
 
 interface Props {
@@ -71,11 +61,10 @@ function Header(props: Props) {
       </Box>
       <Box display="flex" width="100%" alignItems="center" py={2} px={3}>
         <Box display="flex" width="100%" alignItems="center">
-          <Searchbar
+          <TextField
             id="standard-basic"
             value={inputValue}
             variant="outlined"
-            sx={{ height: '40px' }}
             onChange={(event) => setInputValue(event.target.value as string)}
             label={t('main:search')}
             InputProps={{
@@ -84,30 +73,7 @@ function Header(props: Props) {
                   <SearchOutlinedIcon />
                 </InputAdornment>
               ),
-              sx: {
-                '.MuiOutlinedInput-root': {
-                  '&.MuiOutlinedInput-notchedOutline': {
-                    borderColor: `${theme.palette.primary.main} !important`,
-                  },
-                },
-                '.Mui-focused': {
-                  // borderColor: `${theme.palette.primary.main} !important`
-                },
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderWidth: '1px',
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                },
-              } }}
-            InputLabelProps={{
-              sx: {
-                '.MuiInputLabel-root': {
-                  color: theme.palette.text.secondary,
-                },
-                '.Mui-focused': {
-                },
-              },
             }}
-
           />
           <Divider sx={{ width: '1px', height: '40px', bgcolor: 'divider', margin: '0px 16px' }} />
           <Button color="secondary" variant="outlined" onClick={onFilterClick}>

@@ -39,8 +39,6 @@ function PropertiesView(props: PropsType) {
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
       <TextField
-        sx={{ m: 2, '& .MuiOutlinedInput-root': { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.09)' } } }}
-        color="primary"
         label={t('main:search')}
         variant="outlined"
         InputProps={{
