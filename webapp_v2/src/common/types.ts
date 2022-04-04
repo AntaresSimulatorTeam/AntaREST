@@ -565,8 +565,8 @@ export interface AreaInfoDTO extends AreaCreationDTO {
   thermals: Array<object>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isNode = (el: NodeProperties | LinkProperties): boolean =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (el as any).id !== undefined;
 
 export default {};

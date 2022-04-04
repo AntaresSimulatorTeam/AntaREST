@@ -50,9 +50,9 @@ export const loginUser =
   (dispatch): void => {
     const tokenData = jwt_decode(user.accessToken);
     setAuth(user.accessToken);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedUser = {
       ...user,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expirationDate: moment.unix((tokenData as any).exp),
     };
     dispatch({

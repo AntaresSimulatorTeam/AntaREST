@@ -39,11 +39,11 @@ export const getStudyVersions = async (): Promise<Array<string>> => {
   return res.data;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getStudyData = async (
   sid: string,
   path = "",
   depth = 1
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const res = await client.get(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`
