@@ -70,17 +70,36 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
 
   let navigation: Array<MenuItem> = [
-    { id: 'studies', link: '/studies', strict: true, icon: TravelExploreOutlinedIcon },
+    {
+      id: "studies",
+      link: "/studies",
+      strict: true,
+      icon: TravelExploreOutlinedIcon,
+    },
     { id: "tasks", link: "/tasks", icon: PlaylistAddCheckOutlinedIcon },
     { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
-    { id: 'api', link: '/api', icon: ApiIcon },
-    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: ClassOutlinedIcon },
-    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: GitHubIcon },
-    { id: 'settings', link: '/settings', icon: SettingsOutlinedIcon },
+    { id: "api", link: "/api", icon: ApiIcon },
+    {
+      id: "documentation",
+      link: "https://antares-web.readthedocs.io/en/latest",
+      newTab: true,
+      icon: ClassOutlinedIcon,
+    },
+    {
+      id: "github",
+      link: "https://github.com/AntaresSimulatorTeam/AntaREST",
+      newTab: true,
+      icon: GitHubIcon,
+    },
+    { id: "settings", link: "/settings", icon: SettingsOutlinedIcon },
   ];
 
   if (currentStudy) {
-    navigation = ([{ id: 'studies', link: `/studies/${currentStudy}`, icon: GpsFixedIcon }] as MenuItem[]).concat(navigation);
+    navigation = (
+      [
+        { id: "studies", link: `/studies/${currentStudy}`, icon: GpsFixedIcon },
+      ] as MenuItem[]
+    ).concat(navigation);
   }
 
   const settings = navigation[navigation.length - 1];
@@ -179,14 +198,14 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
           sx={{ boxSizing: "border-box" }}
         >
           <List>
-            {navigation.slice(0, 3 + topMenuLastIndexOffset).map((elm: MenuItem, index) => (
-              drawMenuItem(elm)
-            ))}
+            {navigation
+              .slice(0, 3 + topMenuLastIndexOffset)
+              .map((elm: MenuItem, index) => drawMenuItem(elm))}
           </List>
           <List>
-            {navigation.slice(3 + topMenuLastIndexOffset, 6 + topMenuLastIndexOffset).map((elm: MenuItem, index) => (
-              drawMenuItem(elm)
-            ))}
+            {navigation
+              .slice(3 + topMenuLastIndexOffset, 6 + topMenuLastIndexOffset)
+              .map((elm: MenuItem, index) => drawMenuItem(elm))}
           </List>
         </Box>
         <Divider />
