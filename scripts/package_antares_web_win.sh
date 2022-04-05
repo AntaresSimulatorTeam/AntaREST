@@ -54,6 +54,10 @@ echo "Creating shortcuts"
     ln -s ../dist/AntaresWeb/AntaresWebServer ../dist/AntaresWebServer
     fi
 
+echo "Unzipping example study"
+    cd ../dist/examples/studies
+    7z x example_study.zip
+
 echo "Cleaning up"
     rm $ANTARES_SOLVER_ZIPFILE_NAME
     rm -rf $ANTARES_SOLVER_FOLDER_NAME
