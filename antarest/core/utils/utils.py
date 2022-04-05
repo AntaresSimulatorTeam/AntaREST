@@ -61,17 +61,14 @@ def extract_zip(stream: IO[bytes], dst: Path) -> None:
 
 def get_default_config_path() -> Optional[Path]:
     config = Path("config.yaml")
-    print(config)
     if config.exists():
         return config
 
     config = Path("../config.yaml")
-    print(config)
     if config.exists():
         return config
 
     config = Path.home() / ".antares/config.yaml"
-    print(config)
     if config.exists():
         return config
     return None
