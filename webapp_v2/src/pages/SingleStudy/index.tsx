@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
+import { connect, ConnectedProps } from "react-redux";
 import { StudyMetadata, VariantTree } from "../../common/types";
 import { getStudyMetadata } from "../../services/api/study";
 import NavHeader from "../../components/singlestudy/NavHeader";
@@ -13,52 +13,26 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
-=======
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, Outlet } from 'react-router-dom';
-import { Box, Button, Divider, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import { useSnackbar } from 'notistack';
-import debug from 'debug';
-import { connect, ConnectedProps } from 'react-redux';
-import { StudyMetadata, VariantTree } from '../../common/types';
-import { getStudyMetadata } from '../../services/api/study';
-import NavHeader from '../../components/singlestudy/NavHeader';
-import { getDirectParent, getVariantChildren, getVariantParents } from '../../services/api/variant';
-import TabWrapper from '../../components/singlestudy/explore/TabWrapper';
-import HomeView from '../../components/singlestudy/HomeView';
-import { viewStudy } from '../../store/study';
->>>>>>> Add a current study menu
+import { viewStudy } from "../../store/study";
 
 const logError = debug("antares:singlestudy:error");
 
-<<<<<<< HEAD
-interface Props {
-  isExplorer?: boolean;
-=======
 const mapState = () => ({});
 
-const mapDispatch = ({
+const mapDispatch = {
   setCurrentStudy: viewStudy,
-});
+};
 
 const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 interface OwnProps {
-    isExplorer?: boolean
->>>>>>> Add a current study menu
+  isExplorer?: boolean;
 }
 type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
-<<<<<<< HEAD
-=======
   const { setCurrentStudy } = props;
-  const [t] = useTranslation();
-  const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
->>>>>>> Add a current study menu
   const { isExplorer } = props;
 
   const [study, setStudy] = useState<StudyMetadata>();
