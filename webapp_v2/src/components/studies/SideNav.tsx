@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
 import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from "../../theme";
 import StudyTree from "./StudyTree";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 function SideNav(props: Props) {
+  const navigate = useNavigate();
   const { studies, folder, setFolder, favorite } = props;
   const [tree, setTree] = useState<StudyTreeNode>(buildStudyTree(studies));
   useEffect(() => {
@@ -35,6 +37,7 @@ function SideNav(props: Props) {
         {favorite.map((elm) => (
           <ListItem
             key={elm.id}
+            onClick={() => navigate(`/studies/${elm.id}`)}
             sx={{
               width: "100%",
               m: 0,

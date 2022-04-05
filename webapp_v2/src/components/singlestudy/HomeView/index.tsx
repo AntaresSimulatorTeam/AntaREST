@@ -26,16 +26,18 @@ function HomeView(props: Props) {
       style={{
         display: "flex",
         flexDirection: "row",
+        flex: 1,
       }}
     >
       <Box
+        height="100%"
         display="flex"
         flexDirection="column"
         justifyContent="flex-start"
         alignItems="flex-start"
         boxSizing="border-box"
         overflow="hidden"
-        p={2}
+        px={2}
       >
         <StudyTreeView
           study={study}
@@ -45,6 +47,7 @@ function HomeView(props: Props) {
         />
       </Box>
       <Box
+        height="100%"
         display="flex"
         flexDirection="column"
         justifyContent="center"

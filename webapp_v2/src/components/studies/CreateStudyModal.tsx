@@ -66,8 +66,11 @@ function CreateStudyModal(props: PropTypes) {
   const [group, setGroup] = useState<Array<string>>([]);
   const [tags, setTags] = useState<Array<string>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
+  const [actionButtonDisabled, setActionButtonDisabled] =
+    useState<boolean>(false);
 
   const onSubmit = async () => {
+    setActionButtonDisabled(true);
     if (studyName && studyName.replace(/\s+/g, "") !== "") {
       try {
         let vrs = versionList[versionList.length - 1].id as number;
@@ -99,6 +102,7 @@ function CreateStudyModal(props: PropTypes) {
       onClose();
     } else {
       enqueueSnackbar(t("data:emptyName"), { variant: "error" });
+      setActionButtonDisabled(false);
     }
   };
 
@@ -130,6 +134,7 @@ function CreateStudyModal(props: PropTypes) {
       onClose={onClose}
       closeButtonLabel={t("main:cancelButton")}
       actionButtonLabel={t("main:create")}
+      actionButtonDisabled={actionButtonDisabled}
       onActionButtonClick={onSubmit}
       rootStyle={{
         width: "600px",
