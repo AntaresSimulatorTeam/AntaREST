@@ -51,11 +51,12 @@ if __name__ == "__main__":
         from win10toast import ToastNotifier
 
         toaster = ToastNotifier()
-        toaster.show_toast("AntaresWebServer",
-                           "Antares Web Server started, you can manage the application within the systray app",
-                           icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
-                           duration=1,
-                           threaded=True)
+        toaster.show_toast(
+            "AntaresWebServer",
+            "Antares Web Server started, you can manage the application within the systray app",
+            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
+            threaded=True,
+        )
     else:
         from plyer import notification  # type: ignore
 
