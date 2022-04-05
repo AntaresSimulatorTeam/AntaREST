@@ -48,7 +48,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if platform.system() == "Windows":
-        from win10toast import ToastNotifier
+        from win10toast import ToastNotifier  # type: ignore
 
         toaster = ToastNotifier()
         toaster.show_toast(
