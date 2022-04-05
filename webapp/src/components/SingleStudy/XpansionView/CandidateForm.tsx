@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexWrap: 'wrap',
       marginBottom: theme.spacing(2),
       '&> div': {
+        width: '270px',
         marginRight: theme.spacing(2),
         marginBottom: theme.spacing(2),
       },
@@ -57,7 +58,7 @@ const useStyles = makeStyles((theme: Theme) =>
     select: {
       display: 'flex',
       alignItems: 'center',
-      width: '276px',
+      width: '270px',
     },
     deleteIcon: {
       cursor: 'pointer',

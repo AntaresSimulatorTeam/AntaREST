@@ -175,7 +175,7 @@ const XpansionView = (props: Props) => {
 
   const createCandidate = async (name: string, link: string) => {
     try {
-      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 });
+      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 10, 'max-investment': 10 });
       setCandidateCreationModal(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createCandidateError'), e as AxiosError);
@@ -206,8 +206,10 @@ const XpansionView = (props: Props) => {
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
-      initCandidate(() => setSelectedItem(name));
-      enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+      if (name && value['annual-cost-per-mw'] && value.link) {
+        initCandidate(() => setSelectedItem(name));
+        enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+      }
     }
   };
 

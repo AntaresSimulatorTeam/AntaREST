@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexWrap: 'wrap',
       marginBottom: theme.spacing(2),
       '&> div': {
+        width: '270px',
         marginRight: theme.spacing(2),
         marginBottom: theme.spacing(2),
       },
@@ -44,7 +45,7 @@ const useStyles = makeStyles((theme: Theme) =>
     select: {
       display: 'flex',
       alignItems: 'center',
-      width: '276px',
+      width: '270px',
     },
     selectBox: {
       display: 'flex',
@@ -102,6 +103,7 @@ const SettingsForm = (props: PropType) => {
   const ucType = ['expansion_fast', 'expansion_accurate'];
   const master = ['relaxed', 'integer'];
   const solver = ['Cbc', 'Xpress'];
+  const cutType = ['yearly', 'weekly', 'average'];
 
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
@@ -145,7 +147,9 @@ const SettingsForm = (props: PropType) => {
           <TextField type="number" label={t('xpansion:optimalyGap')} variant="filled" value={currentSettings.optimality_gap} onChange={(e) => handleChange('optimality_gap', parseFloat(e.target.value))} />
           <TextField label={t('xpansion:maxIteration')} variant="filled" value={currentSettings.max_iteration || ''} onChange={(e) => handleChange('max_iteration', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={currentSettings['relaxed-optimality-gap'] || ''} onChange={(e) => handleChange('relaxed-optimality-gap', parseFloat(e.target.value))} />
-          <TextField label={t('xpansion:cutType')} variant="filled" value={currentSettings.cut_type || ''} onChange={(e) => handleChange('cut_type', e.target.value)} />
+          <Box className={classes.select}>
+            <SelectBasic name={t('xpansion:cutType')} items={cutType} label="cut_type" value={currentSettings.cut_type || ''} handleChange={handleChange} />
+          </Box>
           <TextField label={t('xpansion:amplSolver')} variant="filled" value={currentSettings['ampl.solver'] || ''} onChange={(e) => handleChange('ampl.solver', e.target.value)} />
           <TextField type="number" label={t('xpansion:amplPresolve')} variant="filled" value={currentSettings['ampl.presolve'] || ''} onChange={(e) => handleChange('ampl.presolve', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || ''} onChange={(e) => handleChange('ampl.solve_bounds_frequency', parseFloat(e.target.value))} />
