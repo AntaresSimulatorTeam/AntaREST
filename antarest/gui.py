@@ -1,4 +1,5 @@
 import multiprocessing
+import platform
 import sys
 import time
 import webbrowser
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
 
-    if sys.platform.system() == "Windows":
+    if platform.system() == "Windows":
         from win10toast import ToastNotifier
 
         toaster = ToastNotifier()
