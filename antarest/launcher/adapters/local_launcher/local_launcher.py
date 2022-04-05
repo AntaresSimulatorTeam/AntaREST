@@ -24,10 +24,6 @@ from antarest.launcher.model import JobStatus, LogType
 logger = logging.getLogger(__name__)
 
 
-class StudyVersionNotSupported(Exception):
-    pass
-
-
 class LocalLauncher(AbstractLauncher):
     """
     This local launcher is meant to work when using AntaresWeb on a single worker process in local mode
@@ -91,6 +87,10 @@ class LocalLauncher(AbstractLauncher):
 
         def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
+                with open(
+                    self.config.storage.tmp_dir / "antares_solver.logs"
+                ) as log_file:
+                    log_file.write(self.logs[str(uuid)])
                 del self.logs[str(uuid)]
             return end
 
