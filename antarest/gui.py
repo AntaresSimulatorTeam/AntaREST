@@ -54,7 +54,8 @@ if __name__ == "__main__":
         toaster.show_toast("AntaresWebServer",
                            "Antares Web Server started, you can manage the application within the systray app",
                            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
-                           duration=600)
+                           duration=600,
+                           threaded=True)
     else:
         from plyer import notification  # type: ignore
 

@@ -57,6 +57,7 @@ echo "Creating shortcuts"
 echo "Unzipping example study"
     cd ../dist/examples/studies
     7z x example_study.zip
+    rm example_study.zip
 
 echo "Cleaning up"
     rm $ANTARES_SOLVER_ZIPFILE_NAME
