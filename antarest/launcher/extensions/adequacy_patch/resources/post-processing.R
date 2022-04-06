@@ -15,7 +15,7 @@ run_adq(opts = opts,
 					mcYears = config$mcYears,
 					antaresfbzone = config$antaresfbzone,
 					ext = NULL,
-					nbcl = 8, thresholdFilter = config$thresholdFilter,
+					nbcl = config$nbcore, thresholdFilter = config$thresholdFilter,
 					core_ahc = config$core_ahc,
                     calculate_mc_all = config$calculate_mc_all,
                     log_detail = TRUE)
