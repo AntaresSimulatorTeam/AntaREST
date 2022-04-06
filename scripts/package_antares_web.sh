@@ -32,7 +32,6 @@ echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINA
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
         mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
     else
-        chmod 777 "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver"
         mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver" $DESTINATION
         mv "$ANTARES_SOLVER_FOLDER_NAME/bin/libsirius_solver.so" $DESTINATION
     fi
