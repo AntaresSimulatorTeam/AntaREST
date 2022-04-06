@@ -118,7 +118,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
       height="100vh"
       sx={{
         background:
-          "linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)",
+          "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
       }}
     >
       <Box

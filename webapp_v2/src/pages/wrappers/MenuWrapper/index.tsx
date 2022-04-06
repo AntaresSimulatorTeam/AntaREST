@@ -117,7 +117,7 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
       overflow="hidden"
       sx={{
         background:
-          "linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)",
+          "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
       }}
     >
       <CssBaseline />
@@ -210,6 +210,7 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
         bgcolor="inherit"
         height="100vh"
         overflow="hidden"
+        zIndex={1}
       >
         {children}
       </Box>
