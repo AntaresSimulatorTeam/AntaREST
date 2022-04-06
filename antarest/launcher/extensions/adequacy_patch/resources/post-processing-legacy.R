@@ -17,3 +17,10 @@ run_adq(opts = opts,
 					ext = NULL,
 					nbcl = config$nbcore, thresholdFilter = config$thresholdFilter,
 					core_ahc = config$core_ahc)
+
+areas <- read_yaml("user/adequacypatch/hourly-areas.yml", fileEncoding = "UTF-8", text)
+for (area in names(areas)) {
+  if (!areas[[area]]) {
+    print(area)
+  }
+}
