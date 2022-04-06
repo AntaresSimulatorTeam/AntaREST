@@ -15,7 +15,7 @@
   "group": "Groupe",
   "groupNameLabel": "Nom du groupe",
   "newGroupTitle": "Nouveau groupe",
-  "usernameLabel" : "nom",
+  "usernameLabel": "nom",
   "passwordLabel": "Mot de passe",
   "newUserTitle": "Nouvel utilisateur",
   "cancelButton": "Fermer",
@@ -30,7 +30,7 @@
   "onGroupUpdate": "Groupe modifié avec succès",
   "onGroupCreation": "Groupe créé avec succès",
   "onGroupSaveError": "Groupe non sauvegardé",
-  "onGroupDeleteError": "Groupe non supprimé",   
+  "onGroupDeleteError": "Groupe non supprimé",
   "onUserDeleteError": "Utilisateur non supprimé",
   "onTokenDeleteError": "Token non supprimé",
   "onGroupDeleteSuccess": "Groupe supprimé avec succès",
@@ -57,5 +57,5 @@
   "onUpdateMaintenanceError": "Erreur lors du changement du status de maintenance",
   "onUpdateMessageInfoError": "Erreur lors du changement du message d'information",
   "updateMaintenanceModeConfirmation": "Êtes vous sûr de vouloir changer le status de maintenance de l'application ?",
-  "updateMessageModeConfirmation": "Êtes vous sûr de vouloir changer le message d'information ?"              
+  "updateMessageModeConfirmation": "Êtes vous sûr de vouloir changer le message d'information ?"
 }

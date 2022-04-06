@@ -16,7 +16,7 @@
 }
 
 .nest3:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -31,7 +31,7 @@
 }
 
 .nest3:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -414,7 +414,7 @@ fade out when your webpage get loaded.
 }
 
 #nest1:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -428,7 +428,7 @@ fade out when your webpage get loaded.
 }
 
 #nest1:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -485,7 +485,7 @@ fade out when your webpage get loaded.
 }
 
 #nest2:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -500,7 +500,7 @@ fade out when your webpage get loaded.
 }
 
 #nest2:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -559,7 +559,7 @@ fade out when your webpage get loaded.
 }
 
 #nest4:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -573,7 +573,7 @@ fade out when your webpage get loaded.
 }
 
 #nest4:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -653,7 +653,7 @@ fade out when your webpage get loaded.
 }
 
 #nest5:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -667,7 +667,7 @@ fade out when your webpage get loaded.
 }
 
 #nest5:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -723,7 +723,7 @@ fade out when your webpage get loaded.
 }
 
 #nest6:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7px;
   right: 7px;
@@ -737,7 +737,7 @@ fade out when your webpage get loaded.
 }
 
 #nest6:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 15px;
   right: 15px;
@@ -1927,7 +1927,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner1:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -1992,7 +1992,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner2:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -2087,7 +2087,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner3:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -2183,7 +2183,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner4:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -2279,7 +2279,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner5:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -2375,7 +2375,7 @@ fade out when your webpage get loaded.
 }
 
 #spinner6:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 5px;
   right: 5px;
@@ -3102,7 +3102,7 @@ fade out when your webpage get loaded.
 }
 
 #clock1:before {
-  content: '';
+  content: "";
   border-left: 1px #000 solid;
   position: absolute;
   top: 9%;
@@ -3165,7 +3165,7 @@ fade out when your webpage get loaded.
 
 #wave1:before,
 #wave1:after {
-  content: '';
+  content: "";
   border: 2px solid #008744;
   border-radius: 50%;
   width: 50px;
@@ -3262,7 +3262,7 @@ fade out when your webpage get loaded.
 #heart1:before,
 #heart1:after {
   position: absolute;
-  content: '';
+  content: "";
   left: 30px;
   top: 0;
   width: 30px;
@@ -3396,28 +3396,48 @@ fade out when your webpage get loaded.
     #055194 80%,
     #062745 100%
   );
-  background: radial-gradient(circle at bottom, #81e8f6, #76deef 10%, #055194 80%, #062745 100%);
+  background: radial-gradient(
+    circle at bottom,
+    #81e8f6,
+    #76deef 10%,
+    #055194 80%,
+    #062745 100%
+  );
   border-radius: 50%;
   -webkit-animation: bubble-anim 2s infinite ease-out;
   animation: bubble-anim 2s infinite ease-out;
 }
 
 #bubble1:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 1%;
   left: 5%;
   width: 90%;
   height: 90%;
   border-radius: 100%;
-  background: -webkit-radial-gradient(top, circle, white, rgba(255, 255, 255, 0) 58%);
-  background: -webkit-radial-gradient(top, circle, #ffffff, rgba(255, 255, 255, 0) 58%);
-  background: radial-gradient(circle at top, #ffffff, rgba(255, 255, 255, 0) 58%);
+  background: -webkit-radial-gradient(
+    top,
+    circle,
+    white,
+    rgba(255, 255, 255, 0) 58%
+  );
+  background: -webkit-radial-gradient(
+    top,
+    circle,
+    #ffffff,
+    rgba(255, 255, 255, 0) 58%
+  );
+  background: radial-gradient(
+    circle at top,
+    #ffffff,
+    rgba(255, 255, 255, 0) 58%
+  );
   z-index: 2;
 }
 
 #bubble1:after {
-  content: '';
+  content: "";
   position: absolute;
   display: none;
   top: 5%;
@@ -3943,7 +3963,7 @@ fade out when your webpage get loaded.
 }
 #pacman1:before,
 #pacman1:after {
-  content: '';
+  content: "";
   position: absolute;
   display: block;
   width: 25px;
@@ -4086,7 +4106,7 @@ fade out when your webpage get loaded.
 }
 
 #santa1 span:nth-child(1):after {
-  content: '';
+  content: "";
   width: 10px;
   height: 10px;
   position: absolute;
@@ -4108,7 +4128,7 @@ fade out when your webpage get loaded.
 }
 
 #santa1 span:nth-child(2):before {
-  content: '';
+  content: "";
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -4121,7 +4141,7 @@ fade out when your webpage get loaded.
 }
 
 #santa1 span:nth-child(2):after {
-  content: '';
+  content: "";
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -4142,18 +4162,20 @@ fade out when your webpage get loaded.
   background: white;
   border-radius: 50%;
   z-index: 3;
-  box-shadow: 1px 1px 0px 0px white, 8px 1px 0px white, 14px 3px 0px white, -6px 1px 0px white,
-    -12px 4px 0px white, -18px 5px 0px white, -23px 10px 0px white, -25px 16px 0px white,
-    -19px 26px 0px white, -22px 22px 0px white, -17px 30px 0px white, -12px 37px 0px white,
-    -8px 44px 0px white, -3px 47px 0px white, 0px 50px 0px white, 3px 47px 0px white,
-    8px 44px 0px white, 25px 16px 0px white, 19px 26px 0px white, 22px 22px 0px white,
-    16px 30px 0px white, 12px 34px 0px white, 18px 7px 0px white, 23px 12px 0px white,
-    26px 16px 0px white, -11px 24px 0px white, 6px 23px 0px white, 10px 25px 0px white,
-    0px 23px 0px white, -4px 23px 0px white;
+  box-shadow: 1px 1px 0px 0px white, 8px 1px 0px white, 14px 3px 0px white,
+    -6px 1px 0px white, -12px 4px 0px white, -18px 5px 0px white,
+    -23px 10px 0px white, -25px 16px 0px white, -19px 26px 0px white,
+    -22px 22px 0px white, -17px 30px 0px white, -12px 37px 0px white,
+    -8px 44px 0px white, -3px 47px 0px white, 0px 50px 0px white,
+    3px 47px 0px white, 8px 44px 0px white, 25px 16px 0px white,
+    19px 26px 0px white, 22px 22px 0px white, 16px 30px 0px white,
+    12px 34px 0px white, 18px 7px 0px white, 23px 12px 0px white,
+    26px 16px 0px white, -11px 24px 0px white, 6px 23px 0px white,
+    10px 25px 0px white, 0px 23px 0px white, -4px 23px 0px white;
 }
 
 #santa1 span:nth-child(3):after {
-  content: '';
+  content: "";
   width: 33px;
   height: 25px;
   position: absolute;
@@ -4164,7 +4186,7 @@ fade out when your webpage get loaded.
 }
 
 #santa1 span:nth-child(3):before {
-  content: '';
+  content: "";
   width: 12px;
   height: 7px;
   position: absolute;
@@ -4329,15 +4351,16 @@ fade out when your webpage get loaded.
   -webkit-animation: rotate_tree 1.5s infinite;
   animation: rotate_tree 1.5s infinite;
   background: #008744;
-  box-shadow: 1em 1em 0 #008744, 2em 2em 0 #008744, 3em 3em 0 #008744, 4em 4em 0 #008744,
-    0em 1em 0 #008744, 1em 0em 0 #008744, 1em 2em 0 #008744, 2em 1em 0 #008744, 3em 1em 0 #008744,
-    1em 3em 0 #008744, 2em 3em 0 #008744, 3em 2em 0 #008744, 4em 2em 0 #008744, 2em 4em 0 #008744,
-    3em 4em 0 #008744, 4em 3em 0 #008744, 5em 2em 0 #008744, 2em 5em 0 #008744, 3em 5em 0 #008744,
+  box-shadow: 1em 1em 0 #008744, 2em 2em 0 #008744, 3em 3em 0 #008744,
+    4em 4em 0 #008744, 0em 1em 0 #008744, 1em 0em 0 #008744, 1em 2em 0 #008744,
+    2em 1em 0 #008744, 3em 1em 0 #008744, 1em 3em 0 #008744, 2em 3em 0 #008744,
+    3em 2em 0 #008744, 4em 2em 0 #008744, 2em 4em 0 #008744, 3em 4em 0 #008744,
+    4em 3em 0 #008744, 5em 2em 0 #008744, 2em 5em 0 #008744, 3em 5em 0 #008744,
     5em 3em 0 #008744;
 }
 
 #tree1 span:before {
-  content: '';
+  content: "";
   display: block;
   position: relative;
   top: -0.05em;
@@ -4352,7 +4375,7 @@ fade out when your webpage get loaded.
 
 #tree1 span:after {
   position: absolute;
-  content: '';
+  content: "";
   z-index: 1;
   left: 4.5em;
   bottom: -4.5em;
@@ -4373,36 +4396,42 @@ fade out when your webpage get loaded.
   0%,
   49% {
     background-color: red;
-    box-shadow: 1em 1em 0 red, 2em 2em 0 red, 3em 3em 0 red, 4em 4em 0 red, 0em 1em 0 white,
-      1em 0em 0 white, 1em 2em 0 white, 2em 1em 0 white, 3em 1em 0 red, 1em 3em 0 red,
-      2em 3em 0 white, 3em 2em 0 white, 4em 2em 0 red, 2em 4em 0 red, 3em 4em 0 white,
-      4em 3em 0 white, 5em 2em 0 white, 2em 5em 0 white, 3em 5em 0 red, 5em 3em 0 red;
+    box-shadow: 1em 1em 0 red, 2em 2em 0 red, 3em 3em 0 red, 4em 4em 0 red,
+      0em 1em 0 white, 1em 0em 0 white, 1em 2em 0 white, 2em 1em 0 white,
+      3em 1em 0 red, 1em 3em 0 red, 2em 3em 0 white, 3em 2em 0 white,
+      4em 2em 0 red, 2em 4em 0 red, 3em 4em 0 white, 4em 3em 0 white,
+      5em 2em 0 white, 2em 5em 0 white, 3em 5em 0 red, 5em 3em 0 red;
   }
   50%,
   100% {
     background-color: white;
-    box-shadow: 1em 1em 0 white, 2em 2em 0 white, 3em 3em 0 white, 4em 4em 0 white, 0em 1em 0 red,
-      1em 0em 0 red, 1em 2em 0 red, 2em 1em 0 red, 3em 1em 0 white, 1em 3em 0 white, 2em 3em 0 red,
-      3em 2em 0 red, 4em 2em 0 white, 2em 4em 0 white, 3em 4em 0 red, 4em 3em 0 red, 5em 2em 0 red,
-      2em 5em 0 red, 3em 5em 0 white, 5em 3em 0 white;
+    box-shadow: 1em 1em 0 white, 2em 2em 0 white, 3em 3em 0 white,
+      4em 4em 0 white, 0em 1em 0 red, 1em 0em 0 red, 1em 2em 0 red,
+      2em 1em 0 red, 3em 1em 0 white, 1em 3em 0 white, 2em 3em 0 red,
+      3em 2em 0 red, 4em 2em 0 white, 2em 4em 0 white, 3em 4em 0 red,
+      4em 3em 0 red, 5em 2em 0 red, 2em 5em 0 red, 3em 5em 0 white,
+      5em 3em 0 white;
   }
 }
 @keyframes blink_lights {
   0%,
   49% {
     background-color: red;
-    box-shadow: 1em 1em 0 red, 2em 2em 0 red, 3em 3em 0 red, 4em 4em 0 red, 0em 1em 0 white,
-      1em 0em 0 white, 1em 2em 0 white, 2em 1em 0 white, 3em 1em 0 red, 1em 3em 0 red,
-      2em 3em 0 white, 3em 2em 0 white, 4em 2em 0 red, 2em 4em 0 red, 3em 4em 0 white,
-      4em 3em 0 white, 5em 2em 0 white, 2em 5em 0 white, 3em 5em 0 red, 5em 3em 0 red;
+    box-shadow: 1em 1em 0 red, 2em 2em 0 red, 3em 3em 0 red, 4em 4em 0 red,
+      0em 1em 0 white, 1em 0em 0 white, 1em 2em 0 white, 2em 1em 0 white,
+      3em 1em 0 red, 1em 3em 0 red, 2em 3em 0 white, 3em 2em 0 white,
+      4em 2em 0 red, 2em 4em 0 red, 3em 4em 0 white, 4em 3em 0 white,
+      5em 2em 0 white, 2em 5em 0 white, 3em 5em 0 red, 5em 3em 0 red;
   }
   50%,
   100% {
     background-color: white;
-    box-shadow: 1em 1em 0 white, 2em 2em 0 white, 3em 3em 0 white, 4em 4em 0 white, 0em 1em 0 red,
-      1em 0em 0 red, 1em 2em 0 red, 2em 1em 0 red, 3em 1em 0 white, 1em 3em 0 white, 2em 3em 0 red,
-      3em 2em 0 red, 4em 2em 0 white, 2em 4em 0 white, 3em 4em 0 red, 4em 3em 0 red, 5em 2em 0 red,
-      2em 5em 0 red, 3em 5em 0 white, 5em 3em 0 white;
+    box-shadow: 1em 1em 0 white, 2em 2em 0 white, 3em 3em 0 white,
+      4em 4em 0 white, 0em 1em 0 red, 1em 0em 0 red, 1em 2em 0 red,
+      2em 1em 0 red, 3em 1em 0 white, 1em 3em 0 white, 2em 3em 0 red,
+      3em 2em 0 red, 4em 2em 0 white, 2em 4em 0 white, 3em 4em 0 red,
+      4em 3em 0 red, 5em 2em 0 red, 2em 5em 0 red, 3em 5em 0 white,
+      5em 3em 0 white;
   }
 }
 @-webkit-keyframes rotate_tree {
@@ -4479,7 +4508,7 @@ fade out when your webpage get loaded.
   box-shadow: -5px 0px 0px rgba(0, 0, 0, 0.1) inset;
   border-radius: 50%;
   display: inline-block;
-  content: '';
+  content: "";
   position: relative;
   top: -191px;
   left: 46px;
@@ -4494,7 +4523,7 @@ fade out when your webpage get loaded.
   box-shadow: -7px -5px 0px rgba(0, 0, 0, 0.1) inset;
   border-radius: 50%;
   display: inline-block;
-  content: '';
+  content: "";
   position: relative;
   top: -203px;
   left: 20px;
@@ -4506,7 +4535,7 @@ fade out when your webpage get loaded.
   border-style: solid;
   border-width: 8px 41px 8px 0;
   border-color: transparent #fa9a20 transparent transparent;
-  content: '';
+  content: "";
   position: relative;
   top: -229px;
   display: inline-block;
@@ -4520,7 +4549,7 @@ fade out when your webpage get loaded.
 }
 
 #snowman1 span:nth-child(1):before {
-  content: '';
+  content: "";
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -4532,7 +4561,7 @@ fade out when your webpage get loaded.
 }
 
 #snowman1 span:nth-child(1):after {
-  content: '';
+  content: "";
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -4566,7 +4595,7 @@ fade out when your webpage get loaded.
   transform: rotate(86deg);
   background: #f34d4d;
   display: inline-block;
-  content: '';
+  content: "";
   position: absolute;
   top: 34px;
   left: 15px;
@@ -4592,7 +4621,7 @@ fade out when your webpage get loaded.
   width: 20px;
   background: #2c3e50;
   position: absolute;
-  content: '';
+  content: "";
   display: inline-block;
   border-radius: 50%;
   top: -30px;
@@ -4606,7 +4635,7 @@ fade out when your webpage get loaded.
   width: 10px;
   background: #2c3e50;
   position: absolute;
-  content: '';
+  content: "";
   display: inline-block;
   border-radius: 50%;
   top: 30px;
@@ -4704,7 +4733,7 @@ fade out when your webpage get loaded.
 }
 
 #elf1 span:nth-child(1):after {
-  content: '';
+  content: "";
   width: 10px;
   height: 10px;
   position: absolute;
@@ -4726,7 +4755,7 @@ fade out when your webpage get loaded.
 }
 
 #elf1 span:nth-child(2):before {
-  content: '';
+  content: "";
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -4739,7 +4768,7 @@ fade out when your webpage get loaded.
 }
 
 #elf1 span:nth-child(2):after {
-  content: '';
+  content: "";
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -4760,14 +4789,15 @@ fade out when your webpage get loaded.
   background: black;
   border-radius: 50%;
   z-index: 3;
-  box-shadow: 1px 1px 0px 0px black, 8px 1px 0px black, 14px 3px 0px black, -6px 1px 0px black,
-    -12px 4px 0px black, -18px 5px 0px black, -23px 10px 0px black, 18px 7px 0px black,
-    23px 12px 0px black, -11px 24px 0px black, 6px 23px 0px black, 10px 25px 0px black,
+  box-shadow: 1px 1px 0px 0px black, 8px 1px 0px black, 14px 3px 0px black,
+    -6px 1px 0px black, -12px 4px 0px black, -18px 5px 0px black,
+    -23px 10px 0px black, 18px 7px 0px black, 23px 12px 0px black,
+    -11px 24px 0px black, 6px 23px 0px black, 10px 25px 0px black,
     0px 23px 0px black, -4px 23px 0px black;
 }
 
 #elf1 span:nth-child(3):before {
-  content: '';
+  content: "";
   width: 12px;
   height: 7px;
   position: absolute;

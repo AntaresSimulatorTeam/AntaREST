@@ -1,15 +1,25 @@
-import { applyMiddleware, combineReducers, createStore, Store, CombinedState } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
-import thunk from 'redux-thunk';
-import logger from 'redux-logger';
-import { throttle } from 'lodash';
-import study, { StudyState, initStudies } from './study';
-import auth, { AuthState, logoutAction, persistState as persistAuthState } from './auth';
-import { setLogoutInterceptor } from '../services/api/client';
-import upload, { UploadState } from './upload';
-import global, { GlobalState } from './global';
-import ui, { UIState } from './ui';
-import websockets, { WebsocketState } from './websockets';
+import {
+  applyMiddleware,
+  combineReducers,
+  createStore,
+  Store,
+  CombinedState,
+} from "redux";
+import { composeWithDevTools } from "redux-devtools-extension";
+import thunk from "redux-thunk";
+import logger from "redux-logger";
+import { throttle } from "lodash";
+import study, { StudyState, initStudies } from "./study";
+import auth, {
+  AuthState,
+  logoutAction,
+  persistState as persistAuthState,
+} from "./auth";
+import { setLogoutInterceptor } from "../services/api/client";
+import upload, { UploadState } from "./upload";
+import global, { GlobalState } from "./global";
+import ui, { UIState } from "./ui";
+import websockets, { WebsocketState } from "./websockets";
 
 const reducers = combineReducers({
   global,
@@ -30,12 +40,18 @@ export type AppState = CombinedState<{
 }>;
 
 export default function createMainStore(): Store<AppState> {
-  const reduxStore = createStore(reducers, composeWithDevTools(applyMiddleware(...[thunk, logger])));
-  setLogoutInterceptor(() => reduxStore.dispatch(logoutAction()), () => reduxStore.dispatch(initStudies([])));
+  const reduxStore = createStore(
+    reducers,
+    composeWithDevTools(applyMiddleware(...[thunk, logger]))
+  );
+  setLogoutInterceptor(
+    () => reduxStore.dispatch(logoutAction()),
+    () => reduxStore.dispatch(initStudies([]))
+  );
   reduxStore.subscribe(
     throttle(() => {
       persistAuthState(reduxStore.getState().auth);
-    }, 1000),
+    }, 1000)
   );
 
   return reduxStore;
