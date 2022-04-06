@@ -38,6 +38,7 @@ import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
+  displayVersionName,
 } from "../../services/utils";
 import { scrollbarStyle } from "../../theme";
 import DeleteStudyModal from "./DeleteStudyModal";
@@ -153,17 +154,21 @@ export default function StudyCard(props: Props) {
               </Typography>
             </Tooltip>
             {favorite ? (
-              <StarPurple500OutlinedIcon
-                sx={{ cursor: "pointer" }}
-                onClick={handleFavoriteClick}
-                color="primary"
-              />
+              <Tooltip title={t("studymanager:removeFavorite") as string}>
+                <StarPurple500OutlinedIcon
+                  sx={{ cursor: "pointer" }}
+                  onClick={handleFavoriteClick}
+                  color="primary"
+                />
+              </Tooltip>
             ) : (
-              <StarOutlineOutlinedIcon
-                sx={{ cursor: "pointer" }}
-                onClick={handleFavoriteClick}
-                color="primary"
-              />
+              <Tooltip title={t("studymanager:bookmark") as string}>
+                <StarOutlineOutlinedIcon
+                  sx={{ cursor: "pointer" }}
+                  onClick={handleFavoriteClick}
+                  color="primary"
+                />
+              </Tooltip>
             )}
           </Box>
           <Box
@@ -198,6 +203,7 @@ export default function StudyCard(props: Props) {
         </Box>
         <Box
           width="100%"
+          height="25px"
           display="flex"
           flexDirection="row"
           justifyContent="space-between"
@@ -205,12 +211,15 @@ export default function StudyCard(props: Props) {
         >
           <Box
             display="flex"
+            maxWidth="65%"
             flexDirection="row"
             justifyContent="flex-start"
             alignItems="center"
           >
             <ScheduleOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText>{convertUTCToLocalTime(study.creationDate)}</TinyText>
+            <TinyText noWrap>
+              {convertUTCToLocalTime(study.creationDate)}
+            </TinyText>
           </Box>
           <Box
             display="flex"
@@ -228,11 +237,19 @@ export default function StudyCard(props: Props) {
           width="100%"
           display="flex"
           flexDirection="row"
-          justifyContent="flex-start"
+          justifyContent="space-between"
           alignItems="center"
         >
-          <PersonOutlineIcon sx={{ color: "text.secondary", mr: 1 }} />
-          <TinyText>{study.owner.name}</TinyText>
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="flex-start"
+            alignItems="center"
+          >
+            <PersonOutlineIcon sx={{ color: "text.secondary", mr: 1 }} />
+            <TinyText>{study.owner.name}</TinyText>
+          </Box>
+          <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
         </Box>
         <Box
           my={1}
@@ -273,17 +290,19 @@ export default function StudyCard(props: Props) {
         >
           {t("studymanager:exploreButton")}
         </Button>
-        <Button
-          size="small"
-          aria-controls="menu-elements"
-          aria-haspopup="true"
-          id="menu"
-          color="primary"
-          sx={{ width: "auto", minWidth: 0, p: 0 }}
-          onClick={handleClick}
-        >
-          <MoreVertIcon />
-        </Button>
+        <Tooltip title={t("singlestudy:more") as string}>
+          <Button
+            size="small"
+            aria-controls="menu-elements"
+            aria-haspopup="true"
+            id="menu"
+            color="primary"
+            sx={{ width: "auto", minWidth: 0, p: 0 }}
+            onClick={handleClick}
+          >
+            <MoreVertIcon />
+          </Button>
+        </Tooltip>
         <Menu
           id="menu-elements"
           anchorEl={anchorEl}

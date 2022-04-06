@@ -55,5 +55,7 @@
   "versionsLabel": "Versions",
   "usersLabel": "Users",
   "groupsLabel": "Groups",
-  "tagsLabel": "Tags"
+  "tagsLabel": "Tags",
+  "bookmark": "Bookmark",
+  "removeFavorite": "Remove from favorites"
 }
