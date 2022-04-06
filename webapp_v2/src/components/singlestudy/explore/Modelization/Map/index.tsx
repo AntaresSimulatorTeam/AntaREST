@@ -9,7 +9,7 @@ import { useSnackbar } from 'notistack';
 import debug from 'debug';
 import { AxiosError } from 'axios';
 import enqueueErrorSnackbar from '../../../../common/ErrorSnackBar';
-import { AreasConfig, isNode, LinkProperties, NodeProperties, SingleAreaConfig, StudyMetadata, UpdateAreaUi } from '../../../../../common/types';
+import { AreasConfig, isNode, LinkProperties, NodeProperties, SingleAreaConfig, StudyMetadata, StudyProperties, UpdateAreaUi } from '../../../../../common/types';
 import SplitLayoutView from '../../../../common/SplitLayoutView';
 import { createArea, updateAreaUI, deleteArea, deleteLink, createLink } from '../../../../../services/api/studydata';
 import { getAreaPositions, getSynthesis } from '../../../../../services/api/study';
@@ -212,23 +212,25 @@ function Map() {
       const init = async () => {
         try {
           const data = await getSynthesis(study.id);
-          const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
-          const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
-          const tempNodeData = Object.keys(areas).map((areaId) => ({
-            id: areaId,
-            name: data.areas[areaId].name,
-            x: areas[areaId].ui.x,
-            y: areas[areaId].ui.y,
-            color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-            rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
-            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-          }));
-          setNodeData(tempNodeData);
-          setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
-            links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
-              source: currentAreaId,
-              target: linkId,
-            }))), [] as Array<LinkProperties>));
+          if (Object.keys(data.areas).length >= 1) {
+            const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
+            const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
+            const tempNodeData = Object.keys(areas).map((areaId) => ({
+              id: areaId,
+              name: data.areas[areaId].name,
+              x: areas[areaId].ui.x,
+              y: areas[areaId].ui.y,
+              color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+              rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
+              size: { width: calculateSize(areaId), height: NODE_HEIGHT },
+            }));
+            setNodeData(tempNodeData);
+            setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
+              links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
+                source: currentAreaId,
+                target: linkId,
+              }))), [] as Array<LinkProperties>));
+          }
         } catch (e) {
           enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
         } finally {
