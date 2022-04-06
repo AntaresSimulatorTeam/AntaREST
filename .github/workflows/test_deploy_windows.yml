@@ -64,7 +64,7 @@ jobs:
           pyinstaller AntaresWebLinux.spec
           chmod 777 dist/AntaresWeb/AntaresWebServer
       - name: Packaging
-        run: bash ./package_antares_web_win.sh
+        run: bash ./package_antares_web.sh
         working-directory: scripts
       - name: Archive binaries
         uses: actions/upload-artifact@v2

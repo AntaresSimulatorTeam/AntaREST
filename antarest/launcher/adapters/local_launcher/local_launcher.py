@@ -88,7 +88,7 @@ class LocalLauncher(AbstractLauncher):
         def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
                 with open(
-                    self.config.storage.tmp_dir / f"antares_solver-{uuid}.logs"
+                    self.config.storage.tmp_dir / f"antares_solver-{uuid}.log"
                 ) as log_file:
                     log_file.write(self.logs[str(uuid)])
                 del self.logs[str(uuid)]
