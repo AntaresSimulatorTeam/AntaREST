@@ -83,7 +83,10 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
         justifyContent="center"
         alignItems="center"
         overflow="hidden"
-        sx={{ background: 'radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)' }}
+        sx={{
+          background:
+            "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
+        }}
       >
         <Stars />
         <Button

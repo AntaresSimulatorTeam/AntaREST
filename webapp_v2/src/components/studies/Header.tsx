@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { styled, useTheme } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { purple, indigo } from "@mui/material/colors";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
@@ -48,7 +48,6 @@ interface Props {
 
 function Header(props: Props) {
   const [t] = useTranslation();
-  const theme = useTheme();
   const {
     inputValue,
     managedFilter,

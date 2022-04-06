@@ -115,7 +115,10 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
       width="100vw"
       height="100vh"
       overflow="hidden"
-      sx={{ background: 'radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)' }}
+      sx={{
+        background:
+          "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
+      }}
     >
       <CssBaseline />
       <Box

@@ -54,9 +54,9 @@ const logError = debug("antares:studieslist:error");
 
 const StyledGrid = styled(FixedSizeGrid)(({ theme }) => ({
   ...scrollbarStyle,
-  '&::-webkit-scrollbar-thumb': {
+  "&::-webkit-scrollbar-thumb": {
     backgroundColor: theme.palette.secondary.main,
-    outline: '1px solid slategrey',
+    outline: "1px solid slategrey",
   },
 }));
 
@@ -393,7 +393,7 @@ function StudiesList(props: PropTypes) {
         width="100%"
         height="100%"
         boxSizing="border-box"
-        sx={{ overflowX: 'hidden', overflowY: 'auto' }}
+        sx={{ overflowX: "hidden", overflowY: "auto" }}
       >
         <AutoSizer>
           {({ height, width }) => {

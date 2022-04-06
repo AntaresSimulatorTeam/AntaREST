@@ -1,28 +1,41 @@
-import React from 'react';
-import { Graph, GraphLink, GraphNode } from 'react-d3-graph';
-import { LinkProperties, NodeProperties } from '../../../../../common/types';
-import NodeView from './NodeView';
+import { RefObject } from "react";
+import { Graph, GraphLink, GraphNode } from "react-d3-graph";
+import { LinkProperties, NodeProperties } from "../../../../../common/types";
+import NodeView from "./NodeView";
 
 interface GraphViewProps {
-    nodeData: Array<NodeProperties>;
-    linkData: Array<LinkProperties>;
-    height: number;
-    width: number;
-    onClickNode: (nodeId: string) => void;
-    onClickLink: (src: string, target: string) => void;
-    graph: React.RefObject<Graph<NodeProperties & GraphNode, LinkProperties & GraphLink>>;
-    setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
-    onLink: (id: string) => void;
-    onNodePositionChange: (id: string, x: number, y: number) => void;
-  }
+  nodeData: Array<NodeProperties>;
+  linkData: Array<LinkProperties>;
+  height: number;
+  width: number;
+  onClickNode: (nodeId: string) => void;
+  onClickLink: (src: string, target: string) => void;
+  graph: RefObject<
+    Graph<NodeProperties & GraphNode, LinkProperties & GraphLink>
+  >;
+  setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
+  onLink: (id: string) => void;
+  onNodePositionChange: (id: string, x: number, y: number) => void;
+}
 
 function GraphView(props: GraphViewProps) {
-  const { nodeData, linkData, height, width, onClickNode, onClickLink, graph, setSelectedItem, onLink, onNodePositionChange } = props;
+  const {
+    nodeData,
+    linkData,
+    height,
+    width,
+    onClickNode,
+    onClickLink,
+    graph,
+    setSelectedItem,
+    onLink,
+    onNodePositionChange,
+  } = props;
   let nodeDataToRender = nodeData;
   const initialZoom = 1;
   if (nodeData.length > 0) {
     // compute center offset with scale fix on x axis
-    const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
+    const centerVector = { x: width / initialZoom / 2, y: height / 2 };
 
     // get real center from origin enclosing rectangle
     const realCenter = {
@@ -32,7 +45,7 @@ function GraphView(props: GraphViewProps) {
     // apply translations (y axis is inverted)
     nodeDataToRender = nodeData.map((area) => ({
       ...area,
-      x: (area.x + centerVector.x - realCenter.x),
+      x: area.x + centerVector.x - realCenter.x,
       y: -area.y + centerVector.y + realCenter.y,
     }));
   }
@@ -55,19 +68,26 @@ function GraphView(props: GraphViewProps) {
         node: {
           renderLabel: false,
           // eslint-disable-next-line react/no-unstable-nested-components
-          viewGenerator: (node) => <NodeView node={node} linkCreation={onLink} />,
+          viewGenerator: (node) => (
+            <NodeView node={node} linkCreation={onLink} />
+          ),
         },
         link: {
-          color: '#a3a3a3',
+          color: "#a3a3a3",
           strokeWidth: 2,
         },
       }}
       onClickNode={onClickNode}
       onClickLink={onClickLink}
       onClickGraph={() => setSelectedItem(undefined)}
-      onNodePositionChange={(id, x, y) => onNodePositionChange(id, x - (width / initialZoom / 2) - 0, -y + (height / 2) + 0)}
+      onNodePositionChange={(id, x, y) =>
+        onNodePositionChange(
+          id,
+          x - width / initialZoom / 2 - 0,
+          -y + height / 2 + 0
+        )
+      }
     />
-
   );
 }
 

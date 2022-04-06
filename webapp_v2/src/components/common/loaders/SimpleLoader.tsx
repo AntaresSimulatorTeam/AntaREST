@@ -56,7 +56,7 @@ function SimpleLoader(props: PropTypes) {
 SimpleLoader.defaultProps = {
   progress: undefined,
   message: undefined,
-  color: 'rgba(0,0,0,0)',
+  color: "rgba(0,0,0,0)",
 };
 
 export default SimpleLoader;

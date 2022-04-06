@@ -1,25 +1,39 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useCallback, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { useTranslation } from 'react-i18next';
-import { Graph, GraphLink, GraphNode } from 'react-d3-graph';
-import { useSnackbar } from 'notistack';
-import debug from 'debug';
-import { AxiosError } from 'axios';
-import enqueueErrorSnackbar from '../../../../common/ErrorSnackBar';
-import { AreasConfig, isNode, LinkProperties, NodeProperties, SingleAreaConfig, StudyMetadata, StudyProperties, UpdateAreaUi } from '../../../../../common/types';
-import SplitLayoutView from '../../../../common/SplitLayoutView';
-import { createArea, updateAreaUI, deleteArea, deleteLink, createLink } from '../../../../../services/api/studydata';
-import { getAreaPositions, getSynthesis } from '../../../../../services/api/study';
-import SimpleLoader from '../../../../common/loaders/SimpleLoader';
-import GraphView from './GraphView';
-import MapPropsView from './MapPropsView';
-import CreateAreaModal from './CreateAreaModal';
-import mapbackground from '../../../../../assets/mapbackground.png';
-
-const logError = debug('antares:singlestudy:modelization:map:error');
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import { Box, Typography } from "@mui/material";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { useTranslation } from "react-i18next";
+import { Graph, GraphLink, GraphNode } from "react-d3-graph";
+import { useSnackbar } from "notistack";
+import { AxiosError } from "axios";
+import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
+import {
+  AreasConfig,
+  isNode,
+  LinkProperties,
+  NodeProperties,
+  SingleAreaConfig,
+  StudyMetadata,
+  UpdateAreaUi,
+} from "../../../../../common/types";
+import SplitLayoutView from "../../../../common/SplitLayoutView";
+import {
+  createArea,
+  updateAreaUI,
+  deleteArea,
+  deleteLink,
+  createLink,
+} from "../../../../../services/api/studydata";
+import {
+  getAreaPositions,
+  getSynthesis,
+} from "../../../../../services/api/study";
+import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+import GraphView from "./GraphView";
+import MapPropsView from "./MapPropsView";
+import CreateAreaModal from "./CreateAreaModal";
+import mapbackground from "../../../../../assets/mapbackground.png";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -47,31 +61,38 @@ const calculateSize = (text: string): number => {
   return FONT_SIZE * textSize * 6.5;
 };
 
-const GraphViewMemo = React.memo(GraphView);
+const GraphViewMemo = memo(GraphView);
 
 function Map() {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const [loaded, setLoaded] = React.useState(false);
-  const [selectedItem, setSelectedItem] = React.useState<NodeProperties | LinkProperties>();
-  const [selectedNodeLinks, setSelectedNodeLinks] = React.useState<Array<LinkProperties>>();
-  const [nodeData, setNodeData] = React.useState<Array<NodeProperties>>([]);
-  const [linkData, setLinkData] = React.useState<Array<LinkProperties>>([]);
-  const [openModal, setOpenModal] = React.useState<boolean>(false);
-  const [firstNode, setFirstNode] = React.useState<string>();
-  const [secondNode, setSecondNode] = React.useState<string>();
-  const graphRef = React.useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
-  const prevselectedItemId = React.useRef<string>();
+  const [loaded, setLoaded] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<
+    NodeProperties | LinkProperties
+  >();
+  const [selectedNodeLinks, setSelectedNodeLinks] =
+    useState<Array<LinkProperties>>();
+  const [nodeData, setNodeData] = useState<Array<NodeProperties>>([]);
+  const [linkData, setLinkData] = useState<Array<LinkProperties>>([]);
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [firstNode, setFirstNode] = useState<string>();
+  const [secondNode, setSecondNode] = useState<string>();
+  const graphRef =
+    useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
+  const prevselectedItemId = useRef<string>();
 
-  const onClickNode = useCallback((nodeId: string) => {
-    if (!firstNode && nodeData) {
-      const obj = nodeData.find((o) => o.id === nodeId);
-      setSelectedItem(obj);
-    } else if (firstNode) {
-      setSecondNode(nodeId);
-    }
-  }, [firstNode, nodeData]);
+  const onClickNode = useCallback(
+    (nodeId: string) => {
+      if (!firstNode && nodeData) {
+        const obj = nodeData.find((o) => o.id === nodeId);
+        setSelectedItem(obj);
+      } else if (firstNode) {
+        setSecondNode(nodeId);
+      }
+    },
+    [firstNode, nodeData]
+  );
 
   const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
@@ -81,36 +102,51 @@ function Map() {
     setSelectedItem(obj);
   }, []);
 
-  const createModeLink = useCallback((id: string) => {
-    if (firstNode && firstNode === id) {
-      setFirstNode(undefined);
-      setSecondNode(undefined);
-    } else {
-      setFirstNode(id);
-    }
-  }, [firstNode, setFirstNode, setSecondNode]);
+  const createModeLink = useCallback(
+    (id: string) => {
+      if (firstNode && firstNode === id) {
+        setFirstNode(undefined);
+        setSecondNode(undefined);
+      } else {
+        setFirstNode(id);
+      }
+    },
+    [firstNode, setFirstNode, setSecondNode]
+  );
 
   const onClose = () => {
     setOpenModal(false);
   };
 
-  const onSave = async (name: string, posX: number, posY: number, color: string) => {
+  const onSave = async (
+    name: string,
+    posX: number,
+    posY: number,
+    color: string
+  ) => {
     setOpenModal(false);
     try {
       if (study) {
         const area = await createArea(study.id, name);
-        setNodeData([...nodeData, {
-          id: area.id,
-          name: area.name,
-          x: posX,
-          y: posY,
-          color,
-          rgbColor: color.slice(4, -1).split(',').map(Number),
-          size: { width: calculateSize(name), height: NODE_HEIGHT },
-        }]);
+        setNodeData([
+          ...nodeData,
+          {
+            id: area.id,
+            name: area.name,
+            x: posX,
+            y: posY,
+            color,
+            rgbColor: color.slice(4, -1).split(",").map(Number),
+            size: { width: calculateSize(name), height: NODE_HEIGHT },
+          },
+        ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createAreaError'), e as AxiosError);
+      enqueueErrorSnackbar(
+        enqueueSnackbar,
+        t("singlestudy:createAreaError"),
+        e as AxiosError
+      );
     }
   };
 
@@ -122,22 +158,39 @@ function Map() {
       try {
         const prevColors = targetNode.rgbColor;
         const prevPosition = { x: targetNode.x, y: targetNode.y };
-        if ((value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) || (value.x !== prevPosition.x || value.y !== prevPosition.y)) {
+        if (
+          value.color_rgb[0] !== prevColors[0] ||
+          value.color_rgb[1] !== prevColors[1] ||
+          value.color_rgb[2] !== prevColors[2] ||
+          value.x !== prevPosition.x ||
+          value.y !== prevPosition.y
+        ) {
           const updateNode = nodeData.filter((o) => o.id !== id);
-          setNodeData([...updateNode, {
-            ...targetNode,
-            x: value.x,
-            y: value.y,
-            color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
-            rgbColor: [value.color_rgb[0], value.color_rgb[1], value.color_rgb[2]],
-          }]);
+          setNodeData([
+            ...updateNode,
+            {
+              ...targetNode,
+              x: value.x,
+              y: value.y,
+              color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
+              rgbColor: [
+                value.color_rgb[0],
+                value.color_rgb[1],
+                value.color_rgb[2],
+              ],
+            },
+          ]);
           if (study) {
             await updateAreaUI(study.id, id, value);
           }
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:updateUIError'), e as AxiosError);
+        enqueueErrorSnackbar(
+          enqueueSnackbar,
+          t("singlestudy:updateUIError"),
+          e as AxiosError
+        );
       }
     }
   };
@@ -159,17 +212,25 @@ function Map() {
       setTimeout(async () => {
         if (target && linkData) {
           try {
-            const links = linkData.filter((o) => o.source !== id || o.target !== target);
+            const links = linkData.filter(
+              (o) => o.source !== id || o.target !== target
+            );
             setLinkData(links);
             setSelectedItem(undefined);
             await deleteLink(study.id, id, target);
           } catch (e) {
             setLinkData([...linkData]);
-            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
+            enqueueErrorSnackbar(
+              enqueueSnackbar,
+              t("singlestudy:deleteAreaOrLink"),
+              e as AxiosError
+            );
           }
         } else if (nodeData && linkData && !target) {
           const obj = nodeData.filter((o) => o.id !== id);
-          const links = linkData.filter((o) => o.source !== id && o.target !== id);
+          const links = linkData.filter(
+            (o) => o.source !== id && o.target !== id
+          );
           try {
             setSelectedItem(undefined);
             setLinkData(links);
@@ -178,7 +239,11 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
-            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
+            enqueueErrorSnackbar(
+              enqueueSnackbar,
+              t("singlestudy:deleteAreaOrLink"),
+              e as AxiosError
+            );
           }
         }
       }, 0);
@@ -190,16 +255,29 @@ function Map() {
       const init = async () => {
         if (firstNode && secondNode) {
           try {
-            setLinkData([...linkData, ...[{
-              source: firstNode,
-              target: secondNode,
-            }]]);
+            setLinkData([
+              ...linkData,
+              ...[
+                {
+                  source: firstNode,
+                  target: secondNode,
+                },
+              ],
+            ]);
             setFirstNode(undefined);
             setSecondNode(undefined);
             await createLink(study.id, { area1: firstNode, area2: secondNode });
           } catch (e) {
-            setLinkData(linkData.filter((o) => o.source !== firstNode || o.target !== secondNode));
-            enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createLinkError'), e as AxiosError);
+            setLinkData(
+              linkData.filter(
+                (o) => o.source !== firstNode || o.target !== secondNode
+              )
+            );
+            enqueueErrorSnackbar(
+              enqueueSnackbar,
+              t("singlestudy:createLinkError"),
+              e as AxiosError
+            );
           }
         }
       };
@@ -213,26 +291,49 @@ function Map() {
         try {
           const data = await getSynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
-            const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
-            const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
+            const areaData = await getAreaPositions(
+              study.id,
+              Object.keys(data.areas).join(",")
+            );
+            const areas: AreasConfig =
+              Object.keys(data.areas).length === 1
+                ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig }
+                : (areaData as AreasConfig);
             const tempNodeData = Object.keys(areas).map((areaId) => ({
               id: areaId,
               name: data.areas[areaId].name,
               x: areas[areaId].ui.x,
               y: areas[areaId].ui.y,
               color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-              rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
+              rgbColor: [
+                areas[areaId].ui.color_r,
+                areas[areaId].ui.color_g,
+                areas[areaId].ui.color_b,
+              ],
               size: { width: calculateSize(areaId), height: NODE_HEIGHT },
             }));
             setNodeData(tempNodeData);
-            setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
-              links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
-                source: currentAreaId,
-                target: linkId,
-              }))), [] as Array<LinkProperties>));
+            setLinkData(
+              Object.keys(data.areas).reduce(
+                (links, currentAreaId) =>
+                  links.concat(
+                    Object.keys(data.areas[currentAreaId].links).map(
+                      (linkId) => ({
+                        source: currentAreaId,
+                        target: linkId,
+                      })
+                    )
+                  ),
+                [] as Array<LinkProperties>
+              )
+            );
           }
         } catch (e) {
-          enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
+          enqueueErrorSnackbar(
+            enqueueSnackbar,
+            t("studymanager:failtoloadstudy"),
+            e as AxiosError
+          );
         } finally {
           setLoaded(true);
         }
@@ -243,18 +344,30 @@ function Map() {
 
   useEffect(() => {
     if (selectedItem && isNode(selectedItem)) {
-      setSelectedNodeLinks(linkData.filter((o) => o.source === (selectedItem as NodeProperties).id || o.target === (selectedItem as NodeProperties).id));
+      setSelectedNodeLinks(
+        linkData.filter(
+          (o) =>
+            o.source === (selectedItem as NodeProperties).id ||
+            o.target === (selectedItem as NodeProperties).id
+        )
+      );
     }
     if (graphRef.current) {
       const currentGraph = graphRef.current;
       if (prevselectedItemId.current) {
         // eslint-disable-next-line no-underscore-dangle
-        currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
+        currentGraph._setNodeHighlightedValue(
+          prevselectedItemId.current,
+          false
+        );
       }
       if (selectedItem && isNode(selectedItem)) {
         setTimeout(() => {
           // eslint-disable-next-line no-underscore-dangle
-          currentGraph._setNodeHighlightedValue((selectedItem as NodeProperties).id, true);
+          currentGraph._setNodeHighlightedValue(
+            (selectedItem as NodeProperties).id,
+            true
+          );
           prevselectedItemId.current = (selectedItem as NodeProperties).id;
         }, 0);
       }
@@ -265,44 +378,74 @@ function Map() {
     <>
       <SplitLayoutView
         left={
-          <MapPropsView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} updateUI={updateUI} />
+          <MapPropsView
+            item={
+              selectedItem && isNode(selectedItem)
+                ? nodeData.find(
+                    (o) => o.id === (selectedItem as NodeProperties).id
+                  )
+                : selectedItem
+            }
+            setSelectedItem={setSelectedItem}
+            nodeLinks={selectedNodeLinks}
+            nodeList={nodeData}
+            onDelete={onDelete}
+            onArea={() => setOpenModal(true)}
+            updateUI={updateUI}
+          />
         }
-        right={(
+        right={
           <Box
             width="100%"
             height="100%"
             position="relative"
-            sx={{ '& svg[name="svg-container-graph-id"]': {
-              backgroundImage: `url("${mapbackground}")`,
-            } }}
+            sx={{
+              '& svg[name="svg-container-graph-id"]': {
+                backgroundImage: `url("${mapbackground}")`,
+              },
+            }}
           >
             {loaded ? (
               <AutoSizer>
-                {
-                  ({ height, width }) => (
-                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} onNodePositionChange={handleUpdatePosition} />
-                  )
-              }
+                {({ height, width }) => (
+                  <GraphViewMemo
+                    height={height}
+                    width={width}
+                    nodeData={nodeData}
+                    linkData={linkData}
+                    onClickLink={onClickLink}
+                    onClickNode={onClickNode}
+                    graph={graphRef}
+                    setSelectedItem={setSelectedItem}
+                    onLink={createModeLink}
+                    onNodePositionChange={handleUpdatePosition}
+                  />
+                )}
               </AutoSizer>
-            ) : <SimpleLoader />
-            }
-            <Box width="14%" display="flex" justifyContent="space-between" alignItems="center" position="absolute" right="16px" top="10px">
+            ) : (
+              <SimpleLoader />
+            )}
+            <Box
+              width="14%"
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              position="absolute"
+              right="16px"
+              top="10px"
+            >
               <Typography>
-                {`${nodeData.length} ${t('singlestudy:area')}`}
+                {`${nodeData.length} ${t("singlestudy:area")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t('singlestudy:link')}`}
+                {`${linkData.length} ${t("singlestudy:link")}`}
               </Typography>
             </Box>
           </Box>
-        )}
+        }
       />
       {openModal && (
-        <CreateAreaModal
-          open={openModal}
-          onClose={onClose}
-          onSave={onSave}
-        />
+        <CreateAreaModal open={openModal} onClose={onClose} onSave={onSave} />
       )}
     </>
   );
