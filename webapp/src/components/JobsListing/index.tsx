@@ -240,7 +240,7 @@ const JobsListing = (props: PropTypes) => {
         {renderStatus(job)}
         <Link to={`/study/${encodeURI(job.studyId)}`}>
           <Typography className={classes.title}>
-            {studies.find((s) => s.id === job.studyId)?.name}
+            {studies.find((s) => s.id === job.studyId)?.name || `${t('main:unknown')} (${job.id})`}
           </Typography>
         </Link>
       </Box>
