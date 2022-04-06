@@ -175,7 +175,7 @@ const XpansionView = (props: Props) => {
 
   const createCandidate = async (name: string, link: string) => {
     try {
-      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 10, 'max-investment': 10 });
+      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 1, 'max-investment': 1 });
       setCandidateCreationModal(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createCandidateError'), e as AxiosError);

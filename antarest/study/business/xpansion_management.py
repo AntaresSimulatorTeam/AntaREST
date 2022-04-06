@@ -105,6 +105,16 @@ class IllegalCharacterInNameError(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class CandidateNameIsEmpty(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST)
+
+
+class WrongSettingsFormat(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class WrongLinkFormatError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
@@ -168,7 +178,7 @@ class XpansionManager:
 
             if study_version < 800:
                 xpansion_settings["relaxed-optimality-gap"] = 1e6
-                xpansion_settings["cut-type"] = "average"
+                xpansion_settings["cut-type"] = "yearly"
                 xpansion_settings["ampl.solver"] = "cbc"
                 xpansion_settings["ampl.presolve"] = 0
                 xpansion_settings["ampl.solve_bounds_frequency"] = 1000000
@@ -222,6 +232,29 @@ class XpansionManager:
                     f"The 'additional-constraints' file '{additional_constraints}' does not exist"
                 )
 
+
+    def _assert_xpansion_settings_optimality_gap_is_valid(
+        self,
+        optimality_gap: float,
+    ) -> None:
+        if optimality_gap < 0:
+            raise WrongSettingsFormat('Optimality gap must be a float greater than or equal to 0')
+
+
+    def _assert_xpansion_settings_relative_gap_is_valid(
+        self,
+            relative_gap: float,
+    ) -> None:
+        if relative_gap < 0:
+            raise WrongSettingsFormat('Relative gap must be a float greater than or equal to 0')
+
+    def _assert_xpansion_settings_max_iteration_is_valid(
+            self,
+            max_iteration: float,
+    ) -> None:
+        if max_iteration < 0:
+            raise WrongSettingsFormat('Max iteration must be a float greater than or equal to 0')
+
     def update_xpansion_settings(
         self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
@@ -229,6 +262,12 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
+        if new_xpansion_settings_dto.optimality_gap is not None:
+            self._assert_xpansion_settings_optimality_gap_is_valid(new_xpansion_settings_dto.optimality_gap)
+        if new_xpansion_settings_dto.relative_gap is not None:
+            self._assert_xpansion_settings_relative_gap_is_valid(new_xpansion_settings_dto.relative_gap)
+        if new_xpansion_settings_dto.max_iteration is not None:
+            self._assert_xpansion_settings_max_iteration_is_valid(new_xpansion_settings_dto.max_iteration)
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
@@ -301,6 +340,8 @@ class XpansionManager:
             "(",
             ")",
         ]
+        if xpansion_candidate_name.strip() == '':
+            raise CandidateNameIsEmpty()
         for char in illegal_chars:
             if char in xpansion_candidate_name:
                 raise IllegalCharacterInNameError(
