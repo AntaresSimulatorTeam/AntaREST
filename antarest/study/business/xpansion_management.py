@@ -110,7 +110,7 @@ class CandidateNameIsEmpty(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST)
 
 
-class WrongSettingsFormat(HTTPException):
+class WrongTypeFormat(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
@@ -169,7 +169,7 @@ class XpansionManager:
 
             xpansion_settings = {
                 "optimality_gap": 1,
-                "max_iteration": float("inf"),
+                "max_iteration": "inf",
                 "uc_type": "expansion_fast",
                 "master": "integer",
                 "yearly-weights": None,
@@ -214,9 +214,9 @@ class XpansionManager:
         return XpansionSettingsDTO.parse_obj(json)
 
     def _assert_xpansion_settings_additional_constraints_is_valid(
-        self,
-        file_study: FileStudy,
-        additional_constraints: str,
+            self,
+            file_study: FileStudy,
+            additional_constraints: str,
     ) -> None:
         if additional_constraints:
             try:
@@ -232,42 +232,42 @@ class XpansionManager:
                     f"The 'additional-constraints' file '{additional_constraints}' does not exist"
                 )
 
-
-    def _assert_xpansion_settings_optimality_gap_is_valid(
-        self,
-        optimality_gap: float,
-    ) -> None:
-        if optimality_gap < 0:
-            raise WrongSettingsFormat('Optimality gap must be a float greater than or equal to 0')
-
-
-    def _assert_xpansion_settings_relative_gap_is_valid(
-        self,
-            relative_gap: float,
-    ) -> None:
-        if relative_gap < 0:
-            raise WrongSettingsFormat('Relative gap must be a float greater than or equal to 0')
-
-    def _assert_xpansion_settings_max_iteration_is_valid(
+    def _assert_type_float_is_valid(
             self,
-            max_iteration: float,
+            name: str,
+            param: float,
     ) -> None:
-        if max_iteration < 0:
-            raise WrongSettingsFormat('Max iteration must be a float greater than or equal to 0')
+        if param < 0:
+            raise WrongTypeFormat(f"'{name}' must be a float greater than or equal to 0")
+
+    def _assert_type_integer_is_valid(
+            self,
+            name: str,
+            param: int,
+    ) -> None:
+        if param < 0:
+            raise WrongTypeFormat(f"'{name} must be an integer greater than or equal to 0'")
+
+    def _assert_max_iteration_is_valid(
+            self,
+            max_iteration: Union[int, MaxIteration]
+    ) -> None:
+        if max_iteration < 0 or max_iteration != MaxIteration.INF:
+            raise WrongTypeFormat("'max_iteration' must be an integer greater than or equal to 0 OR '+Inf'")
 
     def update_xpansion_settings(
-        self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
+            self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         if new_xpansion_settings_dto.optimality_gap is not None:
-            self._assert_xpansion_settings_optimality_gap_is_valid(new_xpansion_settings_dto.optimality_gap)
+            self._assert_type_float_is_valid('optimality_gap', new_xpansion_settings_dto.optimality_gap)
         if new_xpansion_settings_dto.relative_gap is not None:
-            self._assert_xpansion_settings_relative_gap_is_valid(new_xpansion_settings_dto.relative_gap)
+            self._assert_type_float_is_valid('relative_gap', new_xpansion_settings_dto.relative_gap)
         if new_xpansion_settings_dto.max_iteration is not None:
-            self._assert_xpansion_settings_max_iteration_is_valid(new_xpansion_settings_dto.max_iteration)
+            self._assert_type_float_is_valid('max_iteration', new_xpansion_settings_dto.max_iteration)
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
@@ -280,35 +280,35 @@ class XpansionManager:
         return new_xpansion_settings_dto
 
     def _assert_link_profile_are_files(
-        self,
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
+            self,
+            file_study: FileStudy,
+            xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         if xpansion_candidate_dto.link_profile and not file_study.tree.get(
-            ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
+                ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
         ):
             raise XpansionFileNotFoundError(
                 f"The 'link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
         if (
-            xpansion_candidate_dto.already_installed_link_profile
-            and not file_study.tree.get(
-                [
-                    "user",
-                    "expansion",
-                    "capa",
-                    xpansion_candidate_dto.already_installed_link_profile,
-                ]
-            )
+                xpansion_candidate_dto.already_installed_link_profile
+                and not file_study.tree.get(
+            [
+                "user",
+                "expansion",
+                "capa",
+                xpansion_candidate_dto.already_installed_link_profile,
+            ]
+        )
         ):
             raise XpansionFileNotFoundError(
                 f"The 'already-installed-link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
 
     def _assert_link_exist(
-        self,
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
+            self,
+            file_study: FileStudy,
+            xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         if " - " not in xpansion_candidate_dto.link:
             raise WrongLinkFormatError(
@@ -322,7 +322,7 @@ class XpansionManager:
             )
 
     def _assert_no_illegal_character_is_in_candidate_name(
-        self, xpansion_candidate_name: str
+            self, xpansion_candidate_name: str
     ) -> None:
         illegal_chars = [
             " ",
@@ -349,7 +349,7 @@ class XpansionManager:
                 )
 
     def _assert_candidate_name_is_not_already_taken(
-        self, candidates: JSON, xpansion_candidate_name: str
+            self, candidates: JSON, xpansion_candidate_name: str
     ) -> None:
         for candidate in candidates.values():
             if candidate["name"] == xpansion_candidate_name:
@@ -358,38 +358,36 @@ class XpansionManager:
                 )
 
     def _assert_investment_candidate_is_valid(
-        self,
-        max_investment: Optional[float],
-        max_units: Optional[int],
-        unit_size: Optional[float],
+            self,
+            max_investment: Optional[float],
+            max_units: Optional[int],
+            unit_size: Optional[float],
     ) -> None:
         bool_max_investment = max_investment is None
         bool_max_units = max_units is None
         bool_unit_size = unit_size is None
 
         if not (
-            (not bool_max_investment and bool_max_units and bool_unit_size)
-            or (
-                bool_max_investment
-                and not bool_max_units
-                and not bool_unit_size
-            )
+                (not bool_max_investment and bool_max_units and bool_unit_size)
+                or (
+                        bool_max_investment
+                        and not bool_max_units
+                        and not bool_unit_size
+                )
         ):
             raise BadCandidateFormatError(
                 f"The candidate is not well formatted."
-                f"It should either contain max-investment or (max-units and unit-size)."
+                f" It should either contain max-investment or (max-units and unit-size)."
             )
 
     def _assert_candidate_is_correct(
-        self,
-        candidates: JSON,
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-        new_name: bool = False,
+            self,
+            candidates: JSON,
+            file_study: FileStudy,
+            xpansion_candidate_dto: XpansionCandidateDTO,
+            new_name: bool = False,
     ) -> None:
         logger.info(f"Checking given candidate is correct")
-        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
-        self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_no_illegal_character_is_in_candidate_name(
             xpansion_candidate_dto.name
         )
@@ -397,14 +395,29 @@ class XpansionManager:
             self._assert_candidate_name_is_not_already_taken(
                 candidates, xpansion_candidate_dto.name
             )
+        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
+        self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_investment_candidate_is_valid(
             xpansion_candidate_dto.max_investment,
             xpansion_candidate_dto.max_units,
             xpansion_candidate_dto.unit_size,
         )
+        if xpansion_candidate_dto.annual_cost_per_mw is not None:
+            self._assert_type_float_is_valid('annual_cost_per_mw', xpansion_candidate_dto.annual_cost_per_mw)
+        if xpansion_candidate_dto.unit_size is not None:
+            self._assert_type_float_is_valid('unit_size', xpansion_candidate_dto.unit_size)
+        if xpansion_candidate_dto.max_investment is not None:
+            self._assert_type_float_is_valid('max_investment', xpansion_candidate_dto.max_investment)
+        if xpansion_candidate_dto.already_installed_capacity is not None:
+            self._assert_type_float_is_valid(
+                'already_installed_capacity',
+                xpansion_candidate_dto.already_installed_capacity
+            )
+        if xpansion_candidate_dto.max_units is not None:
+            self._assert_type_integer_is_valid('max_units', xpansion_candidate_dto.max_units)
 
     def add_candidate(
-        self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
+            self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
     ) -> None:
 
         file_study = self.study_storage_service.get_storage(study).get_raw(
@@ -436,7 +449,7 @@ class XpansionManager:
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
 
     def get_candidate(
-        self, study: Study, candidate_name: str
+            self, study: Study, candidate_name: str
     ) -> XpansionCandidateDTO:
         logger.info(
             f"Getting candidate '{candidate_name}' of study '{study.id}'"
@@ -466,10 +479,10 @@ class XpansionManager:
         return [XpansionCandidateDTO(**c) for c in candidates.values()]
 
     def update_candidate(
-        self,
-        study: Study,
-        candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
+            self,
+            study: Study,
+            candidate_name: str,
+            xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
@@ -519,7 +532,7 @@ class XpansionManager:
         )
 
     def update_xpansion_constraints_settings(
-        self, study: Study, constraints_file_name: Optional[str]
+            self, study: Study, constraints_file_name: Optional[str]
     ) -> None:
         self.update_xpansion_settings(
             study,
@@ -529,10 +542,10 @@ class XpansionManager:
         )
 
     def _add_raw_files(
-        self,
-        file_study: FileStudy,
-        files: List[UploadFile],
-        raw_file_type: str,
+            self,
+            file_study: FileStudy,
+            files: List[UploadFile],
+            raw_file_type: str,
     ) -> None:
         if raw_file_type == "constraints":
             keys = ["user", "expansion"]
@@ -569,7 +582,7 @@ class XpansionManager:
         file_study.tree.save(data)
 
     def add_xpansion_constraints(
-        self, study: Study, files: List[UploadFile]
+            self, study: Study, files: List[UploadFile]
     ) -> None:
         logger.info(
             f"Adding xpansion constraints file list to study '{study.id}'"
@@ -580,21 +593,21 @@ class XpansionManager:
         self._add_raw_files(file_study, files, "constraints")
 
     def _is_constraints_file_used(
-        self, file_study: FileStudy, filename: str
+            self, file_study: FileStudy, filename: str
     ) -> bool:
         try:
             return (
-                str(
-                    file_study.tree.get(
-                        [
-                            "user",
-                            "expansion",
-                            "settings",
-                            "additional-constraints",
-                        ]
+                    str(
+                        file_study.tree.get(
+                            [
+                                "user",
+                                "expansion",
+                                "settings",
+                                "additional-constraints",
+                            ]
+                        )
                     )
-                )
-                == filename
+                    == filename
             )
         except KeyError:
             return False
@@ -615,7 +628,7 @@ class XpansionManager:
         file_study.tree.delete(["user", "expansion", filename])
 
     def get_single_xpansion_constraints(
-        self, study: Study, filename: str
+            self, study: Study, filename: str
     ) -> bytes:
         logger.info(
             f"Getting xpansion constraints file '{filename}' from study '{study.id}'"
@@ -644,8 +657,8 @@ class XpansionManager:
             for key, node in cast(
                 FolderNode, file_study.tree.get_node(["user", "expansion"])
             )
-            .build()
-            .items()
+                .build()
+                .items()
             if key not in registered_filenames and type(node) != BucketNode
         ]
         return constraints_filenames

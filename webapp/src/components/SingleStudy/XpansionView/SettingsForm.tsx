@@ -154,7 +154,6 @@ const SettingsForm = (props: PropType) => {
           <TextField type="number" label={t('xpansion:amplPresolve')} variant="filled" value={currentSettings['ampl.presolve'] || ''} onChange={(e) => handleChange('ampl.presolve', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || ''} onChange={(e) => handleChange('ampl.solve_bounds_frequency', parseFloat(e.target.value))} />
           <TextField type="number" label={t('xpansion:relativeGap')} variant="filled" value={currentSettings.relative_gap || ''} onChange={(e) => handleChange('relative_gap', parseFloat(e.target.value))} />
-          <TextField label={t('xpansion:solver')} variant="filled" value={currentSettings.solver || ''} onChange={(e) => handleChange('solver', e.target.value)} />
           <Box className={classes.select}>
             <SelectBasic name={t('xpansion:solver')} items={solver} label="solver" value={currentSettings.solver || ''} handleChange={handleChange} optional />
           </Box>

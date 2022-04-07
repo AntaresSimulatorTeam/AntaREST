@@ -173,14 +173,14 @@ const XpansionView = (props: Props) => {
     }
   };
 
-  const createCandidate = async (name: string, link: string) => {
+  const createCandidate = async (candidate: XpansionCandidate) => {
     try {
-      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 1, 'max-investment': 1 });
+      await addCandidate(study.id, candidate);
       setCandidateCreationModal(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createCandidateError'), e as AxiosError);
     } finally {
-      initCandidate(() => { setSelectedItem(name); setView(XpansionRenderView.candidate); });
+      initCandidate(() => { setSelectedItem(candidate.name); setView(XpansionRenderView.candidate); });
     }
   };
 
@@ -206,7 +206,7 @@ const XpansionView = (props: Props) => {
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
-      if (name && value['annual-cost-per-mw'] && value.link) {
+      if (name && value['annual-cost-per-mw'] && value.link && ((value['max-investment'] && value['max-investment'] >= 0) || (value['max-units'] && value['max-units'] >= 0 && value['unit-size'] && value['unit-size'] >= 0))) {
         initCandidate(() => setSelectedItem(name));
         enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
       }

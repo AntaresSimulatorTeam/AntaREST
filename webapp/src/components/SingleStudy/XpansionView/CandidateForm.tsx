@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import SaveIcon from '@material-ui/icons/Save';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
+import HeightIcon from '@material-ui/icons/Height';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate } from './types';
 import { LinkCreationInfo } from '../MapView/types';
@@ -41,7 +42,6 @@ const useStyles = makeStyles((theme: Theme) =>
       '&> div': {
         width: '270px',
         marginRight: theme.spacing(2),
-        marginBottom: theme.spacing(2),
       },
     },
     selectBox: {
@@ -100,6 +100,37 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     buttonElement: {
       margin: theme.spacing(0.2),
+    },
+    inputPack: {
+      backgroundColor: 'rgba(0, 0, 0, 0.09)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: 'unset !important',
+      maxWidth: '556px !important',
+      height: '80px',
+      paddingLeft: theme.spacing(2),
+      paddingRight: theme.spacing(2),
+      borderRadius: '5px',
+      '&> div': {
+        width: '270px',
+      },
+      '&> div > div': {
+        backgroundColor: '#e8e8e8',
+        '&:hover': {
+          backgroundColor: '#dedede',
+        },
+        '&:focused': {
+          backgroundColor: '#e8e8e8',
+        },
+      },
+    },
+    marginR: {
+      marginRight: theme.spacing(2),
+    },
+    arrowIcon: {
+      transform: 'rotate(90deg)',
+      marginRight: theme.spacing(2),
     },
   }));
 
@@ -171,9 +202,19 @@ const CandidateForm = (props: PropType) => {
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
           <TextField type="number" label={t('xpansion:annualCost')} variant="filled" value={currentCandidate['annual-cost-per-mw'] || ''} onChange={(e) => handleChange('annual-cost-per-mw', parseFloat(e.target.value))} />
-          <TextField type="number" label={t('xpansion:unitSize')} variant="filled" value={currentCandidate['unit-size'] || ''} onChange={(e) => handleChange('unit-size', parseFloat(e.target.value))} />
-          <TextField type="number" label={t('xpansion:maxUnits')} variant="filled" value={currentCandidate['max-units'] || ''} onChange={(e) => handleChange('max-units', parseFloat(e.target.value))} />
-          <TextField type="number" label={t('xpansion:maxInvestments')} variant="filled" value={currentCandidate['max-investment'] || ''} onChange={(e) => handleChange('max-investment', parseFloat(e.target.value))} />
+        </Box>
+        <Box className={classes.fields}>
+          <Box className={classes.inputPack}>
+            <TextField className={classes.marginR} type="number" label={t('xpansion:unitSize')} variant="filled" value={currentCandidate['unit-size'] || ''} onChange={(e) => handleChange('unit-size', parseFloat(e.target.value))} />
+            <TextField type="number" label={t('xpansion:maxUnits')} variant="filled" value={currentCandidate['max-units'] || ''} onChange={(e) => handleChange('max-units', parseFloat(e.target.value))} />
+          </Box>
+          <HeightIcon className={classes.arrowIcon} color="primary" />
+          {/* <Typography className={classes.marginR} variant="body1" component="p">ou</Typography> */}
+          <Box className={classes.inputPack}>
+            <TextField type="number" label={t('xpansion:maxInvestments')} variant="filled" value={currentCandidate['max-investment'] || ''} onChange={(e) => handleChange('max-investment', parseFloat(e.target.value))} />
+          </Box>
+        </Box>
+        <Box className={classes.fields}>
           <TextField type="number" label={t('xpansion:alreadyICapacity')} variant="filled" value={currentCandidate['already-installed-capacity'] || ''} onChange={(e) => handleChange('already-installed-capacity', parseFloat(e.target.value))} />
         </Box>
       </Box>
