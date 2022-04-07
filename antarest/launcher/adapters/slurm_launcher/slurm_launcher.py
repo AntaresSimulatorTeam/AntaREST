@@ -586,7 +586,7 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        children = self.batch_jobs.get_batch_job_children(job_id)
+        children = self.batch_jobs.get_batch_job_children(job_id, use_cache=False)
         logs = []
         for child in children:
             log_path: Optional[Path] = None
@@ -618,7 +618,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = deepcopy(self.launcher_args)
-        jobs = self.batch_jobs.get_batch_job_children(job_id)
+        jobs = self.batch_jobs.get_batch_job_children(job_id, use_cache=False)
         for job in jobs:
             found = False
             for study in self.data_repo_tinydb.get_list_of_studies():

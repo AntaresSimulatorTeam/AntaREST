@@ -108,7 +108,9 @@ class BatchJobManager:
     def get_batch_job_parent(self, batch_job_id: str) -> Optional[str]:
         return self.cache.get(batch_job_id, None)
 
-    def get_batch_job_children(self, parent_batch_job_id: str) -> List[str]:
+    def get_batch_job_children(self, parent_batch_job_id: str, use_cache: bool = True) -> List[str]:
+        if not use_cache:
+            self.refresh_cache()
         return [
             child
             for child, parent in self.cache.items()
