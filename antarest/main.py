@@ -7,7 +7,7 @@ from typing import Tuple, Any, Optional, Dict, cast
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
@@ -28,7 +28,6 @@ from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
@@ -56,6 +55,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
@@ -247,8 +247,14 @@ def create_watcher(
         _, _, _, _, _, _, study_service = create_core_services(
             application, config
         )
+        watcher = Watcher(config=config, service=study_service)
 
-        return Watcher(config=config, service=study_service)
+        if application:
+            application.include_router(
+                create_watcher_routes(watcher=watcher, config=config)
+            )
+
+        return watcher
 
 
 def create_matrix_gc(
