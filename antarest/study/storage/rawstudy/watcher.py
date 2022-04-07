@@ -4,12 +4,13 @@ import threading
 from html import escape
 from pathlib import Path
 from time import time, sleep
-from typing import List
+from typing import List, Optional
 
 from filelock import FileLock
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
@@ -23,6 +24,7 @@ class Watcher:
     """
 
     LOCK = Path("watcher")
+    SCAN_LOCK = Path("scan.lock")
 
     def __init__(self, config: Config, service: StudyService):
         self.service = service
@@ -89,87 +91,130 @@ class Watcher:
         while True:
             try:
                 if not self.should_stop:
-                    self._scan()
+                    self.scan()
             except Exception as e:
                 logger.error(
                     "Unexpected error when scanning workspaces", exc_info=e
                 )
             sleep(2)
 
-    def _scan(self) -> None:
+    def _rec_scan(
+        self,
+        path: Path,
+        workspace: str,
+        groups: List[Group],
+        filter_in: List[str],
+        filter_out: List[str],
+    ) -> List[StudyFolder]:
+        try:
+            if (path / "AW_NO_SCAN").exists():
+                logger.info(
+                    f"No scan directive file found. Will skip further scan of folder {path}"
+                )
+                return []
+            if (path / "study.antares").exists():
+                logger.debug(f"Study {path.name} found in {workspace}")
+                return [StudyFolder(path, workspace, groups)]
+            else:
+                folders: List[StudyFolder] = list()
+                if path.is_dir():
+                    for child in path.iterdir():
+                        try:
+                            if (
+                                child.is_dir()
+                                and any(
+                                    [
+                                        re.search(regex, child.name)
+                                        for regex in filter_in
+                                    ]
+                                )
+                                and not any(
+                                    [
+                                        re.search(regex, child.name)
+                                        for regex in filter_out
+                                    ]
+                                )
+                            ):
+                                folders = folders + self._rec_scan(
+                                    child,
+                                    workspace,
+                                    groups,
+                                    filter_in,
+                                    filter_out,
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to scan dir {child}", exc_info=e
+                            )
+                return folders
+        except Exception as e:
+            logger.error(f"Failed to scan dir {path}", exc_info=e)
+            return []
+
+    def oneshot_scan(self, path: Path) -> None:
+        """
+        Scan a folder and add studies found to database.
+
+        Args:
+            path: path to folder to scan
+        """
+        thread = threading.Thread(target=lambda: self.scan(path), daemon=True)
+        thread.start()
+
+    def scan(self, directory_path: Optional[Path] = None) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
         Returns:
 
         """
-
-        def rec_scan(
-            path: Path,
-            workspace: str,
-            groups: List[Group],
-            filter_in: List[str],
-            filter_out: List[str],
-        ) -> List[StudyFolder]:
-            try:
-                if (path / "AW_NO_SCAN").exists():
-                    logger.info(
-                        f"No scan directive file found. Will skip further scan of folder {path}"
-                    )
-                    return []
-                if (path / "study.antares").exists():
-                    logger.debug(f"Study {path.name} found in {workspace}")
-                    return [StudyFolder(path, workspace, groups)]
-                else:
-                    folders: List[StudyFolder] = list()
-                    if path.is_dir():
-                        for child in path.iterdir():
-                            try:
-                                if (
-                                    child.is_dir()
-                                    and any(
-                                        [
-                                            re.search(regex, child.name)
-                                            for regex in filter_in
-                                        ]
-                                    )
-                                    and not any(
-                                        [
-                                            re.search(regex, child.name)
-                                            for regex in filter_out
-                                        ]
-                                    )
-                                ):
-                                    folders = folders + rec_scan(
-                                        child,
-                                        workspace,
-                                        groups,
-                                        filter_in,
-                                        filter_out,
-                                    )
-                            except Exception as e:
-                                logger.error(
-                                    f"Failed to scan dir {child}", exc_info=e
-                                )
-                    return folders
-            except Exception as e:
-                logger.error(f"Failed to scan dir {path}", exc_info=e)
-                return []
-
         studies: List[StudyFolder] = list()
-        for name, workspace in self.config.storage.workspaces.items():
-            if name != DEFAULT_WORKSPACE_NAME:
-                path = Path(workspace.path)
-                groups = [
-                    Group(id=escape(g), name=escape(g))
-                    for g in workspace.groups
-                ]
-                studies = studies + rec_scan(
-                    path,
-                    name,
-                    groups,
-                    workspace.filter_in,
-                    workspace.filter_out,
-                )
 
+        if directory_path:
+            for name, workspace in self.config.storage.workspaces.items():
+                if (
+                    workspace.path == directory_path
+                    or workspace.path in directory_path.parents
+                ):
+                    groups = [
+                        Group(id=escape(g), name=escape(g))
+                        for g in workspace.groups
+                    ]
+                    studies = self._rec_scan(
+                        directory_path,
+                        name,
+                        groups,
+                        workspace.filter_in,
+                        workspace.filter_out,
+                    )
+        else:
+            for name, workspace in self.config.storage.workspaces.items():
+                if name != DEFAULT_WORKSPACE_NAME:
+                    path = Path(workspace.path)
+                    groups = [
+                        Group(id=escape(g), name=escape(g))
+                        for g in workspace.groups
+                    ]
+                    studies = studies + self._rec_scan(
+                        path,
+                        name,
+                        groups,
+                        workspace.filter_in,
+                        workspace.filter_out,
+                    )
         with db():
-            self.service.sync_studies_on_disk(studies)
+            stopwatch = StopWatch()
+            logger.info(
+                f"Waiting for FileLock to synchronize {directory_path or 'all studies'}"
+            )
+            with FileLock(self.config.storage.tmp_dir / Watcher.SCAN_LOCK):
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"FileLock acquired to synchronize for {directory_path or 'all studies'} in {x}s"
+                    )
+                )
+                self.service.sync_studies_on_disk(studies, directory_path)
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"{directory_path or 'All studies'} synchronized in {x}s"
+                    )
+                )
