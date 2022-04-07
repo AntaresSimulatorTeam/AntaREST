@@ -61,7 +61,7 @@ def build_study_service(
     Storage module linking dependencies.
 
     Args:
-        application: fastAPI application
+        application: flask application
         config: server config
         user_service: user service facade
         matrix_service: matrix store service

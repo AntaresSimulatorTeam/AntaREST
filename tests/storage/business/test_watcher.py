@@ -80,7 +80,7 @@ def test_scan(tmp_path: Path):
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)
 
-    watcher.scan()
+    watcher._scan()
 
     service.sync_studies_on_disk.assert_called_once_with(
         [

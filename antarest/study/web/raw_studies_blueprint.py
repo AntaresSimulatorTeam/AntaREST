@@ -8,8 +8,8 @@ from fastapi.params import Param
 from starlette.responses import Response
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -23,13 +23,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_raw_study_routes(
-    study_service: StudyService,
-    config: Config,
+    storage_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
-        study_service: study service facade to handle request
+        storage_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -56,7 +55,7 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth, formatted, parameters)
+        output = storage_service.get(uuid, path, depth, formatted, parameters)
 
         try:
             # try to decode string
@@ -97,7 +96,7 @@ def create_raw_study_routes(
 
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, new, params)
+        storage_service.edit_study(uuid, path, new, params)
         return ""
 
     @bp.put(
@@ -118,7 +117,7 @@ def create_raw_study_routes(
         )
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, file, params)
+        storage_service.edit_study(uuid, path, file, params)
         content = ""
 
         return content
@@ -136,6 +135,6 @@ def create_raw_study_routes(
             f"Validating data for study {uuid}",
             extra={"user": current_user.id},
         )
-        return study_service.check_errors(uuid)
+        return storage_service.check_errors(uuid)
 
     return bp

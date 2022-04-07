@@ -11,9 +11,6 @@ RATE_LIMIT_CONFIG = {
     r"^/v1/launcher/run": [
         Rule(second=1, minute=20),
     ],
-    r"^/v1/studies/watcher/scan": [
-        Rule(minute=2),
-    ],
 }
 
 
