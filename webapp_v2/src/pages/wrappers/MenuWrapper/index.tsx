@@ -17,7 +17,7 @@ import Divider from "@mui/material/Divider";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
-import GpsFixedIcon from "@mui/icons-material/GpsFixedOutlined";
+import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 
 import ApiIcon from "@mui/icons-material/Api";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
@@ -97,7 +97,11 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   if (currentStudy) {
     navigation = (
       [
-        { id: "studies", link: `/studies/${currentStudy}`, icon: GpsFixedIcon },
+        {
+          id: "studies",
+          link: `/studies/${currentStudy}`,
+          icon: CenterFocusStrongIcon,
+        },
       ] as MenuItem[]
     ).concat(navigation);
   }
