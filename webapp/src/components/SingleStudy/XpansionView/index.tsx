@@ -202,13 +202,25 @@ const XpansionView = (props: Props) => {
 
   const handleUpdateCandidate = async (name: string, value: XpansionCandidate) => {
     try {
-      await updateCandidate(study.id, name, value);
+      if (value['link-profile']?.length === 0) {
+        if (value['already-installed-link-profile']?.length === 0) {
+          await updateCandidate(study.id, name, { ...value, 'link-profile': null, 'already-installed-link-profile': null });
+        } else {
+          await updateCandidate(study.id, name, { ...value, 'link-profile': null });
+        }
+      } else if (value['already-installed-link-profile']?.length === 0) {
+        await updateCandidate(study.id, name, { ...value, 'already-installed-link-profile': null });
+      } else {
+        await updateCandidate(study.id, name, value);
+      }
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
-      if (name && value['annual-cost-per-mw'] && value.link && ((value['max-investment'] && value['max-investment'] >= 0) || (value['max-units'] && value['max-units'] >= 0 && value['unit-size'] && value['unit-size'] >= 0))) {
-        initCandidate(() => setSelectedItem(name));
-        enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+      if (name && value['annual-cost-per-mw'] && value.link) {
+        if (((value['max-investment'] && value['max-investment'] >= 0) || (value['max-units'] && value['max-units'] >= 0 && value['unit-size'] && value['unit-size'] >= 0)) && ((value['max-investment'] && !value['max-units']) && (value['max-investment'] && !value['unit-size']))) {
+          initCandidate(() => setSelectedItem(name));
+          enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+        }
       }
     }
   };

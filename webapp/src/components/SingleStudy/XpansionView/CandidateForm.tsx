@@ -8,12 +8,12 @@ import {
   Divider,
   Typography,
   Button,
+  ButtonGroup,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import SaveIcon from '@material-ui/icons/Save';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
-import HeightIcon from '@material-ui/icons/Height';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate } from './types';
 import { LinkCreationInfo } from '../MapView/types';
@@ -101,36 +101,30 @@ const useStyles = makeStyles((theme: Theme) =>
     buttonElement: {
       margin: theme.spacing(0.2),
     },
-    inputPack: {
-      backgroundColor: 'rgba(0, 0, 0, 0.09)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: 'unset !important',
-      maxWidth: '556px !important',
-      height: '80px',
-      paddingLeft: theme.spacing(2),
-      paddingRight: theme.spacing(2),
-      borderRadius: '5px',
-      '&> div': {
-        width: '270px',
-      },
-      '&> div > div': {
-        backgroundColor: '#e8e8e8',
-        '&:hover': {
-          backgroundColor: '#dedede',
-        },
-        '&:focused': {
-          backgroundColor: '#e8e8e8',
-        },
-      },
-    },
     marginR: {
       marginRight: theme.spacing(2),
     },
-    arrowIcon: {
-      transform: 'rotate(90deg)',
-      marginRight: theme.spacing(2),
+    buttongroup: {
+      width: '100% !important',
+      display: 'flex',
+      justifyContent: 'flex-start',
+    },
+    button: {
+      width: '270px',
+      marginBottom: theme.spacing(2),
+    },
+    disable: {
+      backgroundColor: '#002a5e !important',
+      color: 'white !important',
+    },
+    enable: {
+      backgroundColor: 'white',
+      color: 'rgba(0, 0, 0, 0.54)',
+      border: '1px solid rgba(0, 0, 0, 0.23)',
+      '&:hover': {
+        backgroundColor: 'rgba(0, 0, 0, 0.12)',
+        color: 'rgba(0, 0, 0, 0.26)',
+      },
     },
   }));
 
@@ -150,6 +144,7 @@ const CandidateForm = (props: PropType) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentCandidate, setCurrentCandidate] = useState<XpansionCandidate>(candidate);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
+  const [toggleView, setToggleView] = useState<boolean>(true);
 
   const tabLinks = links.map((item) => `${item.area1} - ${item.area2}`);
 
@@ -158,10 +153,17 @@ const CandidateForm = (props: PropType) => {
     setCurrentCandidate({ ...currentCandidate, [key]: value });
   };
 
+  const changeView = () => setToggleView(!toggleView);
+
   useEffect(() => {
     if (candidate) {
       setCurrentCandidate(candidate);
       setSaveAllowed(false);
+      if (candidate['max-investment'] && candidate['max-investment'] >= 0) {
+        setToggleView(false);
+      } else {
+        setToggleView(true);
+      }
     }
   }, [candidate]);
 
@@ -204,15 +206,37 @@ const CandidateForm = (props: PropType) => {
           <TextField type="number" label={t('xpansion:annualCost')} variant="filled" value={currentCandidate['annual-cost-per-mw'] || ''} onChange={(e) => handleChange('annual-cost-per-mw', parseFloat(e.target.value))} />
         </Box>
         <Box className={classes.fields}>
-          <Box className={classes.inputPack}>
-            <TextField className={classes.marginR} type="number" label={t('xpansion:unitSize')} variant="filled" value={currentCandidate['unit-size'] || ''} onChange={(e) => handleChange('unit-size', parseFloat(e.target.value))} />
-            <TextField type="number" label={t('xpansion:maxUnits')} variant="filled" value={currentCandidate['max-units'] || ''} onChange={(e) => handleChange('max-units', parseFloat(e.target.value))} />
+          <Box className={classes.buttongroup}>
+            <ButtonGroup className={classes.button} variant="outlined">
+              {toggleView ? (
+                <Button size="small" variant="outlined" disabled className={classes.disable} color="primary">
+                  {`${t('xpansion:unitSize')} & ${t('xpansion:maxUnits')}`}
+                </Button>
+              ) : (
+                <Button size="small" variant="outlined" className={classes.enable} color="primary" onClick={changeView}>
+                  {`${t('xpansion:unitSize')} & ${t('xpansion:maxUnits')}`}
+                </Button>
+              )}
+              {toggleView ? (
+                <Button size="small" variant="outlined" className={classes.enable} color="primary" onClick={changeView}>
+                  {t('xpansion:maxInvestments')}
+                </Button>
+              ) : (
+                <Button size="small" variant="outlined" className={classes.disable} color="primary" disabled>
+                  {t('xpansion:maxInvestments')}
+                </Button>
+              )}
+            </ButtonGroup>
           </Box>
-          <HeightIcon className={classes.arrowIcon} color="primary" />
-          {/* <Typography className={classes.marginR} variant="body1" component="p">ou</Typography> */}
-          <Box className={classes.inputPack}>
+          {toggleView && (
+            <>
+              <TextField className={classes.marginR} type="number" label={t('xpansion:unitSize')} variant="filled" value={currentCandidate['unit-size'] || ''} onChange={(e) => handleChange('unit-size', parseFloat(e.target.value))} />
+              <TextField type="number" label={t('xpansion:maxUnits')} variant="filled" value={currentCandidate['max-units'] || ''} onChange={(e) => handleChange('max-units', parseFloat(e.target.value))} />
+            </>
+          )}
+          {!toggleView && (
             <TextField type="number" label={t('xpansion:maxInvestments')} variant="filled" value={currentCandidate['max-investment'] || ''} onChange={(e) => handleChange('max-investment', parseFloat(e.target.value))} />
-          </Box>
+          )}
         </Box>
         <Box className={classes.fields}>
           <TextField type="number" label={t('xpansion:alreadyICapacity')} variant="filled" value={currentCandidate['already-installed-capacity'] || ''} onChange={(e) => handleChange('already-installed-capacity', parseFloat(e.target.value))} />

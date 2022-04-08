@@ -23,8 +23,8 @@ export interface XpansionCandidate {
     'max-units'?: number;
     'max-investment'?: number;
     'already-installed-capacity'?: number;
-    'link-profile'?: string;
-    'already-installed-link-profile'?: string;
+    'link-profile'?: string | null;
+    'already-installed-link-profile'?: string | null;
 }
 
 export enum XpansionRenderView {
