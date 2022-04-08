@@ -77,8 +77,6 @@ class AdequacyPatchExtension(ILauncherExtension):
         )
         assert_this("areas" in adequacy_patch_config)
         self.prepare_study_for_adq_patch(job_id, study, adequacy_patch_config)
-        # todo
-        # modify post-processing.R so to remove unwanted results
 
     def prepare_study_for_adq_patch(
         self, job_id: str, study: FileStudy, adq_patch_config: JSON
@@ -123,35 +121,3 @@ class AdequacyPatchExtension(ILauncherExtension):
                     ConfigData(owner=0, key=key, value=json.dumps(data))
                 )
         return original_area_status
-
-    def before_import_hook(
-        self,
-        job_id: str,
-        study_id: str,
-        study_output_path: Path,
-        ext_opts: Any,
-    ) -> None:
-        # todo
-        # should not need this method since it can/must be done in the post-processing script directly on the remote cluster
-        with FileLock(self.tmp_dir / "data.lock"):
-            with db():
-                key = "ADEQUACY_PATCH_DATA"
-                data = self.config_data_repo.get_json(key) or {}
-                original_area_status = data.get(job_id, {})
-                if job_id in data:
-                    del data[job_id]
-                    self.config_data_repo.save(
-                        ConfigData(owner=0, key=key, value=json.dumps(data))
-                    )
-
-        study_metadata = self.study_service.get_study(study_id)
-        study = self.study_service.storage_service.get_storage(
-            study_metadata
-        ).get_raw(
-            study_metadata, use_cache=False, output_dir=study_output_path
-        )
-        for area_id, keep in original_area_status.items():
-            if not keep:
-                # delete the values-hourly for that area..
-                # study_tree.delete(["output", output_path, outputs[0].mode, "mc-ind", "*", ])
-                pass
