@@ -302,6 +302,17 @@ export enum WSEvent {
   MAINTENANCE_MODE = "MAINTENANCE_MODE",
 }
 
+export enum DefaultFilterKey {
+  USERS = "v2.studylisting.filter.user",
+  GROUPS = "v2.studylisting.filter.group",
+  VERSIONS = "v2.studylisting.filter.version",
+  MANAGED = "v2.studylisting.filter.managed",
+  SORTING = "v2.studylisting.filter.sorting",
+  FOLDER = "v2.studylisting.filter.folder",
+  FAVORITE_STUDIES = "v2.studylisting.favorite",
+  TAGS = "v2.studylisting.filter.tag",
+}
+
 export interface WSMessage {
   type: string;
   payload: unknown;

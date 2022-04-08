@@ -1,7 +1,13 @@
-import { useState } from "react";
-import * as React from "react";
+/* eslint-disable react/jsx-props-no-spreading */
+import {
+  FunctionComponent,
+  PropsWithChildren,
+  ReactNode,
+  useState,
+} from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { NavLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Toolbar from "@mui/material/Toolbar";
@@ -39,7 +45,7 @@ interface MenuItem {
   id: string;
   link: string;
   newTab?: boolean;
-  icon: React.FunctionComponent<SvgIconProps>;
+  icon: FunctionComponent<SvgIconProps>;
 }
 
 const mapState = (state: AppState) => ({
@@ -54,7 +60,7 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
-function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
+function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const { children, extended, setExtended } = props;
   const theme = useTheme();
   const [t] = useTranslation();
@@ -62,8 +68,8 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
 
   const navigation: Array<MenuItem> = [
     { id: "studies", link: "/studies", icon: TravelExploreOutlinedIcon },
-    { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
     { id: "tasks", link: "/tasks", icon: PlaylistAddCheckOutlinedIcon },
+    { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
     { id: "api", link: "/api", icon: ApiIcon },
     {
       id: "documentation",
@@ -82,7 +88,7 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
 
   const settings = navigation[navigation.length - 1];
 
-  const drawMenuItem = (elm: MenuItem): React.ReactNode => (
+  const drawMenuItem = (elm: MenuItem): ReactNode => (
     <NavListItem link key={elm.id}>
       {elm.newTab === true ? (
         <NavExternalLink href={elm.link} target="_blank">
@@ -146,11 +152,13 @@ function MenuWrapper(props: React.PropsWithChildren<PropTypes>) {
             flexWrap="nowrap"
             boxSizing="border-box"
           >
-            <img
-              src={logo}
-              alt="logo"
-              style={{ height: "32px", marginRight: extended ? "20px" : 0 }}
-            />
+            <NavLink to={navigation[0].link}>
+              <img
+                src={logo}
+                alt="logo"
+                style={{ height: "32px", marginRight: extended ? "20px" : 0 }}
+              />
+            </NavLink>
             {extended && (
               <Typography
                 style={{

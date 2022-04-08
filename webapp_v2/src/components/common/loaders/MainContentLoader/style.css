@@ -2,11 +2,8 @@
 .nest3 {
   display: block;
   position: absolute;
-  top: 50%;
-  left: 50%;
   height: 94px;
   width: 94px;
-  margin: -48px 0 0 -48px;
   border: 2px solid transparent;
   border-top-color: #002a5e;
   box-shadow: 0 0 5px #00a3ca;

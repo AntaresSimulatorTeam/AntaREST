@@ -45,6 +45,7 @@ function SelectSingle(props: Props) {
         placeholder={placeholder}
         onChange={handleChange}
         sx={{
+          minHeight: 0,
           background: "rgba(255, 255, 255, 0.09)",
           borderRadius: "4px 4px 0px 0px",
           borderBottom: "1px solid rgba(255, 255, 255, 0.42)",

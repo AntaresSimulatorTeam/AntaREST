@@ -18,6 +18,7 @@ import {
   SortElement,
   SortItem,
   SortStatus,
+  DefaultFilterKey,
 } from "../../common/types";
 import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
@@ -30,15 +31,6 @@ import enqueueErrorSnackbar from "../../components/common/ErrorSnackBar";
 import MainContentLoader from "../../components/common/loaders/MainContentLoader";
 
 const logErr = debug("antares:studies:error");
-
-const DEFAULT_FILTER_USER = "v2.studylisting.filter.user";
-const DEFAULT_FILTER_GROUP = "v2.studylisting.filter.group";
-const DEFAULT_FILTER_VERSION = "v2.studylisting.filter.version";
-const DEFAULT_FILTER_MANAGED = "v2.studylisting.filter.managed";
-const DEFAULT_FILTER_SORTING = "v2.studylisting.filter.sorting";
-const DEFAULT_FILTER_FOLDER = "v2.studylisting.filter.folder";
-const DEFAULT_FAVORITE_STUDIES = "v2.studylisting.favorite";
-const DEFAULT_FILTER_TAG = "v2.studylisting.filter.tag";
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
@@ -62,10 +54,10 @@ function Studies(props: PropTypes) {
     useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(false);
   const [managedFilter, setManageFilter] = useState(
-    loadState<boolean>(DEFAULT_FILTER_MANAGED, false)
+    loadState<boolean>(DefaultFilterKey.MANAGED, false)
   );
   const [currentSortItem, setCurrentSortItem] = useState<SortItem | undefined>(
-    loadState<SortItem>(DEFAULT_FILTER_SORTING, {
+    loadState<SortItem>(DefaultFilterKey.SORTING, {
       element: SortElement.NAME,
       status: SortStatus.INCREASE,
     })
@@ -75,23 +67,23 @@ function Studies(props: PropTypes) {
   const [userList, setUserList] = useState<Array<UserDTO>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [currentUser, setCurrentUser] = useState<Array<UserDTO> | undefined>(
-    loadState<Array<UserDTO>>(DEFAULT_FILTER_USER)
+    loadState<Array<UserDTO>>(DefaultFilterKey.USERS)
   );
   const [currentGroup, setCurrentGroup] = useState<Array<GroupDTO> | undefined>(
-    loadState<Array<GroupDTO>>(DEFAULT_FILTER_GROUP)
+    loadState<Array<GroupDTO>>(DefaultFilterKey.GROUPS)
   );
   const [currentVersion, setCurrentVersion] = useState<
     Array<GenericInfo> | undefined
-  >(loadState<Array<GenericInfo>>(DEFAULT_FILTER_VERSION));
+  >(loadState<Array<GenericInfo>>(DefaultFilterKey.VERSIONS));
   const [currentTag, setCurrentTag] = useState<Array<string> | undefined>(
-    loadState<Array<string>>(DEFAULT_FILTER_TAG)
+    loadState<Array<string>>(DefaultFilterKey.TAGS)
   );
   const [currentFolder, setCurrentFolder] = useState<string | undefined>(
-    loadState<string>(DEFAULT_FILTER_FOLDER, "root")
+    loadState<string>(DefaultFilterKey.FOLDER, "root")
   );
   const [currentFavorite, setCurrentFavorite] = useState<
     Array<GenericInfo> | undefined
-  >(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
+  >(loadState<Array<GenericInfo>>(DefaultFilterKey.FAVORITE_STUDIES, []));
 
   // NOTE: GET TAG LIST FROM BACKEND
   const tagList: Array<string> = [];
@@ -256,13 +248,13 @@ function Studies(props: PropTypes) {
   }, []);
 
   useEffect(() => {
-    saveState(DEFAULT_FILTER_USER, currentUser);
-    saveState(DEFAULT_FILTER_GROUP, currentGroup);
-    saveState(DEFAULT_FILTER_MANAGED, managedFilter);
-    saveState(DEFAULT_FILTER_VERSION, currentVersion);
-    saveState(DEFAULT_FILTER_TAG, currentTag);
-    saveState(DEFAULT_FILTER_SORTING, currentSortItem);
-    saveState(DEFAULT_FILTER_FOLDER, currentFolder);
+    saveState(DefaultFilterKey.USERS, currentUser);
+    saveState(DefaultFilterKey.GROUPS, currentGroup);
+    saveState(DefaultFilterKey.MANAGED, managedFilter);
+    saveState(DefaultFilterKey.VERSIONS, currentVersion);
+    saveState(DefaultFilterKey.TAGS, currentTag);
+    saveState(DefaultFilterKey.SORTING, currentSortItem);
+    saveState(DefaultFilterKey.FOLDER, currentFolder);
     applyFilter();
   }, [
     currentVersion,
@@ -275,10 +267,21 @@ function Studies(props: PropTypes) {
   ]);
 
   useEffect(() => {
-    saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);
+    saveState(DefaultFilterKey.FAVORITE_STUDIES, currentFavorite);
   }, [currentFavorite]);
 
   useEffect(() => {
+    if (
+      currentFavorite !== undefined &&
+      currentFavorite.length > 0 &&
+      studies.length > 0
+    ) {
+      setCurrentFavorite(
+        currentFavorite.filter((elm) =>
+          studies.map((item) => item.id).includes(elm.id as string)
+        )
+      );
+    }
     applyFilter();
   }, [studies]);
 

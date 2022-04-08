@@ -204,7 +204,11 @@ function NavHeader(props: PropTypes) {
         alignItems="center"
         boxSizing="border-box"
       >
-        <ArrowBackIcon color="secondary" />
+        <ArrowBackIcon
+          color="secondary"
+          onClick={onBackClick}
+          sx={{ cursor: "pointer" }}
+        />
         <Button variant="text" color="secondary" onClick={onBackClick}>
           {isExplorer === true && study ? study.name : t("main:studies")}
         </Button>

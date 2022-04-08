@@ -82,7 +82,7 @@ function SingleStudy(props: Props) {
       {!isExplorer && <Divider sx={{ width: "98%" }} />}
       <Box
         width="100%"
-        flexGrow={1}
+        flex={1}
         display="flex"
         flexDirection="column"
         justifyContent="flex-start"
