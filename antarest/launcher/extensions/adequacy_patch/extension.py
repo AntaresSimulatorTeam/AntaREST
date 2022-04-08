@@ -100,6 +100,7 @@ class AdequacyPatchExtension(ILauncherExtension):
                         "areas",
                         area_id,
                         "optimization",
+                        "filtering",
                         "filter-year-by-year",
                     ],
                 )
