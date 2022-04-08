@@ -121,3 +121,12 @@ class AdequacyPatchExtension(ILauncherExtension):
                     ConfigData(owner=0, key=key, value=json.dumps(data))
                 )
         return original_area_status
+
+    def before_import_hook(
+        self,
+        job_id: str,
+        study_id: str,
+        study_output_path: Path,
+        ext_opts: Any,
+    ) -> None:
+        pass
