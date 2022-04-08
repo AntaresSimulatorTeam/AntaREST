@@ -94,7 +94,7 @@ class AdequacyPatchExtension(ILauncherExtension):
                 and area_id in area_to_turn_on
             ):
                 study.tree.save(
-                    True,
+                    ", ".join([*area.filters_year, "hourly"]),
                     [
                         "input",
                         "areas",
