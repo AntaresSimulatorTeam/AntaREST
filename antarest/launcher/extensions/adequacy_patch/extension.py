@@ -111,7 +111,13 @@ class AdequacyPatchExtension(ILauncherExtension):
                 key = "ADEQUACY_PATCH_DATA"
                 data = self.config_data_repo.get_json(key) or {}
                 data[job_id] = original_area_status
-                with open(study.config.study_path / "user" / "adequacypatch" / "hourly-areas.yml", "w") as fh:
+                with open(
+                    study.config.study_path
+                    / "user"
+                    / "adequacypatch"
+                    / "hourly-areas.yml",
+                    "w",
+                ) as fh:
                     yaml.dump(original_area_status, fh)
                 self.config_data_repo.save(
                     ConfigData(owner=0, key=key, value=json.dumps(data))

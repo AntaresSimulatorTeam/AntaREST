@@ -56,12 +56,20 @@ class BatchJobManager:
     def refresh_cache(self) -> None:
         self.cache = self._get_batch_jobs()
 
-    def _get_batch_jobs(self) -> Dict[str, str]:
+    def _get_batch_jobs(self, all_workspaces: bool = False) -> Dict[str, str]:
         with db():
             all_jobs = (
                 self.config_data_repo.get_json(key=BATCH_JOB_CONFIG_DATA_KEY)
                 or {}
             )
+            if all_workspaces:
+                all_workspaces_jobs = {}
+                for workspace_jobs in all_jobs.values():
+                    all_workspaces_jobs = {
+                        **workspace_jobs,
+                        **all_workspaces_jobs,
+                    }
+                return all_workspaces_jobs
             return all_jobs.get(self.workspace_id, {})
 
     def _add_batch_job(
@@ -108,13 +116,21 @@ class BatchJobManager:
     def get_batch_job_parent(self, batch_job_id: str) -> Optional[str]:
         return self.cache.get(batch_job_id, None)
 
-    def get_batch_job_children(self, parent_batch_job_id: str, use_cache: bool = True) -> List[str]:
+    def get_batch_job_children(
+        self,
+        parent_batch_job_id: str,
+        use_cache: bool = True,
+        from_all_workspaces: bool = False,
+    ) -> List[str]:
         if not use_cache:
             self.refresh_cache()
+        jobs = (
+            self.cache.items()
+            if not from_all_workspaces
+            else self._get_batch_jobs(all_workspaces=True)
+        )
         return [
-            child
-            for child, parent in self.cache.items()
-            if parent_batch_job_id == parent
+            child for child, parent in jobs if parent_batch_job_id == parent
         ]
 
     @staticmethod
@@ -583,10 +599,16 @@ class BatchJobManager:
                             .div(np.sum(mc_alls_size))
                         )
 
-                data_nodes[stat_name][0].save(df_main.astype('int64', errors='ignore').to_dict(orient="split"))
+                data_nodes[stat_name][0].save(
+                    df_main.astype("int64", errors="ignore").to_dict(
+                        orient="split"
+                    )
+                )
                 if dfs_id_main is not None and df_id_datanode_name:
                     data_nodes[df_id_datanode_name][0].save(
-                        dfs_id_main.astype('int64', errors='ignore').to_dict(orient="split")
+                        dfs_id_main.astype("int64", errors="ignore").to_dict(
+                            orient="split"
+                        )
                     )
 
         for item_type in ["areas", "links"]:

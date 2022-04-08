@@ -586,7 +586,9 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        children = self.batch_jobs.get_batch_job_children(job_id, use_cache=False)
+        children = self.batch_jobs.get_batch_job_children(
+            job_id, use_cache=False, from_all_workspaces=True
+        )
         logs = []
         for child in children:
             log_path: Optional[Path] = None
@@ -619,8 +621,8 @@ class SlurmLauncher(AbstractLauncher):
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = deepcopy(self.launcher_args)
         jobs = self.batch_jobs.get_batch_job_children(job_id, use_cache=False)
+        found = False
         for job in jobs:
-            found = False
             for study in self.data_repo_tinydb.get_list_of_studies():
                 if study.name == job:
                     launcher_args.job_id_to_kill = study.job_id
@@ -635,15 +637,13 @@ class SlurmLauncher(AbstractLauncher):
                         )
                     found = True
                     break
-            if not found and dispatch:
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id
-                    )
-                )
-                self.callbacks.update_status(
-                    job_id,
-                    JobStatus.FAILED,
-                    None,
-                    None,
-                )
+        if not found and dispatch:
+            self.event_bus.push(
+                Event(type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id)
+            )
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )
