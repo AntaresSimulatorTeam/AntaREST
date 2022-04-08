@@ -31,7 +31,7 @@ function RootPage(props: PropsWithChildren<PropTypes>) {
     <BasicPage
       header={
         <>
-          <Box width="100%" alignItems="center" display="flex" px={3}>
+          <Box width="100%" alignItems="center" display="flex">
             <Box alignItems="center" display="flex">
               {TitleIcon && (
                 <TitleIcon
@@ -58,7 +58,7 @@ function RootPage(props: PropsWithChildren<PropTypes>) {
             )}
           </Box>
           {headerBottom && (
-            <Box display="flex" width="100%" alignItems="center" py={0} px={3}>
+            <Box display="flex" width="100%" alignItems="center">
               {headerBottom}
             </Box>
           )}

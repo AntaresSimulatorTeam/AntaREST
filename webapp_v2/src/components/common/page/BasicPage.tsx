@@ -11,7 +11,7 @@ const Header = styled("div")(({ theme }) => ({
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  padding: theme.spacing(2, 0),
+  padding: theme.spacing(2, 3),
   boxSizing: "border-box",
 }));
 

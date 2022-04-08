@@ -1,17 +1,15 @@
-import { styled } from "@mui/material/styles";
-
-const Root = styled("div")({
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  flexFlow: "row nowrap",
-  justifyContent: "center",
-  alignItems: "center",
-  boxSizing: "border-box",
-});
+import SettingsIcon from "@mui/icons-material/Settings";
+import { useTranslation } from "react-i18next";
+import RootPage from "../components/common/page/RootPage";
 
 function Settings() {
-  return <Root>SETTINGS</Root>;
+  const [t] = useTranslation();
+
+  return (
+    <RootPage title={t("main:settings")} titleIcon={SettingsIcon}>
+      In progress
+    </RootPage>
+  );
 }
 
 export default Settings;
