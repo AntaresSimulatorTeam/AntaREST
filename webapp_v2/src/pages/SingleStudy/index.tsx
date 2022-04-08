@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
+import { connect, ConnectedProps } from "react-redux";
 import { StudyMetadata, VariantTree } from "../../common/types";
 import { getStudyMetadata } from "../../services/api/study";
 import NavHeader from "../../components/singlestudy/NavHeader";
@@ -12,15 +13,26 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
+import { viewStudy } from "../../store/study";
 
 const logError = debug("antares:singlestudy:error");
 
-interface Props {
+const mapState = () => ({});
+
+const mapDispatch = {
+  setCurrentStudy: viewStudy,
+};
+
+const connector = connect(mapState, mapDispatch);
+type PropsFromRedux = ConnectedProps<typeof connector>;
+interface OwnProps {
   isExplorer?: boolean;
 }
+type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
+  const { setCurrentStudy } = props;
   const { isExplorer } = props;
 
   const [study, setStudy] = useState<StudyMetadata>();
@@ -45,6 +57,7 @@ function SingleStudy(props: Props) {
   useEffect(() => {
     const init = async () => {
       if (studyId) {
+        setCurrentStudy(studyId);
         try {
           const tmpStudy = await getStudyMetadata(studyId, false);
           if (tmpStudy) {
@@ -108,4 +121,4 @@ SingleStudy.defaultProps = {
   isExplorer: undefined,
 };
 
-export default SingleStudy;
+export default connector(SingleStudy);
