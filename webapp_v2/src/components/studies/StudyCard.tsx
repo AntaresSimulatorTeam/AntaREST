@@ -128,31 +128,31 @@ export default function StudyCard(props: Props) {
       <CardContent>
         <Box
           width="100%"
-          height="60px"
+          height="40px"
           display="flex"
-          flexDirection="column"
+          flexDirection="row"
           justifyContent="flex-start"
           p={0.5}
         >
+          <Tooltip title={study.name}>
+            <Typography
+              noWrap
+              variant="h5"
+              component="div"
+              color="white"
+              boxSizing="border-box"
+              sx={{ width: "81%" }}
+            >
+              {study.name}
+            </Typography>
+          </Tooltip>
           <Box
             display="flex"
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="flex-start"
-            width="100%"
-            boxSizing="border-box"
+            justifyContent="center"
+            alignItems="center"
+            p={0}
+            sx={{ flexFlow: "row nowrap" }}
           >
-            <Tooltip title={study.name}>
-              <Typography
-                noWrap
-                variant="h5"
-                component="div"
-                color="white"
-                boxSizing="border-box"
-              >
-                {study.name}
-              </Typography>
-            </Tooltip>
             {favorite ? (
               <Tooltip title={t("studymanager:removeFavorite") as string}>
                 <StarPurple500OutlinedIcon
@@ -170,22 +170,6 @@ export default function StudyCard(props: Props) {
                 />
               </Tooltip>
             )}
-          </Box>
-          <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
-            width="100%"
-            boxSizing="border-box"
-          >
-            <Typography
-              noWrap
-              color="white"
-              sx={{ fontSize: "13px", color: "text.secondary" }}
-            >
-              {study.id}
-            </Typography>
             <Tooltip title={t("studymanager:copyID") as string}>
               <ContentCopyIcon
                 sx={{
@@ -207,7 +191,7 @@ export default function StudyCard(props: Props) {
           display="flex"
           flexDirection="row"
           justifyContent="space-between"
-          mt={1}
+          mt={0}
         >
           <Box
             display="flex"
@@ -254,7 +238,7 @@ export default function StudyCard(props: Props) {
         <Box
           my={1}
           width="100%"
-          height="45px"
+          height="70px"
           display="flex"
           flexDirection="row"
           flexWrap="wrap"
