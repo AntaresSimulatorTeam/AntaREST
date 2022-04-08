@@ -127,7 +127,7 @@ class BatchJobManager:
         jobs = (
             self.cache.items()
             if not from_all_workspaces
-            else self._get_batch_jobs(all_workspaces=True)
+            else self._get_batch_jobs(all_workspaces=True).items()
         )
         return [
             child for child, parent in jobs if parent_batch_job_id == parent
