@@ -1,17 +1,15 @@
-import { styled } from "@mui/material/styles";
-
-const Root = styled("div")({
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  flexFlow: "row nowrap",
-  justifyContent: "center",
-  alignItems: "center",
-  boxSizing: "border-box",
-});
+import { useTranslation } from "react-i18next";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import RootPage from "../components/common/page/RootPage";
 
 function Tasks() {
-  return <Root>TASKS</Root>;
+  const [t] = useTranslation();
+
+  return (
+    <RootPage title={t("main:tasks")} titleIcon={AssignmentIcon}>
+      In progress
+    </RootPage>
+  );
 }
 
 export default Tasks;

@@ -7,7 +7,7 @@ import { connect, ConnectedProps } from "react-redux";
 import moment from "moment";
 import { AxiosError } from "axios";
 import debug from "debug";
-import Header from "../../components/studies/Header";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import SideNav from "../../components/studies/SideNav";
 import StudiesList from "../../components/studies/StudiesList";
 import {
@@ -29,6 +29,9 @@ import { initStudies, initStudiesVersion } from "../../store/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import enqueueErrorSnackbar from "../../components/common/ErrorSnackBar";
 import MainContentLoader from "../../components/common/loaders/MainContentLoader";
+import RootPage from "../../components/common/page/RootPage";
+import HeaderRight from "../../components/studies/HeaderRight";
+import HeaderBottom from "../../components/studies/HeaderBottom";
 
 const logErr = debug("antares:studies:error");
 
@@ -54,7 +57,7 @@ function Studies(props: PropTypes) {
     useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(false);
   const [managedFilter, setManageFilter] = useState(
-    loadState<boolean>(DefaultFilterKey.MANAGED, false)
+    loadState<boolean>(DefaultFilterKey.MANAGED, false) || false
   );
   const [currentSortItem, setCurrentSortItem] = useState<SortItem | undefined>(
     loadState<SortItem>(DefaultFilterKey.SORTING, {
@@ -286,32 +289,30 @@ function Studies(props: PropTypes) {
   }, [studies]);
 
   return (
-    <Box
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-      boxSizing="border-box"
-      overflow="hidden"
+    <RootPage
+      title={t("main:studies")}
+      titleIcon={TravelExploreOutlinedIcon}
+      headerRight={<HeaderRight />}
+      headerBottom={
+        <HeaderBottom
+          {...{
+            inputValue,
+            setInputValue: onChange,
+            onFilterClick,
+            managedFilter,
+            setManageFilter,
+            versions: currentVersion,
+            setVersions: setCurrentVersion,
+            users: currentUser,
+            setUsers: setCurrentUser,
+            groups: currentGroup,
+            setGroups: setCurrentGroup,
+            tags: currentTag,
+            setTags: setCurrentTag,
+          }}
+        />
+      }
     >
-      <Header
-        managedFilter={managedFilter as boolean}
-        setManageFilter={setManageFilter}
-        tags={currentTag}
-        versions={currentVersion}
-        users={currentUser}
-        groups={currentGroup}
-        setVersions={setCurrentVersion}
-        setUsers={setCurrentUser}
-        setGroups={setCurrentGroup}
-        setTags={setCurrentTag}
-        inputValue={inputValue}
-        setInputValue={onChange}
-        onFilterClick={onFilterClick}
-      />
-      <Divider sx={{ width: "98%" }} />
       <Box
         flex={1}
         width="100%"
@@ -362,7 +363,7 @@ function Studies(props: PropTypes) {
           />
         )}
       </Box>
-    </Box>
+    </RootPage>
   );
 }
 
