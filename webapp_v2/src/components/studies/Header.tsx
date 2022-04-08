@@ -26,7 +26,7 @@ const Root = styled("div")(({ theme }) => ({
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  padding: theme.spacing(2, 0),
+  padding: theme.spacing(2, 3),
   boxSizing: "border-box",
 }));
 
@@ -67,7 +67,7 @@ function Header(props: Props) {
 
   return (
     <Root>
-      <Box width="100%" alignItems="center" display="flex" px={3}>
+      <Box width="100%" alignItems="center" display="flex">
         <Box alignItems="center" display="flex">
           <TravelExploreOutlinedIcon
             sx={{ color: "text.secondary", width: "42px", height: "42px" }}
@@ -100,7 +100,7 @@ function Header(props: Props) {
           )}
         </Box>
       </Box>
-      <Box display="flex" width="100%" alignItems="center" py={2} px={3}>
+      <Box display="flex" width="100%" alignItems="center">
         <Box display="flex" width="100%" alignItems="center">
           <TextField
             id="standard-basic"

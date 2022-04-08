@@ -168,13 +168,14 @@ function CreateStudyModal(props: PropTypes) {
             label={`${t("studymanager:studyName")} *`}
             value={studyName}
             onChange={setStudyName}
-            sx={{ flexGrow: 1, mr: 2 }}
+            sx={{ flexGrow: 1, mr: 2, height: "60px" }}
           />
           <SingleSelect
             name={`${t("studymanager:version")} *`}
             list={versionList}
             data={version}
             setValue={setVersion}
+            sx={{ flexGrow: 1, height: "60px" }}
           />
         </Box>
         <Box
@@ -200,14 +201,14 @@ function CreateStudyModal(props: PropTypes) {
               setValue={(value: string) =>
                 setPublicMode(value as StudyPublicMode)
               }
-              sx={{ flexGrow: 1, mr: 1 }}
+              sx={{ flexGrow: 1, mr: 1, height: "60px" }}
             />
             <MultiSelect
               name={t("studymanager:group")}
               list={groupList}
               data={group}
               setValue={setGroup}
-              sx={{ flexGrow: 1, ml: 1 }}
+              sx={{ flexGrow: 1, ml: 1, height: "60px" }}
             />
           </Box>
         </Box>

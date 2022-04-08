@@ -271,8 +271,16 @@ function Studies(props: PropTypes) {
   }, [currentFavorite]);
 
   useEffect(() => {
-    if (currentFavorite && currentFavorite.length > 0) {
-      // setCurrentFavorite(currentFavorite.filter((elm) => studies.map((item) => item.id).includes(elm.id as string)));
+    if (
+      currentFavorite !== undefined &&
+      currentFavorite.length > 0 &&
+      studies.length > 0
+    ) {
+      setCurrentFavorite(
+        currentFavorite.filter((elm) =>
+          studies.map((item) => item.id).includes(elm.id as string)
+        )
+      );
     }
     applyFilter();
   }, [studies]);
