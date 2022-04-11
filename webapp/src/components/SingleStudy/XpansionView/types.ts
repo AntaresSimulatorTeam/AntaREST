@@ -18,7 +18,7 @@ export interface XpansionSettings {
 export interface XpansionCandidate {
     name: string;
     link: string;
-    'annual-cost-per-mw': number;
+    'annual-cost-per-mw': number | null;
     'unit-size'?: number;
     'max-units'?: number;
     'max-investment'?: number;

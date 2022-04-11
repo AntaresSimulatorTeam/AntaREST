@@ -76,12 +76,6 @@ const useStyles = makeStyles((theme: Theme) =>
       marginTop: theme.spacing(1),
       marginBottom: theme.spacing(2),
     },
-    formControl: {
-      minWidth: '130px',
-    },
-    alreadyInstalled: {
-      minWidth: '250px',
-    },
     icon: {
       marginLeft: theme.spacing(1),
       marginRight: theme.spacing(1),
