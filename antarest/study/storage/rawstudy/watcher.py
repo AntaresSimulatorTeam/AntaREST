@@ -2,6 +2,8 @@ import logging
 import re
 import threading
 from html import escape
+from http import HTTPStatus
+from http.client import HTTPException
 from pathlib import Path
 from time import time, sleep
 from typing import List, Optional
@@ -16,6 +18,11 @@ from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
+
+
+class WorkspaceNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class Watcher:
@@ -151,17 +158,25 @@ class Watcher:
             logger.error(f"Failed to scan dir {path}", exc_info=e)
             return []
 
-    def oneshot_scan(self, path: Path) -> None:
+    def oneshot_scan(
+        self, workspace: Optional[str], path: Optional[Path] = None
+    ) -> None:
         """
         Scan a folder and add studies found to database.
 
         Args:
             path: path to folder to scan
         """
-        thread = threading.Thread(target=lambda: self.scan(path), daemon=True)
+        thread = threading.Thread(
+            target=lambda: self.scan(workspace, path), daemon=True
+        )
         thread.start()
 
-    def scan(self, directory_path: Optional[Path] = None) -> None:
+    def scan(
+        self,
+        workspace_name: Optional[str] = None,
+        directory_path: Optional[Path] = None,
+    ) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
         Returns:
@@ -169,24 +184,26 @@ class Watcher:
         """
         studies: List[StudyFolder] = list()
 
-        if directory_path:
-            for name, workspace in self.config.storage.workspaces.items():
-                if (
-                    workspace.path == directory_path
-                    or workspace.path in directory_path.parents
-                ):
-                    groups = [
-                        Group(id=escape(g), name=escape(g))
-                        for g in workspace.groups
-                    ]
-                    studies = self._rec_scan(
-                        directory_path,
-                        name,
-                        groups,
-                        workspace.filter_in,
-                        workspace.filter_out,
-                    )
-        else:
+        if directory_path and workspace_name:
+            try:
+                workspace = self.config.storage.workspaces[workspace_name]
+            except KeyError:
+                logger.error(f"Workspace {workspace_name} not found")
+                raise WorkspaceNotFound(
+                    f"Workspace {workspace_name} not found"
+                )
+
+            groups = [
+                Group(id=escape(g), name=escape(g)) for g in workspace.groups
+            ]
+            studies = self._rec_scan(
+                directory_path,
+                workspace_name,
+                groups,
+                workspace.filter_in,
+                workspace.filter_out,
+            )
+        elif directory_path is None and workspace_name is None:
             for name, workspace in self.config.storage.workspaces.items():
                 if name != DEFAULT_WORKSPACE_NAME:
                     path = Path(workspace.path)
@@ -201,6 +218,10 @@ class Watcher:
                         workspace.filter_in,
                         workspace.filter_out,
                     )
+        else:
+            raise ValueError(
+                "Both workspace_name and directory_path must be specified"
+            )
         with db():
             stopwatch = StopWatch()
             logger.info(

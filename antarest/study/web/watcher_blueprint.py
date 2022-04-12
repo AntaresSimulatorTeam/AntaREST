@@ -1,4 +1,7 @@
 import logging
+from http import HTTPStatus
+from http.client import HTTPException
+from pathlib import Path
 from typing import List, Any, Optional
 
 from fastapi import APIRouter, Depends
@@ -10,6 +13,11 @@ from antarest.login.auth import Auth
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
+
+
+class BadPathFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 def create_watcher_routes(
@@ -35,12 +43,21 @@ def create_watcher_routes(
         response_model=List[str],
     )
     def scan_dir(
-        path: str = None,
+        path: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+
         if path:
+            # The front actually sends <workspace>/<path/to/folder>
+            try:
+                workspace: Optional[str] = path.split("/")[0]
+                real_path = Path("/".join(path.split("/")[1:]))
+            except:
+                raise BadPathFormatError(
+                    "Bad path format. Expected <workspace>/<path/to/folder>"
+                )
             logger.info(
-                f"Scanning directory {path}",
+                f"Scanning directory {real_path}",
                 extra={"user": current_user.id},
             )
         else:
@@ -48,6 +65,8 @@ def create_watcher_routes(
                 "Scanning all workspaces",
                 extra={"user": current_user.id},
             )
-        return watcher.oneshot_scan(path)
+            real_path = None
+            workspace = None
+        return watcher.oneshot_scan(workspace=workspace, path=real_path)
 
     return bp

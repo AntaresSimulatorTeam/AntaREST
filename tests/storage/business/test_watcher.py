@@ -85,7 +85,45 @@ def test_scan(tmp_path: Path):
     service.sync_studies_on_disk.assert_called_once_with(
         [
             StudyFolder(c, "diese", [Group(id="tata", name="tata")]),
-        ]
+        ],
+        None,
+    )
+
+
+@pytest.mark.unit_test
+def test_partial_scan(tmp_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    clean_files()
+
+    default = tmp_path / "default"
+    default.mkdir()
+    a = default / "studyA"
+    a.mkdir()
+    (a / "study.antares").touch()
+
+    diese = tmp_path / "diese"
+    diese.mkdir()
+    c = diese / "folder/studyC"
+    c.mkdir(parents=True)
+    (c / "study.antares").touch()
+
+    service = Mock()
+    watcher = Watcher(build_config(tmp_path), service)
+
+    watcher.scan(workspace_name="default", directory_path=default)
+
+    service.sync_studies_on_disk.assert_called_once_with(
+        [
+            StudyFolder(a, "default", [Group(id="toto", name="toto")]),
+        ],
+        default,
     )
 
 

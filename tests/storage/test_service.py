@@ -302,6 +302,60 @@ def test_sync_studies_from_disk() -> None:
             call(RawStudy(id="f", path="f", workspace=DEFAULT_WORKSPACE_NAME)),
         ]
     )
+    # TODO: This does not work. If we change the id and/or path of a study, the test should fail but it does not.
+
+
+@pytest.mark.unit_test
+def test_partial_sync_studies_from_disk() -> None:
+    now = datetime.utcnow()
+    ma = RawStudy(id="a", path=Path("a"))
+    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    mb = RawStudy(id="b", path=Path("b"))
+    mc = RawStudy(
+        id="c",
+        path=Path("directory/c"),
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    md = RawStudy(
+        id="d",
+        path=Path("directory/d"),
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+    )
+    me = RawStudy(
+        id="e",
+        path=Path("directory/e"),
+        created_at=now,
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+    )
+    fc = StudyFolder(
+        path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    fe = StudyFolder(
+        path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    ff = StudyFolder(
+        path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
+    service = build_study_service(Mock(), repository, config)
+
+    service.sync_studies_on_disk([fa, fc, fe, ff], directory=Path("directory"))
+
+    repository.delete.assert_called_once_with(md.id)
+    repository.save.assert_called_with(
+        RawStudy(id="a", path="a", created_at=now, missing=None)
+    )
+    # TODO: This does not work. If we change the id and/or path of a study, the test should fail but it does not.
 
 
 @pytest.mark.unit_test
