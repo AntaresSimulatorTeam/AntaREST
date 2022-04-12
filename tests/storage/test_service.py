@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
@@ -362,9 +363,9 @@ def test_partial_sync_studies_from_disk() -> None:
     repository.save.assert_called_with(
         RawStudy(
             id=ANY,
-            path="directory/f",
+            path=f"directory{os.pathsep}f",
             name="f",
-            folder="directory/f",
+            folder=f"directory{os.pathsep}f",
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
