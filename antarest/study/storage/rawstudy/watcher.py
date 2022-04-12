@@ -159,13 +159,14 @@ class Watcher:
             return []
 
     def oneshot_scan(
-        self, workspace: Optional[str], path: Optional[Path] = None
+        self, workspace: Optional[str], path: Optional[str] = None
     ) -> None:
         """
         Scan a folder and add studies found to database.
 
         Args:
-            path: path to folder to scan
+            workspace: workspace to scan
+            path: relative path to folder to scan
         """
         thread = threading.Thread(
             target=lambda: self.scan(workspace, path), daemon=True
@@ -175,7 +176,7 @@ class Watcher:
     def scan(
         self,
         workspace_name: Optional[str] = None,
-        directory_path: Optional[Path] = None,
+        workspace_directory_path: Optional[str] = None,
     ) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
@@ -183,8 +184,8 @@ class Watcher:
 
         """
         studies: List[StudyFolder] = list()
-
-        if directory_path and workspace_name:
+        directory_path: Optional[Path] = None
+        if workspace_directory_path and workspace_name:
             try:
                 workspace = self.config.storage.workspaces[workspace_name]
             except KeyError:
@@ -196,6 +197,7 @@ class Watcher:
             groups = [
                 Group(id=escape(g), name=escape(g)) for g in workspace.groups
             ]
+            directory_path = workspace.path / workspace_directory_path
             studies = self._rec_scan(
                 directory_path,
                 workspace_name,
@@ -203,7 +205,7 @@ class Watcher:
                 workspace.filter_in,
                 workspace.filter_out,
             )
-        elif directory_path is None and workspace_name is None:
+        elif workspace_directory_path is None and workspace_name is None:
             for name, workspace in self.config.storage.workspaces.items():
                 if name != DEFAULT_WORKSPACE_NAME:
                     path = Path(workspace.path)

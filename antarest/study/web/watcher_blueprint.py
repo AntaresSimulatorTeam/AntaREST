@@ -43,21 +43,26 @@ def create_watcher_routes(
         response_model=List[str],
     )
     def scan_dir(
-        path: Optional[str] = None,
+        path: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
 
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:
-                workspace: Optional[str] = path.split("/")[0]
-                real_path = Path("/".join(path.split("/")[1:]))
-            except:
+                path_components: List[str] = path.strip("/").split("/")
+                workspace = path_components[0]
+                relative_path = "/".join(path_components[1:])
+            except Exception as e:
+                logger.error(
+                    "Unexpected exception when tying to retrieve scan path components",
+                    exc_info=e,
+                )
                 raise BadPathFormatError(
                     "Bad path format. Expected <workspace>/<path/to/folder>"
                 )
             logger.info(
-                f"Scanning directory {real_path}",
+                f"Scanning directory {relative_path} of worskpace {workspace}",
                 extra={"user": current_user.id},
             )
         else:
@@ -65,8 +70,8 @@ def create_watcher_routes(
                 "Scanning all workspaces",
                 extra={"user": current_user.id},
             )
-            real_path = None
+            relative_path = None
             workspace = None
-        return watcher.oneshot_scan(workspace=workspace, path=real_path)
+        return watcher.oneshot_scan(workspace=workspace, path=relative_path)
 
     return bp

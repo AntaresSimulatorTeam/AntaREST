@@ -566,7 +566,7 @@ class StudyService:
             all_studies = [
                 raw_study
                 for raw_study in all_studies
-                if directory in raw_study.path.parents
+                if directory in Path(raw_study.path).parents
             ]
 
         # delete orphan studies on database

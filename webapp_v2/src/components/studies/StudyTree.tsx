@@ -1,5 +1,5 @@
 import { useCallback, useState, MouseEvent as ReactMouseEvent } from "react";
-import { Menu, MenuItem } from "@mui/material";
+import { Menu, MenuItem, Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -28,7 +28,7 @@ function StudyTree(props: Props) {
   } | null>(null);
 
   const onContextMenu = (
-    event: ReactMouseEvent<HTMLLIElement, MouseEvent>,
+    event: ReactMouseEvent<HTMLSpanElement, MouseEvent>,
     id: string
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,12 +86,15 @@ function StudyTree(props: Props) {
           <TreeItem
             key={newId}
             nodeId={newId}
-            label={elm.name}
+            label={
+              <Typography onContextMenu={(e) => onContextMenu(e, elm.path)}>
+                {elm.name}
+              </Typography>
+            }
             expandIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
             collapseIcon={
               elements.length > 0 ? <ChevronRightIcon /> : undefined
             }
-            onContextMenu={(e) => onContextMenu(e, elm.path)}
             onClick={() => setFolder(newId)}
           >
             {buildTree((elm as StudyTreeNode).children, newId)}
