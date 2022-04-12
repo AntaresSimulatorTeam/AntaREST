@@ -8,9 +8,6 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useSnackbar } from "notistack";
 import moment from "moment";
 import {
-  makeStyles,
-  createStyles,
-  Theme,
   useTheme,
   Typography,
   Box,
@@ -49,7 +46,7 @@ import {
 import {
   convertFileDownloadDTO,
   FileDownload,
-  getDownloadUrl,
+  // getDownloadUrl,
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
@@ -69,69 +66,6 @@ import { AppState } from "../store/reducers";
 // import LogView from "./LogView";
 
 const logError = debug("antares:studymanagement:error");
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      flexGrow: 1,
-      overflow: "hidden",
-      width: "100%",
-      display: "flex",
-    },
-    titleblock: {
-      flexGrow: 0.6,
-      display: "flex",
-      alignItems: "center",
-      width: "60%",
-    },
-    title: {
-      color: theme.palette.primary.main,
-      fontSize: "0.95rem",
-    },
-    dateblock: {
-      color: theme.palette.grey[500],
-      fontSize: "0.85em",
-    },
-    dateicon: {
-      marginRight: "0.5em",
-    },
-    actions: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-    },
-    actionButton: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-    },
-    blockIcon: {
-      cursor: "pointer",
-      color: theme.palette.error.light,
-      "&:hover": {
-        color: theme.palette.error.main,
-      },
-    },
-    downloadIcon: {
-      "& > span > svg": {
-        margin: theme.spacing(0.5),
-        color: theme.palette.primary.main,
-      },
-      "&:hover > span > svg": {
-        color: theme.palette.secondary.main,
-      },
-    },
-    errorIcon: {
-      width: "18px",
-      height: "auto",
-      cursor: "pointer",
-      color: theme.palette.error.main,
-      "&:hover": {
-        color: theme.palette.error.dark,
-      },
-    },
-  })
-);
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
@@ -165,16 +99,16 @@ function JobsListing(props: PropTypes) {
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
   const createNotif = useNotif();
-  const [loaded, setLoaded] = useState(false);
+  // const [loaded, setLoaded] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<
     string | undefined
   >();
-  const [messageModalOpen, setMessageModalOpen] = useState<
-    string | undefined
-  >();
+  // const [messageModalOpen, setMessageModalOpen] = useState<
+  //   string | undefined
+  // >();
 
   const init = async () => {
-    setLoaded(false);
+    // setLoaded(false);
     try {
       if (studies.length === 0) {
         const allStudies = await getStudies();
@@ -197,7 +131,7 @@ function JobsListing(props: PropTypes) {
       logError("woops", e);
       enqueueErrorSnackbar(createNotif, "ça marche pas", e as AxiosError);
     } finally {
-      setLoaded(true);
+      // setLoaded(true);
     }
   };
 
@@ -397,7 +331,7 @@ function JobsListing(props: PropTypes) {
                 <Box />
               )}
             </Box>
-            <LogView job={job} logButton logErrorButton />
+            {/* <LogView job={job} logButton logErrorButton /> */}
           </Box>
         ),
         date: job.completionDate || job.creationDate,
@@ -433,30 +367,28 @@ function JobsListing(props: PropTypes) {
                   color: "error.dark",
                 },
               }}
-              onClick={() => setMessageModalOpen(download.errorMessage)}
+              // onClick={() => setMessageModalOpen(download.errorMessage)}
             />
           </Tooltip>
         ) : (
           <Box>
             {download.ready ? (
-              <DownloadLink url={getDownloadUrl(download.id)}>
-                <Tooltip title={t("jobs:download") as string}>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      "& > span > svg": {
-                        margin: "4px",
-                        color: theme.palette.primary.main,
-                      },
-                      "&:hover > span svg": {
-                        color: theme.palette.secondary.main,
-                      },
-                    }}
-                  >
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              </DownloadLink>
+              <Tooltip title={t("jobs:download") as string}>
+                <IconButton
+                  size="small"
+                  sx={{
+                    "& > span > svg": {
+                      margin: "4px",
+                      color: theme.palette.primary.main,
+                    },
+                    "&:hover > span svg": {
+                      color: theme.palette.secondary.main,
+                    },
+                  }}
+                >
+                  <DownloadIcon />
+                </IconButton>
+              </Tooltip>
             ) : (
               <Tooltip title={t("jobs:loading") as string}>
                 <CircularProgress
@@ -535,12 +467,13 @@ function JobsListing(props: PropTypes) {
   );
 
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
+  console.log(content);
 
   return (
     <RootPage title={t("main:tasks")} titleIcon={AssignmentIcon}>
       <Box flexGrow={1} overflow="hidden" width="100%" display="flex">
-        {!loaded && <MainContentLoader />}
-        {loaded && <JobTableView content={content || []} />}
+        {/* {!loaded && <MainContentLoader />} */}
+        {/* {loaded && <JobTableView content={content || []} />} */}
         {openConfirmationModal && (
           <BasicModal
             open={!!openConfirmationModal}
@@ -562,13 +495,13 @@ function JobsListing(props: PropTypes) {
             </Typography>
           </BasicModal>
         )}
-        <LogModal
+        {/* <LogModal
           isOpen={!!messageModalOpen}
           title={t("singlestudy:taskLog")}
           content={messageModalOpen}
           close={() => setMessageModalOpen(undefined)}
           style={{ width: "600px", height: "300px" }}
-        />
+        /> */}
       </Box>
     </RootPage>
   );
