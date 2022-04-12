@@ -580,4 +580,22 @@ export const isNode = (el: NodeProperties | LinkProperties): boolean =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (el as any).id !== undefined;
 
+export enum TaskType {
+  LAUNCH = "LAUNCH",
+  EXPORT = "EXPORT",
+  VARIANT_GENERATION = "VARIANT_GENERATION",
+  COPY = "COPY",
+  ARCHIVE = "ARCHIVE",
+  UNARCHIVE = "UNARCHIVE",
+  DOWNLOAD = "DOWNLOAD",
+}
+
+export interface JobsType {
+  name: ReactNode;
+  dateView: ReactNode;
+  action: ReactNode;
+  date: string;
+  type: TaskType;
+}
+
 export default {};
