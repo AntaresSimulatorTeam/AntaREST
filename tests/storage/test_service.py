@@ -363,9 +363,9 @@ def test_partial_sync_studies_from_disk() -> None:
     repository.save.assert_called_with(
         RawStudy(
             id=ANY,
-            path=f"directory{os.pathsep}f",
+            path=f"directory{os.sep}f",
             name="f",
-            folder=f"directory{os.pathsep}f",
+            folder=f"directory{os.sep}f",
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
