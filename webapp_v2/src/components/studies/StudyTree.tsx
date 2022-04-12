@@ -3,6 +3,7 @@ import {
   useState,
   MouseEvent as ReactMouseEvent,
   Fragment,
+  SyntheticEvent,
 } from "react";
 import { Menu, MenuItem, Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
@@ -26,6 +27,7 @@ function StudyTree(props: Props) {
   const { tree, folder, setFolder } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
+  const [expanded, setExpanded] = useState([tree.name]);
   const [menuId, setMenuId] = useState<string>("");
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -50,6 +52,12 @@ function StudyTree(props: Props) {
           null
     );
     setMenuId(id);
+  };
+
+  const handleToggle = (event: SyntheticEvent, nodeIds: Array<string>) => {
+    if ((event.target as HTMLElement).classList.contains("MuiSvgIcon-root")) {
+      setExpanded(nodeIds);
+    }
   };
 
   const handleClose = () => {
@@ -98,10 +106,8 @@ function StudyTree(props: Props) {
                 {elm.name}
               </Typography>
             }
-            expandIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
-            collapseIcon={
-              elements.length > 0 ? <ChevronRightIcon /> : undefined
-            }
+            collapseIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
+            expandIcon={elements.length > 0 ? <ChevronRightIcon /> : undefined}
             onClick={() => setFolder(newId)}
           >
             {buildTree((elm as StudyTreeNode).children, newId)}
@@ -138,16 +144,16 @@ function StudyTree(props: Props) {
       defaultSelected={getDefaultSelected()}
       defaultExpanded={getDefaultExpanded()}
       selected={[folder]}
+      expanded={expanded}
+      onNodeToggle={handleToggle}
       sx={{ flexGrow: 1, height: 0, width: "100%", py: 1 }}
     >
       <TreeItem
         nodeId={tree.name}
         label={tree.name}
         onClick={() => setFolder(tree.name)}
-        expandIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
-        collapseIcon={
-          tree.children.length > 0 ? <ChevronRightIcon /> : undefined
-        }
+        collapseIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
+        expandIcon={tree.children.length > 0 ? <ChevronRightIcon /> : undefined}
       >
         {buildTree(tree.children, tree.name)}
       </TreeItem>
