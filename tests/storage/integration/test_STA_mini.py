@@ -287,14 +287,6 @@ def test_sta_mini_study_antares(
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
             {},
         ),
-        (
-            "/v1/watcher/_scan",
-            {},
-        ),
-        (
-            "/v1/watcher/_scan?path=/tmp",
-            {},
-        ),
     ],
 )
 def test_sta_mini_input(storage_service, url: str, expected_output: dict):
