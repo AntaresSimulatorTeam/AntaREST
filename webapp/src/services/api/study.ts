@@ -239,4 +239,8 @@ export const renameStudy = async (studyId: string, name: string): Promise<any> =
   return res.data;
 };
 
+export const scanFolder = async (folderPath: string): Promise<void> => {
+  await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
+};
+
 export default {};

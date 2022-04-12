@@ -1,5 +1,5 @@
 import logging
-from typing import List, Any
+from typing import List, Any, Optional
 
 from fastapi import APIRouter, Depends
 
@@ -29,13 +29,13 @@ def create_watcher_routes(
     auth = Auth(config)
 
     @bp.post(
-        "/studies/watcher/scan",
+        "/watcher/_scan",
         summary="Launch scan in selected directory",
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
     def scan_dir(
-        path: Optional[str] = None,  # type: ignore
+        path: str = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         if path:

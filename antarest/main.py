@@ -242,19 +242,19 @@ def create_watcher(
     study_service: Optional[StudyService] = None,
 ) -> Watcher:
     if study_service:
-        return Watcher(config=config, service=study_service)
+        watcher = Watcher(config=config, service=study_service)
     else:
         _, _, _, _, _, _, study_service = create_core_services(
             application, config
         )
         watcher = Watcher(config=config, service=study_service)
 
-        if application:
-            application.include_router(
-                create_watcher_routes(watcher=watcher, config=config)
-            )
+    if application:
+        application.include_router(
+            create_watcher_routes(watcher=watcher, config=config)
+        )
 
-        return watcher
+    return watcher
 
 
 def create_matrix_gc(
