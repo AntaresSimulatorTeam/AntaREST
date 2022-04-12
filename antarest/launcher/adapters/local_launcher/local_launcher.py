@@ -43,12 +43,15 @@ class LocalLauncher(AbstractLauncher):
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
+        if self.config.launcher.local is None:
+            raise LauncherInitException()
+
         if version in self.config.launcher.local.binaries:
             antares_solver_path = self.config.launcher.local.binaries[version]
         else:
-            version = int(version)
+            version_int = int(version)
             keys = list(map(int, self.config.launcher.local.binaries.keys()))
-            keys_sup = [k for k in keys if k > version]
+            keys_sup = [k for k in keys if k > version_int]
             best_existing_version = min(keys_sup) if keys_sup else max(keys)
             antares_solver_path = self.config.launcher.local.binaries[
                 str(best_existing_version)
