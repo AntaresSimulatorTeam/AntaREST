@@ -117,7 +117,7 @@ def test_partial_scan(tmp_path: Path):
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)
 
-    watcher.scan(workspace_name="default", directory_path=default)
+    watcher.scan(workspace_name="default", workspace_directory_path=default)
 
     service.sync_studies_on_disk.assert_called_once_with(
         [

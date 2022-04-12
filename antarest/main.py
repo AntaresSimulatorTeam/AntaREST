@@ -309,10 +309,11 @@ def create_services(
         file_transfer_manager=file_transfer_manager,
     )
 
+    watcher = create_watcher(
+        config=config, application=application, study_service=study_service
+    )
+
     if Module.WATCHER.value in config.server.services or create_all:
-        watcher = create_watcher(
-            config=config, application=application, study_service=study_service
-        )
         services["watcher"] = watcher
 
     if Module.MATRIX_GC.value in config.server.services or create_all:
