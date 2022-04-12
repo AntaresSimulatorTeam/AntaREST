@@ -43,13 +43,12 @@ export const SVGText = styled("text")({
 
 interface Props {
   study: StudyMetadata | undefined;
-  parents: Array<StudyMetadata>;
-  childrenTree: VariantTree | undefined;
+  tree: VariantTree | undefined;
   onClick: (studyId: string) => void;
 }
 
 export default function CustomizedTreeView(props: Props) {
-  const { study, parents, childrenTree, onClick } = props;
+  const { study, tree, onClick } = props;
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>("");
   const [openVariantModal, setOpenVariantModal] = useState<boolean>(false);
@@ -214,13 +213,13 @@ export default function CustomizedTreeView(props: Props) {
 
   useEffect(() => {
     const buildStudyTree = async () => {
-      if (study && childrenTree) {
-        const tmp = await getTreeNodes(study, parents, childrenTree);
+      if (study && tree) {
+        const tmp = await getTreeNodes(tree);
         setStudyTree(tmp);
       }
     };
     buildStudyTree();
-  }, [study, parents, childrenTree]);
+  }, [study, tree]);
 
   return (
     <Box
