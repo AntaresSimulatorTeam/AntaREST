@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal, call
+from unittest.mock import Mock, seal, call, ANY
 from uuid import uuid4
 
 import pytest
@@ -297,9 +297,18 @@ def test_sync_studies_from_disk() -> None:
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
-            call(RawStudy(id="b", path="b", missing=True)),
+            call(RawStudy(id="b", path="b", missing=ANY)),
             call(RawStudy(id="e", path="e", created_at=now, missing=None)),
-            call(RawStudy(id="f", path="f", workspace=DEFAULT_WORKSPACE_NAME)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    workspace=DEFAULT_WORKSPACE_NAME,
+                    name="f",
+                    folder="f",
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
     )
     # TODO: This does not work. If we change the id and/or path of a study, the test should fail but it does not.
