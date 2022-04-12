@@ -1,4 +1,9 @@
-import { useCallback, useState, MouseEvent as ReactMouseEvent } from "react";
+import {
+  useCallback,
+  useState,
+  MouseEvent as ReactMouseEvent,
+  Fragment,
+} from "react";
 import { Menu, MenuItem, Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -61,6 +66,8 @@ function StudyTree(props: Props) {
         t("studymanager:scanFolderError"),
         e as AxiosError
       );
+    } finally {
+      setContextMenu(null);
     }
   };
 
@@ -82,9 +89,9 @@ function StudyTree(props: Props) {
         (item) => item
       );
       return (
-        <>
+        <Fragment key={newId}>
           <TreeItem
-            key={newId}
+            key={`treeitem-${newId}`}
             nodeId={newId}
             label={
               <Typography onContextMenu={(e) => onContextMenu(e, elm.path)}>
@@ -100,6 +107,7 @@ function StudyTree(props: Props) {
             {buildTree((elm as StudyTreeNode).children, newId)}
           </TreeItem>
           <Menu
+            key={`menu-${newId}`}
             open={contextMenu !== null && menuId === elm.path}
             onClose={handleClose}
             anchorReference="anchorPosition"
@@ -115,7 +123,7 @@ function StudyTree(props: Props) {
               {t("studymanager:scanFolder")}
             </MenuItem>
           </Menu>
-        </>
+        </Fragment>
       );
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
