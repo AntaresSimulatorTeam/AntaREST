@@ -64,7 +64,7 @@ const buildTree = async (
 };
 
 export const getTreeNodes = async (tree: VariantTree): Promise<StudyTree> => {
-  const root = buildNodeFromMetadata(tree.node); // root
+  const root = buildNodeFromMetadata(tree.node);
   await buildTree(root, tree);
   return root;
 };
