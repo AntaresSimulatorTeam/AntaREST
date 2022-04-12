@@ -22,11 +22,10 @@ import { AppState } from '../../App/reducers';
 import { downloadJobOutput, killStudy, getStudyJobs, getStudies } from '../../services/api/study';
 import { convertFileDownloadDTO, FileDownload, getDownloadUrl, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
 import { initStudies } from '../../ducks/study';
-import { LaunchJob, TaskDTO, TaskEventPayload, WSEvent, WSMessage } from '../../common/types';
+import { LaunchJob, TaskType, TaskDTO, TaskEventPayload, WSEvent, WSMessage } from '../../common/types';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import { getAllMiscRunningTasks, getTask } from '../../services/api/tasks';
-import { TaskType } from './types';
 import LogView from './LogView';
 
 const logError = debug('antares:studymanagement:error');
@@ -361,7 +360,7 @@ const JobsListing = (props: PropTypes) => {
       </Box>
     ),
     date: task.completion_date_utc || task.creation_date_utc,
-    type: ((task.type === TaskType.COPY) && TaskType.COPY) || ((task.type === TaskType.ARCHIVE) && TaskType.ARCHIVE) || ((task.type === TaskType.UNARCHIVE) && TaskType.UNARCHIVE) || TaskType.COPY,
+    type: task.type || TaskType.UNKNOWN,
   })), [tasks]);
 
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
