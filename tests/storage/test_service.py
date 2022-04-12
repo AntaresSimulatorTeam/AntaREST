@@ -311,14 +311,12 @@ def test_sync_studies_from_disk() -> None:
             ),
         ]
     )
-    # TODO: This does not work. If we change the id and/or path of a study, the test should fail but it does not.
 
 
 @pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
     ma = RawStudy(id="a", path=Path("a"))
-    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
     mb = RawStudy(id="b", path=Path("b"))
     mc = RawStudy(
         id="c",
@@ -346,7 +344,7 @@ def test_partial_sync_studies_from_disk() -> None:
         path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
     )
     ff = StudyFolder(
-        path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+        path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
     )
 
     repository = Mock()
@@ -358,13 +356,21 @@ def test_partial_sync_studies_from_disk() -> None:
     )
     service = build_study_service(Mock(), repository, config)
 
-    service.sync_studies_on_disk([fa, fc, fe, ff], directory=Path("directory"))
+    service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
 
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_called_with(
-        RawStudy(id="a", path="a", created_at=now, missing=None)
+        RawStudy(
+            id=ANY,
+            path="directory/f",
+            name="f",
+            folder="directory/f",
+            created_at=ANY,
+            missing=None,
+            public_mode=PublicMode.FULL,
+            workspace=DEFAULT_WORKSPACE_NAME,
+        )
     )
-    # TODO: This does not work. If we change the id and/or path of a study, the test should fail but it does not.
 
 
 @pytest.mark.unit_test
@@ -490,11 +496,6 @@ def test_save_metadata() -> None:
     # Expected
     study = RawStudy(
         id=uuid,
-        name="CAPTION",
-        version="VERSION",
-        author="AUTHOR",
-        created_at=datetime.utcfromtimestamp(1234),
-        updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -507,6 +508,7 @@ def test_save_metadata() -> None:
     )
     service = build_study_service(study_service, repository, config)
 
+    service.user_service.get_user.return_value = user
     service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=jwt,
