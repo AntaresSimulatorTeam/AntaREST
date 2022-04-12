@@ -31,6 +31,7 @@ function StudyTree(props: Props) {
     event: ReactMouseEvent<HTMLLIElement, MouseEvent>,
     id: string
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (event as any).preventDefault();
     setContextMenu(
       contextMenu === null
@@ -73,9 +74,6 @@ function StudyTree(props: Props) {
     }
     return expandedTab;
   };
-
-  console.log(menuId);
-  console.log(contextMenu);
 
   const buildTree = (children: Array<StudyTreeNode>, parentId: string) =>
     children.map((elm) => {
