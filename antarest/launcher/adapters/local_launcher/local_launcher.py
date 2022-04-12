@@ -42,6 +42,22 @@ class LocalLauncher(AbstractLauncher):
         ] = {}
         self.logs: Dict[str, str] = {}
 
+    def _select_best_binary(self, version: str) -> Path:
+        if version in self.config.launcher.local.binaries:
+            antares_solver_path = self.config.launcher.local.binaries[version]
+        else:
+            version = int(version)
+            keys = list(map(int, self.config.launcher.local.binaries.keys()))
+            keys_sup = [k for k in keys if k > version]
+            best_existing_version = min(keys_sup) if keys_sup else max(keys)
+            antares_solver_path = self.config.launcher.local.binaries[
+                str(best_existing_version)
+            ]
+            logger.warning(
+                f"Version {version} is not available. Version {best_existing_version} has been selected instead"
+            )
+        return antares_solver_path
+
     def run_study(
         self,
         study_uuid: str,
@@ -53,16 +69,7 @@ class LocalLauncher(AbstractLauncher):
         if self.config.launcher.local is None:
             raise LauncherInitException()
 
-        if version in self.config.launcher.local.binaries:
-            antares_solver_path = self.config.launcher.local.binaries[version]
-        else:
-            keys = self.config.launcher.local.binaries.keys()
-            keys_sup = [k for k in keys if k > version]
-            best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = self.config.launcher.local.binaries[
-                best_existing_version
-            ]
-            logger.warning(f"Launching")
+        antares_solver_path = self._select_best_binary(version)
 
         job = threading.Thread(
             target=LocalLauncher._compute,
@@ -166,14 +173,14 @@ class LocalLauncher(AbstractLauncher):
             self.callbacks.update_status(
                 str(uuid),
                 JobStatus.FAILED
-                if (not process.returncode == 0) or not output_id
+                if process.returncode != 0 or not output_id
                 else JobStatus.SUCCESS,
                 None,
                 output_id,
             )
         except Exception as e:
             logger.error(
-                f"Unexpected error happend during launch {uuid}", exc_info=e
+                f"Unexpected error happened during launch {uuid}", exc_info=e
             )
             self.callbacks.update_status(
                 str(uuid),
