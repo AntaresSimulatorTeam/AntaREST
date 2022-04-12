@@ -14,6 +14,8 @@
   "COPY": "Copy",
   "ARCHIVE": "Archive",
   "UNARCHIVE": "Unarchive",
+  "SCAN": "Scan",
+  "UNKNOWN": "Unknown",
   "typeFilter": "Filter by type",
   "all": "All"
 }

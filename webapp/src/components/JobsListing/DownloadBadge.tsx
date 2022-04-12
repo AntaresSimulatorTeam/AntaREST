@@ -74,6 +74,8 @@ const DownloadBadge = (props: PropTypes) => {
             setNotificationMessage('studymanager:studyarchiving');
           } else if (task.type === 'UNARCHIVE') {
             setNotificationMessage('studymanager:studyunarchiving');
+          } else if (task.type === 'SCAN') {
+            setNotificationMessage('studymanager:scanFolderSuccess');
           }
         } catch (error) {
           logError(error);

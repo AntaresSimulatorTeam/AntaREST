@@ -1,9 +1,21 @@
-import { useCallback } from "react";
+import {
+  useCallback,
+  useState,
+  MouseEvent as ReactMouseEvent,
+  Fragment,
+  SyntheticEvent,
+} from "react";
+import { Menu, MenuItem, Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import TreeItem from "@mui/lab/TreeItem";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 import { StudyTreeNode } from "./utils";
+import { scanFolder } from "../../services/api/study";
+import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 
 interface Props {
   tree: StudyTreeNode;
@@ -13,6 +25,59 @@ interface Props {
 
 function StudyTree(props: Props) {
   const { tree, folder, setFolder } = props;
+  const { enqueueSnackbar } = useSnackbar();
+  const [t] = useTranslation();
+  const [expanded, setExpanded] = useState([tree.name]);
+  const [menuId, setMenuId] = useState<string>("");
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+
+  const onContextMenu = (
+    event: ReactMouseEvent<HTMLSpanElement, MouseEvent>,
+    id: string
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (event as any).preventDefault();
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX - 2,
+            mouseY: event.clientY - 4,
+          }
+        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+          // Other native context menus might behave different.
+          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+          null
+    );
+    setMenuId(id);
+  };
+
+  const handleToggle = (event: SyntheticEvent, nodeIds: Array<string>) => {
+    if ((event.target as HTMLElement).classList.contains("MuiSvgIcon-root")) {
+      setExpanded(nodeIds);
+    }
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
+  };
+
+  const orderFolderScan = async (folderPath: string): Promise<void> => {
+    try {
+      await scanFolder(folderPath);
+      enqueueSnackbar(t("studymanager:scanFolderSuccess"), { variant: "info" });
+    } catch (e) {
+      enqueueErrorSnackbar(
+        enqueueSnackbar,
+        t("studymanager:scanFolderError"),
+        e as AxiosError
+      );
+    } finally {
+      setContextMenu(null);
+    }
+  };
 
   const getExpandedTab = (nodeId: string): Array<string> => {
     const expandedTab: Array<string> = [];
@@ -32,16 +97,39 @@ function StudyTree(props: Props) {
         (item) => item
       );
       return (
-        <TreeItem
-          key={newId}
-          nodeId={newId}
-          label={elm.name}
-          expandIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
-          collapseIcon={elements.length > 0 ? <ChevronRightIcon /> : undefined}
-          onClick={() => setFolder(newId)}
-        >
-          {buildTree((elm as StudyTreeNode).children, newId)}
-        </TreeItem>
+        <Fragment key={newId}>
+          <TreeItem
+            key={`treeitem-${newId}`}
+            nodeId={newId}
+            label={
+              <Typography onContextMenu={(e) => onContextMenu(e, elm.path)}>
+                {elm.name}
+              </Typography>
+            }
+            collapseIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
+            expandIcon={elements.length > 0 ? <ChevronRightIcon /> : undefined}
+            onClick={() => setFolder(newId)}
+          >
+            {buildTree((elm as StudyTreeNode).children, newId)}
+          </TreeItem>
+          <Menu
+            key={`menu-${newId}`}
+            open={contextMenu !== null && menuId === elm.path}
+            onClose={handleClose}
+            anchorReference="anchorPosition"
+            anchorPosition={
+              contextMenu !== null
+                ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                : undefined
+            }
+          >
+            <MenuItem
+              onClick={() => orderFolderScan((elm as StudyTreeNode).path)}
+            >
+              {t("studymanager:scanFolder")}
+            </MenuItem>
+          </Menu>
+        </Fragment>
       );
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,16 +144,16 @@ function StudyTree(props: Props) {
       defaultSelected={getDefaultSelected()}
       defaultExpanded={getDefaultExpanded()}
       selected={[folder]}
+      expanded={expanded}
+      onNodeToggle={handleToggle}
       sx={{ flexGrow: 1, height: 0, width: "100%", py: 1 }}
     >
       <TreeItem
         nodeId={tree.name}
         label={tree.name}
         onClick={() => setFolder(tree.name)}
-        expandIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
-        collapseIcon={
-          tree.children.length > 0 ? <ChevronRightIcon /> : undefined
-        }
+        collapseIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
+        expandIcon={tree.children.length > 0 ? <ChevronRightIcon /> : undefined}
       >
         {buildTree(tree.children, tree.name)}
       </TreeItem>

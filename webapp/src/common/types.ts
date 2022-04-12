@@ -302,6 +302,18 @@ export enum TaskStatus {
   CANCELLED = 6,
 }
 
+export enum TaskType {
+  LAUNCH = 'LAUNCH',
+  EXPORT = 'EXPORT',
+  VARIANT_GENERATION = 'VARIANT_GENERATION',
+  COPY = 'COPY',
+  ARCHIVE = 'ARCHIVE',
+  UNARCHIVE = 'UNARCHIVE',
+  DOWNLOAD = 'DOWNLOAD',
+  SCAN = 'SCAN',
+  UNKNOWN = 'UNKNOWN'
+}
+
 export interface TaskDTO {
   id: string;
   name: string;
@@ -311,7 +323,7 @@ export interface TaskDTO {
   completion_date_utc?: string;
   result?: TaskResult;
   logs?: Array<TaskLogDTO>;
-  type?: string;
+  type?: TaskType;
   ref_id?: string;
 }
 

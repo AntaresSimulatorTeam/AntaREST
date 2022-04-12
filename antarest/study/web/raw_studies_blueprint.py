@@ -8,8 +8,8 @@ from fastapi.params import Param
 from starlette.responses import Response
 
 from antarest.core.config import Config
-from antarest.core.model import JSON
 from antarest.core.jwt import JWTUser
+from antarest.core.model import JSON
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -23,12 +23,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_raw_study_routes(
-    storage_service: StudyService, config: Config
+    study_service: StudyService,
+    config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
-        storage_service: study service facade to handle request
+        study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -55,7 +56,7 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = storage_service.get(uuid, path, depth, formatted, parameters)
+        output = study_service.get(uuid, path, depth, formatted, parameters)
 
         try:
             # try to decode string
@@ -96,7 +97,7 @@ def create_raw_study_routes(
 
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        storage_service.edit_study(uuid, path, new, params)
+        study_service.edit_study(uuid, path, new, params)
         return ""
 
     @bp.put(
@@ -117,7 +118,7 @@ def create_raw_study_routes(
         )
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        storage_service.edit_study(uuid, path, file, params)
+        study_service.edit_study(uuid, path, file, params)
         content = ""
 
         return content
@@ -135,6 +136,6 @@ def create_raw_study_routes(
             f"Validating data for study {uuid}",
             extra={"user": current_user.id},
         )
-        return storage_service.check_errors(uuid)
+        return study_service.check_errors(uuid)
 
     return bp

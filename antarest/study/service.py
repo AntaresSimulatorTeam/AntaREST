@@ -544,12 +544,15 @@ class StudyService:
                     logger.info(f"Removing study {study_name}")
                     self.repository.delete(study_name)
 
-    def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
+    def sync_studies_on_disk(
+        self, folders: List[StudyFolder], directory: Optional[Path] = None
+    ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
         Args:
             folders: list of studies currently present on folder
+            directory: directory of studies that will be watched
 
         Returns:
 
@@ -559,6 +562,13 @@ class StudyService:
             days=MAX_MISSING_STUDY_TIMEOUT
         )
         all_studies = self.repository.get_all_raw()
+        if directory:
+            all_studies = [
+                raw_study
+                for raw_study in all_studies
+                if directory in Path(raw_study.path).parents
+            ]
+
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in all_studies:

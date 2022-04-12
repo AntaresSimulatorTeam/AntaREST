@@ -20,7 +20,7 @@ export const getAllRunningTasks = async (): Promise<Array<TaskDTO>> => {
 export const getAllMiscRunningTasks = async (): Promise<Array<TaskDTO>> => {
   const res = await client.post('/v1/tasks', {
     status: [TaskStatus.RUNNING, TaskStatus.PENDING, TaskStatus.FAILED, TaskStatus.COMPLETED],
-    type: ['COPY', 'ARCHIVE', 'UNARCHIVE'],
+    type: ['COPY', 'ARCHIVE', 'UNARCHIVE', 'SCAN'],
   });
   return res.data;
 };

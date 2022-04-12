@@ -17,9 +17,11 @@ function SideNav(props: Props) {
   const navigate = useNavigate();
   const { studies, folder, setFolder, favorite } = props;
   const [tree, setTree] = useState<StudyTreeNode>(buildStudyTree(studies));
+
   useEffect(() => {
     setTree(buildStudyTree(studies));
   }, [studies]);
+
   return (
     <Box
       flex={`0 0 ${STUDIES_SIDE_NAV_WIDTH}px`}

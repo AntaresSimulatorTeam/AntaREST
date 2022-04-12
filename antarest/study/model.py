@@ -82,6 +82,23 @@ class Study(Base):  # type: ignore
     def __str__(self) -> str:
         return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Study):
+            return False
+        return bool(
+            other.id == self.id
+            and other.name == self.name
+            and other.type == self.type
+            and other.version == self.version
+            and other.created_at == self.created_at
+            and other.updated_at == self.updated_at
+            and other.path == self.path
+            and other.parent_id == self.parent_id
+            and other.public_mode == self.public_mode
+            and other.owner_id == self.owner_id
+            and other.archived == self.archived
+        )
+
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
@@ -107,6 +124,18 @@ class RawStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
     }
+
+    def __eq__(self, other: Any) -> bool:
+        if not super().__eq__(other):
+            return False
+        if not isinstance(other, RawStudy):
+            return False
+        return bool(
+            other.content_status == self.content_status
+            and other.workspace == self.workspace
+            and other.folder == self.folder
+            and other.missing == self.missing
+        )
 
 
 @dataclass

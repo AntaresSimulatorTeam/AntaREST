@@ -1,7 +1,8 @@
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal, call
+from unittest.mock import Mock, seal, call, ANY
 from uuid import uuid4
 
 import pytest
@@ -297,10 +298,79 @@ def test_sync_studies_from_disk() -> None:
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
-            call(RawStudy(id="b", path="b", missing=True)),
+            call(RawStudy(id="b", path="b", missing=ANY)),
             call(RawStudy(id="e", path="e", created_at=now, missing=None)),
-            call(RawStudy(id="f", path="f", workspace=DEFAULT_WORKSPACE_NAME)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    workspace=DEFAULT_WORKSPACE_NAME,
+                    name="f",
+                    folder="f",
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
+    )
+
+
+@pytest.mark.unit_test
+def test_partial_sync_studies_from_disk() -> None:
+    now = datetime.utcnow()
+    ma = RawStudy(id="a", path=Path("a"))
+    mb = RawStudy(id="b", path=Path("b"))
+    mc = RawStudy(
+        id="c",
+        path=Path("directory/c"),
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    md = RawStudy(
+        id="d",
+        path=Path("directory/d"),
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+    )
+    me = RawStudy(
+        id="e",
+        path=Path("directory/e"),
+        created_at=now,
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+    )
+    fc = StudyFolder(
+        path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    fe = StudyFolder(
+        path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    ff = StudyFolder(
+        path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
+    service = build_study_service(Mock(), repository, config)
+
+    service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
+
+    repository.delete.assert_called_once_with(md.id)
+    repository.save.assert_called_with(
+        RawStudy(
+            id=ANY,
+            path=f"directory{os.sep}f",
+            name="f",
+            folder=f"directory{os.sep}f",
+            created_at=ANY,
+            missing=None,
+            public_mode=PublicMode.FULL,
+            workspace=DEFAULT_WORKSPACE_NAME,
+        )
     )
 
 
@@ -427,11 +497,6 @@ def test_save_metadata() -> None:
     # Expected
     study = RawStudy(
         id=uuid,
-        name="CAPTION",
-        version="VERSION",
-        author="AUTHOR",
-        created_at=datetime.utcfromtimestamp(1234),
-        updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -444,6 +509,7 @@ def test_save_metadata() -> None:
     )
     service = build_study_service(study_service, repository, config)
 
+    service.user_service.get_user.return_value = user
     service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=jwt,

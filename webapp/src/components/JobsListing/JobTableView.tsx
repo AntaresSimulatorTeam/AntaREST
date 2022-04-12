@@ -4,7 +4,8 @@ import { makeStyles, createStyles, Theme, Paper, TableContainer, Table, TableHea
 import { useTranslation } from 'react-i18next';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import { JobsType, TaskType } from './types';
+import { JobsType } from './types';
+import { TaskType } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -71,6 +72,7 @@ const JobTableView = (props: PropType) => {
     TaskType.COPY,
     TaskType.ARCHIVE,
     TaskType.UNARCHIVE,
+    TaskType.SCAN,
   ];
 
   return (
