@@ -64,6 +64,10 @@ def get_default_config_path() -> Optional[Path]:
     if config.exists():
         return config
 
+    config = Path("../config.yaml")
+    if config.exists():
+        return config
+
     config = Path.home() / ".antares/config.yaml"
     if config.exists():
         return config
