@@ -48,7 +48,7 @@ import PropertiesModal from "./PropertiesModal";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
-  countAllCHildrens,
+  countAllChildrens,
 } from "../../services/utils";
 import DeleteStudyModal from "../studies/DeleteStudyModal";
 
@@ -437,7 +437,7 @@ function NavHeader(props: PropTypes) {
               <AccountTreeOutlinedIcon
                 sx={{ color: "text.secondary", mr: 1 }}
               />
-              <TinyText>{countAllCHildrens(childrenTree)}</TinyText>
+              <TinyText>{countAllChildrens(childrenTree)}</TinyText>
             </Box>
           )}
           <StyledDivider />

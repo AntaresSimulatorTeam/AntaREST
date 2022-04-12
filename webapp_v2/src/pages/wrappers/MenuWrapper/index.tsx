@@ -98,7 +98,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
     navigation = (
       [
         {
-          id: "studies",
+          id: "recentStudy",
           link: `/studies/${currentStudy}`,
           icon: CenterFocusStrongIcon,
         },

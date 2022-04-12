@@ -4,13 +4,11 @@ import {
   StudyMetadata,
   VariantTree,
 } from "../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../services/utils";
 
 export interface StudyTree {
   name: string;
   attributes: {
     id: string;
-    modificationDate: string;
   };
   drawOptions: {
     depth: number;
@@ -23,7 +21,6 @@ const buildNodeFromMetadata = (study: StudyMetadata): StudyTree => ({
   name: study.name,
   attributes: {
     id: study.id,
-    modificationDate: convertUTCToLocalTime(study.modificationDate),
   },
   drawOptions: {
     depth: 0,
@@ -66,30 +63,10 @@ const buildTree = async (
   node.children = children.children;
 };
 
-export const getTreeNodes = async (
-  study: StudyMetadata,
-  parents: Array<StudyMetadata>,
-  childrenTree: VariantTree
-): Promise<StudyTree> => {
-  const currentNode = buildNodeFromMetadata(study);
-  await buildTree(currentNode, childrenTree);
-
-  if (parents.length > 0) {
-    let prevNode: StudyTree = currentNode;
-
-    for (let i = 0; i < parents.length; i += 1) {
-      const elmNode = buildNodeFromMetadata(parents[i]);
-      elmNode.drawOptions.depth = 1 + prevNode.drawOptions.depth;
-      elmNode.drawOptions.nbAllChildrens =
-        1 + prevNode.drawOptions.nbAllChildrens;
-      if (prevNode.children !== undefined) elmNode.children.push(prevNode);
-      prevNode = elmNode;
-    }
-    return prevNode;
-  }
-
-  await buildTree(currentNode, childrenTree);
-  return currentNode;
+export const getTreeNodes = async (tree: VariantTree): Promise<StudyTree> => {
+  const root = buildNodeFromMetadata(tree.node); // root
+  await buildTree(root, tree);
+  return root;
 };
 
 export const createListFromTree = (tree: StudyTree): Array<GenericInfo> => {

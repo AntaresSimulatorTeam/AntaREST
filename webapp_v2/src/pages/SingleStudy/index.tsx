@@ -14,6 +14,7 @@ import {
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
 import { viewStudy } from "../../store/study";
+import { findNodeInTree } from "../../services/utils";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -36,8 +37,8 @@ function SingleStudy(props: Props) {
   const { isExplorer } = props;
 
   const [study, setStudy] = useState<StudyMetadata>();
-  const [parents, setParents] = useState<Array<StudyMetadata>>([]);
-  const [childrenTree, setChildren] = useState<VariantTree>();
+  const [parent, setParent] = useState<StudyMetadata>();
+  const [tree, setTree] = useState<VariantTree>();
 
   const tabList = useMemo(
     () => [
@@ -62,10 +63,12 @@ function SingleStudy(props: Props) {
           const tmpStudy = await getStudyMetadata(studyId, false);
           if (tmpStudy) {
             const tmpParents = await getVariantParents(tmpStudy.id);
-            const childrenTree = await getVariantChildren(tmpStudy.id);
+            let root: StudyMetadata = tmpStudy;
+            if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
+            const tmpTree = await getVariantChildren(root.id);
+            setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
             setStudy(tmpStudy);
-            setParents(tmpParents);
-            setChildren(childrenTree);
+            setTree(tmpTree);
           }
         } catch (e) {
           logError("Failed to fetch study informations", study, e);
@@ -88,9 +91,13 @@ function SingleStudy(props: Props) {
     >
       <NavHeader
         study={study}
-        parent={parents.length > 0 ? parents[0] : undefined}
+        parent={parent}
         isExplorer={isExplorer}
-        childrenTree={childrenTree}
+        childrenTree={
+          study !== undefined && tree !== undefined
+            ? findNodeInTree(study.id, tree)
+            : undefined
+        }
       />
       {!isExplorer && <Divider sx={{ width: "98%" }} />}
       <Box
@@ -106,11 +113,7 @@ function SingleStudy(props: Props) {
         {isExplorer === true ? (
           <TabWrapper study={study} border tabList={tabList} />
         ) : (
-          <HomeView
-            study={study}
-            parents={parents}
-            childrenTree={childrenTree}
-          />
+          <HomeView study={study} tree={tree} />
         )}
       </Box>
     </Box>

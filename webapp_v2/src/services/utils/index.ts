@@ -200,13 +200,25 @@ export const buildModificationDate = (
     .humanize();
 };
 
-export const countAllCHildrens = (tree: VariantTree): number => {
+export const countAllChildrens = (tree: VariantTree): number => {
   if (tree.children.length > 0) {
     return tree.children
-      .map((elm) => 1 + countAllCHildrens(elm))
+      .map((elm) => 1 + countAllChildrens(elm))
       .reduce((acc, curr) => acc + curr);
   }
   return 0;
+};
+
+export const findNodeInTree = (
+  studyId: string,
+  tree: VariantTree
+): VariantTree | undefined => {
+  if (studyId === tree.node.id) return tree;
+  for (let i = 0; i < tree.children.length; i += 1) {
+    const elm = findNodeInTree(studyId, tree.children[i]);
+    if (elm !== undefined) return elm;
+  }
+  return undefined;
 };
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {

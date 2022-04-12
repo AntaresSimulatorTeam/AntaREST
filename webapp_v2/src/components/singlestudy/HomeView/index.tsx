@@ -9,13 +9,12 @@ import InformationView from "./InformationView";
 
 interface Props {
   study: StudyMetadata | undefined;
-  parents: Array<StudyMetadata>;
-  childrenTree: VariantTree | undefined;
+  tree: VariantTree | undefined;
 }
 
 function HomeView(props: Props) {
   const navigate = useNavigate();
-  const { study, parents, childrenTree } = props;
+  const { study, tree } = props;
 
   return (
     <Split
@@ -41,8 +40,7 @@ function HomeView(props: Props) {
       >
         <StudyTreeView
           study={study}
-          parents={parents}
-          childrenTree={childrenTree}
+          tree={tree}
           onClick={(studyId: string) => navigate(`/studies/${studyId}`)}
         />
       </Box>
