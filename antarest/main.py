@@ -313,10 +313,18 @@ def create_services(
         config=config, application=application, study_service=study_service
     )
 
-    if Module.WATCHER.value in config.server.services or create_all:
+    if (
+        config.server.services
+        and Module.WATCHER.value in config.server.services
+        or create_all
+    ):
         services["watcher"] = watcher
 
-    if Module.MATRIX_GC.value in config.server.services or create_all:
+    if (
+        config.server.services
+        and Module.MATRIX_GC.value in config.server.services
+        or create_all
+    ):
         matrix_garbage_collector = create_matrix_gc(
             config=config,
             application=application,
@@ -471,11 +479,17 @@ def fastapi_app(
 
     services = create_services(config, application)
 
-    if Module.WATCHER.value in config.server.services:
+    if (
+        config.server.services
+        and Module.WATCHER.value in config.server.services
+    ):
         watcher = cast(Watcher, services["watcher"])
         watcher.start()
 
-    if Module.MATRIX_GC.value in config.server.services:
+    if (
+        config.server.services
+        and Module.MATRIX_GC.value in config.server.services
+    ):
         matrix_gc = cast(MatrixGarbageCollector, services["matrix_gc"])
         matrix_gc.start()
 
