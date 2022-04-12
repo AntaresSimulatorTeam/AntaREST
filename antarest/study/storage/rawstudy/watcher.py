@@ -11,6 +11,9 @@ from typing import List, Optional
 from filelock import FileLock
 
 from antarest.core.config import Config
+from antarest.core.requests import RequestParameters
+from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -33,8 +36,14 @@ class Watcher:
     LOCK = Path("watcher")
     SCAN_LOCK = Path("scan.lock")
 
-    def __init__(self, config: Config, service: StudyService):
-        self.service = service
+    def __init__(
+        self,
+        config: Config,
+        study_service: StudyService,
+        task_service: ITaskService,
+    ):
+        self.study_service = study_service
+        self.task_service = task_service
         self.config = config
         self.should_stop = False
         self.thread = (
@@ -89,7 +98,7 @@ class Watcher:
                 "Removing duplicates, this is a temporary fix that should be removed when previous duplicates are removed"
             )
             with db():
-                self.service.remove_duplicates()
+                self.study_service.remove_duplicates()
         except Exception as e:
             logger.error(
                 "Unexpected error when removing duplicates", exc_info=e
@@ -159,19 +168,32 @@ class Watcher:
             return []
 
     def oneshot_scan(
-        self, workspace: Optional[str], path: Optional[str] = None
+        self,
+        params: RequestParameters,
+        workspace: Optional[str] = None,
+        path: Optional[str] = None,
     ) -> None:
         """
         Scan a folder and add studies found to database.
 
         Args:
+            params: user parameters
             workspace: workspace to scan
             path: relative path to folder to scan
         """
-        thread = threading.Thread(
-            target=lambda: self.scan(workspace, path), daemon=True
+
+        def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            self.scan(workspace, path)
+            return TaskResult(success=True, message="Scan completed")
+
+        self.task_service.add_task(
+            action=scan_task,
+            name=f"Scanning {workspace}/{path}",
+            task_type=TaskType.SCAN,
+            ref_id=None,
+            custom_event_messages=None,
+            request_params=params,
         )
-        thread.start()
 
     def scan(
         self,
@@ -235,7 +257,9 @@ class Watcher:
                         f"FileLock acquired to synchronize for {directory_path or 'all studies'} in {x}s"
                     )
                 )
-                self.service.sync_studies_on_disk(studies, directory_path)
+                self.study_service.sync_studies_on_disk(
+                    studies, directory_path
+                )
                 stopwatch.log_elapsed(
                     lambda x: logger.info(
                         f"{directory_path or 'All studies'} synchronized in {x}s"

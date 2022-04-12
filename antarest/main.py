@@ -242,12 +242,20 @@ def create_watcher(
     study_service: Optional[StudyService] = None,
 ) -> Watcher:
     if study_service:
-        watcher = Watcher(config=config, service=study_service)
+        watcher = Watcher(
+            config=config,
+            study_service=study_service,
+            task_service=study_service.task_service,
+        )
     else:
-        _, _, _, _, _, _, study_service = create_core_services(
+        _, _, task_service, _, _, _, study_service = create_core_services(
             application, config
         )
-        watcher = Watcher(config=config, service=study_service)
+        watcher = Watcher(
+            config=config,
+            study_service=study_service,
+            task_service=task_service,
+        )
 
     if application:
         application.include_router(
