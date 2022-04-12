@@ -64,7 +64,7 @@ def test_select_best_binary(tmp_path: Path):
         event_bus=Mock(),
     )
 
-    assert local_launcher._select_best_binary("600") == Path("700")
-    assert local_launcher._select_best_binary("700") == Path("700")
-    assert local_launcher._select_best_binary("710") == Path("800")
-    assert local_launcher._select_best_binary("1100") == Path("1000")
+    assert local_launcher._select_best_binary("600") == binaries["700"]
+    assert local_launcher._select_best_binary("700") == binaries["700"]
+    assert local_launcher._select_best_binary("710") == binaries["800"]
+    assert local_launcher._select_best_binary("1100") == binaries["1000"]
