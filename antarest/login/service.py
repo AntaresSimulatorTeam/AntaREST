@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from fastapi import HTTPException
 
@@ -27,6 +27,7 @@ from antarest.login.model import (
     UserGroup,
     UserRoleDTO,
     GroupDTO,
+    UserInfo,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -600,17 +601,21 @@ class LoginService:
                 user_list.append(user)
         return user_list
 
-    def get_all_users(self, params: RequestParameters) -> List[Identity]:
+    def get_all_users(
+        self, params: RequestParameters, details: Optional[bool] = False
+    ) -> List[Union[UserInfo, IdentityDTO]]:
         """
         Get all users.
         Permission: SADMIN
         Args:
             params: request parameters
+            details: get all user information, including roles
 
         Returns: list of groups
 
         """
         if params.user:
+            user_list = []
             roles = self.roles.get_all_by_user(params.user.id)
             groups = [r.group for r in roles]
             if any(
@@ -619,18 +624,29 @@ class LoginService:
                     params.user.is_group_admin(groups),
                 )
             ):
-                return self.ldap.get_all() + self.users.get_all()
+                user_list = self.ldap.get_all() + self.users.get_all()
+            else:
+                for group in groups:
+                    user_list.extend(
+                        [
+                            usr
+                            for usr in self._get_user_by_group(group.id)
+                            if usr not in user_list
+                        ]
+                    )
 
-            user_list = []
-            for group in groups:
-                user_list.extend(
-                    [
-                        usr
-                        for usr in self._get_user_by_group(group.id)
-                        if usr not in user_list
+            return (
+                [
+                    usr
+                    for usr in [
+                        self.get_user_info(user.id, params)
+                        for user in user_list
                     ]
-                )
-            return user_list
+                    if usr is not None
+                ]
+                if details
+                else [user.to_dto() for user in user_list]
+            )
         else:
             logger.error(
                 "user %s has not permission to get all users",

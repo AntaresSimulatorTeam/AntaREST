@@ -114,13 +114,18 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         else:
             raise HTTPException(status_code=403, detail="Token invalid")
 
-    @bp.get("/users", tags=[APITag.users], response_model=List[UserInfo])
+    @bp.get(
+        "/users",
+        tags=[APITag.users],
+        response_model=List[Union[UserInfo, IdentityDTO]],
+    )
     def users_get_all(
+        details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching users list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        return [u.to_dto() for u in service.get_all_users(params)]
+        return service.get_all_users(params, details)
 
     @bp.get(
         "/users/{id}",
