@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Union, List, Tuple, Dict, Optional
+from typing import Any, Union, List, Tuple, Dict, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -83,19 +83,19 @@ class UpdateConfig(ICommand):
             if isinstance(command, UpdateConfig):
                 # adding all the UpdateConfig commands until we find one containing self (or the end)
                 update_config_list.append(command)
-            if (
-                Path(command.target) in self_target_path.parents
-                or command.target == self.target
-            ):
-                # found the last parent command.
-                parent_path = Path(command.target)
-                break
+                if (
+                    Path(command.target) in self_target_path.parents
+                    or command.target == self.target
+                ):
+                    # found the last parent command.
+                    parent_path = Path(command.target)
+                    break
 
         if parent_path is not None:
             # we found the last parent command which is in the end of the list
             # we now revert the list of UpdateConfig commands to return it in the correct order
             # and we also filter out the UpdateConfig commands which are not "children" of the parent command
-            output_list: List[UpdateConfig] = [
+            output_list: List[ICommand] = [
                 command
                 for command in update_config_list[::-1]
                 if parent_path in Path(command.target).parents
