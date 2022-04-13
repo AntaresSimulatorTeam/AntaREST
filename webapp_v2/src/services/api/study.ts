@@ -321,6 +321,7 @@ export const getStudyJobLog = async (
   return res.data;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const downloadJobOutput = async (jobId: string): Promise<any> => {
   const res = await client.get(`/v1/launcher/jobs/${jobId}/output`);
   return res.data;

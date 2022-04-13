@@ -18,6 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { grey } from "@mui/material/colors";
 import { JobsType, TaskType } from "../../common/types";
 import { scrollbarStyle } from "../../theme";
 
@@ -95,6 +96,7 @@ function JobTableView(props: PropType) {
                 "& td, & th": {
                   borderBottom: "1px solid",
                   borderColor: "divider",
+                  color: grey[500],
                 },
               }}
             >

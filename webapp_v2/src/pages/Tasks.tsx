@@ -277,12 +277,31 @@ function JobsListing(props: PropTypes) {
           </Box>
         ),
         dateView: (
-          <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
-            <Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              flexDirection: "column",
+              color: grey[500],
+              fontSize: "0.85rem",
+            }}
+          >
+            <Box
+              width="165px"
+              display="flex"
+              justifyContent="flex-start"
+              alignItems="center"
+            >
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(job.creationDate)}
             </Box>
-            <Box>
+            <Box
+              width="165px"
+              display="flex"
+              justifyContent="flex-start"
+              alignItems="center"
+            >
               {job.completionDate && (
                 <>
                   <EventAvailableIcon
@@ -301,6 +320,7 @@ function JobsListing(props: PropTypes) {
                 <Tooltip title={t("singlestudy:killStudy") as string}>
                   <BlockIcon
                     sx={{
+                      mb: "4px",
                       cursor: "pointer",
                       color: "error.light",
                       "&:hover": { color: "error.dark" },
@@ -410,12 +430,31 @@ function JobsListing(props: PropTypes) {
           </Typography>
         ),
         dateView: (
-          <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
-            <Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              flexDirection: "column",
+              color: grey[500],
+              fontSize: "0.85rem",
+            }}
+          >
+            <Box
+              width="165px"
+              display="flex"
+              justifyContent="flex-start"
+              alignItems="center"
+            >
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(task.creation_date_utc)}
             </Box>
-            <Box>
+            <Box
+              width="165px"
+              display="flex"
+              justifyContent="flex-start"
+              alignItems="center"
+            >
               {task.completion_date_utc && (
                 <>
                   <EventAvailableIcon
