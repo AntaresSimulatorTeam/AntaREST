@@ -104,7 +104,7 @@ class StudyDownloader:
             cluster_details += [f"details-res-{data.level.value}"]
 
         files_matcher = (
-            [f"values-{data.level.value}", cluster_details]
+            [f"values-{data.level.value}"] + cluster_details
             if data.includeClusters and target[0] != StudyDownloadType.LINK
             else [f"values-{data.level.value}"]
         )
