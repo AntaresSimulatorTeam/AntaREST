@@ -410,6 +410,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     metadata=variant_study, update_modification_date=True
                 )
 
+    def has_children(self, study: VariantStudy) -> bool:
+        return len(self.repository.get_children(parent_id=study.id)) > 0
+
     def get_all_variants_children(
         self,
         parent_id: str,
@@ -445,6 +448,27 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if len(output_list) > 0:
             output_list = output_list[1:]
         return output_list
+
+    def get_direct_parent(
+        self, id: str, params: RequestParameters
+    ) -> Optional[StudyMetadataDTO]:
+        study = self._get_variant_study(id, params, raw_study_accepted=True)
+        if study.parent_id is not None:
+            parent = self._get_variant_study(
+                study.parent_id, params, raw_study_accepted=True
+            )
+            return (
+                self.get_study_information(
+                    parent,
+                    summary=True,
+                )
+                if isinstance(parent, VariantStudy)
+                else self.raw_study_service.get_study_information(
+                    parent,
+                    summary=True,
+                )
+            )
+        return None
 
     def _get_variants_parents(
         self, id: str, params: RequestParameters

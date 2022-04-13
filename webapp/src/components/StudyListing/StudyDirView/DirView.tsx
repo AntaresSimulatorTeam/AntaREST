@@ -12,7 +12,7 @@ import HomeRoundedIcon from '@material-ui/icons/HomeRounded';
 import _ from 'lodash';
 import { isDir, StudyTreeNode } from '../utils';
 import { StudyMetadata } from '../../../common/types';
-import { exportStudy } from '../../../services/api/study';
+import { exportStudy, scanFolder } from '../../../services/api/study';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { convertUTCToLocalTime } from '../../../services/utils';
@@ -181,6 +181,15 @@ const DirView = (props: Props) => {
 
   ];
 
+  const orderFolderScan = async (folderPath: string): Promise<void> => {
+    try {
+      await scanFolder(folderPath);
+      enqueueSnackbar(t('studymanager:scanFolderSuccess'), { variant: 'info' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:scanFolderError'), e as AxiosError);
+    }
+  };
+
   const copyId = (studyId: string): void => {
     try {
       navigator.clipboard.writeText(studyId);
@@ -220,17 +229,31 @@ const DirView = (props: Props) => {
           {
             node.children.map((elm, index) =>
               (isDir(elm) ? (
-                <Tooltip key={`${elm.name}-${index}`} title={elm.name}>
-                  <Paper className={classes.element} onClick={() => onClick(elm)}>
-                    <FolderIcon className={classes.icon} />
-                    <div className={classes.elementNameContainer}>
-                      <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
-                    </div>
-                    <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
-                      <Typography noWrap className={classes.elementDate}>{convertUTCToLocalTime(elm.modificationDate)}</Typography>
-                    </div>
-                  </Paper>
-                </Tooltip>
+                <Fragment key={`${elm.name}-${index}`}>
+                  <Tooltip key={`${elm.name}-${index}`} title={elm.name}>
+                    <Paper className={classes.element} onContextMenu={(e) => onContextMenu(e, (elm as StudyTreeNode).path)} onClick={() => onClick(elm)}>
+                      <FolderIcon className={classes.icon} />
+                      <div className={classes.elementNameContainer}>
+                        <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
+                      </div>
+                      <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
+                        <Typography noWrap className={classes.elementDate}>{convertUTCToLocalTime(elm.modificationDate)}</Typography>
+                      </div>
+                    </Paper>
+                  </Tooltip>
+                  <Menu
+                    open={contextMenu !== null && menuId === (elm as StudyTreeNode).path}
+                    onClose={handleClose}
+                    anchorReference="anchorPosition"
+                    anchorPosition={
+                      contextMenu !== null
+                        ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                        : undefined
+                    }
+                  >
+                    <MenuItem onClick={() => orderFolderScan((elm as StudyTreeNode).path)}>{t('studymanager:scanFolder')}</MenuItem>
+                  </Menu>
+                </Fragment>
               ) : (
                 <Fragment key={`${elm.name}-${index}`}>
                   <Tooltip title={elm.name}>

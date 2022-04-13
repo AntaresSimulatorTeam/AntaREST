@@ -26,7 +26,7 @@ from antarest.core.tasks.service import (
     ITaskService,
 )
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, assert_this
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -75,7 +75,7 @@ class ISimpleMatrixService(ABC):
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_path: Path):
         self.matrix_path = matrix_path
-        assert matrix_path.exists() and matrix_path.is_dir()
+        assert_this(matrix_path.exists() and matrix_path.is_dir())
         config = Config(storage=StorageConfig(matrixstore=matrix_path))
         self.matrix_content_repository = MatrixContentRepository(config)
 
@@ -366,7 +366,7 @@ class MatrixService(ISimpleMatrixService):
     def create_matrix_files(
         self, dataset: MatrixDataSet, export_path: Path
     ) -> str:
-        assert export_path.name.endswith(".zip")
+        assert_this(export_path.name.endswith(".zip"))
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:

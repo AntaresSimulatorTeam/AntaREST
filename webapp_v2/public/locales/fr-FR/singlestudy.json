@@ -43,7 +43,7 @@
   "renamestudy": "Renommer l'étude",
   "killStudy": "Arrêter",
   "exportOutput": "Exporter les sorties",
-  "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?",
+  "confirmKill": "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?",
   "failedToExportOutput": "Echec lors de l'export de la sortie",
   "failedToListOutputs": "Echec de la récupération des sorties",
   "notes": "Notes",

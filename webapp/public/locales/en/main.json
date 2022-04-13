@@ -34,5 +34,6 @@
   "onGetMaintenanceError": "Unable to retrieve maintenance status",
   "search": "Search",
   "files": "Files",
-  "none": "None"
+  "none": "None",
+  "date": "Date"
 }

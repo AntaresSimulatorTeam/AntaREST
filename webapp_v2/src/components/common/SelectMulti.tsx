@@ -1,15 +1,27 @@
-import React from 'react';
-import { Box, Checkbox, Chip, FormControl, InputLabel, ListItemText, MenuItem, Select, SelectChangeEvent, SxProps, Theme } from '@mui/material';
-import { GenericInfo } from '../../common/types';
+import * as React from "react";
+import {
+  Box,
+  Checkbox,
+  Chip,
+  FormControl,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  SxProps,
+  Theme,
+} from "@mui/material";
+import { GenericInfo } from "../../common/types";
 
 interface Props {
-   name: string;
-   list: Array<GenericInfo>;
-   data: Array<string>;
-   setValue: (data: Array<string>) => void;
-   sx?: SxProps<Theme> | undefined;
-   placeholder?: string;
-   tagsMode?: boolean;
+  name: string;
+  list: Array<GenericInfo>;
+  data: Array<string>;
+  setValue: (data: Array<string>) => void;
+  sx?: SxProps<Theme> | undefined;
+  placeholder?: string;
+  tagsMode?: boolean;
 }
 
 function SelectMulti(props: Props) {
@@ -19,29 +31,45 @@ function SelectMulti(props: Props) {
     const {
       target: { value },
     } = event;
-    setValue(typeof value === 'string' ? value.split(',') : value);
+    setValue(typeof value === "string" ? value.split(",") : value);
   };
 
-  const chipRender = (selected: Array<string>) : React.ReactNode =>
-    (
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        {selected.map((value) => {
-          const element = list.find((item) => (typeof item.id === 'string' ? item.id === value : item.id.toString() === value));
-          if (element) { return <Chip key={element.id} label={element.name} />; }
-          return undefined;
-        })
+  const chipRender = (selected: Array<string>): React.ReactNode => (
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+      {selected.map((value) => {
+        const element = list.find((item) =>
+          typeof item.id === "string"
+            ? item.id === value
+            : item.id.toString() === value
+        );
+        if (element) {
+          return <Chip key={element.id} label={element.name} />;
         }
-      </Box>
-    );
+        return undefined;
+      })}
+    </Box>
+  );
 
-  const checkboxRender = (selected: Array<string>) : string =>
-    selected.map((elm) => (
-      list.find((item) => (typeof item.id === 'string' ? item.id === elm : item.id.toString() === elm))?.name
-    )).join(', ');
+  const checkboxRender = (selected: Array<string>): string =>
+    selected
+      .map(
+        (elm) =>
+          list.find((item) =>
+            typeof item.id === "string"
+              ? item.id === elm
+              : item.id.toString() === elm
+          )?.name
+      )
+      .join(", ");
 
   return (
     <FormControl sx={sx}>
-      <InputLabel id="multiple-checkbox-label" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{name}</InputLabel>
+      <InputLabel
+        id="multiple-checkbox-label"
+        sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+      >
+        {name}
+      </InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
         id={`multiple-checkbox-${name}`}
@@ -52,11 +80,12 @@ function SelectMulti(props: Props) {
         onChange={handleChange}
         renderValue={tagsMode === true ? chipRender : checkboxRender}
         sx={{
-          background: 'rgba(255, 255, 255, 0.09)',
-          borderRadius: '4px 4px 0px 0px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
-          '.MuiSelect-icon': {
-            backgroundColor: '#222333',
+          minHeight: 0,
+          background: "rgba(255, 255, 255, 0.09)",
+          borderRadius: "4px 4px 0px 0px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+          ".MuiSelect-icon": {
+            backgroundColor: "#222333",
           },
         }}
       >

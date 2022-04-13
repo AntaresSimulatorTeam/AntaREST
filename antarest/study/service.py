@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     UnsupportedOperationOnArchivedStudy,
     NotAManagedStudyException,
     CommandApplicationError,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
@@ -543,12 +544,15 @@ class StudyService:
                     logger.info(f"Removing study {study_name}")
                     self.repository.delete(study_name)
 
-    def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
+    def sync_studies_on_disk(
+        self, folders: List[StudyFolder], directory: Optional[Path] = None
+    ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
         Args:
             folders: list of studies currently present on folder
+            directory: directory of studies that will be watched
 
         Returns:
 
@@ -558,6 +562,13 @@ class StudyService:
             days=MAX_MISSING_STUDY_TIMEOUT
         )
         all_studies = self.repository.get_all_raw()
+        if directory:
+            all_studies = [
+                raw_study
+                for raw_study in all_studies
+                if directory in Path(raw_study.path).parents
+            ]
+
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in all_studies:
@@ -872,6 +883,13 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
+        elif isinstance(
+            study, VariantStudy
+        ) and self.storage_service.variant_study_service.has_children(study):
+            raise StudyDeletionNotAllowed(
+                study.id, "Study has variant children"
+            )
+
         self.repository.delete(study.id)
 
         self.event_bus.push(

@@ -9,6 +9,9 @@
   "failtorunstudy": "Failed to run study",
   "studylaunched": "{{studyname}} launched !",
   "savedatasuccess": "Data saved with success",
+  "scanFolder": "Scan folder",
+  "scanFolderSuccess": "Folder scan started",
+  "scanFolderError": "Failed to start folder scan",
   "importcopy": "Copy",
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",
@@ -55,6 +58,7 @@
   "versionsLabel": "Versions",
   "usersLabel": "Users",
   "groupsLabel": "Groups",
-  "tagsLabel": "Tags"
-
+  "tagsLabel": "Tags",
+  "bookmark": "Bookmark",
+  "removeFavorite": "Remove from favorites"
 }

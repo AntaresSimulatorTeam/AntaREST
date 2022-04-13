@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Union, Any, Tuple
 from pydantic import validator
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -170,6 +171,6 @@ class UpdateBindingConstraint(ICommand):
 
     def get_inner_matrices(self) -> List[str]:
         if self.values is not None:
-            assert isinstance(self.values, str)
+            assert_this(isinstance(self.values, str))
             return [strip_matrix_protocol(self.values)]
         return []

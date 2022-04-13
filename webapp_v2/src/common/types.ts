@@ -1,17 +1,17 @@
 /* eslint-disable camelcase */
-import { Moment } from 'moment';
-import { ReactNode } from 'react';
+import { Moment } from "moment";
+import { ReactNode } from "react";
 
 export type IDType = number | string;
 
 export enum SortElement {
-  DATE='DATE',
-  NAME='NAME'
+  DATE = "DATE",
+  NAME = "NAME",
 }
 
 export enum SortStatus {
-  INCREASE='INCREASE',
-  DECREASE='DECREASE'
+  INCREASE = "INCREASE",
+  DECREASE = "DECREASE",
 }
 
 export interface SortItem {
@@ -19,9 +19,9 @@ export interface SortItem {
   status: SortStatus;
 }
 
-export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
+export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 
-export type StudyPublicMode = 'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL';
+export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
 export interface GenericInfo {
   id: IDType;
@@ -39,7 +39,7 @@ export interface StudyMetadataOwner {
   name: string;
 }
 
-export type StudyType = 'variantstudy' | 'rawstudy';
+export type StudyType = "variantstudy" | "rawstudy";
 
 export interface StudyMetadataDTO {
   id: string;
@@ -110,11 +110,7 @@ export interface VariantTree {
   children: Array<VariantTree>;
 }
 
-export type JobStatus =
-  | 'running'
-  | 'pending'
-  | 'success'
-  | 'failed';
+export type JobStatus = "running" | "pending" | "success" | "failed";
 
 export interface LaunchJob {
   id: string;
@@ -286,24 +282,35 @@ export interface CommandDTO {
 }
 
 export enum WSEvent {
-  STUDY_CREATED='STUDY_CREATED',
-  STUDY_DELETED='STUDY_DELETED',
-  STUDY_EDITED='STUDY_EDITED',
-  STUDY_JOB_STARTED='STUDY_JOB_STARTED',
-  STUDY_JOB_LOG_UPDATE='STUDY_JOB_LOG_UPDATE',
-  STUDY_JOB_COMPLETED='STUDY_JOB_COMPLETED',
-  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE',
-  STUDY_VARIANT_GENERATION_COMMAND_RESULT='STUDY_VARIANT_GENERATION_COMMAND_RESULT',
-  TASK_ADDED = 'TASK_ADDED',
-  TASK_RUNNING = 'TASK_RUNNING',
-  TASK_COMPLETED = 'TASK_COMPLETED',
-  TASK_FAILED = 'TASK_FAILED',
-  DOWNLOAD_CREATED = 'DOWNLOAD_CREATED',
-  DOWNLOAD_READY = 'DOWNLOAD_READY',
-  DOWNLOAD_EXPIRED = 'DOWNLOAD_EXPIRED',
-  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED',
-  MESSAGE_INFO = 'MESSAGE_INFO',
-  MAINTENANCE_MODE = 'MAINTENANCE_MODE',
+  STUDY_CREATED = "STUDY_CREATED",
+  STUDY_DELETED = "STUDY_DELETED",
+  STUDY_EDITED = "STUDY_EDITED",
+  STUDY_JOB_STARTED = "STUDY_JOB_STARTED",
+  STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE",
+  STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED",
+  STUDY_JOB_STATUS_UPDATE = "STUDY_JOB_STATUS_UPDATE",
+  STUDY_VARIANT_GENERATION_COMMAND_RESULT = "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
+  TASK_ADDED = "TASK_ADDED",
+  TASK_RUNNING = "TASK_RUNNING",
+  TASK_COMPLETED = "TASK_COMPLETED",
+  TASK_FAILED = "TASK_FAILED",
+  DOWNLOAD_CREATED = "DOWNLOAD_CREATED",
+  DOWNLOAD_READY = "DOWNLOAD_READY",
+  DOWNLOAD_EXPIRED = "DOWNLOAD_EXPIRED",
+  DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
+  MESSAGE_INFO = "MESSAGE_INFO",
+  MAINTENANCE_MODE = "MAINTENANCE_MODE",
+}
+
+export enum DefaultFilterKey {
+  USERS = "v2.studylisting.filter.user",
+  GROUPS = "v2.studylisting.filter.group",
+  VERSIONS = "v2.studylisting.filter.version",
+  MANAGED = "v2.studylisting.filter.managed",
+  SORTING = "v2.studylisting.filter.sorting",
+  FOLDER = "v2.studylisting.filter.folder",
+  FAVORITE_STUDIES = "v2.studylisting.favorite",
+  TAGS = "v2.studylisting.filter.tag",
 }
 
 export interface WSMessage {
@@ -319,7 +326,7 @@ export interface WSLogMessage {
 
 export type Components = {
   [item: string]: () => ReactNode;
-}
+};
 
 export interface CommandResultDTO {
   study_id: string;
@@ -372,14 +379,14 @@ export interface Cluster {
   enabled: boolean;
 }
 
-export interface Link{
+export interface Link {
   filters_synthesis: Array<string>;
   filters_year: Array<string>;
 }
 
 export interface Area {
   name: string;
-  links: {[elm: string]: Link};
+  links: { [elm: string]: Link };
   thermals: Array<Cluster>;
   renewables: Array<Cluster>;
   filters_synthesis: Array<string>;
@@ -410,9 +417,9 @@ export interface FileStudyTreeConfigDTO {
   study_id: string;
   version: number;
   output_path?: string;
-  areas: {[elm: string]: Area};
-  sets: {[elm: string]: Set};
-  outputs: {[elm: string]: Simulation};
+  areas: { [elm: string]: Area };
+  sets: { [elm: string]: Set };
+  outputs: { [elm: string]: Simulation };
   bindings: Array<string>;
   store_new_set: boolean;
   archive_input_series: Array<string>;
@@ -420,17 +427,17 @@ export interface FileStudyTreeConfigDTO {
 }
 
 export enum StudyOutputDownloadType {
-  LINK = 'LINK',
-  DISTRICT = 'DISTRICT',
-  AREA = 'AREA',
+  LINK = "LINK",
+  DISTRICT = "DISTRICT",
+  AREA = "AREA",
 }
 
 export enum StudyOutputDownloadLevelDTO {
-  ANNUAL = 'annual',
-  MONTHLY = 'monthly',
-  WEEKLY = 'weekly',
-  DAILY = 'daily',
-  HOURLY = 'hourly',
+  ANNUAL = "annual",
+  MONTHLY = "monthly",
+  WEEKLY = "weekly",
+  DAILY = "daily",
+  HOURLY = "hourly",
 }
 
 export interface StudyOutputDownloadDTO {
@@ -569,7 +576,8 @@ export interface AreaInfoDTO extends AreaCreationDTO {
   thermals: Array<object>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isNode = (el: NodeProperties | LinkProperties): boolean => (el as any).id !== undefined;
+export const isNode = (el: NodeProperties | LinkProperties): boolean =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (el as any).id !== undefined;
 
 export default {};

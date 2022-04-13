@@ -1,6 +1,7 @@
 from typing import List, Optional, cast, Dict, Any, Union
 
 from antarest.core.model import JSON, SUB_JSON
+from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import (

@@ -148,6 +148,7 @@ const TaskView = (props: PropTypes) => {
   const { enqueueSnackbar } = useSnackbar();
   const [jobIdDetail, setJobIdDetail] = useState<string>();
   const [jobIdKill, setJobIdKill] = useState<string>();
+  const [followLogs, setFollowLogs] = useState<boolean>(false);
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
   const [logModalContentLoading, setLogModalContentLoading] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
@@ -155,6 +156,7 @@ const TaskView = (props: PropTypes) => {
   const openLogView = (jobId: string, errorLogs = false) => {
     setJobIdDetail(jobId);
     setLogModalContentLoading(true);
+    setFollowLogs(!errorLogs);
     (async () => {
       try {
         const logData = await getStudyJobLog(jobId, errorLogs ? 'STDERR' : 'STDOUT');
@@ -205,6 +207,7 @@ const TaskView = (props: PropTypes) => {
       <LogModal
         isOpen={!!jobIdDetail}
         title={t('singlestudy:taskLog')}
+        followLogs={followLogs}
         jobId={jobIdDetail}
         content={logModalContent}
         loading={logModalContentLoading}

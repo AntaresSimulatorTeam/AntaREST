@@ -1,10 +1,10 @@
 /* eslint-disable camelcase */
-import axios from 'axios';
-import moment from 'moment';
-import jwt_decode from 'jwt-decode';
-import client from './client';
-import { UserInfo } from '../../common/types';
-import { Config } from '../config';
+import axios from "axios";
+import moment from "moment";
+import jwt_decode from "jwt-decode";
+import client from "./client";
+import { UserInfo } from "../../common/types";
+import { Config } from "../config";
 
 // instance sans crédentials et hooks pour l'authent
 const rawAxiosInstance = axios.create();
@@ -15,7 +15,7 @@ export const initRawAxiosClient = (config: Config): void => {
 
 export const needAuth = async (): Promise<boolean> => {
   try {
-    await client.get('/v1/auth');
+    await client.get("/v1/auth");
     return Promise.resolve(false);
   } catch (e) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,12 +27,22 @@ export const needAuth = async (): Promise<boolean> => {
   }
 };
 
-export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, logout: () => void): Promise<UserInfo|undefined> => {
-  if (!user.expirationDate || user.expirationDate < moment().add(5, 's')) {
+export const refresh = async (
+  user: UserInfo,
+  login: (user: UserInfo) => void,
+  logout: () => void
+): Promise<UserInfo | undefined> => {
+  if (!user.expirationDate || user.expirationDate < moment().add(5, "s")) {
     try {
-      const res = await rawAxiosInstance.post('/v1/refresh', {}, { headers: {
-        Authorization: `Bearer ${user.refreshToken}`,
-      } });
+      const res = await rawAxiosInstance.post(
+        "/v1/refresh",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user.refreshToken}`,
+          },
+        }
+      );
       const userInfoDTO = await res.data;
       const tokenData = jwt_decode(userInfoDTO.access_token);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,9 +68,9 @@ export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, l
 
 export const login = async (
   username: string,
-  password: string,
+  password: string
 ): Promise<UserInfo> => {
-  const res = await rawAxiosInstance.post('/v1/login', { username, password });
+  const res = await rawAxiosInstance.post("/v1/login", { username, password });
   const userInfo = await res.data;
   const tokenData = jwt_decode(userInfo.access_token);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

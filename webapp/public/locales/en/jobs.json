@@ -6,5 +6,16 @@
   "launches": "Launches",
   "exports": "Exports",
   "download": "Download",
-  "others": "Others"
+  "loading": "Loading",
+  "others": "Others",
+  "action": "Action",
+  "DOWNLOAD": "Download",
+  "LAUNCH": "Launch",
+  "COPY": "Copy",
+  "ARCHIVE": "Archive",
+  "UNARCHIVE": "Unarchive",
+  "SCAN": "Scan",
+  "UNKNOWN": "Unknown",
+  "typeFilter": "Filter by type",
+  "all": "All"
 }

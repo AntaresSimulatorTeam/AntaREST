@@ -29,6 +29,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -208,6 +209,10 @@ class LauncherService:
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
     ) -> str:
+        job_uuid = self._generate_new_id()
+        logger.info(
+            f"New study launch (study={study_uuid}, job_id={job_uuid})"
+        )
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
         )
@@ -219,7 +224,6 @@ class LauncherService:
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
-        job_uuid = self._generate_new_id()
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,
@@ -452,6 +456,9 @@ class LauncherService:
     def _import_fallback_output(
         self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
     ) -> Optional[str]:
+        logger.info(
+            f"Trying to import output in fallback tmp space for job {job_id}"
+        )
         output_name: Optional[str] = None
         job_output_path = self._get_job_output_fallback_path(job_id)
         try:
@@ -476,6 +483,7 @@ class LauncherService:
     def _import_output(
         self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
     ) -> Optional[str]:
+        logger.info(f"Importing output for job {job_id}")
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
@@ -538,6 +546,7 @@ class LauncherService:
     def download_output(
         self, job_id: str, params: RequestParameters
     ) -> FileDownloadTaskDTO:
+        logger.info(f"Downloading output for job {job_id}")
         job_result = self.job_result_repository.get(job_id)
         if job_result and job_result.output_id:
             if self._get_job_output_fallback_path(job_id).exists():

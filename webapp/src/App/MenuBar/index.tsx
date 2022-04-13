@@ -11,7 +11,7 @@ import UserBadge from '../../components/UserBadge';
 import { getConfig } from '../../services/config';
 import { AppState } from '../reducers';
 import './style.css';
-import DownloadBadge from '../../components/DownloadsListing/DownloadBadge';
+import DownloadBadge from '../../components/JobsListing/DownloadBadge';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

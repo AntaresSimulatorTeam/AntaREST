@@ -3,6 +3,7 @@ from typing import Union, List, Any, Tuple, Dict
 from pydantic import validator
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -69,7 +70,7 @@ class ReplaceMatrix(ICommand):
 
         try:
             last_node = study_data.tree.get_node(url)
-            assert isinstance(last_node, MatrixNode)
+            assert_this(isinstance(last_node, MatrixNode))
         except (KeyError, ChildNotFoundError):
             return CommandOutput(
                 status=False,
@@ -136,5 +137,5 @@ class ReplaceMatrix(ICommand):
         return [other]
 
     def get_inner_matrices(self) -> List[str]:
-        assert isinstance(self.matrix, str)
+        assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]

@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
@@ -82,6 +82,23 @@ class Study(Base):  # type: ignore
     def __str__(self) -> str:
         return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Study):
+            return False
+        return bool(
+            other.id == self.id
+            and other.name == self.name
+            and other.type == self.type
+            and other.version == self.version
+            and other.created_at == self.created_at
+            and other.updated_at == self.updated_at
+            and other.path == self.path
+            and other.parent_id == self.parent_id
+            and other.public_mode == self.public_mode
+            and other.owner_id == self.owner_id
+            and other.archived == self.archived
+        )
+
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
@@ -107,6 +124,18 @@ class RawStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
     }
+
+    def __eq__(self, other: Any) -> bool:
+        if not super().__eq__(other):
+            return False
+        if not isinstance(other, RawStudy):
+            return False
+        return bool(
+            other.content_status == self.content_status
+            and other.workspace == self.workspace
+            and other.folder == self.folder
+            and other.missing == self.missing
+        )
 
 
 @dataclass
@@ -277,10 +306,42 @@ class MatrixIndex(BaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
+class TimeSerie(BaseModel):
+    name: str
+    unit: str
+    data: List[Optional[float]] = list()
+
+
+class TimeSeriesData(BaseModel):
+    type: StudyDownloadType
+    name: str
+    data: Dict[str, List[TimeSerie]] = dict()
+
+
+class MatrixAggregationResultDTO(BaseModel):
+    index: MatrixIndex
+    data: List[TimeSeriesData]
+    warnings: List[str]
+
+
 class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
-    data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
+    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
     warnings: List[str]
+
+    def to_dto(self) -> MatrixAggregationResultDTO:
+        return MatrixAggregationResultDTO(
+            index=self.index,
+            data=[
+                TimeSeriesData(
+                    type=key_type,
+                    name=key_name,
+                    data=self.data[(key_type, key_name)],
+                )
+                for key_type, key_name in self.data
+            ],
+            warnings=self.warnings,
+        )
 
 
 class ReferenceStudy(BaseModel):

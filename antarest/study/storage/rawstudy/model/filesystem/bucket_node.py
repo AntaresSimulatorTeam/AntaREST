@@ -1,6 +1,7 @@
 from typing import Optional, List, Union, Dict, Callable, Any
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

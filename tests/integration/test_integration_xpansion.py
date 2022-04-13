@@ -100,7 +100,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relaxed-optimality-gap": None,
         "solver": "Cbc",
         "uc_type": "expansion_fast",
-        "yearly_weight": None,
+        "yearly-weights": None,
     }
 
     res = client.put(
@@ -122,7 +122,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relaxed-optimality-gap": None,
         "solver": None,
         "uc_type": "expansion_fast",
-        "yearly_weight": None,
+        "yearly-weights": None,
     }
 
     res = client.put(

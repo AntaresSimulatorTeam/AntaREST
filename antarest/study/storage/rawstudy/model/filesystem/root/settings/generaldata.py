@@ -21,6 +21,8 @@ DUPLICATE_KEYS = [
     "playlist_year_weight",
     "playlist_year +",
     "playlist_year -",
+    "select_var -",
+    "select_var +",
 ]
 
 

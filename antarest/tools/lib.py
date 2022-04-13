@@ -17,6 +17,7 @@ from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import (
     StopWatch,
     get_local_path,
+    assert_this,
 )
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import (
@@ -88,7 +89,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         study = self.session.get(
             self.build_url(f"/v1/studies/{self.study_id}")
         ).json()
-        assert study is not None
+        assert_this(study is not None)
 
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
@@ -101,9 +102,9 @@ class RemoteVariantGenerator(IVariantGenerator):
                 res = self.session.post(
                     self.build_url(f"/v1/matrix"), json=matrix_data
                 )
-                assert res.status_code == 200
+                assert_this(res.status_code == 200)
                 matrix_id = res.json()
-                assert matrix_id == matrix_file.split(".")[0]
+                assert_this(matrix_id == matrix_file.split(".")[0])
                 matrix_dataset.append(matrix_id)
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
@@ -118,14 +119,14 @@ class RemoteVariantGenerator(IVariantGenerator):
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command upload done in {x}s")
         )
-        assert res.status_code == 200
+        assert_this(res.status_code == 200)
 
         res = self.session.put(
             self.build_url(
                 f"/v1/studies/{self.study_id}/generate?denormalize=true"
             )
         )
-        assert res.status_code == 200
+        assert_this(res.status_code == 200)
         task_id = res.json()
         res = self.session.get(
             self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true")
@@ -134,7 +135,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             lambda x: logger.info(f"Generation done in {x}s")
         )
         print(res.status_code)
-        assert res.status_code == 200
+        assert_this(res.status_code == 200)
         task_result = TaskDTO.parse_obj(res.json())
         assert task_result.result is not None
         return GenerationResultInfoDTO.parse_raw(

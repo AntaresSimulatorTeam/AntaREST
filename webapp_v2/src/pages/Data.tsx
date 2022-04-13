@@ -1,21 +1,14 @@
-import React from 'react';
-import { styled } from '@mui/material/styles';
-
-const Root = styled('div')(({
-  width: '100%',
-  height: '100%',
-  display: 'flex',
-  flexFlow: 'row nowrap',
-  justifyContent: 'center',
-  alignItems: 'center',
-  boxSizing: 'border-box',
-}));
+import { useTranslation } from "react-i18next";
+import StorageIcon from "@mui/icons-material/Storage";
+import RootPage from "../components/common/page/RootPage";
 
 function Data() {
+  const [t] = useTranslation();
+
   return (
-    <Root>
-      DATA
-    </Root>
+    <RootPage title={t("main:data")} titleIcon={StorageIcon}>
+      In progress
+    </RootPage>
   );
 }
 

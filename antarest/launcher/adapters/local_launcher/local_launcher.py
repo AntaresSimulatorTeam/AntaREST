@@ -24,10 +24,6 @@ from antarest.launcher.model import JobStatus, LogType
 logger = logging.getLogger(__name__)
 
 
-class StudyVersionNotSupported(Exception):
-    pass
-
-
 class LocalLauncher(AbstractLauncher):
     """
     This local launcher is meant to work when using AntaresWeb on a single worker process in local mode
@@ -46,6 +42,25 @@ class LocalLauncher(AbstractLauncher):
         ] = {}
         self.logs: Dict[str, str] = {}
 
+    def _select_best_binary(self, version: str) -> Path:
+        if self.config.launcher.local is None:
+            raise LauncherInitException()
+
+        if version in self.config.launcher.local.binaries:
+            antares_solver_path = self.config.launcher.local.binaries[version]
+        else:
+            version_int = int(version)
+            keys = list(map(int, self.config.launcher.local.binaries.keys()))
+            keys_sup = [k for k in keys if k > version_int]
+            best_existing_version = min(keys_sup) if keys_sup else max(keys)
+            antares_solver_path = self.config.launcher.local.binaries[
+                str(best_existing_version)
+            ]
+            logger.warning(
+                f"Version {version} is not available. Version {best_existing_version} has been selected instead"
+            )
+        return antares_solver_path
+
     def run_study(
         self,
         study_uuid: str,
@@ -57,21 +72,19 @@ class LocalLauncher(AbstractLauncher):
         if self.config.launcher.local is None:
             raise LauncherInitException()
 
-        antares_solver_path = self.config.launcher.local.binaries[version]
-        if antares_solver_path is None:
-            raise StudyVersionNotSupported()
-        else:
-            job = threading.Thread(
-                target=LocalLauncher._compute,
-                args=(
-                    self,
-                    antares_solver_path,
-                    study_uuid,
-                    job_id,
-                    launcher_parameters,
-                ),
-            )
-            job.start()
+        antares_solver_path = self._select_best_binary(version)
+
+        job = threading.Thread(
+            target=LocalLauncher._compute,
+            args=(
+                self,
+                antares_solver_path,
+                study_uuid,
+                job_id,
+                launcher_parameters,
+            ),
+        )
+        job.start()
 
     def _compute(
         self,
@@ -84,6 +97,11 @@ class LocalLauncher(AbstractLauncher):
 
         def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
+                with open(
+                    self.config.storage.tmp_dir / f"antares_solver-{uuid}.log",
+                    "w",
+                ) as log_file:
+                    log_file.write(self.logs[str(uuid)])
                 del self.logs[str(uuid)]
             return end
 
@@ -158,14 +176,14 @@ class LocalLauncher(AbstractLauncher):
             self.callbacks.update_status(
                 str(uuid),
                 JobStatus.FAILED
-                if (not process.returncode == 0) or not output_id
+                if process.returncode != 0 or not output_id
                 else JobStatus.SUCCESS,
                 None,
                 output_id,
             )
         except Exception as e:
             logger.error(
-                f"Unexpected error happend during launch {uuid}", exc_info=e
+                f"Unexpected error happened during launch {uuid}", exc_info=e
             )
             self.callbacks.update_status(
                 str(uuid),

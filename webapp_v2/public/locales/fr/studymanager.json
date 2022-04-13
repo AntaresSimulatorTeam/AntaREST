@@ -9,6 +9,9 @@
   "failtorunstudy": "Echec du lancement de l'étude",
   "studylaunched": "{{studyname}} lancée !",
   "savedatasuccess": "Données sauvegardées avec succès",
+  "scanFolder": "Scanner le dossier",
+  "scanFolderSuccess": "Scan du dossier lancé",
+  "scanFolderError": "Echec du lancement du scan",
   "importcopy": "Copier",
   "failtosavedata": "Erreur lors de la sauvegarde des données",
   "failtocopystudy": "Erreur lors de la copie de l'étude",
@@ -56,5 +59,7 @@
   "versionsLabel": "Versions",
   "usersLabel": "Utilisateurs",
   "groupsLabel": "Groupes",
-  "tagsLabel": "Tags"
+  "tagsLabel": "Tags",
+  "bookmark": "Ajouter aux favoris",
+  "removeFavorite": "Retirer des favoris"
 }

@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.adapters.local_launcher.local_launcher import (
@@ -48,3 +48,23 @@ def test_compute(tmp_path: Path):
             call(str(uuid), JobStatus.SUCCESS, None, "some output"),
         ]
     )
+
+
+@pytest.mark.unit_test
+def test_select_best_binary(tmp_path: Path):
+    binaries = {
+        "700": Path("700"),
+        "800": Path("800"),
+        "900": Path("900"),
+        "1000": Path("1000"),
+    }
+    local_launcher = LocalLauncher(
+        Config(launcher=LauncherConfig(local=LocalConfig(binaries=binaries))),
+        callbacks=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert local_launcher._select_best_binary("600") == binaries["700"]
+    assert local_launcher._select_best_binary("700") == binaries["700"]
+    assert local_launcher._select_best_binary("710") == binaries["800"]
+    assert local_launcher._select_best_binary("1100") == binaries["1000"]

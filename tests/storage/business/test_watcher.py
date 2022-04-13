@@ -12,6 +12,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
 from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.watcher import Watcher
+from tests.storage.conftest import SimpleSyncTaskService
 
 
 def build_config(root: Path) -> Config:
@@ -78,14 +79,56 @@ def test_scan(tmp_path: Path):
     (f / "study.antares").touch()
 
     service = Mock()
-    watcher = Watcher(build_config(tmp_path), service)
+    watcher = Watcher(
+        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
+    )
 
-    watcher._scan()
+    watcher.scan()
 
     service.sync_studies_on_disk.assert_called_once_with(
         [
             StudyFolder(c, "diese", [Group(id="tata", name="tata")]),
-        ]
+        ],
+        None,
+    )
+
+
+@pytest.mark.unit_test
+def test_partial_scan(tmp_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    clean_files()
+
+    default = tmp_path / "default"
+    default.mkdir()
+    a = default / "studyA"
+    a.mkdir()
+    (a / "study.antares").touch()
+
+    diese = tmp_path / "diese"
+    diese.mkdir()
+    c = diese / "folder/studyC"
+    c.mkdir(parents=True)
+    (c / "study.antares").touch()
+
+    service = Mock()
+    watcher = Watcher(
+        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
+    )
+
+    watcher.scan(workspace_name="default", workspace_directory_path=default)
+
+    service.sync_studies_on_disk.assert_called_once_with(
+        [
+            StudyFolder(a, "default", [Group(id="toto", name="toto")]),
+        ],
+        default,
     )
 
 

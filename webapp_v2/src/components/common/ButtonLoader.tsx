@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Button, ButtonProps, CircularProgress } from '@mui/material';
-import { blue } from '@mui/material/colors';
+import * as React from "react";
+import { Box, Button, ButtonProps, CircularProgress } from "@mui/material";
+import { blue } from "@mui/material/colors";
 
 interface OwnProps {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -12,7 +12,9 @@ function ButtonLoader(props: ButtonProps & OwnProps) {
   const { children, onClick, fakeDelay = 0 } = props;
   const [loading, setLoading] = React.useState(false);
 
-  const handleButtonClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const handleButtonClick = async (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
     if (!loading && !!onClick) {
       setLoading(true);
       setTimeout(async () => {
@@ -31,11 +33,12 @@ function ButtonLoader(props: ButtonProps & OwnProps) {
   delete forwardedProps.progressColor;
 
   return (
-    <Box sx={{
-      m: 1,
-      position: 'relative',
-      display: 'inline',
-    }}
+    <Box
+      sx={{
+        m: 1,
+        position: "relative",
+        display: "inline",
+      }}
     >
       <Button
         // eslint-disable-next-line react/jsx-props-no-spreading
@@ -46,17 +49,17 @@ function ButtonLoader(props: ButtonProps & OwnProps) {
         {children}
       </Button>
       {loading && (
-      <CircularProgress
-        size={24}
-        sx={{
-          color: progressColor,
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          marginTop: -12,
-          marginLeft: -12,
-        }}
-      />
+        <CircularProgress
+          size={24}
+          sx={{
+            color: progressColor,
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            marginTop: -12,
+            marginLeft: -12,
+          }}
+        />
       )}
     </Box>
   );

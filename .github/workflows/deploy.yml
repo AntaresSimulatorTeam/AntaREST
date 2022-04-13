@@ -18,6 +18,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Install wget for windows
+        if: matrix.os == 'windows-latest'
+        run: choco install wget --no-progress
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
@@ -41,29 +44,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
+      - name: Install Windows dependencies
+        if: matrix.os == 'windows-latest'
+        run: pip install -r requirements-windows.txt
       - name: Fix symlink for windows
         if: matrix.os == 'windows-latest'
         run: |
           rm antareslauncher
           ln -s antares-launcher\antareslauncher antareslauncher
-      - name: Generate binary Unix
-        if: matrix.os != 'windows-latest'
-        run: |
-          git log -1 HEAD --format=%H > ./resources/commit_id
-          pyinstaller -F antarest/gui.py --windowed --icon=resources/webapp/favicon.ico -n AntaresWebServer --hidden-import='cmath' --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.linux' --hidden-import='plyer.platforms.linux.notification' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
-          pyinstaller -F antarest/main.py -n TestWebServer --hidden-import='cmath' --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
-          pyinstaller -F antarest/tools/cli.py -n AntaresTool --hidden-import='cmath' --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data resources:resources
-          dist/TestWebServer -v
-          dist/AntaresTool --help
-      - name: Generate binary Windows
+      - name: Generate Windows binary
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\gui.py --windowed --icon=resources/webapp/favicon.ico -n AntaresWebServer --hidden-import='cmath' --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.win' --hidden-import='plyer.platforms.win.notification' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini"
-          pyinstaller -F antarest\tools\cli.py -n AntaresTool --hidden-import='cmath' --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
-          dist\AntaresTool.exe --help
+          pyinstaller AntaresWebWin.spec
+      - name: Generate linux binary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          git log -1 HEAD --format=%H > .\resources\commit_id
+          pyinstaller AntaresWebLinux.spec
+      - name: Packaging
+        run: bash ./package_antares_web.sh
+        working-directory: scripts
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
-          name: dist-${{ matrix.os }}
+          name: AntaresWeb-${{ matrix.os }}
           path: dist/*

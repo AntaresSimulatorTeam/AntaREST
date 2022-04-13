@@ -1,7 +1,8 @@
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal, call
+from unittest.mock import Mock, seal, call, ANY
 from uuid import uuid4
 
 import pytest
@@ -36,6 +37,9 @@ from antarest.study.model import (
     OwnerInfo,
     StudyDownloadLevelDTO,
     ExportFormat,
+    MatrixAggregationResultDTO,
+    TimeSerie,
+    TimeSeriesData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
@@ -294,10 +298,79 @@ def test_sync_studies_from_disk() -> None:
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
-            call(RawStudy(id="b", path="b", missing=True)),
+            call(RawStudy(id="b", path="b", missing=ANY)),
             call(RawStudy(id="e", path="e", created_at=now, missing=None)),
-            call(RawStudy(id="f", path="f", workspace=DEFAULT_WORKSPACE_NAME)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    workspace=DEFAULT_WORKSPACE_NAME,
+                    name="f",
+                    folder="f",
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
+    )
+
+
+@pytest.mark.unit_test
+def test_partial_sync_studies_from_disk() -> None:
+    now = datetime.utcnow()
+    ma = RawStudy(id="a", path=Path("a"))
+    mb = RawStudy(id="b", path=Path("b"))
+    mc = RawStudy(
+        id="c",
+        path=Path("directory/c"),
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    md = RawStudy(
+        id="d",
+        path=Path("directory/d"),
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+    )
+    me = RawStudy(
+        id="e",
+        path=Path("directory/e"),
+        created_at=now,
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+    )
+    fc = StudyFolder(
+        path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    fe = StudyFolder(
+        path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+    ff = StudyFolder(
+        path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
+    service = build_study_service(Mock(), repository, config)
+
+    service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
+
+    repository.delete.assert_called_once_with(md.id)
+    repository.save.assert_called_with(
+        RawStudy(
+            id=ANY,
+            path=f"directory{os.sep}f",
+            name="f",
+            folder=f"directory{os.sep}f",
+            created_at=ANY,
+            missing=None,
+            public_mode=PublicMode.FULL,
+            workspace=DEFAULT_WORKSPACE_NAME,
+        )
     )
 
 
@@ -424,11 +497,6 @@ def test_save_metadata() -> None:
     # Expected
     study = RawStudy(
         id=uuid,
-        name="CAPTION",
-        version="VERSION",
-        author="AUTHOR",
-        created_at=datetime.utcfromtimestamp(1234),
-        updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -441,6 +509,7 @@ def test_save_metadata() -> None:
     )
     service = build_study_service(study_service, repository, config)
 
+    service.user_service.get_user.return_value = user
     service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=jwt,
@@ -490,6 +559,7 @@ def test_download_output() -> None:
         synthesis=True,
         by_year=True,
         error=False,
+        playlist=[0],
     )
     file_config = FileStudyTreeConfig(
         study_path=input_study.path,
@@ -511,7 +581,11 @@ def test_download_output() -> None:
     )
     service = build_study_service(study_service, repository, config)
 
-    res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
+    res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
+    res_study_details = {
+        "columns": [["some cluster", "Euro/MWh"]],
+        "data": [[0.8]],
+    }
     study_service.get_raw.return_value = FileStudy(
         config=file_config, tree=study
     )
@@ -526,27 +600,39 @@ def test_download_output() -> None:
     study.get.side_effect = [
         output_config,
         res_study,
+        res_study_details,
+        output_config,
+        res_study,
+        res_study_details,
+        output_config,
         res_study,
         output_config,
         res_study,
-        res_study,
-        output_config,
-        res_study,
-        res_study,
-        output_config,
-        res_study,
-        res_study,
+        res_study_details,
     ]
 
     # AREA TYPE
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="east",
+                type=StudyDownloadType.AREA,
+                data={
+                    1: [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
+                        TimeSerie(
+                            name="some cluster", unit="Euro/MWh", data=[0.8]
+                        ),
+                    ]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -557,7 +643,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -592,14 +678,22 @@ def test_download_output() -> None:
     # LINK TYPE
     input_data.type = StudyDownloadType.LINK
     input_data.filter = ["east>west"]
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="east^west",
+                type=StudyDownloadType.LINK,
+                data={
+                    1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -610,20 +704,33 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
     input_data.filter = []
     input_data.filterIn = "n"
-    res_matrix = MatrixAggregationResult(
+    res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
             start_date="2001-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
         ),
-        data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        data=[
+            TimeSeriesData(
+                name="north",
+                type=StudyDownloadType.DISTRICT,
+                data={
+                    1: [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
+                        TimeSerie(
+                            name="some cluster", unit="Euro/MWh", data=[0.8]
+                        ),
+                    ]
+                },
+            )
+        ],
         warnings=[],
     )
     result = service.download_outputs(
@@ -634,7 +741,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
 
 @pytest.mark.unit_test
@@ -936,6 +1043,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     raw_study_service = RawStudyService(
         Config(), Mock(), Mock(), Mock(), Mock()
     )
+    variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
@@ -943,7 +1051,7 @@ def test_delete_with_prefetch(tmp_path: Path):
         Mock(),
         Mock(),
         Mock(),
-        Mock(),
+        variant_study_repository,
         Mock(),
         Mock(),
     )
@@ -998,6 +1106,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
+    variant_study_repository.get_children.return_value = []
 
     # if this fails, it may means the study metadata mock is missing some definition
     # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)

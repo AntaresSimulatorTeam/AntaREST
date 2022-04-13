@@ -48,10 +48,16 @@ class MaintenanceService:
     def check_disk_usage(self) -> None:
         while True:
             for name, workspace in self.config.storage.workspaces.items():
-                usage = shutil.disk_usage(workspace.path)
-                logger.info(
-                    f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}% ({(usage.free / 1000000000):.3f}GB free)"
-                )
+                try:
+                    usage = shutil.disk_usage(workspace.path)
+                    logger.info(
+                        f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}% ({(usage.free / 1000000000):.3f}GB free)"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to check disk usage for disk {workspace.path}",
+                        exc_info=e,
+                    )
             time.sleep(3600)
 
     def _get_maintenance_data(

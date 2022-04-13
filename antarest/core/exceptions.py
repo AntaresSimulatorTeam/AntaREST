@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Optional
 
 from fastapi import HTTPException
 
@@ -79,10 +80,13 @@ class NotAManagedStudyException(HTTPException):
 
 
 class StudyDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str) -> None:
+    def __init__(self, uuid: str, message: Optional[str] = None) -> None:
+        msg = f"Study {uuid} (not managed) is not allowed to be deleted"
+        if message:
+            msg += f"\n{message}"
         super().__init__(
             HTTPStatus.FORBIDDEN,
-            f"Study {uuid} (not managed) is not allowed to be deleted",
+            msg,
         )
 
 
