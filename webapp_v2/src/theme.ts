@@ -86,6 +86,18 @@ const theme = createTheme({
         },
       ],
     },
+    MuiFormControl: {
+      variants: [
+        {
+          props: { variant: "outlined" },
+          style: {
+            "> div > fieldset": {
+              borderColor: "rgba(255,255,255,0.09)",
+            },
+          },
+        },
+      ],
+    },
   },
 
   typography: {
@@ -129,7 +141,7 @@ const theme = createTheme({
     },
     action: {
       active: "rgba(255, 255, 255, 0.56)",
-      hover: "rgba(255, 255, 255, 0.08)",
+      hover: "rgba(255, 255, 255, 0.32)",
       selected: "rgba(255, 255, 255, 0.16)",
       disabled: "rgba(255, 255, 255, 0.3)",
       disabledBackground: "rgba(255, 255, 255, 0.12)",

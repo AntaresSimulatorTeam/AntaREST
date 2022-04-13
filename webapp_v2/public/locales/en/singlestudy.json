@@ -31,6 +31,7 @@
   "taskMessage": "Message",
   "taskOutputId": "Simulation output Id",
   "taskLog": "Logs",
+  "taskErrorLog": "Error logs",
   "noTasks": "No tasks",
   "failtofetchlogs": "Failed to fetch logs",
   "failtokilltask": "Failed to kill task",

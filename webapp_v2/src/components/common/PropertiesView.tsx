@@ -7,13 +7,13 @@ import AddIcon from "@mui/icons-material/Add";
 const StyledAddIcon = styled(AddIcon)(({ theme }) => ({
   cursor: "pointer",
   color: "black",
-  width: "40px",
-  height: "40px",
+  width: "56px",
+  height: "56px",
   position: "absolute",
   left: "5%",
   bottom: "25px",
   borderRadius: "30px",
-  padding: "8px",
+  padding: "16px",
   backgroundColor: theme.palette.primary.main,
   "&:hover": {
     backgroundColor: theme.palette.primary.dark,

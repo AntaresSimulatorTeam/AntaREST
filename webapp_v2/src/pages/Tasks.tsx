@@ -13,10 +13,8 @@ import {
   Box,
   CircularProgress,
   Tooltip,
-  IconButton,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import BlockIcon from "@mui/icons-material/Block";
 import InfoIcon from "@mui/icons-material/Info";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
@@ -25,9 +23,9 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import DownloadIcon from "@mui/icons-material/Download";
 import { grey } from "@mui/material/colors";
 import RootPage from "../components/common/page/RootPage";
-// import MainContentLoader from "../ui/loaders/MainContentLoader";
-// import DownloadLink from "../ui/DownloadLink";
-// import LogModal from "../ui/LogModal";
+import SimpleLoader from "../components/common/loaders/SimpleLoader";
+import DownloadLink from "../components/common/DownloadLink";
+import LogModal from "../components/common/LogModal";
 import {
   addListener,
   removeListener,
@@ -35,7 +33,7 @@ import {
   unsubscribe,
   WsChannel,
 } from "../store/websockets";
-// import JobTableView from "./JobTableView";
+import JobTableView from "../components/tasks/JobTableView";
 import { convertUTCToLocalTime, useNotif } from "../services/utils/index";
 import {
   downloadJobOutput,
@@ -46,7 +44,7 @@ import {
 import {
   convertFileDownloadDTO,
   FileDownload,
-  // getDownloadUrl,
+  getDownloadUrl,
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
@@ -63,7 +61,7 @@ import enqueueErrorSnackbar from "../components/common/ErrorSnackBar";
 import BasicModal from "../components/common/BasicModal";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
 import { AppState } from "../store/reducers";
-// import LogView from "./LogView";
+import LogView from "../components/tasks/LogView";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -99,16 +97,16 @@ function JobsListing(props: PropTypes) {
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
   const createNotif = useNotif();
-  // const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<
     string | undefined
   >();
-  // const [messageModalOpen, setMessageModalOpen] = useState<
-  //   string | undefined
-  // >();
+  const [messageModalOpen, setMessageModalOpen] = useState<
+    string | undefined
+  >();
 
   const init = async () => {
-    // setLoaded(false);
+    setLoaded(false);
     try {
       if (studies.length === 0) {
         const allStudies = await getStudies();
@@ -131,7 +129,7 @@ function JobsListing(props: PropTypes) {
       logError("woops", e);
       enqueueErrorSnackbar(createNotif, "ça marche pas", e as AxiosError);
     } finally {
-      // setLoaded(true);
+      setLoaded(true);
     }
   };
 
@@ -267,8 +265,11 @@ function JobsListing(props: PropTypes) {
         name: (
           <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
             {renderStatus(job)}
-            <Link to={`/study/${encodeURI(job.studyId)}`}>
-              <Typography sx={{ color: "primary.main", fontSize: "0.95rem" }}>
+            <Link
+              style={{ textDecoration: "none" }}
+              to={`/studies/${encodeURI(job.studyId)}`}
+            >
+              <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
                 {studies.find((s) => s.id === job.studyId)?.name ||
                   `${t("main:unknown")} (${job.id})`}
               </Typography>
@@ -278,13 +279,15 @@ function JobsListing(props: PropTypes) {
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
             <Box>
-              <CalendarTodayIcon sx={{ marginRight: "0.5em" }} />
+              <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(job.creationDate)}
             </Box>
             <Box>
               {job.completionDate && (
                 <>
-                  <EventAvailableIcon sx={{ marginRight: "0.5em" }} />
+                  <EventAvailableIcon
+                    sx={{ fontSize: 16, marginRight: "0.5em" }}
+                  />
                   {convertUTCToLocalTime(job.completionDate)}
                 </>
               )}
@@ -300,7 +303,7 @@ function JobsListing(props: PropTypes) {
                     sx={{
                       cursor: "pointer",
                       color: "error.light",
-                      "&:hover": { color: "error.main" },
+                      "&:hover": { color: "error.dark" },
                     }}
                     onClick={() => setOpenConfirmationModal(job.id)}
                   />
@@ -312,26 +315,21 @@ function JobsListing(props: PropTypes) {
             <Box>
               {job.status === "success" ? (
                 <Tooltip title={t("jobs:download") as string}>
-                  <IconButton
-                    size="small"
+                  <DownloadIcon
                     sx={{
-                      "& > span > svg": {
-                        margin: "4px",
-                        color: theme.palette.primary.main,
-                      },
-                      "&:hover > span svg": {
-                        color: theme.palette.secondary.main,
-                      },
+                      fontSize: 22,
+                      color: "action.active",
+                      cursor: "pointer",
+                      "&:hover": { color: "action.hover" },
                     }}
-                  >
-                    <DownloadIcon onClick={() => exportJobOutput(job.id)} />
-                  </IconButton>
+                    onClick={() => exportJobOutput(job.id)}
+                  />
                 </Tooltip>
               ) : (
                 <Box />
               )}
             </Box>
-            {/* <LogView job={job} logButton logErrorButton /> */}
+            <LogView job={job} logButton logErrorButton />
           </Box>
         ),
         date: job.completionDate || job.creationDate,
@@ -344,7 +342,7 @@ function JobsListing(props: PropTypes) {
     () =>
       downloads.map((download) => ({
         name: (
-          <Box sx={{ color: "primary.main", fontSize: "0.95rem" }}>
+          <Box sx={{ color: "white", fontSize: "0.95rem" }}>
             {download.name}
           </Box>
         ),
@@ -362,33 +360,29 @@ function JobsListing(props: PropTypes) {
                 width: "18px",
                 height: "auto",
                 cursor: "pointer",
-                color: "error.main",
+                color: "error.light",
                 "&:hover": {
                   color: "error.dark",
                 },
               }}
-              // onClick={() => setMessageModalOpen(download.errorMessage)}
+              onClick={() => setMessageModalOpen(download.errorMessage)}
             />
           </Tooltip>
         ) : (
           <Box>
             {download.ready ? (
-              <Tooltip title={t("jobs:download") as string}>
-                <IconButton
-                  size="small"
-                  sx={{
-                    "& > span > svg": {
-                      margin: "4px",
-                      color: theme.palette.primary.main,
-                    },
-                    "&:hover > span svg": {
-                      color: theme.palette.secondary.main,
-                    },
-                  }}
-                >
-                  <DownloadIcon />
-                </IconButton>
-              </Tooltip>
+              <DownloadLink url={getDownloadUrl(download.id)}>
+                <Tooltip title={t("jobs:download") as string}>
+                  <DownloadIcon
+                    sx={{
+                      fontSize: 22,
+                      color: "action.active",
+                      cursor: "pointer",
+                      "&:hover": { color: "action.hover" },
+                    }}
+                  />
+                </Tooltip>
+              </DownloadLink>
             ) : (
               <Tooltip title={t("jobs:loading") as string}>
                 <CircularProgress
@@ -411,20 +405,22 @@ function JobsListing(props: PropTypes) {
     () =>
       tasks.map((task) => ({
         name: (
-          <Typography sx={{ color: "primary.main", fontSize: "0.95rem" }}>
+          <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
             {task.name}
           </Typography>
         ),
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
             <Box>
-              <CalendarTodayIcon sx={{ marginRight: "0.5em" }} />
+              <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(task.creation_date_utc)}
             </Box>
             <Box>
               {task.completion_date_utc && (
                 <>
-                  <EventAvailableIcon sx={{ marginRight: "0.5em" }} />
+                  <EventAvailableIcon
+                    sx={{ fontSize: 16, marginRight: "0.5em" }}
+                  />
                   {convertUTCToLocalTime(task.completion_date_utc)}
                 </>
               )}
@@ -447,7 +443,7 @@ function JobsListing(props: PropTypes) {
                   width: "18px",
                   height: "auto",
                   cursor: "pointer",
-                  color: "error.main",
+                  color: "error.light",
                   "&:hover": {
                     color: "error.dark",
                   },
@@ -457,23 +453,24 @@ function JobsListing(props: PropTypes) {
           </Box>
         ),
         date: task.completion_date_utc || task.creation_date_utc,
-        type:
-          (task.type === TaskType.COPY && TaskType.COPY) ||
-          (task.type === TaskType.ARCHIVE && TaskType.ARCHIVE) ||
-          (task.type === TaskType.UNARCHIVE && TaskType.UNARCHIVE) ||
-          TaskType.COPY,
+        type: task.type || TaskType.UNKNOWN,
       })),
     [tasks]
   );
 
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
-  console.log(content);
 
   return (
     <RootPage title={t("main:tasks")} titleIcon={AssignmentIcon}>
-      <Box flexGrow={1} overflow="hidden" width="100%" display="flex">
-        {/* {!loaded && <MainContentLoader />} */}
-        {/* {loaded && <JobTableView content={content || []} />} */}
+      <Box
+        flexGrow={1}
+        overflow="hidden"
+        width="100%"
+        display="flex"
+        position="relative"
+      >
+        {!loaded && <SimpleLoader />}
+        {loaded && <JobTableView content={content || []} />}
         {openConfirmationModal && (
           <BasicModal
             open={!!openConfirmationModal}
@@ -495,13 +492,13 @@ function JobsListing(props: PropTypes) {
             </Typography>
           </BasicModal>
         )}
-        {/* <LogModal
+        <LogModal
           isOpen={!!messageModalOpen}
           title={t("singlestudy:taskLog")}
           content={messageModalOpen}
           close={() => setMessageModalOpen(undefined)}
           style={{ width: "600px", height: "300px" }}
-        /> */}
+        />
       </Box>
     </RootPage>
   );

@@ -15,8 +15,8 @@ import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
-import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
+import StorageIcon from "@mui/icons-material/Storage";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 
 import ApiIcon from "@mui/icons-material/Api";
@@ -76,8 +76,8 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       strict: true,
       icon: TravelExploreOutlinedIcon,
     },
-    { id: "tasks", link: "/tasks", icon: PlaylistAddCheckOutlinedIcon },
-    { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
+    { id: "tasks", link: "/tasks", icon: AssignmentIcon },
+    { id: "data", link: "/data", icon: StorageIcon },
     { id: "api", link: "/api", icon: ApiIcon },
     {
       id: "documentation",
