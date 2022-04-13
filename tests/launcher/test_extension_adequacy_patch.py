@@ -20,6 +20,7 @@ def test_hooks(tmp_path: Path):
 
     study_export_path = tmp_path / "study"
     study_export_path.mkdir()
+    (study_export_path / "user" / "adequacypatch").mkdir(parents=True)
 
     study_tree = Mock()
     study_config = Mock()
@@ -32,6 +33,7 @@ def test_hooks(tmp_path: Path):
 
     study_tree.get.side_effect = [{}, {"flowbased": {}}, '{"areas": []}']
     study_config.areas = {}
+    study_config.study_path = study_export_path
 
     with pytest.raises(AssertionError):
         adq_ext.after_export_flat_hook(
@@ -42,3 +44,6 @@ def test_hooks(tmp_path: Path):
         "some-job", "some-study-id", study_export_path, {}
     )
     assert (study_export_path / "post-processing.R").exists()
+    assert (
+        study_export_path / "user" / "adequacypatch" / "hourly-areas.yml"
+    ).exists()

@@ -63,7 +63,7 @@ class BatchJobManager:
                 or {}
             )
             if all_workspaces:
-                all_workspaces_jobs = {}
+                all_workspaces_jobs: Dict[str, str] = {}
                 for workspace_jobs in all_jobs.values():
                     all_workspaces_jobs = {
                         **workspace_jobs,
@@ -206,6 +206,7 @@ class BatchJobManager:
         launcher_studies: List[StudyDTO],
         workspace: Path,
         allow_part_failure: bool = True,
+        reconstruct_synthesis: bool = True,
     ) -> Optional[Path]:
         """
         Merge the output of study run batches.
@@ -246,7 +247,7 @@ class BatchJobManager:
                 logger.warning(
                     f"Sub job {study.name} failed within job {job_id}. Skipping importing this part."
                 )
-        if batch_parts > 1 and output_info:
+        if batch_parts > 1 and output_info and reconstruct_synthesis:
             self.reconstruct_synthesis(
                 output_info[0], output_info[1], merged_batches
             )

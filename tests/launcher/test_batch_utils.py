@@ -145,6 +145,7 @@ def test_merge_outputs(tmp_path: Path):
             ],
             workspace=tmp_path,
             allow_part_failure=False,
+            reconstruct_synthesis=False,
         )
         is None
     )
@@ -173,6 +174,7 @@ def test_merge_outputs(tmp_path: Path):
             ],
             workspace=tmp_path,
             allow_part_failure=True,
+            reconstruct_synthesis=False,
         )
         == target_output_dir
     )
