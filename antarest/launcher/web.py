@@ -167,7 +167,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/launcher/_versions",
         tags=[APITag.launcher],
-        summary="Get list of supported study version for all configures launchers",
+        summary="Get list of supported study version for all configured launchers",
         response_model=Dict[str, List[str]],
     )
     def get_versions(
