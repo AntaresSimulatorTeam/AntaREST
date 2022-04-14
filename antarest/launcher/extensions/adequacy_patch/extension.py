@@ -35,7 +35,6 @@ class AdequacyPatchExtension(ILauncherExtension):
             config.storage.tmp_dir
             / f"ext_{AdequacyPatchExtension.EXTENSION_NAME}"
         )
-        self.config_data_repo = ConfigDataRepository()
         self.tmp_dir.mkdir(exist_ok=True)
 
     def get_name(self) -> str:
@@ -86,8 +85,9 @@ class AdequacyPatchExtension(ILauncherExtension):
             for area_id in adq_patch_config.get("areas", [])
         ]
         original_area_status: Dict[str, bool] = {}
+        original_link_status: Dict[str, bool] = {}
         for area_id, area in study.config.areas.items():
-            # area.filters_synthesis
+            # areas
             original_area_status[area_id] = "hourly" in area.filters_year
             if (
                 not original_area_status[area_id]
@@ -105,11 +105,27 @@ class AdequacyPatchExtension(ILauncherExtension):
                     ],
                 )
 
+            # links
+            for area_2, link in area.links:
+                link_id = f"{area_id} - {area_2}"
+                original_link_status[link_id] = "hourly" in link.filters_year
+                if not original_link_status[link_id] and (
+                    area_id in area_to_turn_on or area_2 in area_to_turn_on
+                ):
+                    study.tree.save(
+                        ", ".join([*link.filters_year, "hourly"]),
+                        [
+                            "input",
+                            "links",
+                            area_id,
+                            "properties",
+                            area_2,
+                            "filter-year-by-year",
+                        ],
+                    )
+
         with FileLock(self.tmp_dir / "data.lock"):
             with db():
-                key = "ADEQUACY_PATCH_DATA"
-                data = self.config_data_repo.get_json(key) or {}
-                data[job_id] = original_area_status
                 with open(
                     study.config.study_path
                     / "user"
@@ -118,9 +134,14 @@ class AdequacyPatchExtension(ILauncherExtension):
                     "w",
                 ) as fh:
                     yaml.dump(original_area_status, fh)
-                self.config_data_repo.save(
-                    ConfigData(owner=0, key=key, value=json.dumps(data))
-                )
+                with open(
+                    study.config.study_path
+                    / "user"
+                    / "adequacypatch"
+                    / "hourly-links.yml",
+                    "w",
+                ) as fh:
+                    yaml.dump(original_link_status, fh)
         return original_area_status
 
     def before_import_hook(

@@ -31,43 +31,42 @@ run_adq(opts = opts,
                     log_detail = TRUE)
 
 areas <- read_yaml("user/adequacypatch/hourly-areas.yml", fileEncoding = "UTF-8", text)
+links <- read_yaml("user/adequacypatch/hourly-links.yml", fileEncoding = "UTF-8", text)
+
+remove_data <- function(path_prefix, data_type, data_list, include_id) {
+    for (item in names(data_list)) {
+        if (!data_list[[item]]) {
+            item_data <- paste(c(path_prefix, data_type, item), collapse="/")
+            cat(paste0("Removing from ", data_type, " ", item, " in ", path_prefix))
+            unlink(file.path(paste0(item_data, "values-hourly.txt", collapse="/")))
+            if (include_id) {
+                unlink(file.path(paste0(item_data, "id-hourly.txt", collapse="/")))
+            }
+            unlink(file.path(paste0(item_data, "details-hourly.txt", collapse="/")))
+            if (length(list.files(file.path(item_data))) == 0) {
+                unlink(file.path(item_data))
+            }
+        }
+    }
+}
 
 for (output in list.files("output")) {
     for (run_type in c("economy", "adequacy", "adequacy-draft")) {
         output_data <- paste(c("output", output, run_type), collapse="/")
-            if (file.exists(output_data)) {
-                # mc ind
-                mc_data <- paste(c(output_data, "mc-ind"), collapse="/")
-                if (file.exists(mc_data)) {
-                    for (mc_year in list.files(file.path(mc_data))) {
-                        for (area in names(areas)) {
-                            if (!areas[[area]]) {
-                                area_data <- paste(c(mc_data, mc_year, "areas", area), collapse="/")
-                                cat(paste0("Removing area ", area, " for year ", mc_year))
-                                unlink(file.path(paste0(area_data, "values-hourly.txt", collapse="/")))
-                                unlink(file.path(paste0(area_data, "details-hourly.txt", collapse="/")))
-                                if (length(list.files(file.path(area_data))) == 0) {
-                                    unlink(file.path(area_data))
-                                }
-                            }
-                        }
-                    }
+        if (file.exists(output_data)) {
+            # mc ind
+            mc_data <- paste(c(output_data, "mc-ind"), collapse="/")
+            if (file.exists(mc_data)) {
+                for (mc_year in list.files(file.path(mc_data))) {
+                    remove_data(c(mc_data, mc_year), "areas", areas, FALSE)
+                    remove_data(c(mc_data, mc_year), "links", links, FALSE)
                 }
-                # mc all
-                mc_data <- paste(c(output_data, "mc-all"), collapse="/")
-                if (file.exists(mc_data)) {
-                for (area in names(areas)) {
-                    if (!areas[[area]]) {
-                        area_data <- paste(c(mc_data, "areas", area), collapse="/")
-                        cat(paste0("Removing area ", area))
-                        unlink(file.path(paste0(area_data, "values-hourly.txt", collapse="/")))
-                        unlink(file.path(paste0(area_data, "id-hourly.txt", collapse="/")))
-                        unlink(file.path(paste0(area_data, "details-hourly.txt", collapse="/")))
-                        if (length(list.files(file.path(area_data))) == 0) {
-                            unlink(file.path(area_data))
-                        }
-                    }
-                }
+            }
+            # mc all
+            mc_data <- paste(c(output_data, "mc-all"), collapse="/")
+            if (file.exists(mc_data)) {
+                remove_data(mc_data, "areas", areas, TRUE)
+                remove_data(mc_data, "links", links, TRUE)
             }
         }
     }
