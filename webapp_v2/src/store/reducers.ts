@@ -7,7 +7,6 @@ import {
 } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension";
 import thunk from "redux-thunk";
-import logger from "redux-logger";
 import { throttle } from "lodash";
 import study, { StudyState, initStudies } from "./study";
 import auth, {
@@ -42,7 +41,7 @@ export type AppState = CombinedState<{
 export default function createMainStore(): Store<AppState> {
   const reduxStore = createStore(
     reducers,
-    composeWithDevTools(applyMiddleware(...[thunk, logger]))
+    composeWithDevTools(applyMiddleware(thunk))
   );
   setLogoutInterceptor(
     () => reduxStore.dispatch(logoutAction()),
