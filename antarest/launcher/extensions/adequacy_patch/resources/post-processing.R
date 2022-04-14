@@ -17,6 +17,7 @@ thresholdFilter = config$thresholdFilter
 core_ahc = config$core_ahc
 calculate_mc_all = config$calculate_mc_all
 extension = config$extension
+config = config$nbcore
 
 run_adq(opts = opts,
 					areas = areas,
@@ -24,7 +25,7 @@ run_adq(opts = opts,
 					mcYears = mcYears,
 					antaresfbzone = antaresfbzone,
 					ext = extension,
-					nbcl = 12, thresholdFilter = thresholdFilter,
+					nbcl = nbcore, thresholdFilter = thresholdFilter,
 					core_ahc = core_ahc,
                     calculate_mc_all = calculate_mc_all,
                     log_detail = TRUE)

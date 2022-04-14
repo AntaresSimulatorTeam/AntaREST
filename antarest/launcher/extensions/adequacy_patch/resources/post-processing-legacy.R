@@ -16,6 +16,7 @@ thresholdFilter = config$thresholdFilter
 core_ahc = config$core_ahc
 calculate_mc_all = config$calculate_mc_all
 extension = config$extension
+nbcore = config$nbcore
 
 run_adq(opts = opts,
 					areas = areas,
@@ -23,7 +24,7 @@ run_adq(opts = opts,
 					mcYears = mcYears,
 					antaresfbzone = antaresfbzone,
 					ext = extension,
-					nbcl = 12, thresholdFilter = thresholdFilter,
+					nbcl = nbcore, thresholdFilter = thresholdFilter,
 					core_ahc = core_ahc)
 
 areas <- read_yaml("user/adequacypatch/hourly-areas.yml", fileEncoding = "UTF-8", text)
