@@ -106,7 +106,7 @@ class AdequacyPatchExtension(ILauncherExtension):
                 )
 
             # links
-            for area_2, link in area.links:
+            for area_2, link in area.links.items():
                 link_id = f"{area_id} - {area_2}"
                 original_link_status[link_id] = "hourly" in link.filters_year
                 if not original_link_status[link_id] and (
