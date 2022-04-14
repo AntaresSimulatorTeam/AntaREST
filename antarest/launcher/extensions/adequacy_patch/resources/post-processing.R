@@ -17,7 +17,7 @@ thresholdFilter = config$thresholdFilter
 core_ahc = config$core_ahc
 calculate_mc_all = config$calculate_mc_all
 extension = config$extension
-config = config$nbcore
+nbcore = config$nbcore
 
 run_adq(opts = opts,
 					areas = areas,
