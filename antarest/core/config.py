@@ -197,7 +197,7 @@ class LauncherConfig:
     default: str = "local"
     local: Optional[LocalConfig] = LocalConfig()
     slurm: Optional[SlurmConfig] = SlurmConfig()
-    batch_size: int = 100
+    batch_size: int = 9999
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
@@ -214,7 +214,7 @@ class LauncherConfig:
             default=data.get("default", "local"),
             local=local,
             slurm=slurm,
-            batch_size=data.get("batch_size", 100),
+            batch_size=data.get("batch_size", 9999),
         )
 
 

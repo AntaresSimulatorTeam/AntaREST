@@ -385,6 +385,7 @@ class BatchJobManager:
         - mc-all
         - todo parameters (playlist)
         - todo summary files (checkIntegrity.txt, annualSystemCost.txt)
+        - todo ts numbers
         """
         study = self.study_factory.create_from_fs(
             study_dir, "", use_cache=False
