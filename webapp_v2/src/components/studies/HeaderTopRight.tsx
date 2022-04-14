@@ -13,7 +13,7 @@ function HeaderRight() {
     <>
       <ImportStudy />
       <Button
-        sx={{ m: 2 }}
+        sx={{ ml: 2 }}
         variant="contained"
         color="primary"
         startIcon={<AddCircleOutlineOutlinedIcon />}
