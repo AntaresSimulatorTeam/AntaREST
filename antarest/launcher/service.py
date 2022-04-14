@@ -231,6 +231,7 @@ class LauncherService:
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
+        study_version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(
@@ -239,7 +240,7 @@ class LauncherService:
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
         )
-        study_version = study_info.version
+        study_version = study_version or study_info.version
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
