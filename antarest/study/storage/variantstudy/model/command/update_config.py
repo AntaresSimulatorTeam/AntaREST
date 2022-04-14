@@ -78,7 +78,7 @@ class UpdateConfig(ICommand):
     ) -> List["ICommand"]:
         update_config_list: List[UpdateConfig] = []
         self_target_path = Path(self.target)
-        parent_path: Optional[Path] = None
+        parent_path: Path = Path(".")
         for command in reversed(history):
             if isinstance(command, UpdateConfig):
                 # adding all the UpdateConfig commands until we find one containing self (or the end)
@@ -89,8 +89,6 @@ class UpdateConfig(ICommand):
                     # found the last parent command.
                     parent_path = Path(command.target)
                     break
-
-        parent_path = parent_path or Path(".")
 
         output_list: List[ICommand] = [
             command
