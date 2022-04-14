@@ -83,43 +83,44 @@ class UpdateConfig(ICommand):
             if isinstance(command, UpdateConfig):
                 # adding all the UpdateConfig commands until we find one containing self (or the end)
                 update_config_list.append(command)
-                if (
-                    Path(command.target) in self_target_path.parents
-                    or command.target == self.target
-                ):
+                if command.target == self.target:
+                    return [command]
+                elif Path(command.target) in self_target_path.parents:
                     # found the last parent command.
                     parent_path = Path(command.target)
                     break
 
-        if parent_path is not None:
-            # we found the last parent command which is in the end of the list
-            # we now revert the list of UpdateConfig commands to return it in the correct order
-            # and we also filter out the UpdateConfig commands which are not "children" of the parent command
-            output_list: List[ICommand] = [
-                command
-                for command in update_config_list[::-1]
-                if parent_path in Path(command.target).parents
-                or str(parent_path) == command.target
-            ]
-            return output_list
+        parent_path = parent_path or Path(".")
 
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
+        output_list: List[ICommand] = [
+            command
+            for command in update_config_list[::-1]
+            if parent_path in Path(command.target).parents
+            or str(parent_path) == command.target
+        ]
 
-        try:
-            return [
-                (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
-                ).generate_update_config(base.tree, self.target.split("/"))
-            ]
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for update_config {self.target}",
-                exc_info=e,
+        if not output_list:
+            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+                CommandExtraction,
             )
-            return []
+
+            try:
+                output_list = [
+                    (
+                        self.command_context.command_extractor
+                        or CommandExtraction(
+                            self.command_context.matrix_service
+                        )
+                    ).generate_update_config(base.tree, self.target.split("/"))
+                ]
+            except ChildNotFoundError as e:
+                logging.getLogger(__name__).warning(
+                    f"Failed to extract revert command for update_config {self.target}",
+                    exc_info=e,
+                )
+                output_list = []
+
+        return output_list
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
