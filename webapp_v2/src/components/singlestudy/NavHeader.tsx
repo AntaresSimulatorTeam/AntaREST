@@ -93,7 +93,7 @@ function NavHeader(props: PropTypes) {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
-  const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
+  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const [openPropertiesModal, setOpenPropertiesModal] =
     useState<boolean>(false);
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
@@ -465,9 +465,9 @@ function NavHeader(props: PropTypes) {
           </Box>
         </Box>
       )}
-      {openLaunncherModal && (
+      {openLauncherModal && (
         <LauncherModal
-          open={openLaunncherModal}
+          open={openLauncherModal}
           study={study}
           onClose={() => setOpenLauncherModal(false)}
         />

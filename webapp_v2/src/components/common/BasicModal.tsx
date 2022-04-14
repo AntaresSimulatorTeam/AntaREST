@@ -10,6 +10,16 @@ import {
   Theme,
 } from "@mui/material";
 
+type ColorVariant =
+  | "inherit"
+  | "success"
+  | "primary"
+  | "secondary"
+  | "error"
+  | "info"
+  | "warning"
+  | undefined;
+
 interface Props {
   title: string;
   open: boolean;
@@ -19,6 +29,8 @@ interface Props {
   onActionButtonClick?: () => void;
   actionButtonDisabled?: boolean;
   rootStyle: SxProps<Theme> | undefined;
+  actionColor?: ColorVariant;
+  closeColor?: ColorVariant;
 }
 
 function BasicModal(props: PropsWithChildren<Props>) {
@@ -31,6 +43,8 @@ function BasicModal(props: PropsWithChildren<Props>) {
     actionButtonLabel,
     onActionButtonClick,
     rootStyle,
+    actionColor,
+    closeColor,
     children,
   } = props;
   const [t] = useTranslation();
@@ -96,7 +110,11 @@ function BasicModal(props: PropsWithChildren<Props>) {
           p={2}
           boxSizing="border-box"
         >
-          <Button variant="text" color="error" onClick={onClose}>
+          <Button
+            variant="text"
+            color={closeColor !== undefined ? closeColor : "error"}
+            onClick={onClose}
+          >
             {closeButtonLabel !== undefined
               ? closeButtonLabel
               : t("main:closeButton")}
@@ -106,7 +124,7 @@ function BasicModal(props: PropsWithChildren<Props>) {
               <Button
                 disabled={actionButtonDisabled}
                 sx={{ mx: 2 }}
-                color="success"
+                color={actionColor !== undefined ? actionColor : "success"}
                 variant="contained"
                 onClick={onActionButtonClick}
               >
@@ -126,6 +144,8 @@ BasicModal.defaultProps = {
   actionButtonLabel: undefined,
   onActionButtonClick: undefined,
   actionButtonDisabled: undefined,
+  actionColor: undefined,
+  closeColor: undefined,
 };
 
 export default BasicModal;

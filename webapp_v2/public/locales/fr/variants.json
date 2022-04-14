@@ -1,6 +1,8 @@
 {
+  "variants": "Gestion des variantes",
   "variantDependencies": "Vue dépendences",
   "createVariant": "Créer une variante",
+  "createNewVariant": "Créer une nouvelle variante",
   "editionMode": "Mode édition",
   "testGeneration": "Tester la géneration",
   "newVariant": "Nouvelle variante",

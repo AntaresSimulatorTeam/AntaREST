@@ -61,6 +61,7 @@
   "failedToExportOutput": "Echec lors de l'export de la sortie",
   "failedToListOutputs": "Echec de la récupération des sorties",
   "notes": "Notes",
+  "userNote": "Note utilisateur",
   "fetchCommentsError": "Echec lors de la récupération des commentaires",
   "commentsSaved": "Commentaires enregistrés avec succès",
   "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",

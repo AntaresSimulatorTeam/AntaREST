@@ -61,6 +61,7 @@
   "failedToExportOutput": "Failed to export the output",
   "failedToListOutputs": "Failed to retrieve output list",
   "notes": "Notes",
+  "userNote": "User note",
   "fetchCommentsError": "Failed to fetch comments",
   "commentsSaved": "Comments saved successfully",
   "commentsNotSaved": "Comments not saved",

@@ -221,6 +221,16 @@ export const findNodeInTree = (
   return undefined;
 };
 
+export const createListFromTree = (tree: VariantTree): Array<GenericInfo> => {
+  const { node, children } = tree;
+  const { id, name } = node;
+  let res: Array<GenericInfo> = [{ id, name }];
+  children.forEach((elm) => {
+    res = res.concat(createListFromTree(elm));
+  });
+  return res;
+};
+
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(",").map(Number);
   const red = r / 255;

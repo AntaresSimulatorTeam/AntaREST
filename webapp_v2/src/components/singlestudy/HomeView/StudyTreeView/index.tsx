@@ -2,8 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Box, styled } from "@mui/material";
-import Fab from "@mui/material/Fab";
-import AddIcon from "@mui/icons-material/Add";
 import { StudyMetadata, VariantTree } from "../../../../common/types";
 import { StudyTree, getTreeNodes } from "./utils";
 import { scrollbarStyle } from "../../../../theme";
@@ -28,7 +26,6 @@ import {
   ZOOM_OUT,
   CURVE_OFFSET,
 } from "./treeconfig";
-import CreateVariantModal from "./CreateVariantModal";
 
 export const SVGCircle = styled("circle")({
   cursor: "pointer",
@@ -51,7 +48,6 @@ export default function CustomizedTreeView(props: Props) {
   const { study, tree, onClick } = props;
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>("");
-  const [openVariantModal, setOpenVariantModal] = useState<boolean>(false);
 
   const rectWidth = useMemo(() => {
     if (studyTree === undefined) return 0;
@@ -239,23 +235,6 @@ export default function CustomizedTreeView(props: Props) {
       >
         {studyTree && renderTree(studyTree)}
       </Box>
-      <Fab
-        variant="circular"
-        color="primary"
-        aria-label="add"
-        sx={{ position: "absolute", bottom: "34px" }}
-        onClick={() => setOpenVariantModal(true)}
-      >
-        <AddIcon />
-      </Fab>
-      {study && studyTree && openVariantModal && (
-        <CreateVariantModal
-          open={openVariantModal}
-          onClose={() => setOpenVariantModal(false)}
-          studyTree={studyTree}
-          parentId={study.id}
-        />
-      )}
     </Box>
   );
 }
