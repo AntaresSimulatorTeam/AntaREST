@@ -37,7 +37,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study_id: str,
         launcher: Optional[str] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
-        version:Optional[str] = None,
+        version: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
