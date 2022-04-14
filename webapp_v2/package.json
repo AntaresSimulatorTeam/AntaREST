@@ -76,8 +76,7 @@
     "build": "react-app-rewired build",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "test": "react-app-rewired test",
-    "eject": "react-app-rewired eject",
-    "prepare": "cd .. && husky install webapp_v2/.husky"
+    "eject": "react-app-rewired eject"
   },
   "browserslist": {
     "production": [
