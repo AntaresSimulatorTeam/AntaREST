@@ -42,22 +42,22 @@ function InformationView(props: Props) {
         flexDirection="row"
         justifyContent="center"
         alignItems="center"
-        py={1}
+        py={1.5}
       >
         <LauncherHistory study={study} />
         <Notes study={study} />
       </Box>
-      <Divider sx={{ width: "98%", height: "1px" }} />
+      <Divider sx={{ width: "100%", height: "1px" }} />
       <Box
         width="100%"
-        flex="0 0 50px"
+        flex="0 0 40px"
         display="flex"
         flexDirection="row"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems="flex-start"
+        py={1.5}
       >
         <Box
-          height="100%"
           display="flex"
           flexDirection="row"
           justifyContent="flex-start"

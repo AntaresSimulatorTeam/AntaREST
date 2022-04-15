@@ -1,13 +1,34 @@
 import { Paper } from "@mui/material";
+import { connect, ConnectedProps } from "react-redux";
 import { StudyMetadata } from "../../../../common/types";
+import {
+  addListener,
+  removeListener,
+  subscribe,
+  unsubscribe,
+} from "../../../../store/websockets";
 
-interface Props {
+interface OwnTypes {
   // eslint-disable-next-line react/no-unused-prop-types
   study: StudyMetadata | undefined;
 }
 
-export default function LauncherHistory(props: Props) {
+const mapState = () => ({});
+
+const mapDispatch = {
+  subscribeChannel: subscribe,
+  unsubscribeChannel: unsubscribe,
+  addWsListener: addListener,
+  removeWsListener: removeListener,
+};
+
+const connector = connect(mapState, mapDispatch);
+type ReduxProps = ConnectedProps<typeof connector>;
+type PropTypes = ReduxProps & OwnTypes;
+
+function LauncherHistory(props: PropTypes) {
   const { study } = props;
+
   return (
     <Paper
       sx={{
@@ -19,7 +40,7 @@ export default function LauncherHistory(props: Props) {
         justifyContent: "center",
         alignItems: "center",
         boxSizing: "border-box",
-        mx: 1,
+        mr: 1,
         p: 2,
       }}
     >
@@ -27,3 +48,5 @@ export default function LauncherHistory(props: Props) {
     </Paper>
   );
 }
+
+export default connector(LauncherHistory);

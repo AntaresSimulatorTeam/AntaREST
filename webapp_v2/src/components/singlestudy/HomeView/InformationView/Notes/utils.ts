@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-plusplus */
 import { ContentState, convertToRaw, EditorState } from "draft-js";

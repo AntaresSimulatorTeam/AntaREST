@@ -35,6 +35,7 @@ const Note = styled(Box)(({ theme }) => ({
   justifyContent: "flex-start",
   alignItems: "center",
   padding: theme.spacing(2),
+  paddingTop: 0,
 }));
 
 const NoteHeader = styled(Box)(({ theme }) => ({
@@ -47,10 +48,10 @@ const NoteHeader = styled(Box)(({ theme }) => ({
 
 const NoteFooter = NoteHeader;
 
-const EditorCOntainer = styled(Box)(({ theme }) => ({
+const EditorContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "flex-start",
-  alignItems: "center",
+  alignItems: "flex-start",
   width: "100%",
   height: 0,
   flex: 1,
@@ -182,21 +183,25 @@ export default function Notes(props: Props) {
           setNbAreas(areas.length);
           setNbLinks(links);
         } catch (e) {
-          console.log(e);
+          enqueueErrorSnackbar(
+            enqueueSnackbar,
+            t("singlestudy:getAreasInfo"),
+            e as AxiosError
+          );
         }
       }
     })();
-  }, [study]);
+  }, [enqueueSnackbar, study, t]);
   return (
     <Root>
       <Note>
         <NoteHeader>
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
           <Typography color="text.secondary">
-            {t("singlestudy:userNote")}
+            {t("singlestudy:notes")}
           </Typography>
         </NoteHeader>
-        <EditorCOntainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
+        <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
           {!loaded && <SimpleLoader />}
           {loaded && (
             <Editor
@@ -206,7 +211,7 @@ export default function Notes(props: Props) {
               textAlignment="left"
             />
           )}
-        </EditorCOntainer>
+        </EditorContainer>
         <NoteFooter>
           <Button
             variant="text"

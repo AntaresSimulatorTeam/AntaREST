@@ -61,6 +61,7 @@ function NoteEditorModal(props: Props) {
     setEditorState(RichUtils.toggleBlockType(editorState, type));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleKeyBindings = (e: any) => {
     if (e.keyCode === 9) {
       const newEditorState = RichUtils.onTab(e, editorState, 6 /* maxDepth */);
@@ -83,7 +84,7 @@ function NoteEditorModal(props: Props) {
 
   return (
     <BasicModal
-      title={t("singlestudy:userNote")}
+      title={t("singlestudy:notes")}
       open={open}
       onClose={onClose}
       closeButtonLabel={t("main:cancelButton")}
