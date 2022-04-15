@@ -3,7 +3,6 @@ import {
   useState,
   MouseEvent as ReactMouseEvent,
   Fragment,
-  SyntheticEvent,
 } from "react";
 import { Menu, MenuItem, Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
@@ -27,7 +26,6 @@ function StudyTree(props: Props) {
   const { tree, folder, setFolder } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
-  const [expanded, setExpanded] = useState([tree.name]);
   const [menuId, setMenuId] = useState<string>("");
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -52,12 +50,6 @@ function StudyTree(props: Props) {
           null
     );
     setMenuId(id);
-  };
-
-  const handleToggle = (event: SyntheticEvent, nodeIds: Array<string>) => {
-    if ((event.target as HTMLElement).classList.contains("MuiSvgIcon-root")) {
-      setExpanded(nodeIds);
-    }
   };
 
   const handleClose = () => {
@@ -93,22 +85,29 @@ function StudyTree(props: Props) {
   const buildTree = (children: Array<StudyTreeNode>, parentId: string) =>
     children.map((elm) => {
       const newId = `${parentId}/${elm.name}`;
-      const elements = buildTree((elm as StudyTreeNode).children, newId).filter(
-        (item) => item
-      );
       return (
         <Fragment key={newId}>
           <TreeItem
             key={`treeitem-${newId}`}
             nodeId={newId}
             label={
-              <Typography onContextMenu={(e) => onContextMenu(e, elm.path)}>
+              <Typography
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setFolder(newId);
+                }}
+                onContextMenu={(e) => onContextMenu(e, elm.path)}
+              >
                 {elm.name}
               </Typography>
             }
-            collapseIcon={elements.length > 0 ? <ExpandMoreIcon /> : undefined}
-            expandIcon={elements.length > 0 ? <ChevronRightIcon /> : undefined}
-            onClick={() => setFolder(newId)}
+            collapseIcon={
+              elm.children.length > 0 ? <ExpandMoreIcon /> : undefined
+            }
+            expandIcon={
+              elm.children.length > 0 ? <ChevronRightIcon /> : undefined
+            }
           >
             {buildTree((elm as StudyTreeNode).children, newId)}
           </TreeItem>
@@ -144,8 +143,6 @@ function StudyTree(props: Props) {
       defaultSelected={getDefaultSelected()}
       defaultExpanded={getDefaultExpanded()}
       selected={[folder]}
-      expanded={expanded}
-      onNodeToggle={handleToggle}
       sx={{ flexGrow: 1, height: 0, width: "100%", py: 1 }}
     >
       <TreeItem
