@@ -6,6 +6,7 @@ import { StudyMetadata, VariantTree } from "../../../common/types";
 import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
 import InformationView from "./InformationView";
+import { scrollbarStyle } from "../../../theme";
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -47,13 +48,26 @@ function HomeView(props: Props) {
       <Box
         height="100%"
         display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
+        flexDirection="row"
+        justifyContent="flex-start"
+        alignItems="flex-start"
         boxSizing="border-box"
         overflow="hidden"
+        sx={{ overflowX: "auto", ...scrollbarStyle }}
       >
-        <InformationView study={study} />
+        <Box
+          flex={1}
+          minWidth="700px"
+          height="100%"
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          boxSizing="border-box"
+          overflow="hidden"
+        >
+          <InformationView study={study} tree={tree} />
+        </Box>
       </Box>
     </Split>
   );

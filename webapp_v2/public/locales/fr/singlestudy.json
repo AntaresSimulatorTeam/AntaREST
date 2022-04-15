@@ -93,6 +93,7 @@
   "filterOut": "Filtre d'exclusion (Regex)",
   "area1": "Zone 1",
   "area2": "Zone 2",
+  "getAreasInfo": "Impossible de récupérer les informations sur les zones",
   "managedStudy": "Étude managée",
   "properties": "Propriétés",
   "validate": "Valider",

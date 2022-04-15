@@ -2,6 +2,7 @@
   "variants": "Variant management",
   "variantDependencies": "Variant dependencies",
   "createVariant": "Create variant",
+  "createNewVariant": "Create new variant",
   "editionMode": "Edition mode",
   "testGeneration": "Test generation",
   "newVariant": "New variant",

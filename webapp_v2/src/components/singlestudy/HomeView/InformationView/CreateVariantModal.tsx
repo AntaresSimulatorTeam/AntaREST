@@ -7,22 +7,22 @@ import { AxiosError } from "axios";
 import BasicModal from "../../../common/BasicModal";
 import FilledTextInput from "../../../common/FilledTextInput";
 import SingleSelect from "../../../common/SelectSingle";
-import { GenericInfo } from "../../../../common/types";
+import { GenericInfo, VariantTree } from "../../../../common/types";
 import enqueueErrorSnackbar from "../../../common/ErrorSnackBar";
 import { scrollbarStyle } from "../../../../theme";
 import { createVariant } from "../../../../services/api/variant";
-import { createListFromTree, StudyTree } from "./utils";
+import { createListFromTree } from "../../../../services/utils";
 
 interface Props {
   open: boolean;
   parentId: string;
-  studyTree: StudyTree;
+  tree: VariantTree;
   onClose: () => void;
 }
 
 function CreateVariantModal(props: Props) {
   const [t] = useTranslation();
-  const { open, parentId, studyTree, onClose } = props;
+  const { open, parentId, tree, onClose } = props;
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [studyName, setStudyName] = useState<string>("");
@@ -51,8 +51,8 @@ function CreateVariantModal(props: Props) {
   };
 
   useEffect(() => {
-    setVersionSourceList(createListFromTree(studyTree));
-  }, [studyTree]);
+    setVersionSourceList(createListFromTree(tree));
+  }, [tree]);
 
   return (
     <BasicModal

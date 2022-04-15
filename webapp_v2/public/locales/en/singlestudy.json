@@ -93,6 +93,7 @@
   "filterOut": "Filter Out",
   "area1": "Area 1",
   "area2": "Area 2",
+  "getAreasInfo": "Failed to fetch areas data",
   "managedStudy": "Managed study",
   "properties": "Properties",
   "validate": "Validate",
