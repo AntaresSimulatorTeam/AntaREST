@@ -2,17 +2,106 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Divider, Paper, styled, Typography } from "@mui/material";
 import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import { ContentState, Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
-import { editComments, getComments } from "../../../../../services/api/study";
+import {
+  editComments,
+  getComments,
+  getStudySynthesis,
+} from "../../../../../services/api/study";
 import { convertXMLToDraftJS } from "./utils";
 import { StudyMetadata } from "../../../../../common/types";
 import { scrollbarStyle } from "../../../../../theme";
 import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 import NoteEditorModal from "./NoteEditorModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+
+const Root = styled(Box)(({ theme }) => ({
+  flex: "0 0 40%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "flex-start",
+  alignItems: "center",
+}));
+
+const Note = styled(Box)(({ theme }) => ({
+  flex: "0 0 70%",
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "flex-start",
+  alignItems: "center",
+  padding: theme.spacing(2),
+}));
+
+const NoteHeader = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-start",
+  alignItems: "center",
+  width: "100%",
+  height: "60px",
+}));
+
+const NoteFooter = NoteHeader;
+
+const EditorCOntainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-start",
+  alignItems: "center",
+  width: "100%",
+  height: 0,
+  flex: 1,
+  padding: theme.spacing(0),
+  overflow: "hidden",
+}));
+
+const FigureInfoContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "flex-start",
+  width: "100%",
+  flexGrow: 1,
+  padding: theme.spacing(2),
+}));
+
+const FigureInfo = styled(Paper)(({ theme }) => ({
+  backgroundColor: "rgba(36, 207, 157, 0.05)",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  width: "87px",
+  height: "96px",
+  margin: theme.spacing(0, 1),
+}));
+
+function Figure({ title, data }: { title: string; data: number }) {
+  return (
+    <FigureInfo>
+      <Typography
+        variant="h4"
+        fontStyle="normal"
+        fontWeight={400}
+        fontSize="34px"
+        lineHeight="123.5%"
+      >
+        {data}
+      </Typography>
+      <Typography
+        fontStyle="normal"
+        fontWeight={400}
+        fontSize="16px"
+        lineHeight="175%"
+        letterSpacing="0.15px"
+      >
+        {title}
+      </Typography>
+    </FigureInfo>
+  );
+}
 
 interface Props {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -29,6 +118,8 @@ export default function Notes(props: Props) {
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
+  const [nbAreas, setNbAreas] = useState<number>(0);
+  const [nbLinks, setNbLinks] = useState<number>(0);
 
   const onSave = async (newContent: string) => {
     if (study) {
@@ -73,51 +164,39 @@ export default function Notes(props: Props) {
     init();
     return () => setContent("");
   }, [study, t]);
+
+  useEffect(() => {
+    (async () => {
+      if (study) {
+        try {
+          const tmpSynth = await getStudySynthesis(study.id);
+          const areas = Object.keys(tmpSynth.areas).map(
+            (elm) => tmpSynth.areas[elm]
+          );
+          const links = areas
+            .map((elm) => Object.keys(elm.links).length)
+            .reduce(
+              (prevValue: number, currentValue: number) =>
+                prevValue + currentValue
+            );
+          setNbAreas(areas.length);
+          setNbLinks(links);
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    })();
+  }, [study]);
   return (
-    <Box
-      sx={{
-        flex: "0 0 40%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-      }}
-    >
-      <Box
-        sx={{
-          flex: "0 0 70%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          alignItems: "center",
-          p: 2,
-        }}
-      >
-        <Box
-          display="flex"
-          justifyContent="flex-start"
-          alignItems="center"
-          width="100%"
-          height="60px"
-        >
+    <Root>
+      <Note>
+        <NoteHeader>
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
           <Typography color="text.secondary">
             {t("singlestudy:userNote")}
           </Typography>
-        </Box>
-        <Box
-          display="flex"
-          justifyContent="flex-start"
-          alignItems="center"
-          width="100%"
-          height={0}
-          flex={1}
-          p={0}
-          overflow="hidden"
-          sx={{ overflowY: "auto", ...scrollbarStyle }}
-        >
+        </NoteHeader>
+        <EditorCOntainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
           {!loaded && <SimpleLoader />}
           {loaded && (
             <Editor
@@ -127,14 +206,8 @@ export default function Notes(props: Props) {
               textAlignment="left"
             />
           )}
-        </Box>
-        <Box
-          display="flex"
-          justifyContent="flex-start"
-          alignItems="center"
-          width="100%"
-          height="60px"
-        >
+        </EditorCOntainer>
+        <NoteFooter>
           <Button
             variant="text"
             color="secondary"
@@ -142,8 +215,13 @@ export default function Notes(props: Props) {
           >
             {t("main:edit")}
           </Button>
-        </Box>
-      </Box>
+        </NoteFooter>
+      </Note>
+      <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
+      <FigureInfoContainer>
+        <Figure title={t("singlestudy:area")} data={nbAreas} />
+        <Figure title={t("singlestudy:link")} data={nbLinks} />
+      </FigureInfoContainer>
       {editionMode && (
         <NoteEditorModal
           open={editionMode}
@@ -152,6 +230,6 @@ export default function Notes(props: Props) {
           onSave={onSave}
         />
       )}
-    </Box>
+    </Root>
   );
 }
