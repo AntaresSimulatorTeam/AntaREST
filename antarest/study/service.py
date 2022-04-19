@@ -48,6 +48,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
@@ -1000,12 +1001,23 @@ class StudyService:
             def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
                     study = self.get_study(study_id)
+                    stopwatch = StopWatch()
                     matrix = StudyDownloader.build(
                         self.storage_service.get_storage(study).get_raw(study),
                         output_id,
                         data,
                     )
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} built in {x}s"
+                        )
+                    )
                     StudyDownloader.export(matrix, filetype, export_path)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} exported in {x}s"
+                        )
+                    )
                     self.file_transfer_manager.set_ready(export_id)
                     return TaskResult(
                         success=True,
@@ -1028,13 +1040,24 @@ class StudyService:
                 file=export_file_download.to_dto(), task=task_id
             )
         else:
+            stopwatch = StopWatch()
             matrix = StudyDownloader.build(
                 self.storage_service.get_storage(study).get_raw(study),
                 output_id,
                 data,
             )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Study {study_id} filtered output {output_id} built in {x}s"
+                )
+            )
             if tmp_export_file is not None:
                 StudyDownloader.export(matrix, filetype, tmp_export_file)
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Study {study_id} filtered output {output_id} exported in {x}s"
+                    )
+                )
                 return FileResponse(
                     tmp_export_file,
                     headers={"Content-Disposition": "inline"}
@@ -1043,6 +1066,17 @@ class StudyService:
                         "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
                     },
                     media_type=filetype,
+                )
+            else:
+                json_response = json.dumps(
+                    matrix.dict(),
+                    ensure_ascii=False,
+                    allow_nan=True,
+                    indent=None,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                return Response(
+                    content=json_response, media_type="application/json"
                 )
 
     def get_study_sim_result(
