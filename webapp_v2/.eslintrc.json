@@ -53,6 +53,7 @@
         "tsx": "never"
       }
     ],
+    "import/prefer-default-export": "off",
     "no-shadow": "off",
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
@@ -61,7 +62,11 @@
     "react/jsx-props-no-spreading": "off",
     "react/jsx-uses-react": "off",
     "react-hooks/exhaustive-deps": "warn",
-    "spaced-comment": ["error", "always", { "line": {"exceptions": ["/"], "markers": ["/"] }}]
+    "spaced-comment": [
+      "error",
+      "always",
+      { "line": { "exceptions": ["/"], "markers": ["/"] } }
+    ]
   },
   "overrides": [
     {
