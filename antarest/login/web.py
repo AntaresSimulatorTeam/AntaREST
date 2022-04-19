@@ -117,7 +117,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get(
         "/users",
         tags=[APITag.users],
-        response_model=List[Union[UserInfo, IdentityDTO]],
+        response_model=List[Union[IdentityDTO, UserInfo]],
     )
     def users_get_all(
         details: Optional[bool] = False,
