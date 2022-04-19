@@ -37,7 +37,7 @@ function InformationView(props: Props) {
     >
       <Box
         width="100%"
-        flex={1}
+        height="calc(100% - 40px)"
         display="flex"
         flexDirection="row"
         justifyContent="center"
