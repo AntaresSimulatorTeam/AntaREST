@@ -73,6 +73,7 @@
     }
   ],
   "settings": {
+    "import/core-modules": ["ts-essentials"],
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
