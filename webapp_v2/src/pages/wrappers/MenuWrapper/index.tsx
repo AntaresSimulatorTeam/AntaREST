@@ -29,6 +29,7 @@ import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
 
 import { SvgIconProps, useTheme } from "@mui/material";
 import logo from "../../../assets/logo.png";
+import DownloadBadge from "../../../components/tasks/DownloadBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
 import { AppState } from "../../../store/reducers";
 import { setMenuExtensionStatusAction } from "../../../store/ui";
@@ -53,6 +54,7 @@ interface MenuItem {
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
   currentStudy: state.study.current,
+  websocketConnected: state.websockets.connected,
 });
 
 const mapDispatch = {
@@ -108,33 +110,57 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
 
   const settings = navigation[navigation.length - 1];
 
-  const drawMenuItem = (elm: MenuItem): ReactNode => (
-    <NavListItem link key={elm.id}>
-      {elm.newTab === true ? (
-        <NavExternalLink href={elm.link} target="_blank">
-          <NavListItemIcon>
-            <elm.icon sx={{ color: "grey.400" }} />
-          </NavListItemIcon>
-          {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
-        </NavExternalLink>
-      ) : (
-        <NavInternalLink
-          to={elm.link}
-          end={elm.strict}
-          style={({ isActive }) => ({
-            background: isActive
-              ? theme.palette.primary.outlinedHoverBackground
-              : undefined,
-          })}
-        >
-          <NavListItemIcon>
-            <elm.icon sx={{ color: "grey.400" }} />
-          </NavListItemIcon>
-          {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
-        </NavInternalLink>
-      )}
-    </NavListItem>
-  );
+  const drawMenuItem = (elm: MenuItem): ReactNode => {
+    if (elm.id === "tasks") {
+      return (
+        <NavListItem link key={elm.id}>
+          <NavInternalLink
+            to={elm.link}
+            end={elm.strict}
+            style={({ isActive }) => ({
+              background: isActive
+                ? theme.palette.primary.outlinedHoverBackground
+                : undefined,
+            })}
+          >
+            <DownloadBadge>
+              <NavListItemIcon>
+                <elm.icon sx={{ color: "grey.400" }} />
+              </NavListItemIcon>
+            </DownloadBadge>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavInternalLink>
+        </NavListItem>
+      );
+    }
+    return (
+      <NavListItem link key={elm.id}>
+        {elm.newTab === true ? (
+          <NavExternalLink href={elm.link} target="_blank">
+            <NavListItemIcon>
+              <elm.icon sx={{ color: "grey.400" }} />
+            </NavListItemIcon>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavExternalLink>
+        ) : (
+          <NavInternalLink
+            to={elm.link}
+            end={elm.strict}
+            style={({ isActive }) => ({
+              background: isActive
+                ? theme.palette.primary.outlinedHoverBackground
+                : undefined,
+            })}
+          >
+            <NavListItemIcon>
+              <elm.icon sx={{ color: "grey.400" }} />
+            </NavListItemIcon>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavInternalLink>
+        )}
+      </NavListItem>
+    );
+  };
 
   const topMenuLastIndexOffset = currentStudy ? 1 : 0;
 

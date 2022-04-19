@@ -74,15 +74,12 @@ function LogModal(props: PropTypes) {
     keyboardEvent: KeyboardEvent<HTMLDivElement>
   ) => {
     if (keyboardEvent.key === "a" && keyboardEvent.ctrlKey) {
-      console.log("test");
       if (divRef.current) {
         const range = document.createRange();
         range.selectNode(divRef.current);
         const selection = window.getSelection();
-        console.log(selection);
         if (selection !== null) {
           selection.addRange(range);
-          console.log(selection);
         }
       }
       keyboardEvent.preventDefault();
