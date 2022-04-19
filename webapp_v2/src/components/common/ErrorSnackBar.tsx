@@ -14,7 +14,7 @@ const enqueueErrorSnackbar = (
   ) => SnackbarKey,
   message: SnackbarMessage,
   details: string | Error
-) =>
+): SnackbarKey =>
   enqueueSnackbar(message, {
     variant: "error",
     persist: true,

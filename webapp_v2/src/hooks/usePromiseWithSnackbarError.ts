@@ -9,13 +9,13 @@ function usePromiseWithSnackbarError<T>(
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
   const res = usePromise(fn, deps);
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
 
   useEffect(
     () => {
       if (res.error) {
-        enqueueErrorSnackbar(enqueueSnackbar, t(errorMessageKey), res.error);
+        enqueueErrorSnackbar(t(errorMessageKey), res.error);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
