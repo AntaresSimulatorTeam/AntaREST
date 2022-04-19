@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -130,28 +130,31 @@ function Studies(props: PropTypes) {
 
   const versionList = convertVersions(versions || []);
 
-  const sortStudies = (): Array<StudyMetadata> => {
-    const tmpStudies: Array<StudyMetadata> = (
-      [] as Array<StudyMetadata>
-    ).concat(studies);
-    if (currentSortItem) {
-      tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
-        const firstElm =
-          currentSortItem.status === SortStatus.INCREASE ? studyA : studyB;
-        const secondElm =
-          currentSortItem.status === SortStatus.INCREASE ? studyB : studyA;
-        if (currentSortItem.element === SortElement.NAME) {
-          return firstElm.name.localeCompare(secondElm.name);
-        }
-        return moment(firstElm.modificationDate).isAfter(
-          moment(secondElm.modificationDate)
-        )
-          ? 1
-          : -1;
-      });
-    }
-    return tmpStudies;
-  };
+  const sortStudies = useCallback(
+    (studyList: Array<StudyMetadata>): Array<StudyMetadata> => {
+      const tmpStudies: Array<StudyMetadata> = (
+        [] as Array<StudyMetadata>
+      ).concat(studyList);
+      if (currentSortItem) {
+        tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
+          const firstElm =
+            currentSortItem.status === SortStatus.INCREASE ? studyA : studyB;
+          const secondElm =
+            currentSortItem.status === SortStatus.INCREASE ? studyB : studyA;
+          if (currentSortItem.element === SortElement.NAME) {
+            return firstElm.name.localeCompare(secondElm.name);
+          }
+          return moment(firstElm.modificationDate).isAfter(
+            moment(secondElm.modificationDate)
+          )
+            ? 1
+            : -1;
+        });
+      }
+      return tmpStudies;
+    },
+    [currentSortItem]
+  );
 
   const insideFolder = (study: StudyMetadata): boolean => {
     let studyNodeId = "";
@@ -162,44 +165,61 @@ function Studies(props: PropTypes) {
     return studyNodeId.startsWith(currentFolder as string);
   };
 
-  const filter = (currentName: string): StudyMetadata[] =>
-    sortStudies()
-      .filter(
-        (s) =>
-          !currentName ||
-          s.name.search(new RegExp(currentName, "i")) !== -1 ||
-          s.id.search(new RegExp(currentName, "i")) !== -1
-      )
-      .filter((s) =>
-        currentTag
-          ? s.tags &&
-            s.tags.findIndex((elm) =>
-              (currentTag as Array<string>).includes(elm)
-            ) >= 0
-          : true
-      )
-      .filter(
-        (s) =>
-          !currentVersion ||
-          currentVersion.map((elm) => elm.id).includes(s.version)
-      )
-      .filter((s) =>
-        currentUser
-          ? s.owner.id &&
-            (currentUser as Array<UserDTO>)
-              .map((elm) => elm.id)
-              .includes(s.owner.id)
-          : true
-      )
-      .filter((s) =>
-        currentGroup
-          ? s.groups.findIndex((elm) =>
-              (currentGroup as Array<GroupDTO>).includes(elm)
-            ) >= 0
-          : true
-      )
-      .filter((s) => (managedFilter ? s.managed : true))
-      .filter((s) => insideFolder(s));
+  const filterFromFolder = useCallback(
+    (studyList: StudyMetadata[]) => {
+      return studyList.filter((s) => insideFolder(s));
+    },
+    [currentFolder]
+  );
+
+  const filter = useCallback(
+    (currentName: string): StudyMetadata[] =>
+      sortStudies(filterFromFolder(studies))
+        .filter(
+          (s) =>
+            !currentName ||
+            s.name.search(new RegExp(currentName, "i")) !== -1 ||
+            s.id.search(new RegExp(currentName, "i")) !== -1
+        )
+        .filter((s) =>
+          currentTag
+            ? s.tags &&
+              s.tags.findIndex((elm) =>
+                (currentTag as Array<string>).includes(elm)
+              ) >= 0
+            : true
+        )
+        .filter(
+          (s) =>
+            !currentVersion ||
+            currentVersion.map((elm) => elm.id).includes(s.version)
+        )
+        .filter((s) =>
+          currentUser
+            ? s.owner.id &&
+              (currentUser as Array<UserDTO>)
+                .map((elm) => elm.id)
+                .includes(s.owner.id)
+            : true
+        )
+        .filter((s) =>
+          currentGroup
+            ? s.groups.findIndex((elm) =>
+                (currentGroup as Array<GroupDTO>).includes(elm)
+              ) >= 0
+            : true
+        )
+        .filter((s) => (managedFilter ? s.managed : true)),
+    [
+      currentVersion,
+      currentUser,
+      currentGroup,
+      currentTag,
+      managedFilter,
+      filterFromFolder,
+      sortStudies,
+    ]
+  );
 
   const applyFilter = (): void => {
     setLoaded(false);
