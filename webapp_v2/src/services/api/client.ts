@@ -17,11 +17,13 @@ export const setLogoutInterceptor = (
     async (c): Promise<AxiosResponse> => c,
     async (e) => {
       logError("api error", e.response);
-      const { status } = e.response;
-      if (e && status === 401) {
-        client.defaults.headers.common.Authorization = "";
-        clearStudies();
-        logoutCallback();
+      if (e.response) {
+        const { status } = e.response;
+        if (e && status === 401) {
+          client.defaults.headers.common.Authorization = "";
+          clearStudies();
+          logoutCallback();
+        }
       }
       return Promise.reject(e);
     }
