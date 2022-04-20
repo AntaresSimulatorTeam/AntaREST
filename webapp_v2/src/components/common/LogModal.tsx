@@ -75,11 +75,9 @@ function LogModal(props: PropTypes) {
   ) => {
     if (keyboardEvent.key === "a" && keyboardEvent.ctrlKey) {
       if (divRef.current) {
-        const range = document.createRange();
-        range.selectNode(divRef.current);
         const selection = window.getSelection();
         if (selection !== null) {
-          selection.addRange(range);
+          selection.selectAllChildren(divRef.current);
         }
       }
       keyboardEvent.preventDefault();
