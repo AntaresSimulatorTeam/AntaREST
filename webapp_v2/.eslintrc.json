@@ -43,6 +43,8 @@
         "ignoreRestSiblings": true
       }
     ],
+    "consistent-return": "off",
+    "default-case": "off",
     "import/extensions": [
       "error",
       "ignorePackages",
