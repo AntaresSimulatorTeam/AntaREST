@@ -82,32 +82,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         patch = Patch.parse_raw(study.additional_data.patch) or Patch()
         patch_metadata = patch.study or PatchStudy()
 
-        try:
-            study_path = self.get_study_path(study)
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=-1,
-                )
-                raw_study = self.study_factory.create_from_config(config)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(
-                    file_metadata.get("version", study.version)
-                )
-                if study_version != study.version:
-                    logger.warning(
-                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                    )
-                    study.version = study_version
-        except Exception as e:
-            logger.error(
-                "Failed to retrieve general settings for study %s",
-                study.id,
-                exc_info=e,
-            )
-
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
@@ -330,3 +304,30 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         )
         return target.parent / filename
+
+    def check_and_update_study_version_in_database(self, study: T) -> None:
+        try:
+            study_path = self.get_study_path(study)
+            if study_path:
+                config = FileStudyTreeConfig(
+                    study_path=study_path,
+                    path=study_path,
+                    study_id="",
+                    version=-1,
+                )
+                raw_study = self.study_factory.create_from_config(config)
+                file_metadata = raw_study.get(url=["study", "antares"])
+                study_version = str(
+                    file_metadata.get("version", study.version)
+                )
+                if study_version != study.version:
+                    logger.warning(
+                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                    )
+                    study.version = study_version
+        except Exception as e:
+            logger.error(
+                "Failed to retrieve general settings for study %s",
+                study.id,
+                exc_info=e,
+            )

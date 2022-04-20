@@ -136,6 +136,11 @@ logger = logging.getLogger(__name__)
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
+class ForbiddenError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(status_code=HTTPStatus.FORBIDDEN, detail=message)
+
+
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -2008,3 +2013,15 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         self.matrix_manager.update_matrix(study, path, slices, operation)
+
+    def check_and_update_all_study_versions_in_database(
+        self, params: RequestParameters
+    ) -> None:
+        if params.user and not params.user.is_site_admin():
+            logger.error(f"User {params.user.id} is not site admin")
+            raise ForbiddenError("Only site admins can update study versions")
+        studies = self.repository.get_all()
+        for study in studies:
+            self.storage_service.get_storage(
+                study
+            ).check_and_update_study_version_in_database(study)

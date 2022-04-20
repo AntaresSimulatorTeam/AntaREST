@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Optional, List, cast
+from typing import Optional, List
 
 from sqlalchemy.orm import with_polymorphic  # type: ignore
 
@@ -46,8 +46,10 @@ class StudyMetadataRepository:
     def get_additional_data(
         self, study_id: str
     ) -> Optional[StudyAdditionalData]:
-        metadata: Study = db.session.query(Study).get(study_id)
-        return cast(StudyAdditionalData, metadata.additional_data)
+        metadata: StudyAdditionalData = db.session.query(
+            StudyAdditionalData
+        ).get(study_id)
+        return metadata
 
     def get_all(self) -> List[Study]:
         entity = with_polymorphic(Study, "*")

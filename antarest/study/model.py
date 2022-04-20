@@ -49,7 +49,7 @@ class CommentsDto(BaseModel):
 
 
 @dataclass
-class StudyAdditionalData:
+class StudyAdditionalData(Base):  # type:ignore
     """
     Study additional data
     """
