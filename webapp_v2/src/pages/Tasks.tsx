@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { debounce } from "lodash";
 import BlockIcon from "@mui/icons-material/Block";
 import InfoIcon from "@mui/icons-material/Info";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
@@ -56,6 +57,7 @@ import {
   WSEvent,
   WSMessage,
   TaskType,
+  TaskStatus,
 } from "../common/types";
 import enqueueErrorSnackbar from "../components/common/ErrorSnackBar";
 import BasicModal from "../components/common/BasicModal";
@@ -127,7 +129,11 @@ function JobsListing(props: PropTypes) {
       );
     } catch (e) {
       logError("woops", e);
-      enqueueErrorSnackbar(createNotif, "ça marche pas", e as AxiosError);
+      enqueueErrorSnackbar(
+        createNotif,
+        t("jobs:failedtoretrievejobs"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -149,17 +155,21 @@ function JobsListing(props: PropTypes) {
     );
   };
 
-  const exportJobOutput = async (jobId: string): Promise<void> => {
-    try {
-      await downloadJobOutput(jobId);
-    } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("singlestudy:failedToExportOutput"),
-        e as AxiosError
-      );
-    }
-  };
+  const exportJobOutput = debounce(
+    async (jobId: string): Promise<void> => {
+      try {
+        await downloadJobOutput(jobId);
+      } catch (e) {
+        enqueueErrorSnackbar(
+          enqueueSnackbar,
+          t("singlestudy:failedToExportOutput"),
+          e as AxiosError
+        );
+      }
+    },
+    2000,
+    { leading: true }
+  );
 
   const killTask = (jobId: string) => {
     (async () => {
@@ -262,6 +272,7 @@ function JobsListing(props: PropTypes) {
   const jobsMemo = useMemo(
     () =>
       jobs.map((job) => ({
+        id: job.id,
         name: (
           <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
             {renderStatus(job)}
@@ -354,6 +365,7 @@ function JobsListing(props: PropTypes) {
         ),
         date: job.completionDate || job.creationDate,
         type: TaskType.LAUNCH,
+        status: job.status === "running" ? "running" : "",
       })),
     [jobs]
   );
@@ -361,6 +373,7 @@ function JobsListing(props: PropTypes) {
   const downloadsMemo = useMemo(
     () =>
       downloads.map((download) => ({
+        id: download.id,
         name: (
           <Box sx={{ color: "white", fontSize: "0.95rem" }}>
             {download.name}
@@ -417,6 +430,7 @@ function JobsListing(props: PropTypes) {
           .subtract(1, "days")
           .format("YYYY-MM-DD HH:mm:ss"),
         type: TaskType.DOWNLOAD,
+        status: !download.ready && !download.failed ? "running" : "",
       })),
     [downloads]
   );
@@ -424,6 +438,7 @@ function JobsListing(props: PropTypes) {
   const tasksMemo = useMemo(
     () =>
       tasks.map((task) => ({
+        id: task.id,
         name: (
           <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
             {task.name}
@@ -493,6 +508,7 @@ function JobsListing(props: PropTypes) {
         ),
         date: task.completion_date_utc || task.creation_date_utc,
         type: task.type || TaskType.UNKNOWN,
+        status: task.status === TaskStatus.RUNNING ? "running" : "",
       })),
     [tasks]
   );

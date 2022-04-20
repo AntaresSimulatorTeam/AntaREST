@@ -5,7 +5,8 @@ import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
-import { useSnackbar } from "notistack";
+import { useSnackbar, VariantType } from "notistack";
+import { red } from "@mui/material/colors";
 import { addListener, removeListener } from "../../store/websockets";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
@@ -46,11 +47,11 @@ function NotificationBadge(props: PropTypes) {
   const { enqueueSnackbar } = useSnackbar();
   const ref = useRef<HTMLDivElement>(null);
 
-  const newNotification = (message: string) => {
-    enqueueSnackbar(t(message), { variant: "success" });
+  const newNotification = (message: string, variantType?: VariantType) => {
     if (location.pathname !== "/tasks") {
       addTasksNotification();
     }
+    enqueueSnackbar(t(message), { variant: variantType || "info" });
   };
 
   useEffect(() => {
@@ -59,6 +60,8 @@ function NotificationBadge(props: PropTypes) {
         newNotification("downloads:newDownload");
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
         newNotification("downloads:downloadReady");
+      } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
+        newNotification("singlestudy:failedToExportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
         const taskId = (ev.payload as TaskEventPayload).id;
         try {
@@ -111,7 +114,7 @@ function NotificationBadge(props: PropTypes) {
           >
             {notificationCount}
           </Typography>
-          <CircleIcon sx={{ fontSize: "20px", color: "error.dark" }} />
+          <CircleIcon sx={{ fontSize: "20px", color: red[800] }} />
         </Box>
       )}
     </Box>

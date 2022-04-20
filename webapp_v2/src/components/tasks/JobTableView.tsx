@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import moment from "moment";
 import {
   Paper,
@@ -14,6 +14,8 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
@@ -31,21 +33,38 @@ function JobTableView(props: PropType) {
   const [t] = useTranslation();
   const [sorted, setSorted] = useState<string>();
   const [type, setType] = useState<string>("all");
-  const [currentContent, setCurrentContent] = useState<JobsType[]>([]);
+  const [status, setStatus] = useState<boolean>(false);
+  const [currentContent, setCurrentContent] = useState<JobsType[]>(content);
 
   const handleChange = (event: SelectChangeEvent) => {
     setType(event.target.value as string);
+    if (event.target.value !== "all") {
+      if (status) {
+        setCurrentContent(
+          content
+            .filter((o) => o.type === type)
+            .filter((o) => o.status === "running")
+        );
+      } else {
+        setCurrentContent(content.filter((o) => o.type === event.target.value));
+      }
+    } else if (status) {
+      setCurrentContent(content.filter((o) => o.status === "running"));
+    } else {
+      setCurrentContent(content);
+    }
   };
 
-  useEffect(() => {
-    if (content) {
-      if (type !== "all") {
-        setCurrentContent(content.filter((o) => o.type === type));
-      } else {
-        setCurrentContent(content);
-      }
+  const handleStatusChange = () => {
+    setStatus(!status);
+    if (!status) {
+      setCurrentContent(currentContent.filter((o) => o.status === "running"));
+    } else if (type !== "all") {
+      setCurrentContent(content.filter((o) => o.type === type));
+    } else {
+      setCurrentContent(content);
     }
-  }, [content, type]);
+  };
 
   const filterList = [
     "all",
@@ -70,24 +89,30 @@ function JobTableView(props: PropType) {
         alignItems: "flex-end",
       }}
     >
-      <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>
-        <InputLabel id="jobsView-select-outlined-label">
-          {t("jobs:typeFilter")}
-        </InputLabel>
-        <Select
-          labelId="jobsView-select-outlined-label"
-          id="jobsView-select-outlined"
-          value={type}
-          onChange={handleChange}
-          label={t("jobs:typeFilter")}
-        >
-          {filterList.map((item) => (
-            <MenuItem value={item} key={item}>
-              {t(`jobs:${item}`)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Box display="flex" alignItems="center">
+        <FormControlLabel
+          control={<Checkbox checked={status} onChange={handleStatusChange} />}
+          label={t("jobs:runningTasks") as string}
+        />
+        <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>
+          <InputLabel id="jobsView-select-outlined-label">
+            {t("jobs:typeFilter")}
+          </InputLabel>
+          <Select
+            labelId="jobsView-select-outlined-label"
+            id="jobsView-select-outlined"
+            value={type}
+            onChange={handleChange}
+            label={t("jobs:typeFilter")}
+          >
+            {filterList.map((item) => (
+              <MenuItem value={item} key={item}>
+                {t(`jobs:${item}`)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       <TableContainer sx={scrollbarStyle} component={Paper}>
         <Table sx={{ width: "100%", height: "90%" }} aria-label="simple table">
           <TableHead>
@@ -143,7 +168,7 @@ function JobTableView(props: PropType) {
               })
               .map((row) => (
                 <TableRow
-                  key={`${row.name}-name-${row.date}`}
+                  key={`job-${row.id}`}
                   sx={{
                     "& td, & th": {
                       borderColor: "divider",

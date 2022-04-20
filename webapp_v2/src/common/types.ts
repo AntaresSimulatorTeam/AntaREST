@@ -593,11 +593,13 @@ export const isNode = (el: NodeProperties | LinkProperties): boolean =>
   (el as any).id !== undefined;
 
 export interface JobsType {
+  id: string;
   name: ReactNode;
   dateView: ReactNode;
   action: ReactNode;
   date: string;
   type: TaskType;
+  status: string;
 }
 
 export default {};

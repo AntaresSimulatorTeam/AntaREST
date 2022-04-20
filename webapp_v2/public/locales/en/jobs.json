@@ -17,5 +17,6 @@
   "SCAN": "Scan",
   "UNKNOWN": "Unknown",
   "typeFilter": "Filter by type",
-  "all": "All"
+  "all": "All",
+  "runningTasks": "Running tasks"
 }
