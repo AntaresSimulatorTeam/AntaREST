@@ -1,8 +1,9 @@
-import { Paper } from "@mui/material";
+import { Box, Paper, styled, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
+import HistoryIcon from "@mui/icons-material/History";
 import {
   LaunchJob,
   LaunchJobDTO,
@@ -21,6 +22,14 @@ import {
   unsubscribe,
 } from "../../../../../store/websockets";
 import JobStepper from "./JobStepper";
+
+const TitleHeader = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-start",
+  alignItems: "center",
+  width: "100%",
+  height: "60px",
+}));
 
 interface OwnTypes {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -119,6 +128,10 @@ function LauncherHistory(props: PropTypes) {
         p: 2,
       }}
     >
+      <TitleHeader>
+        <HistoryIcon sx={{ color: "text.secondary", mr: 1 }} />
+        <Typography color="text.secondary">{t("main:jobs")}</Typography>
+      </TitleHeader>
       <JobStepper jobs={studyJobs} />
     </Paper>
   );

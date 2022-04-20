@@ -1,65 +1,73 @@
-import * as React from "react";
 import Box from "@mui/material/Box";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
-import StepContent from "@mui/material/StepContent";
-import Button from "@mui/material/Button";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import InfoIcon from "@mui/icons-material/Info";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CancelIcon from "@mui/icons-material/Cancel";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   StepConnector,
   stepConnectorClasses,
   StepIconProps,
   styled,
+  Tooltip,
 } from "@mui/material";
 import moment from "moment";
-import { LaunchJob } from "../../../../../common/types";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
+import { AxiosError } from "axios";
+import { JobStatus, LaunchJob } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import { scrollbarStyle } from "../../../../../theme";
+import ConfirmationModal from "../../../../common/ConfirmationModal";
+import { killStudy } from "../../../../../services/api/study";
+import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 
 const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.disabled}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      height: "100px",
+      height: "20px",
     },
   },
 }));
 
-const QontoStepIconRoot = styled("div")<{ ownerState: { active?: boolean } }>(
-  ({ theme, ownerState }) => ({
-    color: theme.palette.mode === "dark" ? theme.palette.grey[700] : "#eaeaf0",
-    display: "flex",
-    width: "24px",
-    justifyContent: "center",
-    alignItems: "center",
-    ...(ownerState.active && {
-      color: "#784af4",
-    }),
-    "& .QontoStepIcon-completedIcon": {
-      color: "#784af4",
-      zIndex: 1,
-      fontSize: 18,
-    },
-    "& .QontoStepIcon-inprogress": {
-      width: 16,
-      height: 16,
-      color: theme.palette.primary.main,
-    },
-  })
-);
+const QontoStepIconRoot = styled("div")(({ theme }) => ({
+  color: theme.palette.mode === "dark" ? theme.palette.grey[700] : "#eaeaf0",
+  display: "flex",
+  width: "24px",
+  justifyContent: "center",
+  alignItems: "center",
+  "& .QontoStepIcon-inprogress": {
+    width: 16,
+    height: 16,
+    color: theme.palette.primary.main,
+  },
+}));
 
-function QontoStepIcon(props: StepIconProps) {
-  const { active, completed, className } = props;
+const ColorStatus = {
+  running: "primary.main",
+  pending: "primary.main",
+  success: "success.main",
+  failed: "error.main",
+};
 
+function QontoStepIcon(props: {
+  className: string | undefined;
+  status: JobStatus;
+}) {
+  const { className, status } = props;
   return (
-    <QontoStepIconRoot ownerState={{ active }} className={className}>
-      {completed ? (
-        <CircleOutlinedIcon className="QontoStepIcon-completedIcon" />
-      ) : (
-        <CircleOutlinedIcon className="QontoStepIcon-inprogress" />
-      )}
+    <QontoStepIconRoot className={className}>
+      <FiberManualRecordIcon
+        sx={{
+          width: 24,
+          height: 24,
+          color: ColorStatus[status],
+        }}
+      />
     </QontoStepIconRoot>
   );
 }
@@ -70,18 +78,45 @@ interface Props {
 
 export default function VerticalLinearStepper(props: Props) {
   const { jobs } = props;
-  const [activeStep, setActiveStep] = React.useState(0);
+  const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
+  const [openConfirmationModal, setOpenConfirmationModal] =
+    useState<boolean>(false);
+  const [jobIdKill, setJobIdKill] = useState<string>();
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  const openConfirmModal = (jobId: string) => {
+    setOpenConfirmationModal(true);
+    setJobIdKill(jobId);
   };
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  const killTask = (jobId: string) => {
+    (async () => {
+      try {
+        await killStudy(jobId);
+      } catch (e) {
+        enqueueErrorSnackbar(
+          enqueueSnackbar,
+          t("singlestudy:failtokilltask"),
+          e as AxiosError
+        );
+      }
+      setOpenConfirmationModal(false);
+    })();
   };
 
-  const handleReset = () => {
-    setActiveStep(0);
+  const copyId = (jobId: string): void => {
+    try {
+      navigator.clipboard.writeText(jobId);
+      enqueueSnackbar(t("singlestudy:onJobIdCopySucces"), {
+        variant: "success",
+      });
+    } catch (e) {
+      enqueueErrorSnackbar(
+        enqueueSnackbar,
+        t("singlestudy:onJobIdCopyError"),
+        e as AxiosError
+      );
+    }
   };
 
   return (
@@ -90,8 +125,8 @@ export default function VerticalLinearStepper(props: Props) {
         width: "100%",
         height: "calc(0px + 100%)",
         display: "flex",
-        justifyContent: "flex-start",
-        alignItems: "flex-start",
+        justifyContent: jobs.length > 0 ? "flex-start" : "center",
+        alignItems: jobs.length > 0 ? "flex-start" : "center",
         overflowX: "hidden",
         overflowY: "auto",
         ...scrollbarStyle,
@@ -101,48 +136,127 @@ export default function VerticalLinearStepper(props: Props) {
         activeStep={-1}
         orientation="vertical"
         connector={<QontoConnector />}
+        sx={{ width: "100%", px: 2 }}
       >
         {jobs.map((job, index) => (
           <Step key={job.id}>
             <StepLabel
-              StepIconComponent={QontoStepIcon}
-              optional={<Button variant="text">Action</Button>}
+              StepIconComponent={({ className }: StepIconProps) =>
+                QontoStepIcon({ className, status: job.status })
+              }
             >
-              {moment(convertUTCToLocalTime(job.creationDate)).format(
-                "ddd, MMM D YYYY, HH:mm:ss"
-              )}
-            </StepLabel>
-            <StepContent>
-              <Typography>{job.msg}</Typography>
-              <Box sx={{ mb: 2 }}>
-                <div>
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    sx={{ mt: 1, mr: 1 }}
-                  >
-                    {index === jobs.length - 1 ? "Finish" : "Continue"}
-                  </Button>
-                  <Button
-                    disabled={index === 0}
-                    onClick={handleBack}
-                    sx={{ mt: 1, mr: 1 }}
-                  >
-                    Back
-                  </Button>
-                </div>
+              <Box
+                width="100%"
+                height="60px"
+                pt={2}
+                display="flex"
+                flexDirection="column"
+                justifyContent="flex-start"
+              >
+                <Box
+                  width="100%"
+                  height="30px"
+                  display="flex"
+                  justifyContent="flex-start"
+                >
+                  {moment(convertUTCToLocalTime(job.creationDate)).format(
+                    "ddd, MMM D YYYY, HH:mm:ss"
+                  )}
+                  {job.completionDate !== "" &&
+                    ` => ${moment(
+                      convertUTCToLocalTime(job.completionDate)
+                    ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
+                </Box>
+                <Box
+                  width="100%"
+                  height="30px"
+                  display="flex"
+                  justifyContent="flex-start"
+                >
+                  {job.outputId}
+                </Box>
+                <Box
+                  width="100%"
+                  height="30px"
+                  display="flex"
+                  justifyContent="flex-start"
+                  py={1}
+                >
+                  <Tooltip title={t("singlestudy:copyJobId") as string}>
+                    <ContentCopyIcon
+                      onClick={() => copyId(job.id)}
+                      sx={{
+                        mx: 0.5,
+                        cursor: "pointer",
+                        width: 20,
+                        height: 20,
+                        "&:hover": {
+                          color: "secondary.dark",
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip title={t("singlestudy:taskLog") as string}>
+                    <DescriptionIcon
+                      sx={{
+                        mx: 0.5,
+                        cursor: "pointer",
+                        width: 20,
+                        height: 20,
+                        "&:hover": {
+                          color: "secondary.dark",
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip title={t("singlestudy:taskErrorLog") as string}>
+                    <InfoIcon
+                      sx={{
+                        cursor: "pointer",
+                        width: 20,
+                        height: 20,
+                        "&:hover": {
+                          color: "secondary.dark",
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  {job.status === "running" && (
+                    <Box
+                      flexGrow={1}
+                      height="30px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="flex-end"
+                      py={1}
+                    >
+                      <Tooltip title={t("singlestudy:killStudy") as string}>
+                        <CancelIcon
+                          onClick={() => openConfirmModal(job.id)}
+                          sx={{
+                            mx: 0.5,
+                            cursor: "pointer",
+                            "&:hover": {
+                              color: "error.main",
+                            },
+                          }}
+                        />
+                      </Tooltip>
+                    </Box>
+                  )}
+                </Box>
               </Box>
-            </StepContent>
+            </StepLabel>
           </Step>
         ))}
       </Stepper>
-      {activeStep === jobs.length && (
-        <Paper square elevation={0} sx={{ p: 3 }}>
-          <Typography>All steps completed - you&apos;re finished</Typography>
-          <Button onClick={handleReset} sx={{ mt: 1, mr: 1 }}>
-            Reset
-          </Button>
-        </Paper>
+      {openConfirmationModal && (
+        <ConfirmationModal
+          open={openConfirmationModal}
+          message={t("singlestudy:confirmKill")}
+          handleYes={() => killTask(jobIdKill as string)}
+          handleNo={() => setOpenConfirmationModal(false)}
+        />
       )}
     </Box>
   );
