@@ -137,7 +137,7 @@ const JobsListing = (props: PropTypes) => {
       setTasks(allTasks.filter((task) => !task.completion_date_utc || moment.utc(task.completion_date_utc).isAfter(dateThreshold)));
     } catch (e) {
       logError('woops', e);
-      enqueueErrorSnackbar(createNotif, 'ça marche pas', e as AxiosError);
+      enqueueErrorSnackbar(createNotif, 'Failed to retrieve tasks', e as AxiosError);
     } finally {
       setLoaded(true);
     }
