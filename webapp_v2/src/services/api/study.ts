@@ -19,7 +19,9 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 
-const getStudiesRaw = async (): Promise<{ [sid: string]: StudyMetadataDTO }> => {
+const getStudiesRaw = async (): Promise<{
+  [sid: string]: StudyMetadataDTO;
+}> => {
   const res = await client.get(`/v1/studies`);
   return res.data;
 };
@@ -72,9 +74,7 @@ export const getAreaPositions = async (
   return res.data;
 };
 
-export const getStudyMetadata = async (
-  sid: string,
-): Promise<StudyMetadata> => {
+export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}`);
   return convertStudyDtoToMetadata(sid, res.data);
 };
