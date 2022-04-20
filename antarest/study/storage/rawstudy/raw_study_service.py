@@ -11,13 +11,13 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     Study,
+    Patch,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -86,6 +86,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             metadata.updated_at = datetime.utcfromtimestamp(
                 raw_meta["lastsave"]
             )
+
+            patch = self.patch_service.get(metadata)
+            metadata.additional_data.patch = patch.json()
+            metadata.additional_data.horizon = study.get(
+                ["settings", "generaldata", "general", "horizon"]
+            )
+            metadata.additional_data.author = raw_meta["author"]
+
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -97,6 +105,16 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.version = metadata.version or 0
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                metadata.additional_data.patch = (
+                    metadata.additional_data.patch or Patch()
+                )
+                metadata.additional_data.horizon = (
+                    metadata.additional_data.horizon or datetime.utcnow().year
+                )
+                metadata.additional_data.author = (
+                    metadata.additional_data.author or "Unknown"
+                )
+
             else:
                 raise e
 

@@ -1,5 +1,4 @@
 import io
-import json
 import logging
 from http import HTTPStatus
 from pathlib import Path
@@ -61,14 +60,13 @@ def create_study_routes(
         response_model=Dict[str, StudyMetadataDTO],
     )
     def get_studies(
-        summary: bool = False,
         managed: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = study_service.get_studies_information(
-            summary, managed, params
+            managed, params
         )
         return available_studies
 

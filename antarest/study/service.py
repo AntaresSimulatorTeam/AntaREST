@@ -301,12 +301,11 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, summary: bool, managed: bool, params: RequestParameters
+        self, managed: bool, params: RequestParameters
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
-            summary: indicate if just basic information should be retrieved
             managed: indicate if just managed studies should be retrieved
             params: request parameters
 
@@ -315,13 +314,11 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_keys = {
-            (True, True): CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value,
-            (True, False): CacheConstants.STUDY_LISTING_SUMMARY.value,
-            (False, True): CacheConstants.STUDY_LISTING_MANAGED.value,
-            (False, False): CacheConstants.STUDY_LISTING.value,
-        }
-        cache_key = cache_keys[(summary, managed)]
+        cache_key = (
+            CacheConstants.STUDY_LISTING_MANAGED.value
+            if managed
+            else CacheConstants.STUDY_LISTING.value
+        )
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
@@ -332,9 +329,7 @@ class StudyService:
             logger.info("Studies retrieved")
             for study in all_studies:
                 if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(
-                        study, summary
-                    )
+                    study_metadata = self._try_get_studies_information(study)
                     if study_metadata is not None:
                         studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
@@ -352,12 +347,12 @@ class StudyService:
         }
 
     def _try_get_studies_information(
-        self, study: Study, summary: bool
+        self, study: Study
     ) -> Optional[StudyMetadataDTO]:
         try:
             return self.storage_service.get_storage(
                 study
-            ).get_study_information(study, summary)
+            ).get_study_information(study)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",
@@ -409,9 +404,6 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        if metadata_patch.name:
-            study.name = metadata_patch.name
-            self.repository.save(study)
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             self._assert_study_unarchived(study)
@@ -423,10 +415,31 @@ class StudyService:
             self._edit_study_using_command(
                 study=study, url=study_settings_url, data=study_settings
             )
+        if metadata_patch.author:
+            study_antares_url = "study/antares"
+            self._assert_study_unarchived(study)
+            study_antares = self.storage_service.get_storage(study).get(
+                study, study_antares_url
+            )
+            study_antares["author"] = metadata_patch.author
 
-        new_metadata = self.storage_service.get_storage(
+            self._edit_study_using_command(
+                study=study, url=study_antares_url, data=study_antares
+            )
+
+        new_metadata, new_patch = self.storage_service.get_storage(
             study
         ).patch_update_study_metadata(study, metadata_patch)
+
+        if metadata_patch.name:
+            study.name = metadata_patch.name
+        if metadata_patch.author:
+            study.additional_data.author = metadata_patch.author
+        if metadata_patch.horizon:
+            study.additional_data.horizon = metadata_patch.horizon
+        study.additional_data.patch = new_patch.json()
+        self.repository.save(study)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,

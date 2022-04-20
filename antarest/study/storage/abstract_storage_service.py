@@ -2,17 +2,15 @@ import logging
 import os
 import shutil
 import tempfile
-from abc import abstractmethod, ABC
-from datetime import datetime
+from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO
+from typing import List, Union, Optional, IO, Tuple
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.requests import RequestParameters
+from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import extract_zip, StopWatch, assert_this
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -25,17 +23,15 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PatchStudy,
     StudyMetadataPatchDTO,
+    Patch,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     FileStudyTreeConfig,
-    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
-    FileStudy,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
@@ -64,7 +60,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         study: T,
         metadata: StudyMetadataPatchDTO,
-    ) -> StudyMetadataDTO:
+    ) -> Tuple[StudyMetadataDTO, Patch]:
         old_patch = self.patch_service.get(study)
         old_patch.study = PatchStudy(
             scenario=metadata.scenario,
@@ -77,54 +73,42 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             old_patch,
         )
         remove_from_cache(self.cache, study.id)
-        return self.get_study_information(study)
+        return self.get_study_information(study), old_patch
 
     def get_study_information(
         self,
         study: T,
-        summary: bool = False,
     ) -> StudyMetadataDTO:
-        file_settings = {}
-        file_metadata = {}
+        patch = Patch.parse_raw(study.additional_data.patch) or Patch()
+        patch_metadata = patch.study or PatchStudy()
 
-        patch_metadata = PatchStudy()
-
-        if not summary:
-            try:
-                patch_metadata = (
-                    self.patch_service.get(study).study or PatchStudy()
+        try:
+            study_path = self.get_study_path(study)
+            if study_path:
+                config = FileStudyTreeConfig(
+                    study_path=study_path,
+                    path=study_path,
+                    study_id="",
+                    version=-1,
                 )
-                study_path = self.get_study_path(study)
-                if study_path:
-                    config = FileStudyTreeConfig(
-                        study_path=study_path,
-                        path=study_path,
-                        study_id="",
-                        version=-1,
-                    )
-                    raw_study = self.study_factory.create_from_config(config)
-                    file_metadata = raw_study.get(url=["study", "antares"])
-                    study_version = str(
-                        file_metadata.get("version", study.version)
-                    )
-                    if study_version != study.version:
-                        logger.warning(
-                            f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                        )
-                        study.version = study_version
-                    file_settings = raw_study.get(
-                        url=["settings", "generaldata", "general"]
-                    )
-            except Exception as e:
-                logger.error(
-                    "Failed to retrieve general settings for study %s",
-                    study.id,
-                    exc_info=e,
+                raw_study = self.study_factory.create_from_config(config)
+                file_metadata = raw_study.get(url=["study", "antares"])
+                study_version = str(
+                    file_metadata.get("version", study.version)
                 )
+                if study_version != study.version:
+                    logger.warning(
+                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                    )
+                    study.version = study_version
+        except Exception as e:
+            logger.error(
+                "Failed to retrieve general settings for study %s",
+                study.id,
+                exc_info=e,
+            )
 
-        study_workspace = DEFAULT_WORKSPACE_NAME
-        if hasattr(study, "workspace"):
-            study_workspace = study.workspace
+        study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
@@ -141,13 +125,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             archived=study.archived if study.archived is not None else False,
             owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else OwnerInfo(name=file_metadata.get("author", "Unknown")),
+            else OwnerInfo(name=study.additional_data.author),
             groups=[
                 GroupDTO(id=group.id, name=group.name)
                 for group in study.groups
             ],
             public_mode=study.public_mode or PublicMode.NONE,
-            horizon=file_settings.get("horizon", None),
+            horizon=study.additional_data.horizon,
             scenario=patch_metadata.scenario,
             status=patch_metadata.status,
             doc=patch_metadata.doc,

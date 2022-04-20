@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar, Generic, List, Union, Optional, IO
+from typing import TypeVar, Generic, List, Union, Optional, IO, Tuple
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -10,6 +10,7 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    Patch,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
@@ -84,7 +85,7 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def patch_update_study_metadata(
         self, study: T, metadata: StudyMetadataPatchDTO
-    ) -> StudyMetadataDTO:
+    ) -> Tuple[StudyMetadataDTO, Patch]:
         """
         Update patch study metadata
         Args:
@@ -110,9 +111,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_study_information(
-        self, metadata: T, summary: bool = False
-    ) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: T) -> StudyMetadataDTO:
         raise NotImplementedError()
 
     @abstractmethod

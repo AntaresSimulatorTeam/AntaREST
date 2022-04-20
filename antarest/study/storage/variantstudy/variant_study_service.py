@@ -423,7 +423,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
 
         children_tree = VariantTreeDTO(
-            node=self.get_study_information(study, summary=True),
+            node=self.get_study_information(study),
             children=[],
         )
         children = self.repository.get_children(parent_id=parent_id)
@@ -460,12 +460,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             return (
                 self.get_study_information(
                     parent,
-                    summary=True,
                 )
                 if isinstance(parent, VariantStudy)
                 else self.raw_study_service.get_study_information(
                     parent,
-                    summary=True,
                 )
             )
         return None
@@ -477,12 +475,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata = (
             self.get_study_information(
                 study,
-                summary=True,
             )
             if isinstance(study, VariantStudy)
             else self.raw_study_service.get_study_information(
                 study,
-                summary=True,
             )
         )
         output_list: List[StudyMetadataDTO] = [metadata]
@@ -564,6 +560,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
+            additional_data=study.additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -769,6 +766,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             from_command_index=command_start_index,
         )
         if results.success:
+            self._synchronize_additional_data(variant_study)
+
             last_command_index = len(variant_study.commands) - 1
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
@@ -789,6 +788,18 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study.tree.denormalize()
         return results
+
+    def _synchronize_additional_data(
+        self, variant_study: VariantStudy
+    ) -> None:
+        horizon = self.get(
+            variant_study, url="settings/generaldata/general/horizon"
+        )
+        author = self.get(variant_study, url="study/antares/author")
+        patch = self.patch_service.get(variant_study)
+        variant_study.additional_data.horizon = horizon
+        variant_study.additional_data.author = author
+        variant_study.additional_data.patch = patch.json()
 
     def _generate_study_config(
         self, metadata: VariantStudy, config: Optional[FileStudyTreeConfig]
