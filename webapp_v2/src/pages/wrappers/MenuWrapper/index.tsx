@@ -29,7 +29,7 @@ import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
 
 import { SvgIconProps, useTheme } from "@mui/material";
 import logo from "../../../assets/logo.png";
-import DownloadBadge from "../../../components/tasks/DownloadBadge";
+import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
 import { AppState } from "../../../store/reducers";
 import { setMenuExtensionStatusAction } from "../../../store/ui";
@@ -123,11 +123,11 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
                 : undefined,
             })}
           >
-            <DownloadBadge>
+            <NotificationBadge>
               <NavListItemIcon>
                 <elm.icon sx={{ color: "grey.400" }} />
               </NavListItemIcon>
-            </DownloadBadge>
+            </NotificationBadge>
             {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
           </NavInternalLink>
         </NavListItem>
