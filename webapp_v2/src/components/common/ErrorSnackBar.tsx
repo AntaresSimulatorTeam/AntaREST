@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import { OptionsObject, SnackbarKey, SnackbarMessage } from "notistack";
 import SnackErrorMessage from "./SnackErrorMessage";
 
@@ -14,7 +13,7 @@ const enqueueErrorSnackbar = (
     options?: OptionsObject | undefined
   ) => SnackbarKey,
   message: SnackbarMessage,
-  details: AxiosError
+  details: string | Error
 ) =>
   enqueueSnackbar(message, {
     variant: "error",

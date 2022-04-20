@@ -2,7 +2,7 @@
 import { useState, forwardRef, useCallback } from "react";
 import * as React from "react";
 import { useSnackbar, SnackbarContent } from "notistack";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import {
   Box,
   Card,
@@ -17,6 +17,7 @@ import {
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import * as R from "ramda";
 
 const Snackbar = styled(SnackbarContent)(({ theme }) => ({
   [theme.breakpoints.up("sm")]: {
@@ -43,7 +44,7 @@ export const ExpandButton = styled(IconButton, {
 interface Props {
   id: string | number;
   message: string | React.ReactNode;
-  details: AxiosError;
+  details: string | Error;
 }
 
 const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
@@ -93,32 +94,43 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
               </ExpandButton>
             </Box>
           </CardActions>
-          {details.response !== undefined && (
-            <Collapse in={expanded} timeout="auto" unmountOnExit>
-              <Paper sx={{ p: 2 }}>
-                <Grid
-                  container
-                  spacing={1}
-                  sx={{ width: "100%", height: "100%", mt: 1 }}
-                >
-                  <Grid item xs={6}>
-                    <Label>Status :</Label>
-                    <Typography>{details.response.status}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Label>Exception : </Label>
-                    <Typography>{details.response.data.exception}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Label>Description : </Label>
-                    <Typography sx={{ whiteSpace: "pre-wrap" }}>
-                      {details.response.data.description}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Collapse>
-          )}
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Paper sx={{ p: 2 }}>
+              {R.cond([
+                [
+                  axios.isAxiosError,
+                  () => {
+                    const err = details as AxiosError;
+                    return (
+                      <Grid
+                        container
+                        spacing={1}
+                        sx={{ width: "100%", height: "100%", mt: 1 }}
+                      >
+                        <Grid item xs={6}>
+                          <Label>Status :</Label>
+                          <Typography>{err.response?.status}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Label>Exception : </Label>
+                          <Typography>
+                            {err.response?.data.exception}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Label>Description : </Label>
+                          <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                            {err.response?.data.description}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    );
+                  },
+                ],
+                [R.T, () => <>{details.toString()}</>],
+              ])(details)}
+            </Paper>
+          </Collapse>
         </Card>
       </Snackbar>
     );
