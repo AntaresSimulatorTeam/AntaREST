@@ -55,7 +55,8 @@ function LaunchJobLogView(props: PropsType) {
         <Tooltip title={t("singlestudy:taskLog") as string}>
           <Box
             sx={{
-              position: "relative",
+              width: "auto",
+              height: "24px",
               cursor: "pointer",
               m: 0.5,
               "& svg:first-of-type": {
@@ -80,6 +81,8 @@ function LaunchJobLogView(props: PropsType) {
           <Box
             sx={{
               position: "relative",
+              width: "auto",
+              height: "24px",
               cursor: "pointer",
               m: 0.5,
               "& svg:first-of-type": {

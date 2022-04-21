@@ -3,8 +3,6 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import InfoIcon from "@mui/icons-material/Info";
-import DescriptionIcon from "@mui/icons-material/Description";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
@@ -25,6 +23,7 @@ import { scrollbarStyle } from "../../../../../theme";
 import ConfirmationModal from "../../../../common/ConfirmationModal";
 import { killStudy } from "../../../../../services/api/study";
 import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
+import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
 
 const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.disabled}`]: {
@@ -48,8 +47,8 @@ const QontoStepIconRoot = styled("div")(({ theme }) => ({
 }));
 
 const ColorStatus = {
-  running: "primary.main",
-  pending: "primary.main",
+  running: "warning.main",
+  pending: "warning.main",
   success: "success.main",
   failed: "error.main",
 };
@@ -148,7 +147,7 @@ export default function VerticalLinearStepper(props: Props) {
               <Box
                 width="100%"
                 height="60px"
-                pt={2}
+                pt={2.5}
                 display="flex"
                 flexDirection="column"
                 justifyContent="flex-start"
@@ -186,41 +185,16 @@ export default function VerticalLinearStepper(props: Props) {
                     <ContentCopyIcon
                       onClick={() => copyId(job.id)}
                       sx={{
-                        mx: 0.5,
+                        m: 0.5,
+                        height: "22px",
                         cursor: "pointer",
-                        width: 20,
-                        height: 20,
                         "&:hover": {
-                          color: "secondary.dark",
+                          color: "action.hover",
                         },
                       }}
                     />
                   </Tooltip>
-                  <Tooltip title={t("singlestudy:taskLog") as string}>
-                    <DescriptionIcon
-                      sx={{
-                        mx: 0.5,
-                        cursor: "pointer",
-                        width: 20,
-                        height: 20,
-                        "&:hover": {
-                          color: "secondary.dark",
-                        },
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title={t("singlestudy:taskErrorLog") as string}>
-                    <InfoIcon
-                      sx={{
-                        cursor: "pointer",
-                        width: 20,
-                        height: 20,
-                        "&:hover": {
-                          color: "secondary.dark",
-                        },
-                      }}
-                    />
-                  </Tooltip>
+                  <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
                     <Box
                       flexGrow={1}
