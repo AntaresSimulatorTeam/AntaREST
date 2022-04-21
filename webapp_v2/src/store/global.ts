@@ -14,17 +14,35 @@ export interface GlobalState {
   onCloseListeners: { [id: string]: (event: Event) => void };
   maintenanceMode: boolean;
   messageInfo: string;
+  tasksNotificationCount: number;
 }
 
 const initialState: GlobalState = {
   onCloseListeners: {},
   maintenanceMode: false,
   messageInfo: "",
+  tasksNotificationCount: 0,
 };
 
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
+
+export interface AddTasksNotificationAction extends Action {
+  type: "GLOBAL/ADD_TASKS_NOTIFICATION";
+}
+
+export const addTasksNotification = (): AddTasksNotificationAction => ({
+  type: "GLOBAL/ADD_TASKS_NOTIFICATION",
+});
+
+export interface ClearTasksNotificationAction extends Action {
+  type: "GLOBAL/CLEAR_TASKS_NOTIFICATION";
+}
+
+export const clearTasksNotification = (): ClearTasksNotificationAction => ({
+  type: "GLOBAL/CLEAR_TASKS_NOTIFICATION",
+});
 
 export interface AddOnCloseListenerAction extends Action {
   type: "GLOBAL/ADD_ONCLOSE_LISTENER";
@@ -104,7 +122,9 @@ type GlobalAction =
   | AddOnCloseListenerAction
   | RemoveOnCloseListenerAction
   | SetMaintenanceModeAction
-  | SetMessageInfoAction;
+  | SetMessageInfoAction
+  | AddTasksNotificationAction
+  | ClearTasksNotificationAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
@@ -151,6 +171,18 @@ export default (state = initialState, action: GlobalAction): GlobalState => {
       return {
         ...state,
         messageInfo: action.payload,
+      };
+    }
+    case "GLOBAL/ADD_TASKS_NOTIFICATION": {
+      return {
+        ...state,
+        tasksNotificationCount: state.tasksNotificationCount + 1,
+      };
+    }
+    case "GLOBAL/CLEAR_TASKS_NOTIFICATION": {
+      return {
+        ...state,
+        tasksNotificationCount: 0,
       };
     }
     default:

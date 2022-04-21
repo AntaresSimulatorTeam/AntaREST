@@ -15,8 +15,8 @@ import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
-import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
+import StorageIcon from "@mui/icons-material/Storage";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 
 import ApiIcon from "@mui/icons-material/Api";
@@ -29,6 +29,7 @@ import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
 
 import { SvgIconProps, useTheme } from "@mui/material";
 import logo from "../../../assets/logo.png";
+import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
 import { AppState } from "../../../store/reducers";
 import { setMenuExtensionStatusAction } from "../../../store/ui";
@@ -53,6 +54,7 @@ interface MenuItem {
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
   currentStudy: state.study.current,
+  websocketConnected: state.websockets.connected,
 });
 
 const mapDispatch = {
@@ -76,8 +78,8 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       strict: true,
       icon: TravelExploreOutlinedIcon,
     },
-    { id: "tasks", link: "/tasks", icon: PlaylistAddCheckOutlinedIcon },
-    { id: "data", link: "/data", icon: ShowChartOutlinedIcon },
+    { id: "tasks", link: "/tasks", icon: AssignmentIcon },
+    { id: "data", link: "/data", icon: StorageIcon },
     { id: "api", link: "/api", icon: ApiIcon },
     {
       id: "documentation",
@@ -108,33 +110,57 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
 
   const settings = navigation[navigation.length - 1];
 
-  const drawMenuItem = (elm: MenuItem): ReactNode => (
-    <NavListItem link key={elm.id}>
-      {elm.newTab === true ? (
-        <NavExternalLink href={elm.link} target="_blank">
-          <NavListItemIcon>
-            <elm.icon sx={{ color: "grey.400" }} />
-          </NavListItemIcon>
-          {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
-        </NavExternalLink>
-      ) : (
-        <NavInternalLink
-          to={elm.link}
-          end={elm.strict}
-          style={({ isActive }) => ({
-            background: isActive
-              ? theme.palette.primary.outlinedHoverBackground
-              : undefined,
-          })}
-        >
-          <NavListItemIcon>
-            <elm.icon sx={{ color: "grey.400" }} />
-          </NavListItemIcon>
-          {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
-        </NavInternalLink>
-      )}
-    </NavListItem>
-  );
+  const drawMenuItem = (elm: MenuItem): ReactNode => {
+    if (elm.id === "tasks") {
+      return (
+        <NavListItem link key={elm.id}>
+          <NavInternalLink
+            to={elm.link}
+            end={elm.strict}
+            style={({ isActive }) => ({
+              background: isActive
+                ? theme.palette.primary.outlinedHoverBackground
+                : undefined,
+            })}
+          >
+            <NotificationBadge>
+              <NavListItemIcon>
+                <elm.icon sx={{ color: "grey.400" }} />
+              </NavListItemIcon>
+            </NotificationBadge>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavInternalLink>
+        </NavListItem>
+      );
+    }
+    return (
+      <NavListItem link key={elm.id}>
+        {elm.newTab === true ? (
+          <NavExternalLink href={elm.link} target="_blank">
+            <NavListItemIcon>
+              <elm.icon sx={{ color: "grey.400" }} />
+            </NavListItemIcon>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavExternalLink>
+        ) : (
+          <NavInternalLink
+            to={elm.link}
+            end={elm.strict}
+            style={({ isActive }) => ({
+              background: isActive
+                ? theme.palette.primary.outlinedHoverBackground
+                : undefined,
+            })}
+          >
+            <NavListItemIcon>
+              <elm.icon sx={{ color: "grey.400" }} />
+            </NavListItemIcon>
+            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+          </NavInternalLink>
+        )}
+      </NavListItem>
+    );
+  };
 
   const topMenuLastIndexOffset = currentStudy ? 1 : 0;
 

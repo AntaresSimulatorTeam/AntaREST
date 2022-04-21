@@ -5,5 +5,18 @@
   "logdetails": "Pas de logs",
   "launches": "Lancements",
   "exports": "Exports",
-  "others": "Autres"
+  "others": "Autres",
+  "download": "Télécharger",
+  "loading": "Chargement",
+  "action": "Action",
+  "DOWNLOAD": "Téléchargement",
+  "LAUNCH": "Lancement",
+  "COPY": "Copie",
+  "ARCHIVE": "Archivage",
+  "UNARCHIVE": "Désarchivage",
+  "SCAN": "Scan",
+  "UNKNOWN": "Inconnu",
+  "typeFilter": "Filtrer par type",
+  "all": "Tous",
+  "runningTasks": "Tâches en cours"
 }

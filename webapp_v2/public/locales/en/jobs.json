@@ -5,5 +5,18 @@
   "logdetails": "No logs found",
   "launches": "Launches",
   "exports": "Exports",
-  "others": "Others"
+  "others": "Others",
+  "download": "Download",
+  "loading": "Loading",
+  "action": "Action",
+  "DOWNLOAD": "Download",
+  "LAUNCH": "Launch",
+  "COPY": "Copy",
+  "ARCHIVE": "Archive",
+  "UNARCHIVE": "Unarchive",
+  "SCAN": "Scan",
+  "UNKNOWN": "Unknown",
+  "typeFilter": "Filter by type",
+  "all": "All",
+  "runningTasks": "Running tasks"
 }
