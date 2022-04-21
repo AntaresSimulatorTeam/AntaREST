@@ -22,8 +22,17 @@ class FileStudyHelpers:
         return study.tree.get(config_path)
 
     @staticmethod
-    def save_config(study: FileStudy, config: JSON) -> None:
+    def save_config(
+        study: FileStudy, config: JSON, output_id: Optional[str] = None
+    ) -> None:
         config_path = ["settings", "generaldata"]
+        if output_id:
+            config_path = [
+                "output",
+                output_id,
+                "about-the-study",
+                "parameters",
+            ]
         return study.tree.save(config, config_path)
 
     @staticmethod
@@ -34,8 +43,10 @@ class FileStudyHelpers:
         return ConfigPathBuilder.get_playlist(config)
 
     @staticmethod
-    def set_playlist(study: FileStudy, playlist: List[int]) -> None:
-        config = FileStudyHelpers.get_config(study)
+    def set_playlist(
+        study: FileStudy, playlist: List[int], output_id: Optional[str] = None
+    ) -> None:
+        config = FileStudyHelpers.get_config(study, output_id)
         general_config: Optional[JSON] = config.get("general", None)
         assert_this(general_config is not None)
         general_config = cast(JSON, general_config)
@@ -58,4 +69,4 @@ class FileStudyHelpers:
                     del playlist_config["playlist_year -"]
                 playlist_config["playlist_year +"] = playlist
             config["playlist"] = playlist_config
-        FileStudyHelpers.save_config(study, config)
+        FileStudyHelpers.save_config(study, config, output_id)

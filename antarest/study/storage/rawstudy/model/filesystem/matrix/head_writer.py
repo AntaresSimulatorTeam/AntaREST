@@ -27,7 +27,7 @@ class AreaHeadWriter(HeadWriter):
     """
 
     def __init__(self, area: str, data_type: str, freq: str):
-        self.head = f"""{area.upper()}\tarea\t{data_type}\t{freq}
+        self.head = f"""{area}\tarea\t{data_type}\t{freq}
 \tVARIABLES\tBEGIN\tEND
 """
 
@@ -40,9 +40,9 @@ class LinkHeadWriter(HeadWriter):
     Implementation for link head matrix
     """
 
-    def __init__(self, src: str, dest: str, freq: str):
-        self.head = f"""{src.upper()}\tlink\tva\t{freq}
-{dest.upper()}\tVARIABLES\tBEGIN\tEND
+    def __init__(self, src: str, dest: str, data_type: str, freq: str):
+        self.head = f"""{src}\tlink\t{data_type}\t{freq}
+{dest}\tVARIABLES\tBEGIN\tEND
 """
 
     def build(self, var: int, end: int, start: int = 1) -> str:

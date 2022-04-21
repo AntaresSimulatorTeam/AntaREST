@@ -83,7 +83,9 @@ class OutputSeriesMatrix(
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T
-        matrix = pd.concat([headers, pd.DataFrame(df.values)], axis=0)
+        matrix = pd.concat(
+            [headers, pd.DataFrame(df.values).convert_dtypes()], axis=0
+        )
 
         time = self.date_serializer.build_date(df.index)
         matrix.index = time.index
@@ -98,6 +100,7 @@ class OutputSeriesMatrix(
             sep="\t",
             index=False,
             header=False,
+            na_rep="N/A",
             line_terminator="\n",
         )
 
@@ -161,7 +164,7 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
             context=context,
             config=config,
             date_serializer=FactoryDateSerializer.create(freq, src),
-            head_writer=LinkHeadWriter(src, dest, freq),
+            head_writer=LinkHeadWriter(src, dest, config.path.name[:2], freq),
             freq=freq,
         )
 

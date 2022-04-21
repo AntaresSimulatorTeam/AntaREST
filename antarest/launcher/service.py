@@ -109,6 +109,7 @@ class LauncherService:
                 import_output=self._import_output,
             ),
             event_bus,
+            study_service.storage_service.raw_study_service.study_factory,
         )
         self.extensions = self._init_extensions()
 
