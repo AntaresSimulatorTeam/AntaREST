@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useCallback, useEffect, useRef } from "react";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
 import { Box, Typography } from "@mui/material";
@@ -47,12 +47,15 @@ function NotificationBadge(props: PropTypes) {
   const { enqueueSnackbar } = useSnackbar();
   const ref = useRef<HTMLDivElement>(null);
 
-  const newNotification = (message: string, variantType?: VariantType) => {
-    if (location.pathname !== "/tasks") {
-      addTasksNotification();
-    }
-    enqueueSnackbar(t(message), { variant: variantType || "info" });
-  };
+  const newNotification = useCallback(
+    (message: string, variantType?: VariantType) => {
+      if (location.pathname !== "/tasks") {
+        addTasksNotification();
+      }
+      enqueueSnackbar(t(message), { variant: variantType || "info" });
+    },
+    [addTasksNotification, enqueueSnackbar, location.pathname, t]
+  );
 
   useEffect(() => {
     const listener = async (ev: WSMessage) => {
@@ -82,8 +85,7 @@ function NotificationBadge(props: PropTypes) {
     };
     addWsListener(listener);
     return () => removeWsListener(listener);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addWsListener, removeWsListener]);
+  }, [addWsListener, removeWsListener, newNotification]);
 
   useEffect(() => {
     if (location.pathname === "/tasks") {

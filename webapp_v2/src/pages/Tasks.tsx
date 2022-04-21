@@ -491,7 +491,7 @@ function JobsListing(props: PropTypes) {
                 />
               </Tooltip>
             )}
-            {task.completion_date_utc && !task.result?.success && (
+            {task.result && !task.result.success && (
               <InfoIcon
                 sx={{
                   width: "18px",
@@ -502,6 +502,7 @@ function JobsListing(props: PropTypes) {
                     color: "error.dark",
                   },
                 }}
+                onClick={() => setMessageModalOpen(`${task.result?.message}`)}
               />
             )}
           </Box>

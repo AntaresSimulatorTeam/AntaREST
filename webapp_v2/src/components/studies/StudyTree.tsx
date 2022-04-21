@@ -59,7 +59,6 @@ function StudyTree(props: Props) {
   const orderFolderScan = async (folderPath: string): Promise<void> => {
     try {
       await scanFolder(folderPath);
-      enqueueSnackbar(t("studymanager:scanFolderSuccess"), { variant: "info" });
     } catch (e) {
       enqueueErrorSnackbar(
         enqueueSnackbar,
