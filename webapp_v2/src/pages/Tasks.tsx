@@ -492,18 +492,20 @@ function JobsListing(props: PropTypes) {
               </Tooltip>
             )}
             {task.result && !task.result.success && (
-              <InfoIcon
-                sx={{
-                  width: "18px",
-                  height: "auto",
-                  cursor: "pointer",
-                  color: "error.light",
-                  "&:hover": {
-                    color: "error.dark",
-                  },
-                }}
-                onClick={() => setMessageModalOpen(`${task.result?.message}`)}
-              />
+              <Tooltip title={t("variants:taskFailed") as string}>
+                <InfoIcon
+                  sx={{
+                    width: "18px",
+                    height: "auto",
+                    cursor: "pointer",
+                    color: "error.light",
+                    "&:hover": {
+                      color: "error.dark",
+                    },
+                  }}
+                  onClick={() => setMessageModalOpen(`${task.result?.message}`)}
+                />
+              </Tooltip>
             )}
           </Box>
         ),
