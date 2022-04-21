@@ -63,7 +63,7 @@ import enqueueErrorSnackbar from "../components/common/ErrorSnackBar";
 import BasicModal from "../components/common/BasicModal";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
 import { AppState } from "../store/reducers";
-import LogView from "../components/tasks/LogView";
+import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -360,7 +360,7 @@ function JobsListing(props: PropTypes) {
                 <Box />
               )}
             </Box>
-            <LogView job={job} logButton logErrorButton />
+            <LaunchJobLogView job={job} logButton logErrorButton />
           </Box>
         ),
         date: job.completionDate || job.creationDate,

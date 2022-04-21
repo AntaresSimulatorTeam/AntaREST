@@ -21,11 +21,11 @@ import { useTranslation } from "react-i18next";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
-import { JobsType, TaskType } from "../../common/types";
+import { TaskView, TaskType } from "../../common/types";
 import { scrollbarStyle } from "../../theme";
 
 interface PropType {
-  content: Array<JobsType>;
+  content: Array<TaskView>;
 }
 
 function JobTableView(props: PropType) {
@@ -33,13 +33,14 @@ function JobTableView(props: PropType) {
   const [t] = useTranslation();
   const [sorted, setSorted] = useState<string>();
   const [type, setType] = useState<string>("all");
-  const [status, setStatus] = useState<boolean>(false);
-  const [currentContent, setCurrentContent] = useState<JobsType[]>(content);
+  const [filterRunningStatus, setFilterRunningStatus] =
+    useState<boolean>(false);
+  const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
   const handleChange = (event: SelectChangeEvent) => {
     setType(event.target.value as string);
     if (event.target.value !== "all") {
-      if (status) {
+      if (filterRunningStatus) {
         setCurrentContent(
           content
             .filter((o) => o.type === type)
@@ -48,16 +49,16 @@ function JobTableView(props: PropType) {
       } else {
         setCurrentContent(content.filter((o) => o.type === event.target.value));
       }
-    } else if (status) {
+    } else if (filterRunningStatus) {
       setCurrentContent(content.filter((o) => o.status === "running"));
     } else {
       setCurrentContent(content);
     }
   };
 
-  const handleStatusChange = () => {
-    setStatus(!status);
-    if (!status) {
+  const handleFilterStatusChange = () => {
+    setFilterRunningStatus(!filterRunningStatus);
+    if (!filterRunningStatus) {
       setCurrentContent(currentContent.filter((o) => o.status === "running"));
     } else if (type !== "all") {
       setCurrentContent(content.filter((o) => o.type === type));
@@ -91,7 +92,12 @@ function JobTableView(props: PropType) {
     >
       <Box display="flex" alignItems="center">
         <FormControlLabel
-          control={<Checkbox checked={status} onChange={handleStatusChange} />}
+          control={
+            <Checkbox
+              checked={filterRunningStatus}
+              onChange={handleFilterStatusChange}
+            />
+          }
           label={t("jobs:runningTasks") as string}
         />
         <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>

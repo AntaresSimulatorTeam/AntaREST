@@ -16,7 +16,7 @@ interface PropsType {
   logErrorButton?: boolean;
 }
 
-function LogView(props: PropsType) {
+function LaunchJobLogView(props: PropsType) {
   const { job, logButton, logErrorButton } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -121,9 +121,9 @@ function LogView(props: PropsType) {
   );
 }
 
-LogView.defaultProps = {
+LaunchJobLogView.defaultProps = {
   logButton: false,
   logErrorButton: false,
 };
 
-export default LogView;
+export default LaunchJobLogView;

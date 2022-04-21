@@ -592,7 +592,7 @@ export const isNode = (el: NodeProperties | LinkProperties): boolean =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (el as any).id !== undefined;
 
-export interface JobsType {
+export interface TaskView {
   id: string;
   name: ReactNode;
   dateView: ReactNode;
