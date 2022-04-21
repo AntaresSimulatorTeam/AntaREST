@@ -48,6 +48,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
@@ -984,69 +985,99 @@ class StudyService:
             params.get_user_id(),
         )
 
-        matrix = StudyDownloader.build(
-            self.storage_service.get_storage(study).get_raw(study),
-            output_id,
-            data,
-        )
+        if use_task:
+            logger.info(f"Exporting {output_id} from study {study_id}")
+            export_name = (
+                f"Study filtered output {study.name}/{output_id} export"
+            )
+            export_file_download = self.file_transfer_manager.request_download(
+                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
+                export_name,
+                params.user,
+            )
+            export_path = Path(export_file_download.path)
+            export_id = export_file_download.id
 
-        if filetype != ExportFormat.JSON:
-            if use_task:
-                logger.info(f"Exporting {output_id} from study {study_id}")
-                export_name = (
-                    f"Study filtered output {study.name}/{output_id} export"
-                )
-                export_file_download = self.file_transfer_manager.request_download(
-                    f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
-                    export_name,
-                    params.user,
-                )
-                export_path = Path(export_file_download.path)
-                export_id = export_file_download.id
-
-                def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
-                    try:
-                        StudyDownloader.export(matrix, filetype, export_path)
-                        self.file_transfer_manager.set_ready(export_id)
-                        return TaskResult(
-                            success=True,
-                            message=f"Study filtered output {study_id}/{output_id} successfully exported",
+            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    matrix = StudyDownloader.build(
+                        self.storage_service.get_storage(study).get_raw(study),
+                        output_id,
+                        data,
+                    )
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} built in {x}s"
                         )
-                    except Exception as e:
-                        self.file_transfer_manager.fail(export_id, str(e))
-                        raise e
+                    )
+                    StudyDownloader.export(matrix, filetype, export_path)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} exported in {x}s"
+                        )
+                    )
+                    self.file_transfer_manager.set_ready(export_id)
+                    return TaskResult(
+                        success=True,
+                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
+                    )
+                except Exception as e:
+                    self.file_transfer_manager.fail(export_id, str(e))
+                    raise e
 
-                task_id = self.task_service.add_task(
-                    export_task,
-                    export_name,
-                    task_type=TaskType.EXPORT,
-                    ref_id=study.id,
-                    custom_event_messages=None,
-                    request_params=params,
+            task_id = self.task_service.add_task(
+                export_task,
+                export_name,
+                task_type=TaskType.EXPORT,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return FileDownloadTaskDTO(
+                file=export_file_download.to_dto(), task=task_id
+            )
+        else:
+            stopwatch = StopWatch()
+            matrix = StudyDownloader.build(
+                self.storage_service.get_storage(study).get_raw(study),
+                output_id,
+                data,
+            )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Study {study_id} filtered output {output_id} built in {x}s"
                 )
-
-                return FileDownloadTaskDTO(
-                    file=export_file_download.to_dto(), task=task_id
+            )
+            if tmp_export_file is not None:
+                StudyDownloader.export(matrix, filetype, tmp_export_file)
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Study {study_id} filtered output {output_id} exported in {x}s"
+                    )
+                )
+                return FileResponse(
+                    tmp_export_file,
+                    headers={"Content-Disposition": "inline"}
+                    if filetype == ExportFormat.JSON
+                    else {
+                        "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
+                    },
+                    media_type=filetype,
                 )
             else:
-                if tmp_export_file is not None:
-                    StudyDownloader.export(matrix, filetype, tmp_export_file)
-                    return FileResponse(
-                        tmp_export_file,
-                        headers={
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                        },
-                        media_type=filetype,
-                    )
-
-        json_response = json.dumps(
-            matrix.dict(),
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return Response(content=json_response, media_type="application/json")
+                json_response = json.dumps(
+                    matrix.dict(),
+                    ensure_ascii=False,
+                    allow_nan=True,
+                    indent=None,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                return Response(
+                    content=json_response, media_type="application/json"
+                )
 
     def get_study_sim_result(
         self, study_id: str, params: RequestParameters
