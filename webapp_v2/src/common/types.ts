@@ -169,6 +169,12 @@ export interface UserRoleDTO extends IdentityDTO<number> {
 
 export type GroupDTO = IdentityDTO;
 
+export interface RoleCreationReturnDTO {
+  group: GroupDTO;
+  identity: UserDTO;
+  type: RoleType;
+}
+
 export interface JWTGroup {
   id: string;
   name: string;
