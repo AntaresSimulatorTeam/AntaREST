@@ -139,6 +139,7 @@ function LauncherHistory(props: PropTypes) {
   return (
     <Paper
       sx={{
+        width: 0,
         flex: 1,
         bgcolor: "rgba(36, 207, 157, 0.05)",
         height: "100%",
@@ -148,7 +149,7 @@ function LauncherHistory(props: PropTypes) {
         alignItems: "center",
         boxSizing: "border-box",
         mr: 1,
-        p: 2,
+        px: 2,
       }}
     >
       <TitleHeader>

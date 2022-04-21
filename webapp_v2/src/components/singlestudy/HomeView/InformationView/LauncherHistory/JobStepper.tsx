@@ -3,7 +3,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import CancelIcon from "@mui/icons-material/Cancel";
+import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   StepConnector,
@@ -11,6 +11,7 @@ import {
   StepIconProps,
   styled,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
@@ -28,7 +29,7 @@ import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
 const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.disabled}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      height: "20px",
+      height: "auto",
     },
   },
 }));
@@ -48,7 +49,7 @@ const QontoStepIconRoot = styled("div")(({ theme }) => ({
 
 const ColorStatus = {
   running: "warning.main",
-  pending: "warning.main",
+  pending: "grey.400",
   success: "success.main",
   failed: "error.main",
 };
@@ -122,7 +123,7 @@ export default function VerticalLinearStepper(props: Props) {
     <Box
       sx={{
         width: "100%",
-        height: "calc(0px + 100%)",
+        flex: 1,
         display: "flex",
         justifyContent: jobs.length > 0 ? "flex-start" : "center",
         alignItems: jobs.length > 0 ? "flex-start" : "center",
@@ -135,7 +136,7 @@ export default function VerticalLinearStepper(props: Props) {
         activeStep={-1}
         orientation="vertical"
         connector={<QontoConnector />}
-        sx={{ width: "100%", px: 2 }}
+        sx={{ width: "100%", px: 2, boxSizing: "border-box" }}
       >
         {jobs.map((job, index) => (
           <Step key={job.id}>
@@ -143,43 +144,55 @@ export default function VerticalLinearStepper(props: Props) {
               StepIconComponent={({ className }: StepIconProps) =>
                 QontoStepIcon({ className, status: job.status })
               }
+              sx={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "flex-start",
+                mt: 1,
+              }}
             >
               <Box
                 width="100%"
-                height="60px"
-                pt={2.5}
                 display="flex"
                 flexDirection="column"
                 justifyContent="flex-start"
               >
                 <Box
                   width="100%"
-                  height="30px"
                   display="flex"
                   justifyContent="flex-start"
+                  boxSizing="border-box"
                 >
-                  {moment(convertUTCToLocalTime(job.creationDate)).format(
-                    "ddd, MMM D YYYY, HH:mm:ss"
-                  )}
-                  {job.completionDate &&
-                    ` => ${moment(
-                      convertUTCToLocalTime(job.completionDate)
-                    ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
+                  <Typography
+                    sx={{
+                      height: "auto",
+                      mx: 0,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {moment(convertUTCToLocalTime(job.creationDate)).format(
+                      "ddd, MMM D YYYY, HH:mm:ss"
+                    )}
+                    {job.completionDate &&
+                      ` => ${moment(
+                        convertUTCToLocalTime(job.completionDate)
+                      ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
+                  </Typography>
                 </Box>
                 <Box
                   width="100%"
-                  height="30px"
                   display="flex"
                   justifyContent="flex-start"
+                  mt={0.5}
                 >
                   {job.outputId}
                 </Box>
                 <Box
                   width="100%"
-                  height="30px"
                   display="flex"
                   justifyContent="flex-start"
                   py={1}
+                  boxSizing="border-box"
                 >
                   <Tooltip title={t("singlestudy:copyJobId") as string}>
                     <ContentCopyIcon
@@ -195,7 +208,7 @@ export default function VerticalLinearStepper(props: Props) {
                     />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
-                  {job.status === "running" && (
+                  {job.status && (
                     <Box
                       flexGrow={1}
                       height="30px"
@@ -205,14 +218,14 @@ export default function VerticalLinearStepper(props: Props) {
                       py={1}
                     >
                       <Tooltip title={t("singlestudy:killStudy") as string}>
-                        <CancelIcon
+                        <BlockIcon
                           onClick={() => openConfirmModal(job.id)}
                           sx={{
-                            mx: 0.5,
+                            m: 0.5,
+                            height: "22px",
                             cursor: "pointer",
-                            "&:hover": {
-                              color: "error.main",
-                            },
+                            color: "error.light",
+                            "&:hover": { color: "error.dark" },
                           }}
                         />
                       </Tooltip>

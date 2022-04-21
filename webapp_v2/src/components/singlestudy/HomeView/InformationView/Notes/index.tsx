@@ -44,6 +44,7 @@ const NoteHeader = styled(Box)(({ theme }) => ({
   alignItems: "center",
   width: "100%",
   height: "60px",
+  boxSizing: "border-box",
 }));
 
 const NoteFooter = NoteHeader;
