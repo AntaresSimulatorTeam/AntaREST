@@ -162,7 +162,7 @@ export default function VerticalLinearStepper(props: Props) {
                   {moment(convertUTCToLocalTime(job.creationDate)).format(
                     "ddd, MMM D YYYY, HH:mm:ss"
                   )}
-                  {job.completionDate !== "" &&
+                  {job.completionDate &&
                     ` => ${moment(
                       convertUTCToLocalTime(job.completionDate)
                     ).format("ddd, MMM D YYYY, HH:mm:ss")}`}

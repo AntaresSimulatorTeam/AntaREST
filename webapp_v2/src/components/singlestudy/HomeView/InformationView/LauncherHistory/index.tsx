@@ -3,6 +3,7 @@ import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
+import { AxiosError } from "axios";
 import HistoryIcon from "@mui/icons-material/History";
 import {
   LaunchJob,
@@ -20,8 +21,10 @@ import {
   removeListener,
   subscribe,
   unsubscribe,
+  WsChannel,
 } from "../../../../../store/websockets";
 import JobStepper from "./JobStepper";
+import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -50,19 +53,16 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
 function LauncherHistory(props: PropTypes) {
-  const { study, addWsListener, removeWsListener } = props;
+  const {
+    study,
+    addWsListener,
+    removeWsListener,
+    subscribeChannel,
+    unsubscribeChannel,
+  } = props;
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<Array<LaunchJob>>([]);
   const { enqueueSnackbar } = useSnackbar();
-
-  const fetchStudyJob = async (sid: string) => {
-    try {
-      const data = await getStudyJobs(sid);
-      setStudyJobs(data.reverse());
-    } catch (e) {
-      console.log("Failed to fetch study data", sid, e);
-    }
-  };
 
   const handleEvents = useCallback(
     (msg: WSMessage): void => {
@@ -96,7 +96,7 @@ function LauncherHistory(props: PropTypes) {
       } else if (msg.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
         // TODO
       } else if (msg.type === WSEvent.STUDY_EDITED) {
-        // fetchStudyInfo();
+        // TODO
       }
     },
     [study, studyJobs]
@@ -104,6 +104,18 @@ function LauncherHistory(props: PropTypes) {
 
   useEffect(() => {
     if (study) {
+      const fetchStudyJob = async (sid: string) => {
+        try {
+          const data = await getStudyJobs(sid);
+          setStudyJobs(data.reverse());
+        } catch (e) {
+          enqueueErrorSnackbar(
+            enqueueSnackbar,
+            t("jobs:failedtoretrievejobs"),
+            e as AxiosError
+          );
+        }
+      };
       fetchStudyJob(study.id);
     }
   }, [study, t, enqueueSnackbar]);
@@ -112,6 +124,17 @@ function LauncherHistory(props: PropTypes) {
     addWsListener(handleEvents);
     return () => removeWsListener(handleEvents);
   }, [addWsListener, removeWsListener, handleEvents]);
+
+  useEffect(() => {
+    studyJobs.forEach((job) => {
+      subscribeChannel(WsChannel.JOB_STATUS + job.id);
+    });
+    return () => {
+      studyJobs.forEach((job) => {
+        unsubscribeChannel(WsChannel.JOB_STATUS + job.id);
+      });
+    };
+  }, [studyJobs, subscribeChannel, unsubscribeChannel]);
 
   return (
     <Paper
