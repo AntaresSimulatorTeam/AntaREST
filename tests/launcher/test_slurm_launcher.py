@@ -25,7 +25,6 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
 from antarest.launcher.model import JobStatus, JobResult
 from antarest.study.model import StudyMetadataDTO, RawStudy
 from antarest.tools.admin_lib import clean_locks_from_config
-from tests.conftest import with_db_context
 
 
 @pytest.fixture
@@ -66,7 +65,6 @@ def test_init_slurm_launcher_arguments(tmp_path: Path):
         config=config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
     )
 
     arguments = slurm_launcher._init_launcher_arguments()
@@ -117,7 +115,6 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
         config=config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
     )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
@@ -156,7 +153,6 @@ def test_slurm_launcher_delete_function(tmp_path: str):
         config=config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
         use_private_workspace=False,
     )
     directory_path = Path(tmp_path) / "directory"
@@ -179,7 +175,6 @@ def test_extra_parameters(launcher_config: Config):
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
     )
     launcher_params = slurm_launcher._check_and_apply_launcher_params({})
     assert launcher_params.n_cpu == 1
@@ -232,18 +227,23 @@ def test_extra_parameters(launcher_config: Config):
     "version,job_status", [(42, JobStatus.RUNNING), (99, JobStatus.FAILED)]
 )
 @pytest.mark.unit_test
-@with_db_context
 def test_run_study(
     tmp_path: Path,
     launcher_config: Config,
     version: int,
     job_status: JobStatus,
 ):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
     )
 
     study_uuid = "study_uuid"
@@ -254,18 +254,13 @@ def test_run_study(
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
-    slurm_launcher.batch_jobs = Mock()
-    slurm_launcher.batch_jobs.prepare_batch_study.return_value = ["some id"]
-    slurm_launcher.batch_jobs.get_batch_job_children.return_value = ["some id"]
+
     slurm_launcher._run_study(
         study_uuid, str(uuid.uuid4()), None, str(version)
     )
 
     #    slurm_launcher._clean_local_workspace.assert_called_once()
-    if version != 99:
-        slurm_launcher.callbacks.export_study.assert_called_once()
-    else:
-        slurm_launcher.callbacks.export_study.assert_not_called()
+    slurm_launcher.callbacks.export_study.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
         ANY, job_status, ANY, None
     )
@@ -275,13 +270,11 @@ def test_run_study(
 
 
 @pytest.mark.unit_test
-@with_db_context
 def test_check_state(tmp_path: Path, launcher_config: Config):
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
     )
     slurm_launcher._import_study_output = Mock()
     slurm_launcher._delete_workspace_file = Mock()
@@ -306,12 +299,11 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
     slurm_launcher.launcher_params = Mock()
     slurm_launcher.launcher_args = Mock()
     slurm_launcher.data_repo_tinydb = data_repo_tinydb
-    slurm_launcher.batch_jobs._add_batch_job("job_id1", ["job_id1"])
-    slurm_launcher.batch_jobs._add_batch_job("job_id2", ["job_id2"])
+
     slurm_launcher._check_studies_state()
 
     assert slurm_launcher.callbacks.update_status.call_count == 2
-    assert slurm_launcher._import_study_output.call_count == 2
+    assert slurm_launcher._import_study_output.call_count == 1
     assert slurm_launcher._delete_workspace_file.call_count == 4
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
@@ -332,7 +324,6 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
         use_private_workspace=False,
     )
 
@@ -349,20 +340,10 @@ def test_import_study_output(launcher_config, tmp_path):
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
         use_private_workspace=False,
     )
     slurm_launcher.callbacks.import_output.return_value = "output"
-    slurm_launcher.batch_jobs = Mock()
-    slurm_launcher.batch_jobs.merge_outputs.return_value = (
-        launcher_config.launcher.slurm.local_workspace
-        / "OUTPUT"
-        / "1"
-        / "output"
-    )
-    res = slurm_launcher._import_study_output(
-        "1", [StudyDTO(path="1", with_error=False, job_log_dir="")]
-    )
+    res = slurm_launcher._import_study_output("1")
 
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
@@ -370,7 +351,7 @@ def test_import_study_output(launcher_config, tmp_path):
         / "OUTPUT"
         / "1"
         / "output",
-        {"antares-out.log": [], "antares-err.log": []},
+        {},
     )
     assert res == "output"
 
@@ -405,26 +386,12 @@ def test_import_study_output(launcher_config, tmp_path):
     assert not (output_dir / "updated_links" / "something").exists()
     assert not (output_dir / "updated_links" / "something").exists()
 
-    slurm_launcher._import_study_output(
-        "1",
-        [
-            StudyDTO(
-                path="1", with_error=False, job_log_dir="", xpansion_mode="cpp"
-            )
-        ],
-    )
+    slurm_launcher._import_study_output("1", "cpp")
     assert (output_dir / "updated_links" / "something").exists()
     assert (output_dir / "updated_links" / "something").read_text() == "hello"
     shutil.rmtree(output_dir / "updated_links")
 
-    slurm_launcher._import_study_output(
-        "1",
-        [
-            StudyDTO(
-                path="1", with_error=False, job_log_dir="", xpansion_mode="r"
-            )
-        ],
-    )
+    slurm_launcher._import_study_output("1", "r")
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
 
@@ -435,17 +402,7 @@ def test_import_study_output(launcher_config, tmp_path):
     log_info.touch()
     log_error.touch()
     slurm_launcher.callbacks.import_output.reset_mock()
-    slurm_launcher._import_study_output(
-        "1",
-        [
-            StudyDTO(
-                path="1",
-                with_error=False,
-                job_log_dir=str(log_dir),
-                xpansion_mode=None,
-            )
-        ],
-    )
+    slurm_launcher._import_study_output("1", None, str(log_dir))
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
         launcher_config.launcher.slurm.local_workspace
@@ -478,11 +435,8 @@ def test_kill_job(
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
-        study_factory=Mock(),
         use_private_workspace=False,
     )
-    slurm_launcher.batch_jobs = Mock()
-    slurm_launcher.batch_jobs.get_batch_job_children.return_value = [launch_id]
     slurm_launcher.data_repo_tinydb = data_repo_tinydb_mock
 
     slurm_launcher.kill_job(job_id=launch_id)
@@ -524,7 +478,6 @@ def test_kill_job(
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
-@with_db_context
 def test_launcher_workspace_init(
     run_with_mock, tmp_path: Path, launcher_config: Config
 ):
@@ -535,7 +488,6 @@ def test_launcher_workspace_init(
         config=launcher_config,
         callbacks=callbacks,
         event_bus=Mock(),
-        study_factory=Mock(),
         retrieve_existing_jobs=True,
     )
     workspaces = list(
@@ -559,7 +511,6 @@ def test_launcher_workspace_init(
         config=launcher_config,
         callbacks=callbacks,
         event_bus=Mock(),
-        study_factory=Mock(),
         retrieve_existing_jobs=True,
     )
     assert (
@@ -574,7 +525,6 @@ def test_launcher_workspace_init(
         config=launcher_config,
         callbacks=callbacks,
         event_bus=Mock(),
-        study_factory=Mock(),
         retrieve_existing_jobs=True,
     )
     assert (

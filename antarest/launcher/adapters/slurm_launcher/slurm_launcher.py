@@ -34,12 +34,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.adapters.slurm_launcher.batch_job import BatchJobManager
 from antarest.launcher.model import JobStatus, LogType
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-    FileStudy,
-)
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -68,7 +63,6 @@ class SlurmLauncher(AbstractLauncher):
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
-        study_factory: StudyFactory,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
     ) -> None:
@@ -76,7 +70,6 @@ class SlurmLauncher(AbstractLauncher):
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
-        self.study_factory = study_factory
         self.slurm_config: SlurmConfig = config.launcher.slurm
         self.check_state: bool = True
         self.event_bus = event_bus
@@ -84,15 +77,12 @@ class SlurmLauncher(AbstractLauncher):
             self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST]
         )
         self.thread: Optional[threading.Thread] = None
-        self.batch_sub_jobs: Dict[str, str] = {}
+        self.job_list: List[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
         with FileLock(LOCK_FILE_NAME):
             self.local_workspace = self._init_workspace(use_private_workspace)
 
-        self.batch_jobs = BatchJobManager(
-            self.local_workspace.name, self.study_factory, config
-        )
         self.log_tail_manager = LogTailManager(
             Path(self.slurm_config.local_workspace)
         )
@@ -148,7 +138,6 @@ class SlurmLauncher(AbstractLauncher):
             return Path(self.slurm_config.local_workspace)
 
     def _retrieve_running_jobs(self) -> None:
-        self.batch_jobs.refresh_cache()
         if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
             logger.info("Old job retrieved, starting loop")
             self.start()
@@ -240,49 +229,42 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        launcher_studies: List[StudyDTO],
+        xpansion_mode: Optional[str] = None,
+        log_dir: Optional[str] = None,
     ) -> Optional[str]:
+        if xpansion_mode is not None:
+            self._import_xpansion_result(job_id, xpansion_mode)
 
-        if (
-            len(launcher_studies) == 1
-            and launcher_studies[0].xpansion_mode is not None
-        ):
-            self._import_xpansion_result(
-                job_id, launcher_studies[0].xpansion_mode
-            )
-
-        output_dir = self.batch_jobs.merge_outputs(
+        launcher_logs: Dict[str, List[Path]] = {}
+        if log_dir is not None:
+            launcher_logs = {
+                log_name: log_path
+                for log_name, log_path in {
+                    "antares-out.log": [
+                        p
+                        for p in [
+                            SlurmLauncher._get_log_path_from_log_dir(
+                                Path(log_dir), LogType.STDOUT
+                            )
+                        ]
+                        if p is not None
+                    ],
+                    "antares-err.log": [
+                        p
+                        for p in [
+                            SlurmLauncher._get_log_path_from_log_dir(
+                                Path(log_dir), LogType.STDERR
+                            )
+                        ]
+                        if p is not None
+                    ],
+                }.items()
+                if log_path
+            }
+        return self.callbacks.import_output(
             job_id,
-            launcher_studies,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME,
-        )
-
-        launcher_logs: Dict[str, List[Path]] = {
-            "antares-out.log": [],
-            "antares-err.log": [],
-        }
-        for study in launcher_studies:
-            log_dir = study.job_log_dir
-            if log_dir is not None:
-                out_log = SlurmLauncher._get_log_path_from_log_dir(
-                    Path(log_dir), LogType.STDOUT
-                )
-                if out_log:
-                    launcher_logs["antares-out.log"].append(out_log)
-                err_log = SlurmLauncher._get_log_path_from_log_dir(
-                    Path(log_dir), LogType.STDERR
-                )
-                if err_log:
-                    launcher_logs["antares-err.log"].append(err_log)
-
-        return (
-            self.callbacks.import_output(
-                job_id,
-                output_dir,
-                launcher_logs,
-            )
-            if output_dir
-            else None
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
@@ -326,56 +308,42 @@ class SlurmLauncher(AbstractLauncher):
 
         all_done = True
 
-        # fetch all study states and group them by batch job
-        batch_jobs: Dict[str, List[StudyDTO]] = {}
         for study in study_list:
             all_done = all_done and (study.finished or study.with_error)
             if study.done:
-                self.log_tail_manager.stop_tracking(
-                    SlurmLauncher._get_log_path(study)
-                )
-                parent_job = self.batch_jobs.get_batch_job_parent(study.name)
-                if parent_job:
-                    if parent_job not in batch_jobs:
-                        batch_jobs[parent_job] = []
-                    batch_jobs[parent_job].append(study)
-            elif not self.log_tail_manager.is_tracking(
-                SlurmLauncher._get_log_path(study)
-            ):
-                parent_job = self.batch_jobs.get_batch_job_parent(study.name)
-                if parent_job:
-                    self.log_tail_manager.track(
-                        SlurmLauncher._get_log_path(study),
-                        self.create_update_log(parent_job),
-                    )
-
-        # for each batch job, check if all batch is done and then run the import of all results
-        for batch_job in batch_jobs:
-            if len(batch_jobs[batch_job]) == len(
-                self.batch_jobs.get_batch_job_children(batch_job)
-            ):
                 try:
+                    self.log_tail_manager.stop_tracking(
+                        SlurmLauncher._get_log_path(study)
+                    )
                     output_id: Optional[str] = None
                     try:
-                        output_id = self._import_study_output(
-                            batch_job, batch_jobs[batch_job]
-                        )
+                        if not study.with_error:
+                            output_id = self._import_study_output(
+                                study.name,
+                                study.xpansion_mode,
+                                study.job_log_dir,
+                            )
                     finally:
                         self.callbacks.update_status(
-                            batch_job,
+                            study.name,
                             JobStatus.FAILED
-                            if output_id is None
+                            if study.with_error or output_id is None
                             else JobStatus.SUCCESS,
                             None,
                             output_id,
                         )
                 except Exception as e:
                     logger.error(
-                        f"Failed to finalize study {batch_job} launch",
+                        f"Failed to finalize study {study.name} launch",
                         exc_info=e,
                     )
                 finally:
-                    self._clean_up_study(batch_job, is_parent=True)
+                    self._clean_up_study(study.name)
+            else:
+                self.log_tail_manager.track(
+                    SlurmLauncher._get_log_path(study),
+                    self.create_update_log(study.name),
+                )
 
         if all_done:
             self.stop()
@@ -428,30 +396,23 @@ class SlurmLauncher(AbstractLauncher):
                 f" {', '.join(self.slurm_config.antares_versions_on_remote_server)}"
             )
 
-    def _clean_up_study(self, launch_id: str, is_parent: bool = False) -> None:
+    def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
-        if is_parent:
-            children = self.batch_jobs.get_batch_job_children(launch_id)
-            for child_id in children:
-                self._clean_up_study(child_id, is_parent=False)
-            self.batch_jobs.remove_batch_job(launch_id)
-        else:
-            self.data_repo_tinydb.remove_study(launch_id)
-
-            self._delete_workspace_file(
-                self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id
-            )
-            self._delete_workspace_file(
-                self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id
-            )
-            if (self.local_workspace / STUDIES_OUTPUT_DIR_NAME).exists():
-                for finished_zip in (
-                    self.local_workspace / STUDIES_OUTPUT_DIR_NAME
-                ).iterdir():
-                    if finished_zip.is_file() and re.match(
-                        f"finished_{launch_id}_\\d+", finished_zip.name
-                    ):
-                        self._delete_workspace_file(finished_zip)
+        self.data_repo_tinydb.remove_study(launch_id)
+        self._delete_workspace_file(
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id
+        )
+        self._delete_workspace_file(
+            self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id
+        )
+        if (self.local_workspace / STUDIES_OUTPUT_DIR_NAME).exists():
+            for finished_zip in (
+                self.local_workspace / STUDIES_OUTPUT_DIR_NAME
+            ).iterdir():
+                if finished_zip.is_file() and re.match(
+                    f"finished_{launch_id}_\\d+", finished_zip.name
+                ):
+                    self._delete_workspace_file(finished_zip)
 
     def _run_study(
         self,
@@ -460,35 +421,16 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: Optional[JSON],
         version: str,
     ) -> None:
-        # the default path and batch id for a launche
-        study_path = Path(self.launcher_args.studies_in) / launch_uuid
-        sub_job_ids = [launch_uuid]
+        study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
 
         try:
-            self._assert_study_version_is_supported(version)
-
+            # export study
             with self.antares_launcher_lock:
-                # export study
                 self.callbacks.export_study(
                     launch_uuid, study_uuid, study_path, launcher_params
                 )
 
-                # batch mode (export studies split in different folders with special playlist set)
-                # if there is a need for multiple batch,
-                # the first study export is moved to a new folder and other batch are copied from this export
-                # this generate new sub ids for each batch
-                force_single_batch = (
-                    "xpansion" in launcher_params
-                    or not launcher_params.get("batch_mode", False)
-                    if launcher_params
-                    else True
-                )
-                sub_job_ids = self.batch_jobs.prepare_batch_study(
-                    launch_uuid,
-                    study_path,
-                    Path(self.launcher_args.studies_in),
-                    force_single_batch,
-                )
+                self._assert_study_version_is_supported(version)
 
                 launcher_args = self._check_and_apply_launcher_params(
                     launcher_params
@@ -505,7 +447,7 @@ class SlurmLauncher(AbstractLauncher):
                 logger.info("Study exported and run with launcher")
 
             self.callbacks.update_status(
-                launch_uuid, JobStatus.RUNNING, None, None
+                str(launch_uuid), JobStatus.RUNNING, None, None
             )
         except Exception as e:
             logger.error(f"Failed to launch study {study_uuid}", exc_info=e)
@@ -514,18 +456,14 @@ class SlurmLauncher(AbstractLauncher):
                 f"Unexpected error when launching study : {str(e)}",
             )
             self.callbacks.update_status(
-                launch_uuid, JobStatus.FAILED, str(e), None
+                str(launch_uuid), JobStatus.FAILED, str(e), None
             )
-            self._clean_up_study(launch_uuid, is_parent=True)
+            self._clean_up_study(str(launch_uuid))
 
         if not self.thread:
             self.start()
 
-        # clean up study export after they are 'sent to the internet'
-        for sub_job in sub_job_ids:
-            self._delete_workspace_file(
-                Path(self.launcher_args.studies_in) / sub_job
-            )
+        self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: Optional[JSON]
@@ -586,29 +524,22 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        children = self.batch_jobs.get_batch_job_children(
-            job_id, use_cache=False, from_all_workspaces=True
+        log_path: Optional[Path] = None
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            if study.name == job_id:
+                log_path = SlurmLauncher._get_log_path(study, log_type)
+                if log_path:
+                    return log_path.read_text()
+        # when this is not the current worker handling this job (found in data_repo_tinydb)
+        log_dir = SlurmLauncher._find_log_dir(
+            Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id
         )
-        logs = []
-        for child in children:
-            log_path: Optional[Path] = None
-            for study in self.data_repo_tinydb.get_list_of_studies():
-                if study.name == child:
-                    log_path = SlurmLauncher._get_log_path(study, log_type)
-                    if log_path:
-                        logs.append(log_path.read_text())
-            # when this is not the current worker handling this job (found in data_repo_tinydb)
-            log_dir = SlurmLauncher._find_log_dir(
-                Path(self.launcher_args.log_dir) / "JOB_LOGS", child
+        if log_dir:
+            log_path = SlurmLauncher._get_log_path_from_log_dir(
+                log_dir, log_type
             )
-            if log_dir:
-                log_path = SlurmLauncher._get_log_path_from_log_dir(
-                    log_dir, log_type
-                )
-            if log_path:
-                logs.append(log_path.read_text())
-        if len(logs):
-            return "\n----\n".join(logs)
+        if log_path:
+            return log_path.read_text()
         return None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
@@ -620,24 +551,18 @@ class SlurmLauncher(AbstractLauncher):
 
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = deepcopy(self.launcher_args)
-        jobs = self.batch_jobs.get_batch_job_children(job_id, use_cache=False)
-        found = False
-        for job in jobs:
-            for study in self.data_repo_tinydb.get_list_of_studies():
-                if study.name == job:
-                    launcher_args.job_id_to_kill = study.job_id
-                    logger.info(
-                        f"Cancelling job {job} (dispatched={not dispatch})"
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            if study.name == job_id:
+                launcher_args.job_id_to_kill = study.job_id
+                logger.info(
+                    f"Cancelling job {job_id} (dispatched={not dispatch})"
+                )
+                with self.antares_launcher_lock:
+                    run_with(
+                        launcher_args, self.launcher_params, show_banner=False
                     )
-                    with self.antares_launcher_lock:
-                        run_with(
-                            launcher_args,
-                            self.launcher_params,
-                            show_banner=False,
-                        )
-                    found = True
-                    break
-        if not found and dispatch:
+                return
+        if dispatch:
             self.event_bus.push(
                 Event(type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id)
             )

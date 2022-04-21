@@ -14,9 +14,6 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +24,6 @@ class FactoryLauncher:
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
-        study_factory: StudyFactory,
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
         if config.launcher.local is not None:
@@ -39,7 +35,6 @@ class FactoryLauncher:
                 config,
                 callbacks,
                 event_bus,
-                study_factory,
                 retrieve_existing_jobs=True,
             )
         return dict_launchers
