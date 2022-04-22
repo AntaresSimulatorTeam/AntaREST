@@ -269,7 +269,7 @@ function Studies(props: PropTypes) {
       loadVersions();
     }
     getAllStudies(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
