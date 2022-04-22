@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import { connect, ConnectedProps } from "react-redux";
 import moment from "moment";
 import { AxiosError } from "axios";
@@ -27,11 +26,11 @@ import { getStudies } from "../../services/api/study";
 import { AppState } from "../../store/reducers";
 import { initStudies, initStudiesVersion } from "../../store/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
-import enqueueErrorSnackbar from "../../components/common/ErrorSnackBar";
 import MainContentLoader from "../../components/common/loaders/MainContentLoader";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";
 import HeaderBottom from "../../components/studies/HeaderBottom";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logErr = debug("antares:studies:error");
 
@@ -52,7 +51,7 @@ type PropTypes = ReduxProps;
 function Studies(props: PropTypes) {
   const { studies, loadStudies, loadVersions, versions } = props;
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [filteredStudies, setFilteredStudies] =
     useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(false);
@@ -119,7 +118,6 @@ function Studies(props: PropTypes) {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:failtoretrievestudies"),
         e as AxiosError
       );

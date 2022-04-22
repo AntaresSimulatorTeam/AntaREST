@@ -8,10 +8,10 @@ import BasicModal from "../../../common/BasicModal";
 import FilledTextInput from "../../../common/FilledTextInput";
 import SingleSelect from "../../../common/SelectSingle";
 import { GenericInfo, VariantTree } from "../../../../common/types";
-import enqueueErrorSnackbar from "../../../common/ErrorSnackBar";
 import { scrollbarStyle } from "../../../../theme";
 import { createVariant } from "../../../../services/api/variant";
 import { createListFromTree } from "../../../../services/utils";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   open: boolean;
@@ -25,6 +25,7 @@ function CreateVariantModal(props: Props) {
   const { open, parentId, tree, onClose } = props;
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [studyName, setStudyName] = useState<string>("");
   const [versionSourceList, setVersionSourceList] = useState<
     Array<GenericInfo>
@@ -43,7 +44,6 @@ function CreateVariantModal(props: Props) {
       navigate(`/studies/${newId}`);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("variants:onVariantCreationError"),
         e as AxiosError
       );

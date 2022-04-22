@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Box, Tooltip } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { getStudyJobLog } from "../../services/api/study";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import LogModal from "../common/LogModal";
 import { LaunchJob } from "../../common/types";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 interface PropsType {
   job: LaunchJob;
@@ -19,7 +18,7 @@ interface PropsType {
 function LaunchJobLogView(props: PropsType) {
   const { job, logButton, logErrorButton } = props;
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [jobIdDetail, setJobIdDetail] = useState<string>();
   const [followLogs, setFollowLogs] = useState<boolean>(false);
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
@@ -38,11 +37,7 @@ function LaunchJobLogView(props: PropsType) {
         );
         setLogModalContent(logData);
       } catch (e) {
-        enqueueErrorSnackbar(
-          enqueueSnackbar,
-          t("singlestudy:failtofetchlogs"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("singlestudy:failtofetchlogs"), e as AxiosError);
       } finally {
         setLogModalContentLoading(false);
       }

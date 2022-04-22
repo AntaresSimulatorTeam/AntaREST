@@ -1,5 +1,4 @@
 import { Box, Paper, styled, Typography } from "@mui/material";
-import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
@@ -24,7 +23,7 @@ import {
   WsChannel,
 } from "../../../../../store/websockets";
 import JobStepper from "./JobStepper";
-import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -62,7 +61,7 @@ function LauncherHistory(props: PropTypes) {
   } = props;
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<Array<LaunchJob>>([]);
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const handleEvents = useCallback(
     (msg: WSMessage): void => {
@@ -109,16 +108,12 @@ function LauncherHistory(props: PropTypes) {
           const data = await getStudyJobs(sid);
           setStudyJobs(data.reverse());
         } catch (e) {
-          enqueueErrorSnackbar(
-            enqueueSnackbar,
-            t("jobs:failedtoretrievejobs"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("jobs:failedtoretrievejobs"), e as AxiosError);
         }
       };
       fetchStudyJob(study.id);
     }
-  }, [study, t, enqueueSnackbar]);
+  }, [study, t, enqueueErrorSnackbar]);
 
   useEffect(() => {
     addWsListener(handleEvents);

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { isEqual } from "lodash";
 import debug from "debug";
-import { useSnackbar } from "notistack";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
+import { useSnackbar } from "notistack";
 import BasicModal from "../common/BasicModal";
 import SingleSelect from "../common/SelectSingle";
 import MultiSelect from "../common/SelectMulti";
@@ -24,9 +24,9 @@ import {
   updateStudyMetadata,
 } from "../../services/api/study";
 import { getGroups } from "../../services/api/user";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import TagTextInput from "../common/TagTextInput";
 import { scrollbarStyle } from "../../theme";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -40,6 +40,7 @@ function PropertiesModal(props: Props) {
   const [t] = useTranslation();
   const { open, onClose, study } = props;
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   // NOTE: GET TAG LIST FROM BACKEND
   const tagList: Array<string> = [];
@@ -121,7 +122,6 @@ function PropertiesModal(props: Props) {
       } catch (e) {
         logErr("Failed to modify study", studyName, e);
         enqueueErrorSnackbar(
-          enqueueSnackbar,
           t("singlestudy:modifiedStudyFailed", { studyname: studyName }),
           e as AxiosError
         );

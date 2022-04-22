@@ -15,7 +15,7 @@ import { AxiosError } from "axios";
 import BasicModal from "../common/BasicModal";
 import { StudyMetadata } from "../../common/types";
 import { LaunchOptions, launchStudy } from "../../services/api/study";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   open: boolean;
@@ -27,6 +27,7 @@ function LauncherModal(props: Props) {
   const { study, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({});
 
@@ -43,11 +44,7 @@ function LauncherModal(props: Props) {
       );
       onClose();
     } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("studymanager:failtorunstudy"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studymanager:failtorunstudy"), e as AxiosError);
     }
   };
 

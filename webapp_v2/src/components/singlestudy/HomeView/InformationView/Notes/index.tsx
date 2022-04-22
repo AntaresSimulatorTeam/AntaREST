@@ -14,9 +14,9 @@ import {
 import { convertXMLToDraftJS } from "./utils";
 import { StudyMetadata } from "../../../../../common/types";
 import { scrollbarStyle } from "../../../../../theme";
-import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 import NoteEditorModal from "./NoteEditorModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: "0 0 40%",
@@ -114,6 +114,7 @@ export default function Notes(props: Props) {
   const { study } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty()
   );
@@ -135,7 +136,6 @@ export default function Notes(props: Props) {
         setEditionMode(false);
       } catch (e) {
         enqueueErrorSnackbar(
-          enqueueSnackbar,
           t("singlestudy:commentsNotSaved"),
           e as AxiosError
         );
@@ -184,15 +184,11 @@ export default function Notes(props: Props) {
           setNbAreas(areas.length);
           setNbLinks(links);
         } catch (e) {
-          enqueueErrorSnackbar(
-            enqueueSnackbar,
-            t("singlestudy:getAreasInfo"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("singlestudy:getAreasInfo"), e as AxiosError);
         }
       }
     })();
-  }, [enqueueSnackbar, study, t]);
+  }, [enqueueErrorSnackbar, study, t]);
   return (
     <Root>
       <Note>
