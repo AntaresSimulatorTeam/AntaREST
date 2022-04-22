@@ -242,6 +242,7 @@ function PropertiesModal(props: Props) {
           >
             <SingleSelect
               name={t("singlestudy:publicMode")}
+              label={t("singlestudy:publicMode")}
               list={publicModeList}
               data={publicMode}
               setValue={(value: string) =>

@@ -25,6 +25,7 @@ import Links from "./components/singlestudy/explore/Modelization/Links";
 import Areas from "./components/singlestudy/explore/Modelization/Areas";
 import Map from "./components/singlestudy/explore/Modelization/Map";
 import DebugView from "./components/singlestudy/explore/Modelization/DebugView";
+import Xpansion from "./components/singlestudy/explore/Xpansion";
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
                           path="configuration"
                           element={<Configuration />}
                         />
+                        <Route path="xpansion" element={<Xpansion />} />
                         <Route path="results" element={<Results />} />
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />
