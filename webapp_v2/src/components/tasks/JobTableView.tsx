@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import moment from "moment";
 import {
   Paper,
@@ -37,34 +37,26 @@ function JobTableView(props: PropType) {
     useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
+  const applyFilter = useCallback(
+    (taskList: TaskView[]) => {
+      let filteredContent = taskList;
+      if (filterRunningStatus) {
+        filteredContent = filteredContent.filter((o) => o.status === "running");
+      }
+      if (type !== "all") {
+        filteredContent = filteredContent.filter((o) => o.type === type);
+      }
+      return filteredContent;
+    },
+    [type, filterRunningStatus]
+  );
+
   const handleChange = (event: SelectChangeEvent) => {
     setType(event.target.value as string);
-    if (event.target.value !== "all") {
-      if (filterRunningStatus) {
-        setCurrentContent(
-          content
-            .filter((o) => o.type === type)
-            .filter((o) => o.status === "running")
-        );
-      } else {
-        setCurrentContent(content.filter((o) => o.type === event.target.value));
-      }
-    } else if (filterRunningStatus) {
-      setCurrentContent(content.filter((o) => o.status === "running"));
-    } else {
-      setCurrentContent(content);
-    }
   };
 
   const handleFilterStatusChange = () => {
     setFilterRunningStatus(!filterRunningStatus);
-    if (!filterRunningStatus) {
-      setCurrentContent(currentContent.filter((o) => o.status === "running"));
-    } else if (type !== "all") {
-      setCurrentContent(content.filter((o) => o.type === type));
-    } else {
-      setCurrentContent(content);
-    }
   };
 
   const filterList = [
@@ -76,6 +68,10 @@ function JobTableView(props: PropType) {
     TaskType.UNARCHIVE,
     TaskType.SCAN,
   ];
+
+  useEffect(() => {
+    setCurrentContent(applyFilter(content));
+  }, [content, applyFilter]);
 
   return (
     <Box
