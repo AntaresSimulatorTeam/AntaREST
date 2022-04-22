@@ -141,8 +141,17 @@ function StudyTree(props: Props) {
     >
       <TreeItem
         nodeId={tree.name}
-        label={tree.name}
-        onClick={() => setFolder(tree.name)}
+        label={
+          <Typography
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setFolder(tree.name);
+            }}
+          >
+            {tree.name}
+          </Typography>
+        }
         collapseIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
         expandIcon={tree.children.length > 0 ? <ChevronRightIcon /> : undefined}
       >
