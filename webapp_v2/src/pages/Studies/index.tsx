@@ -269,6 +269,7 @@ function Studies(props: PropTypes) {
       loadVersions();
     }
     getAllStudies(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -309,10 +310,6 @@ function Studies(props: PropTypes) {
     }
     applyFilter();
   }, [applyFilter, currentFavorite, studies]);
-
-  console.log(studies);
-  console.log(currentFolder);
-  console.log(filteredStudies);
 
   return (
     <RootPage
