@@ -504,7 +504,7 @@ function JobsListing(props: PropTypes) {
       })),
     [tasks]
   );
-
+  console.log(downloadsMemo);
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
 
   return (
