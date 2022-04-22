@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -154,20 +153,23 @@ function Studies(props: PropTypes) {
     [currentSortItem]
   );
 
-  const insideFolder = (study: StudyMetadata): boolean => {
-    let studyNodeId = "";
-    if (study.folder !== undefined && study.folder !== null)
-      studyNodeId = `root/${study.workspace}/${study.folder}`;
-    else studyNodeId = `root/${study.workspace}`;
+  const insideFolder = useCallback(
+    (study: StudyMetadata): boolean => {
+      let studyNodeId = "";
+      if (study.folder !== undefined && study.folder !== null)
+        studyNodeId = `root/${study.workspace}/${study.folder}`;
+      else studyNodeId = `root/${study.workspace}`;
 
-    return studyNodeId.startsWith(currentFolder as string);
-  };
+      return studyNodeId.startsWith(currentFolder as string);
+    },
+    [currentFolder]
+  );
 
   const filterFromFolder = useCallback(
     (studyList: StudyMetadata[]) => {
       return studyList.filter((s) => insideFolder(s));
     },
-    [currentFolder]
+    [insideFolder]
   );
 
   const filter = useCallback(
@@ -216,15 +218,16 @@ function Studies(props: PropTypes) {
       managedFilter,
       filterFromFolder,
       sortStudies,
+      studies,
     ]
   );
 
-  const applyFilter = (): void => {
+  const applyFilter = useCallback((): void => {
     setLoaded(false);
     const f = filter(inputValue);
     setFilteredStudies(f);
     setLoaded(true);
-  };
+  }, [filter, inputValue]);
 
   const onChange = async (currentName: string) => {
     setLoaded(false);
@@ -285,6 +288,7 @@ function Studies(props: PropTypes) {
     currentSortItem,
     managedFilter,
     currentFolder,
+    applyFilter,
   ]);
 
   useEffect(() => {
@@ -304,7 +308,11 @@ function Studies(props: PropTypes) {
       );
     }
     applyFilter();
-  }, [studies]);
+  }, [applyFilter, currentFavorite, studies]);
+
+  console.log(studies);
+  console.log(currentFolder);
+  console.log(filteredStudies);
 
   return (
     <RootPage
