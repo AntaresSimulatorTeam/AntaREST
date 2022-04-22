@@ -1,6 +1,4 @@
-import * as React from "react";
 import moment from "moment";
-import { useSnackbar, OptionsObject } from "notistack";
 import debug from "debug";
 import { TFunction } from "react-i18next";
 import {
@@ -50,15 +48,6 @@ export const convertVariantTreeDTO = (
     convertVariantTreeDTO(child)
   ),
 });
-
-// eslint-disable-next-line no-undef
-export const useNotif = (): ((
-  message: React.ReactNode,
-  options?: OptionsObject | undefined
-) => React.ReactText) => {
-  const { enqueueSnackbar } = useSnackbar();
-  return enqueueSnackbar;
-};
 
 export const isUserAdmin = (user: UserInfo): boolean => {
   if (user) {

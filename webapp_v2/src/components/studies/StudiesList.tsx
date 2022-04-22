@@ -17,7 +17,6 @@ import {
   styled,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -41,7 +40,6 @@ import {
 } from "../../theme";
 import { AppState } from "../../store/reducers";
 import { removeStudies } from "../../store/study";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import {
   deleteStudy as callDeleteStudy,
   copyStudy as callCopyStudy,
@@ -49,6 +47,7 @@ import {
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
 import LauncherModal from "./LauncherModal";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logError = debug("antares:studieslist:error");
 
@@ -130,7 +129,7 @@ function StudiesList(props: PropTypes) {
     refresh,
   } = props;
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [folderList, setFolderList] = useState<Array<string>>([]);
   const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
@@ -166,11 +165,7 @@ function StudiesList(props: PropTypes) {
         withOutputs
       );
     } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("studymanager:failtocopystudy"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studymanager:failtocopystudy"), e as AxiosError);
       logError("Failed to copy/import study", study, e);
     }
   };
@@ -180,7 +175,6 @@ function StudiesList(props: PropTypes) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:archivefailure", { studyname: study.name }),
         e as AxiosError
       );
@@ -192,7 +186,6 @@ function StudiesList(props: PropTypes) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:unarchivefailure", { studyname: study.name }),
         e as AxiosError
       );
@@ -206,7 +199,6 @@ function StudiesList(props: PropTypes) {
       removeStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:failtodeletestudy"),
         e as AxiosError
       );

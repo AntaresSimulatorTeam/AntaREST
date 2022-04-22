@@ -5,7 +5,6 @@ import { connect, ConnectedProps } from "react-redux";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import { useSnackbar } from "notistack";
 import moment from "moment";
 import {
   useTheme,
@@ -35,7 +34,7 @@ import {
   WsChannel,
 } from "../store/websockets";
 import JobTableView from "../components/tasks/JobTableView";
-import { convertUTCToLocalTime, useNotif } from "../services/utils/index";
+import { convertUTCToLocalTime } from "../services/utils/index";
 import {
   downloadJobOutput,
   killStudy,
@@ -59,11 +58,11 @@ import {
   TaskType,
   TaskStatus,
 } from "../common/types";
-import enqueueErrorSnackbar from "../components/common/ErrorSnackBar";
 import BasicModal from "../components/common/BasicModal";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
 import { AppState } from "../store/reducers";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
+import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -93,12 +92,11 @@ function JobsListing(props: PropTypes) {
     unsubscribeChannel,
   } = props;
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [jobs, setJobs] = useState<LaunchJob[]>([]);
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
-  const createNotif = useNotif();
   const [loaded, setLoaded] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<
     string | undefined
@@ -129,11 +127,7 @@ function JobsListing(props: PropTypes) {
       );
     } catch (e) {
       logError("woops", e);
-      enqueueErrorSnackbar(
-        createNotif,
-        t("jobs:failedtoretrievejobs"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("jobs:failedtoretrievejobs"), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -161,7 +155,6 @@ function JobsListing(props: PropTypes) {
         await downloadJobOutput(jobId);
       } catch (e) {
         enqueueErrorSnackbar(
-          enqueueSnackbar,
           t("singlestudy:failedToExportOutput"),
           e as AxiosError
         );
@@ -176,11 +169,7 @@ function JobsListing(props: PropTypes) {
       try {
         await killStudy(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(
-          enqueueSnackbar,
-          t("singlestudy:failtokilltask"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
       }
       setOpenConfirmationModal(undefined);
     })();

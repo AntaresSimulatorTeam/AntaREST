@@ -9,12 +9,11 @@ import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import TreeItem from "@mui/lab/TreeItem";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { StudyTreeNode } from "./utils";
 import { scanFolder } from "../../services/api/study";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   tree: StudyTreeNode;
@@ -24,7 +23,7 @@ interface Props {
 
 function StudyTree(props: Props) {
   const { tree, folder, setFolder } = props;
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const [menuId, setMenuId] = useState<string>("");
   const [contextMenu, setContextMenu] = useState<{
@@ -60,11 +59,7 @@ function StudyTree(props: Props) {
     try {
       await scanFolder(folderPath);
     } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("studymanager:scanFolderError"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studymanager:scanFolderError"), e as AxiosError);
     } finally {
       setContextMenu(null);
     }

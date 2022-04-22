@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
 import { AppState } from "../../../store/reducers";
 import { isStringEmpty, isUserAdmin } from "../../../services/utils";
 import { getMessageInfo } from "../../../services/api/maintenance";
 import { setMessageInfo } from "../../../store/global";
-import enqueueErrorSnackbar from "../../../components/common/ErrorSnackBar";
 import BasicModal from "../../../components/common/BasicModal";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -26,7 +25,7 @@ type PropTypes = ReduxProps;
 
 function MessageInfoModal(props: PropTypes) {
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { user, messageInfo, setMessage } = props;
   const [open, setOpen] = useState(false);
 
@@ -36,15 +35,11 @@ function MessageInfoModal(props: PropTypes) {
         const tmpMessage = await getMessageInfo();
         setMessage(isStringEmpty(tmpMessage) ? "" : tmpMessage);
       } catch (e) {
-        enqueueErrorSnackbar(
-          enqueueSnackbar,
-          t("main:onGetMessageInfoError"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("main:onGetMessageInfoError"), e as AxiosError);
       }
     };
     init();
-  }, [enqueueSnackbar, setMessage, t]);
+  }, [enqueueErrorSnackbar, setMessage, t]);
 
   useEffect(() => {
     if (

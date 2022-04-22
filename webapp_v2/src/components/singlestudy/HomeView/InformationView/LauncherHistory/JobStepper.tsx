@@ -23,8 +23,8 @@ import { convertUTCToLocalTime } from "../../../../../services/utils";
 import { scrollbarStyle } from "../../../../../theme";
 import ConfirmationModal from "../../../../common/ConfirmationModal";
 import { killStudy } from "../../../../../services/api/study";
-import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.disabled}`]: {
@@ -80,6 +80,7 @@ export default function VerticalLinearStepper(props: Props) {
   const { jobs } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<boolean>(false);
   const [jobIdKill, setJobIdKill] = useState<string>();
@@ -94,11 +95,7 @@ export default function VerticalLinearStepper(props: Props) {
       try {
         await killStudy(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(
-          enqueueSnackbar,
-          t("singlestudy:failtokilltask"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
       }
       setOpenConfirmationModal(false);
     })();
@@ -111,11 +108,7 @@ export default function VerticalLinearStepper(props: Props) {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("singlestudy:onJobIdCopyError"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("singlestudy:onJobIdCopyError"), e as AxiosError);
     }
   };
 
