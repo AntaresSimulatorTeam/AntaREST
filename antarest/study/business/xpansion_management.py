@@ -232,24 +232,14 @@ class XpansionManager:
                     f"The 'additional-constraints' file '{additional_constraints}' does not exist"
                 )
 
-    def _assert_type_float_is_valid(
+    def _assert_is_positive(
         self,
         name: str,
-        param: float,
+        param: Union[float, int],
     ) -> None:
         if param < 0:
             raise WrongTypeFormat(
                 f"'{name}' must be a float greater than or equal to 0"
-            )
-
-    def _assert_type_integer_is_valid(
-        self,
-        name: str,
-        param: int,
-    ) -> None:
-        if param < 0:
-            raise WrongTypeFormat(
-                f"'{name} must be an integer greater than or equal to 0'"
             )
 
     def _assert_max_iteration_is_valid(
@@ -268,15 +258,15 @@ class XpansionManager:
             study
         )
         if new_xpansion_settings_dto.optimality_gap is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "optimality_gap", new_xpansion_settings_dto.optimality_gap
             )
         if new_xpansion_settings_dto.relative_gap is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "relative_gap", new_xpansion_settings_dto.relative_gap
             )
         if new_xpansion_settings_dto.max_iteration is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "max_iteration", new_xpansion_settings_dto.max_iteration
             )
         if new_xpansion_settings_dto.additional_constraints:
@@ -387,8 +377,7 @@ class XpansionManager:
             )
         ):
             raise BadCandidateFormatError(
-                f"The candidate is not well formatted."
-                f" It should either contain max-investment or (max-units and unit-size)."
+                "The candidate is not well formatted.\nIt should either contain max-investment or (max-units and unit-size)."
             )
 
     def _assert_candidate_is_correct(
@@ -414,24 +403,24 @@ class XpansionManager:
             xpansion_candidate_dto.unit_size,
         )
         if xpansion_candidate_dto.annual_cost_per_mw is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "annual_cost_per_mw", xpansion_candidate_dto.annual_cost_per_mw
             )
         if xpansion_candidate_dto.unit_size is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "unit_size", xpansion_candidate_dto.unit_size
             )
         if xpansion_candidate_dto.max_investment is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "max_investment", xpansion_candidate_dto.max_investment
             )
         if xpansion_candidate_dto.already_installed_capacity is not None:
-            self._assert_type_float_is_valid(
+            self._assert_is_positive(
                 "already_installed_capacity",
                 xpansion_candidate_dto.already_installed_capacity,
             )
         if xpansion_candidate_dto.max_units is not None:
-            self._assert_type_integer_is_valid(
+            self._assert_is_positive(
                 "max_units", xpansion_candidate_dto.max_units
             )
 
