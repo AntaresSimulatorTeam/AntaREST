@@ -9,12 +9,11 @@ import {
   styled,
   experimental_sx as sx,
 } from "@mui/material";
-import { ElementType, PropsWithChildren, ReactNode } from "react";
+import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import CloseIcon from "@mui/icons-material/Close";
 import * as R from "ramda";
-import { useTranslation } from "react-i18next";
 
 /**
  * Types
@@ -33,6 +32,7 @@ export interface BasicDialogProps extends DialogProps {
   titleIcon?: ElementType<SvgIconComponent>;
   actions?: ReactNode;
   alert?: keyof typeof Alert;
+  noCloseIcon?: boolean;
 }
 
 /**
@@ -60,12 +60,18 @@ const AlertBorder = styled("span", {
  * Component
  */
 
-function BasicDialog(props: PropsWithChildren<BasicDialogProps>) {
-  const { title, titleIcon, children, actions, alert, ...dialogProps } = props;
+function BasicDialog(props: BasicDialogProps) {
+  const {
+    title,
+    titleIcon,
+    children,
+    actions,
+    alert,
+    noCloseIcon,
+    ...dialogProps
+  } = props;
   const { onClose } = dialogProps;
   const TitleIcon = titleIcon as SvgIconComponent;
-
-  const { t } = useTranslation();
 
   return (
     <Dialog {...dialogProps}>
@@ -77,12 +83,12 @@ function BasicDialog(props: PropsWithChildren<BasicDialogProps>) {
               fontSize="large"
               sx={{
                 verticalAlign: "bottom",
-                mr: "5px",
+                mr: 2,
               }}
             />
           )}
-          {title || t("main:confirmationModalTitle")}
-          {onClose && (
+          {title}
+          {onClose && !noCloseIcon && (
             <IconButton
               onClick={onClose as () => void}
               sx={{
@@ -114,6 +120,7 @@ BasicDialog.defaultProps = {
   titleIcon: null,
   actions: null,
   alert: false,
+  noCloseIcon: false,
 };
 
 export default BasicDialog;

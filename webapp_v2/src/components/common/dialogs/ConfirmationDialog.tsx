@@ -1,15 +1,19 @@
-import { Button } from "@mui/material";
-import { MouseEventHandler, PropsWithChildren } from "react";
+import { Button, ButtonProps } from "@mui/material";
+import { MouseEventHandler } from "react";
 import { useTranslation } from "react-i18next";
+import * as RA from "ramda-adjunct";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 /**
  * Types
  */
 
-interface Props extends Omit<BasicDialogProps, "actions"> {
+export interface ConfirmationDialogProps
+  extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
   confirmButtonText?: string;
+  cancelButtonProps?: Omit<ButtonProps, "onClick">;
+  confirmButtonProps?: Omit<ButtonProps, "onClick">;
   onConfirm: MouseEventHandler<HTMLButtonElement>;
   onCancel: MouseEventHandler<HTMLButtonElement>;
 }
@@ -18,10 +22,13 @@ interface Props extends Omit<BasicDialogProps, "actions"> {
  * Component
  */
 
-function ConfirmDialog(props: PropsWithChildren<Props>) {
+function ConfirmationDialog(props: ConfirmationDialogProps) {
   const {
+    title,
     cancelButtonText,
     confirmButtonText,
+    cancelButtonProps,
+    confirmButtonProps,
     onConfirm,
     onCancel,
     ...basicDialogProps
@@ -31,15 +38,17 @@ function ConfirmDialog(props: PropsWithChildren<Props>) {
 
   return (
     <BasicDialog
+      title={RA.isUndefined(title) ? t("main:confirmationModalTitle") : title}
       onClose={onCancel}
       onBackdropClick={onCancel}
+      noCloseIcon
       {...basicDialogProps}
       actions={
         <>
-          <Button onClick={onCancel} autoFocus>
+          <Button autoFocus {...cancelButtonProps} onClick={onCancel}>
             {cancelButtonText || t("main:noButton")}
           </Button>
-          <Button onClick={onConfirm}>
+          <Button {...confirmButtonProps} onClick={onConfirm}>
             {confirmButtonText || t("main:yesButton")}
           </Button>
         </>
@@ -48,9 +57,11 @@ function ConfirmDialog(props: PropsWithChildren<Props>) {
   );
 }
 
-ConfirmDialog.defaultProps = {
+ConfirmationDialog.defaultProps = {
   cancelButtonText: null,
   confirmButtonText: null,
+  cancelButtonProps: null,
+  confirmButtonProps: null,
 };
 
-export default ConfirmDialog;
+export default ConfirmationDialog;
