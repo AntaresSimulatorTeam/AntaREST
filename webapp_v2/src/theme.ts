@@ -3,7 +3,7 @@ import { createTheme } from "@mui/material/styles";
 
 export const DRAWER_WIDTH = 60;
 export const DRAWER_WIDTH_EXTENDED = 240;
-export const STUDIES_HEIGHT_HEADER = 150;
+export const STUDIES_HEIGHT_HEADER = 166;
 export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
