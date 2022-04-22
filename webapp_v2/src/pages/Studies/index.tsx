@@ -30,7 +30,7 @@ import FilterDrawer from "../../components/studies/FilterDrawer";
 import enqueueErrorSnackbar from "../../components/common/ErrorSnackBar";
 import MainContentLoader from "../../components/common/loaders/MainContentLoader";
 import RootPage from "../../components/common/page/RootPage";
-import HeaderRight from "../../components/studies/HeaderRight";
+import HeaderTopRight from "../../components/studies/HeaderTopRight";
 import HeaderBottom from "../../components/studies/HeaderBottom";
 
 const logErr = debug("antares:studies:error");
@@ -312,7 +312,7 @@ function Studies(props: PropTypes) {
     <RootPage
       title={t("main:studies")}
       titleIcon={TravelExploreOutlinedIcon}
-      headerRight={<HeaderRight />}
+      headerTopRight={<HeaderTopRight />}
       headerBottom={
         <HeaderBottom
           {...{

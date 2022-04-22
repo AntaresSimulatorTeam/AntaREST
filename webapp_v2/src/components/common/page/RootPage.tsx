@@ -1,3 +1,4 @@
+import { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import { ElementType, PropsWithChildren, ReactNode } from "react";
 import BasicPage from "./BasicPage";
@@ -6,33 +7,48 @@ import BasicPage from "./BasicPage";
  * Types
  */
 
-type PropTypes = {
+interface Props {
   title: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  titleIcon?: ElementType<any>; // TODO: replace any
-  headerRight?: ReactNode;
+  titleIcon?: ElementType<SvgIconComponent>;
+  headerTopRight?: ReactNode;
   headerBottom?: ReactNode;
-};
+  hideHeaderDivider?: boolean;
+}
 
 /**
  * Component
  */
 
-function RootPage(props: PropsWithChildren<PropTypes>) {
+function RootPage(props: PropsWithChildren<Props>) {
   const {
     title,
-    titleIcon: TitleIcon,
-    headerRight,
+    titleIcon,
+    headerTopRight,
     headerBottom,
     children,
+    hideHeaderDivider,
   } = props;
+
+  const TitleIcon = titleIcon as SvgIconComponent;
 
   return (
     <BasicPage
       header={
         <>
-          <Box width="100%" alignItems="center" display="flex">
-            <Box alignItems="center" display="flex">
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                flex: 1,
+              }}
+            >
               {TitleIcon && (
                 <TitleIcon
                   sx={{
@@ -42,28 +58,24 @@ function RootPage(props: PropsWithChildren<PropTypes>) {
                   }}
                 />
               )}
-              <Typography color="white" sx={{ ml: 2, fontSize: "34px" }}>
-                {title}
-              </Typography>
+              <Typography sx={{ ml: 2, fontSize: 34 }}>{title}</Typography>
             </Box>
-            {headerRight && (
+            {headerTopRight && (
               <Box
-                alignItems="center"
-                justifyContent="flex-end"
-                flexGrow={1}
-                display="flex"
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  flex: 1,
+                }}
               >
-                {headerRight}
+                {headerTopRight}
               </Box>
             )}
           </Box>
-          {headerBottom && (
-            <Box display="flex" width="100%" alignItems="center">
-              {headerBottom}
-            </Box>
-          )}
+          {headerBottom && <Box sx={{ width: 1, mb: 1 }}>{headerBottom}</Box>}
         </>
       }
+      hideHeaderDivider={hideHeaderDivider}
     >
       {children}
     </BasicPage>
@@ -72,8 +84,9 @@ function RootPage(props: PropsWithChildren<PropTypes>) {
 
 RootPage.defaultProps = {
   titleIcon: null,
-  headerRight: null,
+  headerTopRight: null,
   headerBottom: null,
+  hideHeaderDivider: false,
 };
 
 export default RootPage;
