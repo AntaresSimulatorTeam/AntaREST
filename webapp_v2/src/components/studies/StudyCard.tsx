@@ -34,7 +34,6 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import { GenericInfo, StudyMetadata } from "../../common/types";
 import { exportStudy } from "../../services/api/study";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
@@ -42,6 +41,7 @@ import {
 } from "../../services/utils";
 import { scrollbarStyle } from "../../theme";
 import DeleteStudyModal from "./DeleteStudyModal";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   study: StudyMetadata;
@@ -74,6 +74,7 @@ export default function StudyCard(props: Props) {
   } = props;
   const [t, i18n] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
@@ -101,7 +102,6 @@ export default function StudyCard(props: Props) {
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("singlestudy:onStudyIdCopyError"),
         e as AxiosError
       );

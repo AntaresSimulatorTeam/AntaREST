@@ -1,48 +1,30 @@
-import { Box, Divider, styled } from "@mui/material";
+import { Box, Divider } from "@mui/material";
 import { PropsWithChildren, ReactNode } from "react";
-
-/**
- * Styles
- */
-
-const Header = styled("div")(({ theme }) => ({
-  width: "100%",
-  display: "flex",
-  flexFlow: "column nowrap",
-  justifyContent: "flex-start",
-  alignItems: "center",
-  padding: theme.spacing(2, 3),
-  boxSizing: "border-box",
-}));
 
 /**
  * Types
  */
 
-type PropTypes = {
+interface Props {
   header?: ReactNode;
-};
+  hideHeaderDivider?: boolean;
+}
 
 /**
  * Component
  */
 
-function BasicPage(props: PropsWithChildren<PropTypes>) {
-  const { header, children } = props;
+function BasicPage(props: PropsWithChildren<Props>) {
+  const { header, hideHeaderDivider, children } = props;
 
   return (
-    <Box
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-      boxSizing="border-box"
-      overflow="hidden"
-    >
-      {header && <Header>{header}</Header>}
-      <Divider sx={{ width: "98%" }} />
+    <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
+      {header && (
+        <Box sx={{ width: 1, py: 2, px: 3 }}>
+          {header}
+          {hideHeaderDivider ? null : <Divider />}
+        </Box>
+      )}
       {children}
     </Box>
   );
@@ -50,6 +32,7 @@ function BasicPage(props: PropsWithChildren<PropTypes>) {
 
 BasicPage.defaultProps = {
   header: null,
+  hideHeaderDivider: false,
 };
 
 export default BasicPage;

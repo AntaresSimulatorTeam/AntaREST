@@ -69,6 +69,7 @@ function HeaderBottom(props: PropTypes) {
             </InputAdornment>
           ),
         }}
+        sx={{ mx: 0 }}
       />
       <Divider
         sx={{

@@ -6,19 +6,31 @@ import {
   RoleDTO,
   UserToken,
   UserGroup,
-  Identity,
-  IdentityDTO,
   BotCreateDTO,
-  BotIdentityDTO,
+  BotDetailsDTO,
   BotDTO,
 } from "../../common/types";
 
-/** ******************************************* */
-/* Users                                        */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Users
+////////////////////////////////////////////////////////////////
 
-export const getUsers = async (): Promise<Array<UserDTO>> => {
-  const res = await client.get("/v1/users");
+interface GetUserParams {
+  details: boolean;
+}
+
+export const getUsers = async <T extends UserDTO>(
+  params?: GetUserParams
+): Promise<Array<T>> => {
+  const res = await client.get("/v1/users", { params });
+  return res.data;
+};
+
+export const getUser = async <T extends UserDTO>(
+  id: number,
+  params?: GetUserParams
+): Promise<T> => {
+  const res = await client.get(`/v1/users/${id}`, { params });
   return res.data;
 };
 
@@ -31,24 +43,14 @@ export const createNewUser = async (
   return res.data;
 };
 
-export const getUser = async (id: number): Promise<Identity> => {
-  const res = await client.get(`/v1/users/${id}`);
-  return res.data;
-};
-
-export const getUserInfos = async (id: number): Promise<IdentityDTO> => {
-  const res = await client.get(`/v1/users/${id}?details=true`);
-  return res.data;
-};
-
 export const deleteUser = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/users/${id}`);
   return res.data;
 };
 
-/** ******************************************* */
-/* Groups                                       */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Groups
+////////////////////////////////////////////////////////////////
 
 export const getGroups = async (): Promise<Array<GroupDTO>> => {
   const res = await client.get("/v1/groups");
@@ -82,9 +84,9 @@ export const deleteGroup = async (id: string): Promise<string> => {
   return res.data;
 };
 
-/** ******************************************* */
-/* Roles                                        */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Roles
+////////////////////////////////////////////////////////////////
 
 export const getAllRolesInGroup = async (
   groupId: string
@@ -112,9 +114,9 @@ export const deleteAllRoles = async (id: number): Promise<void> => {
   return res.data;
 };
 
-/** ******************************************* */
-/* Tokens                                       */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Tokens
+////////////////////////////////////////////////////////////////
 
 export const createNewBot = async (bot: BotCreateDTO): Promise<string> => {
   const data = bot;
@@ -128,7 +130,7 @@ export const getBots = async (owner?: number): Promise<Array<BotDTO>> => {
   return res.data;
 };
 
-export const getBotInfos = async (id: number): Promise<BotIdentityDTO> => {
+export const getBotInfos = async (id: number): Promise<BotDetailsDTO> => {
   const res = await client.get(`/v1/bots/${id}?verbose=1`);
   return res.data;
 };

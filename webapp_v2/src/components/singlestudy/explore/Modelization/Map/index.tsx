@@ -5,9 +5,7 @@ import { Box, Typography } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
-import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import enqueueErrorSnackbar from "../../../../common/ErrorSnackBar";
 import {
   AreasConfig,
   isNode,
@@ -34,6 +32,7 @@ import GraphView from "./GraphView";
 import MapPropsView from "./MapPropsView";
 import CreateAreaModal from "./CreateAreaModal";
 import mapbackground from "../../../../../assets/mapbackground.png";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -65,7 +64,7 @@ const GraphViewMemo = memo(GraphView);
 
 function Map() {
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [loaded, setLoaded] = useState(false);
   const [selectedItem, setSelectedItem] = useState<
@@ -142,11 +141,7 @@ function Map() {
         ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        enqueueSnackbar,
-        t("singlestudy:createAreaError"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("singlestudy:createAreaError"), e as AxiosError);
     }
   };
 
@@ -186,11 +181,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(
-          enqueueSnackbar,
-          t("singlestudy:updateUIError"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("singlestudy:updateUIError"), e as AxiosError);
       }
     }
   };
@@ -221,7 +212,6 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             enqueueErrorSnackbar(
-              enqueueSnackbar,
               t("singlestudy:deleteAreaOrLink"),
               e as AxiosError
             );
@@ -240,7 +230,6 @@ function Map() {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
             enqueueErrorSnackbar(
-              enqueueSnackbar,
               t("singlestudy:deleteAreaOrLink"),
               e as AxiosError
             );
@@ -274,7 +263,6 @@ function Map() {
               )
             );
             enqueueErrorSnackbar(
-              enqueueSnackbar,
               t("singlestudy:createLinkError"),
               e as AxiosError
             );
@@ -283,7 +271,7 @@ function Map() {
       };
       init();
     }
-  }, [enqueueSnackbar, t, firstNode, secondNode, study?.id, linkData]);
+  }, [enqueueErrorSnackbar, t, firstNode, secondNode, study?.id, linkData]);
 
   useEffect(() => {
     if (study) {
@@ -330,7 +318,6 @@ function Map() {
           }
         } catch (e) {
           enqueueErrorSnackbar(
-            enqueueSnackbar,
             t("studymanager:failtoloadstudy"),
             e as AxiosError
           );
@@ -340,7 +327,7 @@ function Map() {
       };
       init();
     }
-  }, [enqueueSnackbar, study?.id, t]);
+  }, [enqueueErrorSnackbar, study?.id, t]);
 
   useEffect(() => {
     if (selectedItem && isNode(selectedItem)) {

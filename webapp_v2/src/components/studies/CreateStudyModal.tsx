@@ -26,9 +26,9 @@ import {
 } from "../../services/api/study";
 import { addStudies, initStudiesVersion } from "../../store/study";
 import { getGroups } from "../../services/api/user";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import TagTextInput from "../common/TagTextInput";
 import { scrollbarStyle } from "../../theme";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -53,6 +53,7 @@ function CreateStudyModal(props: PropTypes) {
   const [t] = useTranslation();
   const { versions, open, addStudy, onClose } = props;
   const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const versionList = convertVersions(versions || []);
 
   // NOTE: GET TAG LIST FROM BACKEND
@@ -94,7 +95,6 @@ function CreateStudyModal(props: PropTypes) {
       } catch (e) {
         logErr("Failed to create new study", studyName, e);
         enqueueErrorSnackbar(
-          enqueueSnackbar,
           t("studymanager:createStudyFailed", { studyname: studyName }),
           e as AxiosError
         );

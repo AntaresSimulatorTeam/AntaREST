@@ -30,11 +30,9 @@ import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import { connect, ConnectedProps } from "react-redux";
 import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
-import enqueueErrorSnackbar from "../common/ErrorSnackBar";
 import {
   deleteStudy as callDeleteStudy,
   archiveStudy as callArchiveStudy,
@@ -51,6 +49,7 @@ import {
   countAllChildrens,
 } from "../../services/utils";
 import DeleteStudyModal from "../studies/DeleteStudyModal";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -97,7 +96,7 @@ function NavHeader(props: PropTypes) {
   const [openPropertiesModal, setOpenPropertiesModal] =
     useState<boolean>(false);
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const publicModeList: Array<GenericInfo> = [
     { id: "NONE", name: t("singlestudy:nonePublicModeText") },
@@ -144,7 +143,6 @@ function NavHeader(props: PropTypes) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:archivefailure", { studyname: study.name }),
         e as AxiosError
       );
@@ -156,7 +154,6 @@ function NavHeader(props: PropTypes) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:unarchivefailure", { studyname: study.name }),
         e as AxiosError
       );
@@ -170,7 +167,6 @@ function NavHeader(props: PropTypes) {
       removeStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        enqueueSnackbar,
         t("studymanager:failtodeletestudy"),
         e as AxiosError
       );

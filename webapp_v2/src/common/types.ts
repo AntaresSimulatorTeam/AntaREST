@@ -4,6 +4,11 @@ import { ReactNode } from "react";
 
 export type IDType = number | string;
 
+export interface IdentityDTO<T extends IDType = string> {
+  id: T;
+  name: string;
+}
+
 export enum SortElement {
   DATE = "DATE",
   NAME = "NAME",
@@ -41,10 +46,8 @@ export interface StudyMetadataOwner {
 
 export type StudyType = "variantstudy" | "rawstudy";
 
-export interface StudyMetadataDTO {
-  id: string;
+export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
-  name: string;
   type: StudyType;
   created: string;
   updated: string;
@@ -52,7 +55,7 @@ export interface StudyMetadataDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
-  groups: Array<{ id: string; name: string }>;
+  groups: Array<IdentityDTO>;
   public_mode: StudyPublicMode;
   folder?: string;
   horizon?: string;
@@ -154,21 +157,17 @@ export interface RoleCreationDTO {
   type: RoleType;
 }
 
-export interface UserDTO {
-  id: number;
-  name: string;
+export type UserDTO = IdentityDTO<number>;
+
+export interface UserDetailsDTO extends UserDTO {
+  roles: Array<RoleDTO>;
 }
 
-export interface UserRoleDTO {
-  id: number;
-  name: string;
+export interface UserRoleDTO extends IdentityDTO<number> {
   role: RoleType;
 }
 
-export interface GroupDTO {
-  id: string;
-  name: string;
-}
+export type GroupDTO = IdentityDTO;
 
 export interface JWTGroup {
   id: string;
@@ -186,22 +185,7 @@ export interface UserInfo {
   refreshToken: string;
   expirationDate?: Moment;
 }
-
-export interface Identity {
-  id: number;
-  name: string;
-  type: string;
-}
-
-export interface IdentityDTO {
-  id: number;
-  name: string;
-  roles: Array<RoleDTO>;
-}
-
-export interface BotDTO {
-  id: number;
-  name: string;
+export interface BotDTO extends IdentityDTO<number> {
   owner: number;
   isAuthor: boolean;
 }
@@ -217,9 +201,7 @@ export interface BotCreateDTO {
   roles: Array<BotRoleCreateDTO>;
 }
 
-export interface BotIdentityDTO {
-  id: number;
-  name: string;
+export interface BotDetailsDTO extends IdentityDTO<number> {
   isAuthor: boolean;
   roles: Array<RoleDTO>;
 }
@@ -240,14 +222,9 @@ export interface MatrixType {
   data: Array<Array<number>>;
 }
 
-export interface MatrixInfoDTO {
-  id: string;
-  name: string;
-}
+export type MatrixInfoDTO = IdentityDTO;
 
-export interface MatrixDataSetDTO {
-  id: string;
-  name: string;
+export interface MatrixDataSetDTO extends IdentityDTO {
   public: boolean;
   groups: Array<GroupDTO>;
   matrices: Array<MatrixInfoDTO>;
@@ -266,13 +243,13 @@ export interface MatrixDataSetUpdateDTO {
 }
 
 export interface MatrixDTO {
+  id: string;
   width: number;
   height: number;
   index: Array<string>;
   columns: Array<string>;
   data: Array<Array<number>>;
   created_at: number;
-  id: string;
 }
 
 export interface CommandDTO {
@@ -367,7 +344,7 @@ export enum TaskType {
   UNKNOWN = "UNKNOWN",
 }
 
-export interface TaskDTO {
+export interface TaskDTO extends IdentityDTO<string> {
   id: string;
   name: string;
   owner?: number;
