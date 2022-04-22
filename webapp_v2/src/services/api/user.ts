@@ -9,7 +9,7 @@ import {
   Identity,
   IdentityDTO,
   BotCreateDTO,
-  BotIdentityDTO,
+  BotDetailsDTO,
   BotDTO,
 } from "../../common/types";
 
@@ -128,7 +128,7 @@ export const getBots = async (owner?: number): Promise<Array<BotDTO>> => {
   return res.data;
 };
 
-export const getBotInfos = async (id: number): Promise<BotIdentityDTO> => {
+export const getBotInfos = async (id: number): Promise<BotDetailsDTO> => {
   const res = await client.get(`/v1/bots/${id}?verbose=1`);
   return res.data;
 };
