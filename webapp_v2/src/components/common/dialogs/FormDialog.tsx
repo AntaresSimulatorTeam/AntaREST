@@ -2,7 +2,7 @@ import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { ReactNode } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Head } from "ts-essentials";
+import { L } from "ts-toolbelt";
 import ConfirmationDialog, {
   ConfirmationDialogProps,
 } from "./ConfirmationDialog";
@@ -15,7 +15,7 @@ export type FormObj = Omit<ReturnType<typeof useForm>, "handleSubmit">;
 
 export interface FormDialogProps
   extends Omit<ConfirmationDialogProps, "onConfirm"> {
-  formOptions?: Head<Parameters<typeof useForm>>;
+  formOptions?: L.Head<Parameters<typeof useForm>>;
   onSubmit: SubmitHandler<FieldValues>;
   children: (formObj: FormObj) => ReactNode;
 }

@@ -1,6 +1,6 @@
 import { ProviderContext, useSnackbar } from "notistack";
 import { useCallback } from "react";
-import { Head } from "ts-essentials";
+import { L } from "ts-toolbelt";
 import SnackErrorMessage from "../components/common/SnackErrorMessage";
 
 /**
@@ -10,7 +10,7 @@ import SnackErrorMessage from "../components/common/SnackErrorMessage";
 type EnqueueErrorType = ProviderContext["enqueueSnackbar"];
 
 type EnqueueErrorSnackbarType = (
-  message: Head<Parameters<EnqueueErrorType>>,
+  message: L.Head<Parameters<EnqueueErrorType>>,
   details: string | Error
 ) => ReturnType<EnqueueErrorType>;
 
