@@ -36,5 +36,6 @@
   "taskFailed": "Erreur: l'exécution de la tâche a échoué",
   "nameEmptyError": "Entrée invalide, le nom est vide",
   "noCommands": "Liste de commandes vide",
-  "newCommandButton": "Nouvelle commande"
+  "newCommandButton": "Nouvelle commande",
+  "commands": "Commands"
 }

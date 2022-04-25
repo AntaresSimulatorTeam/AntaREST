@@ -15,6 +15,7 @@ import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
 import { viewStudy } from "../../store/study";
 import { findNodeInTree } from "../../services/utils";
+import CommandDrawer from "../../components/singlestudy/Commands";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -39,6 +40,7 @@ function SingleStudy(props: Props) {
   const [study, setStudy] = useState<StudyMetadata>();
   const [parent, setParent] = useState<StudyMetadata>();
   const [tree, setTree] = useState<VariantTree>();
+  const [openCommands, setOpenCommands] = useState<boolean>(false);
 
   const tabList = useMemo(
     () => [
@@ -93,6 +95,7 @@ function SingleStudy(props: Props) {
         study={study}
         parent={parent}
         isExplorer={isExplorer}
+        openCommands={() => setOpenCommands(true)}
         childrenTree={
           study !== undefined && tree !== undefined
             ? findNodeInTree(study.id, tree)
@@ -116,6 +119,13 @@ function SingleStudy(props: Props) {
           <HomeView study={study} tree={tree} />
         )}
       </Box>
+      {openCommands && studyId && (
+        <CommandDrawer
+          open={openCommands}
+          studyId={studyId}
+          onClose={() => setOpenCommands(false)}
+        />
+      )}
     </Box>
   );
 }

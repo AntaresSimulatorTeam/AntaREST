@@ -29,6 +29,7 @@ import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import FactCheckIcon from "@mui/icons-material/FactCheck";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
 import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
@@ -83,11 +84,13 @@ interface OwnProps {
   parent: StudyMetadata | undefined;
   childrenTree: VariantTree | undefined;
   isExplorer?: boolean;
+  openCommands?: () => void;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 function NavHeader(props: PropTypes) {
-  const { study, parent, childrenTree, isExplorer, removeStudy } = props;
+  const { study, parent, childrenTree, isExplorer, removeStudy, openCommands } =
+    props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -262,6 +265,17 @@ function NavHeader(props: PropTypes) {
               sx={{ width: "auto", minWidth: 0, mx: 2 }}
             >
               <HistoryOutlinedIcon />
+            </Button>
+          )}
+          {!isExplorer && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              onClick={openCommands}
+              sx={{ width: "auto", minWidth: 0, mx: 2 }}
+            >
+              <FactCheckIcon />
             </Button>
           )}
           <Button
@@ -488,6 +502,7 @@ function NavHeader(props: PropTypes) {
 
 NavHeader.defaultProps = {
   isExplorer: undefined,
+  openCommands: undefined,
 };
 
 export default connector(NavHeader);
