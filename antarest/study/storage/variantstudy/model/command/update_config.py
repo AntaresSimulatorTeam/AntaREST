@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Union, List, Tuple, Dict, Optional, cast
+from typing import Any, Union, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -105,9 +105,9 @@ class UpdateConfig(ICommand):
             try:
                 output_list = [
                     (
-                        self.command_context.command_extractor
-                        or CommandExtraction(
-                            self.command_context.matrix_service
+                        CommandExtraction(
+                            self.command_context.matrix_service,
+                            self.command_context.patch_service,
                         )
                     ).generate_update_config(base.tree, self.target.split("/"))
                 ]

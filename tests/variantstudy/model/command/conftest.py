@@ -11,6 +11,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -56,26 +57,27 @@ def matrix_service() -> MatrixService:
 
 @pytest.fixture
 def command_context(matrix_service: MatrixService) -> CommandContext:
-    command_extractor = Mock(spec=CommandExtraction)
-    command_extractor.generate_update_comments.side_effect = (
-        lambda x: CommandExtraction.generate_update_comments(
-            command_extractor, x
-        )
-    )
-    command_extractor.generate_update_rawfile.side_effect = (
-        lambda x, u: CommandExtraction.generate_update_rawfile(
-            command_extractor, x, u
-        )
-    )
+    # command_extractor = Mock(spec=CommandExtraction)
+    # command_extractor.generate_update_comments.side_effect = (
+    #     lambda x: CommandExtraction.generate_update_comments(
+    #         command_extractor, x
+    #     )
+    # )
+    # command_extractor.generate_update_rawfile.side_effect = (
+    #     lambda x, u: CommandExtraction.generate_update_rawfile(
+    #         command_extractor, x, u
+    #     )
+    # )
     command_context = CommandContext(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service
         ),
         matrix_service=matrix_service,
-        patch_service=PatchService(),
-        command_extractor=command_extractor,
+        patch_service=PatchService(
+            repository=Mock(spec=StudyMetadataRepository)
+        ),
     )
-    command_extractor.command_context = command_context
+    # command_extractor.command_context = command_context
     return command_context
 
 

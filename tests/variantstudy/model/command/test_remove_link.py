@@ -1,7 +1,7 @@
 import os
 import uuid
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
 import pytest
@@ -122,18 +122,17 @@ class TestRemoveLink:
         assert base.get_inner_matrices() == []
 
     @pytest.mark.unit_test
-    def test_revert(self, command_context: CommandContext):
+    @patch(
+        "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_link",
+    )
+    def test_revert(self, mock_extract_link, command_context: CommandContext):
         base = RemoveLink(
             area1="foo", area2="bar", command_context=command_context
         )
         study = FileStudy(config=Mock(), tree=Mock())
-        base.command_context.command_extractor.extract_link.side_effect = (
-            ChildNotFoundError("")
-        )
+        mock_extract_link.side_effect = ChildNotFoundError("")
         base.revert([], study)
-        base.command_context.command_extractor.extract_link.assert_called_with(
-            study, "bar", "foo"
-        )
+        mock_extract_link.assert_called_with(study, "bar", "foo")
         assert base.revert(
             [
                 CreateLink(

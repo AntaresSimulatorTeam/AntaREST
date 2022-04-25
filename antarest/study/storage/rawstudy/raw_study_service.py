@@ -18,6 +18,7 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
     Patch,
+    StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -88,11 +89,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             )
 
             patch = self.patch_service.get(metadata)
-            metadata.additional_data.patch = patch.json()
-            metadata.additional_data.horizon = study.get(
+            horizon = study.get(
                 ["settings", "generaldata", "general", "horizon"]
             )
-            metadata.additional_data.author = raw_meta["author"]
+            author = raw_meta["author"]
+            additional_data = metadata.additional_data or StudyAdditionalData(
+                patch=patch.json(), horizon=horizon, author=author
+            )
+            metadata.additional_data = additional_data
 
         except Exception as e:
             logger.error(
@@ -200,6 +204,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         self._check_study_exists(src_meta)
+        additional_data = StudyAdditionalData(
+            horizon=src_meta.additional_data.horizon,
+            author=src_meta.additional_data.author,
+            patch=src_meta.additional_data.patch,
+        )
         dest_id = str(uuid4())
         dest_study = RawStudy(
             id=dest_id,
@@ -209,6 +218,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=src_meta.version,
+            additional_data=additional_data,
         )
 
         src_path = self.get_study_path(src_meta)

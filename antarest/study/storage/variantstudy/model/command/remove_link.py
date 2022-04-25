@@ -156,8 +156,10 @@ class RemoveLink(ICommand):
         area_from, area_to = sorted([self.area1, self.area2])
         try:
             return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
+                CommandExtraction(
+                    self.command_context.matrix_service,
+                    self.command_context.patch_service,
+                )
             ).extract_link(base, area_from, area_to)
         except ChildNotFoundError as e:
             logging.getLogger(__name__).warning(

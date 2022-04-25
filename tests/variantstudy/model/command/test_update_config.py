@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -82,18 +82,17 @@ def test_match(command_context: CommandContext):
     assert base.match_signature() == "update_config%foo"
 
 
-def test_revert(command_context: CommandContext):
+@patch(
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.generate_update_config"
+)
+def test_revert(mock_generate_update_config, command_context: CommandContext):
     base = UpdateConfig(
         target="foo", data="bar", command_context=command_context
     )
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.generate_update_config.side_effect = ChildNotFoundError(
-        ""
-    )
+    mock_generate_update_config.side_effect = ChildNotFoundError("")
     res = base.revert([], study)
-    base.command_context.command_extractor.generate_update_config.assert_called_with(
-        study.tree, ["foo"]
-    )
+    mock_generate_update_config.assert_called_with(study.tree, ["foo"])
     assert res == []
 
     assert base.revert(

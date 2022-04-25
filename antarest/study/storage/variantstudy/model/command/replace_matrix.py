@@ -124,8 +124,10 @@ class ReplaceMatrix(ICommand):
         try:
             return [
                 (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
+                    CommandExtraction(
+                        self.command_context.matrix_service,
+                        self.command_context.patch_service,
+                    )
                 ).generate_replace_matrix(base.tree, self.target.split("/"))
             ]
         except ChildNotFoundError:

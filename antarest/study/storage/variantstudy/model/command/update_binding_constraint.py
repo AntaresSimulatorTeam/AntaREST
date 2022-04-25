@@ -162,8 +162,10 @@ class UpdateBindingConstraint(ICommand):
         )
 
         return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
+            CommandExtraction(
+                self.command_context.matrix_service,
+                self.command_context.patch_service,
+            )
         ).extract_binding_constraint(base, self.id)
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

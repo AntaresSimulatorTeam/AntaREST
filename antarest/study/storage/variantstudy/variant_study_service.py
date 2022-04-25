@@ -47,6 +47,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudySimResultDTO,
     RawStudy,
+    StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -548,6 +549,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
+        additional_data = StudyAdditionalData(
+            horizon=study.additional_data.horizon,
+            author=study.additional_data.author,
+            patch=study.additional_data.patch,
+        )
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -560,7 +566,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
-            additional_data=study.additional_data,
+            additional_data=additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -954,6 +960,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
+        additional_data = StudyAdditionalData(
+            horizon=src_meta.additional_data.horizon,
+            author=src_meta.additional_data.author,
+            patch=src_meta.additional_data.patch,
+        )
         dest_meta = VariantStudy(
             id=new_id,
             name=dest_name,
@@ -965,6 +976,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             version=src_meta.version,
             groups=src_meta.groups,  # Create inherit_group boolean
             snapshot=None,
+            additional_data=additional_data,
         )
 
         dest_meta.commands = [

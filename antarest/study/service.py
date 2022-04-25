@@ -85,6 +85,7 @@ from antarest.study.model import (
     PatchCluster,
     PatchArea,
     ExportFormat,
+    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -166,7 +167,7 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.areas = AreaManager(self.storage_service)
+        self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
@@ -432,18 +433,16 @@ class StudyService:
                 study=study, url=study_antares_url, data=study_antares
             )
 
-        new_metadata, new_patch = self.storage_service.get_storage(
-            study
-        ).patch_update_study_metadata(study, metadata_patch)
-
         if metadata_patch.name:
             study.name = metadata_patch.name
         if metadata_patch.author:
             study.additional_data.author = metadata_patch.author
         if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
-        study.additional_data.patch = new_patch.json()
-        self.repository.save(study)
+
+        new_metadata = self.storage_service.get_storage(
+            study
+        ).patch_update_study_metadata(study, metadata_patch)
 
         self.event_bus.push(
             Event(
@@ -501,6 +500,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
+            additional_data=StudyAdditionalData(),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -1179,6 +1179,7 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
+            additional_data=StudyAdditionalData(),
         )
         study = self.storage_service.raw_study_service.import_study(
             study, stream
@@ -1744,7 +1745,7 @@ class StudyService:
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
-        Creeate new study with owner, group or content_status.
+        Create new study with owner, group or content_status.
         Args:
             study: study to save
             owner: new owner

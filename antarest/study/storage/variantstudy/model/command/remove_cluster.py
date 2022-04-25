@@ -181,8 +181,10 @@ class RemoveCluster(ICommand):
 
         try:
             return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
+                CommandExtraction(
+                    self.command_context.matrix_service,
+                    self.command_context.patch_service,
+                )
             ).extract_cluster(base, self.area_id, self.cluster_id)
             # todo revert binding constraints that has the cluster in constraint
         except ChildNotFoundError as e:

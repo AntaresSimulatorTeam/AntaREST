@@ -4,8 +4,10 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO, Tuple
+from typing import List, Union, Optional, IO
 from uuid import uuid4
+
+from pydantic import ValidationError
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -60,7 +62,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         study: T,
         metadata: StudyMetadataPatchDTO,
-    ) -> Tuple[StudyMetadataDTO, Patch]:
+    ) -> StudyMetadataDTO:
         old_patch = self.patch_service.get(study)
         old_patch.study = PatchStudy(
             scenario=metadata.scenario,
@@ -73,13 +75,17 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             old_patch,
         )
         remove_from_cache(self.cache, study.id)
-        return self.get_study_information(study), old_patch
+        return self.get_study_information(study)
 
     def get_study_information(
         self,
         study: T,
     ) -> StudyMetadataDTO:
-        patch = Patch.parse_raw(study.additional_data.patch) or Patch()
+        try:
+            patch = Patch.parse_raw(study.additional_data.patch) or Patch()
+        except ValidationError:
+            patch = Patch()
+
         patch_metadata = patch.study or PatchStudy()
 
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)

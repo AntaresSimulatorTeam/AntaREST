@@ -64,15 +64,18 @@ logger = logging.getLogger(__name__)
 
 
 class CommandExtraction(ICommandExtractor):
-    def __init__(self, matrix_service: ISimpleMatrixService):
+    def __init__(
+        self, matrix_service: ISimpleMatrixService, patch_service: PatchService
+    ):
         self.matrix_service = matrix_service
         self.generator_matrix_constants = GeneratorMatrixConstants(
             self.matrix_service
         )
+        self.patch_service = patch_service
         self.command_context = CommandContext(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
-            patch_service=PatchService(),
+            patch_service=self.patch_service,
         )
         self.null_matrix_id = strip_matrix_protocol(
             self.generator_matrix_constants.get_null_matrix()

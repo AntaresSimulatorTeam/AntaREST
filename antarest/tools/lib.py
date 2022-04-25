@@ -28,6 +28,8 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
 )
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
@@ -159,10 +161,11 @@ class LocalVariantGenerator(IVariantGenerator):
         stopwatch = StopWatch()
         matrix_service = SimpleMatrixService(matrices_dir)
         matrix_resolver = UriResolverService(matrix_service)
+        local_cache = LocalCache(CacheConfig())
         study_factory = StudyFactory(
             matrix=matrix_service,
             resolver=matrix_resolver,
-            cache=LocalCache(CacheConfig()),
+            cache=local_cache,
         )
         generator = VariantCommandGenerator(study_factory)
         command_factory = CommandFactory(
@@ -170,6 +173,7 @@ class LocalVariantGenerator(IVariantGenerator):
                 matrix_service
             ),
             matrix_service=matrix_service,
+            repository=StudyMetadataRepository(local_cache),
         )
 
         command_objs: List[List[ICommand]] = []
@@ -217,17 +221,21 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
 
     matrix_service = SimpleMatrixService(matrices_dir)
     matrix_resolver = UriResolverService(matrix_service)
+    cache = LocalCache(CacheConfig())
     study_factory = StudyFactory(
         matrix=matrix_service,
         resolver=matrix_resolver,
-        cache=LocalCache(CacheConfig()),
+        cache=cache,
     )
+    patch_service = PatchService(StudyMetadataRepository(cache))
 
     study = study_factory.create_from_fs(
         study_path, str(study_path), use_cache=False
     )
     local_matrix_service = SimpleMatrixService(matrices_dir)
-    extractor = VariantCommandsExtractor(local_matrix_service)
+    extractor = VariantCommandsExtractor(
+        local_matrix_service, patch_service=patch_service
+    )
     command_list = extractor.extract(study)
 
     with open(commands_output_dir / COMMAND_FILE, "w") as fh:
@@ -261,8 +269,10 @@ def generate_diff(
     local_matrix_service = SimpleMatrixService(matrices_dir)
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
+    cache = LocalCache()
+    patch_service = PatchService(StudyMetadataRepository(cache))
     study_factory = StudyFactory(
-        matrix=local_matrix_service, resolver=resolver, cache=LocalCache()
+        matrix=local_matrix_service, resolver=resolver, cache=cache
     )
 
     create_new_empty_study(
@@ -301,7 +311,9 @@ def generate_diff(
         lambda x: logger.info(f"Variant input matrix copied in {x}s")
     )
 
-    extractor = VariantCommandsExtractor(local_matrix_service)
+    extractor = VariantCommandsExtractor(
+        local_matrix_service, patch_service=patch_service
+    )
     diff_commands = extractor.diff(
         base=parse_commands(base_command_file),
         variant=parse_commands(variant_command_file),

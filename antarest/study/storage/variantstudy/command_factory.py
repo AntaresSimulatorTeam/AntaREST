@@ -3,6 +3,7 @@ from typing import List
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -79,11 +80,12 @@ class CommandFactory:
         self,
         generator_matrix_constants: GeneratorMatrixConstants,
         matrix_service: ISimpleMatrixService,
+        repository: StudyMetadataRepository,
     ):
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
-            patch_service=PatchService(),
+            patch_service=PatchService(repository=repository),
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:

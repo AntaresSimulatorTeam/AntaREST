@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from checksumdir import dirhash
 
@@ -104,7 +104,12 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_revert(command_context: CommandContext):
+@patch(
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_renewables_cluster",
+)
+def test_revert(
+    mock_extract_renewables_cluster, command_context: CommandContext
+):
     base = RemoveRenewablesCluster(
         area_id="foo", cluster_id="bar", command_context=command_context
     )
@@ -127,13 +132,9 @@ def test_revert(command_context: CommandContext):
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.extract_renewables_cluster.side_effect = ChildNotFoundError(
-        ""
-    )
+    mock_extract_renewables_cluster.side_effect = ChildNotFoundError("")
     base.revert([], study)
-    base.command_context.command_extractor.extract_renewables_cluster.assert_called_with(
-        study, "foo", "bar"
-    )
+    mock_extract_renewables_cluster.assert_called_with(study, "foo", "bar")
 
 
 def test_create_diff(command_context: CommandContext):

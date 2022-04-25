@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -208,8 +208,10 @@ class RemoveArea(ICommand):
 
         try:
             area_commands, links_commands = (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
+                CommandExtraction(
+                    self.command_context.matrix_service,
+                    self.command_context.patch_service,
+                )
             ).extract_area(base, self.id)
             # todo revert binding constraints that has the area in constraint
             return area_commands + links_commands

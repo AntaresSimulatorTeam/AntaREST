@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -101,8 +101,10 @@ class RemoveBindingConstraint(ICommand):
 
         try:
             return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
+                CommandExtraction(
+                    self.command_context.matrix_service,
+                    self.command_context.patch_service,
+                )
             ).extract_binding_constraint(base, self.id)
         except Exception as e:
             logging.getLogger(__name__).warning(
