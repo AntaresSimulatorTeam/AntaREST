@@ -56,6 +56,8 @@
       }
     ],
     "import/prefer-default-export": "off",
+    "no-undef": "off",
+    "no-param-reassign": ["error", { "props": true, "ignorePropertyModificationsForRegex": ["^draft"] }],
     "no-shadow": "off",
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
