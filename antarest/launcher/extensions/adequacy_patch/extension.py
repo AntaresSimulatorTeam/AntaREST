@@ -31,11 +31,6 @@ class AdequacyPatchExtension(ILauncherExtension):
 
     def __init__(self, study_service: StudyService, config: Config):
         self.study_service = study_service
-        self.tmp_dir = (
-            config.storage.tmp_dir
-            / f"ext_{AdequacyPatchExtension.EXTENSION_NAME}"
-        )
-        self.tmp_dir.mkdir(exist_ok=True)
 
     def get_name(self) -> str:
         return AdequacyPatchExtension.EXTENSION_NAME
@@ -84,13 +79,13 @@ class AdequacyPatchExtension(ILauncherExtension):
             transform_name_to_id(area_id)
             for area_id in adq_patch_config.get("areas", [])
         ]
-        original_area_status: Dict[str, bool] = {}
-        original_link_status: Dict[str, bool] = {}
+        original_area_enabled: Dict[str, bool] = {}
+        original_link_enabled: Dict[str, bool] = {}
         for area_id, area in study.config.areas.items():
             # areas
-            original_area_status[area_id] = "hourly" in area.filters_year
+            original_area_enabled[area_id] = "hourly" in area.filters_year
             if (
-                not original_area_status[area_id]
+                not original_area_enabled[area_id]
                 and area_id in area_to_turn_on
             ):
                 study.tree.save(
@@ -108,8 +103,8 @@ class AdequacyPatchExtension(ILauncherExtension):
             # links
             for area_2, link in area.links.items():
                 link_id = f"{area_id} - {area_2}"
-                original_link_status[link_id] = "hourly" in link.filters_year
-                if not original_link_status[link_id] and (
+                original_link_enabled[link_id] = "hourly" in link.filters_year
+                if not original_link_enabled[link_id] and (
                     area_id in area_to_turn_on or area_2 in area_to_turn_on
                 ):
                     study.tree.save(
@@ -124,25 +119,24 @@ class AdequacyPatchExtension(ILauncherExtension):
                         ],
                     )
 
-        with FileLock(self.tmp_dir / "data.lock"):
-            with db():
-                with open(
-                    study.config.study_path
-                    / "user"
-                    / "adequacypatch"
-                    / "hourly-areas.yml",
-                    "w",
-                ) as fh:
-                    yaml.dump(original_area_status, fh)
-                with open(
-                    study.config.study_path
-                    / "user"
-                    / "adequacypatch"
-                    / "hourly-links.yml",
-                    "w",
-                ) as fh:
-                    yaml.dump(original_link_status, fh)
-        return original_area_status
+        with db():
+            with open(
+                study.config.study_path
+                / "user"
+                / "adequacypatch"
+                / "hourly-areas.yml",
+                "w",
+            ) as fh:
+                yaml.dump(original_area_enabled, fh)
+            with open(
+                study.config.study_path
+                / "user"
+                / "adequacypatch"
+                / "hourly-links.yml",
+                "w",
+            ) as fh:
+                yaml.dump(original_link_enabled, fh)
+        return original_area_enabled
 
     def before_import_hook(
         self,
