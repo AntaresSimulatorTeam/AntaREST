@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -29,7 +30,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import assert_this, concat_files
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -56,6 +57,7 @@ from antarest.study.storage.utils import (
     create_permission_from_study,
     extract_output_name,
     fix_study_root,
+    find_single_output_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -112,14 +114,14 @@ class LauncherService:
 
     def _init_extensions(self) -> Dict[str, ILauncherExtension]:
         adequacy_patch_ext = AdequacyPatchExtension(
-            self.study_service.storage_service
+            self.study_service, self.config
         )
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def after_export_flat_hooks(
+    def _after_export_flat_hooks(
         self,
         job_id: str,
         study_id: str,
@@ -138,6 +140,28 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_exported_path,
+                    launcher_opts.get(ext),
+                )
+
+    def _before_import_hooks(
+        self,
+        job_id: str,
+        study_id: str,
+        study_output_path: Path,
+        launcher_opts: Optional[JSON],
+    ) -> None:
+        for ext in self.extensions:
+            if (
+                launcher_opts is not None
+                and launcher_opts.get(ext, None) is not None
+            ):
+                logger.info(
+                    f"Applying extension {ext} before_import_hook on job {job_id}"
+                )
+                self.extensions[ext].before_import_hook(
+                    job_id,
+                    study_id,
+                    study_output_path,
                     launcher_opts.get(ext),
                 )
 
@@ -229,6 +253,9 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
+            launcher_params=json.dumps(launcher_parameters)
+            if launcher_parameters
+            else None,
         )
         self.job_result_repository.save(job_status)
 
@@ -446,7 +473,7 @@ class LauncherService:
                 outputs=False,
             )
             self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-            self.after_export_flat_hooks(
+            self._after_export_flat_hooks(
                 job_id, study_id, target_path, launcher_params
             )
 
@@ -454,7 +481,10 @@ class LauncherService:
         return self.config.storage.tmp_dir / f"output_{job_id}"
 
     def _import_fallback_output(
-        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+        self,
+        job_id: str,
+        output_path: Path,
+        additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(
             f"Trying to import output in fallback tmp space for job {job_id}"
@@ -469,9 +499,10 @@ class LauncherService:
             output_name = extract_output_name(imported_output)
             imported_output.rename(Path(job_output_path, output_name))
             if additional_logs:
-                for log_name, log_path in additional_logs.items():
-                    shutil.copyfile(
-                        log_path, Path(job_output_path, output_name) / log_name
+                for log_name, log_paths in additional_logs.items():
+                    concat_files(
+                        log_paths,
+                        Path(job_output_path, output_name) / log_name,
                     )
         except Exception as e:
             logger.error(
@@ -481,22 +512,34 @@ class LauncherService:
         return output_name
 
     def _import_output(
-        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+        self,
+        job_id: str,
+        output_path: Path,
+        additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(f"Importing output for job {job_id}")
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
+                output_true_path = find_single_output_path(output_path)
+                self._before_import_hooks(
+                    job_id,
+                    job_result.study_id,
+                    output_true_path,
+                    json.loads(job_result.launcher_params)
+                    if job_result.launcher_params
+                    else None,
+                )
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
-                        output_path,
+                        output_true_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
                         additional_logs,
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
-                        job_id, output_path, additional_logs
+                        job_id, output_true_path, additional_logs
                     )
         raise JobNotFound()
 

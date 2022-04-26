@@ -75,9 +75,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             fallback_on_default: use default values in case of failure
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, study_id="")
+        study = self.study_factory.create_from_fs(path, study_id="")
         try:
-            raw_meta = study.get(["study", "antares"])
+            raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
             metadata.created_at = datetime.utcfromtimestamp(
@@ -111,31 +111,34 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_raw(self, metadata: RawStudy, use_cache: bool = True) -> FileStudy:
+    def get_raw(
+        self,
+        metadata: RawStudy,
+        use_cache: bool = True,
+        output_dir: Optional[Path] = None,
+    ) -> FileStudy:
         """
         Fetch a study object and its config
         Args:
             metadata: study
             use_cache: use cache
+            output_dir: optional output dir override
         Returns: the config and study tree object
 
         """
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        study_config, study_tree = self.study_factory.create_from_fs(
-            study_path, metadata.id, use_cache=use_cache
+        return self.study_factory.create_from_fs(
+            study_path, metadata.id, output_dir, use_cache=use_cache
         )
-        return FileStudy(config=study_config, tree=study_tree)
 
     def get_synthesis(
         self, metadata: RawStudy, params: Optional[RequestParameters] = None
     ) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        study_config, _ = self.study_factory.create_from_fs(
-            study_path, metadata.id
-        )
-        return FileStudyTreeConfigDTO.from_build_config(study_config)
+        study = self.study_factory.create_from_fs(study_path, metadata.id)
+        return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
@@ -155,8 +158,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             path_resources=self.path_resources,
         )
 
-        _, tree = self.study_factory.create_from_fs(path_study, metadata.id)
-        update_antares_info(metadata, tree)
+        study = self.study_factory.create_from_fs(path_study, metadata.id)
+        update_antares_info(metadata, study.tree)
 
         metadata.path = str(path_study)
 
@@ -199,12 +202,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         if not with_outputs and output.exists():
             shutil.rmtree(output)
 
-        _, study = self.study_factory.create_from_fs(
+        study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_study.id
         )
-        update_antares_info(dest_study, study)
+        update_antares_info(dest_study, study.tree)
 
-        del study
+        del study.tree
         return dest_study
 
     def delete(self, metadata: RawStudy) -> None:
@@ -286,8 +289,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        study.denormalize()
+        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
+        study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
 
@@ -304,8 +307,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, metadata.id)
-        return study.check_errors(study.get())
+        study = self.study_factory.create_from_fs(path, metadata.id)
+        return study.tree.check_errors(study.tree.get())
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool

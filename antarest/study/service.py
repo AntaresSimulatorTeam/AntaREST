@@ -48,7 +48,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
@@ -1190,7 +1190,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[Dict[str, Path]] = None,
+        additional_logs: Optional[Dict[str, List[Path]]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1215,9 +1215,9 @@ class StudyService:
             study, output
         )
         if res is not None and additional_logs:
-            for log_name, log_path in additional_logs.items():
-                shutil.copyfile(
-                    log_path, Path(study.path) / "output" / res / log_name
+            for log_name, log_paths in additional_logs.items():
+                concat_files(
+                    log_paths, Path(study.path) / "output" / res / log_name
                 )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(

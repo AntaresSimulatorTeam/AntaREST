@@ -235,17 +235,29 @@ class SlurmLauncher(AbstractLauncher):
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: Dict[str, Path] = {}
+        launcher_logs: Dict[str, List[Path]] = {}
         if log_dir is not None:
             launcher_logs = {
                 log_name: log_path
                 for log_name, log_path in {
-                    "antares-out.log": SlurmLauncher._get_log_path_from_log_dir(
-                        Path(log_dir), LogType.STDOUT
-                    ),
-                    "antares-err.log": SlurmLauncher._get_log_path_from_log_dir(
-                        Path(log_dir), LogType.STDERR
-                    ),
+                    "antares-out.log": [
+                        p
+                        for p in [
+                            SlurmLauncher._get_log_path_from_log_dir(
+                                Path(log_dir), LogType.STDOUT
+                            )
+                        ]
+                        if p is not None
+                    ],
+                    "antares-err.log": [
+                        p
+                        for p in [
+                            SlurmLauncher._get_log_path_from_log_dir(
+                                Path(log_dir), LogType.STDERR
+                            )
+                        ]
+                        if p is not None
+                    ],
                 }.items()
                 if log_path
             }

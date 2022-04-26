@@ -149,6 +149,23 @@ class FileStudyTreeConfig(DTO):
             cache=self.cache,
         )
 
+    def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
+        return FileStudyTreeConfig(
+            study_path=self.study_path,
+            output_path=self.output_path,
+            path=filepath,
+            study_id=self.study_id,
+            version=self.version,
+            areas=self.areas,
+            sets=self.sets,
+            outputs=self.outputs,
+            bindings=self.bindings,
+            store_new_set=self.store_new_set,
+            archive_input_series=self.archive_input_series,
+            enr_modelling=self.enr_modelling,
+            cache=self.cache,
+        )
+
     def area_names(self) -> List[str]:
         return self.cache.get("%areas", list(self.areas.keys()))
 

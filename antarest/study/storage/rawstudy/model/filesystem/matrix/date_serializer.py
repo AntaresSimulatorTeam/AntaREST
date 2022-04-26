@@ -76,7 +76,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str, str]:
             m, d, h = re.split("[\s/]", row)
-            return "", 1, d.strip("0"), IDateMatrixSerializer._R_MONTHS[m], h
+            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m], h
 
         items = index.map(_map).tolist()
         matrix = pd.DataFrame(items)
@@ -126,7 +126,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str]:
             m, d = row.split("/")
-            return "", 1, d.strip("0"), IDateMatrixSerializer._R_MONTHS[m]
+            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m]
 
         items = index.map(_map).tolist()
         matrix = pd.DataFrame(items)
@@ -221,7 +221,7 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
         # Extract left part with date
         date = df.iloc[:, 2:3]
         date.columns = ["month"]
-        date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
+        date["month"] = date.loc[:, "month"].map(IDateMatrixSerializer._MONTHS)
 
         # Extract right part with data
         to_remove = df.columns[0:3]

@@ -15,6 +15,9 @@ class LogTailManager:
         self.log_base_dir = log_base_dir
         self.tracked_logs: Dict[str, Thread] = {}
 
+    def is_tracking(self, log_path: Optional[Path]) -> bool:
+        return str(log_path) in self.tracked_logs if log_path else False
+
     def track(
         self, log_path: Optional[Path], handler: Callable[[str], None]
     ) -> None:

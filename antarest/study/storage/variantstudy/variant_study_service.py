@@ -782,12 +782,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
-                config, study_tree = self.study_factory.create_from_fs(
+                study = self.study_factory.create_from_fs(
                     self.get_study_path(variant_study),
                     study_id=variant_study.id,
                 )
                 logger.info(f"Denormalizing variant study {variant_study.id}")
-                study_tree.denormalize()
+                study.tree.denormalize()
         return results
 
     def _generate_study_config(
@@ -798,12 +798,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raise StudyNotFoundError(metadata.parent_id)
 
         if isinstance(parent_study, RawStudy):
-            parent_config, _ = self.study_factory.create_from_fs(
+            study = self.study_factory.create_from_fs(
                 Path(parent_study.path),
                 parent_study.id,
                 Path(parent_study.path) / "output",
                 use_cache=True,
             )
+            parent_config = study.config
         else:
             res, parent_config = self._generate_study_config(
                 parent_study, config
@@ -1009,25 +1010,28 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return None
 
     def get_raw(
-        self, metadata: VariantStudy, use_cache: bool = True
+        self,
+        metadata: VariantStudy,
+        use_cache: bool = True,
+        output_dir: Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
             use_cache: use cache
+            output_dir: optional output dir override
         Returns: the config and study tree object
         """
         self._safe_generation(metadata)
 
         study_path = self.get_study_path(metadata)
-        study_config, study_tree = self.study_factory.create_from_fs(
+        return self.study_factory.create_from_fs(
             study_path,
             metadata.id,
-            Path(metadata.path) / "output",
+            output_dir or Path(metadata.path) / "output",
             use_cache=use_cache,
         )
-        return FileStudy(config=study_config, tree=study_tree)
 
     def get_study_sim_result(
         self, study: VariantStudy
@@ -1116,9 +1120,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
+        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
         if denormalize:
-            study.denormalize()
+            study.tree.denormalize()
             duration = "{:.3f}".format(time.time() - stop_time)
             logger.info(f"Study {path_study} denormalized in {duration}s")
 

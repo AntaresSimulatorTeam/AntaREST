@@ -52,7 +52,7 @@ class StudyFactory:
         study_id: str,
         output_path: Optional[Path] = None,
         use_cache: bool = True,
-    ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
+    ) -> FileStudy:
         cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
         if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
@@ -61,12 +61,12 @@ class StudyFactory:
                 config = FileStudyTreeConfigDTO.parse_obj(
                     from_cache
                 ).to_build_config()
-                return config, FileStudyTree(self.context, config)
+                return FileStudy(config, FileStudyTree(self.context, config))
         start_time = time.time()
         config = ConfigPathBuilder.build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
-        result = config, FileStudyTree(self.context, config)
+        result = FileStudy(config, FileStudyTree(self.context, config))
         if study_id and use_cache:
             self.cache.put(
                 cache_id,

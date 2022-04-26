@@ -37,6 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     fix_study_root,
     remove_from_cache,
@@ -213,9 +214,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
-                file_metadata = study_data.tree.get(
-                    url=["output", output, "about-the-study", "parameters"]
-                )
+                file_metadata = FileStudyHelpers.get_config(study_data)
                 settings = StudySimSettingsDTO(
                     general=file_metadata["general"],
                     input=file_metadata["input"],

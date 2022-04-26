@@ -8,7 +8,6 @@ opts <- setSimulationPath(".")
 print(readLayout(opts = opts))
 
 config <- read_yaml("user/adequacypatch/config.yml", fileEncoding = "UTF-8", text)
-
 areas = config$areas
 virutal_areas = config$areas
 mcYears = config$mcYears
@@ -26,12 +25,11 @@ run_adq(opts = opts,
 					antaresfbzone = antaresfbzone,
 					ext = extension,
 					nbcl = nbcore, thresholdFilter = thresholdFilter,
-					core_ahc = core_ahc,
-                    calculate_mc_all = calculate_mc_all,
-                    log_detail = TRUE)
+					core_ahc = core_ahc)
 
 areas <- read_yaml("user/adequacypatch/hourly-areas.yml", fileEncoding = "UTF-8", text)
 links <- read_yaml("user/adequacypatch/hourly-links.yml", fileEncoding = "UTF-8", text)
+
 
 remove_data <- function(path_prefix, data_type, data_list, include_id) {
     for (item in names(data_list)) {

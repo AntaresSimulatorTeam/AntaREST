@@ -590,12 +590,14 @@ def test_download_output() -> None:
         config=file_config, tree=study
     )
     output_config = {
-        "first-month-in-year": "january",
-        "january.1st": "Monday",
-        "leapyear": False,
-        "first.weekday": "Monday",
-        "simulation.start": 1,
-        "simulation.end": 354,
+        "general": {
+            "first-month-in-year": "january",
+            "january.1st": "Monday",
+            "leapyear": False,
+            "first.weekday": "Monday",
+            "simulation.start": 1,
+            "simulation.end": 354,
+        }
     }
     study.get.side_effect = [
         output_config,

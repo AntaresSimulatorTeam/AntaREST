@@ -1,10 +1,15 @@
 import sys
+from functools import wraps
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.core.model import SUB_JSON
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 
 project_dir: Path = Path(__file__).parent.parent
 sys.path.insert(0, str(project_dir))
@@ -13,6 +18,21 @@ sys.path.insert(0, str(project_dir))
 @pytest.fixture
 def project_path() -> Path:
     return project_dir
+
+
+def with_db_context(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        engine = create_engine("sqlite:///:memory:", echo=True)
+        Base.metadata.create_all(engine)
+        DBSessionMiddleware(
+            Mock(),
+            custom_engine=engine,
+            session_args={"autocommit": False, "autoflush": False},
+        )
+        return f(*args, **kwds)
+
+    return wrapper
 
 
 def _assert_dict(a: dict, b: dict) -> None:

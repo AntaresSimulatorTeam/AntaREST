@@ -59,7 +59,7 @@ def test_export_file(tmp_path: Path, outputs: bool):
 
     study = RawStudy(id="Yo", path=root)
     study_tree = Mock()
-    study_factory.create_from_fs.return_value = (None, study_tree)
+    study_factory.create_from_fs.return_value = study_tree
 
     study_service.export_study(study, export_path, outputs)
     zipf = ZipFile(export_path)
@@ -104,7 +104,7 @@ def test_export_flat(tmp_path: Path):
         cache=Mock(),
     )
     study_tree = Mock()
-    study_factory.create_from_fs.return_value = (None, study_tree)
+    study_factory.create_from_fs.return_value = study_tree
 
     study = RawStudy(id="id", path=root)
 
@@ -149,7 +149,7 @@ def test_export_output(tmp_path: Path):
 
     study = RawStudy(id="Yo", path=root)
     study_tree = Mock()
-    study_factory.create_from_fs.return_value = (None, study_tree)
+    study_factory.create_from_fs.return_value = study_tree
 
     study_service.export_output(study, output_id, export_path)
     zipf = ZipFile(f"{export_path}.zip")

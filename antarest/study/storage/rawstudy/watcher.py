@@ -205,6 +205,7 @@ class Watcher:
         Returns:
 
         """
+        stopwatch = StopWatch()
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None
         if workspace_directory_path is not None and workspace_name:
@@ -242,20 +243,22 @@ class Watcher:
                         workspace.filter_in,
                         workspace.filter_out,
                     )
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Workspace {name} scanned in {x}s"
+                        )
+                    )
         else:
             raise ValueError(
                 "Both workspace_name and directory_path must be specified"
             )
         with db():
-            stopwatch = StopWatch()
             logger.info(
                 f"Waiting for FileLock to synchronize {directory_path or 'all studies'}"
             )
             with FileLock(self.config.storage.tmp_dir / Watcher.SCAN_LOCK):
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(
-                        f"FileLock acquired to synchronize for {directory_path or 'all studies'} in {x}s"
-                    )
+                logger.info(
+                    f"FileLock acquired to synchronize for {directory_path or 'all studies'}"
                 )
                 self.study_service.sync_studies_on_disk(
                     studies, directory_path
@@ -263,5 +266,6 @@ class Watcher:
                 stopwatch.log_elapsed(
                     lambda x: logger.info(
                         f"{directory_path or 'All studies'} synchronized in {x}s"
-                    )
+                    ),
+                    since_start=True,
                 )

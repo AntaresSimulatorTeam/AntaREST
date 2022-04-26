@@ -60,10 +60,10 @@ def test_factory_cache():
     config = ConfigPathBuilder.build(path, study_id)
 
     cache.get.return_value = None
-    return_conf, _ = factory.create_from_fs(path, study_id)
-    assert return_conf == config
+    study = factory.create_from_fs(path, study_id)
+    assert study.config == config
     cache.put.assert_called_once_with(cache_id, config.dict())
 
     cache.get.return_value = config.dict()
-    return_conf, _ = factory.create_from_fs(path, study_id)
-    assert return_conf == config
+    study = factory.create_from_fs(path, study_id)
+    assert study.config == config

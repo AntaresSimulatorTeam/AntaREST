@@ -6,6 +6,7 @@
   "xpansionMode": "Mode Xpansion",
   "useXpansionVersionR": "Utiliser la version R d'Xpansion",
   "xpansion": "Xpansion",
+  "batchMode": "Mode batch",
   "postProcessing": "Post processing",
   "timeLimit": "Limite de temps",
   "timeLimitHelper": "Limite de temps (en heures). Max: 240h.",
