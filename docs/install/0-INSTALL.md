@@ -28,6 +28,12 @@ Build front
 cd webapp
 npm install
 cd ..
-NODE_OPTIONS="--max-old-space-size=8192" ./scripts/build-front.sh
+./scripts/build-front.sh
 ```
 
+Run the application
+
+```
+export PYTHONPATH=$(pwd)
+python antarest/main.py -c resources/application.yaml --auto-upgrade-db
+```

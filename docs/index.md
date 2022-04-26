@@ -15,7 +15,7 @@ and a full user guide. Visit the [Antares-Simulator Documentation][readthedocs-a
 
 ## Introduction
 
-`antares-web` is a server api interfacing Antares Simulator studies. It provides a web application to manage studies
+`antares-web` is a server api interfacing Antares Simulator solver and studies management. It provides a web application to manage studies
 adding more features to simple edition.
 
 This brings:
