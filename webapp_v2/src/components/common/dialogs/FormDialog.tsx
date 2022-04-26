@@ -66,7 +66,7 @@ function FormDialog(props: FormDialogProps) {
 
       return onSubmit({ values: data, modifiedValues: dirtyValues }, event);
     })().catch((error) => {
-      enqueueErrorSnackbar(t("main:form.submitError"), error);
+      enqueueErrorSnackbar(t("main:form.submit.error"), error);
     });
   };
 

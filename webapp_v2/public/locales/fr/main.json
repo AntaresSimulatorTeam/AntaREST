@@ -47,6 +47,9 @@
   "secondsSymbol": "secondes",
   "loading": "Chargement",
   "logoutModalMessage": "Êtes vous sûr de vouloir vous déconnecter ?",
-  "date": "Date"
-  "form.submitError": "Erreur lors de la soumission"
+  "date": "Date",
+  "form.submit.error": "Erreur lors de la soumission",
+  "form.field.required": "Champ requis",
+  "form.field.minLength": "{{0}} caractère(s) minimum",
+  "form.field.notAllowedValue": "Valeur non autorisée"
 }

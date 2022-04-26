@@ -2,9 +2,9 @@
 import { Moment } from "moment";
 import { ReactNode } from "react";
 
-export type IDType = number | string;
+export type IdType = number | string;
 
-export interface IdentityDTO<T extends IDType = string> {
+export interface IdentityDTO<T extends IdType = string> {
   id: T;
   name: string;
 }
@@ -29,7 +29,7 @@ export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
 export interface GenericInfo {
-  id: IDType;
+  id: IdType;
   name: string;
 }
 
@@ -168,6 +168,12 @@ export interface UserRoleDTO extends IdentityDTO<number> {
 }
 
 export type GroupDTO = IdentityDTO;
+
+export interface RoleCreationReturnDTO {
+  group: GroupDTO;
+  identity: UserDTO;
+  type: RoleType;
+}
 
 export interface JWTGroup {
   id: string;

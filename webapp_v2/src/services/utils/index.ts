@@ -1,6 +1,7 @@
 import moment from "moment";
 import debug from "debug";
 import { TFunction } from "react-i18next";
+import i18n from "i18next";
 import {
   StudyMetadataDTO,
   StudyMetadata,
@@ -72,21 +73,16 @@ export const isGroupAdmin = (user: UserInfo): boolean => {
 export const roleToString = (role: RoleType): string => {
   switch (role) {
     case RoleType.ADMIN:
-      return "settings:adminRole";
-
+      return i18n.t("settings:adminRole");
     case RoleType.RUNNER:
-      return "settings:runnerRole";
-
+      return i18n.t("settings:runnerRole");
     case RoleType.WRITER:
-      return "settings:writerRole";
-
+      return i18n.t("settings:writerRole");
     case RoleType.READER:
-      return "settings:readerRole";
-
+      return i18n.t("settings:readerRole");
     default:
-      break;
+      return "";
   }
-  return "";
 };
 
 export const hasAuthorization = (
