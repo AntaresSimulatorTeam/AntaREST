@@ -5,14 +5,12 @@ import {
   DialogContentText,
   DialogProps,
   DialogTitle,
-  IconButton,
   styled,
   experimental_sx as sx,
 } from "@mui/material";
 import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
 import * as R from "ramda";
 
 /**
@@ -20,19 +18,19 @@ import * as R from "ramda";
  */
 
 enum Alert {
-  "success",
-  "error",
-  "warning",
-  "info",
+  success,
+  error,
+  warning,
+  info,
 }
 
+type AlertValues = keyof typeof Alert;
+
 export interface BasicDialogProps extends DialogProps {
-  open: boolean;
   title?: string;
   titleIcon?: ElementType<SvgIconComponent>;
   actions?: ReactNode;
-  alert?: keyof typeof Alert;
-  noCloseIcon?: boolean;
+  alert?: AlertValues;
 }
 
 /**
@@ -41,7 +39,7 @@ export interface BasicDialogProps extends DialogProps {
 
 const AlertBorder = styled("span", {
   shouldForwardProp: (prop: string) => !prop.startsWith("$"),
-})<{ $type: keyof typeof Alert }>(({ $type }) =>
+})<{ $type: AlertValues }>(({ $type }) =>
   sx({
     position: "absolute",
     top: 0,
@@ -61,23 +59,14 @@ const AlertBorder = styled("span", {
  */
 
 function BasicDialog(props: BasicDialogProps) {
-  const {
-    title,
-    titleIcon,
-    children,
-    actions,
-    alert,
-    noCloseIcon,
-    ...dialogProps
-  } = props;
-  const { onClose } = dialogProps;
+  const { title, titleIcon, children, actions, alert, ...dialogProps } = props;
   const TitleIcon = titleIcon as SvgIconComponent;
 
   return (
     <Dialog {...dialogProps}>
       {alert && <AlertBorder $type={alert} />}
-      {(title || TitleIcon || onClose) && (
-        <DialogTitle sx={{ mr: onClose ? 4 : 0 }}>
+      {(title || TitleIcon) && (
+        <DialogTitle>
           {TitleIcon && (
             <TitleIcon
               fontSize="large"
@@ -88,28 +77,15 @@ function BasicDialog(props: BasicDialogProps) {
             />
           )}
           {title}
-          {onClose && !noCloseIcon && (
-            <IconButton
-              onClick={onClose as () => void}
-              sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.grey[500],
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          )}
         </DialogTitle>
       )}
-      {RA.isString(children) ? (
-        <DialogContent>
+      <DialogContent>
+        {RA.isString(children) ? (
           <DialogContentText>{children}</DialogContentText>
-        </DialogContent>
-      ) : (
-        children
-      )}
+        ) : (
+          children
+        )}
+      </DialogContent>
       {actions && <DialogActions>{actions}</DialogActions>}
     </Dialog>
   );
@@ -120,7 +96,6 @@ BasicDialog.defaultProps = {
   titleIcon: null,
   actions: null,
   alert: false,
-  noCloseIcon: false,
 };
 
 export default BasicDialog;

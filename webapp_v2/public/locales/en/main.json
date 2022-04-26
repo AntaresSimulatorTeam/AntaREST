@@ -48,4 +48,5 @@
   "loading": "Loading",
   "logoutModalMessage": "Are you sure you want to logout ?",
   "date": "Date"
+  "form.submitError": "Error while submitting"
 }

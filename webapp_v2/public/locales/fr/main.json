@@ -48,4 +48,5 @@
   "loading": "Chargement",
   "logoutModalMessage": "Êtes vous sûr de vouloir vous déconnecter ?",
   "date": "Date"
+  "form.submitError": "Erreur lors de la soumission"
 }

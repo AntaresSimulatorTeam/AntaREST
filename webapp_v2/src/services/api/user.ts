@@ -9,6 +9,8 @@ import {
   BotCreateDTO,
   BotDetailsDTO,
   BotDTO,
+  RoleCreationReturnDTO,
+  UserDetailsDTO,
 } from "../../common/types";
 
 ////////////////////////////////////////////////////////////////
@@ -19,17 +21,21 @@ interface GetUserParams {
   details: boolean;
 }
 
-export const getUsers = async <T extends UserDTO>(
-  params?: GetUserParams
-): Promise<Array<T>> => {
+type UserTypeFromParams<T extends GetUserParams> = T["details"] extends true
+  ? UserDetailsDTO
+  : UserDTO;
+
+export const getUsers = async <T extends GetUserParams>(
+  params?: T
+): Promise<Array<UserTypeFromParams<T>>> => {
   const res = await client.get("/v1/users", { params });
   return res.data;
 };
 
-export const getUser = async <T extends UserDTO>(
+export const getUser = async <T extends GetUserParams>(
   id: number,
-  params?: GetUserParams
-): Promise<T> => {
+  params?: T
+): Promise<UserTypeFromParams<T>> => {
   const res = await client.get(`/v1/users/${id}`, { params });
   return res.data;
 };
@@ -40,6 +46,15 @@ export const createNewUser = async (
 ): Promise<UserDTO> => {
   const data = { name, password };
   const res = await client.post("/v1/users", data);
+  return res.data;
+};
+
+// TODO: throw a 422 error (Unprocessable Entity)
+export const updateUser = async (
+  id: number,
+  name: string
+): Promise<UserDTO> => {
+  const res = await client.put(`/v1/users/${id}`, { name });
   return res.data;
 };
 
