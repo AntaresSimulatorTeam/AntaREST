@@ -1,21 +1,17 @@
-import { useRef, useState } from "react";
-import { Button, LinearProgress } from "@mui/material";
-import { useForm } from "react-hook-form";
+import { useCallback, useState } from "react";
+import { AxiosError } from "axios";
+import { Box, LinearProgress, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
-import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import Dropzone from "react-dropzone";
+import { useSnackbar } from "notistack";
 import { getStudyMetadata, importStudy } from "../../services/api/study";
 import { addStudies } from "../../store/study";
 import { StudyMetadata } from "../../common/types";
 import { addUpload, updateUpload, completeUpload } from "../../store/upload";
 import { AppState } from "../../store/reducers";
-
-const logErr = debug("antares:createstudyform:error");
-
-interface Inputs {
-  study: FileList;
-}
+import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const mapState = (state: AppState) => ({ uploads: state.upload.uploads });
 
@@ -29,69 +25,92 @@ const mapDispatch = {
 
 const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
-type PropTypes = PropsFromRedux;
+type PropTypes = PropsFromRedux & BasicDialogProps;
 
 function ImportStudyForm(props: PropTypes) {
+  const {
+    open,
+    onClose,
+    addStudy,
+    createUpload,
+    updateUploadCompletion,
+    endUpload,
+  } = props;
   const [t] = useTranslation();
-  const { addStudy, createUpload, updateUploadCompletion, endUpload } = props;
-  const { register, handleSubmit } = useForm<Inputs>();
   const [uploadProgress, setUploadProgress] = useState<number>();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
 
-  const onSubmit = async (data: Inputs) => {
-    if (data.study && data.study.length === 1) {
-      const uploadId = createUpload("Study import");
-      try {
-        const sid = await importStudy(data.study[0], (completion) => {
-          updateUploadCompletion(uploadId, completion);
-          setUploadProgress(completion);
-        });
-        const metadata = await getStudyMetadata(sid);
-        addStudy(metadata);
-      } catch (e) {
-        logErr("Failed to import study", data.study, e);
-      } finally {
-        setUploadProgress(undefined);
-        endUpload(uploadId);
+  const onDrop = useCallback(
+    async (acceptedFiles: Array<File>) => {
+      const fileToUpload = acceptedFiles.pop();
+      if (fileToUpload) {
+        const uploadId = createUpload("Study import");
+        try {
+          const sid = await importStudy(fileToUpload, (completion) => {
+            updateUploadCompletion(uploadId, completion);
+            setUploadProgress(completion);
+          });
+          const metadata = await getStudyMetadata(sid);
+          addStudy(metadata);
+          enqueueSnackbar(
+            t("studymanager:importsuccess", { uploadFile: fileToUpload.name }),
+            {
+              variant: "success",
+            }
+          );
+          (onClose as () => void)?.();
+        } catch (e) {
+          enqueueErrorSnackbar(
+            t("studymanager:importfailure", {
+              uploadFile: fileToUpload.name,
+            }),
+            e as AxiosError
+          );
+        } finally {
+          setUploadProgress(undefined);
+          endUpload(uploadId);
+        }
       }
-    }
-  };
-
-  const onButtonClick = () => {
-    if (inputRef.current) {
-      inputRef.current.click();
-    }
-  };
+    },
+    [
+      addStudy,
+      createUpload,
+      endUpload,
+      enqueueErrorSnackbar,
+      enqueueSnackbar,
+      t,
+      onClose,
+      updateUploadCompletion,
+    ]
+  );
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Button
-        variant="outlined"
-        type="submit"
-        color="primary"
-        startIcon={<GetAppOutlinedIcon />}
-        onClick={onButtonClick}
-      >
-        {t("main:import")}
-      </Button>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <input
-        style={{ display: "none" }}
-        type="file"
-        accept="application/zip"
-        {...register("study", { required: true })}
-        ref={(e) => {
-          inputRef.current = e;
-        }}
-      />
-      {uploadProgress && (
-        <LinearProgress
-          style={{ flexGrow: 1 }}
-          variant="determinate"
-          value={uploadProgress}
-        />
-      )}
-    </form>
+    <BasicDialog
+      open={open}
+      onClose={uploadProgress !== undefined ? undefined : onClose}
+      title={t("studymanager:importnewstudy")}
+    >
+      <Box sx={{ p: 2 }}>
+        {uploadProgress !== undefined ? (
+          <LinearProgress
+            variant={uploadProgress > 2 ? "determinate" : "indeterminate"}
+            value={uploadProgress}
+          />
+        ) : (
+          <Dropzone onDrop={(acceptedFiles) => onDrop(acceptedFiles)}>
+            {({ getRootProps, getInputProps }) => (
+              <Paper sx={{ border: "1px dashed grey", p: 4 }}>
+                <div {...getRootProps()}>
+                  <input {...getInputProps()} />
+                  <Typography>{t("studymanager:importhint")}</Typography>
+                </div>
+              </Paper>
+            )}
+          </Dropzone>
+        )}
+      </Box>
+    </BasicDialog>
   );
 }
 
