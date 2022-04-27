@@ -3,12 +3,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-import ImportStudy from "./ImportStudy";
+import ImportStudy from "./ImportStudyDialog";
 import CreateStudyModal from "./CreateStudyModal";
 
 function HeaderRight() {
-  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
-  const [openImportModal, setOpenImportModal] = useState<boolean>(false);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openImportModal, setOpenImportModal] = useState(false);
   const [t] = useTranslation();
 
   return (

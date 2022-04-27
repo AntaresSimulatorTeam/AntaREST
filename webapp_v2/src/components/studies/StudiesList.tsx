@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { debounce } from "lodash";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
@@ -238,12 +238,16 @@ function StudiesList(props: PropTypes) {
     setFolderList(folder.split("/"));
   }, [folder]);
 
-  const updateLastScroll = debounce(
-    (scrollProp: GridOnScrollProps) => {
-      updateScroll(scrollProp.scrollTop);
-    },
-    400,
-    { trailing: true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateLastScroll = useCallback(
+    debounce(
+      (scrollProp: GridOnScrollProps) => {
+        updateScroll(scrollProp.scrollTop);
+      },
+      400,
+      { trailing: true }
+    ),
+    [updateScroll]
   );
 
   return (
