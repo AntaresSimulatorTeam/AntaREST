@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import { debounce } from "lodash";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
 import {
@@ -24,7 +25,12 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { areEqual, FixedSizeGrid, GridChildComponentProps } from "react-window";
+import {
+  areEqual,
+  FixedSizeGrid,
+  GridChildComponentProps,
+  GridOnScrollProps,
+} from "react-window";
 import {
   GenericInfo,
   StudyMetadata,
@@ -39,7 +45,7 @@ import {
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
 import { AppState } from "../../store/reducers";
-import { removeStudies } from "../../store/study";
+import { removeStudies, updateScrollPosition } from "../../store/study";
 import {
   deleteStudy as callDeleteStudy,
   copyStudy as callCopyStudy,
@@ -66,7 +72,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
     importStudy,
     onLaunchClick,
     columnCount,
-    itemWidth,
+    columnWidth,
     favorite,
     onFavoriteClick,
     deleteStudy,
@@ -79,7 +85,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
       <div style={{ display: "flex", justifyContent: "center", ...style }}>
         <StudyCard
           study={study}
-          width={itemWidth}
+          width={columnWidth}
           favorite={favorite.includes(study.id)}
           onLaunchClick={() => onLaunchClick(study)}
           onFavoriteClick={onFavoriteClick}
@@ -100,6 +106,7 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = {
   removeStudy: (sid: string) => removeStudies([sid]),
+  updateScroll: updateScrollPosition,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -126,6 +133,8 @@ function StudiesList(props: PropTypes) {
     setSortItem,
     onFavoriteClick,
     removeStudy,
+    updateScroll,
+    scrollPosition,
     refresh,
   } = props;
   const [t] = useTranslation();
@@ -228,6 +237,14 @@ function StudiesList(props: PropTypes) {
   useEffect(() => {
     setFolderList(folder.split("/"));
   }, [folder]);
+
+  const updateLastScroll = debounce(
+    (scrollProp: GridOnScrollProps) => {
+      updateScroll(scrollProp.scrollTop);
+    },
+    400,
+    { trailing: true }
+  );
 
   return (
     <Box
@@ -390,13 +407,15 @@ function StudiesList(props: PropTypes) {
         <AutoSizer>
           {({ height, width }) => {
             const paddedWidth = width - 20;
-            const itemWidth = paddedWidth / Math.round(paddedWidth / 400);
-            const columnCount = Math.floor(paddedWidth / itemWidth);
+            const columnWidth = paddedWidth / Math.round(paddedWidth / 400);
+            const columnCount = Math.floor(paddedWidth / columnWidth);
             return (
               <StyledGrid
                 columnCount={columnCount}
-                columnWidth={itemWidth}
+                columnWidth={columnWidth}
                 height={height}
+                initialScrollTop={scrollPosition}
+                onScroll={updateLastScroll}
                 rowCount={Math.ceil(studies.length / columnCount)}
                 rowHeight={260}
                 width={width}
@@ -405,7 +424,7 @@ function StudiesList(props: PropTypes) {
                   importStudy,
                   onLaunchClick,
                   columnCount,
-                  itemWidth,
+                  columnWidth,
                   favorite,
                   onFavoriteClick,
                   deleteStudy,
