@@ -204,9 +204,14 @@ function Studies(props: PropTypes) {
         )
         .filter((s) =>
           currentGroup
-            ? s.groups.findIndex((elm) =>
-                (currentGroup as Array<GroupDTO>).includes(elm)
-              ) >= 0
+            ? s.groups
+                .map((g) => g.id)
+                .findIndex(
+                  (elm) =>
+                    (currentGroup as Array<GroupDTO>).findIndex(
+                      (g) => g.id === elm
+                    ) >= 0
+                ) >= 0
             : true
         )
         .filter((s) => (managedFilter ? s.managed : true)),
