@@ -201,7 +201,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             flexWrap="nowrap"
             boxSizing="border-box"
           >
-            <NavLink to={navigation[0].link}>
+            <NavLink to="/">
               <img
                 src={logo}
                 alt="logo"
@@ -225,7 +225,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
           flex={1}
           justifyContent="space-between"
           flexDirection="column"
-          sx={{ boxSizing: "border-box" }}
+          sx={{ boxSizing: "border-box", overflowY: "auto" }}
         >
           <List>
             {navigation
