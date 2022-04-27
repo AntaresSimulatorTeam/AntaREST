@@ -1,18 +1,10 @@
-import Box from "@mui/material/Box";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  StepConnector,
-  stepConnectorClasses,
-  StepIconProps,
-  styled,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { StepIconProps, Tooltip, Typography } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,29 +17,16 @@ import ConfirmationModal from "../../../../common/ConfirmationModal";
 import { killStudy } from "../../../../../services/api/study";
 import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import {
+  CancelContainer,
+  JobRoot,
+  QontoConnector,
+  QontoStepIconRoot,
+  StepLabelRoot,
+  StepLabelRow,
+} from "./style";
 
-const QontoConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.disabled}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      height: "auto",
-    },
-  },
-}));
-
-const QontoStepIconRoot = styled("div")(({ theme }) => ({
-  color: theme.palette.mode === "dark" ? theme.palette.grey[700] : "#eaeaf0",
-  display: "flex",
-  width: "24px",
-  justifyContent: "center",
-  alignItems: "center",
-  "& .QontoStepIcon-inprogress": {
-    width: 16,
-    height: 16,
-    color: theme.palette.primary.main,
-  },
-}));
-
-const ColorStatus = {
+export const ColorStatus = {
   running: "warning.main",
   pending: "grey.400",
   success: "success.main",
@@ -113,18 +92,7 @@ export default function VerticalLinearStepper(props: Props) {
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        flex: 1,
-        display: "flex",
-        justifyContent: jobs.length > 0 ? "flex-start" : "center",
-        alignItems: jobs.length > 0 ? "flex-start" : "center",
-        overflowX: "hidden",
-        overflowY: "auto",
-        ...scrollbarStyle,
-      }}
-    >
+    <JobRoot jobLength={jobs.length} sx={{ ...scrollbarStyle }}>
       <Stepper
         activeStep={-1}
         orientation="vertical"
@@ -144,18 +112,8 @@ export default function VerticalLinearStepper(props: Props) {
                 mt: 1,
               }}
             >
-              <Box
-                width="100%"
-                display="flex"
-                flexDirection="column"
-                justifyContent="flex-start"
-              >
-                <Box
-                  width="100%"
-                  display="flex"
-                  justifyContent="flex-start"
-                  boxSizing="border-box"
-                >
+              <StepLabelRoot>
+                <StepLabelRow>
                   <Typography
                     sx={{
                       height: "auto",
@@ -171,22 +129,9 @@ export default function VerticalLinearStepper(props: Props) {
                         convertUTCToLocalTime(job.completionDate)
                       ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
                   </Typography>
-                </Box>
-                <Box
-                  width="100%"
-                  display="flex"
-                  justifyContent="flex-start"
-                  mt={0.5}
-                >
-                  {job.outputId}
-                </Box>
-                <Box
-                  width="100%"
-                  display="flex"
-                  justifyContent="flex-start"
-                  py={1}
-                  boxSizing="border-box"
-                >
+                </StepLabelRow>
+                <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
+                <StepLabelRow py={1}>
                   <Tooltip title={t("singlestudy:copyJobId") as string}>
                     <ContentCopyIcon
                       onClick={() => copyId(job.id)}
@@ -201,15 +146,8 @@ export default function VerticalLinearStepper(props: Props) {
                     />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
-                  {job.status && (
-                    <Box
-                      flexGrow={1}
-                      height="30px"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="flex-end"
-                      py={1}
-                    >
+                  {job.status === "running" && (
+                    <CancelContainer>
                       <Tooltip title={t("singlestudy:killStudy") as string}>
                         <BlockIcon
                           onClick={() => openConfirmModal(job.id)}
@@ -222,10 +160,10 @@ export default function VerticalLinearStepper(props: Props) {
                           }}
                         />
                       </Tooltip>
-                    </Box>
+                    </CancelContainer>
                   )}
-                </Box>
-              </Box>
+                </StepLabelRow>
+              </StepLabelRoot>
             </StepLabel>
           </Step>
         ))}
@@ -238,6 +176,6 @@ export default function VerticalLinearStepper(props: Props) {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </Box>
+    </JobRoot>
   );
 }

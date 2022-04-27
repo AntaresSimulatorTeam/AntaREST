@@ -36,5 +36,6 @@
   "taskFailed": "Error: Task failed",
   "nameEmptyError": "Invalid input, name is empty",
   "noCommands": "Command list is empty",
-  "newCommandButton": "New command"
+  "newCommandButton": "New command",
+  "commands": "Commands"
 }

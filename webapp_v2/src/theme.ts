@@ -8,6 +8,8 @@ export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
 
+export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
+
 export const scrollbarStyle = {
   "&::-webkit-scrollbar": {
     width: "7px",
@@ -18,7 +20,6 @@ export const scrollbarStyle = {
   },
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: "secondary.main",
-    outline: "1px solid slategrey",
   },
 };
 
