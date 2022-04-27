@@ -11,7 +11,15 @@ function SimpleLoader(props: PropTypes) {
   const [t] = useTranslation();
   const { progress, message, color } = props;
   return (
-    <>
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      position="relative"
+      width="100%"
+      height="100%"
+      zIndex={999}
+    >
       <Box
         display="flex"
         alignItems="center"
@@ -49,7 +57,7 @@ function SimpleLoader(props: PropTypes) {
         zIndex={998}
         sx={{ opacity: 0.9, bgcolor: color }}
       />
-    </>
+    </Box>
   );
 }
 
