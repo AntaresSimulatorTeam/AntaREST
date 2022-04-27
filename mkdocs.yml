@@ -35,8 +35,11 @@ nav:
     - 'Variant manager': 'user-guide/2-variant_manager.md'
   - 'Build':
     - 'Introduction': 'install/0-INSTALL.md'
+    - 'Configuration': 'install/1-CONFIG.md'
+    - 'Deployment': 'install/2-DEPLOY.md'
   - 'Develop':
     - 'Introduction': 'architecture/0-introduction.md'
+    - 'Database management': 'architecture/1-database.md'
     - 'Roadmap': 'architecture/5-roadmap.md'
   - 'Antares ecosystem' : 'https://antares-doc.readthedocs.io'
   - 'Changelog': 'CHANGELOG.md'

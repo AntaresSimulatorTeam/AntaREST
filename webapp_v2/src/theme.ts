@@ -9,6 +9,7 @@ export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
 
 const secondaryMainColor = "#00B2FF";
+export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
 export const scrollbarStyle = {
   "&::-webkit-scrollbar": {
@@ -20,7 +21,6 @@ export const scrollbarStyle = {
   },
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: secondaryMainColor,
-    outline: "1px solid slategrey",
   },
 };
 

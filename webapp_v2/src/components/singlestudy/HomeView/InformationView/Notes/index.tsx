@@ -179,7 +179,8 @@ export default function Notes(props: Props) {
             .map((elm) => Object.keys(elm.links).length)
             .reduce(
               (prevValue: number, currentValue: number) =>
-                prevValue + currentValue
+                prevValue + currentValue,
+              0
             );
           setNbAreas(areas.length);
           setNbLinks(links);
