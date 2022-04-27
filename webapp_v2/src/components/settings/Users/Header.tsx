@@ -2,7 +2,7 @@ import { Box, Button, InputAdornment, TextField } from "@mui/material";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { useTranslation } from "react-i18next";
 import SearchIcon from "@mui/icons-material/Search";
-import { ChangeEvent, useState } from "react";
+import { useState } from "react";
 import CreateUserDialog from "./dialog/CreateUserDialog";
 import { UserDetailsDTO } from "../../../common/types";
 

@@ -2,6 +2,7 @@ import moment from "moment";
 import debug from "debug";
 import { TFunction } from "react-i18next";
 import i18n from "i18next";
+import * as R from "ramda";
 import {
   StudyMetadataDTO,
   StudyMetadata,
@@ -252,6 +253,10 @@ export const rgbToHsl = (rgbStr: string): Array<number> => {
   l = +(l * 100).toFixed(1);
 
   return [h, s, l];
+};
+
+export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
+  return R.sortBy<T>(R.compose(R.toLower, R.prop("name")), list);
 };
 
 export default {};

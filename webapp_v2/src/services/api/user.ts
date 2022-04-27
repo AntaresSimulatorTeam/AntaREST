@@ -49,15 +49,6 @@ export const createUser = async (
   return res.data;
 };
 
-// TODO: throw a 422 error (Unprocessable Entity)
-export const updateUser = async (
-  id: number,
-  name: string
-): Promise<UserDTO> => {
-  const res = await client.put(`/v1/users/${id}`, { name });
-  return res.data;
-};
-
 export const deleteUser = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/users/${id}`);
   return res.data;

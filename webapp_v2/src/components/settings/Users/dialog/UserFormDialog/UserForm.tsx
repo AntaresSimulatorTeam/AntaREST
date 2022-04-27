@@ -24,14 +24,10 @@ import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import * as RA from "ramda-adjunct";
-import {
-  RESERVED_GROUP_NAMES,
-  RESERVED_USER_NAMES,
-  sortByName,
-} from "../../utils";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES } from "../../utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { GroupDTO, RoleType } from "../../../../../common/types";
-import { roleToString } from "../../../../../services/utils";
+import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../services/api/user";
 import { UserFormDialogProps } from ".";

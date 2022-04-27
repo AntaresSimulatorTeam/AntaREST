@@ -1,4 +1,4 @@
-import { Box, DialogContentText, Typography } from "@mui/material";
+import { DialogContentText } from "@mui/material";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../common/dialogs/FormDialog";
@@ -9,12 +9,7 @@ import UserForm from "./UserForm";
  * Types
  */
 
-export interface UserFormDialogProps {
-  open: FormDialogProps["open"];
-  onSubmit: FormDialogProps["onSubmit"];
-  onCancel: FormDialogProps["onCancel"];
-  title: FormDialogProps["title"];
-  titleIcon: FormDialogProps["titleIcon"];
+export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {
   defaultValues?: {
     username?: string;
     password?: string;
