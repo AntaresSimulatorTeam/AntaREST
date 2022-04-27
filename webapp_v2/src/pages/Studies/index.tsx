@@ -309,7 +309,9 @@ function Studies(props: PropTypes) {
       );
     }
     applyFilter();
-  }, [applyFilter, currentFavorite, studies]);
+    // skipping currentFavorite to prevent the loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyFilter, studies]);
 
   return (
     <RootPage
