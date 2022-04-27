@@ -29,7 +29,7 @@ from antarest.login.model import (
     BotDTO,
     BotIdentityDTO,
     RoleDetailDTO,
-    UserGroup,
+    GroupDetailDTO,
     IdentityDTO,
 )
 from antarest.login.service import LoginService
@@ -213,7 +213,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get(
         "/groups/{id}",
         tags=[APITag.users],
-        response_model=Union[UserGroup, GroupDTO],  # type: ignore
+        response_model=Union[GroupDetailDTO, GroupDTO],  # type: ignore
     )
     def groups_get_id(
         id: str,

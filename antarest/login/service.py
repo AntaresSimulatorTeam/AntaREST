@@ -24,7 +24,7 @@ from antarest.login.model import (
     RoleDTO,
     RoleCreationDTO,
     BotIdentityDTO,
-    UserGroup,
+    GroupDetailDTO,
     UserRoleDTO,
     GroupDTO,
     UserInfo,
@@ -293,7 +293,7 @@ class LoginService:
 
     def get_group_info(
         self, id: str, params: RequestParameters
-    ) -> Optional[UserGroup]:
+    ) -> Optional[GroupDetailDTO]:
         """
         Get group.
         Permission: SADMIN, GADMIN (own group)
@@ -315,8 +315,8 @@ class LoginService:
                     user_list.append(
                         UserRoleDTO(id=user.id, name=user.name, role=role.type)
                     )
-            return UserGroup(
-                group=GroupDTO(id=group.id, name=group.name), users=user_list
+            return GroupDetailDTO(
+                id=group.id, name=group.name, users=user_list
             )
         else:
             logger.error(
