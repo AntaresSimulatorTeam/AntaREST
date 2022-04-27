@@ -15,7 +15,7 @@ import {
   styled,
   Typography,
 } from "@mui/material";
-import { CommandItem } from "../../CommandTypes";
+import { CommandItem } from "../../commandTypes";
 import CommandImportButton from "../CommandImportButton";
 import { CommandResultDTO } from "../../../../../../common/types";
 import LogModal from "../../../../../common/LogModal";
@@ -116,6 +116,7 @@ function CommandListItem({
     // setJsonData((json as any)['args']);
     const oldJson = { ...jsonData };
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setJsonData(json as any);
       await onCommandImport(index, json);
     } catch (e) {
@@ -179,7 +180,7 @@ function CommandListItem({
             onClick={() => onExpanded(index, !(expandedIndex === index))}
           >
             <Info>
-              <Typography color="primary" style={{ fontSize: "0.9em" }}>
+              <Typography style={{ fontSize: "0.9em", color: "text.primary" }}>
                 {item.action}
               </Typography>
             </Info>

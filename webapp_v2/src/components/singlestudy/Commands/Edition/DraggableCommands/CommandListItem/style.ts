@@ -7,23 +7,20 @@ export const ItemContainer = styled(Box, {
   display: "flex",
   justifyContent: "center",
   zIndex: onTopVisible ? 10000 : 9999,
-  ...(onTopVisible && {
-    transition: "1s",
-  }),
 }));
 
 export const DraggableAccorderon = styled(Accordion, {
   shouldForwardProp: (prop) => prop !== "isDragging",
 })<{ isDragging?: boolean }>(({ theme, isDragging }) => ({
   flex: 1,
-  boxSizing: "border-box", // normal
+  boxSizing: "border-box",
+  backgroundColor: "rgba(36, 207, 157, 0.05)",
   ...(isDragging
     ? {
         borderColor: theme.palette.secondary.main,
         boxShadow: `0px 0px 2px rgb(8, 58, 30), 0px 0px 10px ${theme.palette.secondary.main}`,
       }
     : {
-        border: `1px solid ${theme.palette.primary.main}`,
         margin: theme.spacing(0, 0.2),
       }),
 }));

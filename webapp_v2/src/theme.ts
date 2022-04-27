@@ -18,7 +18,6 @@ export const scrollbarStyle = {
   },
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: "secondary.main",
-    outline: "1px solid slategrey",
   },
 };
 

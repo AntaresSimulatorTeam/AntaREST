@@ -29,7 +29,6 @@ import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import FactCheckIcon from "@mui/icons-material/FactCheck";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
 import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
@@ -257,17 +256,7 @@ function NavHeader(props: PropTypes) {
               {t("main:launch")}
             </Button>
           )}
-          {isExplorer === true && (
-            <Button
-              size="small"
-              variant="outlined"
-              color="primary"
-              sx={{ width: "auto", minWidth: 0, mx: 2 }}
-            >
-              <HistoryOutlinedIcon />
-            </Button>
-          )}
-          {!isExplorer && (
+          {study && study.type === "variantstudy" && (
             <Button
               size="small"
               variant="outlined"
@@ -275,7 +264,7 @@ function NavHeader(props: PropTypes) {
               onClick={openCommands}
               sx={{ width: "auto", minWidth: 0, mx: 2 }}
             >
-              <FactCheckIcon />
+              <HistoryOutlinedIcon />
             </Button>
           )}
           <Button

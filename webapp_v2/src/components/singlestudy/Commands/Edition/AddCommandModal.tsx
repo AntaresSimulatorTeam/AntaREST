@@ -61,7 +61,7 @@ function AddCommandModal(props: PropTypes) {
             mx: 1,
             my: 2.5,
           }}
-          onChange={(event: any, newValue: string | null) =>
+          onChange={(event, newValue: string | null) =>
             setAction(newValue !== null ? newValue : CommandList[0])
           }
           renderInput={(params) => (

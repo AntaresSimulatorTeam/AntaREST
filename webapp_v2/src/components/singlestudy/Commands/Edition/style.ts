@@ -1,4 +1,4 @@
-import { Box, Button, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 
 export const Root = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -41,14 +41,6 @@ export const Body = styled(Box)(({ theme }) => ({
   padding: theme.spacing(0, 2),
 }));
 
-export const NewCommandButton = styled(Button)(({ theme }) => ({
-  border: `2px solid ${theme.palette.primary.main}`,
-  "&:hover": {
-    border: `2px solid ${theme.palette.secondary.main}`,
-    color: theme.palette.secondary.main,
-  },
-}));
-
 export const headerIconStyle = {
   width: "24px",
   height: "auto",
@@ -56,7 +48,7 @@ export const headerIconStyle = {
   color: "primary.main",
   mx: 3,
   "&:hover": {
-    color: "secondary.main",
+    color: "primary.dark",
   },
 };
 

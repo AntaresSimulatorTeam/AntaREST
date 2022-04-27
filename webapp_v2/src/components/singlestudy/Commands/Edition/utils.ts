@@ -4,7 +4,7 @@ import {
   TaskDTO,
   TaskStatus,
 } from "../../../../common/types";
-import { CommandEnum, CommandItem, JsonCommandItem } from "./CommandTypes";
+import { CommandEnum, CommandItem, JsonCommandItem } from "./commandTypes";
 
 export const CommandList = [
   CommandEnum.CREATE_AREA,
@@ -59,7 +59,9 @@ export const fromCommandDTOToJsonCommand = (
 
 function isString(json: object, name: string): boolean {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (json as any)[name] === "string" ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (json as any)[name] instanceof String
   );
 }

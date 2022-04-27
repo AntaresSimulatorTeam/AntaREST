@@ -11,7 +11,7 @@ import debug from "debug";
 import { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { Box, Button, Typography } from "@mui/material";
-import { CommandItem, JsonCommandItem } from "./CommandTypes";
+import { CommandItem, JsonCommandItem } from "./commandTypes";
 import CommandListView from "./DraggableCommands/CommandListView";
 import {
   reorder,
@@ -50,14 +50,7 @@ import {
   WsChannel,
 } from "../../../../store/websockets";
 import { getTask } from "../../../../services/api/tasks";
-import {
-  Body,
-  EditHeader,
-  Header,
-  headerIconStyle,
-  NewCommandButton,
-  Root,
-} from "./style";
+import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../common/loaders/SimpleLoader";
 import NoContent from "../../../common/NoContent";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
@@ -474,13 +467,13 @@ function EditionView(props: PropTypes) {
               <NoContent
                 title="variants:noCommands"
                 callToAction={
-                  <NewCommandButton
+                  <Button
                     color="primary"
                     variant="outlined"
                     onClick={() => setOpenAddCommandModal(true)}
                   >
                     {t("variants:newCommandButton")}
-                  </NewCommandButton>
+                  </Button>
                 }
               />
             </Box>

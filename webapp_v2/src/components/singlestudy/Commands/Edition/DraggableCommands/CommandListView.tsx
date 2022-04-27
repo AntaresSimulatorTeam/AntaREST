@@ -7,16 +7,12 @@ import {
   OnDragEndResponder,
 } from "react-beautiful-dnd";
 import { styled } from "@mui/material";
-import { CommandItem } from "../CommandTypes";
+import { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
 import { scrollbarStyle } from "../../../../../theme";
 
 const StyledList = styled(FixedSizeList)(({ theme }) => ({
   ...scrollbarStyle,
-  "&::-webkit-scrollbar-thumb": {
-    backgroundColor: theme.palette.secondary.main,
-    outline: "1px solid slategrey",
-  },
 }));
 
 const Row = React.memo((props: ListChildComponentProps) => {
@@ -90,6 +86,7 @@ function CommandListView({
   useEffect(() => {
     if (listRef && listRef !== null && listRef.current) {
       if (generationIndex >= 0)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (listRef.current as any).scrollToItem(generationIndex, "smart");
     }
   }, [generationIndex]);

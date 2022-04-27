@@ -43,8 +43,7 @@ NoContent.defaultProps = {
   title: "main:noContent",
   icon: (
     <LiveHelpRoundedIcon
-      color="primary"
-      style={{ height: "100px", width: "100%" }}
+      sx={{ height: "100px", width: "100%", color: "text.primary" }}
     />
   ),
   callToAction: <div />,
