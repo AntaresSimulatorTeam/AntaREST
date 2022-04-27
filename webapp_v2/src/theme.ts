@@ -8,6 +8,7 @@ export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
 
+const secondaryMainColor = "#00B2FF";
 export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
 export const scrollbarStyle = {
@@ -19,7 +20,7 @@ export const scrollbarStyle = {
     boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
   },
   "&::-webkit-scrollbar-thumb": {
-    backgroundColor: "secondary.main",
+    backgroundColor: secondaryMainColor,
   },
 };
 
@@ -48,6 +49,13 @@ declare module "@mui/material/styles" {
 
 const theme = createTheme({
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        ul: {
+          ...scrollbarStyle,
+        },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {
@@ -100,7 +108,6 @@ const theme = createTheme({
       ],
     },
   },
-
   typography: {
     fontFamily: "'Inter', sans-serif",
   },
@@ -117,7 +124,7 @@ const theme = createTheme({
     },
     secondary: {
       dark: "#0092D0",
-      main: "#00B2FF",
+      main: secondaryMainColor,
       light: "#77CFF5",
       contrast: "rgba(30, 30, 30, 0.87)",
       containedHoverBackground:

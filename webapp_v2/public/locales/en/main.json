@@ -47,5 +47,9 @@
   "secondsSymbol": "seconds",
   "loading": "Loading",
   "logoutModalMessage": "Are you sure you want to logout ?",
-  "date": "Date"
+  "date": "Date",
+  "form.submit.error": "Error while submitting",
+  "form.field.required": "Field required",
+  "form.field.minLength": "{{0}} character(s) minimum",
+  "form.field.notAllowedValue": "Not allowed value"
 }

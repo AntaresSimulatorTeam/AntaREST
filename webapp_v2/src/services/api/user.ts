@@ -9,6 +9,8 @@ import {
   BotCreateDTO,
   BotDetailsDTO,
   BotDTO,
+  RoleCreationReturnDTO,
+  UserDetailsDTO,
 } from "../../common/types";
 
 ////////////////////////////////////////////////////////////////
@@ -19,22 +21,26 @@ interface GetUserParams {
   details: boolean;
 }
 
-export const getUsers = async <T extends UserDTO>(
-  params?: GetUserParams
-): Promise<Array<T>> => {
+type UserTypeFromParams<T extends GetUserParams> = T["details"] extends true
+  ? UserDetailsDTO
+  : UserDTO;
+
+export const getUsers = async <T extends GetUserParams>(
+  params?: T
+): Promise<Array<UserTypeFromParams<T>>> => {
   const res = await client.get("/v1/users", { params });
   return res.data;
 };
 
-export const getUser = async <T extends UserDTO>(
+export const getUser = async <T extends GetUserParams>(
   id: number,
-  params?: GetUserParams
-): Promise<T> => {
+  params?: T
+): Promise<UserTypeFromParams<T>> => {
   const res = await client.get(`/v1/users/${id}`, { params });
   return res.data;
 };
 
-export const createNewUser = async (
+export const createUser = async (
   name: string,
   password: string
 ): Promise<UserDTO> => {
@@ -95,7 +101,9 @@ export const getAllRolesInGroup = async (
   return res.data;
 };
 
-export const createRole = async (role: RoleCreationDTO): Promise<void> => {
+export const createRole = async (
+  role: RoleCreationDTO
+): Promise<RoleCreationReturnDTO> => {
   const data = role;
   const res = await client.post("/v1/roles", data);
   return res.data;

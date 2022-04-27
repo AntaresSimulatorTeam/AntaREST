@@ -1,7 +1,5 @@
 import { Button, ButtonProps } from "@mui/material";
-import { MouseEventHandler } from "react";
 import { useTranslation } from "react-i18next";
-import * as RA from "ramda-adjunct";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 /**
@@ -14,8 +12,8 @@ export interface ConfirmationDialogProps
   confirmButtonText?: string;
   cancelButtonProps?: Omit<ButtonProps, "onClick">;
   confirmButtonProps?: Omit<ButtonProps, "onClick">;
-  onConfirm: MouseEventHandler<HTMLButtonElement>;
-  onCancel: MouseEventHandler<HTMLButtonElement>;
+  onConfirm: VoidFunction;
+  onCancel: VoidFunction;
 }
 
 /**
@@ -24,13 +22,13 @@ export interface ConfirmationDialogProps
 
 function ConfirmationDialog(props: ConfirmationDialogProps) {
   const {
-    title,
     cancelButtonText,
     confirmButtonText,
     cancelButtonProps,
     confirmButtonProps,
     onConfirm,
     onCancel,
+    onClose,
     ...basicDialogProps
   } = props;
 
@@ -38,11 +36,12 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
 
   return (
     <BasicDialog
-      title={RA.isUndefined(title) ? t("main:confirmationModalTitle") : title}
-      onClose={onCancel}
-      onBackdropClick={onCancel}
-      noCloseIcon
+      title={t("main:confirmationModalTitle")}
       {...basicDialogProps}
+      onClose={(...args) => {
+        onCancel();
+        onClose?.(...args);
+      }}
       actions={
         <>
           <Button autoFocus {...cancelButtonProps} onClick={onCancel}>

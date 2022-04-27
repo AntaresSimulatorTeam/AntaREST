@@ -1,9 +1,13 @@
 import SettingsIcon from "@mui/icons-material/Settings";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
-import { SyntheticEvent, useState } from "react";
+import { SyntheticEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import RootPage from "../components/common/page/RootPage";
+import Users from "../components/settings/Users";
+import { isGroupAdmin, isUserAdmin } from "../services/utils";
+import { AppState } from "../store/reducers";
 
 /**
  * Component
@@ -12,6 +16,21 @@ import RootPage from "../components/common/page/RootPage";
 function Settings() {
   const [tabValue, setTabValue] = useState("1");
   const [t] = useTranslation();
+  const authUser = useSelector((state: AppState) => state.auth.user);
+  const isAuthUserAdmin = authUser ? isUserAdmin(authUser) : false;
+  const isAuthUserInGroupAdmin = authUser ? isGroupAdmin(authUser) : false;
+
+  const tabList = useMemo(() => {
+    return [
+      isAuthUserAdmin && [t("settings:users"), () => <Users />],
+      (isAuthUserAdmin || isAuthUserInGroupAdmin) && [
+        t("settings:groups"),
+        () => "Groups",
+      ],
+      [t("settings:tokens"), () => "Tokens"],
+      isAuthUserAdmin && [t("settings:maintenance"), () => "Maintenance"],
+    ].filter(Boolean) as Array<[string, () => JSX.Element]>;
+  }, [isAuthUserAdmin, isAuthUserInGroupAdmin, t]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -39,19 +58,27 @@ function Settings() {
             }}
           >
             <TabList onChange={handleTabChange}>
-              <Tab label={t("settings:users")} value="1" />
-              <Tab label={t("settings:groups")} value="2" />
-              <Tab label={t("settings:tokens")} value="3" />
-              <Tab label={t("settings:maintenance")} value="4" />
+              {tabList.map(([label], index) => (
+                <Tab key={label} label={label} value={String(index + 1)} />
+              ))}
             </TabList>
           </Box>
         }
         hideHeaderDivider
       >
-        <TabPanel value="1" />
-        <TabPanel value="2">Groups</TabPanel>
-        <TabPanel value="3">Tokens</TabPanel>
-        <TabPanel value="4">Maintenance</TabPanel>
+        {tabList.map(([label, Element], index) => (
+          <TabPanel
+            sx={{
+              paddingTop: 0,
+              paddingBottom: 0,
+              overflow: "auto",
+            }}
+            key={label}
+            value={String(index + 1)}
+          >
+            <Element />
+          </TabPanel>
+        ))}
       </RootPage>
     </TabContext>
   );
