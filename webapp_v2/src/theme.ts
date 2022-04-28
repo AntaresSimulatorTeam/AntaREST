@@ -11,6 +11,7 @@ export const STUDIES_FILTER_WIDTH = 300;
 const secondaryMainColor = "#00B2FF";
 export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const scrollbarStyle = {
   "&::-webkit-scrollbar": {
     width: "7px",

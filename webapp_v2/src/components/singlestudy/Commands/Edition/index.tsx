@@ -52,7 +52,7 @@ import {
 import { getTask } from "../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../common/loaders/SimpleLoader";
-import NoContent from "../../../common/NoContent";
+import NoContent from "../../../common/page/NoContent";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 
 const logError = debug("antares:variantedition:error");

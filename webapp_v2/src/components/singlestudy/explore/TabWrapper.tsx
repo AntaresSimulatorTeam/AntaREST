@@ -56,7 +56,6 @@ function BasicTabs(props: Props) {
     setValue(newValue);
     navigate(tabList[newValue].path);
   };
-
   return (
     <Box
       width="100%"
