@@ -43,7 +43,27 @@ class AdequacyPatchExtension(ILauncherExtension):
         launcher_opts: Any,
     ) -> None:
         logger.info("Applying adequacy patch postprocessing script")
-        if "legacy" in launcher_opts and launcher_opts["legacy"]:
+        study = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
+            study_export_path, study_id, use_cache=False
+        )
+        user_config = study.tree.get(["user"])
+        assert_this("flowbased" in user_config)
+        adequacy_patch_config = yaml.safe_load(
+            cast(
+                bytes, study.tree.get(["user", "adequacypatch", "config.yml"])
+            )
+        )
+        assert_this("areas" in adequacy_patch_config)
+        self.prepare_study_for_adq_patch(job_id, study, adequacy_patch_config)
+
+        full_r_version = "legacy" in launcher_opts and launcher_opts["legacy"]
+        if (
+            "mode" in adequacy_patch_config
+            and adequacy_patch_config["mode"] == "legacy"
+        ):
+            full_r_version = True
+
+        if full_r_version:
             logger.info("Using legacy quadratic mode")
             post_processing_file = (
                 Path(__file__).parent
@@ -58,19 +78,6 @@ class AdequacyPatchExtension(ILauncherExtension):
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"
         )
-
-        study = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
-            study_export_path, study_id, use_cache=False
-        )
-        user_config = study.tree.get(["user"])
-        assert_this("flowbased" in user_config)
-        adequacy_patch_config = yaml.safe_load(
-            cast(
-                bytes, study.tree.get(["user", "adequacypatch", "config.yml"])
-            )
-        )
-        assert_this("areas" in adequacy_patch_config)
-        self.prepare_study_for_adq_patch(job_id, study, adequacy_patch_config)
 
     def prepare_study_for_adq_patch(
         self, job_id: str, study: FileStudy, adq_patch_config: JSON
