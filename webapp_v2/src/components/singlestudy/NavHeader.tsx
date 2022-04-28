@@ -262,7 +262,7 @@ function NavHeader(props: PropTypes) {
               variant="outlined"
               color="primary"
               onClick={openCommands}
-              sx={{ width: "auto", minWidth: 0, mx: 2 }}
+              sx={{ width: "auto", minWidth: 0, marginLeft: 2 }}
             >
               <HistoryOutlinedIcon />
             </Button>
@@ -274,7 +274,7 @@ function NavHeader(props: PropTypes) {
             id="menu-study"
             variant="outlined"
             color="primary"
-            sx={{ width: "auto", minWidth: 0, px: 0 }}
+            sx={{ width: "auto", minWidth: 0, px: 0, marginLeft: 2 }}
             onClick={handleClick}
           >
             <MoreVertIcon />

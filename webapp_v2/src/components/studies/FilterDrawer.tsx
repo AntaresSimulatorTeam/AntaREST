@@ -5,14 +5,18 @@ import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import {
+  Autocomplete,
   Button,
   Checkbox,
   Drawer,
   FormControlLabel,
   ListItem,
+  TextField,
   Typography,
   useTheme,
 } from "@mui/material";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import { STUDIES_FILTER_WIDTH } from "../../theme";
 import SelectMulti from "../common/SelectMulti";
 import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
@@ -203,18 +207,43 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <SelectMulti
-            name={t("studymanager:usersLabel")}
-            list={userList.map((elm) => ({
-              id: elm.id.toString(),
-              name: elm.name,
-            }))}
-            data={
-              currentUsers !== undefined
-                ? currentUsers.map((elm) => elm.id.toString())
-                : []
+          <Autocomplete
+            multiple
+            id="study-filter-users"
+            options={userList || []}
+            getOptionLabel={(option: UserDTO) => option.name}
+            sx={{ width: 200, m: 1 }}
+            renderOption={(props, option, { selected }) => (
+              <li {...props}>
+                <Checkbox
+                  icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                  checkedIcon={<CheckBoxIcon fontSize="small" />}
+                  style={{ marginRight: 8 }}
+                  checked={selected}
+                />
+                {option.name}
+              </li>
+            )}
+            onChange={(event, value) =>
+              setUsers(value.map((el) => el.id.toString()))
             }
-            setValue={setUsers}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="filled"
+                sx={{
+                  background: "rgba(255, 255, 255, 0.09)",
+                  borderRadius: "4px 4px 0px 0px",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+                  ".MuiIconButton-root": {
+                    backgroundColor: "#222333",
+                    padding: 0,
+                    marginTop: "2px",
+                  },
+                }}
+                label={t("studymanager:usersLabel")}
+              />
+            )}
           />
         </ListItem>
         <ListItem>

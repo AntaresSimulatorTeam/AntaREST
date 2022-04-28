@@ -288,18 +288,18 @@ function JobsListing(props: PropTypes) {
             }}
           >
             <Box
-              width="165px"
+              width="168px"
               display="flex"
-              justifyContent="flex-start"
+              justifyContent="space-between"
               alignItems="center"
             >
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(job.creationDate)}
             </Box>
             <Box
-              width="165px"
+              width="168px"
               display="flex"
-              justifyContent="flex-start"
+              justifyContent="space-between"
               alignItems="center"
             >
               {job.completionDate && (

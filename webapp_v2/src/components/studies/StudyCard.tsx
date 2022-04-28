@@ -267,13 +267,23 @@ export default function StudyCard(props: Props) {
         </Box>
       </CardContent>
       <CardActions>
-        <Button
-          size="small"
-          color="primary"
-          onClick={() => navigate(`/studies/${study.id}`)}
-        >
-          {t("studymanager:exploreButton")}
-        </Button>
+        {study.archived ? (
+          <Button
+            size="small"
+            color="primary"
+            onClick={() => onUnarchiveClick(study)}
+          >
+            {t("studymanager:unarchive")}
+          </Button>
+        ) : (
+          <Button
+            size="small"
+            color="primary"
+            onClick={() => navigate(`/studies/${study.id}`)}
+          >
+            {t("studymanager:exploreButton")}
+          </Button>
+        )}
         <Tooltip title={t("singlestudy:more") as string}>
           <Button
             size="small"

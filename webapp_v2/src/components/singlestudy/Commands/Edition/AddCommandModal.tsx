@@ -26,7 +26,7 @@ function AddCommandModal(props: PropTypes) {
       open={open}
       onClose={onClose}
       closeButtonLabel={t("main:cancelButton")}
-      actionButtonLabel={t("main:launch")}
+      actionButtonLabel={t("main:create")}
       onActionButtonClick={onSave}
       rootStyle={{
         width: "600px",

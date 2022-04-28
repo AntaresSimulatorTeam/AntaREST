@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import * as R from "ramda";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
@@ -204,9 +205,10 @@ function Studies(props: PropTypes) {
         )
         .filter((s) =>
           currentGroup
-            ? s.groups.findIndex((elm) =>
-                (currentGroup as Array<GroupDTO>).includes(elm)
-              ) >= 0
+            ? R.intersection(
+                s.groups.map(R.prop("id")),
+                currentGroup.map(R.prop("id"))
+              ).length > 0
             : true
         )
         .filter((s) => (managedFilter ? s.managed : true)),
@@ -297,19 +299,15 @@ function Studies(props: PropTypes) {
   }, [currentFavorite]);
 
   useEffect(() => {
-    if (
-      currentFavorite !== undefined &&
-      currentFavorite.length > 0 &&
-      studies.length > 0
-    ) {
-      setCurrentFavorite(
-        currentFavorite.filter((elm) =>
-          studies.map((item) => item.id).includes(elm.id as string)
-        )
-      );
-    }
+    setCurrentFavorite((prev) => {
+      if (prev && prev.length > 0) {
+        const studyIds = studies.map((item) => item.id);
+        return prev.filter((elm) => studyIds.includes(elm.id as string));
+      }
+      return prev;
+    });
     applyFilter();
-  }, [applyFilter, currentFavorite, studies]);
+  }, [applyFilter, setCurrentFavorite, studies]);
 
   return (
     <RootPage
