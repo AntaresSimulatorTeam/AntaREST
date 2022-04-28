@@ -223,7 +223,12 @@ export default function CustomizedTreeView(props: Props) {
       flexDirection="column"
       justifyContent="flex-start"
       alignItems="flex-start"
-      sx={{ width: "100%", flexGrow: 1, overflowY: "auto", ...scrollbarStyle }}
+      sx={{
+        width: "100%",
+        flexGrow: 1,
+        overflowY: "auto",
+        ...scrollbarStyle(),
+      }}
     >
       <Box
         minWidth={treeWidth / ZOOM_OUT}

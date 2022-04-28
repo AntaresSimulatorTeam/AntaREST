@@ -32,7 +32,7 @@ function SideNav(props: Props) {
       alignItems="flex-start"
       boxSizing="border-box"
       p={2}
-      sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+      sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle() }}
     >
       <Typography sx={{ color: "grey.400" }}>Favorites</Typography>
       <List sx={{ width: "100%" }}>

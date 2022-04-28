@@ -25,7 +25,7 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
       textDecoration: "underline",
     },
   },
-  ...scrollbarStyle,
+  ...scrollbarStyle(),
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: theme.palette.secondary.main,
     outline: "1px solid slategrey",

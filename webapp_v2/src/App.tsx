@@ -24,6 +24,7 @@ import BindingContraint from "./components/singlestudy/explore/Modelization/Bind
 import Links from "./components/singlestudy/explore/Modelization/Links";
 import Area from "./components/singlestudy/explore/Modelization/Area";
 import Map from "./components/singlestudy/explore/Modelization/Map";
+import DebugView from "./components/singlestudy/explore/Modelization/DebugView";
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                             path="bindingcontraint"
                             element={<BindingContraint />}
                           />
+                          <Route path="debug" element={<DebugView />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>

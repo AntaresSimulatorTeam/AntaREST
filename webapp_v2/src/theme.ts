@@ -11,7 +11,8 @@ export const STUDIES_FILTER_WIDTH = 300;
 const secondaryMainColor = "#00B2FF";
 export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
-export const scrollbarStyle = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const scrollbarStyle = (color?: string): any => ({
   "&::-webkit-scrollbar": {
     width: "7px",
     height: "7px",
@@ -20,9 +21,9 @@ export const scrollbarStyle = {
     boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
   },
   "&::-webkit-scrollbar-thumb": {
-    backgroundColor: secondaryMainColor,
+    backgroundColor: color || secondaryMainColor,
   },
-};
+});
 
 declare module "@mui/material/styles" {
   interface PaletteColor {

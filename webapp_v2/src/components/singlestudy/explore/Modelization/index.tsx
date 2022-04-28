@@ -23,6 +23,10 @@ function Modelization() {
         label: "Binding contraint",
         path: `/studies/${study?.id}/explore/modelization/bindingcontraint`,
       },
+      {
+        label: "Debug",
+        path: `/studies/${study?.id}/explore/modelization/debug`,
+      },
     ],
     [study]
   );

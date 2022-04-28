@@ -115,7 +115,7 @@ function JobTableView(props: PropType) {
           </Select>
         </FormControl>
       </Box>
-      <TableContainer sx={scrollbarStyle} component={Paper}>
+      <TableContainer sx={scrollbarStyle()} component={Paper}>
         <Table sx={{ width: "100%", height: "90%" }} aria-label="simple table">
           <TableHead>
             <TableRow

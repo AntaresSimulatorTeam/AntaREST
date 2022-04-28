@@ -51,5 +51,6 @@
   "form.submit.error": "Error while submitting",
   "form.field.required": "Field required",
   "form.field.minLength": "{{0}} character(s) minimum",
-  "form.field.notAllowedValue": "Not allowed value"
+  "form.field.notAllowedValue": "Not allowed value",
+  "underConstruction": "Page under construction"
 }

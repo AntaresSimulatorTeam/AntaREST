@@ -53,7 +53,7 @@ function HomeView(props: Props) {
         alignItems="flex-start"
         boxSizing="border-box"
         overflow="hidden"
-        sx={{ overflowX: "auto", ...scrollbarStyle }}
+        sx={{ overflowX: "auto", ...scrollbarStyle() }}
       >
         <Box
           flex={1}

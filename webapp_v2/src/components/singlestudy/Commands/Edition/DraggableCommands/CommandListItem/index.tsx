@@ -204,7 +204,7 @@ function CommandListItem({
                   />
                 )}
               </Header>
-              <JsonContainer sx={{ ...scrollbarStyle }}>
+              <JsonContainer sx={{ ...scrollbarStyle() }}>
                 <ReactJson
                   src={jsonData}
                   onEdit={!generationStatus ? updateJson : undefined}

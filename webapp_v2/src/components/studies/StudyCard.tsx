@@ -244,7 +244,7 @@ export default function StudyCard(props: Props) {
           flexWrap="wrap"
           justifyContent="flex-start"
           alignItems="center"
-          sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+          sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle() }}
         >
           <Chip
             label={study.workspace}
