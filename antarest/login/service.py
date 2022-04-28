@@ -564,33 +564,50 @@ class LoginService:
         logger.error("Can't claim JWT for user=%d", user_id)
         return None
 
-    def get_all_groups(self, params: RequestParameters) -> List[Group]:
+    def get_all_groups(
+            self, params: RequestParameters, details: Optional[bool] = False
+    ) -> List[Union[GroupDetailDTO, GroupDTO]]:
         """
         Get all groups.
         Permission: SADMIN
         Args:
             params: request parameters
+            details: get all user information, including users
 
         Returns: list of groups
 
         """
-        if not params.user:
+        if params.user:
+            group_list = []
+
+            if params.user.is_site_admin():
+                group_list = self.groups.get_all()
+            else:
+                roles_by_user = self.roles.get_all_by_user(user=params.user.id)
+
+                for role in roles_by_user:
+                    tmp = self.groups.get(role.group_id)
+                    if tmp:
+                        group_list.append(tmp)
+        else:
             logger.error(
                 "user %s has not permission to get all groups",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
 
-        if params.user.is_site_admin():
-            return self.groups.get_all()
-        else:
-            roles_by_user = self.roles.get_all_by_user(user=params.user.id)
-            groups = []
-            for role in roles_by_user:
-                tmp = self.groups.get(role.group_id)
-                if tmp:
-                    groups.append(tmp)
-            return groups
+        return (
+            [
+                grp
+                for grp in [
+                    self.get_group_info(group.id, params)
+                    for group in group_list
+                ]
+                if grp is not None
+            ]
+            if details
+            else [group.to_dto() for group in group_list]
+    )
 
     def _get_user_by_group(self, group: str) -> List[Identity]:
         roles = self.roles.get_all_by_group(group)
