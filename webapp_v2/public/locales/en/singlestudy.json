@@ -14,8 +14,10 @@
   "years": "Years",
   "type": "Type",
   "includeClusters": "Include clusters",
-  "area": "Areas",
-  "link": "Links",
+  "areas": "Areas",
+  "links": "Links",
+  "bindingconstraints": "Binding Constraints",
+  "debug": "Debug",
   "district": "Districts",
   "hourly": "Hourly",
   "daily": "Daily",
@@ -104,5 +106,8 @@
   "parentStudy": "Parent study",
   "modifiedStudySuccess": "Study {{studyname}} updated successfully",
   "modifiedStudyFailed": "Study {{studyname}} not updated",
-  "versionSource": "Version source"
+  "versionSource": "Version source",
+  "modelization": "Modelization",
+  "configuration": "Configuration",
+  "results": "Results"
 }

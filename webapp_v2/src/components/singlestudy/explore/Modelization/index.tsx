@@ -2,29 +2,34 @@
 import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../common/types";
 import TabWrapper from "../TabWrapper";
 
 function Modelization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [t] = useTranslation();
 
   const tabList = useMemo(
     () => [
-      { label: "Map", path: `/studies/${study?.id}/explore/modelization/map` },
       {
-        label: "Area",
+        label: t("singlestudy:map"),
+        path: `/studies/${study?.id}/explore/modelization/map`,
+      },
+      {
+        label: t("singlestudy:areas"),
         path: `/studies/${study?.id}/explore/modelization/area`,
       },
       {
-        label: "Links",
+        label: t("singlestudy:links"),
         path: `/studies/${study?.id}/explore/modelization/links`,
       },
       {
-        label: "Binding contraint",
+        label: t("singlestudy:bindingconstraints"),
         path: `/studies/${study?.id}/explore/modelization/bindingcontraint`,
       },
       {
-        label: "Debug",
+        label: t("singlestudy:debug"),
         path: `/studies/${study?.id}/explore/modelization/debug`,
       },
     ],

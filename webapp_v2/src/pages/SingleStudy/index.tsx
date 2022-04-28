@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { StudyMetadata, VariantTree } from "../../common/types";
 import { getStudyMetadata } from "../../services/api/study";
 import NavHeader from "../../components/singlestudy/NavHeader";
@@ -35,6 +36,7 @@ type Props = PropsFromRedux & OwnProps;
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
   const { setCurrentStudy } = props;
+  const [t] = useTranslation();
   const { isExplorer } = props;
 
   const [study, setStudy] = useState<StudyMetadata>();
@@ -45,14 +47,17 @@ function SingleStudy(props: Props) {
   const tabList = useMemo(
     () => [
       {
-        label: "Modelization",
+        label: t("singlestudy:modelization"),
         path: `/studies/${studyId}/explore/modelization`,
       },
       {
-        label: "Configuration",
+        label: t("singlestudy:configuration"),
         path: `/studies/${studyId}/explore/configuration`,
       },
-      { label: "Results", path: `/studies/${studyId}/explore/results` },
+      {
+        label: t("singlestudy:results"),
+        path: `/studies/${studyId}/explore/results`,
+      },
     ],
     [studyId]
   );

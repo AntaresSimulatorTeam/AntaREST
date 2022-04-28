@@ -422,10 +422,10 @@ function Map() {
               top="10px"
             >
               <Typography>
-                {`${nodeData.length} ${t("singlestudy:area")}`}
+                {`${nodeData.length} ${t("singlestudy:areas")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t("singlestudy:link")}`}
+                {`${linkData.length} ${t("singlestudy:links")}`}
               </Typography>
             </Box>
           </Box>
