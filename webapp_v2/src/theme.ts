@@ -12,7 +12,7 @@ const secondaryMainColor = "#00B2FF";
 export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const scrollbarStyle = (color?: string): any => ({
+export const scrollbarStyle = {
   "&::-webkit-scrollbar": {
     width: "7px",
     height: "7px",
@@ -21,9 +21,9 @@ export const scrollbarStyle = (color?: string): any => ({
     boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
   },
   "&::-webkit-scrollbar-thumb": {
-    backgroundColor: color || secondaryMainColor,
+    backgroundColor: secondaryMainColor,
   },
-});
+};
 
 declare module "@mui/material/styles" {
   interface PaletteColor {

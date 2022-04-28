@@ -154,7 +154,7 @@ function CreateStudyModal(props: PropTypes) {
         alignItems="center"
         p={2}
         boxSizing="border-box"
-        sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle() }}
+        sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
       >
         <Box
           width="100%"

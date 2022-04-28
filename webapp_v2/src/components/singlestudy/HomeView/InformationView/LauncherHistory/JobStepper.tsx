@@ -92,7 +92,7 @@ export default function VerticalLinearStepper(props: Props) {
   };
 
   return (
-    <JobRoot jobLength={jobs.length} sx={{ ...scrollbarStyle() }}>
+    <JobRoot jobLength={jobs.length} sx={{ ...scrollbarStyle }}>
       <Stepper
         activeStep={-1}
         orientation="vertical"

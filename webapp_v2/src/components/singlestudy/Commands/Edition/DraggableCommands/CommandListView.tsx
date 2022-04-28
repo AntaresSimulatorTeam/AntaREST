@@ -12,7 +12,7 @@ import CommandListItem from "./CommandListItem";
 import { scrollbarStyle } from "../../../../../theme";
 
 const StyledList = styled(FixedSizeList)(({ theme }) => ({
-  ...scrollbarStyle(theme.palette.secondary.main),
+  ...scrollbarStyle,
 }));
 
 const Row = React.memo((props: ListChildComponentProps) => {

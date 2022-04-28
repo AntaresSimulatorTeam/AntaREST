@@ -31,7 +31,7 @@ export const Content = styled(Paper)(({ theme }) => ({
   alignItems: "flex-start",
   overflow: "auto",
   position: "relative",
-  ...scrollbarStyle(theme.palette.secondary.main),
+  ...scrollbarStyle,
 }));
 
 export default {};

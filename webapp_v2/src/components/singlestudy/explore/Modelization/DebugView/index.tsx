@@ -69,7 +69,7 @@ function DebugView() {
             height="100%"
             flex="0 0 30%"
             overflow="auto"
-            sx={{ ...scrollbarStyle() }}
+            sx={{ ...scrollbarStyle }}
           >
             <Box p={1}>
               {studyData && (

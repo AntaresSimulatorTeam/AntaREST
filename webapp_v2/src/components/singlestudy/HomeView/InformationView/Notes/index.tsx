@@ -199,7 +199,7 @@ export default function Notes(props: Props) {
             {t("singlestudy:notes")}
           </Typography>
         </NoteHeader>
-        <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle() }}>
+        <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
           {!loaded && <SimpleLoader />}
           {loaded && (
             <Editor

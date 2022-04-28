@@ -58,7 +58,7 @@ import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 const logError = debug("antares:studieslist:error");
 
 const StyledGrid = styled(FixedSizeGrid)(({ theme }) => ({
-  ...scrollbarStyle(theme.palette.secondary.main),
+  ...scrollbarStyle,
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: theme.palette.secondary.main,
     outline: "1px solid slategrey",

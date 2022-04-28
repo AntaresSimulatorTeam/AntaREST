@@ -201,7 +201,7 @@ function LogModal(props: PropTypes) {
           flex={1}
           ref={logRef}
           onScroll={onScroll}
-          sx={scrollbarStyle()}
+          sx={scrollbarStyle}
         >
           {loading ? (
             <SimpleLoader />

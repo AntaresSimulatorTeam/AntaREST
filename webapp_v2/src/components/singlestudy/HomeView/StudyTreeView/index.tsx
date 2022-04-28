@@ -227,7 +227,7 @@ export default function CustomizedTreeView(props: Props) {
         width: "100%",
         flexGrow: 1,
         overflowY: "auto",
-        ...scrollbarStyle(),
+        ...scrollbarStyle,
       }}
     >
       <Box
