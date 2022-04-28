@@ -62,7 +62,7 @@ function StudyDataView(props: PropTypes) {
 
   const rd = renderData();
   return (
-    <Box flexGrow={1} p={2} sx={rd.css}>
+    <Box flexGrow={1} px={1} sx={rd.css}>
       {rd.data}
     </Box>
   );

@@ -87,7 +87,7 @@ function DebugView() {
             display="flex"
             boxSizing="border-box"
           >
-            <Box p={2} flexGrow={1} overflow="hidden" display="flex">
+            <Box px={2} flexGrow={1} overflow="hidden" display="flex">
               {elementView && (
                 <StudyDataView
                   study={study.id}
