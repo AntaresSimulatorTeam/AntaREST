@@ -23,6 +23,7 @@ function DebugView() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [studyData, setStudyData] = useState<any>();
   const [loaded, setLoaded] = useState(false);
   const [elementView, setElementView] = useState<ElementView>();

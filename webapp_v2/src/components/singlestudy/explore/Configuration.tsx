@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import UnderConstruction from "../../common/page/UnderConstruction";
 
-function Links() {
+function Configuration() {
   return <UnderConstruction />;
 }
 
-export default Links;
+export default Configuration;

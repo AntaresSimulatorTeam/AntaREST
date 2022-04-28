@@ -9,6 +9,7 @@ import { getStudyParams } from "./utils";
 
 interface ItemPropTypes {
   itemkey: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   path?: string;
   viewer: (type: StudyDataType, data: string) => void;
@@ -63,6 +64,7 @@ function StudyTreeItem(props: ItemPropTypes) {
 }
 
 interface PropTypes {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   view: (type: StudyDataType, data: string) => void;
 }
