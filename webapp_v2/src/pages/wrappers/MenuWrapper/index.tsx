@@ -27,7 +27,13 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
 
-import { keyframes, styled, SvgIconProps, useTheme } from "@mui/material";
+import {
+  keyframes,
+  styled,
+  SvgIconProps,
+  Tooltip,
+  useTheme,
+} from "@mui/material";
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
@@ -42,6 +48,7 @@ import {
   NavListItemIcon,
 } from "../../../components/MenuWrapperComponents";
 import LogoutModal from "./LogoutModal";
+import { getConfig } from "../../../services/config";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -96,6 +103,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const theme = useTheme();
   const [t] = useTranslation();
   const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
+  const versionInfo = getConfig().version;
 
   let navigation: Array<MenuItem> = [
     {
@@ -250,15 +258,19 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
               )}
             </NavLink>
             {extended && (
-              <Typography
-                style={{
-                  color: theme.palette.secondary.main,
-                  fontWeight: "bold",
-                  marginTop: "12px",
-                }}
+              <Tooltip
+                title={`${versionInfo.version} (${versionInfo.gitcommit})`}
               >
-                Antares Web
-              </Typography>
+                <Typography
+                  style={{
+                    color: theme.palette.secondary.main,
+                    fontWeight: "bold",
+                    marginTop: "12px",
+                  }}
+                >
+                  Antares Web
+                </Typography>
+              </Tooltip>
             )}
           </Box>
         </Toolbar>
