@@ -96,7 +96,9 @@ function ImportStudyDialog(props: PropTypes) {
               <Paper sx={{ border: "1px dashed grey", p: 4 }}>
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
-                  <Typography>{t("studymanager:importhint")}</Typography>
+                  <Typography sx={{ cursor: "pointer" }}>
+                    {t("studymanager:importhint")}
+                  </Typography>
                 </div>
               </Paper>
             )}
