@@ -275,7 +275,10 @@ export default function StudyCard(props: Props) {
             {t("studymanager:unarchive")}
           </Button>
         ) : (
-          <NavLink to={`/studies/${study.id}`}>
+          <NavLink
+            to={`/studies/${study.id}`}
+            style={{ textDecoration: "none" }}
+          >
             <Button size="small" color="primary">
               {t("studymanager:exploreButton")}
             </Button>
