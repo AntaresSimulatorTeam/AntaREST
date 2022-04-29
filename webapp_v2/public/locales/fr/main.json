@@ -17,6 +17,7 @@
   "open": "Ouvrir",
   "name": "Nom",
   "import": "Importer",
+  "filter": "Filtrer",
   "allStudies": "Toutes les études",
   "loginError": "Échec de l'authentification",
   "launch": "Lancer",
