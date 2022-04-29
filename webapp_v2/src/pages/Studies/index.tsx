@@ -37,6 +37,10 @@ import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logErr = debug("antares:studies:error");
 
+const StudiesListMemo = memo((props: StudyListProps) => (
+  <StudiesList {...props} />
+));
+
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
   versions: state.study.versionList,
@@ -90,9 +94,9 @@ function Studies(props: PropTypes) {
   const [currentFolder, setCurrentFolder] = useState<string | undefined>(
     loadState<string>(DefaultFilterKey.FOLDER, "root")
   );
-  const [currentFavorite, setCurrentFavorite] = useState<
-    Array<GenericInfo> | undefined
-  >(loadState<Array<GenericInfo>>(DefaultFilterKey.FAVORITE_STUDIES, []));
+  const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo>>(
+    loadState<Array<GenericInfo>>(DefaultFilterKey.FAVORITE_STUDIES, []) || []
+  );
 
   // NOTE: GET TAG LIST FROM BACKEND
   const tagList: Array<string> = [];
@@ -117,23 +121,26 @@ function Studies(props: PropTypes) {
     setOpenFiler(false);
   };
 
-  const getAllStudies = async (refresh: boolean) => {
-    setLoaded(false);
-    try {
-      if (studies.length === 0 || refresh) {
-        const allStudies = await getStudies(false);
-        loadStudies(allStudies);
-        setFilteredStudies(allStudies);
+  const getAllStudies = useCallback(
+    async (refresh: boolean) => {
+      setLoaded(false);
+      try {
+        if (studies.length === 0 || refresh) {
+          const allStudies = await getStudies(false);
+          loadStudies(allStudies);
+          setFilteredStudies(allStudies);
+        }
+      } catch (e) {
+        enqueueErrorSnackbar(
+          t("studymanager:failtoretrievestudies"),
+          e as AxiosError
+        );
+      } finally {
+        setLoaded(true);
       }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studymanager:failtoretrievestudies"),
-        e as AxiosError
-      );
-    } finally {
-      setLoaded(true);
-    }
-  };
+    },
+    [enqueueErrorSnackbar, loadStudies, studies.length, t]
+  );
 
   const versionList = convertVersions(versions || []);
 
@@ -251,19 +258,23 @@ function Studies(props: PropTypes) {
     }, 0);
   }, [filter, inputValue, mounted]);
 
-  const handleFavoriteClick = (value: GenericInfo) => {
-    const favorite = currentFavorite as Array<GenericInfo>;
-    if (
-      favorite.findIndex((elm) => (elm.id as string) === (value.id as string)) <
-      0
-    ) {
-      setCurrentFavorite(favorite.concat(value));
-      return;
-    }
-    setCurrentFavorite(
-      favorite.filter((elm) => (elm.id as string) !== (value.id as string))
-    );
-  };
+  const handleFavoriteClick = useCallback(
+    (value: GenericInfo) => {
+      const favorite = currentFavorite as Array<GenericInfo>;
+      if (
+        favorite.findIndex(
+          (elm) => (elm.id as string) === (value.id as string)
+        ) < 0
+      ) {
+        setCurrentFavorite(favorite.concat(value));
+        return;
+      }
+      setCurrentFavorite(
+        favorite.filter((elm) => (elm.id as string) !== (value.id as string))
+      );
+    },
+    [currentFavorite]
+  );
 
   const init = async () => {
     try {
@@ -314,7 +325,7 @@ function Studies(props: PropTypes) {
 
   useEffect(() => {
     setCurrentFavorite((prev) => {
-      if (prev && prev.length > 0) {
+      if (prev && prev.length > 0 && studies.length > 0) {
         const studyIds = studies.map((item) => item.id);
         return prev.filter((elm) => studyIds.includes(elm.id as string));
       }
@@ -323,9 +334,10 @@ function Studies(props: PropTypes) {
     applyFilter();
   }, [applyFilter, setCurrentFavorite, studies]);
 
-  const StudiesListMemo = memo((props: StudyListProps) => (
-    <StudiesList {...props} />
-  ));
+  const refreshStudies = useCallback(
+    () => getAllStudies(true),
+    [getAllStudies]
+  );
 
   return (
     <RootPage
@@ -375,37 +387,31 @@ function Studies(props: PropTypes) {
         {!loaded && <MainContentLoader />}
         {loaded && studies && (
           <StudiesListMemo
-            refresh={() => getAllStudies(true)}
+            refresh={refreshStudies}
             studies={filteredStudies}
             sortItem={currentSortItem as SortItem}
             setSortItem={setCurrentSortItem}
             folder={currentFolder as string}
             setFolder={setCurrentFolder}
-            favorite={
-              currentFavorite !== undefined
-                ? currentFavorite.map((elm) => elm.id as string)
-                : []
-            }
+            favorites={currentFavorite}
             onFavoriteClick={handleFavoriteClick}
           />
         )}
-        {openFilter && (
-          <FilterDrawer
-            open={openFilter}
-            managedFilter={managedFilter as boolean}
-            archivedFilter={archivedFilter as boolean}
-            tagList={tagList}
-            tags={currentTag as Array<string>}
-            versionList={versionList}
-            versions={currentVersion as Array<GenericInfo>}
-            userList={userList}
-            users={currentUser as Array<UserDTO>}
-            groupList={groupList}
-            groups={currentGroup as Array<GroupDTO>}
-            onFilterActionClick={onFilterActionClick}
-            onClose={() => setOpenFiler(false)}
-          />
-        )}
+        <FilterDrawer
+          open={openFilter}
+          managedFilter={managedFilter as boolean}
+          archivedFilter={archivedFilter as boolean}
+          tagList={tagList}
+          tags={currentTag as Array<string>}
+          versionList={versionList}
+          versions={currentVersion as Array<GenericInfo>}
+          userList={userList}
+          users={currentUser as Array<UserDTO>}
+          groupList={groupList}
+          groups={currentGroup as Array<GroupDTO>}
+          onFilterActionClick={onFilterActionClick}
+          onClose={() => setOpenFiler(false)}
+        />
       </Box>
     </RootPage>
   );
