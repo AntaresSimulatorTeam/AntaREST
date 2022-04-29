@@ -64,6 +64,7 @@ export const JsonContainer = styled(Box)(({ theme }) => ({
   alignItems: "flex-start",
   zIndex: 999, // for json edition modal to be up everything else
   maxHeight: "400px",
+  maxWidth: "500px",
   overflow: "scroll",
 }));
 
