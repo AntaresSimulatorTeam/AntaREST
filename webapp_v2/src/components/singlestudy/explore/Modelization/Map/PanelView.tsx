@@ -106,12 +106,12 @@ function PanelView(props: PropType) {
   return (
     <>
       <Box
-        width="90%"
+        width="100%"
         display="flex"
         flexDirection="column"
         alignItems="center"
         flexGrow={1}
-        marginBottom="120px"
+        sx={{ mb: 1 }}
       >
         {node && (
           <Box
@@ -157,7 +157,6 @@ function PanelView(props: PropType) {
           <LinksView
             links={links}
             node={node}
-            onDelete={() => setOpenConfirmationModal(true)}
             setSelectedItem={setSelectedItem}
           />
         )}
@@ -219,26 +218,24 @@ function PanelView(props: PropType) {
                 {link.target}
               </StyledLinkTypo>
             </Box>
-            <Divider sx={{ height: "1px", width: "90%", mt: 1, mb: 1.5 }} />
-            <Box
-              width="90%"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Button
-                color="primary"
-                size="small"
-                onClick={() => setSelectedItem(undefined)}
-              >
-                {t("main:backButton")}
-              </Button>
-              <StyledDeleteIcon
-                onClick={() => setOpenConfirmationModal(true)}
-              />
-            </Box>
           </Box>
         )}
+        <Divider sx={{ height: "1px", width: "90%", mt: 1, mb: 1.5 }} />
+        <Box
+          width="90%"
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Button
+            color="primary"
+            size="small"
+            onClick={() => setSelectedItem(undefined)}
+          >
+            {t("main:backButton")}
+          </Button>
+          <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
+        </Box>
       </Box>
       {openConfirmationModal && node && (
         <BasicModal
