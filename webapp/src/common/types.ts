@@ -223,8 +223,7 @@ export interface UserToken {
   bots: Array<BotDTO>;
 }
 
-export interface UserGroup {
-  group: GroupDTO;
+export interface UserGroup extends GroupDTO {
   users: Array<UserRoleDTO>;
 }
 

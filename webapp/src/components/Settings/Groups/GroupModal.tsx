@@ -129,7 +129,7 @@ const GroupModal = (props: PropTypes) => {
         if (users.length > 0) {
           setUserSelection(users[0].id);
         }
-        setText(group ? group.group.name : '');
+        setText(group ? group.name : '');
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('settings:usersError'), e as AxiosError);
       }
@@ -143,7 +143,7 @@ const GroupModal = (props: PropTypes) => {
       open={open}
       handleClose={onClose}
       handleAction={() => onSave(text, addedUser)}
-      title={group ? `${t('settings:group')} - ${group.group.name}` : t('settings:newGroupTitle')}
+      title={group ? `${t('settings:group')} - ${group.name}` : t('settings:newGroupTitle')}
     >
       {(isAdmin || group === undefined) && (
       <div className={classes.infos}>

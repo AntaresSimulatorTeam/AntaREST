@@ -66,7 +66,7 @@ const GroupsSettings = (props: PropTypes) => {
       const data: UserDeletion = deletionInfo.data as UserDeletion;
       await deleteUserRole(data.groupId, data.userId);
       const tmpList = ([] as Array<UserGroup>).concat(groupList);
-      const groupIndex = tmpList.findIndex((item) => item.group.id === data.groupId);
+      const groupIndex = tmpList.findIndex((item) => item.id === data.groupId);
       if (groupIndex >= 0) {
         tmpList[groupIndex].users = tmpList[groupIndex].users.filter((item) => item.id !== data.userId);
         setGroupList(tmpList);
@@ -84,7 +84,7 @@ const GroupsSettings = (props: PropTypes) => {
       // 1) Call backend (Delete)
       const deletedGroupId = await deleteGroup(deletionInfo.data as string);
       // 2) Delete group locally from groupList
-      setGroupList(groupList.filter((item) => item.group.id !== deletedGroupId));
+      setGroupList(groupList.filter((item) => item.id !== deletedGroupId));
       enqueueSnackbar(t('settings:onGroupDeleteSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('settings:onGroupDeleteError'), e as AxiosError);
@@ -101,7 +101,7 @@ const GroupsSettings = (props: PropTypes) => {
         type: role,
       };
       const tmpList = ([] as Array<UserGroup>).concat(groupList);
-      const groupIndex = tmpList.findIndex((item) => item.group.id === groupId);
+      const groupIndex = tmpList.findIndex((item) => item.id === groupId);
       if (groupIndex >= 0) {
         const userIndex = tmpList[groupIndex].users.findIndex((item) => item.id === userId);
         if (userIndex >= 0) {
@@ -121,9 +121,9 @@ const GroupsSettings = (props: PropTypes) => {
     try {
       const tmpList = ([] as Array<UserGroup>).concat(groupList);
       const groupInfos = await getGroupInfos(groupId);
-      const index = tmpList.findIndex((item) => item.group.id === groupInfos.group.id);
+      const index = tmpList.findIndex((item) => item.id === groupInfos.id);
       if (index >= 0) {
-        tmpList[index] = { group: groupInfos.group, users: groupInfos.users.filter((elm) => elm.id !== user?.id) };
+        tmpList[index] = { ...groupInfos, users: groupInfos.users.filter((elm) => elm.id !== user?.id) };
         setGroupList(tmpList);
         return tmpList[index];
       }
@@ -154,19 +154,19 @@ const GroupsSettings = (props: PropTypes) => {
   const onModalSave = async (name: string, userList: Array<UserRoleDTO>) => {
     try {
       if (selectedGroup) {
-        if (selectedGroup.group.name !== name) {
-          const updatedGroup = await updateGroup(selectedGroup.group.id, name);
+        if (selectedGroup.name !== name) {
+          const updatedGroup = await updateGroup(selectedGroup.id, name);
           const tmpList = ([] as Array<UserGroup>).concat(groupList);
-          const index = tmpList.findIndex((item) => item.group.id === selectedGroup.group.id);
+          const index = tmpList.findIndex((item) => item.id === selectedGroup.id);
           if (index < 0) return;
-          tmpList[index].group.name = updatedGroup.name;
+          tmpList[index].name = updatedGroup.name;
           setGroupList(tmpList);
         }
 
         Promise.all(
           userList.map(async (item) => {
             const role: RoleCreationDTO = {
-              group_id: selectedGroup.group.id,
+              group_id: selectedGroup.id,
               identity_id: item.id,
               type: item.role,
             };
@@ -177,7 +177,7 @@ const GroupsSettings = (props: PropTypes) => {
       } else {
         const newGroup = await createGroup(name);
         const newGroupItem: UserGroup = {
-          group: newGroup,
+          ...newGroup,
           users: [],
         };
         setGroupList(groupList.concat(newGroupItem));
@@ -211,14 +211,14 @@ const GroupsSettings = (props: PropTypes) => {
             const res = await getGroups();
             groups = res
               .filter((item) => item.id !== 'admin')
-              .map((group) => ({ group, users: [] }));
+              .map((group) => ({ ...group, users: [] }));
           } catch (e) {
             enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
           }
         } else {
           groups = user.groups
             .filter((item) => item.role === RoleType.ADMIN)
-            .map((group) => ({ group: { id: group.id, name: group.name }, users: [] }));
+            .map((group) => ({ id: group.id, name: group.name, users: [] }));
         }
         setGroupList(groups);
       }
