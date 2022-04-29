@@ -29,11 +29,11 @@ import { getStudies } from "../../services/api/study";
 import { AppState } from "../../store/reducers";
 import { initStudies, initStudiesVersion } from "../../store/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
-import MainContentLoader from "../../components/common/loaders/MainContentLoader";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";
 import HeaderBottom from "../../components/studies/HeaderBottom";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import SimpleLoader from "../../components/common/loaders/SimpleLoader";
 
 const logErr = debug("antares:studies:error");
 
@@ -384,7 +384,7 @@ function Studies(props: PropTypes) {
           favorite={currentFavorite as Array<GenericInfo>}
         />
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
-        {!loaded && <MainContentLoader />}
+        {!loaded && <SimpleLoader />}
         {loaded && studies && (
           <StudiesListMemo
             refresh={refreshStudies}

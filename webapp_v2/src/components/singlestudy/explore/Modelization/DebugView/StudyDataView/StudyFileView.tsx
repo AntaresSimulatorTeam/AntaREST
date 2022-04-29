@@ -8,8 +8,8 @@ import { Box } from "@mui/material";
 import { getStudyData, importFile } from "../../../../../../services/api/study";
 import { Header, Root, Content } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import MainContentLoader from "../../../../../common/loaders/MainContentLoader";
 import ImportForm from "../../../../../common/ImportForm";
+import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -89,7 +89,7 @@ function StudyDataView(props: PropTypes) {
       )}
       {!loaded && (
         <Box width="100%" height="100%" position="relative">
-          <MainContentLoader />
+          <SimpleLoader />
         </Box>
       )}
     </>
