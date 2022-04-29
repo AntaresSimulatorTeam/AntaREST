@@ -192,7 +192,7 @@ function Studies(props: PropTypes) {
             s.id.search(new RegExp(currentName, "i")) !== -1
         )
         .filter((s) =>
-          currentTag
+          currentTag && currentTag.length > 0
             ? s.tags &&
               s.tags.findIndex((elm) =>
                 (currentTag as Array<string>).includes(elm)
@@ -248,7 +248,7 @@ function Studies(props: PropTypes) {
         setFilteredStudies(f);
         setLoaded(true);
       }
-    }, 200);
+    }, 0);
   }, [filter, inputValue, mounted]);
 
   const handleFavoriteClick = (value: GenericInfo) => {

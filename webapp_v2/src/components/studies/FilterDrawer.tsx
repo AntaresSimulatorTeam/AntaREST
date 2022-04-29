@@ -21,6 +21,7 @@ import { STUDIES_FILTER_WIDTH } from "../../theme";
 import SelectMulti from "../common/SelectMulti";
 import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
 import { convertVersions } from "../../services/utils";
+import TagTextInput from "../common/TagTextInput";
 
 interface Props {
   open: boolean;
@@ -79,19 +80,6 @@ function FilterDrawer(props: Props) {
   const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
   const [currentArchived, setCurrentArchived] =
     useState<boolean>(archivedFilter);
-
-  const setTags = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentTags(undefined);
-      return;
-    }
-    setCurrentTags(
-      data.map((elm) => {
-        const index = tagList.findIndex((item) => item === elm);
-        return tagList[index];
-      })
-    );
-  };
 
   const setVersions = (data: Array<string>): void => {
     if (data.length === 0) {
@@ -283,11 +271,12 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <SelectMulti
-            name={t("studymanager:tagsLabel")}
-            list={tagList.map((elm) => ({ id: elm, name: elm }))}
-            data={currentTags !== undefined ? currentTags : []}
-            setValue={setTags}
+          <TagTextInput
+            label={t("studymanager:tagsLabel")}
+            sx={{ m: 1, width: "200px" }}
+            value={currentTags || []}
+            onChange={setCurrentTags}
+            tagList={tagList}
           />
         </ListItem>
       </List>
