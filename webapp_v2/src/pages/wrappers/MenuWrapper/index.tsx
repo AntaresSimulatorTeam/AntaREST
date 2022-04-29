@@ -27,7 +27,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
 
-import { SvgIconProps, useTheme } from "@mui/material";
+import { keyframes, styled, SvgIconProps, useTheme } from "@mui/material";
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
@@ -42,6 +42,31 @@ import {
   NavListItemIcon,
 } from "../../../components/MenuWrapperComponents";
 import LogoutModal from "./LogoutModal";
+
+const pulsatingAnimation = keyframes`
+  0% {
+    opacity: 1
+  }
+  50% {
+    opacity: 0
+  }
+  100% {
+    opacity: 1
+  }
+`;
+
+const BorderedPulsating = styled("div")(({ theme }) => ({
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    width: "32px",
+    border: `1px solid ${theme.palette.secondary.main}`,
+    borderRadius: "50%",
+    height: "32px",
+    animation: `${pulsatingAnimation} 2s infinite`,
+    boxShadow: `0 0px 10px 0 ${theme.palette.secondary.main}`,
+  },
+}));
 
 interface MenuItem {
   id: string;
@@ -66,7 +91,8 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function MenuWrapper(props: PropsWithChildren<PropTypes>) {
-  const { children, extended, setExtended, currentStudy } = props;
+  const { children, extended, setExtended, currentStudy, websocketConnected } =
+    props;
   const theme = useTheme();
   const [t] = useTranslation();
   const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
@@ -202,17 +228,33 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             boxSizing="border-box"
           >
             <NavLink to="/">
-              <img
-                src={logo}
-                alt="logo"
-                style={{ height: "32px", marginRight: extended ? "20px" : 0 }}
-              />
+              {websocketConnected ? (
+                <img
+                  src={logo}
+                  alt="logo"
+                  style={{
+                    height: "32px",
+                    marginRight: extended ? "20px" : 0,
+                    marginTop: "18px",
+                  }}
+                />
+              ) : (
+                <BorderedPulsating
+                  style={{
+                    marginRight: extended ? "20px" : 0,
+                    marginTop: "18px",
+                  }}
+                >
+                  <img src={logo} alt="logo" style={{ height: "32px" }} />
+                </BorderedPulsating>
+              )}
             </NavLink>
             {extended && (
               <Typography
                 style={{
                   color: theme.palette.secondary.main,
                   fontWeight: "bold",
+                  marginTop: "12px",
                 }}
               >
                 Antares Web
