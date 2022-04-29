@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -78,7 +78,6 @@ export default function StudyCard(props: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
-  const navigate = useNavigate();
 
   const handleFavoriteClick = () => {
     onFavoriteClick({ id: study.id, name: study.name });
@@ -276,13 +275,11 @@ export default function StudyCard(props: Props) {
             {t("studymanager:unarchive")}
           </Button>
         ) : (
-          <Button
-            size="small"
-            color="primary"
-            onClick={() => navigate(`/studies/${study.id}`)}
-          >
-            {t("studymanager:exploreButton")}
-          </Button>
+          <NavLink to={`/studies/${study.id}`}>
+            <Button size="small" color="primary">
+              {t("studymanager:exploreButton")}
+            </Button>
+          </NavLink>
         )}
         <Tooltip title={t("singlestudy:more") as string}>
           <Button
