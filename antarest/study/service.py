@@ -1165,6 +1165,8 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(
             study, stream
         )
+        study.updated_at = datetime.utcnow()
+
         # status = self._analyse_study(study)
         self._save_study(
             study,
