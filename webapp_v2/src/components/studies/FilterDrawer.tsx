@@ -96,6 +96,9 @@ function FilterDrawer(props: Props) {
   useEffect(() => {
     setCurrentManaged(managedFilter);
   }, [managedFilter]);
+  useEffect(() => {
+    setCurrentArchived(archivedFilter);
+  }, [archivedFilter]);
 
   const setVersions = (data: Array<string>): void => {
     if (data.length === 0) {
@@ -131,15 +134,6 @@ function FilterDrawer(props: Props) {
     );
   };
 
-  const setArchived = (data: boolean): void => {
-    setCurrentArchived(data);
-  };
-
-  const setManaged = (data: boolean): void => {
-    setCurrentManaged(data);
-    if (!data) setArchived(false);
-  };
-
   const onFilterClick = (): void => {
     onFilterActionClick(
       currentManaged,
@@ -156,8 +150,8 @@ function FilterDrawer(props: Props) {
     setCurrentUsers(undefined);
     setCurrentGroups(undefined);
     setCurrentTags(undefined);
-    setManaged(false);
-    setArchived(false);
+    setCurrentManaged(false);
+    setCurrentArchived(false);
   };
 
   return (
@@ -198,24 +192,22 @@ function FilterDrawer(props: Props) {
             control={
               <Checkbox
                 checked={currentManaged}
-                onChange={() => setManaged(!currentManaged)}
+                onChange={() => setCurrentManaged(!currentManaged)}
                 sx={{ color: "white" }}
               />
             }
             label={t("studymanager:managedStudiesFilter") as string}
           />
-          {currentManaged && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={currentArchived}
-                  onChange={() => setArchived(!currentArchived)}
-                  sx={{ color: "white" }}
-                />
-              }
-              label={t("studymanager:archivedStudiesFilter") as string}
-            />
-          )}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={currentArchived}
+                onChange={() => setCurrentArchived(!currentArchived)}
+                sx={{ color: "white" }}
+              />
+            }
+            label={t("studymanager:archivedStudiesFilter") as string}
+          />
         </Box>
       </Toolbar>
       <Divider
