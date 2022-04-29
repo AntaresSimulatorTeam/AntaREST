@@ -58,6 +58,9 @@ function Studies(props: PropTypes) {
   const [managedFilter, setManageFilter] = useState(
     loadState<boolean>(DefaultFilterKey.MANAGED, false) || false
   );
+  const [archivedFilter, setArchivedFilter] = useState(
+    loadState<boolean>(DefaultFilterKey.ARCHIVED, false) || false
+  );
   const [currentSortItem, setCurrentSortItem] = useState<SortItem | undefined>(
     loadState<SortItem>(DefaultFilterKey.SORTING, {
       element: SortElement.NAME,
@@ -95,12 +98,14 @@ function Studies(props: PropTypes) {
   };
   const onFilterActionClick = (
     managed: boolean,
+    archived: boolean,
     versions: Array<GenericInfo> | undefined,
     users: Array<UserDTO> | undefined,
     groups: Array<GroupDTO> | undefined,
     tags: Array<string> | undefined
   ): void => {
     setManageFilter(managed);
+    setArchivedFilter(archived);
     setCurrentVersion(versions);
     setCurrentUser(users);
     setCurrentGroup(groups);
@@ -211,13 +216,15 @@ function Studies(props: PropTypes) {
               ).length > 0
             : true
         )
-        .filter((s) => (managedFilter ? s.managed : true)),
+        .filter((s) => (managedFilter ? s.managed : true))
+        .filter((s) => (archivedFilter ? s.archived : true)),
     [
       currentVersion,
       currentUser,
       currentGroup,
       currentTag,
       managedFilter,
+      archivedFilter,
       filterFromFolder,
       sortStudies,
       studies,
@@ -278,6 +285,7 @@ function Studies(props: PropTypes) {
     saveState(DefaultFilterKey.USERS, currentUser);
     saveState(DefaultFilterKey.GROUPS, currentGroup);
     saveState(DefaultFilterKey.MANAGED, managedFilter);
+    saveState(DefaultFilterKey.ARCHIVED, archivedFilter);
     saveState(DefaultFilterKey.VERSIONS, currentVersion);
     saveState(DefaultFilterKey.TAGS, currentTag);
     saveState(DefaultFilterKey.SORTING, currentSortItem);
@@ -290,6 +298,7 @@ function Studies(props: PropTypes) {
     currentTag,
     currentSortItem,
     managedFilter,
+    archivedFilter,
     currentFolder,
     applyFilter,
   ]);
@@ -322,6 +331,8 @@ function Studies(props: PropTypes) {
             onFilterClick,
             managedFilter,
             setManageFilter,
+            archivedFilter,
+            setArchivedFilter,
             versions: currentVersion,
             setVersions: setCurrentVersion,
             users: currentUser,
@@ -371,6 +382,7 @@ function Studies(props: PropTypes) {
           <FilterDrawer
             open={openFilter}
             managedFilter={managedFilter as boolean}
+            archivedFilter={archivedFilter as boolean}
             tagList={tagList}
             tags={currentTag as Array<string>}
             versionList={versionList}

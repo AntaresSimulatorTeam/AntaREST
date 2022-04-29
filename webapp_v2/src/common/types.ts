@@ -294,6 +294,7 @@ export enum DefaultFilterKey {
   FOLDER = "v2.studylisting.filter.folder",
   FAVORITE_STUDIES = "v2.studylisting.favorite",
   TAGS = "v2.studylisting.filter.tag",
+  ARCHIVED = "v2.studylisting.filter.archived",
 }
 
 export interface WSMessage {

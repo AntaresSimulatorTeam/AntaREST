@@ -20,11 +20,13 @@ type PropTypes = {
   setInputValue: (value: string) => void;
   onFilterClick: () => void;
   managedFilter: boolean;
+  archivedFilter: boolean;
   versions: Array<GenericInfo> | undefined;
   users: Array<UserDTO> | undefined;
   groups: Array<GroupDTO> | undefined;
   tags: Array<string> | undefined;
   setManageFilter: (value: boolean) => void;
+  setArchivedFilter: (value: boolean) => void;
   setVersions: (value: Array<GenericInfo> | undefined) => void;
   setUsers: (value: Array<UserDTO> | undefined) => void;
   setGroups: (value: Array<GroupDTO> | undefined) => void;
@@ -42,6 +44,8 @@ function HeaderBottom(props: PropTypes) {
     onFilterClick,
     managedFilter,
     setManageFilter,
+    archivedFilter,
+    setArchivedFilter,
     versions,
     setVersions,
     users,
@@ -53,6 +57,11 @@ function HeaderBottom(props: PropTypes) {
   } = props;
 
   const [t] = useTranslation();
+
+  const handleManagedDeletion = () => {
+    setManageFilter(false);
+    setArchivedFilter(false);
+  };
 
   return (
     <Box display="flex" width="100%" alignItems="center">
@@ -96,7 +105,16 @@ function HeaderBottom(props: PropTypes) {
             label={t("studymanager:managedStudiesFilter")}
             variant="filled"
             color="secondary"
-            onDelete={() => setManageFilter(false)}
+            onDelete={handleManagedDeletion}
+            sx={{ mx: 1 }}
+          />
+        )}
+        {managedFilter && archivedFilter && (
+          <Chip
+            label={t("studymanager:managedStudiesFilter")}
+            variant="filled"
+            color="warning"
+            onDelete={() => setArchivedFilter(false)}
             sx={{ mx: 1 }}
           />
         )}

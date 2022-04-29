@@ -34,6 +34,7 @@
   "sortByName": "Alphabetical order",
   "sortByDate": "Date",
   "managedStudiesFilter": "Managed studies",
+  "archivedStudiesFilter": "Archived studies",
   "userFilter": "Filter by user",
   "groupFilter": "Filter by group",
   "versionFilter": "Filter by version",
