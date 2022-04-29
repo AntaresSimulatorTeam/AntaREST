@@ -1,30 +1,14 @@
 import { ReactNode } from "react";
-import { TextField, InputAdornment, Box, styled } from "@mui/material";
+import { TextField, InputAdornment, Box, Fab } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useTranslation } from "react-i18next";
 import AddIcon from "@mui/icons-material/Add";
-
-const StyledAddIcon = styled(AddIcon)(({ theme }) => ({
-  cursor: "pointer",
-  color: "black",
-  width: "56px",
-  height: "56px",
-  position: "absolute",
-  left: "5%",
-  bottom: "25px",
-  borderRadius: "30px",
-  padding: "16px",
-  backgroundColor: theme.palette.primary.main,
-  "&:hover": {
-    backgroundColor: theme.palette.primary.dark,
-  },
-}));
 
 interface PropsType {
   mainContent: ReactNode | undefined;
   secondaryContent: ReactNode;
   onSearchFilterChange: (value: string) => void;
-  onAdd: () => void;
+  onAdd?: () => void;
 }
 
 function PropertiesView(props: PropsType) {
@@ -40,6 +24,9 @@ function PropertiesView(props: PropsType) {
       justifyContent="flex-start"
       alignItems="center"
       boxSizing="border-box"
+      sx={{
+        paddingBottom: 1,
+      }}
     >
       <TextField
         label={t("main:search")}
@@ -55,9 +42,22 @@ function PropertiesView(props: PropsType) {
       />
       {mainContent}
       {secondaryContent}
-      <StyledAddIcon onClick={onAdd} />
+      {onAdd && (
+        <Fab
+          size="small"
+          color="primary"
+          aria-label="add"
+          sx={{ alignSelf: "flex-start", mb: 2, ml: 1 }}
+        >
+          <AddIcon onClick={onAdd} />
+        </Fab>
+      )}
     </Box>
   );
 }
+
+PropertiesView.defaultProps = {
+  onAdd: undefined,
+};
 
 export default PropertiesView;

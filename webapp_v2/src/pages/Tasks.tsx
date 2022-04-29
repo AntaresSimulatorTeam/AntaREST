@@ -517,7 +517,7 @@ function JobsListing(props: PropTypes) {
         position="relative"
       >
         {!loaded && <SimpleLoader />}
-        {loaded && <JobTableView content={content || []} />}
+        {loaded && <JobTableView content={content || []} refresh={init} />}
         {openConfirmationModal && (
           <BasicModal
             open={!!openConfirmationModal}

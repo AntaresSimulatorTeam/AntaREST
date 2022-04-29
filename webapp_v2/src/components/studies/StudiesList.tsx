@@ -73,7 +73,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
     onLaunchClick,
     columnCount,
     columnWidth,
-    favorite,
+    favorites,
     onFavoriteClick,
     deleteStudy,
     archiveStudy,
@@ -86,7 +86,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
         <StudyCard
           study={study}
           width={columnWidth}
-          favorite={favorite.includes(study.id)}
+          favorite={favorites.map((f: GenericInfo) => f.id).includes(study.id)}
           onLaunchClick={() => onLaunchClick(study)}
           onFavoriteClick={onFavoriteClick}
           onImportStudy={importStudy}
@@ -111,17 +111,17 @@ const mapDispatch = {
 
 const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+export interface StudyListProps {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
-  favorite: Array<string>;
+  favorites: Array<GenericInfo>;
   onFavoriteClick: (value: GenericInfo) => void;
   sortItem: SortItem;
   setSortItem: (value: SortItem) => void;
   refresh: () => void;
 }
-type PropTypes = PropsFromRedux & OwnProps;
+type PropTypes = PropsFromRedux & StudyListProps;
 
 function StudiesList(props: PropTypes) {
   const {
@@ -129,7 +129,7 @@ function StudiesList(props: PropTypes) {
     folder,
     sortItem,
     setFolder,
-    favorite,
+    favorites,
     setSortItem,
     onFavoriteClick,
     removeStudy,
@@ -429,7 +429,7 @@ function StudiesList(props: PropTypes) {
                   onLaunchClick,
                   columnCount,
                   columnWidth,
-                  favorite,
+                  favorites,
                   onFavoriteClick,
                   deleteStudy,
                   archiveStudy,

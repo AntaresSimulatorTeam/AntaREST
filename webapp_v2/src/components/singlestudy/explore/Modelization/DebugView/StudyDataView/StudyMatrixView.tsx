@@ -8,7 +8,6 @@ import { getStudyData, importFile } from "../../../../../../services/api/study";
 import { MatrixType } from "../../../../../../common/types";
 import { Header, Root, Content } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import MainContentLoader from "../../../../../common/loaders/MainContentLoader";
 import NoContent from "../../../../../common/page/NoContent";
 import ImportForm from "../../../../../common/ImportForm";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
@@ -113,7 +112,7 @@ function StudyMatrixView(props: PropTypes) {
       </Root>
       {!loaded && (
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
-          <MainContentLoader />
+          <SimpleLoader />
         </div>
       )}
     </>

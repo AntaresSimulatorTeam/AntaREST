@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -21,6 +21,7 @@ import { STUDIES_FILTER_WIDTH } from "../../theme";
 import SelectMulti from "../common/SelectMulti";
 import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
 import { convertVersions } from "../../services/utils";
+import TagTextInput from "../common/TagTextInput";
 
 interface Props {
   open: boolean;
@@ -80,18 +81,24 @@ function FilterDrawer(props: Props) {
   const [currentArchived, setCurrentArchived] =
     useState<boolean>(archivedFilter);
 
-  const setTags = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentTags(undefined);
-      return;
-    }
-    setCurrentTags(
-      data.map((elm) => {
-        const index = tagList.findIndex((item) => item === elm);
-        return tagList[index];
-      })
-    );
-  };
+  useEffect(() => {
+    setCurrentUsers(users);
+  }, [users]);
+  useEffect(() => {
+    setCurrentGroups(groups);
+  }, [groups]);
+  useEffect(() => {
+    setCurrentVersions(versions);
+  }, [versions]);
+  useEffect(() => {
+    setCurrentTags(tags);
+  }, [tags]);
+  useEffect(() => {
+    setCurrentManaged(managedFilter);
+  }, [managedFilter]);
+  useEffect(() => {
+    setCurrentArchived(archivedFilter);
+  }, [archivedFilter]);
 
   const setVersions = (data: Array<string>): void => {
     if (data.length === 0) {
@@ -127,15 +134,6 @@ function FilterDrawer(props: Props) {
     );
   };
 
-  const setArchived = (data: boolean): void => {
-    setCurrentArchived(data);
-  };
-
-  const setManaged = (data: boolean): void => {
-    setCurrentManaged(data);
-    if (!data) setArchived(false);
-  };
-
   const onFilterClick = (): void => {
     onFilterActionClick(
       currentManaged,
@@ -152,8 +150,8 @@ function FilterDrawer(props: Props) {
     setCurrentUsers(undefined);
     setCurrentGroups(undefined);
     setCurrentTags(undefined);
-    setManaged(false);
-    setArchived(false);
+    setCurrentManaged(false);
+    setCurrentArchived(false);
   };
 
   return (
@@ -194,24 +192,22 @@ function FilterDrawer(props: Props) {
             control={
               <Checkbox
                 checked={currentManaged}
-                onChange={() => setManaged(!currentManaged)}
+                onChange={() => setCurrentManaged(!currentManaged)}
                 sx={{ color: "white" }}
               />
             }
             label={t("studymanager:managedStudiesFilter") as string}
           />
-          {currentManaged && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={currentArchived}
-                  onChange={() => setArchived(!currentArchived)}
-                  sx={{ color: "white" }}
-                />
-              }
-              label={t("studymanager:archivedStudiesFilter") as string}
-            />
-          )}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={currentArchived}
+                onChange={() => setCurrentArchived(!currentArchived)}
+                sx={{ color: "white" }}
+              />
+            }
+            label={t("studymanager:archivedStudiesFilter") as string}
+          />
         </Box>
       </Toolbar>
       <Divider
@@ -235,6 +231,7 @@ function FilterDrawer(props: Props) {
             multiple
             id="study-filter-users"
             options={userList || []}
+            value={currentUsers || []}
             getOptionLabel={(option: UserDTO) => option.name}
             sx={{ width: 200, m: 1 }}
             renderOption={(props, option, { selected }) => (
@@ -283,11 +280,12 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <SelectMulti
-            name={t("studymanager:tagsLabel")}
-            list={tagList.map((elm) => ({ id: elm, name: elm }))}
-            data={currentTags !== undefined ? currentTags : []}
-            setValue={setTags}
+          <TagTextInput
+            label={t("studymanager:tagsLabel")}
+            sx={{ m: 1, width: "200px" }}
+            value={currentTags || []}
+            onChange={setCurrentTags}
+            tagList={tagList}
           />
         </ListItem>
       </List>

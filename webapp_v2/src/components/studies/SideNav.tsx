@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from "../../theme";
 import StudyTree from "./StudyTree";
 import { GenericInfo, StudyMetadata } from "../../common/types";
@@ -16,6 +17,7 @@ interface Props {
 function SideNav(props: Props) {
   const navigate = useNavigate();
   const { studies, folder, setFolder, favorite } = props;
+  const { t } = useTranslation();
   const [tree, setTree] = useState<StudyTreeNode>(buildStudyTree(studies));
 
   useEffect(() => {
@@ -34,7 +36,9 @@ function SideNav(props: Props) {
       p={2}
       sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
     >
-      <Typography sx={{ color: "grey.400" }}>Favorites</Typography>
+      <Typography sx={{ color: "grey.400" }}>
+        {t("studymanager:favorites")}
+      </Typography>
       <List sx={{ width: "100%" }}>
         {favorite.map((elm) => (
           <ListItem

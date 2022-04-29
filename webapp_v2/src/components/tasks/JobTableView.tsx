@@ -13,11 +13,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tooltip,
+  Button,
   SelectChangeEvent,
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
@@ -26,10 +29,11 @@ import { scrollbarStyle } from "../../theme";
 
 interface PropType {
   content: Array<TaskView>;
+  refresh: () => void;
 }
 
 function JobTableView(props: PropType) {
-  const { content } = props;
+  const { content, refresh } = props;
   const [t] = useTranslation();
   const [sorted, setSorted] = useState<string>();
   const [type, setType] = useState<string>("all");
@@ -87,6 +91,11 @@ function JobTableView(props: PropType) {
       }}
     >
       <Box display="flex" alignItems="center">
+        <Tooltip title={t("jobs:refresh") as string} sx={{ mr: 4 }}>
+          <Button color="primary" onClick={refresh} variant="outlined">
+            <RefreshIcon />
+          </Button>
+        </Tooltip>
         <FormControlLabel
           control={
             <Checkbox

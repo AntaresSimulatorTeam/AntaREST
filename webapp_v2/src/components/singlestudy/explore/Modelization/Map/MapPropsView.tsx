@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import {
   LinkProperties,
@@ -30,25 +30,26 @@ function MapPropsView(props: PropsType) {
     onArea,
     updateUI,
   } = props;
-  const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
+  const [filteredNodes, setFilteredNodes] =
+    useState<Array<NodeProperties>>(nodeList);
+  const [nodeNameFilter, setNodeNameFilter] = useState<string>();
 
-  const filter = (currentName: string): NodeProperties[] => {
-    if (nodeList) {
-      return nodeList.filter(
-        (s) => !currentName || s.id.search(new RegExp(currentName, "i")) !== -1
-      );
-    }
-    return [];
-  };
+  const filter = useCallback(
+    (currentName?: string): NodeProperties[] => {
+      if (nodeList) {
+        return nodeList.filter(
+          (s) =>
+            !currentName || s.id.search(new RegExp(currentName, "i")) !== -1
+        );
+      }
+      return [];
+    },
+    [nodeList]
+  );
 
-  const onChange = async (currentName: string) => {
-    if (currentName !== "") {
-      const f = filter(currentName);
-      setFilteredNodes(f);
-    } else {
-      setFilteredNodes(undefined);
-    }
-  };
+  useEffect(() => {
+    setFilteredNodes(filter(nodeNameFilter));
+  }, [filter, nodeList, nodeNameFilter]);
 
   return (
     <PropertiesView
@@ -56,7 +57,8 @@ function MapPropsView(props: PropsType) {
         item && isNode(item) && onDelete ? (
           <Box
             width="100%"
-            height="100%"
+            flexGrow={1}
+            flexShrink={1}
             display="flex"
             flexDirection="column"
             justifyContent="flex-start"
@@ -75,7 +77,8 @@ function MapPropsView(props: PropsType) {
           onDelete && (
             <Box
               width="100%"
-              height="100%"
+              flexGrow={1}
+              flexShrink={1}
               display="flex"
               flexDirection="column"
               justifyContent="flex-start"
@@ -101,8 +104,8 @@ function MapPropsView(props: PropsType) {
           />
         )
       }
-      onSearchFilterChange={(e) => onChange(e as string)}
-      onAdd={onArea}
+      onSearchFilterChange={(e) => setNodeNameFilter(e as string)}
+      onAdd={!item ? onArea : undefined}
     />
   );
 }

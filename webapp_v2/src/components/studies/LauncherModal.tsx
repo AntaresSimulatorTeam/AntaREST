@@ -185,7 +185,7 @@ function LauncherModal(props: Props) {
                 }
               />
             }
-            label="Mode adequacy"
+            label="Adequacy patch"
           />
         </FormGroup>
       </Box>

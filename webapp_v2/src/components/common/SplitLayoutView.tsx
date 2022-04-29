@@ -18,7 +18,14 @@ function SplitLayoutView(props: Props) {
       overflow="hidden"
       flexGrow="1"
     >
-      <Box width="20%" height="100%" position="relative">
+      <Box
+        width="20%"
+        height="100%"
+        position="relative"
+        sx={{
+          px: 2,
+        }}
+      >
         {left}
       </Box>
       <Divider
@@ -27,13 +34,16 @@ function SplitLayoutView(props: Props) {
         variant="middle"
       />
       <Box
-        width="76%"
+        width="calc(80% - 1px)"
         height="96%"
         display="flex"
         justifyContent="center"
         alignItems="flex-start"
         position="relative"
         overflow="hidden"
+        sx={{
+          px: 2,
+        }}
       >
         {right}
       </Box>

@@ -8,8 +8,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Typography } from "@mui/material";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import MainContentLoader from "../../../../../common/loaders/MainContentLoader";
 import { Header, Root, Content } from "./style";
+import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 
 interface PropTypes {
   data: string;
@@ -105,7 +105,7 @@ function StudyJsonView(props: PropTypes) {
         )}
         {!loaded && (
           <Box width="100%" height="100%" position="relative">
-            <MainContentLoader />
+            <SimpleLoader />
           </Box>
         )}
       </Content>

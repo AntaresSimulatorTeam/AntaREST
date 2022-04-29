@@ -49,12 +49,10 @@ function NodeListing(props: PropsType) {
 
   return (
     <Box
-      width="90%"
-      height="500px"
+      width="100%"
       flexGrow={1}
       flexShrink={1}
-      marginBottom="76px"
-      sx={{ pl: 3, pt: 1, pr: 2 }}
+      sx={{ pl: 2, pt: 1, pr: 1, mb: 1 }}
     >
       {nodes.length > 0 && nodes && (
         <AutoSizer>
@@ -62,11 +60,7 @@ function NodeListing(props: PropsType) {
             const idealHeight = ROW_ITEM_SIZE * nodes.length;
             return (
               <StyledList
-                height={
-                  idealHeight > height
-                    ? height + ROW_ITEM_SIZE
-                    : idealHeight + ROW_ITEM_SIZE
-                }
+                height={idealHeight > height ? height : idealHeight}
                 width={width}
                 itemCount={nodes.length}
                 itemSize={ROW_ITEM_SIZE}

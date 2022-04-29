@@ -9,8 +9,8 @@ import StudyTreeView from "./StudyTreeView";
 import StudyDataView from "./StudyDataView";
 import { StudyDataType, StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import MainContentLoader from "../../../../common/loaders/MainContentLoader";
 import { scrollbarStyle } from "../../../../../theme";
+import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 
 const logError = debug("antares:studyview:error");
 
@@ -102,7 +102,7 @@ function DebugView() {
           </Box>
         </>
       )}
-      {!loaded && studyData === undefined && <MainContentLoader />}
+      {!loaded && studyData === undefined && <SimpleLoader />}
     </Box>
   );
 }
