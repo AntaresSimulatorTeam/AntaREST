@@ -20,9 +20,9 @@ import SingleStudy from "./pages/SingleStudy";
 import Modelization from "./components/singlestudy/explore/Modelization";
 import Results from "./components/singlestudy/explore/Results";
 import Configuration from "./components/singlestudy/explore/Configuration";
-import BindingContraint from "./components/singlestudy/explore/Modelization/BindingContraint";
+import BindingConstraints from "./components/singlestudy/explore/Modelization/BindingConstraints";
 import Links from "./components/singlestudy/explore/Modelization/Links";
-import Area from "./components/singlestudy/explore/Modelization/Area";
+import Areas from "./components/singlestudy/explore/Modelization/Areas";
 import Map from "./components/singlestudy/explore/Modelization/Map";
 import DebugView from "./components/singlestudy/explore/Modelization/DebugView";
 
@@ -46,11 +46,11 @@ function App() {
                       >
                         <Route path="modelization" element={<Modelization />}>
                           <Route path="map" element={<Map />} />
-                          <Route path="area" element={<Area />} />
+                          <Route path="area" element={<Areas />} />
                           <Route path="links" element={<Links />} />
                           <Route
                             path="bindingcontraint"
-                            element={<BindingContraint />}
+                            element={<BindingConstraints />}
                           />
                           <Route path="debug" element={<DebugView />} />
                           <Route index element={<Map />} />
