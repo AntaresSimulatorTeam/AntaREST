@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo, useRef } from "react";
 import * as R from "ramda";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -7,8 +7,11 @@ import moment from "moment";
 import { AxiosError } from "axios";
 import debug from "debug";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import { useMountedState } from "react-use";
 import SideNav from "../../components/studies/SideNav";
-import StudiesList from "../../components/studies/StudiesList";
+import StudiesList, {
+  StudyListProps,
+} from "../../components/studies/StudiesList";
 import {
   GenericInfo,
   GroupDTO,
@@ -52,6 +55,7 @@ function Studies(props: PropTypes) {
   const { studies, loadStudies, loadVersions, versions } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const mounted = useMountedState();
   const [filteredStudies, setFilteredStudies] =
     useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(false);
@@ -231,20 +235,21 @@ function Studies(props: PropTypes) {
     ]
   );
 
+  const filterActionTimeout = useRef<NodeJS.Timeout>();
+
   const applyFilter = useCallback((): void => {
     setLoaded(false);
-    const f = filter(inputValue);
-    setFilteredStudies(f);
-    setLoaded(true);
-  }, [filter, inputValue]);
-
-  const onChange = async (currentName: string) => {
-    setLoaded(false);
-    const f = filter(currentName);
-    setFilteredStudies(f);
-    setLoaded(true);
-    if (currentName !== inputValue) setInputValue(currentName);
-  };
+    if (filterActionTimeout.current) {
+      clearTimeout(filterActionTimeout.current);
+    }
+    filterActionTimeout.current = setTimeout(() => {
+      if (mounted()) {
+        const f = filter(inputValue);
+        setFilteredStudies(f);
+        setLoaded(true);
+      }
+    }, 200);
+  }, [filter, inputValue, mounted]);
 
   const handleFavoriteClick = (value: GenericInfo) => {
     const favorite = currentFavorite as Array<GenericInfo>;
@@ -318,6 +323,10 @@ function Studies(props: PropTypes) {
     applyFilter();
   }, [applyFilter, setCurrentFavorite, studies]);
 
+  const StudiesListMemo = memo((props: StudyListProps) => (
+    <StudiesList {...props} />
+  ));
+
   return (
     <RootPage
       title={t("main:studies")}
@@ -327,7 +336,9 @@ function Studies(props: PropTypes) {
         <HeaderBottom
           {...{
             inputValue,
-            setInputValue: onChange,
+            setInputValue: (newValue) => {
+              if (newValue !== inputValue) setInputValue(newValue);
+            },
             onFilterClick,
             managedFilter,
             setManageFilter,
@@ -363,7 +374,7 @@ function Studies(props: PropTypes) {
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
         {!loaded && <MainContentLoader />}
         {loaded && studies && (
-          <StudiesList
+          <StudiesListMemo
             refresh={() => getAllStudies(true)}
             studies={filteredStudies}
             sortItem={currentSortItem as SortItem}

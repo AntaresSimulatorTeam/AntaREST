@@ -111,7 +111,7 @@ const mapDispatch = {
 
 const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+export interface StudyListProps {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
@@ -121,7 +121,7 @@ interface OwnProps {
   setSortItem: (value: SortItem) => void;
   refresh: () => void;
 }
-type PropTypes = PropsFromRedux & OwnProps;
+type PropTypes = PropsFromRedux & StudyListProps;
 
 function StudiesList(props: PropTypes) {
   const {
