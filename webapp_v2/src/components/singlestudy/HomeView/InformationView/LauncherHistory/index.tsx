@@ -106,7 +106,14 @@ function LauncherHistory(props: PropTypes) {
       const fetchStudyJob = async (sid: string) => {
         try {
           const data = await getStudyJobs(sid);
-          setStudyJobs(data.reverse());
+          setStudyJobs(
+            data.sort((j1, j2) =>
+              (j1.creationDate || j1.creationDate) >
+              (j2.creationDate || j2.creationDate)
+                ? -1
+                : 1
+            )
+          );
         } catch (e) {
           enqueueErrorSnackbar(t("jobs:failedtoretrievejobs"), e as AxiosError);
         }
