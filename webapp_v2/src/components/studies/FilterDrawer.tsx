@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -80,6 +80,22 @@ function FilterDrawer(props: Props) {
   const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
   const [currentArchived, setCurrentArchived] =
     useState<boolean>(archivedFilter);
+
+  useEffect(() => {
+    setCurrentUsers(users);
+  }, [users]);
+  useEffect(() => {
+    setCurrentGroups(groups);
+  }, [groups]);
+  useEffect(() => {
+    setCurrentVersions(versions);
+  }, [versions]);
+  useEffect(() => {
+    setCurrentTags(tags);
+  }, [tags]);
+  useEffect(() => {
+    setCurrentManaged(managedFilter);
+  }, [managedFilter]);
 
   const setVersions = (data: Array<string>): void => {
     if (data.length === 0) {
@@ -223,6 +239,7 @@ function FilterDrawer(props: Props) {
             multiple
             id="study-filter-users"
             options={userList || []}
+            value={currentUsers || []}
             getOptionLabel={(option: UserDTO) => option.name}
             sx={{ width: 200, m: 1 }}
             renderOption={(props, option, { selected }) => (
