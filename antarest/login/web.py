@@ -202,7 +202,11 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_all_roles_from_user(id, params)
         return id
 
-    @bp.get("/groups", tags=[APITag.users], response_model=List[Union[GroupDetailDTO, GroupDTO]])
+    @bp.get(
+        "/groups",
+        tags=[APITag.users],
+        response_model=List[Union[GroupDetailDTO, GroupDTO]],
+    )
     def groups_get_all(
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),

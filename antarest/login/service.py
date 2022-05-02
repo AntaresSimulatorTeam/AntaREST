@@ -565,7 +565,7 @@ class LoginService:
         return None
 
     def get_all_groups(
-            self, params: RequestParameters, details: Optional[bool] = False
+        self, params: RequestParameters, details: Optional[bool] = False
     ) -> List[Union[GroupDetailDTO, GroupDTO]]:
         """
         Get all groups.
@@ -586,9 +586,10 @@ class LoginService:
                 roles_by_user = self.roles.get_all_by_user(user=params.user.id)
 
                 for role in roles_by_user:
-                    tmp = self.groups.get(role.group_id)
-                    if tmp:
-                        group_list.append(tmp)
+                    if not details or role.type == RoleType.ADMIN:
+                        tmp = self.groups.get(role.group_id)
+                        if tmp:
+                            group_list.append(tmp)
         else:
             logger.error(
                 "user %s has not permission to get all groups",
@@ -607,7 +608,7 @@ class LoginService:
             ]
             if details
             else [group.to_dto() for group in group_list]
-    )
+        )
 
     def _get_user_by_group(self, group: str) -> List[Identity]:
         roles = self.roles.get_all_by_group(group)
