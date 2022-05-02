@@ -169,7 +169,11 @@ export interface UserRoleDTO extends IdentityDTO<number> {
 
 export type GroupDTO = IdentityDTO;
 
-export interface RoleCreationReturnDTO {
+export interface GroupDetailsDTO extends GroupDTO {
+  users: UserRoleDTO[];
+}
+
+export interface RoleDetailsDTO {
   group: GroupDTO;
   identity: UserDTO;
   type: RoleType;
@@ -182,7 +186,7 @@ export interface JWTGroup {
 }
 
 export interface UserInfo {
-  user: string;
+  user: string; // TODO: contains user id instead of user name
   groups: Array<JWTGroup>;
   id: number;
   impersonator: number;
@@ -215,11 +219,6 @@ export interface BotDetailsDTO extends IdentityDTO<number> {
 export interface UserToken {
   user: UserDTO;
   bots: Array<BotDTO>;
-}
-
-export interface UserGroup {
-  group: GroupDTO;
-  users: Array<UserRoleDTO>;
 }
 
 export interface MatrixType {
