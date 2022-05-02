@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import RootPage from "../components/common/page/RootPage";
 import Groups from "../components/settings/Groups";
+import Maintenance from "../components/settings/Maintenance";
 import Users from "../components/settings/Users";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../store/selectors";
 
@@ -27,7 +28,7 @@ function Settings() {
         () => <Groups />,
       ],
       [t("settings:tokens"), () => "Tokens"],
-      isUserAdmin && [t("settings:maintenance"), () => "Maintenance"],
+      isUserAdmin && [t("settings:maintenance"), () => <Maintenance />],
     ].filter(Boolean) as Array<[string, () => JSX.Element]>;
   }, [isUserAdmin, isUserInGroupAdmin, t]);
 
