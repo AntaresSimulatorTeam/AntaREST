@@ -127,8 +127,10 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
   }
 
   return (
-    // eslint-disable-next-line react/jsx-no-useless-fragment
-    <>{children}</>
+    <>
+      {children}
+      <MessageInfoModal />
+    </>
   );
 }
 

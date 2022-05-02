@@ -86,7 +86,7 @@ const theme = createTheme({
           props: { variant: "outlined" },
           style: {
             margin: "8px",
-            "& .MuiOutlinedInput-root": {
+            "& .MuiOutlinedInput-root:not(.MuiInputBase-multiline)": {
               height: "50px",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "rgba(255,255,255,0.09)",
