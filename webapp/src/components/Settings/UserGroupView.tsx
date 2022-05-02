@@ -161,17 +161,17 @@ const UserGroupView = (props: PropTypes) => {
     <List component="nav" aria-labelledby="nested-list-subheader" className={classes.root}>
       {data.map(
         (groupItem, index) =>
-          matchFilter(groupItem.group.name) && (
-            <Fragment key={groupItem.group.id}>
+          matchFilter(groupItem.name) && (
+            <Fragment key={groupItem.id}>
               <ListItem
                 className={classes.groupItem}
                 button
-                onClick={() => onButtonChange(index, groupItem.group.id)}
+                onClick={() => onButtonChange(index, groupItem.id)}
               >
-                <Typography className={clsx(classes.text, classes.title)}>{groupItem.group.name}</Typography>
+                <Typography className={clsx(classes.text, classes.title)}>{groupItem.name}</Typography>
                 <div className={classes.iconsContainer}>
-                  <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(groupItem.group.id)} />
-                  {onDeleteGroupClick !== undefined && <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteGroupClick(groupItem.group.id)} />}
+                  <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(groupItem.id)} />
+                  {onDeleteGroupClick !== undefined && <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteGroupClick(groupItem.id)} />}
                 </div>
                 {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
@@ -182,8 +182,8 @@ const UserGroupView = (props: PropTypes) => {
                       <Typography className={classes.text}>{userItem.name}</Typography>
                       <div className={classes.endItem}>
                         <Typography className={classes.role}>{t(roleToString(userItem.role))}</Typography>
-                        <CreateIcon className={classes.createIcon} style={{ cursor: 'pointer' }} onClick={() => setUserRoleModal({ group: groupItem.group, user: userItem })} />
-                        <CloseRoundedIcon className={classes.deleteIcon} style={{ cursor: 'pointer' }} onClick={() => onDeleteUserClick(groupItem.group.id, userItem.id)} />
+                        <CreateIcon className={classes.createIcon} style={{ cursor: 'pointer' }} onClick={() => setUserRoleModal({ group: groupItem, user: userItem })} />
+                        <CloseRoundedIcon className={classes.deleteIcon} style={{ cursor: 'pointer' }} onClick={() => onDeleteUserClick(groupItem.id, userItem.id)} />
                       </div>
                     </ListItem>
                   ))}

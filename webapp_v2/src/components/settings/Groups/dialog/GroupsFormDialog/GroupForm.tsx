@@ -23,81 +23,73 @@ import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
+import { useSelector } from "react-redux";
 import {
   RESERVED_GROUP_NAMES,
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
 } from "../../../utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
-import { GroupDTO, RoleType } from "../../../../../common/types";
+import { RoleType, UserDTO } from "../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
-import { getGroups } from "../../../../../services/api/user";
-import { UserFormDialogProps } from ".";
+import { getUsers } from "../../../../../services/api/user";
+import { getAuthUser } from "../../../../../store/selectors";
 
 /**
  * Types
  */
 
-interface Props extends FormObj {
-  onlyPermissions: UserFormDialogProps["onlyPermissions"];
-}
-
-/**
- * Constants
- */
-
-const PASSWORD_MIN_LENGTH = 8;
+type Props = FormObj;
 
 /**
  * Component
  */
 
-function UserForm(props: Props) {
+function GroupForm(props: Props) {
   const {
     control,
     register,
     getValues,
     formState: { errors },
-    onlyPermissions,
+    defaultValues,
   } = props;
 
-  const groupLabelId = useRef(uuidv4()).current;
+  const userLabelId = useRef(uuidv4()).current;
   const { fields, append, remove } = useFieldArray({
     control,
     name: "permissions",
   });
-  const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
-  const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
+  const [selectedUser, setSelectedUser] = useState<UserDTO>();
+  const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
   const { t } = useTranslation();
-  const commonTextFieldProps = {
-    required: true,
-    sx: { mx: 0 },
-    fullWidth: true,
-  };
+  const authUser = useSelector(getAuthUser);
   const allowToAddPermission =
-    selectedGroup &&
+    selectedUser &&
     !getValues("permissions").some(
-      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id
+      ({ user }: { user: UserDTO }) => user.id === selectedUser.id
     );
 
-  const filteredAndSortedGroups = useMemo(() => {
-    if (!groups) {
+  const filteredAndSortedUsers = useMemo(() => {
+    if (!users) {
       return [];
     }
     return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name))
+      users.filter(
+        (user) =>
+          !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id
+      )
     );
-  }, [groups]);
+  }, [users, authUser]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleGroupChange = (event: SelectChangeEvent<string>) => {
-    const groupId = event.target.value;
-    const group = groups?.find((gp) => gp.id === groupId);
-    setSelectedGroup(group);
+  const handleUserChange = (event: SelectChangeEvent<string>) => {
+    const userId = Number(event.target.value);
+    const user = users?.find((u) => u.id === userId);
+    setSelectedUser(user);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -106,39 +98,27 @@ function UserForm(props: Props) {
 
   return (
     <>
-      {/* Login credentials */}
-      {!onlyPermissions && (
-        <>
-          <TextField
-            label={t("settings:usernameLabel")}
-            error={!!errors.username}
-            helperText={errors.username?.message}
-            {...commonTextFieldProps}
-            {...register("username", {
-              required: t("main:form.field.required") as string,
-              validate: (value) => {
-                if (RESERVED_USER_NAMES.includes(value)) {
-                  return t("main:form.field.notAllowedValue") as string;
-                }
-              },
-            })}
-          />
-          <TextField
-            label={t("settings:passwordLabel")}
-            type="password"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            {...commonTextFieldProps}
-            {...register("password", {
-              required: t("main:form.field.required") as string,
-              minLength: {
-                value: PASSWORD_MIN_LENGTH,
-                message: t("main:form.field.minLength", [PASSWORD_MIN_LENGTH]),
-              },
-            })}
-          />
-        </>
-      )}
+      {/* Name */}
+      <TextField
+        sx={{ mx: 0 }}
+        label={t("main:name")}
+        error={!!errors.name}
+        helperText={errors.name?.message}
+        placeholder={defaultValues?.name}
+        InputLabelProps={
+          // Allow to show placeholder when field is empty
+          defaultValues?.name ? { shrink: true } : {}
+        }
+        fullWidth
+        {...register("name", {
+          required: t("main:form.field.required") as string,
+          validate: (value) => {
+            if (RESERVED_GROUP_NAMES.includes(value)) {
+              return t("main:form.field.notAllowedValue") as string;
+            }
+          },
+        })}
+      />
       {/* Permissions */}
       <Paper
         sx={{
@@ -149,7 +129,7 @@ function UserForm(props: Props) {
         }}
       >
         <Typography>{t("settings:permissionsLabel")}</Typography>
-        {isGroupsLoading && (
+        {isUsersLoading && (
           <Box
             sx={{
               display: "flex",
@@ -161,20 +141,20 @@ function UserForm(props: Props) {
             <CircularProgress color="inherit" />
           </Box>
         )}
-        {filteredAndSortedGroups.length > 0 && (
+        {filteredAndSortedUsers.length > 0 && (
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={groupLabelId}>{t("settings:group")}</InputLabel>
+                <InputLabel id={userLabelId}>{t("settings:user")}</InputLabel>
                 <Select
-                  labelId={groupLabelId}
-                  label={t("settings:group")}
+                  labelId={userLabelId}
+                  label={t("settings:user")}
                   defaultValue=""
-                  onChange={handleGroupChange}
+                  onChange={handleUserChange}
                 >
-                  {filteredAndSortedGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {group.name}
+                  {filteredAndSortedUsers.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
+                      {user.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -184,7 +164,7 @@ function UserForm(props: Props) {
                 size="small"
                 disabled={!allowToAddPermission}
                 onClick={() => {
-                  append({ group: selectedGroup, type: RoleType.READER });
+                  append({ user: selectedUser, type: RoleType.READER });
                 }}
               >
                 {t("settings:addButton")}
@@ -226,8 +206,8 @@ function UserForm(props: Props) {
                       <GroupIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary={getValues(`permissions.${index}.group.name`)}
-                      title={getValues(`permissions.${index}.group.name`)}
+                      primary={getValues(`permissions.${index}.user.name`)}
+                      title={getValues(`permissions.${index}.user.name`)}
                       sx={{
                         ".MuiTypography-root": {
                           textOverflow: "ellipsis",
@@ -248,4 +228,4 @@ function UserForm(props: Props) {
   );
 }
 
-export default UserForm;
+export default GroupForm;

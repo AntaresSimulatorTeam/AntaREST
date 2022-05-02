@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import { GroupDTO, UserDetailsDTO } from "../../../../common/types";
-import { createRole, deleteAllRoles } from "../../../../services/api/user";
+import { GroupDTO, RoleType, UserDetailsDTO } from "../../../../common/types";
+import { createRole, deleteUserRoles } from "../../../../services/api/user";
 import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
@@ -18,7 +18,6 @@ type InheritPropsToOmit =
   | "title"
   | "titleIcon"
   | "defaultValues"
-  | "overrideSchema"
   | "onSubmit"
   | "onCancel";
 
@@ -64,10 +63,10 @@ function UpdateUserDialog(props: Props) {
     // TODO: replace with update method when working
 
     try {
-      await mounted(deleteAllRoles(user.id));
+      await mounted(deleteUserRoles(user.id));
 
       const promises = permissions.map(
-        (perm: { group: GroupDTO; type: number }) =>
+        (perm: { group: GroupDTO; type: RoleType }) =>
           createRole({
             group_id: perm.group.id,
             type: perm.type,
@@ -108,7 +107,7 @@ function UpdateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
-      title={t("settings:updateUserTitle")}
+      title={t("settings:updateUser")}
       subtitle={t("settings:currentUser", [user.name])}
       titleIcon={EditIcon}
       defaultValues={defaultValues}

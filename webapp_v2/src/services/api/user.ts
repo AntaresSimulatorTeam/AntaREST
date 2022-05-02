@@ -3,13 +3,12 @@ import {
   UserDTO,
   GroupDTO,
   RoleCreationDTO,
-  RoleDTO,
   UserToken,
-  UserGroup,
+  GroupDetailsDTO,
   BotCreateDTO,
   BotDetailsDTO,
   BotDTO,
-  RoleCreationReturnDTO,
+  RoleDetailsDTO,
   UserDetailsDTO,
 } from "../../common/types";
 
@@ -58,15 +57,28 @@ export const deleteUser = async (id: number): Promise<void> => {
 // Groups
 ////////////////////////////////////////////////////////////////
 
-export const getGroups = async (): Promise<Array<GroupDTO>> => {
-  const res = await client.get("/v1/groups");
+interface GetGroupParams {
+  details: boolean;
+}
+
+type GroupTypeFromParams<T extends GetGroupParams> = T["details"] extends true
+  ? GroupDetailsDTO
+  : GroupDTO;
+
+export const getGroups = async <T extends GetGroupParams>(
+  params?: T
+): Promise<Array<GroupTypeFromParams<T>>> => {
+  const res = await client.get("/v1/groups", { params });
   return res.data;
 };
 
-export const getGroupInfos = async (id: string): Promise<UserGroup> => {
-  const res = await client.get(
-    `/v1/groups/${encodeURIComponent(id)}?details=true`
-  );
+export const getGroup = async <T extends GetGroupParams>(
+  id: string,
+  params?: T
+): Promise<Array<GroupTypeFromParams<T>>> => {
+  const res = await client.get(`/v1/groups/${encodeURIComponent(id)}`, {
+    params,
+  });
   return res.data;
 };
 
@@ -94,31 +106,36 @@ export const deleteGroup = async (id: string): Promise<string> => {
 // Roles
 ////////////////////////////////////////////////////////////////
 
-export const getAllRolesInGroup = async (
-  groupId: string
-): Promise<Array<RoleDTO>> => {
-  const res = await client.get(`/v1/roles/group/${groupId}`);
-  return res.data;
-};
-
 export const createRole = async (
   role: RoleCreationDTO
-): Promise<RoleCreationReturnDTO> => {
+): Promise<RoleDetailsDTO> => {
   const data = role;
   const res = await client.post("/v1/roles", data);
   return res.data;
 };
 
-export const deleteUserRole = async (
-  groupId: string,
-  userId: number
-): Promise<void> => {
+export const deleteUserRole = async <
+  T extends UserDTO["id"],
+  U extends GroupDTO["id"]
+>(
+  userId: T,
+  groupId: U
+): Promise<[T, U]> => {
   const res = await client.delete(`/v1/roles/${groupId}/${userId}`);
   return res.data;
 };
 
-export const deleteAllRoles = async (id: number): Promise<void> => {
-  const res = await client.delete(`/v1/users/roles/${id}`);
+export const deleteUserRoles = async <T extends UserDTO["id"]>(
+  userId: T
+): Promise<T> => {
+  const res = await client.delete(`/v1/users/roles/${userId}`);
+  return res.data;
+};
+
+export const getRolesForGroup = async (
+  groupId: string
+): Promise<RoleDetailsDTO[]> => {
+  const res = await client.get(`/v1/roles/group/${groupId}`);
   return res.data;
 };
 

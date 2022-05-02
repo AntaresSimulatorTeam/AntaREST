@@ -82,8 +82,7 @@ class UserRoleDTO(BaseModel):
     role: RoleType
 
 
-class UserGroup(BaseModel):
-    group: GroupDTO
+class GroupDetailDTO(GroupDTO):
     users: List[UserRoleDTO]
 
 
