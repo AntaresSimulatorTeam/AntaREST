@@ -48,11 +48,13 @@ function LauncherModal(props: Props) {
     }
   };
 
-  const handleChange = (field: string, value: number | string | boolean) => {
-    const val = field === "adequacy_patch" ? {} : value;
+  const handleChange = (
+    field: string,
+    value: number | string | boolean | object | undefined
+  ) => {
     setOptions({
       ...options,
-      [field]: val,
+      [field]: value,
     });
   };
 
@@ -181,7 +183,7 @@ function LauncherModal(props: Props) {
               <Checkbox
                 checked={!!options.adequacy_patch}
                 onChange={(e, checked) =>
-                  handleChange("adequacy_patch", checked)
+                  handleChange("adequacy_patch", checked ? {} : undefined)
                 }
               />
             }
