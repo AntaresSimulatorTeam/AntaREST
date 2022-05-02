@@ -1,8 +1,14 @@
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { ReactNode } from "react";
-import { FieldValues, UnpackNestedValue, useForm } from "react-hook-form";
+import {
+  FieldValues,
+  UnpackNestedValue,
+  useForm,
+  UseFormProps,
+  UseFormReturn,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { L, F } from "ts-toolbelt";
+import { F } from "ts-toolbelt";
 import * as R from "ramda";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog, {
@@ -19,11 +25,13 @@ export type SubmitHandlerData<TFieldValues extends FieldValues = FieldValues> =
     modifiedValues: UnpackNestedValue<TFieldValues>;
   };
 
-export type FormObj = Omit<ReturnType<typeof useForm>, "handleSubmit">;
+export type FormObj = Omit<UseFormReturn, "handleSubmit"> & {
+  defaultValues: UseFormProps["defaultValues"];
+};
 
 export interface FormDialogProps
   extends Omit<ConfirmationDialogProps, "onConfirm" | "onSubmit"> {
-  formOptions?: L.Head<Parameters<typeof useForm>>;
+  formOptions?: UseFormProps;
   onSubmit: <TFieldValues extends FieldValues>(
     data: SubmitHandlerData<TFieldValues>,
     event?: React.BaseSyntheticEvent
@@ -62,7 +70,7 @@ function FormDialog(props: FormDialogProps) {
       const dirtyValues = R.pickBy(
         (val, key) => dirtyFields[key],
         data
-      ) as object;
+      ) as FieldValues;
 
       return onSubmit({ values: data, modifiedValues: dirtyValues }, event);
     })().catch((error) => {
@@ -94,7 +102,7 @@ function FormDialog(props: FormDialogProps) {
       onClose={invokeIfNotSubmitting(onClose)}
     >
       <Box>
-        {children(formObj)}
+        {children({ defaultValues: formOptions?.defaultValues, ...formObj })}
         <Backdrop
           open={isSubmitting}
           sx={{

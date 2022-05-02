@@ -5,9 +5,9 @@ import { SyntheticEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import RootPage from "../components/common/page/RootPage";
+import Groups from "../components/settings/Groups";
 import Users from "../components/settings/Users";
-import { isGroupAdmin, isUserAdmin } from "../services/utils";
-import { AppState } from "../store/reducers";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../store/selectors";
 
 /**
  * Component
@@ -16,21 +16,20 @@ import { AppState } from "../store/reducers";
 function Settings() {
   const [tabValue, setTabValue] = useState("1");
   const [t] = useTranslation();
-  const authUser = useSelector((state: AppState) => state.auth.user);
-  const isAuthUserAdmin = authUser ? isUserAdmin(authUser) : false;
-  const isAuthUserInGroupAdmin = authUser ? isGroupAdmin(authUser) : false;
+  const isUserAdmin = useSelector(isAuthUserAdmin);
+  const isUserInGroupAdmin = useSelector(isAuthUserInGroupAdmin);
 
   const tabList = useMemo(() => {
     return [
-      isAuthUserAdmin && [t("settings:users"), () => <Users />],
-      (isAuthUserAdmin || isAuthUserInGroupAdmin) && [
+      isUserAdmin && [t("settings:users"), () => <Users />],
+      (isUserAdmin || isUserInGroupAdmin) && [
         t("settings:groups"),
-        () => "Groups",
+        () => <Groups />,
       ],
       [t("settings:tokens"), () => "Tokens"],
-      isAuthUserAdmin && [t("settings:maintenance"), () => "Maintenance"],
+      isUserAdmin && [t("settings:maintenance"), () => "Maintenance"],
     ].filter(Boolean) as Array<[string, () => JSX.Element]>;
-  }, [isAuthUserAdmin, isAuthUserInGroupAdmin, t]);
+  }, [isUserAdmin, isUserInGroupAdmin, t]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

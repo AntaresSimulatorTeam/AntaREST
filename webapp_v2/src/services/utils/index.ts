@@ -51,7 +51,7 @@ export const convertVariantTreeDTO = (
   ),
 });
 
-export const isUserAdmin = (user: UserInfo): boolean => {
+export const isUserAdmin = (user?: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find(
       (elm: JWTGroup) => elm.id === "admin" && elm.role === RoleType.ADMIN
@@ -61,7 +61,7 @@ export const isUserAdmin = (user: UserInfo): boolean => {
   return false;
 };
 
-export const isGroupAdmin = (user: UserInfo): boolean => {
+export const isGroupAdmin = (user?: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find(
       (elm: JWTGroup) => elm.role === RoleType.ADMIN

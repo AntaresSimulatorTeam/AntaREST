@@ -25,7 +25,7 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import Header from "./Header";
-import { RESERVED_USER_NAMES } from "./utils";
+import { RESERVED_USER_NAMES } from "../utils";
 import { IdType, UserDetailsDTO } from "../../../common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../services/utils";
@@ -98,10 +98,10 @@ function Users() {
     data: initialUsers,
     isLoading,
     reload: reloadFetchUsers,
-  } = usePromiseWithSnackbarError(async () => {
-    const users = await getUsers({ details: true });
-    return users.filter((user) => !RESERVED_USER_NAMES.includes(user.name));
-  }, "settings:usersError");
+  } = usePromiseWithSnackbarError(
+    () => getUsers({ details: true }),
+    t("settings:usersError")
+  );
 
   useUpdateEffect(() => {
     setUserToDelete(undefined);
@@ -112,7 +112,7 @@ function Users() {
   }, [initialUsers]);
 
   const filteredAndSortedUsers = useMemo(() => {
-    let list = users;
+    let list = users.filter((u) => !RESERVED_USER_NAMES.includes(u.name));
     if (searchValue) {
       const searchVal = searchValue.toLowerCase();
       list = users?.filter((user) =>
