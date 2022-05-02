@@ -6,6 +6,7 @@ import {
   FormControlLabel,
   Switch,
   TextField,
+  Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
@@ -89,7 +90,11 @@ function Maintenance() {
   ////////////////////////////////////////////////////////////////
 
   if (error) {
-    return null;
+    return (
+      <Typography sx={{ m: 2 }} align="center">
+        {t("settings:maintenanceError")}
+      </Typography>
+    );
   }
 
   return (
