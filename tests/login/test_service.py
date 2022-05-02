@@ -524,7 +524,7 @@ def test_authentication_ldap_user():
 
 
 def test_get_all_groups():
-    group = Group(id="my-group")
+    group = Group(id="my-group", name="my-group")
     groups = Mock()
     groups.get_all.return_value = [group]
 
