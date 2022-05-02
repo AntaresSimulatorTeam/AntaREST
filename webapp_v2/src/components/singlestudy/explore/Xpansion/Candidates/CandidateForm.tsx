@@ -4,10 +4,13 @@ import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import BasicModal from "../../../common/BasicModal";
-import { Title, Fields, SelectFields, StyledTextField } from "./Styles";
-import { XpansionCandidate, LinkCreationInfo } from "../../../../common/types";
-import SelectSingle from "../../../common/SelectSingle";
+import BasicModal from "../../../../common/BasicModal";
+import { Title, Fields, SelectFields, StyledTextField } from "../Styles";
+import {
+  XpansionCandidate,
+  LinkCreationInfo,
+} from "../../../../../common/types";
+import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {
   candidate: XpansionCandidate;
@@ -145,6 +148,18 @@ function CandidateForm(props: PropType) {
               handleChange("annual-cost-per-mw", parseFloat(e.target.value))
             }
           />
+          <StyledTextField
+            type="number"
+            label={t("xpansion:alreadyICapacity")}
+            variant="filled"
+            value={currentCandidate["already-installed-capacity"] || ""}
+            onChange={(e) =>
+              handleChange(
+                "already-installed-capacity",
+                parseFloat(e.target.value)
+              )
+            }
+          />
         </Fields>
         <Fields>
           <Box
@@ -245,20 +260,6 @@ function CandidateForm(props: PropType) {
               }
             />
           )}
-        </Fields>
-        <Fields>
-          <StyledTextField
-            type="number"
-            label={t("xpansion:alreadyICapacity")}
-            variant="filled"
-            value={currentCandidate["already-installed-capacity"] || ""}
-            onChange={(e) =>
-              handleChange(
-                "already-installed-capacity",
-                parseFloat(e.target.value)
-              )
-            }
-          />
         </Fields>
       </Box>
       <Box>

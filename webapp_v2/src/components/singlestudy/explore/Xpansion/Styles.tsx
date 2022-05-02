@@ -20,7 +20,7 @@ export const SelectFields = styled(Box)(() => ({
 }));
 
 export const Title = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
+  color: theme.palette.text.primary,
   fontSize: "1.25rem",
   fontWeight: 400,
   lineHeight: 1.334,

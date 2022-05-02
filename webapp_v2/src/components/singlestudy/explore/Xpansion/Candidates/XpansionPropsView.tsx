@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import PropertiesView from "../../../common/PropertiesView";
-import {
-  XpansionCandidate,
-  XpansionRenderView,
-} from "../../../../common/types";
+import PropertiesView from "../../../../common/PropertiesView";
+import { XpansionCandidate } from "../../../../../common/types";
 import CandidateListing from "./CandidateListing";
-import BasicModal from "../../../common/BasicModal";
+import BasicModal from "../../../../common/BasicModal";
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
@@ -15,7 +12,6 @@ interface PropsType {
   setSelectedItem: (item: string) => void;
   onAdd: () => void;
   deleteXpansion: () => void;
-  setView: (item: XpansionRenderView | undefined) => void;
 }
 
 function XpansionPropsView(props: PropsType) {
@@ -26,7 +22,6 @@ function XpansionPropsView(props: PropsType) {
     setSelectedItem,
     onAdd,
     deleteXpansion,
-    setView,
   } = props;
   const [filteredCandidates, setFilteredCandidates] =
     useState<Array<XpansionCandidate>>();
@@ -63,13 +58,11 @@ function XpansionPropsView(props: PropsType) {
               flexDirection="column"
               alignItems="flex-end"
               flexGrow={1}
-              marginBottom="120px"
             >
               <CandidateListing
                 candidates={candidateList}
                 selectedItem={selectedItem}
                 setSelectedItem={setSelectedItem}
-                setView={setView}
               />
               <Box
                 sx={{
@@ -82,28 +75,7 @@ function XpansionPropsView(props: PropsType) {
                 }}
               >
                 <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.settings)}
-                >
-                  {t("main:settings")}
-                </Button>
-                <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.files)}
-                >
-                  {t("main:files")}
-                </Button>
-                <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.capacities)}
-                >
-                  {t("xpansion:capacities")}
-                </Button>
-                <Button
-                  sx={{ color: "error.main" }}
+                  sx={{ color: "error.light" }}
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >
@@ -121,13 +93,11 @@ function XpansionPropsView(props: PropsType) {
               flexDirection="column"
               alignItems="center"
               flexGrow={1}
-              marginBottom="120px"
             >
               <CandidateListing
                 candidates={filteredCandidates}
                 selectedItem={selectedItem}
                 setSelectedItem={setSelectedItem}
-                setView={setView}
               />
               <Box
                 sx={{
@@ -140,28 +110,7 @@ function XpansionPropsView(props: PropsType) {
                 }}
               >
                 <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.settings)}
-                >
-                  {t("main:settings")}
-                </Button>
-                <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.files)}
-                >
-                  {t("main:files")}
-                </Button>
-                <Button
-                  sx={{ color: "primary.main" }}
-                  size="small"
-                  onClick={() => setView(XpansionRenderView.capacities)}
-                >
-                  {t("xpansion:capacities")}
-                </Button>
-                <Button
-                  sx={{ color: "error.main" }}
+                  sx={{ color: "error.light" }}
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >

@@ -3,9 +3,9 @@ import { Box, Divider, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { XpansionSettings } from "../../../../common/types";
-import { Fields, SelectFields, Title, StyledTextField } from "./Styles";
-import SelectSingle from "../../../common/SelectSingle";
+import { XpansionSettings } from "../../../../../common/types";
+import { Fields, SelectFields, Title, StyledTextField } from "../Styles";
+import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {
   settings: XpansionSettings;

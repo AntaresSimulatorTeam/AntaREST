@@ -39,5 +39,6 @@
     "getFileError": "Échec lors de la récupération du fichier",
     "deleteFileError": "Échec lors de la suppression du fichier",
     "newXpansionConfig": "Nouvelle configuration Xpansion",
+    "candidates": "Candidats",
     "newCandidate": "Nouveau candidat"
 }

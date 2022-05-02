@@ -4,24 +4,20 @@ import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import {
-  XpansionCandidate,
-  XpansionRenderView,
-} from "../../../../common/types";
-import { scrollbarStyle } from "../../../../theme";
+import { XpansionCandidate } from "../../../../../common/types";
+import { scrollbarStyle } from "../../../../../theme";
 
 const ROW_ITEM_SIZE = 45;
 const BUTTONS_SIZE = 40;
 
 const StyledList = styled(FixedSizeList)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
   "&> div > div": {
     cursor: "pointer",
     "&:hover": {
       textDecoration: "underline",
-      color: theme.palette.primary.main,
+      color: theme.palette.text.primary,
       "&>svg": {
-        color: `${theme.palette.primary.main} !important`,
+        color: `${theme.palette.text.primary} !important`,
       },
     },
   },
@@ -32,12 +28,11 @@ interface PropsType {
   candidates: Array<XpansionCandidate> | undefined;
   selectedItem: string;
   setSelectedItem: (item: string) => void;
-  setView: (item: XpansionRenderView | undefined) => void;
 }
 
 const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { candidates, setSelectedItem, selectedItem, setView } = data;
+  const { candidates, setSelectedItem, selectedItem } = data;
   const candidate = candidates[index];
 
   return (
@@ -61,7 +56,6 @@ const Row = memo((props: ListChildComponentProps) => {
       }
       onClick={() => {
         setSelectedItem(candidate.name);
-        setView(XpansionRenderView.candidate);
       }}
     >
       <Typography
@@ -86,7 +80,7 @@ const Row = memo((props: ListChildComponentProps) => {
 }, areEqual);
 
 function CandidateListing(props: PropsType) {
-  const { candidates = [], selectedItem, setSelectedItem, setView } = props;
+  const { candidates = [], selectedItem, setSelectedItem } = props;
 
   return (
     <Box
@@ -97,7 +91,7 @@ function CandidateListing(props: PropsType) {
         display: "flex",
         flexGrow: 1,
         flexShrink: 1,
-        marginBottom: "120px",
+        marginBottom: "10px",
       }}
     >
       {candidates && candidates.length > 0 && (
@@ -118,7 +112,6 @@ function CandidateListing(props: PropsType) {
                   candidates,
                   setSelectedItem,
                   selectedItem,
-                  setView,
                 }}
               >
                 {Row}

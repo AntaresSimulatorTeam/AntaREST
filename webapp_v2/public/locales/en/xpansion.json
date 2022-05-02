@@ -39,5 +39,6 @@
     "getFileError": "Failed to retrieve the file",
     "deleteFileError": "Failed to delete the file",
     "newXpansionConfig": "New Xpansion configuration",
+    "candidates": "Candidates",
     "newCandidate": "New candidate"
 }

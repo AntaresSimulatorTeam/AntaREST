@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-// import ImportForm from "../../../common/ImportForm";
+import ImportForm from "../../../common/ImportForm";
 import BasicModal from "../../../common/BasicModal";
 import { Title } from "./Styles";
 
@@ -52,8 +52,6 @@ function XpansionTable(props: PropType) {
     }
   };
 
-  console.log(onImport);
-
   return (
     <Box
       display="flex"
@@ -65,7 +63,7 @@ function XpansionTable(props: PropType) {
       <Title>{title}</Title>
       <Divider sx={{ mt: 1, mb: 2 }} />
       <Box display="flex" justifyContent="flex-end">
-        {/* <ImportForm text={t("main:import")} onImport={onImport} /> */}
+        <ImportForm text={t("main:import")} onImport={onImport} />
       </Box>
       <Box
         width="100%"
@@ -78,14 +76,32 @@ function XpansionTable(props: PropType) {
         <TableContainer component={Box}>
           <Table sx={{ minWidth: "650px" }} aria-label="simple table">
             <TableHead>
-              <TableRow>
-                <TableCell>{t("xpansion:fileName")}</TableCell>
-                <TableCell align="right">{t("xpansion:options")}</TableCell>
+              <TableRow
+                sx={(theme) => ({
+                  "&> th": {
+                    borderBottom: `solid 1px ${theme.palette.divider}`,
+                  },
+                })}
+              >
+                <TableCell sx={{ color: "text.secondary" }}>
+                  {t("xpansion:fileName")}
+                </TableCell>
+                <TableCell align="right" sx={{ color: "text.secondary" }}>
+                  {t("xpansion:options")}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {content.map((row) => (
-                <TableRow key={row}>
+                <TableRow
+                  key={row}
+                  sx={(theme) => ({
+                    "&> th, >td": {
+                      borderBottom: "solid 1px",
+                      borderColor: theme.palette.divider,
+                    },
+                  })}
+                >
                   <TableCell component="th" scope="row">
                     {row}
                   </TableCell>
