@@ -2,6 +2,7 @@ library(AdequacyPatch)
 library(antaresRead)
 library(yaml)
 library(parallel)
+library(data.table)
 
 opts <- setSimulationPath(".")
 
