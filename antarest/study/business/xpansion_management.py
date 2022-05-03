@@ -1,11 +1,15 @@
 import logging
+import shutil
 from enum import Enum
 from http import HTTPStatus
+from io import BytesIO
 from typing import Optional, Union, List, cast
+from zipfile import ZipFile, BadZipFile
 
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, BaseModel
 
+from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
@@ -20,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
     Expansion,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.utils import fix_study_root
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +159,9 @@ class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
 
-    def create_xpansion_configuration(self, study: Study) -> None:
+    def create_xpansion_configuration(
+        self, study: Study, zipped_config: Optional[UploadFile] = None
+    ) -> None:
         logger.info(
             f"Initiating xpansion configuration for study '{study.id}'"
         )
@@ -165,6 +172,28 @@ class XpansionManager:
             file_study.tree.get(["user", "expansion"])
             logger.info(f"Using existing configuration for study '{study.id}'")
         except ChildNotFoundError:
+            if zipped_config:
+                try:
+                    with ZipFile(
+                        BytesIO(zipped_config.file.read())
+                    ) as zip_output:
+                        logger.info(
+                            f"Importing zipped xpansion configuration for study '{study.id}'"
+                        )
+                        zip_output.extractall(
+                            path=file_study.config.path / "user" / "expansion"
+                        )
+                        fix_study_root(
+                            file_study.config.path / "user" / "expansion"
+                        )
+                    return
+                except BadZipFile:
+                    shutil.rmtree(
+                        file_study.config.path / "user" / "expansion",
+                        ignore_errors=True,
+                    )
+                    raise BadZipBinary("Only zip file are allowed.")
+
             study_version = file_study.config.version
 
             xpansion_settings = {
@@ -245,7 +274,11 @@ class XpansionManager:
     def _assert_max_iteration_is_valid(
         self, max_iteration: Union[int, MaxIteration]
     ) -> None:
-        if max_iteration < 0 or max_iteration != MaxIteration.INF:
+        if (
+            isinstance(max_iteration, int)
+            and max_iteration < 0
+            or cast(str, max_iteration) != MaxIteration.INF
+        ):
             raise WrongTypeFormat(
                 "'max_iteration' must be an integer greater than or equal to 0 OR '+Inf'"
             )
@@ -265,7 +298,9 @@ class XpansionManager:
             self._assert_is_positive(
                 "relative_gap", new_xpansion_settings_dto.relative_gap
             )
-        if new_xpansion_settings_dto.max_iteration is not None:
+        if new_xpansion_settings_dto.max_iteration is not None and isinstance(
+            new_xpansion_settings_dto.max_iteration, int
+        ):
             self._assert_is_positive(
                 "max_iteration", new_xpansion_settings_dto.max_iteration
             )

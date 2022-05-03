@@ -40,6 +40,7 @@ def create_xpansion_routes(
     )
     def create_xpansion_configuration(
         uuid: str,
+        file: Optional[UploadFile] = File(None),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -47,7 +48,9 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.create_xpansion_configuration(uuid=uuid, params=params)
+        study_service.create_xpansion_configuration(
+            uuid=uuid, zipped_config=file, params=params
+        )
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion",
