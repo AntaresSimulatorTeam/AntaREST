@@ -13,10 +13,11 @@ export const Fields = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const SelectFields = styled(Box)(() => ({
+export const SelectFields = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   width: "270px",
+  marginBottom: theme.spacing(1),
 }));
 
 export const Title = styled(Typography)(({ theme }) => ({

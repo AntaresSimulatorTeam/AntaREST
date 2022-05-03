@@ -39,7 +39,7 @@ function SettingsForm(props: PropType) {
   }, [settings]);
 
   return (
-    <Box>
+    <Box sx={{ px: 1 }}>
       <Box>
         <Box
           display="flex"
@@ -227,8 +227,9 @@ function SettingsForm(props: PropType) {
             <VisibilityIcon
               sx={{
                 mx: 1,
+                color: "action.active",
                 "&:hover": {
-                  color: "secondary.main",
+                  color: "primary.main",
                   cursor: "pointer",
                 },
               }}
@@ -256,8 +257,9 @@ function SettingsForm(props: PropType) {
             <VisibilityIcon
               sx={{
                 mx: 1,
+                color: "action.active",
                 "&:hover": {
-                  color: "secondary.main",
+                  color: "primary.main",
                   cursor: "pointer",
                 },
               }}

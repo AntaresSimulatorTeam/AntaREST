@@ -1,12 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { StudyMetadata } from "../../../../../common/types";
 import {
-  xpansionConfigurationExist,
   getAllConstraints,
   deleteConstraints,
   getConstraint,
@@ -20,7 +19,6 @@ import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 function Files() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const navigate = useNavigate();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
   const [constraintViewModal, setConstraintViewModal] = useState<{
@@ -32,15 +30,8 @@ function Files() {
   const init = useCallback(async () => {
     try {
       if (study) {
-        const exist = await xpansionConfigurationExist(study.id);
-        if (exist) {
-          if (study) {
-            const tempConstraints = await getAllConstraints(study.id);
-            setConstraints(tempConstraints);
-          }
-        } else {
-          navigate("Filesandidates");
-        }
+        const tempConstraints = await getAllConstraints(study.id);
+        setConstraints(tempConstraints);
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
@@ -113,7 +104,6 @@ function Files() {
           title={constraintViewModal.filename}
           onClose={() => setConstraintViewModal(undefined)}
           rootStyle={{
-            backgroundColor: "white",
             maxWidth: "80%",
             maxHeight: "70%",
             display: "flex",
@@ -123,11 +113,10 @@ function Files() {
         >
           <Box
             width="900px"
-            height="600px"
+            height="500px"
             display="flex"
             flexDirection="column"
             alignItems="flex-start"
-            overflow="auto"
             padding="8px"
           >
             <code style={{ whiteSpace: "pre" }}>

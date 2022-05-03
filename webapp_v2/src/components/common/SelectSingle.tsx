@@ -64,15 +64,17 @@ function SelectSingle(props: Props) {
             ? (e) => handleChange(label, e.target.value as string)
             : basicHandleChange
         }
-        sx={{
-          minHeight: 0,
-          background: "rgba(255, 255, 255, 0.09)",
-          borderRadius: "4px 4px 0px 0px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-          ".MuiSelect-icon": {
-            backgroundColor: "#222333",
-          },
-        }}
+        sx={
+          variant === "filled"
+            ? {
+                background: "rgba(255, 255, 255, 0.09)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+                ".MuiSelect-icon": {
+                  backgroundColor: "#222333",
+                },
+              }
+            : {}
+        }
       >
         {optional && (
           <MenuItem value="" key="None">

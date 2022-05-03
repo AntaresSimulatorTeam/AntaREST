@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import DeleteIcon from "@mui/icons-material/Delete";
 import PropertiesView from "../../../../common/PropertiesView";
 import { XpansionCandidate } from "../../../../../common/types";
 import CandidateListing from "./CandidateListing";
-import BasicModal from "../../../../common/BasicModal";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
@@ -124,28 +125,18 @@ function XpansionPropsView(props: PropsType) {
         onAdd={onAdd}
       />
       {openConfirmationModal && candidateList && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          closeButtonLabel={t("main:noButton")}
-          actionButtonLabel={t("main:yesButton")}
-          onActionButtonClick={() => {
+        <ConfirmationDialog
+          open
+          titleIcon={DeleteIcon}
+          onConfirm={() => {
             deleteXpansion();
             setOpenConfirmationModal(false);
           }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
+          onCancel={() => setOpenConfirmationModal(false)}
+          alert="warning"
         >
-          <Typography sx={{ p: 3 }}>
-            {t("xpansion:confirmDeleteXpansion")}
-          </Typography>
-        </BasicModal>
+          {t("xpansion:confirmDeleteXpansion")}
+        </ConfirmationDialog>
       )}
     </>
   );

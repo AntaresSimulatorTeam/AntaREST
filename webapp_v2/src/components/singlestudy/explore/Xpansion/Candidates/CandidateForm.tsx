@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import BasicModal from "../../../../common/BasicModal";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import { Title, Fields, SelectFields, StyledTextField } from "../Styles";
 import {
   XpansionCandidate,
@@ -295,12 +295,12 @@ function CandidateForm(props: PropType) {
             <VisibilityIcon
               sx={{
                 mx: 1,
+                color: "action.active",
                 "&:hover": {
-                  color: "secondary.main",
+                  color: "primary.main",
                   cursor: "pointer",
                 },
               }}
-              color="primary"
               onClick={() =>
                 currentCandidate["link-profile"] &&
                 onRead(currentCandidate["link-profile"] || "")
@@ -324,8 +324,9 @@ function CandidateForm(props: PropType) {
             <VisibilityIcon
               sx={{
                 mx: 1,
+                color: "action.active",
                 "&:hover": {
-                  color: "secondary.main",
+                  color: "primary.main",
                   cursor: "pointer",
                 },
               }}
@@ -339,28 +340,18 @@ function CandidateForm(props: PropType) {
         </Box>
       </Box>
       {openConfirmationModal && candidate && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          actionButtonLabel={t("main:yesButton")}
-          closeButtonLabel={t("main:noButton")}
-          onActionButtonClick={() => {
+        <ConfirmationDialog
+          titleIcon={DeleteIcon}
+          onCancel={() => setOpenConfirmationModal(false)}
+          onConfirm={() => {
             deleteCandidate(currentCandidate.name);
             setOpenConfirmationModal(false);
           }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
+          alert="warning"
+          open
         >
-          <Typography sx={{ p: 3 }}>
-            Êtes-vous sûr de vouloir supprimer ce candidat?
-          </Typography>
-        </BasicModal>
+          Êtes-vous sûr de vouloir supprimer ce candidat?
+        </ConfirmationDialog>
       )}
     </Box>
   );

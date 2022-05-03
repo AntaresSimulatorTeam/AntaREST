@@ -1,14 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../common/types";
+import {
+  createXpansionConfiguration,
+  xpansionConfigurationExist,
+} from "../../../../services/api/xpansion";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import TabWrapper from "../TabWrapper";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [configExist, setConfigExist] = useState<boolean>(true);
 
   const tabList = useMemo(
     () => [
@@ -32,6 +40,32 @@ function Xpansion() {
     [study]
   );
 
+  const createXpansion = async () => {
+    try {
+      if (study) {
+        await createXpansionConfiguration(study.id);
+      }
+    } catch (e) {
+      enqueueErrorSnackbar(t("xpansion:createXpansionError"), e as AxiosError);
+    } finally {
+      setConfigExist(true);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (study) {
+          const exist = await xpansionConfigurationExist(study.id);
+          setConfigExist(exist);
+        }
+      } catch (e) {
+        enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      }
+    };
+    init();
+  });
+
   return (
     <Box
       width="100%"
@@ -43,7 +77,34 @@ function Xpansion() {
       boxSizing="border-box"
       overflow="hidden"
     >
-      <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
+      {!configExist ? (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          flexGrow={1}
+        >
+          <Button
+            sx={{
+              width: "140px",
+              border: "2px solid text.secondary",
+              color: "text.secondary",
+              "&:hover": {
+                border: "2px solid primary.main",
+                color: "primary.main",
+              },
+              fontWeight: "bold",
+            }}
+            variant="outlined"
+            onClick={createXpansion}
+          >
+            {t("xpansion:newXpansionConfig")}
+          </Button>
+        </Box>
+      ) : (
+        <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
+      )}
     </Box>
   );
 }

@@ -1,12 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { MatrixType, StudyMetadata } from "../../../../../common/types";
 import {
-  xpansionConfigurationExist,
   getAllCapacities,
   deleteCapacity,
   getCapacity,
@@ -21,7 +20,6 @@ import XpansionTable from "../XpansionTable";
 function Capacities() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const navigate = useNavigate();
   const [capacities, setCapacities] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
   const [capacityViewModal, setCapacityViewModal] = useState<{
@@ -33,15 +31,8 @@ function Capacities() {
   const init = useCallback(async () => {
     try {
       if (study) {
-        const exist = await xpansionConfigurationExist(study.id);
-        if (exist) {
-          if (study) {
-            const tempCapa = await getAllCapacities(study.id);
-            setCapacities(tempCapa);
-          }
-        } else {
-          navigate("candidates");
-        }
+        const tempCapa = await getAllCapacities(study.id);
+        setCapacities(tempCapa);
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
@@ -114,7 +105,6 @@ function Capacities() {
           title={capacityViewModal.filename}
           onClose={() => setCapacityViewModal(undefined)}
           rootStyle={{
-            backgroundColor: "white",
             maxWidth: "80%",
             maxHeight: "70%",
             display: "flex",

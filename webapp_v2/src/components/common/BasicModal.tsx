@@ -9,6 +9,7 @@ import {
   Paper,
   Theme,
 } from "@mui/material";
+import { scrollbarStyle } from "../../theme";
 
 type ColorVariant =
   | "inherit"
@@ -97,6 +98,8 @@ function BasicModal(props: PropsWithChildren<Props>) {
           alignItems="center"
           p={0}
           boxSizing="border-box"
+          overflow="auto"
+          sx={scrollbarStyle}
         >
           {children}
         </Box>

@@ -80,6 +80,7 @@ function CreateCandidateModal(props: PropType) {
           data={candidate.link}
           handleChange={handleChange}
           variant="outlined"
+          sx={{ m: 1, width: "234px" }}
         />
         <TextField
           type="number"

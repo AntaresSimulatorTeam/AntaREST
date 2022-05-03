@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
@@ -8,7 +8,6 @@ import { useSnackbar } from "notistack";
 import { StudyMetadata, XpansionSettings } from "../../../../../common/types";
 import {
   getXpansionSettings,
-  xpansionConfigurationExist,
   getAllConstraints,
   getConstraint,
   updateXpansionSettings,
@@ -21,7 +20,6 @@ import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 function Settings() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const navigate = useNavigate();
   const [settings, setSettings] = useState<XpansionSettings>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
@@ -57,13 +55,8 @@ function Settings() {
   const init = useCallback(async () => {
     try {
       if (study) {
-        const exist = await xpansionConfigurationExist(study.id);
-        if (exist) {
-          initSettings();
-          initFiles();
-        } else {
-          navigate("candidates");
-        }
+        initSettings();
+        initFiles();
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
@@ -122,7 +115,6 @@ function Settings() {
           title={constraintViewModal.filename}
           onClose={() => setConstraintViewModal(undefined)}
           rootStyle={{
-            backgroundColor: "white",
             maxWidth: "80%",
             maxHeight: "70%",
             display: "flex",
@@ -132,11 +124,10 @@ function Settings() {
         >
           <Box
             width="900px"
-            height="600px"
+            height="500px"
             display="flex"
             flexDirection="column"
             alignItems="flex-start"
-            overflow="auto"
             padding="8px"
           >
             <code style={{ whiteSpace: "pre" }}>

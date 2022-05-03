@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import {
   Box,
-  Typography,
   Divider,
   TableContainer,
   Table,
@@ -18,7 +17,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ImportForm from "../../../common/ImportForm";
-import BasicModal from "../../../common/BasicModal";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import { Title } from "./Styles";
 
 const logErr = debug("antares:createimportform:error");
@@ -59,6 +58,7 @@ function XpansionTable(props: PropType) {
       width="100%"
       height="100%"
       flexDirection="column"
+      sx={{ px: 1 }}
     >
       <Title>{title}</Title>
       <Divider sx={{ mt: 1, mb: 2 }} />
@@ -117,8 +117,9 @@ function XpansionTable(props: PropType) {
                     <VisibilityIcon
                       sx={{
                         mx: 1,
+                        color: "action.active",
                         "&:hover": {
-                          color: "secondary.main",
+                          color: "primary.main",
                           cursor: "pointer",
                         },
                       }}
@@ -145,26 +146,18 @@ function XpansionTable(props: PropType) {
         </TableContainer>
       </Box>
       {openConfirmationModal && openConfirmationModal.length > 0 && (
-        <BasicModal
-          open={!!openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          actionButtonLabel={t("main:yesButton")}
-          closeButtonLabel={t("main:noButton")}
-          onActionButtonClick={() => {
+        <ConfirmationDialog
+          open
+          titleIcon={DeleteIcon}
+          onConfirm={() => {
             onDelete(openConfirmationModal);
             setOpenConfirmationModal("");
           }}
-          onClose={() => setOpenConfirmationModal("")}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
+          onCancel={() => setOpenConfirmationModal("")}
+          alert="warning"
         >
-          <Typography sx={{ p: 3 }}>{t("xpansion:deleteFile")}</Typography>
-        </BasicModal>
+          {t("xpansion:deleteFile")}
+        </ConfirmationDialog>
       )}
     </Box>
   );

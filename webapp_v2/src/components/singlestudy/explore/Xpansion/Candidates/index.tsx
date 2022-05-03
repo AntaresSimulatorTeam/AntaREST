@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import { useSnackbar } from "notistack";
 import {
   MatrixType,
@@ -14,9 +14,7 @@ import {
 import SplitLayoutView from "../../../../common/SplitLayoutView";
 import {
   getAllCandidates,
-  xpansionConfigurationExist,
   getAllCapacities,
-  createXpansionConfiguration,
   deleteXpansionConfiguration,
   addCandidate,
   deleteCandidate,
@@ -36,13 +34,13 @@ import CandidateForm from "./CandidateForm";
 function Candidates() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
+  const navigate = useNavigate();
   const [candidateCreationModal, setCandidateCreationModal] =
     useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<string>();
   const [candidates, setCandidates] = useState<Array<XpansionCandidate>>();
   const [links, setLinks] = useState<Array<LinkCreationInfo>>();
   const [capacities, setCapacities] = useState<Array<string>>();
-  const [createConfigView, setCreateConfigView] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
   const [capacityViewModal, setCapacityViewModal] = useState<{
     filename: string;
@@ -65,6 +63,7 @@ function Candidates() {
               (item: { link: string }) =>
                 item.link
                   .split(" - ")
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   .map((index: any) => transformNameToId(index))
                   .join(" - ")
             )[i];
@@ -95,15 +94,10 @@ function Candidates() {
   const init = useCallback(async () => {
     try {
       if (study) {
-        const exist = await xpansionConfigurationExist(study.id);
-        if (exist) {
-          initCandidate();
-          initCapa();
-          const tempLinks = await getAllLinks(study.id);
-          setLinks(tempLinks);
-        } else {
-          setCreateConfigView(true);
-        }
+        initCandidate();
+        initCapa();
+        const tempLinks = await getAllLinks(study.id);
+        setLinks(tempLinks);
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
@@ -111,20 +105,6 @@ function Candidates() {
       setLoaded(true);
     }
   }, [study?.id, t, initCandidate, initCapa]);
-
-  const createXpansion = async () => {
-    try {
-      if (study) {
-        await createXpansionConfiguration(study.id);
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:createXpansionError"), e as AxiosError);
-    } finally {
-      setCreateConfigView(false);
-      setLoaded(true);
-      init();
-    }
-  };
 
   const deleteXpansion = async () => {
     try {
@@ -134,7 +114,7 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:deleteXpansionError"), e as AxiosError);
     } finally {
-      setCreateConfigView(true);
+      navigate("../../xpansion");
     }
   };
 
@@ -271,36 +251,6 @@ function Candidates() {
   return (
     <>
       {loaded ? (
-        createConfigView && (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            width="100%"
-            flexGrow={1}
-          >
-            <Button
-              sx={{
-                width: "140px",
-                border: "2px solid primary.main",
-                "&:hover": {
-                  border: "2px solid secondary.main",
-                  color: "secondary.main",
-                },
-                fontWeight: "bold",
-              }}
-              color="primary"
-              variant="outlined"
-              onClick={createXpansion}
-            >
-              {t("xpansion:newXpansionConfig")}
-            </Button>
-          </Box>
-        )
-      ) : (
-        <SimpleLoader />
-      )}
-      {loaded && !createConfigView && (
         <SplitLayoutView
           left={
             <XpansionPropsView
@@ -317,6 +267,8 @@ function Candidates() {
             </Box>
           }
         />
+      ) : (
+        <SimpleLoader />
       )}
 
       {candidateCreationModal && (
@@ -333,7 +285,6 @@ function Candidates() {
           title={capacityViewModal.filename}
           onClose={() => setCapacityViewModal(undefined)}
           rootStyle={{
-            backgroundColor: "white",
             maxWidth: "80%",
             maxHeight: "70%",
             display: "flex",
