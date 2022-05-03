@@ -67,5 +67,9 @@
   "groupsLabel": "Groupes",
   "tagsLabel": "Tags",
   "bookmark": "Ajouter aux favoris",
-  "removeFavorite": "Retirer des favoris"
+  "removeFavorite": "Retirer des favoris",
+  "exportOptions": "Options d'export",
+  "exportOutput": "Exporter une sortie",
+  "exportOutputFilter": "Exporter une sortie filtrée",
+  "selectOutput": "Selectionnez une sortie"
 }
