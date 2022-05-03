@@ -46,6 +46,7 @@ def matrix_garbage_collector(tmp_path: Path):
     command_factory = CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService),
+        repository=Mock(spec=VariantStudyRepository),
     )
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = (

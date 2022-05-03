@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -52,14 +52,12 @@ def test_match(command_context: CommandContext):
     assert base.match_signature() == "update_comments"
 
 
-@patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction"
-)
 def test_revert(
-    mock_command_extraction: CommandExtraction,
     command_context: CommandContext,
     empty_study: FileStudy,
 ):
+    mock_command_extraction = Mock(spec=CommandExtraction)
+    mock_command_extraction.command_context = command_context
     mock_command_extraction.generate_update_comments.side_effect = (
         lambda x: CommandExtraction.generate_update_comments(
             mock_command_extraction, x
@@ -69,6 +67,13 @@ def test_revert(
     base_command = UpdateComments(
         comments="comments", command_context=command_context
     )
+
+    object.__setattr__(
+        base_command,
+        "_get_command_extraction",
+        Mock(return_value=mock_command_extraction),
+    )
+
     base_command.revert([], empty_study)
     mock_command_extraction.generate_update_comments.assert_called_with(
         empty_study.tree

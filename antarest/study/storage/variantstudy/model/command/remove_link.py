@@ -142,9 +142,6 @@ class RemoveLink(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_link import (
             CreateLink,
         )
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         for command in reversed(history):
             if (
@@ -155,12 +152,9 @@ class RemoveLink(ICommand):
                 return [command]
         area_from, area_to = sorted([self.area1, self.area2])
         try:
-            return (
-                CommandExtraction(
-                    self.command_context.matrix_service,
-                    self.command_context.patch_service,
-                )
-            ).extract_link(base, area_from, area_to)
+            return self._get_command_extraction().extract_link(
+                base, area_from, area_to
+            )
         except ChildNotFoundError as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_link {self.area1}/{self.area2}",

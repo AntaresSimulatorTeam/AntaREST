@@ -1,5 +1,3 @@
-import time
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -16,8 +14,8 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
 from antarest.login.model import User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -268,7 +266,12 @@ def test_copy_study() -> None:
             version=7,
         )
     ]
-    src_md = VariantStudy(id=src_id, path="path", commands=commands)
+    src_md = VariantStudy(
+        id=src_id,
+        path="path",
+        commands=commands,
+        additional_data=StudyAdditionalData(),
+    )
 
     md = study_service.copy(src_md, "dest_name")
     assert len(src_md.commands) == len(md.commands)
@@ -338,6 +341,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
         owner=User(id=2, name="me"),
         groups=[],
         public_mode=PublicMode.NONE,
+        additional_data=StudyAdditionalData(),
     )
     children = [
         VariantStudy(
@@ -350,6 +354,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
             owner=User(id=2, name="me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            additional_data=StudyAdditionalData(),
         ),
         VariantStudy(
             id="child2",
@@ -361,6 +366,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
             owner=User(id=3, name="not me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            additional_data=StudyAdditionalData(),
         ),
     ]
     repo_mock.get.side_effect = [parent] + children

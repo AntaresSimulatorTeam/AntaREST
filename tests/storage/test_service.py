@@ -30,7 +30,6 @@ from antarest.study.model import (
     RawStudy,
     PublicMode,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadType,
     StudyMetadataDTO,
@@ -40,6 +39,7 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     TimeSerie,
     TimeSeriesData,
+    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
@@ -129,7 +129,7 @@ def test_get_studies_uuid() -> None:
     assert [a, c] == studies
 
 
-def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
+def study_to_dto(study: Study) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
@@ -147,7 +147,7 @@ def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
             GroupDTO(id=group.id, name=group.name) for group in study.groups
         ],
         public_mode=study.public_mode or PublicMode.NONE,
-        horizon=None,
+        horizon=study.additional_data.horizon,
         scenario=None,
         status=None,
         doc=None,
@@ -170,6 +170,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
     )
     b = RawStudy(
         id="B",
@@ -181,6 +182,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace="other",
+        additional_data=StudyAdditionalData(),
     )
     c = RawStudy(
         id="C",
@@ -192,6 +194,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace="other2",
+        additional_data=StudyAdditionalData(),
     )
 
     # Mock
@@ -214,23 +217,23 @@ def test_study_listing() -> None:
     )
 
     studies = service.get_studies_information(
-        True,
-        False,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=False,
+        params=RequestParameters(
+            user=JWTUser(id=1, impersonator=1, type="users")
+        ),
     )
 
-    expected_result = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, c])
-    }
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
     assert expected_result == studies
     cache.get.return_value = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, b, c])
+        e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])
     }
 
     studies = service.get_studies_information(
-        True,
-        False,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=False,
+        params=RequestParameters(
+            user=JWTUser(id=1, impersonator=1, type="users")
+        ),
     )
 
     assert expected_result == studies
@@ -238,14 +241,13 @@ def test_study_listing() -> None:
 
     cache.get.return_value = None
     studies = service.get_studies_information(
-        True,
-        True,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=True,
+        params=RequestParameters(
+            user=JWTUser(id=1, impersonator=1, type="users")
+        ),
     )
 
-    expected_result = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a])
-    }
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
     assert expected_result == studies
 
 

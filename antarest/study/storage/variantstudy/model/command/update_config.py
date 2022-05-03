@@ -98,18 +98,12 @@ class UpdateConfig(ICommand):
         ]
 
         if not output_list:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
 
             try:
                 output_list = [
-                    (
-                        CommandExtraction(
-                            self.command_context.matrix_service,
-                            self.command_context.patch_service,
-                        )
-                    ).generate_update_config(base.tree, self.target.split("/"))
+                    self._get_command_extraction().generate_update_config(
+                        base.tree, self.target.split("/")
+                    )
                 ]
             except ChildNotFoundError as e:
                 logging.getLogger(__name__).warning(

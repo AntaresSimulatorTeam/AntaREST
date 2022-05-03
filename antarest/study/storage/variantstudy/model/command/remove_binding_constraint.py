@@ -88,9 +88,6 @@ class RemoveBindingConstraint(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
             CreateBindingConstraint,
         )
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         for command in reversed(history):
             if (
@@ -100,12 +97,9 @@ class RemoveBindingConstraint(ICommand):
                 return [command]
 
         try:
-            return (
-                CommandExtraction(
-                    self.command_context.matrix_service,
-                    self.command_context.patch_service,
-                )
-            ).extract_binding_constraint(base, self.id)
+            return self._get_command_extraction().extract_binding_constraint(
+                base, self.id
+            )
         except Exception as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_binding_constraint {self.id}",

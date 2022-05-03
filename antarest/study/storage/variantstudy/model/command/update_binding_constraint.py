@@ -157,16 +157,10 @@ class UpdateBindingConstraint(ICommand):
                         command_context=command.command_context,
                     )
                 ]
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
-        return (
-            CommandExtraction(
-                self.command_context.matrix_service,
-                self.command_context.patch_service,
-            )
-        ).extract_binding_constraint(base, self.id)
+        return self._get_command_extraction().extract_binding_constraint(
+            base, self.id
+        )
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

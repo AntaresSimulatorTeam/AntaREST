@@ -194,9 +194,6 @@ class RemoveArea(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_area import (
             CreateArea,
         )
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         for command in reversed(history):
             if (
@@ -207,12 +204,10 @@ class RemoveArea(ICommand):
                 return [command]
 
         try:
-            area_commands, links_commands = (
-                CommandExtraction(
-                    self.command_context.matrix_service,
-                    self.command_context.patch_service,
-                )
-            ).extract_area(base, self.id)
+            (
+                area_commands,
+                links_commands,
+            ) = self._get_command_extraction().extract_area(base, self.id)
             # todo revert binding constraints that has the area in constraint
             return area_commands + links_commands
         except ChildNotFoundError as e:

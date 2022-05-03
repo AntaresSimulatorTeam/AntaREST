@@ -102,5 +102,15 @@ class ICommand(ABC, BaseModel):
     def get_inner_matrices(self) -> List[str]:
         raise NotImplementedError()
 
+    def _get_command_extraction(self) -> "CommandExtraction":
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
+
+        return CommandExtraction(
+            self.command_context.matrix_service,
+            self.command_context.patch_service,
+        )
+
     class Config:
         arbitrary_types_allowed = True

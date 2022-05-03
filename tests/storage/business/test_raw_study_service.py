@@ -13,7 +13,11 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import CacheConstants
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyAdditionalData,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
@@ -418,7 +422,10 @@ def test_copy_study(
     )
 
     src_md = RawStudy(
-        id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+        id=source_name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path_study),
+        additional_data=StudyAdditionalData(),
     )
     md = study_service.copy(src_md, "dest_name")
     md_id = md.id

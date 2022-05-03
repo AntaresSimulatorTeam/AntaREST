@@ -72,18 +72,11 @@ class UpdateComments(ICommand):
             if isinstance(command, UpdateComments):
                 return [command]
 
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
-
         try:
             return [
-                (
-                    CommandExtraction(
-                        self.command_context.matrix_service,
-                        self.command_context.patch_service,
-                    )
-                ).generate_update_comments(base.tree)
+                self._get_command_extraction().generate_update_comments(
+                    base.tree
+                )
             ]
         except ChildNotFoundError:
             return []  # if the file does not exist, there is nothing to revert

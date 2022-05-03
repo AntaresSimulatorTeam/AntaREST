@@ -117,18 +117,12 @@ class ReplaceMatrix(ICommand):
                 and command.target == self.target
             ):
                 return [command]
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         try:
             return [
-                (
-                    CommandExtraction(
-                        self.command_context.matrix_service,
-                        self.command_context.patch_service,
-                    )
-                ).generate_replace_matrix(base.tree, self.target.split("/"))
+                self._get_command_extraction().generate_replace_matrix(
+                    base.tree, self.target.split("/")
+                )
             ]
         except ChildNotFoundError:
             return (

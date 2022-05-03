@@ -13,15 +13,21 @@ from antarest.matrixstore.service import (
     ISimpleMatrixService,
     SimpleMatrixService,
 )
-from antarest.study.business.link_management import LinkManager, LinkInfoDTO
-from antarest.study.model import RawStudy, Patch, PatchArea, PatchCluster
 from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
     AreaCreationDTO,
     AreaUI,
 )
-from antarest.study.storage.patch_service import PatchService
+from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.model import (
+    RawStudy,
+    Patch,
+    PatchArea,
+    PatchCluster,
+    StudyAdditionalData,
+)
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
@@ -81,17 +87,24 @@ def test_area_crud(
         storage_service=StudyStorageService(
             raw_study_service, variant_study_service
         ),
+        repository=Mock(spec=StudyMetadataRepository),
     )
     link_manager = LinkManager(
         storage_service=StudyStorageService(
             raw_study_service, variant_study_service
         )
     )
-    study = RawStudy(id="1", path=empty_study.config.study_path)
+    study = RawStudy(
+        id="1",
+        path=empty_study.config.study_path,
+        additional_data=StudyAdditionalData(),
+    )
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
     variant_study_service.command_factory = CommandFactory(
-        GeneratorMatrixConstants(matrix_service), matrix_service
+        GeneratorMatrixConstants(matrix_service),
+        matrix_service,
+        repository=Mock(spec=StudyMetadataRepository),
     )
     assert len(empty_study.config.areas.keys()) == 0
 
@@ -130,7 +143,11 @@ def test_area_crud(
     area_manager.delete_area(study, "test2")
     assert len(empty_study.config.areas.keys()) == 0
 
-    study = VariantStudy(id="2", path=empty_study.config.study_path)
+    study = VariantStudy(
+        id="2",
+        path=empty_study.config.study_path,
+        additional_data=StudyAdditionalData(),
+    )
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
         study,
@@ -226,7 +243,8 @@ def test_area_crud(
 def test_get_all_area():
     raw_study_service = Mock(spec=RawStudyService)
     area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
+        storage_service=StudyStorageService(raw_study_service, Mock()),
+        repository=Mock(spec=StudyMetadataRepository),
     )
     link_manager = LinkManager(
         storage_service=StudyStorageService(raw_study_service, Mock())
@@ -411,7 +429,8 @@ def test_get_all_area():
 def test_update_area():
     raw_study_service = Mock(spec=RawStudyService)
     area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
+        storage_service=StudyStorageService(raw_study_service, Mock()),
+        repository=Mock(spec=StudyMetadataRepository),
     )
 
     study = RawStudy()
@@ -459,7 +478,8 @@ def test_update_area():
 def test_update_clusters():
     raw_study_service = Mock(spec=RawStudyService)
     area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
+        storage_service=StudyStorageService(raw_study_service, Mock()),
+        repository=Mock(spec=StudyMetadataRepository),
     )
 
     study = RawStudy()
