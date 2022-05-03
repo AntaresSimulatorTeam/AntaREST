@@ -173,18 +173,14 @@ const XpansionView = (props: Props) => {
     }
   };
 
-  const createCandidate = async (candidate: XpansionCandidate) => {
+  const createCandidate = async (name: string, link: string) => {
     try {
-      if (candidate['annual-cost-per-mw'] === 0) {
-        await addCandidate(study.id, { ...candidate, 'annual-cost-per-mw': null });
-      } else {
-        await addCandidate(study.id, candidate);
-      }
+      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 });
       setCandidateCreationModal(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:createCandidateError'), e as AxiosError);
     } finally {
-      initCandidate(() => { setSelectedItem(candidate.name); setView(XpansionRenderView.candidate); });
+      initCandidate(() => { setSelectedItem(name); setView(XpansionRenderView.candidate); });
     }
   };
 
@@ -206,26 +202,12 @@ const XpansionView = (props: Props) => {
 
   const handleUpdateCandidate = async (name: string, value: XpansionCandidate) => {
     try {
-      if (value['link-profile']?.length === 0) {
-        if (value['already-installed-link-profile']?.length === 0) {
-          await updateCandidate(study.id, name, { ...value, 'link-profile': null, 'already-installed-link-profile': null });
-        } else {
-          await updateCandidate(study.id, name, { ...value, 'link-profile': null });
-        }
-      } else if (value['already-installed-link-profile']?.length === 0) {
-        await updateCandidate(study.id, name, { ...value, 'already-installed-link-profile': null });
-      } else {
-        await updateCandidate(study.id, name, value);
-      }
+      await updateCandidate(study.id, name, value);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('xpansion:updateCandidateError'), e as AxiosError);
     } finally {
-      if (name && value['annual-cost-per-mw'] && value.link) {
-        if (((value['max-investment'] && value['max-investment'] >= 0) || (value['max-units'] && value['max-units'] >= 0 && value['unit-size'] && value['unit-size'] >= 0)) && ((value['max-investment'] && !value['max-units']) && (value['max-investment'] && !value['unit-size']))) {
-          initCandidate(() => setSelectedItem(name));
-          enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
-        }
-      }
+      initCandidate(() => setSelectedItem(name));
+      enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
     }
   };
 

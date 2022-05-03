@@ -41,6 +41,21 @@ const useStyles = makeStyles((theme: Theme) =>
         },
       },
     },
+    buttons: {
+      position: 'absolute',
+      right: '20px',
+      bottom: '20px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      color: theme.palette.secondary.dark,
+    },
+    button: {
+      color: theme.palette.primary.main,
+    },
+    delete: {
+      color: theme.palette.error.main,
+    },
   }));
 
 interface PropsType {

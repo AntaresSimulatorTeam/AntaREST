@@ -18,13 +18,13 @@ export interface XpansionSettings {
 export interface XpansionCandidate {
     name: string;
     link: string;
-    'annual-cost-per-mw': number | null;
+    'annual-cost-per-mw': number;
     'unit-size'?: number;
     'max-units'?: number;
     'max-investment'?: number;
     'already-installed-capacity'?: number;
-    'link-profile'?: string | null;
-    'already-installed-link-profile'?: string | null;
+    'link-profile'?: string;
+    'already-installed-link-profile'?: string;
 }
 
 export enum XpansionRenderView {
