@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
@@ -21,7 +22,10 @@ import {
   updateCandidate,
   getCapacity,
 } from "../../../../../services/api/xpansion";
-import { transformNameToId } from "../../../../../services/utils/index";
+import {
+  transformNameToId,
+  removeEmptyFields,
+} from "../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { getAllLinks } from "../../../../../services/api/studydata";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
@@ -63,7 +67,6 @@ function Candidates() {
               (item: { link: string }) =>
                 item.link
                   .split(" - ")
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   .map((index: any) => transformNameToId(index))
                   .join(" - ")
             )[i];
@@ -121,14 +124,7 @@ function Candidates() {
   const createCandidate = async (candidate: XpansionCandidate) => {
     try {
       if (study) {
-        if (candidate["annual-cost-per-mw"] === 0) {
-          await addCandidate(study.id, {
-            ...candidate,
-            "annual-cost-per-mw": null,
-          });
-        } else {
-          await addCandidate(study.id, candidate);
-        }
+        await addCandidate(study.id, candidate);
         setCandidateCreationModal(false);
       }
     } catch (e) {
@@ -166,47 +162,43 @@ function Candidates() {
   ) => {
     try {
       if (study) {
-        if (value["link-profile"]?.length === 0) {
-          if (value["already-installed-link-profile"]?.length === 0) {
-            await updateCandidate(study.id, name, {
-              ...value,
-              "link-profile": null,
-              "already-installed-link-profile": null,
-            });
-          } else {
-            await updateCandidate(study.id, name, {
-              ...value,
-              "link-profile": null,
-            });
-          }
-        } else if (value["already-installed-link-profile"]?.length === 0) {
-          await updateCandidate(study.id, name, {
-            ...value,
-            "already-installed-link-profile": null,
-          });
-        } else {
-          await updateCandidate(study.id, name, value);
-        }
+        await updateCandidate(
+          study.id,
+          name,
+          removeEmptyFields(value as { [key: string]: any }, [
+            "link-profile",
+            "already-installed-link-profile",
+            "already-installed-capacity",
+            "max-investments",
+            "max-units",
+            "unit-size",
+          ]) as XpansionCandidate
+        );
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:updateCandidateError"), e as AxiosError);
     } finally {
       if (name && value["annual-cost-per-mw"] && value.link) {
         if (
-          ((value["max-investment"] && value["max-investment"] >= 0) ||
-            (value["max-units"] &&
-              value["max-units"] >= 0 &&
-              value["unit-size"] &&
-              value["unit-size"] >= 0)) &&
-          value["max-investment"] &&
-          !value["max-units"] &&
-          value["max-investment"] &&
-          !value["unit-size"]
+          (value["max-investment"] && value["max-investment"] >= 0) ||
+          (value["max-units"] &&
+            value["max-units"] >= 0 &&
+            value["unit-size"] &&
+            value["unit-size"] >= 0)
         ) {
-          initCandidate(() => setSelectedItem(name));
-          enqueueSnackbar(t("studymanager:savedatasuccess"), {
-            variant: "success",
-          });
+          initCandidate(() => setSelectedItem(value.name));
+          if (
+            (value["max-investment"] &&
+              !value["max-units"] &&
+              !value["unit-size"]) ||
+            (!value["max-investment"] &&
+              value["max-units"] &&
+              value["unit-size"])
+          ) {
+            enqueueSnackbar(t("studymanager:savedatasuccess"), {
+              variant: "success",
+            });
+          }
         }
       }
     }
@@ -225,7 +217,7 @@ function Candidates() {
 
   useEffect(() => {
     init();
-  }, [init]);
+  }, [init, setSelectedItem]);
 
   const onClose = () => setCandidateCreationModal(false);
 

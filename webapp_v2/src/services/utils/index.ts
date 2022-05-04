@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import moment from "moment";
 import debug from "debug";
 import { TFunction } from "react-i18next";
@@ -301,6 +302,21 @@ export const transformNameToId = (name: string): string => {
   const idTrimmed = id.trim();
 
   return idTrimmed.toLowerCase();
+};
+
+export const removeEmptyFields = (
+  data: { [key: string]: any },
+  fieldsToCheck: Array<string>
+): { [key: string]: any } => {
+  const cleanData = { ...data };
+
+  fieldsToCheck.forEach((fieldName) => {
+    if (R.isEmpty(data[fieldName])) {
+      delete cleanData[fieldName];
+    }
+  });
+
+  return cleanData;
 };
 
 export default {};

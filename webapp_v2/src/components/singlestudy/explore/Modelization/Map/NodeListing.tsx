@@ -18,10 +18,6 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
     },
   },
   ...scrollbarStyle,
-  "&::-webkit-scrollbar-thumb": {
-    backgroundColor: theme.palette.secondary.main,
-    outline: "1px solid slategrey",
-  },
 }));
 
 interface PropsType {

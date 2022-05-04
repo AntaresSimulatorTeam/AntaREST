@@ -16,6 +16,7 @@ import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import BasicModal from "../../../../common/BasicModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+import { removeEmptyFields } from "../../../../../services/utils/index";
 
 function Settings() {
   const [t] = useTranslation();
@@ -68,7 +69,16 @@ function Settings() {
   const updateSettings = async (value: XpansionSettings) => {
     try {
       if (study) {
-        await updateXpansionSettings(study.id, value);
+        await updateXpansionSettings(
+          study.id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          removeEmptyFields(value as { [key: string]: any }, [
+            "cut-type",
+            "solver",
+            "yearly-weights",
+            "additional-constraints",
+          ]) as XpansionSettings
+        );
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:updateSettingsError"), e as AxiosError);

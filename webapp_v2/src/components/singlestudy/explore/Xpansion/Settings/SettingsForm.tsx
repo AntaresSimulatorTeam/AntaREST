@@ -136,12 +136,13 @@ function SettingsForm(props: PropType) {
               list={cutType.map((item) => {
                 return { id: item, name: item };
               })}
-              label="cut_type"
-              data={currentSettings.cut_type || ""}
+              label="cut-type"
+              data={currentSettings["cut-type"] || ""}
               sx={{
                 minWidth: "100%",
               }}
               handleChange={handleChange}
+              optional
             />
           </SelectFields>
           <StyledTextField

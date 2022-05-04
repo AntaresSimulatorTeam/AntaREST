@@ -12,14 +12,15 @@ export const Root = styled(Box)(({ theme }) => ({
 }));
 
 export const StyledButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "rgba(0, 0, 0, 0.3)",
+  backgroundColor: "rgba(180, 180, 180, 0.09)",
   color: "white",
+  borderRight: "none !important",
   "&:hover": {
     color: "white",
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.secondary.main,
   },
   "&:disabled": {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.secondary.dark,
     color: "white !important",
   },
 }));

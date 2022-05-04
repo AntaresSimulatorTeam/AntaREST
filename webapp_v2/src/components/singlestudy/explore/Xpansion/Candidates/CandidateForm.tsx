@@ -91,7 +91,7 @@ function CandidateForm(props: PropType) {
                 border: "2px solid",
               }}
               onClick={() => {
-                updateCandidate(currentCandidate.name, currentCandidate);
+                updateCandidate(candidate.name, currentCandidate);
                 setSaveAllowed(false);
               }}
               disabled={!saveAllowed}
