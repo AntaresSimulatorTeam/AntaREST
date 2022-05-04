@@ -26,6 +26,7 @@ from antarest.study.model import (
     PatchStudy,
     StudyMetadataPatchDTO,
     Patch,
+    StudyAdditionalData,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -34,6 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
+    FileStudy,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
@@ -82,7 +84,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study: T,
     ) -> StudyMetadataDTO:
         try:
-            patch = Patch.parse_raw(study.additional_data.patch) or Patch()
+            patch = Patch.parse_raw(study.additional_data.patch)
         except ValidationError:
             patch = Patch()
 
@@ -92,6 +94,12 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         folder: Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
+
+        owner_info = (
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            if study.owner is not None
+            else OwnerInfo(name=study.additional_data.author or "Unknown")
+        )
 
         return StudyMetadataDTO(
             id=study.id,
@@ -103,9 +111,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             managed=study_workspace == DEFAULT_WORKSPACE_NAME,
             type=study.type,
             archived=study.archived if study.archived is not None else False,
-            owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
-            if study.owner is not None
-            else OwnerInfo(name=study.additional_data.author),
+            owner=owner_info,
             groups=[
                 GroupDTO(id=group.id, name=group.name)
                 for group in study.groups
@@ -337,3 +343,16 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 study.id,
                 exc_info=e,
             )
+
+    def _read_additional_data_from_files(
+        self, file_study: FileStudy
+    ) -> StudyAdditionalData:
+        horizon = file_study.tree.get(
+            url=["settings", "generaldata", "general", "horizon"]
+        )
+        author = file_study.tree.get(url=["study", "antares", "author"])
+        patch = self.patch_service.get_from_filestudy(file_study)
+        study_additional_data = StudyAdditionalData(
+            horizon=horizon, author=author, patch=patch.json()
+        )
+        return study_additional_data

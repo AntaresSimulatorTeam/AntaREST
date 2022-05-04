@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from antarest.study.model import Patch, PatchOutputs, RawStudy
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
 )
@@ -23,6 +24,13 @@ class PatchService:
             if patch_path.exists():
                 patch = Patch.parse_file(patch_path)
 
+        return patch
+
+    def get_from_filestudy(self, file_study: FileStudy) -> Patch:
+        patch = Patch()
+        patch_path = (Path(file_study.config.study_path)) / "patch.json"
+        if patch_path.exists():
+            patch = Patch.parse_file(patch_path)
         return patch
 
     def set_reference_output(

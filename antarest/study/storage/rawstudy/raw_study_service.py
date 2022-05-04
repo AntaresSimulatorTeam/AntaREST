@@ -89,7 +89,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             )
 
             patch = self.patch_service.get(metadata)
-            horizon = study.get(
+            horizon = study.tree.get(
                 ["settings", "generaldata", "general", "horizon"]
             )
             author = raw_meta["author"]

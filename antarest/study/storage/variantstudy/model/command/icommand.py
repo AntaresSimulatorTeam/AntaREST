@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -17,6 +18,11 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+if TYPE_CHECKING:  # False at runtime, for mypy
+    from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+        CommandExtraction,
+    )
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)

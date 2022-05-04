@@ -38,7 +38,11 @@ SADMIN = RequestParameters(
 
 
 def test_commands_service(tmp_path: Path) -> VariantStudyService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=True,
+        connect_args={"check_same_thread": False},
+    )
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

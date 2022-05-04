@@ -772,8 +772,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             from_command_index=command_start_index,
         )
         if results.success:
-            self._synchronize_additional_data(variant_study)
-
             last_command_index = len(variant_study.commands) - 1
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
@@ -784,6 +782,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 if last_command_index >= 0
                 else None,
             )
+            additional_data = self._read_additional_data_from_files(
+                self.get_raw(variant_study)
+            )
+            variant_study.additional_data = additional_data
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
@@ -794,18 +796,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study.tree.denormalize()
         return results
-
-    def _synchronize_additional_data(
-        self, variant_study: VariantStudy
-    ) -> None:
-        horizon = self.get(
-            variant_study, url="settings/generaldata/general/horizon"
-        )
-        author = self.get(variant_study, url="study/antares/author")
-        patch = self.patch_service.get(variant_study)
-        variant_study.additional_data.horizon = horizon
-        variant_study.additional_data.author = author
-        variant_study.additional_data.patch = patch.json()
 
     def _generate_study_config(
         self, metadata: VariantStudy, config: Optional[FileStudyTreeConfig]
