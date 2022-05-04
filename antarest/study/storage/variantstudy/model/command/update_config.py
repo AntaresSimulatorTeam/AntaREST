@@ -49,21 +49,6 @@ class UpdateConfig(ICommand):
 
         study_data.tree.save(self.data, url)
 
-        def get_nested_keys_rec(dic: Dict[str, Any]) -> List[str]:
-            keys = []
-            for k, v in dic.items():
-                if isinstance(v, dict):
-                    keys.extend(get_nested_keys_rec(v))
-                else:
-                    keys.append(k)
-            return keys
-
-        if "horizon" in url or (
-            isinstance(self.data, dict)
-            and "horizon" in get_nested_keys_rec(self.data)
-        ):
-            # TODO: save horizon in repository here
-            pass
 
         output, _ = self._apply_config(study_data.config)
         return output
