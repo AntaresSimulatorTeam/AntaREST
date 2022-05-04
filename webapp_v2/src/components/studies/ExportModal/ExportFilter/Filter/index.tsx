@@ -44,7 +44,7 @@ function Filter(props: PropTypes) {
     const getAreasOrDistrictsList = (): Array<string> => {
       let res: Array<string> = [];
       switch (type) {
-        case StudyOutputDownloadType.AREA:
+        case StudyOutputDownloadType.AREAS:
           res = Object.keys(areas);
           break;
 
@@ -60,7 +60,7 @@ function Filter(props: PropTypes) {
     setAreasOrDistrictsList(getAreasOrDistrictsList());
   }, [areas, sets, type]);
 
-  return type !== StudyOutputDownloadType.LINK ? (
+  return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
       <SelectMulti
         name={`${t("singlestudy:filter")} *`}
@@ -81,7 +81,7 @@ function Filter(props: PropTypes) {
         label={t("singlestudy:filterOut")}
         value={filterOutValue}
         onChange={(event) => setFilterOutValue(event.target.value)}
-        sx={{ m: 0, mb: 2, width: "95%", bgcolor: "red" }}
+        sx={{ m: 0, mb: 2, width: "95%" }}
       />
     </Root>
   ) : (
@@ -94,12 +94,10 @@ function Filter(props: PropTypes) {
       />
       <SingleLinkElement
         label={t("singlestudy:filterIn")}
-        areas={Object.keys(areas)}
         onChange={setFilterInValue}
       />
       <SingleLinkElement
         label={t("singlestudy:filterOut")}
-        areas={Object.keys(areas)}
         onChange={setFilterOutValue}
       />
     </Root>

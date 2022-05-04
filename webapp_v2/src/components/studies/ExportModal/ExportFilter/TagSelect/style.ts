@@ -9,7 +9,6 @@ export const Root = styled(Box)(({ theme }) => ({
   alignItems: "flex-start",
   padding: 0,
   marginBottom: 0,
-  backgroundColor: "red",
 }));
 
 export const InputContainer = styled(Box)(({ theme }) => ({
@@ -27,7 +26,6 @@ export const TagContainer = styled(List)(({ theme }) => ({
   flexDirection: "row",
   width: "100%",
   border: 0,
-  backgroundColor: "black",
   justifyContent: "flex-start",
   flexWrap: "wrap",
   listStyle: "none",

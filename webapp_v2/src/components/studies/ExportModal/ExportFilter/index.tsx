@@ -15,7 +15,7 @@ import Filter from "./Filter";
 import TagSelect from "./TagSelect";
 import SelectSingle from "../../../common/SelectSingle";
 import SelectMulti from "../../../common/SelectMulti";
-import TextSeparator from "../../../common/TextSeparator";
+import { scrollbarStyle } from "../../../../theme";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -26,7 +26,8 @@ const Root = styled(Box)(({ theme }) => ({
   alignItems: "flex-start",
   overflowX: "hidden",
   overflowY: "auto",
-  backgroundColor: "blue",
+  padding: theme.spacing(1, 0),
+  ...scrollbarStyle,
 }));
 
 interface PropTypes {
@@ -50,8 +51,8 @@ function ExportFilterModal(props: PropTypes) {
   );
 
   const typeList: Array<string> = [
-    StudyOutputDownloadType.AREA,
-    StudyOutputDownloadType.LINK,
+    StudyOutputDownloadType.AREAS,
+    StudyOutputDownloadType.LINKS,
     StudyOutputDownloadType.DISTRICT,
   ];
   const levelList: Array<string> = [
@@ -63,7 +64,13 @@ function ExportFilterModal(props: PropTypes) {
   ];
 
   const onTypeChange = (value: Array<string> | string): void => {
-    setFilter({ ...filter, type: value as StudyOutputDownloadType });
+    setFilter({
+      ...filter,
+      filter: [],
+      filterIn: "",
+      filterOut: "",
+      type: value as StudyOutputDownloadType,
+    });
   };
 
   const onLevelChange = (value: Array<string> | string): void => {
@@ -83,7 +90,6 @@ function ExportFilterModal(props: PropTypes) {
 
   return (
     <Root>
-      <TextSeparator text="Filter" />
       <SelectSingle
         name={`${t("singlestudy:type")} *`}
         list={typeList.map((elm) => ({
@@ -154,6 +160,7 @@ function ExportFilterModal(props: PropTypes) {
             name={t("singlestudy:synthesis")}
           />
         }
+        sx={{ my: 1 }}
         label={t("singlestudy:synthesis")}
       />
       <FormControlLabel

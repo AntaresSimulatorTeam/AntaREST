@@ -4,9 +4,9 @@ export const Root = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
   flexFlow: "column nowrap",
-  justifyContent: "flex-start",
-  alignItems: "flex-start",
-  padding: 0,
+  justifyContent: "center",
+  alignItem: "center",
+  boxSizing: "border-box",
 }));
 
 export const LinkFilter = styled(Box)(({ theme }) => ({
@@ -17,7 +17,6 @@ export const LinkFilter = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
   padding: 0,
   flexGrow: 1,
-  backgroundColor: "violet",
   overflow: "hidden",
 }));
 

@@ -1,9 +1,8 @@
-import { TextField, Typography } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../common/SelectSingle";
-import { LinkContainer } from "../style";
-import { LinkFilter } from "./style";
+import TextSeparator from "../../../../../common/TextSeparator";
+import { Root } from "./style";
 
 interface FilterLink {
   area1: string;
@@ -11,13 +10,11 @@ interface FilterLink {
 }
 
 export default function SingleLinkElement(props: {
-  globalFilter?: boolean;
   label: string;
-  areas: Array<string>;
   onChange: (value: string) => void;
 }) {
   const [t] = useTranslation();
-  const { globalFilter, label, areas, onChange } = props;
+  const { label, onChange } = props;
   const [link, setLink] = useState<FilterLink>({ area1: "", area2: "" });
 
   const onSelectChange = (id: number, elm: string): void => {
@@ -32,52 +29,20 @@ export default function SingleLinkElement(props: {
     onChange(`${area1}^${area2}`);
   };
   return (
-    <LinkContainer>
-      <Typography
-        sx={{ width: "auto", height: "auto", mr: 1, bgcolor: "gray" }}
-      >
-        {label}:
-      </Typography>
-      {globalFilter === true ? (
-        <LinkFilter>
-          <SelectSingle
-            name={`${t("singlestudy:area")}1 *`}
-            list={areas.map((elm) => ({ id: elm, name: elm }))}
-            data={link.area1}
-            setValue={(elm: Array<string> | string) =>
-              onSelectChange(0, elm as string)
-            }
-            sx={{ flexGrow: 1, mx: 1 }}
-          />
-          <SelectSingle
-            name={`${t("singlestudy:area")}2 *`}
-            list={areas.map((elm) => ({ id: elm, name: elm }))}
-            data={link.area1}
-            setValue={(elm: Array<string> | string) =>
-              onSelectChange(1, elm as string)
-            }
-            sx={{ width: "50%" }}
-          />
-        </LinkFilter>
-      ) : (
-        <LinkFilter>
-          <TextField
-            label={`${t("singlestudy:area")} 1`}
-            value={link.area1}
-            onChange={(event) => onSelectChange(0, event.target.value)}
-            sx={{ mx: 1 }}
-          />
-          <TextField
-            label={`${t("singlestudy:area")} 2`}
-            value={link.area2}
-            onChange={(event) => onSelectChange(1, event.target.value)}
-          />
-        </LinkFilter>
-      )}
-    </LinkContainer>
+    <Root>
+      <TextSeparator text={label} />
+      <Box display="flex" flex={1}>
+        <TextField
+          label={`${t("singlestudy:area1")}`}
+          value={link.area1}
+          onChange={(event) => onSelectChange(0, event.target.value)}
+        />
+        <TextField
+          label={`${t("singlestudy:area2")}`}
+          value={link.area2}
+          onChange={(event) => onSelectChange(1, event.target.value)}
+        />
+      </Box>
+    </Root>
   );
 }
-
-SingleLinkElement.defaultProps = {
-  globalFilter: false,
-};

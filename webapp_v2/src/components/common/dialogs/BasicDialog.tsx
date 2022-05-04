@@ -12,6 +12,7 @@ import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
+import { scrollbarStyle } from "../../../theme";
 
 /**
  * Types
@@ -79,7 +80,7 @@ function BasicDialog(props: BasicDialogProps) {
           {title}
         </DialogTitle>
       )}
-      <DialogContent>
+      <DialogContent sx={{ ...scrollbarStyle }}>
         {RA.isString(children) ? (
           <DialogContentText>{children}</DialogContentText>
         ) : (

@@ -422,9 +422,9 @@ export interface FileStudyTreeConfigDTO {
 }
 
 export enum StudyOutputDownloadType {
-  LINK = "LINK",
+  LINKS = "LINKS",
   DISTRICT = "DISTRICT",
-  AREA = "AREA",
+  AREAS = "AREAS",
 }
 
 export enum StudyOutputDownloadLevelDTO {

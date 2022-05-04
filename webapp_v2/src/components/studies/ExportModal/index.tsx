@@ -64,7 +64,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [currentOutput, setCurrentOutput] = useState<string>();
   const [synthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
-    type: StudyOutputDownloadType.AREA,
+    type: StudyOutputDownloadType.AREAS,
     level: StudyOutputDownloadLevelDTO.WEEKLY,
     synthesis: false,
     includeClusters: false,
@@ -160,7 +160,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         </Box>
       }
     >
-      <Box sx={{ p: 2, width: "500px", height: "400px" }}>
+      <Box
+        sx={{
+          p: 2,
+          overflow: "hidden",
+        }}
+      >
         <SelectSingle
           name={`${t("studymanager:exportOptions")} *`}
           list={optionsList}
@@ -188,8 +193,9 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         ])()}
         {R.cond([
           [
-            () => optionSelection === "exportOutputFilter",
-            // currentOutput !== undefined,
+            () =>
+              optionSelection === "exportOutputFilter" &&
+              currentOutput !== undefined,
             () =>
               (
                 <ExportFilter
