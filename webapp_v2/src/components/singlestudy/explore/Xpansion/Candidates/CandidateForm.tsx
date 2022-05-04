@@ -174,8 +174,9 @@ function CandidateForm(props: PropType) {
                   variant="outlined"
                   disabled
                   sx={(theme) => ({
-                    backgroundColor: `${theme.palette.primary.main} !important`,
-                    color: `${theme.palette.primary.contrast} !important`,
+                    backgroundColor: "rgba(255,255,255,0.09) !important",
+                    color: `${theme.palette.text.primary} !important`,
+                    borderColor: `${theme.palette.text.secondary} !important`,
                   })}
                 >
                   {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
@@ -186,9 +187,11 @@ function CandidateForm(props: PropType) {
                   variant="outlined"
                   sx={(theme) => ({
                     color: "action.active",
+                    borderColor: theme.palette.text.disabled,
                     "&:hover": {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrast,
+                      backgroundColor: "rgba(255,255,255,0.11)",
+                      borderColor: theme.palette.text.primary,
+                      color: theme.palette.text.primary,
                     },
                   })}
                   onClick={changeView}
@@ -202,9 +205,11 @@ function CandidateForm(props: PropType) {
                   variant="outlined"
                   sx={(theme) => ({
                     color: "action.active",
+                    borderColor: theme.palette.text.disabled,
                     "&:hover": {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrast,
+                      backgroundColor: "rgba(255,255,255,0.11)",
+                      borderColor: theme.palette.text.primary,
+                      color: theme.palette.text.primary,
                     },
                   })}
                   onClick={changeView}
@@ -216,8 +221,9 @@ function CandidateForm(props: PropType) {
                   size="small"
                   variant="outlined"
                   sx={(theme) => ({
-                    backgroundColor: `${theme.palette.primary.main} !important`,
-                    color: `${theme.palette.primary.contrast} !important`,
+                    backgroundColor: "rgba(255,255,255,0.09) !important",
+                    color: `${theme.palette.text.primary} !important`,
+                    borderColor: `${theme.palette.text.secondary} !important`,
                   })}
                   disabled
                 >
@@ -350,7 +356,7 @@ function CandidateForm(props: PropType) {
           alert="warning"
           open
         >
-          Êtes-vous sûr de vouloir supprimer ce candidat?
+          {t("xpansion:deleteCandidate")}
         </ConfirmationDialog>
       )}
     </Box>

@@ -73,7 +73,7 @@ function SettingsForm(props: PropType) {
         </Box>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
-          <SelectFields>
+          <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
               name={t("xpansion:ucType")}
               list={ucType.map((item) => {
@@ -87,7 +87,7 @@ function SettingsForm(props: PropType) {
               }}
             />
           </SelectFields>
-          <SelectFields>
+          <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
               name={t("xpansion:master")}
               list={master.map((item) => {
@@ -109,6 +109,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("optimality_gap", parseFloat(e.target.value))
             }
+            sx={{ mb: 1 }}
           />
           <StyledTextField
             label={t("xpansion:maxIteration")}
@@ -117,6 +118,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("max_iteration", parseFloat(e.target.value))
             }
+            sx={{ mb: 1 }}
           />
           <StyledTextField
             type="number"
@@ -126,8 +128,9 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("relaxed-optimality-gap", parseFloat(e.target.value))
             }
+            sx={{ mb: 1 }}
           />
-          <SelectFields>
+          <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
               name={t("xpansion:cutType")}
               list={cutType.map((item) => {
@@ -146,6 +149,7 @@ function SettingsForm(props: PropType) {
             variant="filled"
             value={currentSettings["ampl.solver"] || ""}
             onChange={(e) => handleChange("ampl.solver", e.target.value)}
+            sx={{ mb: 1 }}
           />
           <StyledTextField
             type="number"
@@ -155,6 +159,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("ampl.presolve", parseFloat(e.target.value))
             }
+            sx={{ mb: 1 }}
           />
           <StyledTextField
             type="number"
@@ -167,6 +172,7 @@ function SettingsForm(props: PropType) {
                 parseFloat(e.target.value)
               )
             }
+            sx={{ mb: 1 }}
           />
           <StyledTextField
             type="number"
@@ -176,8 +182,9 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("relative_gap", parseFloat(e.target.value))
             }
+            sx={{ mb: 1 }}
           />
-          <SelectFields>
+          <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
               name={t("xpansion:solver")}
               list={solver.map((item) => {

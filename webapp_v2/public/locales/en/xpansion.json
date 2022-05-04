@@ -40,5 +40,6 @@
     "deleteFileError": "Failed to delete the file",
     "newXpansionConfig": "New Xpansion configuration",
     "candidates": "Candidates",
+    "deleteCandidate": "Are you sure you want to delete this candidate?",
     "newCandidate": "New candidate"
 }

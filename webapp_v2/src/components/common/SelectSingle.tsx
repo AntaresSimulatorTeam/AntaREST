@@ -1,7 +1,6 @@
 import {
   FormControl,
   InputLabel,
-  ListItemText,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -47,18 +46,29 @@ function SelectSingle(props: Props) {
   };
 
   return (
-    <FormControl sx={sx}>
+    <FormControl
+      variant={variant}
+      sx={
+        variant === "filled"
+          ? {
+              ...sx,
+              ".Mui-focused": { backgroundColor: "rgba(255, 255, 255, 0.09)" },
+              ".MuiInputLabel-root": { backgroundColor: "unset" },
+            }
+          : sx
+      }
+    >
       <InputLabel
-        id={`single-checkbox-label-${label}`}
+        id="single-checkbox"
         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
       >
         {name}
       </InputLabel>
       <Select
         labelId={`single-checkbox-label-${label}`}
-        id={`single-checkbox-${label}`}
+        id="single-checkbox"
         value={data}
-        variant={variant}
+        label={name}
         onChange={
           handleChange
             ? (e) => handleChange(label, e.target.value as string)
@@ -72,6 +82,12 @@ function SelectSingle(props: Props) {
                 ".MuiSelect-icon": {
                   backgroundColor: "#222333",
                 },
+                "&:focus": {
+                  backgroundColor: "rgba(255, 255, 255, 0.09) !important",
+                },
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.09)",
+                },
               }
             : {}
         }
@@ -83,7 +99,7 @@ function SelectSingle(props: Props) {
         )}
         {list.map(({ id, name }) => (
           <MenuItem key={id} value={id}>
-            <ListItemText primary={name} />
+            {name}
           </MenuItem>
         ))}
       </Select>

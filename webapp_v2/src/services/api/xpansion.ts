@@ -36,6 +36,7 @@ export const xpansionConfigurationExist = async (
     await client.get(`/v1/studies/${uuid}/extensions/xpansion/settings`);
     return Promise.resolve(true);
   } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { status } = (e as any).response;
     if (status === 404) {
       return Promise.resolve(false);

@@ -40,5 +40,6 @@
     "deleteFileError": "Échec lors de la suppression du fichier",
     "newXpansionConfig": "Nouvelle configuration Xpansion",
     "candidates": "Candidats",
+    "deleteCandidate": "Êtes-vous sûr de vouloir supprimer ce candidat?",
     "newCandidate": "Nouveau candidat"
 }

@@ -24,7 +24,6 @@ function CreateCandidateModal(props: PropType) {
     "annual-cost-per-mw": 0,
   });
   const [toggleView, setToggleView] = useState<boolean>(true);
-
   const tabLinks = links.map((item) => `${item.area1} - ${item.area2}`);
 
   const handleChange = (key: string, value: string | number) => {
@@ -69,7 +68,6 @@ function CreateCandidateModal(props: PropType) {
           variant="outlined"
           onChange={(e) => handleChange("name", e.target.value)}
           value={candidate.name}
-          size="small"
         />
         <SelectSingle
           name={t("xpansion:link")}
@@ -100,7 +98,7 @@ function CreateCandidateModal(props: PropType) {
         />
         <Box width="100%" display="flex" justifyContent="center">
           <ButtonGroup
-            sx={{ width: "100%", display: "flex", justifyContent: "center" }}
+            sx={{ width: "234px", display: "flex", justifyContent: "center" }}
             variant="outlined"
           >
             {toggleView ? (
@@ -109,8 +107,9 @@ function CreateCandidateModal(props: PropType) {
                 variant="outlined"
                 disabled
                 sx={(theme) => ({
-                  backgroundColor: `${theme.palette.primary.main} !important`,
-                  color: `${theme.palette.primary.contrast} !important`,
+                  backgroundColor: "rgba(255,255,255,0.07) !important",
+                  color: `${theme.palette.text.primary} !important`,
+                  borderColor: `${theme.palette.text.secondary} !important`,
                 })}
               >
                 {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
@@ -121,9 +120,11 @@ function CreateCandidateModal(props: PropType) {
                 variant="outlined"
                 sx={(theme) => ({
                   color: "action.active",
+                  borderColor: theme.palette.text.disabled,
                   "&:hover": {
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrast,
+                    backgroundColor: "rgba(255,255,255,0.09)",
+                    borderColor: theme.palette.text.primary,
+                    color: theme.palette.text.primary,
                   },
                 })}
                 onClick={changeView}
@@ -137,9 +138,11 @@ function CreateCandidateModal(props: PropType) {
                 variant="outlined"
                 sx={(theme) => ({
                   color: "action.active",
+                  borderColor: theme.palette.text.disabled,
                   "&:hover": {
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrast,
+                    backgroundColor: "rgba(255,255,255,0.09)",
+                    borderColor: theme.palette.text.primary,
+                    color: theme.palette.text.primary,
                   },
                 })}
                 onClick={changeView}
@@ -151,8 +154,9 @@ function CreateCandidateModal(props: PropType) {
                 size="small"
                 variant="outlined"
                 sx={(theme) => ({
-                  backgroundColor: `${theme.palette.primary.main} !important`,
-                  color: `${theme.palette.primary.contrast} !important`,
+                  backgroundColor: "rgba(255,255,255,0.07) !important",
+                  color: `${theme.palette.text.primary} !important`,
+                  borderColor: `${theme.palette.text.secondary} !important`,
                 })}
                 disabled
               >

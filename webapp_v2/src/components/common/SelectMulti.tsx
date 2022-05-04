@@ -65,14 +65,14 @@ function SelectMulti(props: Props) {
   return (
     <FormControl sx={sx}>
       <InputLabel
-        id="multiple-checkbox-label"
+        id={`multiple-checkbox-label-${name}`}
         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
       >
         {name}
       </InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
-        id={`multiple-checkbox-${name}`}
+        id="multiple-checkbox"
         multiple
         value={data}
         variant="filled"
