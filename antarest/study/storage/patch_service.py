@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from pydantic import ValidationError
 
@@ -12,14 +12,21 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
 
 
 class PatchService:
-    def __init__(self, repository: StudyMetadataRepository):
+    def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
-    def get(self, study: Union[RawStudy, VariantStudy]) -> Patch:
+    def get(
+        self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False
+    ) -> Patch:
         patch = Patch()
-        try:
-            patch = Patch.parse_raw(study.additional_data.patch)
-        except (AttributeError, ValidationError):
+
+        if not get_from_file:
+            try:
+                patch = Patch.parse_raw(study.additional_data.patch)
+            except (AttributeError, ValidationError):
+                get_from_file = True
+
+        if get_from_file:
             patch_path = (Path(study.path)) / "patch.json"
             if patch_path.exists():
                 patch = Patch.parse_file(patch_path)
@@ -47,9 +54,9 @@ class PatchService:
         self.save(study, patch)
 
     def save(self, study: Union[RawStudy, VariantStudy], patch: Patch) -> None:
-        study.additional_data.patch = patch.json()
-
-        self.repository.save(study)
+        if self.repository:
+            study.additional_data.patch = patch.json()
+            self.repository.save(study)
 
         patch_content = patch.json()
         patch_path = (Path(study.path)) / "patch.json"

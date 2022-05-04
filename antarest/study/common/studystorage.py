@@ -282,3 +282,8 @@ class IStudyStorageService(ABC, Generic[T]):
 
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def initialize_additional_data(self, study: T) -> bool:
+        # TODO: remove this method once used
+        raise NotImplementedError()

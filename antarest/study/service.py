@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import os
-import shutil
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
@@ -2020,9 +2019,24 @@ class StudyService:
     ) -> None:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
-            raise ForbiddenError("Only site admins can update study versions")
+            raise UserHasNotPermissionError()
         studies = self.repository.get_all()
         for study in studies:
             self.storage_service.get_storage(
                 study
             ).check_and_update_study_version_in_database(study)
+
+    def initialize_additional_data_in_db(
+        self, params: RequestParameters
+    ) -> None:
+        # TODO: remove this method once used
+        logger.info("Initializing additional data of studies")
+        if params.user and params.user.is_site_admin():
+            studies = self.repository.get_all()
+            for study in studies:
+                self.storage_service.get_storage(
+                    study
+                ).initialize_additional_data(study)
+        else:
+            logger.error(f"User {params.user.id} is not site admin")
+            raise UserHasNotPermissionError()

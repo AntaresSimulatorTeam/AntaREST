@@ -786,8 +786,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 self.get_study_path(variant_study),
                 study_id=variant_study.id,
             )
-            additional_data = self._read_additional_data_from_files(study)
-            variant_study.additional_data = additional_data
+            variant_study.additional_data = (
+                self._read_additional_data_from_files(study)
+            )
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
@@ -1160,3 +1161,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         raise VariantGenerationError(
             f"Error during light generation of {metadata.id}"
         )
+
+    def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
+        # TODO: remove this method once used
+        if self.exists(variant_study):
+            study = self.study_factory.create_from_fs(
+                self.get_study_path(variant_study),
+                study_id=variant_study.id,
+            )
+            variant_study.additional_data = (
+                self._read_additional_data_from_files(study)
+            )
+            return True
+        return False

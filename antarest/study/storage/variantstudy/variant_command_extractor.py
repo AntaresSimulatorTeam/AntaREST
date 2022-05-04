@@ -122,7 +122,7 @@ class VariantCommandsExtractor:
         command_factory = CommandFactory(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
-            repository=self.command_extractor.patch_service.repository,
+            patch_service=self.command_extractor.patch_service,
         )
         logger.info("Parsing commands")
         base_commands: List[ICommand] = []

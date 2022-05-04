@@ -28,6 +28,7 @@ from antarest.study.model import (
     StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
@@ -104,7 +105,7 @@ def test_area_crud(
     variant_study_service.command_factory = CommandFactory(
         GeneratorMatrixConstants(matrix_service),
         matrix_service,
-        repository=Mock(spec=StudyMetadataRepository),
+        patch_service=Mock(spec=PatchService),
     )
     assert len(empty_study.config.areas.keys()) == 0
 

@@ -339,7 +339,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     study.version = study_version
         except Exception as e:
             logger.error(
-                "Failed to retrieve general settings for study %s",
+                "Failed to check and/or update study version in database for study %s",
                 study.id,
                 exc_info=e,
             )
@@ -347,6 +347,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def _read_additional_data_from_files(
         self, file_study: FileStudy
     ) -> StudyAdditionalData:
+        logger.info(
+            f"Reading additional data from files for study {file_study.config.study_id}"
+        )
         horizon = file_study.tree.get(
             url=["settings", "generaldata", "general", "horizon"]
         )

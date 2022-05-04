@@ -28,10 +28,8 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
 )
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
     StudyFactory,
 )
 from antarest.study.storage.utils import create_new_empty_study
@@ -173,7 +171,7 @@ class LocalVariantGenerator(IVariantGenerator):
                 matrix_service
             ),
             matrix_service=matrix_service,
-            repository=StudyMetadataRepository(local_cache),
+            patch_service=PatchService(),
         )
 
         command_objs: List[List[ICommand]] = []
@@ -227,14 +225,13 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         resolver=matrix_resolver,
         cache=cache,
     )
-    patch_service = PatchService(StudyMetadataRepository(cache))
 
     study = study_factory.create_from_fs(
         study_path, str(study_path), use_cache=False
     )
     local_matrix_service = SimpleMatrixService(matrices_dir)
     extractor = VariantCommandsExtractor(
-        local_matrix_service, patch_service=patch_service
+        local_matrix_service, patch_service=PatchService()
     )
     command_list = extractor.extract(study)
 
@@ -270,7 +267,6 @@ def generate_diff(
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
     cache = LocalCache()
-    patch_service = PatchService(StudyMetadataRepository(cache))
     study_factory = StudyFactory(
         matrix=local_matrix_service, resolver=resolver, cache=cache
     )
@@ -312,7 +308,7 @@ def generate_diff(
     )
 
     extractor = VariantCommandsExtractor(
-        local_matrix_service, patch_service=patch_service
+        local_matrix_service, patch_service=PatchService()
     )
     diff_commands = extractor.diff(
         base=parse_commands(base_command_file),

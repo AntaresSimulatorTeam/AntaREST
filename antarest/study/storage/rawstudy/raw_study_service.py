@@ -88,15 +88,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 raw_meta["lastsave"]
             )
 
-            patch = self.patch_service.get(metadata)
-            horizon = study.tree.get(
-                ["settings", "generaldata", "general", "horizon"]
+            metadata.additional_data = self._read_additional_data_from_files(
+                study
             )
-            author = raw_meta["author"]
-            additional_data = metadata.additional_data or StudyAdditionalData(
-                patch=patch.json(), horizon=horizon, author=author
-            )
-            metadata.additional_data = additional_data
 
         except Exception as e:
             logger.error(
@@ -204,6 +198,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         self._check_study_exists(src_meta)
+
         additional_data = StudyAdditionalData(
             horizon=src_meta.additional_data.horizon,
             author=src_meta.additional_data.author,
@@ -362,3 +357,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         return Path(metadata.path)
+
+    def initialize_additional_data(self, raw_study: RawStudy) -> bool:
+        # TODO: remove this method once used
+        study = self.study_factory.create_from_fs(
+            self.get_study_path(raw_study),
+            study_id=raw_study.id,
+        )
+        raw_study.additional_data = self._read_additional_data_from_files(
+            study
+        )
+        return False
