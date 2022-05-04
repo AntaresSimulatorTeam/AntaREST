@@ -83,7 +83,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.generate_update_config"
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.generate_update_config"
 )
 def test_revert(mock_generate_update_config, command_context: CommandContext):
     base = UpdateConfig(

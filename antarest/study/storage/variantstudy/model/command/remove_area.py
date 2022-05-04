@@ -207,7 +207,7 @@ class RemoveArea(ICommand):
             (
                 area_commands,
                 links_commands,
-            ) = self._get_command_extraction().extract_area(base, self.id)
+            ) = self._get_command_extractor().extract_area(base, self.id)
             # todo revert binding constraints that has the area in constraint
             return area_commands + links_commands
         except ChildNotFoundError as e:

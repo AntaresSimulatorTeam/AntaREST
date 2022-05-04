@@ -26,6 +26,7 @@ from antarest.study.storage.abstract_storage_service import (
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
@@ -103,6 +104,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.version = metadata.version or 0
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                if not metadata.additional_data:
+                    # TODO: remove this when all studies have additional data
+                    metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = (
                     metadata.additional_data.patch or Patch()
                 )
@@ -199,11 +203,15 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(src_meta)
 
-        additional_data = StudyAdditionalData(
-            horizon=src_meta.additional_data.horizon,
-            author=src_meta.additional_data.author,
-            patch=src_meta.additional_data.patch,
-        )
+        if not src_meta.additional_data:
+            # TODO: remove this when all studies have additional data
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=src_meta.additional_data.horizon,
+                author=src_meta.additional_data.author,
+                patch=src_meta.additional_data.patch,
+            )
         dest_id = str(uuid4())
         dest_study = RawStudy(
             id=dest_id,
@@ -368,3 +376,32 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             study
         )
         return False
+
+    def check_and_update_study_version_in_database(
+        self, study: RawStudy
+    ) -> None:
+        try:
+            study_path = self.get_study_path(study)
+            if study_path:
+                config = FileStudyTreeConfig(
+                    study_path=study_path,
+                    path=study_path,
+                    study_id="",
+                    version=-1,
+                )
+                raw_study = self.study_factory.create_from_config(config)
+                file_metadata = raw_study.get(url=["study", "antares"])
+                study_version = str(
+                    file_metadata.get("version", study.version)
+                )
+                if study_version != study.version:
+                    logger.warning(
+                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                    )
+                    study.version = study_version
+        except Exception as e:
+            logger.error(
+                "Failed to check and/or update study version in database for study %s",
+                study.id,
+                exc_info=e,
+            )

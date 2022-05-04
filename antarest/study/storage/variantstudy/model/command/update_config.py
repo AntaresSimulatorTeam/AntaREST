@@ -118,7 +118,7 @@ class UpdateConfig(ICommand):
 
             try:
                 output_list = [
-                    self._get_command_extraction().generate_update_config(
+                    self._get_command_extractor().generate_update_config(
                         base.tree, self.target.split("/")
                     )
                 ]

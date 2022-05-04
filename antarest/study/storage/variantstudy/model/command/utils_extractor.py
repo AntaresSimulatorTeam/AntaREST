@@ -63,7 +63,7 @@ from antarest.study.storage.variantstudy.model.interfaces import (
 logger = logging.getLogger(__name__)
 
 
-class CommandExtraction(ICommandExtractor):
+class CommandExtractor(ICommandExtractor):
     def __init__(
         self, matrix_service: ISimpleMatrixService, patch_service: PatchService
     ):
@@ -561,7 +561,7 @@ class CommandExtraction(ICommandExtractor):
         default_value: Optional[str] = None,
     ) -> ICommand:
         data = study_tree.get(url)
-        matrix = CommandExtraction.get_matrix(data, default_value is None)
+        matrix = CommandExtractor.get_matrix(data, default_value is None)
         return ReplaceMatrix(
             target="/".join(url),
             matrix=matrix or default_value,

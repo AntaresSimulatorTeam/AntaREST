@@ -158,7 +158,7 @@ class UpdateBindingConstraint(ICommand):
                     )
                 ]
 
-        return self._get_command_extraction().extract_binding_constraint(
+        return self._get_command_extractor().extract_binding_constraint(
             base, self.id
         )
 

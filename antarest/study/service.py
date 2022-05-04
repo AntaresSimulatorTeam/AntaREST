@@ -2022,9 +2022,9 @@ class StudyService:
             raise UserHasNotPermissionError()
         studies = self.repository.get_all()
         for study in studies:
-            self.storage_service.get_storage(
-                study
-            ).check_and_update_study_version_in_database(study)
+            if isinstance(study, RawStudy) and not is_managed(study):
+                storage = self.storage_service.raw_study_service
+                storage.check_and_update_study_version_in_database(study)
 
     def initialize_additional_data_in_db(
         self, params: RequestParameters
@@ -2038,5 +2038,5 @@ class StudyService:
                     study
                 ).initialize_additional_data(study)
         else:
-            logger.error(f"User {params.user.id} is not site admin")
+            logger.error(f"User {params.user} is not site admin")
             raise UserHasNotPermissionError()

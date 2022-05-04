@@ -77,7 +77,7 @@ class UpdateRawFile(ICommand):
                 return [command]
 
         return [
-            self._get_command_extraction().generate_update_rawfile(
+            self._get_command_extractor().generate_update_rawfile(
                 base.tree, self.target.split("/")
             )
         ]

@@ -14,7 +14,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtraction,
+    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -29,7 +29,7 @@ class VariantCommandsExtractor:
         self.generator_matrix_constants = GeneratorMatrixConstants(
             self.matrix_service
         )
-        self.command_extractor = CommandExtraction(
+        self.command_extractor = CommandExtractor(
             self.matrix_service, patch_service=patch_service
         )
 

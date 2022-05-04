@@ -271,19 +271,6 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_and_update_study_version_in_database(self, study: T) -> None:
-        """
-        Check if study version is up to date in database and update it if needed.
-
-        Args:
-            study: study
-
-        Returns: None
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def initialize_additional_data(self, study: T) -> bool:
         # TODO: remove this method once used
         raise NotImplementedError()

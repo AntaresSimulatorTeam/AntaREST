@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 if TYPE_CHECKING:  # False at runtime, for mypy
     from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-        CommandExtraction,
+        CommandExtractor,
     )
 
 MATCH_SIGNATURE_SEPARATOR = "%"
@@ -108,12 +108,12 @@ class ICommand(ABC, BaseModel):
     def get_inner_matrices(self) -> List[str]:
         raise NotImplementedError()
 
-    def _get_command_extraction(self) -> "CommandExtraction":
+    def _get_command_extractor(self) -> "CommandExtractor":
         from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
+            CommandExtractor,
         )
 
-        return CommandExtraction(
+        return CommandExtractor(
             self.command_context.matrix_service,
             self.command_context.patch_service,
         )

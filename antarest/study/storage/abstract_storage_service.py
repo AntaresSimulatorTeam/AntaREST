@@ -31,7 +31,6 @@ from antarest.study.model import (
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
-    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
@@ -83,6 +82,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         study: T,
     ) -> StudyMetadataDTO:
+        if not study.additional_data:
+            # TODO: remove this after all additional_data has been initialized
+            self.initialize_additional_data(study)
+
         try:
             patch = Patch.parse_raw(study.additional_data.patch)
         except ValidationError:
@@ -316,33 +319,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         )
         return target.parent / filename
-
-    def check_and_update_study_version_in_database(self, study: T) -> None:
-        try:
-            study_path = self.get_study_path(study)
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=-1,
-                )
-                raw_study = self.study_factory.create_from_config(config)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(
-                    file_metadata.get("version", study.version)
-                )
-                if study_version != study.version:
-                    logger.warning(
-                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                    )
-                    study.version = study_version
-        except Exception as e:
-            logger.error(
-                "Failed to check and/or update study version in database for study %s",
-                study.id,
-                exc_info=e,
-            )
 
     def _read_additional_data_from_files(
         self, file_study: FileStudy

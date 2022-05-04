@@ -34,7 +34,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
     UpdateBindingConstraint,
 )
 from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtraction,
+    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -278,11 +278,11 @@ def test_revert(command_context: CommandContext):
         values=[[0]],
         command_context=command_context,
     )
-    mock_command_extraction = Mock(spec=CommandExtraction)
+    mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
         base,
-        "_get_command_extraction",
-        Mock(return_value=mock_command_extraction),
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
     )
     assert base.revert(
         [
@@ -353,16 +353,16 @@ def test_revert(command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     base.revert([], study)
-    mock_command_extraction.extract_binding_constraint.assert_called_with(
+    mock_command_extractor.extract_binding_constraint.assert_called_with(
         study, "foo"
     )
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    mock_command_extraction = Mock(spec=CommandExtraction)
+    mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
         base,
-        "_get_command_extraction",
-        Mock(return_value=mock_command_extraction),
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
     )
     assert base.revert(
         [
@@ -396,11 +396,11 @@ def test_revert(command_context: CommandContext):
             command_context=command_context,
         )
     ]
-    mock_command_extraction.extract_binding_constraint.side_effect = (
+    mock_command_extractor.extract_binding_constraint.side_effect = (
         ChildNotFoundError("")
     )
     base.revert([], study)
-    mock_command_extraction.extract_binding_constraint.assert_called_with(
+    mock_command_extractor.extract_binding_constraint.assert_called_with(
         study, "foo"
     )
 

@@ -1,6 +1,5 @@
 from unittest.mock import Mock, patch
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
@@ -11,9 +10,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -184,7 +180,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_district",
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_district",
 )
 def test_revert(mock_extract_district, command_context: CommandContext):
     base = CreateDistrict(

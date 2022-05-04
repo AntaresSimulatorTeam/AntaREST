@@ -549,11 +549,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
-        additional_data = StudyAdditionalData(
-            horizon=study.additional_data.horizon,
-            author=study.additional_data.author,
-            patch=study.additional_data.patch,
-        )
+        if not study.additional_data:
+            # TODO: remove this when all studies have additional data
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=study.additional_data.horizon,
+                author=study.additional_data.author,
+                patch=study.additional_data.patch,
+            )
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -949,11 +953,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
-        additional_data = StudyAdditionalData(
-            horizon=src_meta.additional_data.horizon,
-            author=src_meta.additional_data.author,
-            patch=src_meta.additional_data.patch,
-        )
+        if not src_meta.additional_data:
+            # TODO: remove this when all studies have additional data
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=src_meta.additional_data.horizon,
+                author=src_meta.additional_data.author,
+                patch=src_meta.additional_data.patch,
+            )
         dest_meta = VariantStudy(
             id=new_id,
             name=dest_name,

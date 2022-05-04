@@ -177,7 +177,7 @@ class RemoveCluster(ICommand):
                 return [command]
 
         try:
-            return self._get_command_extraction().extract_cluster(
+            return self._get_command_extractor().extract_cluster(
                 base, self.area_id, self.cluster_id
             )
             # todo revert binding constraints that has the cluster in constraint

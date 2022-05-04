@@ -68,7 +68,7 @@ class RemoveDistrict(ICommand):
             ):
                 return [command]
         try:
-            return self._get_command_extraction().extract_district(
+            return self._get_command_extractor().extract_district(
                 base, self.id
             )
         except Exception as e:

@@ -217,7 +217,7 @@ def create_study_data_routes(
     @bp.post(
         "/studies/_update_version",
         tags=[APITag.study_data],
-        summary="Edit matrix",
+        summary="update database version of all studies",
     )
     def update_version(
         current_user: JWTUser = Depends(auth.get_current_user),

@@ -10,7 +10,7 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
     UpdateComments,
 )
 from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtraction,
+    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -56,11 +56,11 @@ def test_revert(
     command_context: CommandContext,
     empty_study: FileStudy,
 ):
-    mock_command_extraction = Mock(spec=CommandExtraction)
-    mock_command_extraction.command_context = command_context
-    mock_command_extraction.generate_update_comments.side_effect = (
-        lambda x: CommandExtraction.generate_update_comments(
-            mock_command_extraction, x
+    mock_command_extractor = Mock(spec=CommandExtractor)
+    mock_command_extractor.command_context = command_context
+    mock_command_extractor.generate_update_comments.side_effect = (
+        lambda x: CommandExtractor.generate_update_comments(
+            mock_command_extractor, x
         )
     )
 
@@ -70,12 +70,12 @@ def test_revert(
 
     object.__setattr__(
         base_command,
-        "_get_command_extraction",
-        Mock(return_value=mock_command_extraction),
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
     )
 
     base_command.revert([], empty_study)
-    mock_command_extraction.generate_update_comments.assert_called_with(
+    mock_command_extractor.generate_update_comments.assert_called_with(
         empty_study.tree
     )
     assert base_command.revert(

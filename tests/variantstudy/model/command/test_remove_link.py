@@ -123,7 +123,7 @@ class TestRemoveLink:
 
     @pytest.mark.unit_test
     @patch(
-        "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_link",
+        "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_link",
     )
     def test_revert(self, mock_extract_link, command_context: CommandContext):
         base = RemoveLink(

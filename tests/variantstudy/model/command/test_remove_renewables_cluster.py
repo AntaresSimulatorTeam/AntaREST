@@ -105,7 +105,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_renewables_cluster",
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_renewables_cluster",
 )
 def test_revert(
     mock_extract_renewables_cluster, command_context: CommandContext

@@ -152,7 +152,7 @@ class RemoveLink(ICommand):
                 return [command]
         area_from, area_to = sorted([self.area1, self.area2])
         try:
-            return self._get_command_extraction().extract_link(
+            return self._get_command_extractor().extract_link(
                 base, area_from, area_to
             )
         except ChildNotFoundError as e:

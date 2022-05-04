@@ -120,7 +120,7 @@ class ReplaceMatrix(ICommand):
 
         try:
             return [
-                self._get_command_extraction().generate_replace_matrix(
+                self._get_command_extractor().generate_replace_matrix(
                     base.tree, self.target.split("/")
                 )
             ]

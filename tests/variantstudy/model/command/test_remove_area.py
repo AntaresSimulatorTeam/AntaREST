@@ -2,16 +2,12 @@ from unittest.mock import Mock, patch
 
 from checksumdir import dirhash
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -101,7 +97,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtraction.extract_area",
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_area",
 )
 def test_revert(mock_extract_area, command_context: CommandContext):
     base = RemoveArea(id="foo", command_context=command_context)

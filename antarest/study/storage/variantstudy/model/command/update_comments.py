@@ -74,7 +74,7 @@ class UpdateComments(ICommand):
 
         try:
             return [
-                self._get_command_extraction().generate_update_comments(
+                self._get_command_extractor().generate_update_comments(
                     base.tree
                 )
             ]
