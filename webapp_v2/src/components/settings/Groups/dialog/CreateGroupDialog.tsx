@@ -11,7 +11,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import { createGroup, createRole } from "../../../../services/api/user";
 import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
-import GroupFormDialog, { GroupFormDialogProps } from "./GroupsFormDialog";
+import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
 /**
  * Types
@@ -20,7 +20,7 @@ import GroupFormDialog, { GroupFormDialogProps } from "./GroupsFormDialog";
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
 interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
-  addGroup: (user: GroupDetailsDTO) => void;
+  addGroup: (group: GroupDetailsDTO) => void;
   reloadFetchGroups: VoidFunction;
   closeDialog: VoidFunction;
 }
