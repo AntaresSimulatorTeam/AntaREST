@@ -437,9 +437,13 @@ class XpansionManager:
             xpansion_candidate_dto.max_units,
             xpansion_candidate_dto.unit_size,
         )
-        if xpansion_candidate_dto.annual_cost_per_mw is not None:
+        if xpansion_candidate_dto.annual_cost_per_mw:
             self._assert_is_positive(
                 "annual_cost_per_mw", xpansion_candidate_dto.annual_cost_per_mw
+            )
+        else:
+            raise BadCandidateFormatError(
+                "The candidate is not well formatted.\nIt should contain annual-cost-per-mw."
             )
         if xpansion_candidate_dto.unit_size is not None:
             self._assert_is_positive(
