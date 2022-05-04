@@ -49,7 +49,6 @@ class UpdateConfig(ICommand):
 
         study_data.tree.save(self.data, url)
 
-
         output, _ = self._apply_config(study_data.config)
         return output
 
