@@ -782,17 +782,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 if last_command_index >= 0
                 else None,
             )
-            additional_data = self._read_additional_data_from_files(
-                self.get_raw(variant_study)
+            study = self.study_factory.create_from_fs(
+                self.get_study_path(variant_study),
+                study_id=variant_study.id,
             )
+            additional_data = self._read_additional_data_from_files(study)
             variant_study.additional_data = additional_data
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
-                study = self.study_factory.create_from_fs(
-                    self.get_study_path(variant_study),
-                    study_id=variant_study.id,
-                )
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study.tree.denormalize()
         return results

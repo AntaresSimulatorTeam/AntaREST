@@ -134,6 +134,10 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
 
         # Generate
         service._generate_snapshot = Mock()
+        service._read_additional_data_from_files = Mock()
+        service._read_additional_data_from_files.return_value = (
+            StudyAdditionalData()
+        )
         expected_result = GenerationResultInfoDTO(success=True, details=[])
         service._generate_snapshot.return_value = expected_result
         results = service._generate(saved_id, SADMIN, False)
@@ -206,6 +210,10 @@ def test_smart_generation(tmp_path: Path) -> None:
             variant_id,
             CommandDTO(action="some action", args={"some-args": "value"}),
             SADMIN,
+        )
+        service._read_additional_data_from_files = Mock()
+        service._read_additional_data_from_files.return_value = (
+            StudyAdditionalData()
         )
         service._generate(variant_id, SADMIN, False)
         service.generator.generate.assert_called_with(
