@@ -33,7 +33,6 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import BoltIcon from "@mui/icons-material/Bolt";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import { GenericInfo, StudyMetadata } from "../../common/types";
-import { exportStudy } from "../../services/api/study";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
@@ -42,6 +41,7 @@ import {
 import { scrollbarStyle } from "../../theme";
 import DeleteStudyModal from "./DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import ExportModal from "./ExportModal";
 
 interface Props {
   study: StudyMetadata;
@@ -78,6 +78,7 @@ export default function StudyCard(props: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
+  const [openExportModal, setOpenExportModal] = useState<boolean>(false);
 
   const handleFavoriteClick = () => {
     onFavoriteClick({ id: study.id, name: study.name });
@@ -356,7 +357,7 @@ export default function StudyCard(props: Props) {
               </MenuItem>
               <MenuItem
                 onClick={() => {
-                  exportStudy(study.id, false);
+                  setOpenExportModal(true);
                   handleClose();
                 }}
               >
@@ -416,6 +417,13 @@ export default function StudyCard(props: Props) {
           open={openDeleteModal}
           onClose={() => setOpenDeleteModal(false)}
           onYesClick={onDeleteStudy}
+        />
+      )}
+      {openExportModal && (
+        <ExportModal
+          open={openExportModal}
+          onClose={() => setOpenExportModal(false)}
+          study={study}
         />
       )}
     </Card>

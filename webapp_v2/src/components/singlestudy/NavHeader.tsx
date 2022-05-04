@@ -37,7 +37,6 @@ import {
   deleteStudy as callDeleteStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
-  exportStudy,
 } from "../../services/api/study";
 import { AppState } from "../../store/reducers";
 import { removeStudies } from "../../store/study";
@@ -50,6 +49,7 @@ import {
 } from "../../services/utils";
 import DeleteStudyModal from "../studies/DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import ExportModal from "../studies/ExportModal";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -98,6 +98,7 @@ function NavHeader(props: PropTypes) {
   const [openPropertiesModal, setOpenPropertiesModal] =
     useState<boolean>(false);
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
+  const [openExportModal, setOpenExportModal] = useState<boolean>(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const publicModeList: Array<GenericInfo> = [
@@ -325,7 +326,7 @@ function NavHeader(props: PropTypes) {
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    if (study) exportStudy(study.id, false);
+                    setOpenExportModal(true);
                     handleClose();
                   }}
                 >
@@ -483,6 +484,13 @@ function NavHeader(props: PropTypes) {
           open={openDeleteModal}
           onClose={() => setOpenDeleteModal(false)}
           onYesClick={onDeleteStudy}
+        />
+      )}
+      {study && openExportModal && (
+        <ExportModal
+          open={openExportModal}
+          onClose={() => setOpenExportModal(false)}
+          study={study}
         />
       )}
     </Box>
