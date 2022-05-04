@@ -107,6 +107,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   };
 
   const onExportClick = (): void => {
+    if (onClose) onClose({}, "backdropClick");
     if (optionSelection === "exportOutput") {
       if (currentOutput) exportOutput(currentOutput);
       return;
@@ -139,7 +140,6 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       open={open}
       onClose={onClose}
       title={t("studymanager:export")}
-      alert="info"
       actions={
         <Box>
           <Button
@@ -151,8 +151,13 @@ export default function ExportModal(props: BasicDialogProps & Props) {
           </Button>
           <Button
             sx={{ mx: 2 }}
-            color="info"
+            color="success"
             variant="contained"
+            disabled={
+              ["exportOutputFilter", "exportOutput"].indexOf(
+                optionSelection
+              ) !== -1 && currentOutput === undefined
+            }
             onClick={onExportClick}
           >
             {t("main:export")}
@@ -185,7 +190,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
                   name={`${t("studymanager:selectOutput")} *`}
                   list={outputList as Array<GenericInfo>}
                   data={currentOutput}
-                  setValue={(data: string) => setOptionSelection(data)}
+                  setValue={(data: string) => setCurrentOutput(data)}
                   sx={{ width: "300px", my: 3 }}
                 />
               ) as ReactNode,
