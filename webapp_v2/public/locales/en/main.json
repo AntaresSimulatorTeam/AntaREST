@@ -28,6 +28,7 @@
   "confirmationModalTitle": "Confirmation",
   "yesButton": "Yes",
   "noButton": "No",
+  "okButton": "Ok",
   "backButton": "Back",
   "closeButton": "Close",
   "cancelButton": "Cancel",

@@ -255,8 +255,15 @@ export const rgbToHsl = (rgbStr: string): Array<number> => {
   return [h, s, l];
 };
 
+export const sortByProp = <T extends object>(
+  getProp: (obj: T) => string,
+  list: T[]
+): T[] => {
+  return R.sortBy<T>(R.compose(R.toLower, getProp), list);
+};
+
 export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
-  return R.sortBy<T>(R.compose(R.toLower, R.prop("name")), list);
+  return sortByProp(R.prop("name"), list);
 };
 
 export default {};

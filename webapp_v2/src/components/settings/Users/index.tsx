@@ -26,7 +26,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import Header from "./Header";
 import { RESERVED_USER_NAMES } from "../utils";
-import { IdType, UserDetailsDTO } from "../../../common/types";
+import { UserDetailsDTO } from "../../../common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../services/utils";
 
@@ -41,10 +41,10 @@ enum UserActionKind {
   RESET = "RESET",
 }
 
-export type UserEdit = Partial<UserDetailsDTO> & { id: IdType };
+export type UserEdit = Partial<UserDetailsDTO> & { id: UserDetailsDTO["id"] };
 
 interface UserAction extends Action<string> {
-  payload?: number | UserDetailsDTO | UserDetailsDTO[] | UserEdit;
+  payload?: UserDetailsDTO["id"] | UserDetailsDTO | UserDetailsDTO[] | UserEdit;
 }
 
 /**
