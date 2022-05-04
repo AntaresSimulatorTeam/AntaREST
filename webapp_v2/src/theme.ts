@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createTheme } from "@mui/material/styles";
+import { red } from "@mui/material/colors";
 
 export const DRAWER_WIDTH = 60;
 export const DRAWER_WIDTH_EXTENDED = 240;
@@ -52,6 +53,9 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        div: {
+          ...scrollbarStyle,
+        },
         ul: {
           ...scrollbarStyle,
         },
