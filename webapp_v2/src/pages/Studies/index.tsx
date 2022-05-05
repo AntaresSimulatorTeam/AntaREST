@@ -126,7 +126,7 @@ function Studies(props: PropTypes) {
       setLoaded(false);
       try {
         if (studies.length === 0 || refresh) {
-          const allStudies = await getStudies(false);
+          const allStudies = await getStudies();
           loadStudies(allStudies);
           setFilteredStudies(allStudies);
         }
