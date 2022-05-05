@@ -4,7 +4,12 @@ from typing import Union, Optional
 
 from pydantic import ValidationError
 
-from antarest.study.model import Patch, PatchOutputs, RawStudy
+from antarest.study.model import (
+    Patch,
+    PatchOutputs,
+    RawStudy,
+    StudyAdditionalData,
+)
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -24,7 +29,7 @@ class PatchService:
         if not get_from_file:
             try:
                 return Patch.parse_raw(study.additional_data.patch)
-            except (AttributeError, ValidationError) as e:
+            except Exception as e:
                 logger.warning("Failed to parse patch data", exc_info=e)
 
         patch = Patch()
@@ -56,6 +61,9 @@ class PatchService:
 
     def save(self, study: Union[RawStudy, VariantStudy], patch: Patch) -> None:
         if self.repository:
+            study.additional_data = (
+                study.additional_data or StudyAdditionalData()
+            )
             study.additional_data.patch = patch.json()
             self.repository.save(study)
 

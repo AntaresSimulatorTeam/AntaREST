@@ -82,12 +82,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         study: T,
     ) -> StudyMetadataDTO:
-        if not study.additional_data:
-            self.initialize_additional_data(study)
+        additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch = Patch.parse_raw(study.additional_data.patch or "{}")
-        except ValidationError:
+            patch = Patch.parse_raw(additional_data.patch or "{}")
+        except Exception as e:
+            logger.warning(
+                f"Failed to parse patch for study {study.id}", exc_info=e
+            )
             patch = Patch()
 
         patch_metadata = patch.study or PatchStudy()
@@ -100,7 +102,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else OwnerInfo(name=study.additional_data.author or "Unknown")
+            else OwnerInfo(name=additional_data.author or "Unknown")
         )
 
         return StudyMetadataDTO(
@@ -119,7 +121,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 for group in study.groups
             ],
             public_mode=study.public_mode or PublicMode.NONE,
-            horizon=study.additional_data.horizon,
+            horizon=additional_data.horizon,
             scenario=patch_metadata.scenario,
             status=patch_metadata.status,
             doc=patch_metadata.doc,
