@@ -110,7 +110,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                     metadata.additional_data.patch or Patch()
                 )
                 metadata.additional_data.horizon = (
-                    metadata.additional_data.horizon or datetime.utcnow().year
+                    metadata.additional_data.horizon
                 )
                 metadata.additional_data.author = (
                     metadata.additional_data.author or "Unknown"

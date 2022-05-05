@@ -20,7 +20,7 @@ def upgrade():
     op.create_table('study_additional_data',
     sa.Column('study_id', sa.String(length=36), nullable=False),
     sa.Column('author', sa.String(length=255), nullable=True),
-    sa.Column('horizon', sa.Integer(), nullable=True),
+    sa.Column('horizon', sa.String(), nullable=True),
     sa.Column('patch', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['study_id'], ['study.id'], ),
     sa.PrimaryKeyConstraint('study_id')

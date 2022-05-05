@@ -62,7 +62,7 @@ class StudyAdditionalData(Base):  # type:ignore
         primary_key=True,
     )
     author = Column(String(255), default="Unknown")
-    horizon = Column(Integer)
+    horizon = Column(String)
     patch = Column(String(), nullable=True)
 
     def __eq__(self, other: Any) -> bool:

@@ -385,16 +385,20 @@ class StudyService:
 
     def initialize_additional_data_in_db(
         self, params: RequestParameters
-    ) -> None:
+    ) -> List[str]:
         # TODO: remove this method once used
         logger.info("Initializing additional data of studies")
         if params.user and params.user.is_site_admin():
             studies = self.repository.get_all()
+            studies_not_updated: List[str] = []
             for study in studies:
                 if self.storage_service.get_storage(
                     study
                 ).initialize_additional_data(study):
                     self.repository.save(study)
+                else:
+                    studies_not_updated.append(f"{study.id} : {study.name}")
+            return studies_not_updated
         else:
             logger.error(f"User {params.user} is not site admin")
             raise UserHasNotPermissionError()

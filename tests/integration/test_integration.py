@@ -205,6 +205,14 @@ def test_main(app: FastAPI):
     )
     assert len(res.json()) == 3
 
+    res = client.post(
+        "/v1/studies/_initialize_additional_data_in_db",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == []
+
     # Study delete
     client.delete(
         f"/v1/studies/{copied.json()}",
