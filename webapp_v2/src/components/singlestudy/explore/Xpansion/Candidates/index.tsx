@@ -46,7 +46,12 @@ function Candidates() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const candidateRes = usePromiseWithSnackbarError(
+  const {
+    data: candidates,
+    isLoading,
+    error,
+    reload,
+  } = usePromiseWithSnackbarError(
     async () => {
       if (!study) {
         return [];
@@ -69,7 +74,7 @@ function Candidates() {
     [study]
   );
 
-  const capaLinksRes = usePromiseWithSnackbarError(
+  const { data: capaLinks } = usePromiseWithSnackbarError(
     async () => {
       if (!study) {
         return {};
@@ -105,12 +110,11 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:createCandidateError"), e as AxiosError);
     } finally {
-      candidateRes.reload();
+      reload();
       setSelectedItem(candidate.name);
     }
   };
   const handleDeleteCandidate = async (name: string | undefined) => {
-    const { data: candidates, reload } = candidateRes;
     if (candidates) {
       try {
         if (study && name) {
@@ -158,7 +162,7 @@ function Candidates() {
             value["unit-size"] &&
             value["unit-size"] >= 0)
         ) {
-          candidateRes.reload();
+          reload();
           setSelectedItem(value.name);
           if (
             (value["max-investment"] &&
@@ -191,16 +195,13 @@ function Candidates() {
   const onClose = () => setCandidateCreationModal(false);
 
   const renderView = () => {
-    const { data: candidates } = candidateRes;
-    const { data: { links, capacities } = {} } = capaLinksRes;
-
     const candidate = candidates?.find((o) => o.name === selectedItem);
     if (candidate) {
       return (
         <CandidateForm
           candidate={candidate}
-          links={links || []}
-          capacities={capacities || []}
+          links={capaLinks?.links || []}
+          capacities={capaLinks?.capacities || []}
           deleteCandidate={handleDeleteCandidate}
           updateCandidate={handleUpdateCandidate}
           onRead={getOneCapa}
@@ -210,7 +211,7 @@ function Candidates() {
   };
 
   // TODO
-  if (candidateRes.error) {
+  if (error) {
     return <Box />;
   }
 
@@ -219,7 +220,7 @@ function Candidates() {
       <SplitLayoutView
         left={
           <XpansionPropsView
-            candidateList={candidateRes.data || []}
+            candidateList={candidates || []}
             onAdd={() => setCandidateCreationModal(true)}
             selectedItem={selectedItem || ""}
             setSelectedItem={setSelectedItem}
@@ -232,7 +233,7 @@ function Candidates() {
               {renderView()}
             </Box>
             <Backdrop
-              open={candidateRes.isLoading}
+              open={isLoading}
               sx={{
                 position: "absolute",
                 zIndex: (theme) => theme.zIndex.drawer + 1,
@@ -250,7 +251,7 @@ function Candidates() {
           open={candidateCreationModal}
           onClose={onClose}
           onSave={createCandidate}
-          links={capaLinksRes.data?.links || []}
+          links={capaLinks?.links || []}
         />
       )}
       {!!capacityViewModal && (
