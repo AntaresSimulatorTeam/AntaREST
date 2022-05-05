@@ -4,6 +4,7 @@ from typing import Optional, List
 from sqlalchemy import exists  # type: ignore
 
 from antarest.core.config import Config
+from antarest.core.jwt import ADMIN_ID
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import (
@@ -70,7 +71,7 @@ class UserRepository:
             if admin_user is None:
                 self.save(
                     User(
-                        id=1,
+                        id=ADMIN_ID,
                         name="admin",
                         password=Password(config.security.admin_pwd),
                     )
