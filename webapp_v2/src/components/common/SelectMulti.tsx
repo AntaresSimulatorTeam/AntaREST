@@ -72,7 +72,7 @@ function SelectMulti(props: Props) {
       </InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
-        id="multiple-checkbox"
+        id={`multiple-checkbox-${name}`}
         multiple
         value={data}
         variant="filled"

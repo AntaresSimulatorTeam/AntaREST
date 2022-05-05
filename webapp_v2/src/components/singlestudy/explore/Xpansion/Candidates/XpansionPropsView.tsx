@@ -3,7 +3,7 @@ import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PropertiesView from "../../../../common/PropertiesView";
-import { XpansionCandidate } from "../../../../../common/types";
+import { XpansionCandidate } from "../types";
 import CandidateListing from "./CandidateListing";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 

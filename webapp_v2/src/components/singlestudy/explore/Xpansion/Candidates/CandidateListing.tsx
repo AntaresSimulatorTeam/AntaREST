@@ -4,7 +4,7 @@ import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import { XpansionCandidate } from "../../../../../common/types";
+import { XpansionCandidate } from "../types";
 import { scrollbarStyle } from "../../../../../theme";
 
 const ROW_ITEM_SIZE = 45;

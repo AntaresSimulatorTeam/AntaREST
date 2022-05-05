@@ -1,9 +1,9 @@
 import { AxiosRequestConfig } from "axios";
+import { MatrixType } from "../../common/types";
 import {
-  MatrixType,
   XpansionCandidate,
   XpansionSettings,
-} from "../../common/types";
+} from "../../components/singlestudy/explore/Xpansion/types";
 import client from "./client";
 
 export const createXpansionConfiguration = async (

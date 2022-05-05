@@ -5,7 +5,8 @@ import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { StudyMetadata, XpansionSettings } from "../../../../../common/types";
+import { StudyMetadata } from "../../../../../common/types";
+import { XpansionSettings } from "../types";
 import {
   getXpansionSettings,
   getAllConstraints,

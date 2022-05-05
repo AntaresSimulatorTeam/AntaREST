@@ -2,10 +2,8 @@ import { useState } from "react";
 import { TextField, Box, Divider, ButtonGroup, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicModal from "../../../../common/BasicModal";
-import {
-  LinkCreationInfo,
-  XpansionCandidate,
-} from "../../../../../common/types";
+import { LinkCreationInfo } from "../../../../../common/types";
+import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {

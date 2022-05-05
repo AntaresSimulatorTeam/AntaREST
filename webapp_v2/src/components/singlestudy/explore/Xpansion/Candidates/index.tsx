@@ -1,17 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Backdrop, Box, CircularProgress } from "@mui/material";
+import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import {
-  MatrixType,
-  StudyMetadata,
-  XpansionCandidate,
-  LinkCreationInfo,
-} from "../../../../../common/types";
+import { MatrixType, StudyMetadata } from "../../../../../common/types";
+import { XpansionCandidate } from "../types";
 import SplitLayoutView from "../../../../common/SplitLayoutView";
 import {
   getAllCandidates,
@@ -28,24 +24,21 @@ import {
 } from "../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { getAllLinks } from "../../../../../services/api/studydata";
-import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import MatrixView from "../../../../common/MatrixView";
 import BasicModal from "../../../../common/BasicModal";
 import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateModal from "./CreateCandidateModal";
 import CandidateForm from "./CandidateForm";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 
 function Candidates() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const navigate = useNavigate();
+  const mounted = usePromiseWrapper();
   const [candidateCreationModal, setCandidateCreationModal] =
     useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<string>();
-  const [candidates, setCandidates] = useState<Array<XpansionCandidate>>();
-  const [links, setLinks] = useState<Array<LinkCreationInfo>>();
-  const [capacities, setCapacities] = useState<Array<string>>();
-  const [loaded, setLoaded] = useState<boolean>(false);
   const [capacityViewModal, setCapacityViewModal] = useState<{
     filename: string;
     content: MatrixType;
@@ -53,66 +46,48 @@ function Candidates() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const initCandidate = useCallback(
-    async (
-      after: () => void = () => {
-        /* noop */
+  const candidateRes = usePromiseWithSnackbarError(
+    async () => {
+      if (!study) {
+        return [];
       }
-    ) => {
-      try {
-        if (study) {
-          const tempCandidates = await getAllCandidates(study.id);
-          for (let i = 0; i < tempCandidates.length; i += 1) {
-            tempCandidates[i].link = tempCandidates.map(
-              (item: { link: string }) =>
-                item.link
-                  .split(" - ")
-                  .map((index: any) => transformNameToId(index))
-                  .join(" - ")
-            )[i];
-          }
-          setCandidates(tempCandidates);
-        }
-        if (after) {
-          after();
-        }
-      } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+
+      // Candidates
+      const tempCandidates = await getAllCandidates(study.id);
+      for (let i = 0; i < tempCandidates.length; i += 1) {
+        tempCandidates[i].link = tempCandidates.map((item: { link: string }) =>
+          item.link
+            .split(" - ")
+            .map((index: any) => transformNameToId(index))
+            .join(" - ")
+        )[i];
       }
+
+      return tempCandidates;
     },
-    [study?.id, t]
+    t("xpansion:xpansionError"),
+    [study]
   );
 
-  const initCapa = useCallback(async () => {
-    try {
-      if (study) {
-        const tempCapa = await getAllCapacities(study.id);
-        setCapacities(tempCapa);
+  const capaLinksRes = usePromiseWithSnackbarError(
+    async () => {
+      if (!study) {
+        return {};
       }
-    } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
-    }
-  }, [study?.id, t]);
 
-  const init = useCallback(async () => {
-    try {
-      if (study) {
-        initCandidate();
-        initCapa();
-        const tempLinks = await getAllLinks(study.id);
-        setLinks(tempLinks);
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
-    } finally {
-      setLoaded(true);
-    }
-  }, [study?.id, t, initCandidate, initCapa]);
+      return {
+        capacities: await getAllCapacities(study.id),
+        links: await getAllLinks(study.id),
+      };
+    },
+    t("xpansion:xpansionError"),
+    [study]
+  );
 
   const deleteXpansion = async () => {
     try {
       if (study) {
-        await deleteXpansionConfiguration(study.id);
+        await mounted(deleteXpansionConfiguration(study.id));
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:deleteXpansionError"), e as AxiosError);
@@ -124,26 +99,22 @@ function Candidates() {
   const createCandidate = async (candidate: XpansionCandidate) => {
     try {
       if (study) {
-        await addCandidate(study.id, candidate);
+        await mounted(addCandidate(study.id, candidate));
         setCandidateCreationModal(false);
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:createCandidateError"), e as AxiosError);
     } finally {
-      initCandidate(() => {
-        setSelectedItem(candidate.name);
-      });
+      candidateRes.reload();
+      setSelectedItem(candidate.name);
     }
   };
-
-  const handleDeleteCandidate = async (name: string) => {
+  const handleDeleteCandidate = async (name: string | undefined) => {
+    const { data: candidates, reload } = candidateRes;
     if (candidates) {
-      const obj = candidates.filter((o) => o.name !== name);
       try {
-        if (study) {
-          await deleteCandidate(study.id, name);
-          setCandidates(obj);
-          setSelectedItem(undefined);
+        if (study && name) {
+          await mounted(deleteCandidate(study.id, name));
         }
       } catch (e) {
         enqueueErrorSnackbar(
@@ -151,17 +122,18 @@ function Candidates() {
           e as AxiosError
         );
       } finally {
-        initCandidate();
+        reload();
+        setSelectedItem(undefined);
       }
     }
   };
 
   const handleUpdateCandidate = async (
-    name: string,
-    value: XpansionCandidate
+    name: string | undefined,
+    value: XpansionCandidate | undefined
   ) => {
     try {
-      if (study) {
+      if (study && name && value) {
         await updateCandidate(
           study.id,
           name,
@@ -178,7 +150,7 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:updateCandidateError"), e as AxiosError);
     } finally {
-      if (name && value["annual-cost-per-mw"] && value.link) {
+      if (name && value && value["annual-cost-per-mw"] && value.link) {
         if (
           (value["max-investment"] && value["max-investment"] >= 0) ||
           (value["max-units"] &&
@@ -186,7 +158,8 @@ function Candidates() {
             value["unit-size"] &&
             value["unit-size"] >= 0)
         ) {
-          initCandidate(() => setSelectedItem(value.name));
+          candidateRes.reload();
+          setSelectedItem(value.name);
           if (
             (value["max-investment"] &&
               !value["max-units"] &&
@@ -215,60 +188,69 @@ function Candidates() {
     }
   };
 
-  useEffect(() => {
-    init();
-  }, [init, setSelectedItem]);
-
   const onClose = () => setCandidateCreationModal(false);
 
   const renderView = () => {
-    if (candidates) {
-      const candidate = candidates.find((o) => o.name === selectedItem);
-      if (candidate) {
-        return (
-          <CandidateForm
-            candidate={candidate}
-            links={links || []}
-            capacities={capacities || []}
-            deleteCandidate={handleDeleteCandidate}
-            updateCandidate={handleUpdateCandidate}
-            onRead={getOneCapa}
-          />
-        );
-      }
+    const { data: candidates } = candidateRes;
+    const { data: { links, capacities } = {} } = capaLinksRes;
+
+    const candidate = candidates?.find((o) => o.name === selectedItem);
+    if (candidate) {
+      return (
+        <CandidateForm
+          candidate={candidate}
+          links={links || []}
+          capacities={capacities || []}
+          deleteCandidate={handleDeleteCandidate}
+          updateCandidate={handleUpdateCandidate}
+          onRead={getOneCapa}
+        />
+      );
     }
-    return <Box />;
   };
+
+  // TODO
+  if (candidateRes.error) {
+    return <Box />;
+  }
 
   return (
     <>
-      {loaded ? (
-        <SplitLayoutView
-          left={
-            <XpansionPropsView
-              candidateList={candidates || []}
-              onAdd={() => setCandidateCreationModal(true)}
-              selectedItem={selectedItem || ""}
-              setSelectedItem={setSelectedItem}
-              deleteXpansion={deleteXpansion}
-            />
-          }
-          right={
+      <SplitLayoutView
+        left={
+          <XpansionPropsView
+            candidateList={candidateRes.data || []}
+            onAdd={() => setCandidateCreationModal(true)}
+            selectedItem={selectedItem || ""}
+            setSelectedItem={setSelectedItem}
+            deleteXpansion={deleteXpansion}
+          />
+        }
+        right={
+          <>
             <Box width="100%" height="100%" padding={2} boxSizing="border-box">
               {renderView()}
             </Box>
-          }
-        />
-      ) : (
-        <SimpleLoader />
-      )}
+            <Backdrop
+              open={candidateRes.isLoading}
+              sx={{
+                position: "absolute",
+                zIndex: (theme) => theme.zIndex.drawer + 1,
+                opacity: "0.1 !important",
+              }}
+            >
+              <CircularProgress sx={{ color: "primary.main" }} />
+            </Backdrop>
+          </>
+        }
+      />
 
       {candidateCreationModal && (
         <CreateCandidateModal
           open={candidateCreationModal}
           onClose={onClose}
           onSave={createCandidate}
-          links={links || []}
+          links={capaLinksRes.data?.links || []}
         />
       )}
       {!!capacityViewModal && (

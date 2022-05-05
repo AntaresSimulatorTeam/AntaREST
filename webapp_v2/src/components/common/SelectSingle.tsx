@@ -59,14 +59,14 @@ function SelectSingle(props: Props) {
       }
     >
       <InputLabel
-        id="single-checkbox"
+        id={`single-checkbox-label-${label}`}
         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
       >
         {name}
       </InputLabel>
       <Select
         labelId={`single-checkbox-label-${label}`}
-        id="single-checkbox"
+        id={`single-checkbox-${label}`}
         value={data}
         label={name}
         onChange={

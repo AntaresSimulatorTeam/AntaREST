@@ -5,19 +5,27 @@ import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import { Title, Fields, SelectFields, StyledTextField } from "../Styles";
 import {
-  XpansionCandidate,
-  LinkCreationInfo,
-} from "../../../../../common/types";
+  Title,
+  Fields,
+  SelectFields,
+  StyledTextField,
+  HoverButton,
+  ActiveButton,
+} from "../Styles";
+import { LinkCreationInfo } from "../../../../../common/types";
+import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {
-  candidate: XpansionCandidate;
+  candidate: XpansionCandidate | undefined;
   links: Array<LinkCreationInfo>;
   capacities: Array<string>;
-  deleteCandidate: (name: string) => Promise<void>;
-  updateCandidate: (name: string, value: XpansionCandidate) => Promise<void>;
+  deleteCandidate: (name: string | undefined) => Promise<void>;
+  updateCandidate: (
+    name: string | undefined,
+    value: XpansionCandidate | undefined
+  ) => Promise<void>;
   onRead: (filename: string) => Promise<void>;
 }
 
@@ -33,8 +41,9 @@ function CandidateForm(props: PropType) {
   } = props;
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<boolean>(false);
-  const [currentCandidate, setCurrentCandidate] =
-    useState<XpansionCandidate>(candidate);
+  const [currentCandidate, setCurrentCandidate] = useState<
+    XpansionCandidate | undefined
+  >(candidate);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [toggleView, setToggleView] = useState<boolean>(true);
 
@@ -47,7 +56,9 @@ function CandidateForm(props: PropType) {
 
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
-    setCurrentCandidate({ ...currentCandidate, [key]: value });
+    if (currentCandidate) {
+      setCurrentCandidate({ ...currentCandidate, [key]: value });
+    }
   };
 
   const changeView = () => setToggleView(!toggleView);
@@ -91,7 +102,7 @@ function CandidateForm(props: PropType) {
                 border: "2px solid",
               }}
               onClick={() => {
-                updateCandidate(candidate.name, currentCandidate);
+                updateCandidate(candidate?.name, currentCandidate);
                 setSaveAllowed(false);
               }}
               disabled={!saveAllowed}
@@ -118,7 +129,7 @@ function CandidateForm(props: PropType) {
           <StyledTextField
             label={t("main:name")}
             variant="filled"
-            value={currentCandidate.name}
+            value={currentCandidate?.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
           />
           <SelectFields>
@@ -126,7 +137,7 @@ function CandidateForm(props: PropType) {
               name={t("xpansion:link")}
               label="link"
               list={tabLinks}
-              data={currentCandidate.link}
+              data={currentCandidate?.link || ""}
               handleChange={handleChange}
               sx={{
                 minWidth: "100%",
@@ -143,7 +154,7 @@ function CandidateForm(props: PropType) {
             type="number"
             label={t("xpansion:annualCost")}
             variant="filled"
-            value={currentCandidate["annual-cost-per-mw"] || ""}
+            value={currentCandidate?.["annual-cost-per-mw"] || ""}
             onChange={(e) =>
               handleChange("annual-cost-per-mw", parseFloat(e.target.value))
             }
@@ -152,7 +163,7 @@ function CandidateForm(props: PropType) {
             type="number"
             label={t("xpansion:alreadyICapacity")}
             variant="filled"
-            value={currentCandidate["already-installed-capacity"] || ""}
+            value={currentCandidate?.["already-installed-capacity"] || ""}
             onChange={(e) =>
               handleChange(
                 "already-installed-capacity",
@@ -169,66 +180,30 @@ function CandidateForm(props: PropType) {
           >
             <ButtonGroup sx={{ width: "270px", mb: 2 }} variant="outlined">
               {toggleView ? (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  disabled
-                  sx={(theme) => ({
-                    backgroundColor: "rgba(255,255,255,0.09) !important",
-                    color: `${theme.palette.text.primary} !important`,
-                    borderColor: `${theme.palette.text.secondary} !important`,
-                  })}
-                >
+                <ActiveButton size="small" variant="outlined" disabled>
                   {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
-                </Button>
+                </ActiveButton>
               ) : (
-                <Button
+                <HoverButton
                   size="small"
                   variant="outlined"
-                  sx={(theme) => ({
-                    color: "action.active",
-                    borderColor: theme.palette.text.disabled,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.11)",
-                      borderColor: theme.palette.text.primary,
-                      color: theme.palette.text.primary,
-                    },
-                  })}
                   onClick={changeView}
                 >
                   {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
-                </Button>
+                </HoverButton>
               )}
               {toggleView ? (
-                <Button
+                <HoverButton
                   size="small"
                   variant="outlined"
-                  sx={(theme) => ({
-                    color: "action.active",
-                    borderColor: theme.palette.text.disabled,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.11)",
-                      borderColor: theme.palette.text.primary,
-                      color: theme.palette.text.primary,
-                    },
-                  })}
                   onClick={changeView}
                 >
                   {t("xpansion:maxInvestments")}
-                </Button>
+                </HoverButton>
               ) : (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  sx={(theme) => ({
-                    backgroundColor: "rgba(255,255,255,0.09) !important",
-                    color: `${theme.palette.text.primary} !important`,
-                    borderColor: `${theme.palette.text.secondary} !important`,
-                  })}
-                  disabled
-                >
+                <ActiveButton size="small" variant="outlined" disabled>
                   {t("xpansion:maxInvestments")}
-                </Button>
+                </ActiveButton>
               )}
             </ButtonGroup>
           </Box>
@@ -239,7 +214,7 @@ function CandidateForm(props: PropType) {
                 type="number"
                 label={t("xpansion:unitSize")}
                 variant="filled"
-                value={currentCandidate["unit-size"] || ""}
+                value={currentCandidate?.["unit-size"] || ""}
                 onChange={(e) =>
                   handleChange("unit-size", parseFloat(e.target.value))
                 }
@@ -248,7 +223,7 @@ function CandidateForm(props: PropType) {
                 type="number"
                 label={t("xpansion:maxUnits")}
                 variant="filled"
-                value={currentCandidate["max-units"] || ""}
+                value={currentCandidate?.["max-units"] || ""}
                 onChange={(e) =>
                   handleChange("max-units", parseFloat(e.target.value))
                 }
@@ -260,7 +235,7 @@ function CandidateForm(props: PropType) {
               type="number"
               label={t("xpansion:maxInvestments")}
               variant="filled"
-              value={currentCandidate["max-investment"] || ""}
+              value={currentCandidate?.["max-investment"] || ""}
               onChange={(e) =>
                 handleChange("max-investment", parseFloat(e.target.value))
               }
@@ -291,7 +266,7 @@ function CandidateForm(props: PropType) {
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}
-              data={currentCandidate["link-profile"] || ""}
+              data={currentCandidate?.["link-profile"] || ""}
               handleChange={handleChange}
               sx={{
                 minWidth: "100%",
@@ -308,8 +283,8 @@ function CandidateForm(props: PropType) {
                 },
               }}
               onClick={() =>
-                currentCandidate["link-profile"] &&
-                onRead(currentCandidate["link-profile"] || "")
+                currentCandidate?.["link-profile"] &&
+                onRead(currentCandidate?.["link-profile"] || "")
               }
             />
           </SelectFields>
@@ -320,7 +295,7 @@ function CandidateForm(props: PropType) {
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}
-              data={currentCandidate["already-installed-link-profile"] || ""}
+              data={currentCandidate?.["already-installed-link-profile"] || ""}
               handleChange={handleChange}
               sx={{
                 minWidth: "100%",
@@ -338,8 +313,10 @@ function CandidateForm(props: PropType) {
               }}
               color="primary"
               onClick={() =>
-                currentCandidate["already-installed-link-profile"] &&
-                onRead(currentCandidate["already-installed-link-profile"] || "")
+                currentCandidate?.["already-installed-link-profile"] &&
+                onRead(
+                  currentCandidate?.["already-installed-link-profile"] || ""
+                )
               }
             />
           </SelectFields>
@@ -350,7 +327,7 @@ function CandidateForm(props: PropType) {
           titleIcon={DeleteIcon}
           onCancel={() => setOpenConfirmationModal(false)}
           onConfirm={() => {
-            deleteCandidate(currentCandidate.name);
+            deleteCandidate(currentCandidate?.name);
             setOpenConfirmationModal(false);
           }}
           alert="warning"

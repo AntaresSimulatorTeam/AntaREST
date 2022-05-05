@@ -1,4 +1,4 @@
-import { Box, Typography, TextField, styled } from "@mui/material";
+import { Box, Typography, TextField, Button, styled } from "@mui/material";
 
 export const Fields = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -33,4 +33,19 @@ export const StyledTextField = styled(TextField)(() => ({
   borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
 }));
 
+export const HoverButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.action.active,
+  borderColor: theme.palette.text.disabled,
+  "&:hover": {
+    backgroundColor: "rgba(255,255,255,0.11)",
+    borderColor: theme.palette.text.primary,
+    color: theme.palette.text.primary,
+  },
+}));
+
+export const ActiveButton = styled(Button)(({ theme }) => ({
+  backgroundColor: "rgba(255,255,255,0.09) !important",
+  color: `${theme.palette.text.primary} !important`,
+  borderColor: `${theme.palette.text.secondary} !important`,
+}));
 export default {};
