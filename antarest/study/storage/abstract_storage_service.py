@@ -86,7 +86,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             self.initialize_additional_data(study)
 
         try:
-            patch = Patch.parse_raw(study.additional_data.patch or "")
+            patch = Patch.parse_raw(study.additional_data.patch or "{}")
         except ValidationError:
             patch = Patch()
 

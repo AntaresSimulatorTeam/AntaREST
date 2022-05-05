@@ -136,11 +136,6 @@ logger = logging.getLogger(__name__)
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
-class ForbiddenError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(status_code=HTTPStatus.FORBIDDEN, detail=message)
-
-
 class StudyService:
     """
     Storage module facade service to handle studies management.

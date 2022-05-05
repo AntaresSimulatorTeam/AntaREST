@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Union, Optional
 
@@ -10,6 +11,8 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class PatchService:
     def __init__(self, repository: Optional[StudyMetadataRepository] = None):
@@ -21,8 +24,8 @@ class PatchService:
         if not get_from_file:
             try:
                 return Patch.parse_raw(study.additional_data.patch)
-            except (AttributeError, ValidationError):
-                pass
+            except (AttributeError, ValidationError) as e:
+                logger.warning("Failed to parse patch data", exc_info=e)
 
         patch = Patch()
         patch_path = (Path(study.path)) / "patch.json"
