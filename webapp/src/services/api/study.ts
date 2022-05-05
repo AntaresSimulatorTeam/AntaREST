@@ -7,7 +7,7 @@ import { FileDownloadTask } from './downloads';
 import { AreasConfig, SingleAreaConfig, StudyProperties } from '../../components/SingleStudy/MapView/types';
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
-  const res = await client.get('/v1/studies?summary=true');
+  const res = await client.get('/v1/studies');
   return res.data;
 };
 
@@ -44,8 +44,8 @@ export const getAreaPositions = async (uuid: string, path: string, depth = -1): 
   return res.data;
 };
 
-export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
-  const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
+export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
+  const res = await client.get(`/v1/studies/${sid}`);
   return convertStudyDtoToMetadata(sid, res.data);
 };
 

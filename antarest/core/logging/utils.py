@@ -68,6 +68,11 @@ def configure_logger(config: Config) -> None:
                 "level": "INFO",
                 "propagate": True,
             },
+            "antarest.study.storage.rawstudy.watcher": {
+                "handlers": ["default"],
+                "level": "WARN",
+                "propagate": True,
+            },
         },
     }
     if config.logging.logfile is not None:

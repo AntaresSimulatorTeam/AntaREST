@@ -14,14 +14,17 @@ from antarest.core.config import (
     WorkspaceConfig,
     CacheConfig,
 )
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.login.model import User
-from antarest.matrixstore.service import MatrixService, SimpleMatrixService
+from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyAdditionalData,
+)
 from antarest.study.service import StudyService
 
 
@@ -61,6 +64,9 @@ def storage_service(
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version=700,
+        additional_data=StudyAdditionalData(
+            author="Andrea SGATTONI", horizon=2030
+        ),
     )
     repo = Mock()
     repo.get.side_effect = lambda name: RawStudy(
@@ -71,6 +77,7 @@ def storage_service(
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version=700,
+        additional_data=StudyAdditionalData(),
     )
     repo.get_all.return_value = [md]
 

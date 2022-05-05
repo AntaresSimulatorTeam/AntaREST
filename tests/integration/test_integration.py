@@ -1,6 +1,6 @@
 import time
-from typing import Callable
 from pathlib import Path
+from typing import Callable
 from unittest.mock import ANY
 
 from fastapi import FastAPI
@@ -205,6 +205,14 @@ def test_main(app: FastAPI):
     )
     assert len(res.json()) == 3
 
+    res = client.post(
+        "/v1/studies/_initialize_additional_data_in_db",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == []
+
     # Study delete
     client.delete(
         f"/v1/studies/{copied.json()}",
@@ -324,7 +332,12 @@ def test_main(app: FastAPI):
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
-        json={"name": "STA-mini-copy", "status": "copied", "horizon": "2035"},
+        json={
+            "name": "STA-mini-copy",
+            "status": "copied",
+            "horizon": "2035",
+            "author": "Luffy",
+        },
     )
     new_meta = client.get(
         f"/v1/studies/{study_id}",

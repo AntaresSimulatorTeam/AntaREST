@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from unittest.mock import Mock, ANY
 
@@ -7,12 +6,15 @@ from sqlalchemy import create_engine
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyAdditionalData,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -36,7 +38,11 @@ SADMIN = RequestParameters(
 
 
 def test_commands_service(tmp_path: Path) -> VariantStudyService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=True,
+        connect_args={"check_same_thread": False},
+    )
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -65,7 +71,11 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
     with db():
         # Save a study
         origin_id = "origin-id"
-        origin_study = RawStudy(id=origin_id, name="my-study")
+        origin_study = RawStudy(
+            id=origin_id,
+            name="my-study",
+            additional_data=StudyAdditionalData(),
+        )
         repository.save(origin_study)
 
         # Create un new variant
@@ -124,6 +134,10 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
 
         # Generate
         service._generate_snapshot = Mock()
+        service._read_additional_data_from_files = Mock()
+        service._read_additional_data_from_files.return_value = (
+            StudyAdditionalData()
+        )
         expected_result = GenerationResultInfoDTO(success=True, details=[])
         service._generate_snapshot.return_value = expected_result
         results = service._generate(saved_id, SADMIN, False)
@@ -182,7 +196,10 @@ def test_smart_generation(tmp_path: Path) -> None:
     with db():
         origin_id = "base-study"
         origin_study = RawStudy(
-            id=origin_id, name="my-study", workspace=DEFAULT_WORKSPACE_NAME
+            id=origin_id,
+            name="my-study",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            additional_data=StudyAdditionalData(),
         )
         repository.save(origin_study)
 
@@ -193,6 +210,10 @@ def test_smart_generation(tmp_path: Path) -> None:
             variant_id,
             CommandDTO(action="some action", args={"some-args": "value"}),
             SADMIN,
+        )
+        service._read_additional_data_from_files = Mock()
+        service._read_additional_data_from_files.return_value = (
+            StudyAdditionalData()
         )
         service._generate(variant_id, SADMIN, False)
         service.generator.generate.assert_called_with(

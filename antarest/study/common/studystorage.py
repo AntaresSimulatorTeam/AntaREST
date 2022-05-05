@@ -110,9 +110,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_study_information(
-        self, metadata: T, summary: bool = False
-    ) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: T) -> StudyMetadataDTO:
         raise NotImplementedError()
 
     @abstractmethod
@@ -270,4 +268,8 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: FileStudyTreeConfigDTO
 
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def initialize_additional_data(self, study: T) -> bool:
         raise NotImplementedError()

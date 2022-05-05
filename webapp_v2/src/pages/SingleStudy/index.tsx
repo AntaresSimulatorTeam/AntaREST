@@ -67,7 +67,7 @@ function SingleStudy(props: Props) {
       if (studyId) {
         setCurrentStudy(studyId);
         try {
-          const tmpStudy = await getStudyMetadata(studyId, false);
+          const tmpStudy = await getStudyMetadata(studyId);
           if (tmpStudy) {
             const tmpParents = await getVariantParents(tmpStudy.id);
             let root: StudyMetadata = tmpStudy;

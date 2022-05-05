@@ -10,6 +10,7 @@ from antarest.study.model import (
     PatchArea,
     PatchOutputs,
 )
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 
 PATCH_CONTENT = """ 
@@ -48,7 +49,7 @@ def test_get(tmp_path: str):
         outputs=PatchOutputs(reference="20210588-eco-1532"),
     )
 
-    patch_service = PatchService()
+    patch_service = PatchService(repository=Mock(spec=StudyMetadataRepository))
     patch = patch_service.get(raw_study)
     assert patch == expected_patch
 
@@ -65,7 +66,7 @@ def test_save(tmp_path: str):
     raw_study = Mock()
     raw_study.path = tmp_path
 
-    patch_service = PatchService()
+    patch_service = PatchService(repository=Mock(spec=StudyMetadataRepository))
     patch_service.save(raw_study, patch)
 
     assert (Path(tmp_path) / "patch.json").read_text() == expected_json
@@ -82,7 +83,7 @@ def test_set_output_ref(tmp_path: str):
     raw_study = Mock()
     raw_study_patch = Patch(outputs=PatchOutputs(reference="some id"))
 
-    patch_service = PatchService()
+    patch_service = PatchService(repository=Mock(spec=StudyMetadataRepository))
     patch_service.get = Mock(return_value=raw_study_patch)
     patch_service.save = Mock()
 

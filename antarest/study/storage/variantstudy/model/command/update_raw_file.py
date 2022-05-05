@@ -75,15 +75,11 @@ class UpdateRawFile(ICommand):
                 and command.target == self.target
             ):
                 return [command]
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         return [
-            (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).generate_update_rawfile(base.tree, self.target.split("/"))
+            self._get_command_extractor().generate_update_rawfile(
+                base.tree, self.target.split("/")
+            )
         ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

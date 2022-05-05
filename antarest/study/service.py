@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import os
-import shutil
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
@@ -85,6 +84,7 @@ from antarest.study.model import (
     PatchCluster,
     PatchArea,
     ExportFormat,
+    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -161,7 +161,7 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.areas = AreaManager(self.storage_service)
+        self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
@@ -301,12 +301,11 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, summary: bool, managed: bool, params: RequestParameters
+        self, managed: bool, params: RequestParameters
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
-            summary: indicate if just basic information should be retrieved
             managed: indicate if just managed studies should be retrieved
             params: request parameters
 
@@ -315,13 +314,11 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_keys = {
-            (True, True): CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value,
-            (True, False): CacheConstants.STUDY_LISTING_SUMMARY.value,
-            (False, True): CacheConstants.STUDY_LISTING_MANAGED.value,
-            (False, False): CacheConstants.STUDY_LISTING.value,
-        }
-        cache_key = cache_keys[(summary, managed)]
+        cache_key = (
+            CacheConstants.STUDY_LISTING_MANAGED.value
+            if managed
+            else CacheConstants.STUDY_LISTING.value
+        )
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
@@ -332,9 +329,7 @@ class StudyService:
             logger.info("Studies retrieved")
             for study in all_studies:
                 if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(
-                        study, summary
-                    )
+                    study_metadata = self._try_get_studies_information(study)
                     if study_metadata is not None:
                         studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
@@ -352,12 +347,12 @@ class StudyService:
         }
 
     def _try_get_studies_information(
-        self, study: Study, summary: bool
+        self, study: Study
     ) -> Optional[StudyMetadataDTO]:
         try:
             return self.storage_service.get_storage(
                 study
-            ).get_study_information(study, summary)
+            ).get_study_information(study)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",
@@ -388,6 +383,26 @@ class StudyService:
             study
         )
 
+    def initialize_additional_data_in_db(
+        self, params: RequestParameters
+    ) -> List[str]:
+        # TODO: remove this method once used
+        logger.info("Initializing additional data of studies")
+        if params.user and params.user.is_site_admin():
+            studies = self.repository.get_all()
+            studies_not_updated: List[str] = []
+            for study in studies:
+                if self.storage_service.get_storage(
+                    study
+                ).initialize_additional_data(study):
+                    self.repository.save(study)
+                else:
+                    studies_not_updated.append(f"{study.id} : {study.name}")
+            return studies_not_updated
+        else:
+            logger.error(f"User {params.user} is not site admin")
+            raise UserHasNotPermissionError()
+
     def update_study_information(
         self,
         uuid: str,
@@ -409,9 +424,6 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        if metadata_patch.name:
-            study.name = metadata_patch.name
-            self.repository.save(study)
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             self._assert_study_unarchived(study)
@@ -423,10 +435,29 @@ class StudyService:
             self._edit_study_using_command(
                 study=study, url=study_settings_url, data=study_settings
             )
+        if metadata_patch.author:
+            study_antares_url = "study/antares"
+            self._assert_study_unarchived(study)
+            study_antares = self.storage_service.get_storage(study).get(
+                study, study_antares_url
+            )
+            study_antares["author"] = metadata_patch.author
+
+            self._edit_study_using_command(
+                study=study, url=study_antares_url, data=study_antares
+            )
+        study.additional_data = study.additional_data or StudyAdditionalData()
+        if metadata_patch.name:
+            study.name = metadata_patch.name
+        if metadata_patch.author:
+            study.additional_data.author = metadata_patch.author
+        if metadata_patch.horizon:
+            study.additional_data.horizon = metadata_patch.horizon
 
         new_metadata = self.storage_service.get_storage(
             study
         ).patch_update_study_metadata(study, metadata_patch)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,
@@ -483,6 +514,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
+            additional_data=StudyAdditionalData(),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -1161,6 +1193,7 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
+            additional_data=StudyAdditionalData(),
         )
         study = self.storage_service.raw_study_service.import_study(
             study, stream
@@ -1726,7 +1759,7 @@ class StudyService:
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
-        Creeate new study with owner, group or content_status.
+        Create new study with owner, group or content_status.
         Args:
             study: study to save
             owner: new owner
@@ -1995,3 +2028,15 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         self.matrix_manager.update_matrix(study, path, slices, operation)
+
+    def check_and_update_all_study_versions_in_database(
+        self, params: RequestParameters
+    ) -> None:
+        if params.user and not params.user.is_site_admin():
+            logger.error(f"User {params.user.id} is not site admin")
+            raise UserHasNotPermissionError()
+        studies = self.repository.get_all()
+        for study in studies:
+            if isinstance(study, RawStudy) and not is_managed(study):
+                storage = self.storage_service.raw_study_service
+                storage.check_and_update_study_version_in_database(study)

@@ -19,15 +19,15 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 
-const getStudiesRaw = async (
-  summary = true
-): Promise<{ [sid: string]: StudyMetadataDTO }> => {
-  const res = await client.get(`/v1/studies?summary=${summary}`);
+const getStudiesRaw = async (): Promise<{
+  [sid: string]: StudyMetadataDTO;
+}> => {
+  const res = await client.get(`/v1/studies`);
   return res.data;
 };
 
-export const getStudies = async (summary = true): Promise<StudyMetadata[]> => {
-  const rawStudyList = await getStudiesRaw(summary);
+export const getStudies = async (): Promise<StudyMetadata[]> => {
+  const rawStudyList = await getStudiesRaw();
   return Object.keys(rawStudyList).map((sid) => {
     const study = rawStudyList[sid];
     return convertStudyDtoToMetadata(sid, study);
@@ -74,11 +74,8 @@ export const getAreaPositions = async (
   return res.data;
 };
 
-export const getStudyMetadata = async (
-  sid: string,
-  summary = true
-): Promise<StudyMetadata> => {
-  const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
+export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
+  const res = await client.get(`/v1/studies/${sid}`);
   return convertStudyDtoToMetadata(sid, res.data);
 };
 

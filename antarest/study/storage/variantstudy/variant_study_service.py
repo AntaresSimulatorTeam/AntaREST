@@ -47,6 +47,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudySimResultDTO,
     RawStudy,
+    StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -423,7 +424,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
 
         children_tree = VariantTreeDTO(
-            node=self.get_study_information(study, summary=True),
+            node=self.get_study_information(study),
             children=[],
         )
         children = self.repository.get_children(parent_id=parent_id)
@@ -460,12 +461,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             return (
                 self.get_study_information(
                     parent,
-                    summary=True,
                 )
                 if isinstance(parent, VariantStudy)
                 else self.raw_study_service.get_study_information(
                     parent,
-                    summary=True,
                 )
             )
         return None
@@ -477,12 +476,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata = (
             self.get_study_information(
                 study,
-                summary=True,
             )
             if isinstance(study, VariantStudy)
             else self.raw_study_service.get_study_information(
                 study,
-                summary=True,
             )
         )
         output_list: List[StudyMetadataDTO] = [metadata]
@@ -552,6 +549,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
+        if not study.additional_data:
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=study.additional_data.horizon,
+                author=study.additional_data.author,
+                patch=study.additional_data.patch,
+            )
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -564,6 +569,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
+            additional_data=additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -779,13 +785,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 if last_command_index >= 0
                 else None,
             )
+            study = self.study_factory.create_from_fs(
+                self.get_study_path(variant_study),
+                study_id=variant_study.id,
+            )
+            variant_study.additional_data = (
+                self._read_additional_data_from_files(study)
+            )
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
-                study = self.study_factory.create_from_fs(
-                    self.get_study_path(variant_study),
-                    study_id=variant_study.id,
-                )
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study.tree.denormalize()
         return results
@@ -943,6 +952,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
+        if not src_meta.additional_data:
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=src_meta.additional_data.horizon,
+                author=src_meta.additional_data.author,
+                patch=src_meta.additional_data.patch,
+            )
         dest_meta = VariantStudy(
             id=new_id,
             name=dest_name,
@@ -954,6 +971,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             version=src_meta.version,
             groups=src_meta.groups,  # Create inherit_group boolean
             snapshot=None,
+            additional_data=additional_data,
         )
 
         dest_meta.commands = [
@@ -1149,3 +1167,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         raise VariantGenerationError(
             f"Error during light generation of {metadata.id}"
         )
+
+    def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
+        try:
+            if self.exists(variant_study):
+                study = self.study_factory.create_from_fs(
+                    self.get_study_path(variant_study),
+                    study_id=variant_study.id,
+                )
+                variant_study.additional_data = (
+                    self._read_additional_data_from_files(study)
+                )
+            else:
+                variant_study.additional_data = StudyAdditionalData()
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error while reading additional data for study {variant_study.id}",
+                exc_info=e,
+            )
+            return False

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, List, Dict, Union, cast
+from typing import Any, Optional, List, Dict, Union
 
 from fastapi import APIRouter, Depends, Body
 
@@ -11,15 +11,15 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import MatrixSlice, Operation
-from antarest.study.business.link_management import LinkInfoDTO
-from antarest.study.model import PatchCluster, PatchArea
-from antarest.study.service import StudyService
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaInfoDTO,
     AreaUI,
 )
+from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.model import PatchCluster, PatchArea
+from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -213,5 +213,16 @@ def create_study_data_routes(
     ) -> Any:
         params = RequestParameters(user=current_user)
         study_service.update_matrix(uuid, path, slices, operation, params)
+
+    @bp.post(
+        "/studies/_update_version",
+        tags=[APITag.study_data],
+        summary="update database version of all studies",
+    )
+    def update_version(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_service.check_and_update_all_study_versions_in_database(params)
 
     return bp
