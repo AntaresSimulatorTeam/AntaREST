@@ -1,71 +1,100 @@
-import client from './client';
+import * as RA from "ramda-adjunct";
+import client from "./client";
 import {
   UserDTO,
   GroupDTO,
   RoleCreationDTO,
-  RoleDTO,
   UserToken,
-  UserGroup,
-  Identity,
-  IdentityDTO,
+  GroupDetailsDTO,
   BotCreateDTO,
-  BotIdentityDTO,
+  BotDetailsDTO,
   BotDTO,
-} from '../../common/types';
+  RoleDetailsDTO,
+  UserDetailsDTO,
+} from "../../common/types";
 
-/** ******************************************* */
-/* Users                                        */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Users
+////////////////////////////////////////////////////////////////
 
-export const getUsers = async (): Promise<Array<UserDTO>> => {
-  const res = await client.get('/v1/users');
+interface GetUserParams {
+  details: boolean;
+}
+
+type UserTypeFromParams<T extends GetUserParams> = T["details"] extends true
+  ? UserDetailsDTO
+  : UserDTO;
+
+export const getUsers = async <T extends GetUserParams>(
+  params?: T
+): Promise<Array<UserTypeFromParams<T>>> => {
+  const res = await client.get("/v1/users", { params });
   return res.data;
 };
 
-export const createNewUser = async (name: string, password: string): Promise<UserDTO> => {
+export const getUser = async <T extends GetUserParams>(
+  id: number,
+  params?: T
+): Promise<UserTypeFromParams<T>> => {
+  const res = await client.get(`/v1/users/${id}`, { params });
+  return res.data;
+};
+
+export const createUser = async (
+  name: string,
+  password: string
+): Promise<UserDTO> => {
   const data = { name, password };
-  const res = await client.post('/v1/users', data);
+  const res = await client.post("/v1/users", data);
   return res.data;
 };
 
-export const getUser = async (id: number): Promise<Identity> => {
-  const res = await client.get(`/v1/users/${id}`);
-  return res.data;
-};
-
-export const getUserInfos = async (id: number): Promise<IdentityDTO> => {
-  const res = await client.get(`/v1/users/${id}?details=true`);
-  return res.data;
-};
-
-export const deleteUser = async (id: number): Promise<any> => {
+export const deleteUser = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/users/${id}`);
   return res.data;
 };
 
-/** ******************************************* */
-/* Groups                                       */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Groups
+////////////////////////////////////////////////////////////////
 
-export const getGroups = async (): Promise<Array<GroupDTO>> => {
-  const res = await client.get('/v1/groups');
+interface GetGroupParams {
+  details: boolean;
+}
+
+type GroupTypeFromParams<T extends GetGroupParams> = T["details"] extends true
+  ? GroupDetailsDTO
+  : GroupDTO;
+
+export const getGroups = async <T extends GetGroupParams>(
+  params?: T
+): Promise<Array<GroupTypeFromParams<T>>> => {
+  const res = await client.get("/v1/groups", { params });
   return res.data;
 };
 
-export const getGroupInfos = async (id: string): Promise<UserGroup> => {
-  const res = await client.get(`/v1/groups/${encodeURIComponent(id)}?details=true`);
+export const getGroup = async <T extends GetGroupParams>(
+  id: string,
+  params?: T
+): Promise<Array<GroupTypeFromParams<T>>> => {
+  const res = await client.get(`/v1/groups/${encodeURIComponent(id)}`, {
+    params,
+  });
   return res.data;
 };
 
 export const createGroup = async (name: string): Promise<GroupDTO> => {
   const data = { name };
-  const res = await client.post('/v1/groups', data);
+  const res = await client.post("/v1/groups", data);
   return res.data;
 };
 
-export const updateGroup = async (id: string, name: string): Promise<GroupDTO> => {
+export const updateGroup = async (
+  id: string,
+  name: string
+): Promise<GroupDTO> => {
   const data = { id, name };
-  const res = await client.post('/v1/groups', data);
+  const res = await client.post("/v1/groups", data);
   return res.data;
 };
 
@@ -74,53 +103,105 @@ export const deleteGroup = async (id: string): Promise<string> => {
   return res.data;
 };
 
-/** ******************************************* */
-/* Roles                                        */
-/** ******************************************* */
+////////////////////////////////////////////////////////////////
+// Roles
+////////////////////////////////////////////////////////////////
 
-export const getAllRolesInGroup = async (groupId: string): Promise<Array<RoleDTO>> => {
-  const res = await client.get(`/v1/roles/group/${groupId}`);
-  return res.data;
-};
-
-export const createRole = async (role: RoleCreationDTO): Promise<any> => {
+export const createRole = async (
+  role: RoleCreationDTO
+): Promise<RoleDetailsDTO> => {
   const data = role;
-  const res = await client.post('/v1/roles', data);
+  const res = await client.post("/v1/roles", data);
   return res.data;
 };
 
-export const deleteUserRole = async (groupId: string, userId: number): Promise<any> => {
+export const deleteUserRole = async <
+  T extends UserDTO["id"],
+  U extends GroupDTO["id"]
+>(
+  userId: T,
+  groupId: U
+): Promise<[T, U]> => {
   const res = await client.delete(`/v1/roles/${groupId}/${userId}`);
   return res.data;
 };
 
-export const deleteAllRoles = async (id: number): Promise<any> => {
-  const res = await client.delete(`/v1/users/roles/${id}`);
+export const deleteUserRoles = async <T extends UserDTO["id"]>(
+  userId: T
+): Promise<T> => {
+  const res = await client.delete(`/v1/users/roles/${userId}`);
   return res.data;
 };
 
-/** ******************************************* */
-/* Tokens                                       */
-/** ******************************************* */
-
-export const createNewBot = async (bot: BotCreateDTO): Promise<any> => {
-  const data = bot;
-  const res = await client.post('/v1/bots', data);
+export const getRolesForGroup = async (
+  groupId: string
+): Promise<RoleDetailsDTO[]> => {
+  const res = await client.get(`/v1/roles/group/${groupId}`);
   return res.data;
 };
 
-export const getBots = async (owner?: number): Promise<Array<BotDTO>> => {
-  const req = `/v1/bots${owner ? `?owner=${owner}` : ''}`;
-  const res = await client.get(req);
+////////////////////////////////////////////////////////////////
+// Tokens
+////////////////////////////////////////////////////////////////
+
+interface GetTokenParams {
+  verbose?: 0 | 1;
+}
+
+interface GetTokensParams extends GetTokenParams {
+  owner?: UserDTO["id"];
+}
+
+type TokenTypeFromParams<T extends GetTokenParams> = T["verbose"] extends 1
+  ? BotDetailsDTO
+  : BotDTO;
+
+// TODO: update return type structure for 'verbose=1' in the API like BotDetailsDTO
+export const getBot = async <T extends GetTokenParams>(
+  id: number,
+  params?: T
+): Promise<TokenTypeFromParams<T>> => {
+  const res = await client.get(`/v1/bots/${id}`, { params });
+  const bot = res.data;
+
+  // Remap structure as define in BotDetailsDTO
+  if (params?.verbose === 1) {
+    const { owner } = await getBot(id, { ...params, verbose: 0 });
+
+    return {
+      owner,
+      ...RA.renameKeys({ isAuthor: "is_author" }, bot),
+    } as BotDetailsDTO;
+  }
+
+  return bot;
+};
+
+// TODO: add 'verbose' param in the API
+export const getBots = async <T extends GetTokensParams>(
+  params?: T
+): Promise<Array<TokenTypeFromParams<T>>> => {
+  const { verbose, ...validParams } = params || {};
+  const res = await client.get("/v1/bots", { params: validParams });
+  const bots = res.data;
+
+  if (verbose === 1) {
+    return Promise.all(
+      bots.map(async (bot: BotDTO) => {
+        return getBot(bot.id, { verbose });
+      })
+    );
+  }
+
+  return bots;
+};
+
+export const createBot = async (bot: BotCreateDTO): Promise<string> => {
+  const res = await client.post("/v1/bots", bot);
   return res.data;
 };
 
-export const getBotInfos = async (id: number): Promise<BotIdentityDTO> => {
-  const res = await client.get(`/v1/bots/${id}?verbose=1`);
-  return res.data;
-};
-
-export const deleteBot = async (id: number): Promise<any> => {
+export const deleteBot = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/bots/${id}`);
   return res.data;
 };
@@ -131,7 +212,7 @@ export const getAdminTokenList = async (): Promise<Array<UserToken>> => {
   return Promise.all(
     users.map(async (user) => ({
       user,
-      bots: await getBots(user.id),
-    })),
+      bots: await getBots({ owner: user.id }),
+    }))
   );
 };

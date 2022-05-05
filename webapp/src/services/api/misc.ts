@@ -1,4 +1,4 @@
-import client from './client';
+import client from "./client";
 
 export interface APIVersion {
   version: string;
@@ -6,7 +6,7 @@ export interface APIVersion {
 }
 
 export const getVersion = async (): Promise<APIVersion> => {
-  const res = await client.get('/version');
+  const res = await client.get("/version");
   return res.data;
 };
 

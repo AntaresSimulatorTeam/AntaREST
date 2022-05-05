@@ -1,19 +1,16 @@
-import 'react-app-polyfill/ie11';
-import 'react-app-polyfill/stable';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { initI18n } from './i18n';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
-import initFontAwesome from './services/utils/initFontAwesome';
-import { Config, initConfig } from './services/config';
-import { loadState, saveState } from './services/utils/localStorage';
+import ReactDOM from "react-dom";
+import { Provider } from "react-redux";
+import { StyledEngineProvider } from "@mui/material";
+import createStore from "./store/reducers";
+import { addWsListeners } from "./services/utils/globalWsListeners";
+import { initI18n } from "./i18n";
+import "./index.css";
+import App from "./App";
+import { Config, initConfig } from "./services/config";
+import { loadState, saveState } from "./services/utils/localStorage";
 
-initFontAwesome();
-// eslint-disable-next-line react/no-render-return-value
 initConfig((config: Config) => {
-  const VERSION_INSTALLED_KEY = 'antaresweb.version';
+  const VERSION_INSTALLED_KEY = "antaresweb.version";
   const versionInstalled = loadState(VERSION_INSTALLED_KEY);
   saveState(VERSION_INSTALLED_KEY, config.version.gitcommit);
   if (versionInstalled !== config.version.gitcommit) {
@@ -23,10 +20,15 @@ initConfig((config: Config) => {
 
   initI18n(config.version.gitcommit);
 
-  ReactDOM.render(<App />, document.getElementById('root'));
-});
+  const reduxStore = createStore();
+  addWsListeners(reduxStore);
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+  ReactDOM.render(
+    <StyledEngineProvider injectFirst>
+      <Provider store={reduxStore}>
+        <App />
+      </Provider>
+    </StyledEngineProvider>,
+    document.getElementById("root")
+  );
+});
