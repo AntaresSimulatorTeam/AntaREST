@@ -40,7 +40,7 @@ import { UserFormDialogProps } from ".";
  */
 
 interface Props extends FormObj {
-  onlyPermissions: UserFormDialogProps["onlyPermissions"];
+  onlyPermissions?: UserFormDialogProps["onlyPermissions"];
 }
 
 /**
@@ -247,5 +247,9 @@ function UserForm(props: Props) {
     </>
   );
 }
+
+UserForm.defaultProps = {
+  onlyPermissions: false,
+};
 
 export default UserForm;

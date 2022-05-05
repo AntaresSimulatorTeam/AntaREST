@@ -22,6 +22,7 @@
   "updateUser": "Modifier un utilisateur",
   "updateGroup": "Modifier un groupe",
   "currentUser": "Utilisateur : {{0}}",
+  "currentToken": "Token : {{0}}",
   "cancelButton": "Fermer",
   "saveButton": "Sauvegarder",
   "roleLabel": "Role",

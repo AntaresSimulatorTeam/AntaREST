@@ -259,7 +259,7 @@ export const sortByProp = <T extends object>(
   getProp: (obj: T) => string,
   list: T[]
 ): T[] => {
-  return R.sortBy<T>(R.compose(R.toLower, getProp), list);
+  return R.sortBy(R.compose(R.toLower, getProp), list);
 };
 
 export const sortByName = <T extends { name: string }>(list: T[]): T[] => {

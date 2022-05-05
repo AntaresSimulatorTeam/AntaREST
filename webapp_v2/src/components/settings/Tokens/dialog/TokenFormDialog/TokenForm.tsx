@@ -1,10 +1,8 @@
 import {
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   FormControl,
-  FormControlLabel,
   IconButton,
   InputLabel,
   List,
@@ -25,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
+import { useSelector } from "react-redux";
 import { TokenFormDialogProps } from ".";
 import { GroupDTO, RoleType } from "../../../../../common/types";
 import usePromise from "../../../../../hooks/usePromise";
@@ -32,13 +31,15 @@ import { getGroups } from "../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import { getAuthUser } from "../../../../../store/selectors";
 
 /**
  * Types
  */
 
-interface Props extends FormObj {
-  onlyPermissions: TokenFormDialogProps["onlyPermissions"];
+interface Props extends Omit<FormObj, "defaultValues"> {
+  onlyPermissions?: TokenFormDialogProps["onlyPermissions"];
+  readOnly?: boolean;
 }
 
 /**
@@ -52,6 +53,7 @@ function TokenForm(props: Props) {
     getValues,
     formState: { errors },
     onlyPermissions,
+    readOnly,
   } = props;
 
   const groupLabelId = useRef(uuidv4()).current;
@@ -62,6 +64,7 @@ function TokenForm(props: Props) {
   const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
   const { t } = useTranslation();
+  const authUser = useSelector(getAuthUser);
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
@@ -88,6 +91,17 @@ function TokenForm(props: Props) {
   };
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const getValidRolesTypesForGroup = (groupName: string) => {
+    const group = authUser?.groups?.find((gp) => gp.name === groupName);
+    return group
+      ? ROLE_TYPE_KEYS.filter((key) => RoleType[key] <= group.role)
+      : [];
+  };
+
+  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -95,25 +109,17 @@ function TokenForm(props: Props) {
     <>
       {/* Name */}
       {!onlyPermissions && (
-        <>
-          <TextField
-            sx={{ mx: 0 }}
-            label={t("main:name")}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            required
-            fullWidth
-            {...register("name", {
-              required: t("main:form.field.required") as string,
-            })}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox defaultChecked={false} {...register("linkToUser")} />
-            }
-            label={t("settings:linkTokenLabel")}
-          />
-        </>
+        <TextField
+          sx={{ mx: 0 }}
+          label={t("main:name")}
+          error={!!errors.name}
+          helperText={errors.name?.message}
+          required
+          fullWidth
+          {...register("name", {
+            required: t("main:form.field.required") as string,
+          })}
+        />
       )}
       {/* Permissions */}
       <Paper
@@ -139,55 +145,69 @@ function TokenForm(props: Props) {
         )}
         {filteredAndSortedGroups.length > 0 && (
           <>
-            <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-              <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={groupLabelId}>{t("settings:group")}</InputLabel>
-                <Select
-                  labelId={groupLabelId}
-                  label={t("settings:group")}
-                  defaultValue=""
-                  onChange={handleGroupChange}
+            {!readOnly && (
+              <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+                <FormControl sx={{ mr: 2, flex: 1 }} size="small">
+                  <InputLabel id={groupLabelId}>
+                    {t("settings:group")}
+                  </InputLabel>
+                  <Select
+                    labelId={groupLabelId}
+                    label={t("settings:group")}
+                    defaultValue=""
+                    onChange={handleGroupChange}
+                  >
+                    {filteredAndSortedGroups.map((group) => (
+                      <MenuItem key={group.id} value={group.id}>
+                        {group.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="contained"
+                  size="small"
+                  disabled={!allowToAddPermission}
+                  onClick={() => {
+                    append({ group: selectedGroup, type: RoleType.READER });
+                  }}
                 >
-                  {filteredAndSortedGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {group.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                variant="contained"
-                size="small"
-                disabled={!allowToAddPermission}
-                onClick={() => {
-                  append({ group: selectedGroup, type: RoleType.READER });
-                }}
-              >
-                {t("settings:addButton")}
-              </Button>
-            </Box>
+                  {t("settings:addButton")}
+                </Button>
+              </Box>
+            )}
             <List>
               {fields.map((field, index) => (
                 <ListItem
                   key={field.id}
                   secondaryAction={
                     <>
-                      <Controller
-                        control={control}
-                        name={`permissions.${index}.type`}
-                        render={({ field }) => (
-                          <Select variant="standard" {...field}>
-                            {ROLE_TYPE_KEYS.map((key) => (
-                              <MenuItem key={key} value={RoleType[key]}>
-                                {roleToString(RoleType[key])}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        )}
-                      />
-                      <IconButton edge="end" onClick={() => remove(index)}>
-                        <DeleteIcon />
-                      </IconButton>
+                      {!readOnly ? (
+                        <Controller
+                          control={control}
+                          name={`permissions.${index}.type`}
+                          render={({ field }) => (
+                            <Select variant="standard" {...field}>
+                              {getValidRolesTypesForGroup(
+                                getValues(`permissions.${index}.group.name`)
+                              ).map((key) => (
+                                <MenuItem key={key} value={RoleType[key]}>
+                                  {roleToString(RoleType[key])}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          )}
+                        />
+                      ) : (
+                        <Typography>
+                          {roleToString(getValues(`permissions.${index}.type`))}
+                        </Typography>
+                      )}
+                      {!readOnly && (
+                        <IconButton edge="end" onClick={() => remove(index)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
                     </>
                   }
                   disablePadding
@@ -223,5 +243,10 @@ function TokenForm(props: Props) {
     </>
   );
 }
+
+TokenForm.defaultProps = {
+  onlyPermissions: false,
+  readOnly: false,
+};
 
 export default TokenForm;

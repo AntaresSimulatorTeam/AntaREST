@@ -1,4 +1,4 @@
-import { Button, ButtonProps, DialogProps, ModalProps } from "@mui/material";
+import { Button, ButtonProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 

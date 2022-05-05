@@ -23,12 +23,18 @@ import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { BotDTO, BotDetailsDTO, UserDTO } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { deleteBot, getBots, getUsers } from "../../../services/api/user";
-import { isUserAdmin, sortByName, sortByProp } from "../../../services/utils";
+import {
+  deleteBot,
+  getBots,
+  getUser,
+  getUsers,
+} from "../../../services/api/user";
+import { isUserAdmin, sortByProp } from "../../../services/utils";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
 import { getAuthUser } from "../../../store/selectors";
+import TokenInfoDialog from "./dialog/TokenInfoDialog";
 
 /**
  * Types
@@ -79,8 +85,9 @@ const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
  */
 
 function Tokens() {
-  const [tokenToDelete, setTokenToDelete] = useState<BotDTO>();
-  const [tokensInLoading, setTokensInLoading] = useState<BotDTO[]>([]);
+  const [tokenToDisplayInfo, setTokenToDisplayInfo] = useState<BotDetailsDTO>();
+  const [tokenToDelete, setTokenToDelete] = useState<BotDetailsDTO>();
+  const [tokensInLoading, setTokensInLoading] = useState<BotDetailsDTO[]>([]);
   const [tokens, dispatch] = useReducer(reducer, []);
   const [searchValue, setSearchValue] = useState("");
   const { enqueueSnackbar } = useSnackbar();
@@ -95,15 +102,26 @@ function Tokens() {
     reload: reloadFetchTokens,
   } = usePromiseWithSnackbarError(
     async () => {
+      if (!authUser) {
+        return [];
+      }
+
+      const isAuthUserAdmin = isUserAdmin(authUser);
       const bots = await getBots({
         verbose: 1,
-        owner: isUserAdmin(authUser) ? undefined : authUser?.id,
+        owner: isAuthUserAdmin ? undefined : authUser.id,
       });
-      const users = await getUsers();
-      return bots.map((bot) => ({
-        ...bot,
-        user: users.find((user) => user.id === bot.owner),
-      }));
+
+      if (isAuthUserAdmin) {
+        const users = await getUsers();
+        return bots.map((bot) => ({
+          ...bot,
+          user: users.find((user) => user.id === bot.owner),
+        }));
+      }
+
+      const user = await getUser(authUser.id);
+      return bots.map((bot) => ({ ...bot, user }));
     },
     t("settings:tokensError"),
     [authUser]
@@ -212,9 +230,7 @@ function Tokens() {
                     ) : (
                       <>
                         <IconButton
-                          onClick={() => {
-                            // TODO
-                          }}
+                          onClick={() => setTokenToDisplayInfo(token)}
                         >
                           <InfoIcon />
                         </IconButton>
@@ -229,11 +245,7 @@ function Tokens() {
                   }
                   disablePadding
                 >
-                  <ListItemButton
-                    onClick={() => {
-                      // TODO
-                    }}
-                  >
+                  <ListItemButton onClick={() => setTokenToDisplayInfo(token)}>
                     <ListItemIcon>
                       <TokenIcon />
                     </ListItemIcon>
@@ -274,6 +286,13 @@ function Tokens() {
         >
           {t("settings:deleteTokenConfirmation", [tokenToDelete.name])}
         </ConfirmationDialog>
+      )}
+      {tokenToDisplayInfo && (
+        <TokenInfoDialog
+          open
+          onOk={() => setTokenToDisplayInfo(undefined)}
+          token={tokenToDisplayInfo}
+        />
       )}
     </Box>
   );

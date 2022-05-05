@@ -1,4 +1,3 @@
-import { DialogContentText } from "@mui/material";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../common/dialogs/FormDialog";
@@ -11,7 +10,6 @@ import TokenForm from "./TokenForm";
 export interface TokenFormDialogProps
   extends Omit<FormDialogProps, "children"> {
   onlyPermissions?: boolean;
-  subtitle?: string;
 }
 
 /**
@@ -19,7 +17,7 @@ export interface TokenFormDialogProps
  */
 
 function TokenFormDialog(props: TokenFormDialogProps) {
-  const { onlyPermissions, subtitle, ...dialogProps } = props;
+  const { onlyPermissions, ...dialogProps } = props;
 
   return (
     <FormDialog
@@ -28,10 +26,7 @@ function TokenFormDialog(props: TokenFormDialogProps) {
       {...dialogProps}
     >
       {(formObj) => (
-        <>
-          {subtitle && <DialogContentText>{subtitle}</DialogContentText>}
-          <TokenForm onlyPermissions={onlyPermissions} {...formObj} />
-        </>
+        <TokenForm onlyPermissions={onlyPermissions} {...formObj} />
       )}
     </FormDialog>
   );
@@ -39,7 +34,6 @@ function TokenFormDialog(props: TokenFormDialogProps) {
 
 TokenFormDialog.defaultProps = {
   onlyPermissions: false,
-  subtitle: "",
 };
 
 export default TokenFormDialog;

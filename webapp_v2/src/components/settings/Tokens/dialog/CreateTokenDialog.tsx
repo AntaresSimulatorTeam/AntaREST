@@ -1,6 +1,5 @@
 import TokenIcon from "@mui/icons-material/Token";
-import { IconButton, Paper, Tooltip, Typography } from "@mui/material";
-import { group } from "console";
+import { IconButton, Paper, Tooltip } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,9 +7,7 @@ import { usePromise as usePromiseWrapper } from "react-use";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   BotCreateDTO,
-  BotDetailsDTO,
   BotDTO,
-  BotRoleCreateDTO,
   GroupDTO,
   RoleType,
 } from "../../../../common/types";
@@ -50,7 +47,7 @@ function CreateTokenDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerData) => {
-    const { name, linkToUser, permissions } = data.values;
+    const { name, permissions } = data.values;
 
     try {
       const roles = permissions.map(
@@ -61,7 +58,7 @@ function CreateTokenDialog(props: Props) {
       ) as BotCreateDTO["roles"];
 
       const tokenValue = await mounted(
-        createBot({ name, is_author: linkToUser, roles })
+        createBot({ name, is_author: true, roles })
       );
 
       setTokenValueToDisplay(tokenValue);
@@ -109,7 +106,6 @@ function CreateTokenDialog(props: Props) {
           }}
         >
           <Paper
-            elevation={0}
             sx={{
               p: 2,
               pb: 6,
