@@ -1181,8 +1181,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 variant_study.additional_data = (
                     self._read_additional_data_from_files(study)
                 )
-                return True
-            return False
+            else:
+                variant_study.additional_data = StudyAdditionalData()
+            return True
         except Exception as e:
             logger.error(
                 f"Error while reading additional data for study {variant_study.id}",
