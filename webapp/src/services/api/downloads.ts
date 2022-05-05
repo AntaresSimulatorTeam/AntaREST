@@ -1,5 +1,5 @@
-import { getConfig } from '../config';
-import client from './client';
+import { getConfig } from "../config";
+import client from "./client";
 
 export interface FileDownloadDTO {
   id: string;
@@ -28,7 +28,9 @@ export interface FileDownloadTask {
   task: string;
 }
 
-export const convertFileDownloadDTO = (fileDownload: FileDownloadDTO): FileDownload => ({
+export const convertFileDownloadDTO = (
+  fileDownload: FileDownloadDTO
+): FileDownload => ({
   id: fileDownload.id,
   name: fileDownload.name,
   filename: fileDownload.filename,
@@ -39,9 +41,12 @@ export const convertFileDownloadDTO = (fileDownload: FileDownloadDTO): FileDownl
 });
 
 export const getDownloadsList = async (): Promise<Array<FileDownload>> => {
-  const res = await client.get('/v1/downloads');
+  const res = await client.get("/v1/downloads");
   return res.data.map(convertFileDownloadDTO);
 };
 
 export const getDownloadUrl = (did: string): string =>
-  `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/downloads/${did}`;
+  `${
+    getConfig().downloadHostUrl ||
+    getConfig().baseUrl + getConfig().restEndpoint
+  }/v1/downloads/${did}`;

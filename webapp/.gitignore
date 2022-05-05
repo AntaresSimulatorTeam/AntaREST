@@ -1,11 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-#ide files
-*.code-workspace
 
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
+package-lock.json
 
 # testing
 /coverage
@@ -20,10 +19,9 @@
 .env.test.local
 .env.production.local
 
+# workspace
+workspace.code-workspace
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# maven build
-/node
-/target
