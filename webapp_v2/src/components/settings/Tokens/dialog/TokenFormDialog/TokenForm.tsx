@@ -31,7 +31,7 @@ import { getGroups } from "../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { getAuthUser } from "../../../../../store/selectors";
+import { getAuthUser, isAuthUserAdmin } from "../../../../../store/selectors";
 
 /**
  * Types
@@ -65,6 +65,7 @@ function TokenForm(props: Props) {
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
   const { t } = useTranslation();
   const authUser = useSelector(getAuthUser);
+  const isUserAdmin = useSelector(isAuthUserAdmin);
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
@@ -95,6 +96,10 @@ function TokenForm(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const getValidRolesTypesForGroup = (groupName: string) => {
+    if (isUserAdmin) {
+      return ROLE_TYPE_KEYS;
+    }
+
     const group = authUser?.groups?.find((gp) => gp.name === groupName);
     return group
       ? ROLE_TYPE_KEYS.filter((key) => RoleType[key] <= group.role)
