@@ -197,7 +197,11 @@ export interface UserInfo {
 }
 export interface BotDTO extends IdentityDTO<number> {
   owner: number;
-  isAuthor: boolean;
+  is_author: boolean;
+}
+
+export interface BotDetailsDTO extends BotDTO {
+  roles: Array<RoleDTO>;
 }
 
 export interface BotRoleCreateDTO {
@@ -209,11 +213,6 @@ export interface BotCreateDTO {
   name: string;
   is_author: boolean;
   roles: Array<BotRoleCreateDTO>;
-}
-
-export interface BotDetailsDTO extends IdentityDTO<number> {
-  isAuthor: boolean;
-  roles: Array<RoleDTO>;
 }
 
 export interface UserToken {

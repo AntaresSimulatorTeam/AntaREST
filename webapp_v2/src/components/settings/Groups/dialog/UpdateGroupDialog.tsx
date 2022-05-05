@@ -13,7 +13,7 @@ import {
 } from "../../../../services/api/user";
 import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import GroupFormDialog, { GroupFormDialogProps } from "./GroupsFormDialog";
+import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
 
 /**

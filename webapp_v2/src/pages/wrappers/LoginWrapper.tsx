@@ -107,7 +107,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
     return <GlobalPageLoadingError />;
   }
 
-  if (!authRequired || user) {
+  if (user || !authRequired) {
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return <>{children}</>;
   }

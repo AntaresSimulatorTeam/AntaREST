@@ -25,9 +25,9 @@ export type SubmitHandlerData<TFieldValues extends FieldValues = FieldValues> =
     modifiedValues: UnpackNestedValue<TFieldValues>;
   };
 
-export type FormObj = Omit<UseFormReturn, "handleSubmit"> & {
+export interface FormObj extends Omit<UseFormReturn, "handleSubmit"> {
   defaultValues: UseFormProps["defaultValues"];
-};
+}
 
 export interface FormDialogProps
   extends Omit<ConfirmationDialogProps, "onConfirm" | "onSubmit"> {

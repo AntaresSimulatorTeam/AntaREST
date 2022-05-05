@@ -52,6 +52,9 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        div: {
+          ...scrollbarStyle,
+        },
         ul: {
           ...scrollbarStyle,
         },

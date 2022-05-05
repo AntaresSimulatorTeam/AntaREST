@@ -31,7 +31,6 @@ function Maintenance() {
 
   const {
     register,
-    setValue,
     control,
     handleSubmit,
     reset,
@@ -53,9 +52,10 @@ function Maintenance() {
 
   useUpdateEffect(() => {
     if (initialValues) {
-      reset();
-      setValue("mode", initialValues.mode);
-      setValue("message", initialValues.message);
+      reset({
+        mode: initialValues.mode,
+        message: initialValues.message,
+      });
     }
   }, [initialValues]);
 

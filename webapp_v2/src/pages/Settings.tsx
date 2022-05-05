@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import RootPage from "../components/common/page/RootPage";
 import Groups from "../components/settings/Groups";
 import Maintenance from "../components/settings/Maintenance";
+import Tokens from "../components/settings/Tokens";
 import Users from "../components/settings/Users";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../store/selectors";
 
@@ -27,7 +28,7 @@ function Settings() {
         t("settings:groups"),
         () => <Groups />,
       ],
-      [t("settings:tokens"), () => "Tokens"],
+      [t("settings:tokens"), () => <Tokens />],
       isUserAdmin && [t("settings:maintenance"), () => <Maintenance />],
     ].filter(Boolean) as Array<[string, () => JSX.Element]>;
   }, [isUserAdmin, isUserInGroupAdmin, t]);

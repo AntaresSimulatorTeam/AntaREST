@@ -1,3 +1,4 @@
+import * as RA from "ramda-adjunct";
 import client from "./client";
 import {
   UserDTO,
@@ -143,20 +144,60 @@ export const getRolesForGroup = async (
 // Tokens
 ////////////////////////////////////////////////////////////////
 
-export const createNewBot = async (bot: BotCreateDTO): Promise<string> => {
-  const data = bot;
-  const res = await client.post("/v1/bots", data);
-  return res.data;
+interface GetTokenParams {
+  verbose?: 0 | 1;
+}
+
+interface GetTokensParams extends GetTokenParams {
+  owner?: UserDTO["id"];
+}
+
+type TokenTypeFromParams<T extends GetTokenParams> = T["verbose"] extends 1
+  ? BotDetailsDTO
+  : BotDTO;
+
+// TODO: update return type structure for 'verbose=1' in the API like BotDetailsDTO
+export const getBot = async <T extends GetTokenParams>(
+  id: number,
+  params?: T
+): Promise<TokenTypeFromParams<T>> => {
+  const res = await client.get(`/v1/bots/${id}`, { params });
+  const bot = res.data;
+
+  // Remap structure as define in BotDetailsDTO
+  if (params?.verbose === 1) {
+    const { owner } = await getBot(id, { ...params, verbose: 0 });
+
+    return {
+      owner,
+      ...RA.renameKeys({ isAuthor: "is_author" }, bot),
+    } as BotDetailsDTO;
+  }
+
+  return bot;
 };
 
-export const getBots = async (owner?: number): Promise<Array<BotDTO>> => {
-  const req = `/v1/bots${owner ? `?owner=${owner}` : ""}`;
-  const res = await client.get(req);
-  return res.data;
+// TODO: add 'verbose' param in the API
+export const getBots = async <T extends GetTokensParams>(
+  params?: T
+): Promise<Array<TokenTypeFromParams<T>>> => {
+  const { verbose, ...validParams } = params || {};
+  const res = await client.get("/v1/bots", { params: validParams });
+  const bots = res.data;
+
+  if (verbose === 1) {
+    return Promise.all(
+      bots.map(async (bot: BotDTO) => {
+        return getBot(bot.id, { verbose });
+      })
+    );
+  }
+
+  return bots;
 };
 
-export const getBotInfos = async (id: number): Promise<BotDetailsDTO> => {
-  const res = await client.get(`/v1/bots/${id}?verbose=1`);
+export const createBot = async (bot: BotCreateDTO): Promise<string> => {
+  const res = await client.post("/v1/bots", bot);
   return res.data;
 };
 
@@ -171,7 +212,7 @@ export const getAdminTokenList = async (): Promise<Array<UserToken>> => {
   return Promise.all(
     users.map(async (user) => ({
       user,
-      bots: await getBots(user.id),
+      bots: await getBots({ owner: user.id }),
     }))
   );
 };

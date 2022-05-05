@@ -21,7 +21,7 @@ import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
-import { GroupDetailsDTO, IdType } from "../../../common/types";
+import { GroupDetailsDTO } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { deleteGroup, getGroups } from "../../../services/api/user";
 import { sortByName } from "../../../services/utils";
@@ -43,10 +43,16 @@ enum GroupActionKind {
   RESET = "RESET",
 }
 
-export type GroupEdit = Partial<GroupDetailsDTO> & { id: IdType };
+export type GroupEdit = Partial<GroupDetailsDTO> & {
+  id: GroupDetailsDTO["id"];
+};
 
 interface GroupAction extends Action<string> {
-  payload?: string | GroupDetailsDTO | GroupDetailsDTO[] | GroupEdit;
+  payload?:
+    | GroupDetailsDTO["id"]
+    | GroupDetailsDTO
+    | GroupDetailsDTO[]
+    | GroupEdit;
 }
 
 /**
