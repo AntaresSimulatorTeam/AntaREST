@@ -550,7 +550,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
         if not study.additional_data:
-            # TODO: remove this when all studies have additional data
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
@@ -954,7 +953,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
         if not src_meta.additional_data:
-            # TODO: remove this when all studies have additional data
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
@@ -1171,7 +1169,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
 
     def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
-        # TODO: remove this method once used
         try:
             if self.exists(variant_study):
                 study = self.study_factory.create_from_fs(

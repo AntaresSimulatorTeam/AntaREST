@@ -83,11 +83,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study: T,
     ) -> StudyMetadataDTO:
         if not study.additional_data:
-            # TODO: remove this after all additional_data has been initialized
             self.initialize_additional_data(study)
 
         try:
-            patch = Patch.parse_raw(study.additional_data.patch)
+            patch = Patch.parse_raw(study.additional_data.patch or "")
         except ValidationError:
             patch = Patch()
 

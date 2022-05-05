@@ -2025,19 +2025,3 @@ class StudyService:
             if isinstance(study, RawStudy) and not is_managed(study):
                 storage = self.storage_service.raw_study_service
                 storage.check_and_update_study_version_in_database(study)
-
-    def initialize_additional_data_in_db(
-        self, params: RequestParameters
-    ) -> None:
-        # TODO: remove this method once used
-        logger.info("Initializing additional data of studies")
-        if params.user and params.user.is_site_admin():
-            studies = self.repository.get_all()
-            for study in studies:
-                if self.storage_service.get_storage(
-                    study
-                ).initialize_additional_data(study):
-                    self.repository.save(study)
-        else:
-            logger.error(f"User {params.user} is not site admin")
-            raise UserHasNotPermissionError()

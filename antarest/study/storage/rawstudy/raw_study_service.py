@@ -105,7 +105,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if not metadata.additional_data:
-                    # TODO: remove this when all studies have additional data
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = (
                     metadata.additional_data.patch or Patch()
@@ -204,7 +203,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self._check_study_exists(src_meta)
 
         if not src_meta.additional_data:
-            # TODO: remove this when all studies have additional data
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
@@ -367,7 +365,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
-        # TODO: remove this method once used
         try:
             study = self.study_factory.create_from_fs(
                 self.get_study_path(raw_study),

@@ -18,18 +18,16 @@ class PatchService:
     def get(
         self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False
     ) -> Patch:
-        patch = Patch()
-
         if not get_from_file:
             try:
-                patch = Patch.parse_raw(study.additional_data.patch)
+                return Patch.parse_raw(study.additional_data.patch)
             except (AttributeError, ValidationError):
-                get_from_file = True
+                pass
 
-        if get_from_file:
-            patch_path = (Path(study.path)) / "patch.json"
-            if patch_path.exists():
-                patch = Patch.parse_file(patch_path)
+        patch = Patch()
+        patch_path = (Path(study.path)) / "patch.json"
+        if patch_path.exists():
+            patch = Patch.parse_file(patch_path)
 
         return patch
 
