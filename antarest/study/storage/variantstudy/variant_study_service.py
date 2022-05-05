@@ -1172,13 +1172,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
         # TODO: remove this method once used
-        if self.exists(variant_study):
-            study = self.study_factory.create_from_fs(
-                self.get_study_path(variant_study),
-                study_id=variant_study.id,
+        try:
+            if self.exists(variant_study):
+                study = self.study_factory.create_from_fs(
+                    self.get_study_path(variant_study),
+                    study_id=variant_study.id,
+                )
+                variant_study.additional_data = (
+                    self._read_additional_data_from_files(study)
+                )
+                return True
+            return False
+        except Exception as e:
+            logger.error(
+                f"Error while reading additional data for study {variant_study.id}",
+                exc_info=e,
             )
-            variant_study.additional_data = (
-                self._read_additional_data_from_files(study)
-            )
-            return True
-        return False
+            return False

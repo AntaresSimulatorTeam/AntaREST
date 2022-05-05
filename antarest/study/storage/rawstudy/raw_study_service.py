@@ -368,14 +368,21 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
         # TODO: remove this method once used
-        study = self.study_factory.create_from_fs(
-            self.get_study_path(raw_study),
-            study_id=raw_study.id,
-        )
-        raw_study.additional_data = self._read_additional_data_from_files(
-            study
-        )
-        return False
+        try:
+            study = self.study_factory.create_from_fs(
+                self.get_study_path(raw_study),
+                study_id=raw_study.id,
+            )
+            raw_study.additional_data = self._read_additional_data_from_files(
+                study
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error while reading additional data for study {raw_study.id}",
+                exc_info=e,
+            )
+            return False
 
     def check_and_update_study_version_in_database(
         self, study: RawStudy

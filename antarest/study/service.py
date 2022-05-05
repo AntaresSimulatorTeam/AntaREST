@@ -2034,9 +2034,10 @@ class StudyService:
         if params.user and params.user.is_site_admin():
             studies = self.repository.get_all()
             for study in studies:
-                self.storage_service.get_storage(
+                if self.storage_service.get_storage(
                     study
-                ).initialize_additional_data(study)
+                ).initialize_additional_data(study):
+                    self.repository.save(study)
         else:
             logger.error(f"User {params.user} is not site admin")
             raise UserHasNotPermissionError()
