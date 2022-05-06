@@ -22,8 +22,7 @@ function usePromise<T>(
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
 
-  const resetDataOnReload =
-    params?.resetDataOnReload === undefined ? false : params?.resetDataOnReload;
+  const resetDataOnReload = params?.resetDataOnReload ?? false;
 
   useEffect(
     () => {
