@@ -6,12 +6,9 @@ export interface UsePromiseWithSnackbarErrorParams extends UsePromiseParams {
   errorMessage: string;
 }
 
-function usePromiseWithSnackbarError<
-  T,
-  U extends UsePromiseWithSnackbarErrorParams
->(
+function usePromiseWithSnackbarError<T>(
   fn: () => Promise<T>,
-  params: U,
+  params: UsePromiseWithSnackbarErrorParams,
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
   const res = usePromise(fn, params, deps);
