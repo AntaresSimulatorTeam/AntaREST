@@ -7,8 +7,13 @@ export interface UsePromiseResponse<T> {
   reload: () => void;
 }
 
-function usePromise<T>(
+export interface UsePromiseParams {
+  resetDataOnReload?: boolean;
+}
+
+function usePromise<T, U extends UsePromiseParams>(
   fn: () => Promise<T>,
+  params?: U,
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
   const [data, setData] = useState<T>();
@@ -17,13 +22,18 @@ function usePromise<T>(
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
 
+  const resetDataOnReload =
+    params?.resetDataOnReload === undefined ? true : params?.resetDataOnReload;
+
   useEffect(
     () => {
       let isMounted = true;
 
       setIsLoading(true);
       // Reset
-      setData(undefined);
+      if (resetDataOnReload) {
+        setData(undefined);
+      }
       setError(undefined);
 
       fn()
