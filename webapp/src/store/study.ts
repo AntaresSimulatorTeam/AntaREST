@@ -1,8 +1,10 @@
-import { Action } from "redux";
+import { Action, AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
+import * as R from "ramda";
 import { AppState } from "./reducers";
-import { StudyMetadata } from "../common/types";
+import { DefaultFilterKey, GenericInfo, StudyMetadata } from "../common/types";
 import { getStudyVersions } from "../services/api/study";
+import { loadState, saveState } from "../services/utils/localStorage";
 
 /** ******************************************* */
 /* State                                        */
@@ -14,17 +16,40 @@ export interface StudyState {
   scrollPosition: number;
   directory: string;
   versionList?: Array<string>;
+  favorites: Array<GenericInfo>;
 }
 
 const initialState: StudyState = {
   studies: [],
   scrollPosition: 0,
   directory: "root",
+  favorites: loadState(DefaultFilterKey.FAVORITE_STUDIES) || [],
 };
 
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
+
+interface UpdateFavoritesAction extends Action {
+  type: "STUDY/UPDATE_FAVORITES";
+  payload: Array<GenericInfo>;
+}
+
+export const toggleFavorite =
+  (studyInfo: GenericInfo): ThunkAction<void, AppState, unknown, Action> =>
+  (dispatch, getState) => {
+    const { study } = getState();
+    const { favorites } = study;
+    const filteredFvorites = favorites.filter((f) => f.id !== studyInfo.id);
+    const newFavorites = filteredFvorites.concat(
+      favorites.length === filteredFvorites.length ? [studyInfo] : []
+    );
+    saveState(DefaultFilterKey.FAVORITE_STUDIES, newFavorites);
+    dispatch({
+      type: "STUDY/UPDATE_FAVORITES",
+      payload: newFavorites.concat(),
+    });
+  };
 
 interface UpdateScrollPositionAction extends Action {
   type: "STUDY/SCROLL_POSITION";
@@ -53,10 +78,31 @@ interface InitStudyListAction extends Action {
   payload: StudyMetadata[];
 }
 
-export const initStudies = (studies: StudyMetadata[]): InitStudyListAction => ({
+export const resetStudies = (): InitStudyListAction => ({
   type: "STUDY/INIT_STUDY_LIST",
-  payload: studies,
+  payload: [],
 });
+
+export const initStudies =
+  (studies: StudyMetadata[]): ThunkAction<void, AppState, unknown, AnyAction> =>
+  (dispatch, getState) => {
+    if (studies.length > 0) {
+      const { study } = getState();
+      const { favorites } = study;
+      dispatch({
+        type: "STUDY/UPDATE_FAVORITES",
+        payload: R.innerJoin(
+          (study, favorite) => study.id === favorite.id,
+          favorites,
+          studies
+        ),
+      });
+    }
+    dispatch({
+      type: "STUDY/INIT_STUDY_LIST",
+      payload: studies,
+    });
+  };
 
 interface InitStudiesVersionAction extends Action {
   type: "STUDY/INIT_STUDIES_VERSION";
@@ -88,10 +134,23 @@ interface RemoveStudyAction extends Action {
   payload: string[];
 }
 
-export const removeStudies = (studyIds: string[]): RemoveStudyAction => ({
-  type: "STUDY/REMOVE_STUDIES",
-  payload: studyIds,
-});
+export const removeStudies =
+  (studyIds: string[]): ThunkAction<void, AppState, unknown, AnyAction> =>
+  (dispatch, getState) => {
+    const { study } = getState();
+    const { favorites } = study;
+    dispatch({
+      type: "STUDY/UPDATE_FAVORITES",
+      payload: R.filter(
+        (f) => studyIds.indexOf(f.id.toString()) === -1,
+        favorites
+      ),
+    });
+    dispatch({
+      type: "STUDY/REMOVE_STUDIES",
+      payload: studyIds,
+    });
+  };
 
 interface AddStudyAction extends Action {
   type: "STUDY/ADD_STUDIES";
@@ -110,7 +169,8 @@ type StudyAction =
   | AddStudyAction
   | UpdateScrollPositionAction
   | FolderPositionAction
-  | InitStudiesVersionAction;
+  | InitStudiesVersionAction
+  | UpdateFavoritesAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -148,7 +208,10 @@ export default (state = initialState, action: StudyAction): StudyState => {
         ...state,
         studies: state.studies
           .filter(
-            (s) => action.payload.map((study) => study.id).indexOf(s.id) === -1
+            (s) =>
+              action.payload
+                .map((study: StudyMetadata) => study.id)
+                .indexOf(s.id) === -1
           )
           .concat(action.payload),
       };
@@ -172,6 +235,11 @@ export default (state = initialState, action: StudyAction): StudyState => {
       return {
         ...state,
         versionList: action.payload,
+      };
+    case "STUDY/UPDATE_FAVORITES":
+      return {
+        ...state,
+        favorites: action.payload,
       };
     default:
       return state;

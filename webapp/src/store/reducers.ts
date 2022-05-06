@@ -8,7 +8,7 @@ import {
 import { composeWithDevTools } from "redux-devtools-extension";
 import thunk from "redux-thunk";
 import { throttle } from "lodash";
-import study, { StudyState, initStudies } from "./study";
+import study, { StudyState, resetStudies } from "./study";
 import auth, {
   AuthState,
   logoutAction,
@@ -45,7 +45,7 @@ export default function createMainStore(): Store<AppState> {
   );
   setLogoutInterceptor(
     () => reduxStore.dispatch(logoutAction()),
-    () => reduxStore.dispatch(initStudies([]))
+    () => reduxStore.dispatch(resetStudies())
   );
   reduxStore.subscribe(
     throttle(() => {

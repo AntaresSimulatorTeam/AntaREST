@@ -1,4 +1,5 @@
-import { Store } from "redux";
+import { AnyAction, Store } from "redux";
+import { ThunkDispatch } from "redux-thunk";
 import { addStudies, removeStudies } from "../../store/study";
 import { getStudyMetadata } from "../api/study";
 import { StudySummary, WSEvent, WSMessage } from "../../common/types";
@@ -21,7 +22,13 @@ const studyListener =
         );
         break;
       case WSEvent.STUDY_DELETED:
-        reduxStore.dispatch(removeStudies([studySummary.id]));
+        (
+          reduxStore.dispatch as ThunkDispatch<
+            AppState,
+            Array<string>,
+            AnyAction
+          >
+        )(removeStudies([studySummary.id]));
         break;
       case WSEvent.STUDY_EDITED:
         reduxStore.dispatch(
