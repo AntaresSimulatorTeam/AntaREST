@@ -278,7 +278,7 @@ function CandidateForm(props: PropType) {
                 mx: 1,
                 color: "action.active",
                 "&:hover": {
-                  color: "primary.main",
+                  color: "white",
                   cursor: "pointer",
                 },
               }}
@@ -307,7 +307,7 @@ function CandidateForm(props: PropType) {
                 mx: 1,
                 color: "action.active",
                 "&:hover": {
-                  color: "primary.main",
+                  color: "white",
                   cursor: "pointer",
                 },
               }}

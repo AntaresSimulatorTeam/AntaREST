@@ -177,6 +177,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
           data={optionSelection}
           setValue={(data: string) => setOptionSelection(data)}
           sx={{ width: "300px" }}
+          required
         />
         {R.cond([
           [
@@ -192,6 +193,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
                   data={currentOutput}
                   setValue={(data: string) => setCurrentOutput(data)}
                   sx={{ width: "300px", my: 3 }}
+                  required
                 />
               ) as ReactNode,
           ],

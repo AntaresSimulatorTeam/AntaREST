@@ -56,6 +56,7 @@ export default function MultipleLinkElement(props: {
               onSelectChange(0, elm as string)
             }
             sx={{ flexGrow: 1, px: 0.5 }}
+            required
           />
           <SelectSingle
             name={t("singlestudy:area2")}
@@ -65,6 +66,7 @@ export default function MultipleLinkElement(props: {
               onSelectChange(1, elm as string)
             }
             sx={{ flexGrow: 1, px: 0.1 }}
+            required
           />
           <AddIcon onClick={onAddLink} />
         </Box>

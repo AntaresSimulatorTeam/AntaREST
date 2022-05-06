@@ -63,13 +63,14 @@ function Filter(props: PropTypes) {
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
       <SelectMulti
-        name={`${t("singlestudy:filter")} *`}
+        name={t("singlestudy:filter")}
         list={areasOrDistrictsList.map((elm) => ({ id: elm, name: elm }))}
         data={filterValue}
         setValue={(elm: Array<string> | string) =>
           setFilterValue(elm as Array<string>)
         }
         sx={{ m: 0, mb: 2, width: "95%" }}
+        required
       />
       <TextField
         label={t("singlestudy:filterIn")}

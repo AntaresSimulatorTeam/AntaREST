@@ -20,6 +20,7 @@ interface Props {
   optional?: boolean;
   variant?: "filled" | "standard" | "outlined" | undefined;
   handleChange?: (key: string, value: string | number) => void;
+  required?: boolean;
 }
 
 function SelectSingle(props: Props) {
@@ -33,6 +34,7 @@ function SelectSingle(props: Props) {
     variant,
     optional,
     handleChange,
+    required,
   } = props;
   const [t] = useTranslation();
 
@@ -57,6 +59,7 @@ function SelectSingle(props: Props) {
             }
           : sx
       }
+      required={required}
     >
       <InputLabel
         id={`single-checkbox-label-${name}`}
@@ -114,6 +117,7 @@ SelectSingle.defaultProps = {
   optional: false,
   setValue: undefined,
   handleChange: undefined,
+  required: false,
 };
 
 export default SelectSingle;

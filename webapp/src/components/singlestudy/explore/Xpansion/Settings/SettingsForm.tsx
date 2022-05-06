@@ -237,7 +237,7 @@ function SettingsForm(props: PropType) {
                 mx: 1,
                 color: "action.active",
                 "&:hover": {
-                  color: "primary.main",
+                  color: "white",
                   cursor: "pointer",
                 },
               }}
@@ -267,7 +267,7 @@ function SettingsForm(props: PropType) {
                 mx: 1,
                 color: "action.active",
                 "&:hover": {
-                  color: "primary.main",
+                  color: "white",
                   cursor: "pointer",
                 },
               }}

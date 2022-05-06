@@ -44,8 +44,8 @@ export const HoverButton = styled(Button)(({ theme }) => ({
 }));
 
 export const ActiveButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "rgba(255,255,255,0.09) !important",
-  color: `${theme.palette.text.primary} !important`,
-  borderColor: `${theme.palette.text.secondary} !important`,
+  backgroundColor: `${theme.palette.secondary.main} !important`,
+  color: `white !important`,
+  borderColor: `${theme.palette.secondary.main} !important`,
 }));
 export default {};

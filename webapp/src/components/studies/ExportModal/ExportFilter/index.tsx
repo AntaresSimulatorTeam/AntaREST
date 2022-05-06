@@ -99,10 +99,11 @@ function ExportFilterModal(props: PropTypes) {
         data={filter.type}
         setValue={(data: string) => onTypeChange(data)}
         sx={{ width: "300px", mb: 2 }}
+        required
       />
       {byYear.isByYear && byYear.nbYear > 0 && (
         <SelectMulti
-          name={`${t("singlestudy:years")} *`}
+          name={t("singlestudy:years")}
           list={_.range(byYear.nbYear).map((elm) => ({
             id: elm.toString(),
             name: elm.toString(),
@@ -114,6 +115,7 @@ function ExportFilterModal(props: PropTypes) {
             )
           }
           sx={{ width: "100%", mb: 2 }}
+          required
         />
       )}
       <SelectSingle

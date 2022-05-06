@@ -218,10 +218,11 @@ function PropertiesModal(props: Props) {
           boxSizing="border-box"
         >
           <FilledTextInput
-            label={`${t("studymanager:studyName")} *`}
+            label={t("studymanager:studyName")}
             value={studyName}
             onChange={setStudyName}
             sx={{ flexGrow: 1, mr: 2 }}
+            required
           />
         </Box>
         <Box
@@ -275,11 +276,12 @@ function PropertiesModal(props: Props) {
             alignItems="center"
           >
             <TagTextInput
-              label={`${t("studymanager:enterTag")} *`}
+              label={t("studymanager:enterTag")}
               sx={{ flexGrow: 1, mr: 2 }}
               value={tags}
               onChange={setTags}
               tagList={tagList}
+              required
             />
           </Box>
         </Box>

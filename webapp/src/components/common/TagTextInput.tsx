@@ -14,10 +14,12 @@ interface Props {
   onChange: (values: Array<string>) => void;
   sx?: SxProps<Theme> | undefined;
   tagList: Array<string>;
+  required?: boolean;
 }
 
 function TagTextInput(props: Props) {
-  const { label, fullWidth, sx, type, value, tagList, onChange } = props;
+  const { label, fullWidth, sx, type, value, tagList, onChange, required } =
+    props;
   return (
     <Autocomplete
       multiple
@@ -44,6 +46,7 @@ function TagTextInput(props: Props) {
           variant="filled"
           placeholder={label}
           type={type}
+          required={required}
         />
       )}
     />
@@ -54,6 +57,7 @@ TagTextInput.defaultProps = {
   sx: undefined,
   fullWidth: undefined,
   type: undefined,
+  required: false,
 };
 
 export default TagTextInput;

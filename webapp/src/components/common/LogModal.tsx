@@ -5,17 +5,17 @@ import {
   useRef,
   UIEvent,
   KeyboardEvent,
+  CSSProperties,
 } from "react";
-import { Box, Button, IconButton } from "@mui/material";
+import { Box, Button, Paper, Typography, Modal, Backdrop } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
 import { connect, ConnectedProps } from "react-redux";
-import SummarizeIcon from "@mui/icons-material/Summarize";
 import { exportText } from "../../services/utils/index";
 import { addListener, removeListener } from "../../store/websockets";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
-import BasicDialog from "./dialogs/BasicDialog";
+import { scrollbarStyle } from "../../theme";
 
 interface OwnTypes {
   isOpen: boolean;
@@ -23,6 +23,7 @@ interface OwnTypes {
   followLogs?: boolean;
   content?: string;
   close: () => void;
+  style?: CSSProperties;
   loading?: boolean;
 }
 
@@ -39,6 +40,7 @@ type PropTypes = ReduxProps & OwnTypes;
 
 function LogModal(props: PropTypes) {
   const {
+    style,
     jobId,
     followLogs,
     loading,
@@ -49,6 +51,7 @@ function LogModal(props: PropTypes) {
     removeWsListener,
   } = props;
   const [logDetail, setLogDetail] = useState(content);
+  const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
   const [autoscroll, setAutoScroll] = useState<boolean>(true);
   const [t] = useTranslation();
@@ -69,10 +72,10 @@ function LogModal(props: PropTypes) {
     keyboardEvent: KeyboardEvent<HTMLDivElement>
   ) => {
     if (keyboardEvent.key === "a" && keyboardEvent.ctrlKey) {
-      if (logRef.current) {
+      if (divRef.current) {
         const selection = window.getSelection();
         if (selection !== null) {
-          selection.selectAllChildren(logRef.current);
+          selection.selectAllChildren(divRef.current);
         }
       }
       keyboardEvent.preventDefault();
@@ -124,44 +127,103 @@ function LogModal(props: PropTypes) {
   }, [updateLog, followLogs, addWsListener, removeWsListener]);
 
   return (
-    <BasicDialog
+    <Modal
+      aria-labelledby="transition-modal-title"
+      aria-describedby="transition-modal-description"
       open={isOpen}
-      title={t("singlestudy:taskLog")}
-      titleIcon={SummarizeIcon}
-      actions={<Button onClick={close}>{t("main:closeButton")}</Button>}
-      onKeyDown={handleGlobalKeyDown}
-      onClose={close}
-      fullWidth
+      closeAfterTransition
+      BackdropComponent={Backdrop}
+      BackdropProps={{
+        timeout: 500,
+      }}
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        boxSizing: "border-box",
+        overflowY: "auto",
+      }}
     >
-      <Box
+      <Paper
+        onKeyDown={handleGlobalKeyDown}
         sx={{
-          position: "relative",
+          width: "80%",
+          height: "80%",
           display: "flex",
-          width: "100%",
-          overflow: "hidden",
-          pb: 4,
+          flexFlow: "column nowrap",
+          alignItems: "center",
+          zIndex: 1,
+          ...style,
         }}
       >
-        {loading ? (
-          <SimpleLoader />
-        ) : (
-          <Box
-            sx={{ overflow: "auto", width: "100%", flex: 1, p: 3 }}
-            component="pre"
-            ref={logRef}
-            onScroll={onScroll}
-          >
-            {logDetail}
-          </Box>
-        )}
-        <IconButton
-          sx={{ position: "absolute", bottom: 3, right: 3 }}
-          onClick={onDownload}
+        <Box
+          width="100%"
+          height="64px"
+          display="flex"
+          flexDirection="row"
+          justifyContent="flex-start"
+          alignItems="center"
+          py={2}
+          px={3}
+          boxSizing="border-box"
         >
-          <DownloadIcon />
-        </IconButton>
-      </Box>
-    </BasicDialog>
+          <Typography
+            sx={{
+              color: "white",
+              fontWeight: 500,
+              fontSize: "20px",
+              boxSizing: "border-box",
+            }}
+          >
+            {t("singlestudy:taskLog")}
+          </Typography>
+          <DownloadIcon
+            sx={{
+              color: "white",
+              cursor: "pointer",
+              mx: 3,
+              "&:hover": {
+                color: "secondary.main",
+              },
+            }}
+            onClick={onDownload}
+          />
+        </Box>
+        <Box
+          width="100%"
+          overflow="auto"
+          position="relative"
+          flex={1}
+          ref={logRef}
+          onScroll={onScroll}
+          sx={scrollbarStyle}
+        >
+          {loading ? (
+            <SimpleLoader />
+          ) : (
+            <Box sx={{ p: 3 }} id="log-content" ref={divRef}>
+              <code style={{ whiteSpace: "pre" }}>{logDetail}</code>
+            </Box>
+          )}
+        </Box>
+        <Box
+          height="60px"
+          width="100%"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          overflow="hidden"
+          position="relative"
+        >
+          <Button variant="contained" sx={{ m: 2 }} onClick={close}>
+            {t("main:closeButton")}
+          </Button>
+        </Box>
+      </Paper>
+    </Modal>
   );
 }
 
@@ -170,6 +232,7 @@ LogModal.defaultProps = {
   jobId: undefined,
   followLogs: false,
   loading: false,
+  style: {},
 };
 
 export default connector(LogModal);
