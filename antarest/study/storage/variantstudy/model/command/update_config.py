@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Union, List, Tuple, Dict, Optional, cast
+from typing import Any, Union, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -48,6 +48,7 @@ class UpdateConfig(ICommand):
             )
 
         study_data.tree.save(self.data, url)
+
         output, _ = self._apply_config(study_data.config)
         return output
 
@@ -98,18 +99,12 @@ class UpdateConfig(ICommand):
         ]
 
         if not output_list:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
 
             try:
                 output_list = [
-                    (
-                        self.command_context.command_extractor
-                        or CommandExtraction(
-                            self.command_context.matrix_service
-                        )
-                    ).generate_update_config(base.tree, self.target.split("/"))
+                    self._get_command_extractor().generate_update_config(
+                        base.tree, self.target.split("/")
+                    )
                 ]
             except ChildNotFoundError as e:
                 logging.getLogger(__name__).warning(

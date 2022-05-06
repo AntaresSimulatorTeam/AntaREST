@@ -1,5 +1,4 @@
 import io
-import json
 import logging
 from http import HTTPStatus
 from pathlib import Path
@@ -61,14 +60,13 @@ def create_study_routes(
         response_model=Dict[str, StudyMetadataDTO],
     )
     def get_studies(
-        summary: bool = False,
         managed: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = study_service.get_studies_information(
-            summary, managed, params
+            managed, params
         )
         return available_studies
 
@@ -557,5 +555,21 @@ def create_study_routes(
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
         return study_service.unarchive(study_id, params)
+
+    @bp.post(
+        "/studies/_initialize_additional_data_in_db",
+        summary="Initialize additional data in db",
+        tags=[APITag.study_management],
+    )
+    def initialize_additional_data_in_db(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        # TODO: remove this method once used
+        logger.info(
+            f"Initializing additional data in db",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.initialize_additional_data_in_db(params)
 
     return bp

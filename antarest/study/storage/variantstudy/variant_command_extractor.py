@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -13,7 +14,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtraction,
+    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -21,12 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class VariantCommandsExtractor:
-    def __init__(self, matrix_service: ISimpleMatrixService):
+    def __init__(
+        self, matrix_service: ISimpleMatrixService, patch_service: PatchService
+    ):
         self.matrix_service = matrix_service
         self.generator_matrix_constants = GeneratorMatrixConstants(
             self.matrix_service
         )
-        self.command_extractor = CommandExtraction(self.matrix_service)
+        self.command_extractor = CommandExtractor(
+            self.matrix_service, patch_service=patch_service
+        )
 
     def extract(self, study: FileStudy) -> List[CommandDTO]:
         stopwatch = StopWatch()
@@ -117,6 +122,7 @@ class VariantCommandsExtractor:
         command_factory = CommandFactory(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
+            patch_service=self.command_extractor.patch_service,
         )
         logger.info("Parsing commands")
         base_commands: List[ICommand] = []

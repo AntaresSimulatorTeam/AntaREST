@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -72,16 +72,11 @@ class UpdateComments(ICommand):
             if isinstance(command, UpdateComments):
                 return [command]
 
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
-
         try:
             return [
-                (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
-                ).generate_update_comments(base.tree)
+                self._get_command_extractor().generate_update_comments(
+                    base.tree
+                )
             ]
         except ChildNotFoundError:
             return []  # if the file does not exist, there is nothing to revert

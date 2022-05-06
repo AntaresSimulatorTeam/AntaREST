@@ -13,7 +13,11 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import CacheConstants
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyAdditionalData,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
@@ -84,7 +88,6 @@ def test_get(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_get_cache(tmp_path: str) -> None:
-
     # Create folders
     path_to_studies = Path(tmp_path)
     (path_to_studies / "study1").mkdir()
@@ -418,7 +421,10 @@ def test_copy_study(
     )
 
     src_md = RawStudy(
-        id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+        id=source_name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path_study),
+        additional_data=StudyAdditionalData(),
     )
     md = study_service.copy(src_md, "dest_name")
     md_id = md.id
@@ -468,3 +474,108 @@ def test_delete_study(tmp_path: Path) -> None:
         ]
     )
     assert not study_path.exists()
+
+
+@pytest.mark.unit_test
+def test_initialize_additional_data(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    study_additional_data = StudyAdditionalData(
+        horizon=10, author="foo", patch="bar"
+    )
+
+    cache = Mock()
+
+    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path))
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), raw_study)
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, workspace_name="foo"),
+        cache=cache,
+        study_factory=study_factory,
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    assert not study_service.initialize_additional_data(raw_study)
+
+    study_service._read_additional_data_from_files = Mock(
+        return_value=study_additional_data
+    )
+    assert study_service.initialize_additional_data(raw_study)
+
+
+@pytest.mark.unit_test
+def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    study_antares = study_path / "study.antares"
+    study_antares.touch()
+
+    raw_study = RawStudy(
+        id=name, workspace="foo", path=str(study_path), version="100"
+    )
+
+    file_study_tree = Mock()
+    file_study_tree.get.return_value = {"version": 100}
+
+    study_factory = Mock()
+    study_factory.create_from_config.return_value = file_study_tree
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, workspace_name="foo"),
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    study_service.check_and_update_study_version_in_database(raw_study)
+
+    assert raw_study.version == "100"
+
+    raw_study = RawStudy(
+        id=name, workspace="foo", path=str(study_path), version="100"
+    )
+
+    file_study_tree = Mock()
+    file_study_tree.get.return_value = {"version": 42}
+
+    study_factory = Mock()
+    study_factory.create_from_config.return_value = file_study_tree
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, workspace_name="foo"),
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    study_service.check_and_update_study_version_in_database(raw_study)
+
+    assert raw_study.version == "42"
+
+    raw_study = RawStudy(
+        id=name, workspace="foo", path=str(study_path), version="100"
+    )
+
+    study_factory = Mock()
+    study_factory.create_from_config.side_effect = FileNotFoundError()
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, workspace_name="foo"),
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    study_service.check_and_update_study_version_in_database(raw_study)
+
+    assert raw_study.version == "100"

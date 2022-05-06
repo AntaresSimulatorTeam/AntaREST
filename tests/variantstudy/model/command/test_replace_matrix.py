@@ -1,13 +1,9 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -86,15 +82,16 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == ["matrix_id"]
 
 
-def test_revert(command_context: CommandContext):
+@patch(
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.generate_replace_matrix"
+)
+def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
     base = ReplaceMatrix(
         target="foo", matrix=[[0]], command_context=command_context
     )
     study = FileStudy(config=Mock(), tree=Mock())
     base.revert([], study)
-    base.command_context.command_extractor.generate_replace_matrix.assert_called_with(
-        study.tree, ["foo"]
-    )
+    mock_generate_replace_matrix.assert_called_with(study.tree, ["foo"])
     assert base.revert(
         [
             ReplaceMatrix(

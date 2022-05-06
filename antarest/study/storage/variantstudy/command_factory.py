@@ -79,11 +79,12 @@ class CommandFactory:
         self,
         generator_matrix_constants: GeneratorMatrixConstants,
         matrix_service: ISimpleMatrixService,
+        patch_service: PatchService,
     ):
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
-            patch_service=PatchService(),
+            patch_service=patch_service,
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:

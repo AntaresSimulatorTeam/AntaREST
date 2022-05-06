@@ -1,5 +1,3 @@
-import time
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -16,7 +14,7 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
 from antarest.login.model import User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
@@ -268,7 +266,12 @@ def test_copy_study() -> None:
             version=7,
         )
     ]
-    src_md = VariantStudy(id=src_id, path="path", commands=commands)
+    src_md = VariantStudy(
+        id=src_id,
+        path="path",
+        commands=commands,
+        additional_data=StudyAdditionalData(),
+    )
 
     md = study_service.copy(src_md, "dest_name")
     assert len(src_md.commands) == len(md.commands)
@@ -338,6 +341,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
         owner=User(id=2, name="me"),
         groups=[],
         public_mode=PublicMode.NONE,
+        additional_data=StudyAdditionalData(),
     )
     children = [
         VariantStudy(
@@ -350,6 +354,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
             owner=User(id=2, name="me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            additional_data=StudyAdditionalData(),
         ),
         VariantStudy(
             id="child2",
@@ -361,6 +366,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
             owner=User(id=3, name="not me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            additional_data=StudyAdditionalData(),
         ),
     ]
     repo_mock.get.side_effect = [parent] + children
@@ -371,3 +377,51 @@ def test_get_variant_children(tmp_path: Path) -> None:
         RequestParameters(user=JWTUser(id=2, type="user", impersonator=2)),
     )
     assert len(tree.children) == 1
+
+
+@pytest.mark.unit_test
+def test_initialize_additional_data(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    md = VariantStudy(id=name, path=str(study_path))
+
+    additional_data = StudyAdditionalData(
+        horizon=2050, patch="{}", author="Zoro"
+    )
+
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = md
+
+    variant_study_service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=study_factory,
+        config=build_config(tmp_path),
+        repository=Mock(spec=VariantStudyRepository),
+        event_bus=Mock(),
+        patch_service=Mock(),
+    )
+
+    variant_study_service._read_additional_data_from_files = Mock(
+        return_value=additional_data
+    )
+
+    variant_study_service.exists = Mock(return_value=False)
+
+    assert variant_study_service.initialize_additional_data(md)
+    assert md.additional_data == StudyAdditionalData()
+
+    variant_study_service.exists = Mock(return_value=True)
+    assert variant_study_service.initialize_additional_data(md)
+    assert md.additional_data == additional_data
+
+    variant_study_service._read_additional_data_from_files.side_effect = (
+        FileNotFoundError()
+    )
+
+    assert not variant_study_service.initialize_additional_data(md)

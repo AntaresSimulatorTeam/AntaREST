@@ -1,17 +1,13 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from checksumdir import dirhash
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -111,7 +107,10 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_revert(command_context: CommandContext):
+@patch(
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_cluster",
+)
+def test_revert(mock_extract_cluster, command_context: CommandContext):
     base = RemoveCluster(
         area_id="foo", cluster_id="bar", command_context=command_context
     )
@@ -138,13 +137,9 @@ def test_revert(command_context: CommandContext):
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.extract_cluster.side_effect = (
-        ChildNotFoundError("")
-    )
+    mock_extract_cluster.side_effect = ChildNotFoundError("")
     base.revert([], study)
-    base.command_context.command_extractor.extract_cluster.assert_called_with(
-        study, "foo", "bar"
-    )
+    mock_extract_cluster.assert_called_with(study, "foo", "bar")
 
 
 def test_create_diff(command_context: CommandContext):

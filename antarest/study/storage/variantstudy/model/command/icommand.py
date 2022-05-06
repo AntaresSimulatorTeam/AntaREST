@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -17,6 +18,11 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+if TYPE_CHECKING:  # False at runtime, for mypy
+    from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+        CommandExtractor,
+    )
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
@@ -101,6 +107,16 @@ class ICommand(ABC, BaseModel):
     @abstractmethod
     def get_inner_matrices(self) -> List[str]:
         raise NotImplementedError()
+
+    def _get_command_extractor(self) -> "CommandExtractor":
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtractor,
+        )
+
+        return CommandExtractor(
+            self.command_context.matrix_service,
+            self.command_context.patch_service,
+        )
 
     class Config:
         arbitrary_types_allowed = True

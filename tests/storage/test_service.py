@@ -30,7 +30,6 @@ from antarest.study.model import (
     RawStudy,
     PublicMode,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadType,
     StudyMetadataDTO,
@@ -40,6 +39,7 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     TimeSerie,
     TimeSeriesData,
+    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
@@ -103,8 +103,8 @@ def build_study_service(
 
 @pytest.mark.unit_test
 def test_get_studies_uuid() -> None:
-    bob = User(id=1, name="bob")
-    alice = User(id=2, name="alice")
+    bob = User(id=2, name="bob")
+    alice = User(id=3, name="alice")
 
     a = Study(id="A", owner=bob)
     b = Study(id="B", owner=alice)
@@ -123,13 +123,13 @@ def test_get_studies_uuid() -> None:
     service = build_study_service(study_service, repository, config)
 
     studies = service._get_study_metadatas(
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
+        RequestParameters(user=JWTUser(id=2, impersonator=2, type="users"))
     )
 
     assert [a, c] == studies
 
 
-def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
+def study_to_dto(study: Study) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
@@ -147,7 +147,7 @@ def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
             GroupDTO(id=group.id, name=group.name) for group in study.groups
         ],
         public_mode=study.public_mode or PublicMode.NONE,
-        horizon=None,
+        horizon=study.additional_data.horizon,
         scenario=None,
         status=None,
         doc=None,
@@ -157,8 +157,8 @@ def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
 
 @pytest.mark.unit_test
 def test_study_listing() -> None:
-    bob = User(id=1, name="bob")
-    alice = User(id=2, name="alice")
+    bob = User(id=2, name="bob")
+    alice = User(id=3, name="alice")
 
     a = RawStudy(
         id="A",
@@ -170,6 +170,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
     )
     b = RawStudy(
         id="B",
@@ -181,6 +182,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace="other",
+        additional_data=StudyAdditionalData(),
     )
     c = RawStudy(
         id="C",
@@ -192,6 +194,7 @@ def test_study_listing() -> None:
         updated_at=datetime.utcnow(),
         path="",
         workspace="other2",
+        additional_data=StudyAdditionalData(),
     )
 
     # Mock
@@ -214,23 +217,23 @@ def test_study_listing() -> None:
     )
 
     studies = service.get_studies_information(
-        True,
-        False,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=False,
+        params=RequestParameters(
+            user=JWTUser(id=2, impersonator=2, type="users")
+        ),
     )
 
-    expected_result = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, c])
-    }
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
     assert expected_result == studies
     cache.get.return_value = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, b, c])
+        e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])
     }
 
     studies = service.get_studies_information(
-        True,
-        False,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=False,
+        params=RequestParameters(
+            user=JWTUser(id=2, impersonator=2, type="users")
+        ),
     )
 
     assert expected_result == studies
@@ -238,14 +241,13 @@ def test_study_listing() -> None:
 
     cache.get.return_value = None
     studies = service.get_studies_information(
-        True,
-        True,
-        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+        managed=True,
+        params=RequestParameters(
+            user=JWTUser(id=2, impersonator=2, type="users")
+        ),
     )
 
-    expected_result = {
-        e.id: e for e in map(lambda x: study_to_dto(x, True), [a])
-    }
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
     assert expected_result == studies
 
 
@@ -746,8 +748,8 @@ def test_download_output() -> None:
 @pytest.mark.unit_test
 def test_change_owner() -> None:
     uuid = str(uuid4())
-    alice = User(id=1)
-    bob = User(id=2, name="Bob")
+    alice = User(id=2)
+    bob = User(id=3, name="Bob")
 
     mock_file_study = Mock()
     mock_file_study.tree.get_node.return_value = Mock(spec=IniFileNode)
@@ -774,10 +776,10 @@ def test_change_owner() -> None:
     service._edit_study_using_command = Mock()
 
     service.change_owner(
-        uuid, 2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
+        uuid, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users"))
     )
     user_service.get_user.assert_called_once_with(
-        2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
+        2, RequestParameters(JWTUser(id=2, impersonator=2, type="users"))
     )
     repository.save.assert_called_once_with(RawStudy(id=uuid, owner=bob))
 
@@ -789,7 +791,7 @@ def test_change_owner() -> None:
         service.change_owner(
             uuid,
             1,
-            RequestParameters(JWTUser(id=1, impersonator=1, type="users")),
+            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
         )
 
 
@@ -897,14 +899,14 @@ def test_set_public_mode() -> None:
         service.set_public_mode(
             uuid,
             PublicMode.FULL,
-            RequestParameters(JWTUser(id=1, impersonator=1, type="users")),
+            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
         )
 
     service.set_public_mode(
         uuid,
         PublicMode.FULL,
         RequestParameters(
-            JWTUser(id=1, impersonator=1, type="users", groups=[group_admin])
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])
         ),
     )
     repository.save.assert_called_once_with(

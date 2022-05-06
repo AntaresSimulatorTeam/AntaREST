@@ -88,7 +88,7 @@ def build_study_service(
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 
-    patch_service = patch_service or PatchService()
+    patch_service = patch_service or PatchService(metadata_repository)
 
     raw_study_service = RawStudyService(
         config=config,
@@ -105,6 +105,7 @@ def build_study_service(
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
+        patch_service=patch_service,
     )
     variant_study_service = VariantStudyService(
         task_service=task_service,

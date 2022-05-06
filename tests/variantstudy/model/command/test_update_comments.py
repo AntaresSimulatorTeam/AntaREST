@@ -9,6 +9,9 @@ from antarest.study.storage.variantstudy.model.command.remove_area import (
 from antarest.study.storage.variantstudy.model.command.update_comments import (
     UpdateComments,
 )
+from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+    CommandExtractor,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -49,12 +52,30 @@ def test_match(command_context: CommandContext):
     assert base.match_signature() == "update_comments"
 
 
-def test_revert(command_context: CommandContext, empty_study: FileStudy):
+def test_revert(
+    command_context: CommandContext,
+    empty_study: FileStudy,
+):
+    mock_command_extractor = Mock(spec=CommandExtractor)
+    mock_command_extractor.command_context = command_context
+    mock_command_extractor.generate_update_comments.side_effect = (
+        lambda x: CommandExtractor.generate_update_comments(
+            mock_command_extractor, x
+        )
+    )
+
     base_command = UpdateComments(
         comments="comments", command_context=command_context
     )
+
+    object.__setattr__(
+        base_command,
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
+    )
+
     base_command.revert([], empty_study)
-    base_command.command_context.command_extractor.generate_update_comments.assert_called_with(
+    mock_command_extractor.generate_update_comments.assert_called_with(
         empty_study.tree
     )
     assert base_command.revert(

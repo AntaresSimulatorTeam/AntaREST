@@ -6,7 +6,7 @@ from sqlalchemy.orm import with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import Study, RawStudy, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,14 @@ class StudyMetadataRepository:
         metadata: Study = db.session.query(Study).get(id)
         return metadata
 
+    def get_additional_data(
+        self, study_id: str
+    ) -> Optional[StudyAdditionalData]:
+        metadata: StudyAdditionalData = db.session.query(
+            StudyAdditionalData
+        ).get(study_id)
+        return metadata
+
     def get_all(self) -> List[Study]:
         entity = with_polymorphic(Study, "*")
         metadatas: List[Study] = (
@@ -67,11 +75,5 @@ class StudyMetadataRepository:
     def _invalidate_study_listing_cache(self) -> None:
         self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
         self.cache_service.invalidate(
-            CacheConstants.STUDY_LISTING_SUMMARY.value
-        )
-        self.cache_service.invalidate(
             CacheConstants.STUDY_LISTING_MANAGED.value
-        )
-        self.cache_service.invalidate(
-            CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value
         )

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -88,9 +88,6 @@ class RemoveBindingConstraint(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
             CreateBindingConstraint,
         )
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         for command in reversed(history):
             if (
@@ -100,10 +97,9 @@ class RemoveBindingConstraint(ICommand):
                 return [command]
 
         try:
-            return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).extract_binding_constraint(base, self.id)
+            return self._get_command_extractor().extract_binding_constraint(
+                base, self.id
+            )
         except Exception as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_binding_constraint {self.id}",
