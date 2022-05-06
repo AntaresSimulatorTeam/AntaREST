@@ -90,10 +90,6 @@ jobs:
         working-directory: webapp
         env:
           NODE_OPTIONS: --max-old-space-size=8192
-      - name: Check extracted deps
-        if: matrix.os == 'ubuntu-latest'
-        run: npm run check
-        working-directory: webapp
       - name: Lint
         if: matrix.os == 'ubuntu-latest'
         run: npm run lint
@@ -101,32 +97,4 @@ jobs:
       - name: Run tests
         run: npm run test
         working-directory: webapp
-
-  npm-test2:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      max-parallel: 9
-      matrix:
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Checkout github repo
-        uses: actions/checkout@v1
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - name: Install dependencies
-        run: npm install
-        working-directory: webapp_v2
-      - name: Build
-        run: npm run build
-        working-directory: webapp_v2
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192
-      - name: Lint
-        run: npm run lint
-        working-directory: webapp_v2
-      - name: Run tests
-        run: npm run test
-        working-directory: webapp_v2
 

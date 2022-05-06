@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import moment from "moment";
 import debug from "debug";
 import { TFunction } from "react-i18next";
@@ -305,8 +304,10 @@ export const transformNameToId = (name: string): string => {
 };
 
 export const removeEmptyFields = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: { [key: string]: any },
   fieldsToCheck: Array<string>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): { [key: string]: any } => {
   const cleanData = { ...data };
 
