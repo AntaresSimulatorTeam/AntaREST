@@ -88,15 +88,8 @@ function Xpansion() {
           <Button
             sx={{
               width: "140px",
-              border: "2px solid text.secondary",
-              color: "text.secondary",
-              "&:hover": {
-                border: "2px solid primary.main",
-                color: "primary.main",
-              },
-              fontWeight: "bold",
             }}
-            variant="outlined"
+            variant="contained"
             onClick={createXpansion}
           >
             {t("xpansion:newXpansionConfig")}

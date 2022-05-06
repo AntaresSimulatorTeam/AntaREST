@@ -17,6 +17,7 @@ import {
   deleteCandidate,
   updateCandidate,
   getCapacity,
+  xpansionConfigurationExist,
 } from "../../../../../services/api/xpansion";
 import {
   transformNameToId,
@@ -56,19 +57,22 @@ function Candidates() {
       if (!study) {
         return [];
       }
-
-      // Candidates
-      const tempCandidates = await getAllCandidates(study.id);
-      for (let i = 0; i < tempCandidates.length; i += 1) {
-        tempCandidates[i].link = tempCandidates.map((item: { link: string }) =>
-          item.link
-            .split(" - ")
-            .map((index: any) => transformNameToId(index))
-            .join(" - ")
-        )[i];
+      const exist = await xpansionConfigurationExist(study.id);
+      if (exist) {
+        // Candidates
+        const tempCandidates = await getAllCandidates(study.id);
+        for (let i = 0; i < tempCandidates.length; i += 1) {
+          tempCandidates[i].link = tempCandidates.map(
+            (item: { link: string }) =>
+              item.link
+                .split(" - ")
+                .map((index: any) => transformNameToId(index))
+                .join(" - ")
+          )[i];
+        }
+        return tempCandidates;
       }
-
-      return tempCandidates;
+      return [];
     },
     { errorMessage: t("xpansion:xpansionError"), resetDataOnReload: false },
     [study]
@@ -79,13 +83,16 @@ function Candidates() {
       if (!study) {
         return {};
       }
-
-      return {
-        capacities: await getAllCapacities(study.id),
-        links: await getAllLinks(study.id),
-      };
+      const exist = await xpansionConfigurationExist(study.id);
+      if (exist) {
+        return {
+          capacities: await getAllCapacities(study.id),
+          links: await getAllLinks(study.id),
+        };
+      }
+      return {};
     },
-    t("xpansion:xpansionError"),
+    { errorMessage: t("xpansion:xpansionError") },
     [study]
   );
 

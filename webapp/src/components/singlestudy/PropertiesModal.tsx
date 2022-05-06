@@ -221,7 +221,7 @@ function PropertiesModal(props: Props) {
             label={t("studymanager:studyName")}
             value={studyName}
             onChange={setStudyName}
-            sx={{ flexGrow: 1, mr: 2 }}
+            sx={{ flexGrow: 1 }}
             required
           />
         </Box>
@@ -277,7 +277,7 @@ function PropertiesModal(props: Props) {
           >
             <TagTextInput
               label={t("studymanager:enterTag")}
-              sx={{ flexGrow: 1, mr: 2 }}
+              sx={{ flexGrow: 1 }}
               value={tags}
               onChange={setTags}
               tagList={tagList}
