@@ -109,11 +109,11 @@ function HeaderBottom(props: PropTypes) {
             sx={{ mx: 1 }}
           />
         )}
-        {managedFilter && archivedFilter && (
+        {archivedFilter && (
           <Chip
-            label={t("studymanager:managedStudiesFilter")}
+            label={t("studymanager:archivedStudiesFilter")}
             variant="filled"
-            color="warning"
+            color="secondary"
             onDelete={() => setArchivedFilter(false)}
             sx={{ mx: 1 }}
           />

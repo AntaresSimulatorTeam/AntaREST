@@ -7,11 +7,9 @@ import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import {
-  AreasConfig,
   isNode,
   LinkProperties,
   NodeProperties,
-  SingleAreaConfig,
   StudyMetadata,
   UpdateAreaUi,
 } from "../../../../../common/types";
