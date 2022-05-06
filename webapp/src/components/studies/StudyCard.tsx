@@ -353,7 +353,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:importcopy")}</ListItemText>
+                <ListItemText>{t("studymanager:copy")}</ListItemText>
               </MenuItem>
               <MenuItem
                 onClick={() => {
