@@ -43,19 +43,20 @@ def create_study_data_routes(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
-        response_model=List[AreaInfoDTO],
+        response_model=Union[List[AreaInfoDTO], Dict[str, Any]],  # type: ignore
     )
     def get_areas(
         uuid: str,
         type: Optional[AreaType] = None,
+        ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
         logger.info(
             f"Fetching area list (type={type}) for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_areas(uuid, type, params)
+        areas_list = study_service.get_all_areas(uuid, type, ui, params)
         return areas_list
 
     @bp.get(

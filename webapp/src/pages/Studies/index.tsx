@@ -27,7 +27,11 @@ import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
 import { getStudies } from "../../services/api/study";
 import { AppState } from "../../store/reducers";
-import { initStudies, initStudiesVersion } from "../../store/study";
+import {
+  initStudies,
+  initStudiesVersion,
+  toggleFavorite as dipatchToggleFavorite,
+} from "../../store/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";
@@ -44,11 +48,13 @@ const StudiesListMemo = memo((props: StudyListProps) => (
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
   versions: state.study.versionList,
+  favorites: state.study.favorites,
 });
 
 const mapDispatch = {
   loadStudies: initStudies,
   loadVersions: initStudiesVersion,
+  toggleFavorite: dipatchToggleFavorite,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -56,7 +62,14 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function Studies(props: PropTypes) {
-  const { studies, loadStudies, loadVersions, versions } = props;
+  const {
+    studies,
+    loadStudies,
+    loadVersions,
+    versions,
+    favorites,
+    toggleFavorite,
+  } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = useMountedState();
@@ -93,9 +106,6 @@ function Studies(props: PropTypes) {
   );
   const [currentFolder, setCurrentFolder] = useState<string | undefined>(
     loadState<string>(DefaultFilterKey.FOLDER, "root")
-  );
-  const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo>>(
-    loadState<Array<GenericInfo>>(DefaultFilterKey.FAVORITE_STUDIES, []) || []
   );
 
   // NOTE: GET TAG LIST FROM BACKEND
@@ -258,24 +268,6 @@ function Studies(props: PropTypes) {
     }, 0);
   }, [filter, inputValue, mounted]);
 
-  const handleFavoriteClick = useCallback(
-    (value: GenericInfo) => {
-      const favorite = currentFavorite as Array<GenericInfo>;
-      if (
-        favorite.findIndex(
-          (elm) => (elm.id as string) === (value.id as string)
-        ) < 0
-      ) {
-        setCurrentFavorite(favorite.concat(value));
-        return;
-      }
-      setCurrentFavorite(
-        favorite.filter((elm) => (elm.id as string) !== (value.id as string))
-      );
-    },
-    [currentFavorite]
-  );
-
   const init = async () => {
     try {
       const userRes = await getUsers();
@@ -318,21 +310,6 @@ function Studies(props: PropTypes) {
     currentFolder,
     applyFilter,
   ]);
-
-  useEffect(() => {
-    saveState(DefaultFilterKey.FAVORITE_STUDIES, currentFavorite);
-  }, [currentFavorite]);
-
-  useEffect(() => {
-    setCurrentFavorite((prev) => {
-      if (prev && prev.length > 0 && studies.length > 0) {
-        const studyIds = studies.map((item) => item.id);
-        return prev.filter((elm) => studyIds.includes(elm.id as string));
-      }
-      return prev;
-    });
-    applyFilter();
-  }, [applyFilter, setCurrentFavorite, studies]);
 
   const refreshStudies = useCallback(
     () => getAllStudies(true),
@@ -381,7 +358,7 @@ function Studies(props: PropTypes) {
           studies={studies}
           folder={currentFolder as string}
           setFolder={setCurrentFolder}
-          favorite={currentFavorite as Array<GenericInfo>}
+          favorite={favorites as Array<GenericInfo>}
         />
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
         {!loaded && <SimpleLoader />}
@@ -393,8 +370,8 @@ function Studies(props: PropTypes) {
             setSortItem={setCurrentSortItem}
             folder={currentFolder as string}
             setFolder={setCurrentFolder}
-            favorites={currentFavorite}
-            onFavoriteClick={handleFavoriteClick}
+            favorites={favorites}
+            onFavoriteClick={toggleFavorite}
           />
         )}
         <FilterDrawer

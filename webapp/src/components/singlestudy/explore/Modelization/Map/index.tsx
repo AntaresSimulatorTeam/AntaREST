@@ -7,11 +7,9 @@ import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import {
-  AreasConfig,
   isNode,
   LinkProperties,
   NodeProperties,
-  SingleAreaConfig,
   StudyMetadata,
   UpdateAreaUi,
 } from "../../../../../common/types";
@@ -279,14 +277,7 @@ function Map() {
         try {
           const data = await getSynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
-            const areaData = await getAreaPositions(
-              study.id,
-              Object.keys(data.areas).join(",")
-            );
-            const areas: AreasConfig =
-              Object.keys(data.areas).length === 1
-                ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig }
-                : (areaData as AreasConfig);
+            const areas = await getAreaPositions(study.id);
             const tempNodeData = Object.keys(areas).map((areaId) => ({
               id: areaId,
               name: data.areas[areaId].name,

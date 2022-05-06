@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import * as React from "react";
 import debug from "debug";
+import { useSnackbar } from "notistack";
 import { Link, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import {
@@ -13,6 +14,7 @@ import {
   Menu,
   MenuItem,
   styled,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -29,8 +31,9 @@ import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps } from "react-redux";
+import { connect, ConnectedProps, useSelector } from "react-redux";
 import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import {
@@ -39,7 +42,10 @@ import {
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
 import { AppState } from "../../store/reducers";
-import { removeStudies } from "../../store/study";
+import {
+  removeStudies,
+  toggleFavorite as dispatchToggleFavorite,
+} from "../../store/study";
 import LauncherModal from "../studies/LauncherModal";
 import PropertiesModal from "./PropertiesModal";
 import {
@@ -50,6 +56,8 @@ import {
 import DeleteStudyModal from "../studies/DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "../studies/ExportModal";
+import { isCurrentStudyFavorite } from "../../store/selectors";
+import StarToggle from "../common/StarToggle";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -74,6 +82,7 @@ const mapState = (state: AppState) => ({});
 
 const mapDispatch = {
   removeStudy: (sid: string) => removeStudies([sid]),
+  toggleFavorite: dispatchToggleFavorite,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -88,8 +97,15 @@ interface OwnProps {
 type PropTypes = PropsFromRedux & OwnProps;
 
 function NavHeader(props: PropTypes) {
-  const { study, parent, childrenTree, isExplorer, removeStudy, openCommands } =
-    props;
+  const {
+    study,
+    parent,
+    childrenTree,
+    isExplorer,
+    removeStudy,
+    openCommands,
+    toggleFavorite,
+  } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -99,7 +115,9 @@ function NavHeader(props: PropTypes) {
     useState<boolean>(false);
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
   const [openExportModal, setOpenExportModal] = useState<boolean>(false);
+  const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const isStudyFavorite = useSelector(isCurrentStudyFavorite);
 
   const publicModeList: Array<GenericInfo> = [
     { id: "NONE", name: t("singlestudy:nonePublicModeText") },
@@ -183,6 +201,22 @@ function NavHeader(props: PropTypes) {
     navigate("/studies");
   };
 
+  const copyId = async (): Promise<void> => {
+    if (study) {
+      try {
+        await navigator.clipboard.writeText(study.id);
+        enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
+          variant: "success",
+        });
+      } catch (e) {
+        enqueueErrorSnackbar(
+          t("singlestudy:onStudyIdCopyError"),
+          e as AxiosError
+        );
+      }
+    }
+  };
+
   return (
     <Box
       p={2}
@@ -228,9 +262,34 @@ function NavHeader(props: PropTypes) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Typography variant="h6" sx={{ color: "text.primary" }}>
-            {study?.name}
-          </Typography>
+          <Tooltip title={study?.folder || ""}>
+            <Typography variant="h6" sx={{ color: "text.primary" }}>
+              {study?.name}
+            </Typography>
+          </Tooltip>
+          <StarToggle
+            isActive={isStudyFavorite}
+            activeTitle={t("studymanager:removeFavorite") as string}
+            unactiveTitle={t("studymanager:bookmark") as string}
+            onToggle={() => {
+              if (study) {
+                toggleFavorite({ id: study.id, name: study.name });
+              }
+            }}
+          />
+          <Tooltip title={t("studymanager:copyID") as string}>
+            <ContentCopyIcon
+              sx={{
+                cursor: "pointer",
+                width: "16px",
+                height: "16px",
+                mx: 1,
+                color: "text.secondary",
+                "&:hover": { color: "primary.main" },
+              }}
+              onClick={copyId}
+            />
+          </Tooltip>
           {study?.managed && (
             <Chip
               label={t("singlestudy:managedStudy")}

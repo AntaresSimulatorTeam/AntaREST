@@ -19,8 +19,6 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { indigo } from "@mui/material/colors";
-import StarPurple500OutlinedIcon from "@mui/icons-material/StarPurple500Outlined";
-import StarOutlineOutlinedIcon from "@mui/icons-material/StarOutlineOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -42,6 +40,7 @@ import { scrollbarStyle } from "../../theme";
 import DeleteStudyModal from "./DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
+import StarToggle from "../common/StarToggle";
 
 interface Props {
   study: StudyMetadata;
@@ -153,23 +152,12 @@ export default function StudyCard(props: Props) {
             p={0}
             sx={{ flexFlow: "row nowrap" }}
           >
-            {favorite ? (
-              <Tooltip title={t("studymanager:removeFavorite") as string}>
-                <StarPurple500OutlinedIcon
-                  sx={{ cursor: "pointer" }}
-                  onClick={handleFavoriteClick}
-                  color="primary"
-                />
-              </Tooltip>
-            ) : (
-              <Tooltip title={t("studymanager:bookmark") as string}>
-                <StarOutlineOutlinedIcon
-                  sx={{ cursor: "pointer" }}
-                  onClick={handleFavoriteClick}
-                  color="primary"
-                />
-              </Tooltip>
-            )}
+            <StarToggle
+              isActive={favorite}
+              activeTitle={t("studymanager:removeFavorite") as string}
+              unactiveTitle={t("studymanager:bookmark") as string}
+              onToggle={handleFavoriteClick}
+            />
             <Tooltip title={t("studymanager:copyID") as string}>
               <ContentCopyIcon
                 sx={{
@@ -353,7 +341,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:importcopy")}</ListItemText>
+                <ListItemText>{t("studymanager:copy")}</ListItemText>
               </MenuItem>
               <MenuItem
                 onClick={() => {

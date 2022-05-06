@@ -87,7 +87,11 @@ function ImportStudyDialog(props: PropTypes) {
       <Box sx={{ p: 2 }}>
         {uploadProgress !== undefined ? (
           <LinearProgress
-            variant={uploadProgress > 2 ? "determinate" : "indeterminate"}
+            variant={
+              uploadProgress > 2 && uploadProgress < 98
+                ? "determinate"
+                : "indeterminate"
+            }
             value={uploadProgress}
           />
         ) : (
