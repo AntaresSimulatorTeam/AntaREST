@@ -134,8 +134,8 @@ function CandidateForm(props: PropType) {
           />
           <SelectFields>
             <SelectSingle
-              name={t("xpansion:link")}
-              label="link"
+              name="link"
+              label={t("xpansion:link")}
               list={tabLinks}
               data={currentCandidate?.link || ""}
               handleChange={handleChange}
@@ -261,8 +261,8 @@ function CandidateForm(props: PropType) {
         >
           <SelectFields>
             <SelectSingle
-              name={t("xpansion:linkProfile")}
-              label="link-profile"
+              name="link-profile"
+              label={t("xpansion:linkProfile")}
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}
@@ -290,8 +290,8 @@ function CandidateForm(props: PropType) {
           </SelectFields>
           <SelectFields>
             <SelectSingle
-              name={t("xpansion:alreadyILinkProfile")}
-              label="already-installed-link-profile"
+              name="already-installed-link-profile"
+              label={t("xpansion:alreadyILinkProfile")}
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}

@@ -75,11 +75,11 @@ function SettingsForm(props: PropType) {
         <Fields>
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
-              name={t("xpansion:ucType")}
+              name="uc_type"
               list={ucType.map((item) => {
                 return { id: item, name: item };
               })}
-              label="uc_type"
+              label={t("xpansion:ucType")}
               data={currentSettings.uc_type}
               handleChange={handleChange}
               sx={{
@@ -89,11 +89,11 @@ function SettingsForm(props: PropType) {
           </SelectFields>
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
-              name={t("xpansion:master")}
+              name="master"
               list={master.map((item) => {
                 return { id: item, name: item };
               })}
-              label="master"
+              label={t("xpansion:master")}
               data={currentSettings.master}
               handleChange={handleChange}
               sx={{
@@ -132,11 +132,11 @@ function SettingsForm(props: PropType) {
           />
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
-              name={t("xpansion:cutType")}
+              name="cut-type"
               list={cutType.map((item) => {
                 return { id: item, name: item };
               })}
-              label="cut-type"
+              label={t("xpansion:cutType")}
               data={currentSettings["cut-type"] || ""}
               sx={{
                 minWidth: "100%",
@@ -187,11 +187,11 @@ function SettingsForm(props: PropType) {
           />
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
-              name={t("xpansion:solver")}
+              name="solver"
               list={solver.map((item) => {
                 return { id: item, name: item };
               })}
-              label="solver"
+              label={t("xpansion:solver")}
               data={currentSettings.solver || ""}
               handleChange={handleChange}
               sx={{
@@ -220,11 +220,11 @@ function SettingsForm(props: PropType) {
         >
           <SelectFields>
             <SelectSingle
-              name={t("xpansion:yearlyWeight")}
+              name="yearly-weights"
               list={constraints.map((item) => {
                 return { id: item, name: item };
               })}
-              label="yearly-weights"
+              label={t("xpansion:yearlyWeight")}
               data={currentSettings["yearly-weights"] || ""}
               handleChange={handleChange}
               sx={{
@@ -250,11 +250,11 @@ function SettingsForm(props: PropType) {
           </SelectFields>
           <SelectFields>
             <SelectSingle
-              name={t("xpansion:additionalConstraints")}
+              name="additional-constraints"
               list={constraints.map((item) => {
                 return { id: item, name: item };
               })}
-              label="additional-constraints"
+              label={t("xpansion:additionalConstraints")}
               data={currentSettings["additional-constraints"] || ""}
               handleChange={handleChange}
               sx={{

@@ -171,8 +171,7 @@ function CreateStudyModal(props: PropTypes) {
             sx={{ flexGrow: 1, mr: 2, height: "60px" }}
           />
           <SingleSelect
-            name={`${t("studymanager:version")} *`}
-            label={t("studymanager:version")}
+            name={t("studymanager:version")}
             list={versionList}
             data={version}
             setValue={setVersion}
@@ -197,7 +196,6 @@ function CreateStudyModal(props: PropTypes) {
           >
             <SingleSelect
               name={t("singlestudy:publicMode")}
-              label={t("singlestudy:publicMode")}
               list={publicModeList}
               data={publicMode}
               setValue={(value: string) =>

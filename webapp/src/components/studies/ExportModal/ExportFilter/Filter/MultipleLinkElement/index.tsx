@@ -49,8 +49,7 @@ export default function MultipleLinkElement(props: {
         <TextSeparator text={label} />
         <Box display="flex" width="100%" alignItems="center">
           <SelectSingle
-            name={`${t("singlestudy:area1")} *`}
-            label={t("singlestudy:area1")}
+            name={t("singlestudy:area1")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area1}
             setValue={(elm: Array<string> | string) =>
@@ -59,8 +58,7 @@ export default function MultipleLinkElement(props: {
             sx={{ flexGrow: 1, px: 0.5 }}
           />
           <SelectSingle
-            name={`${t("singlestudy:area2")} *`}
-            label={t("singlestudy:area2")}
+            name={t("singlestudy:area2")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area2}
             setValue={(elm: Array<string> | string) =>

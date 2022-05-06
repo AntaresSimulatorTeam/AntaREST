@@ -107,8 +107,7 @@ function CreateVariantModal(props: Props) {
           mt={3}
         >
           <SingleSelect
-            name={`${t("singlestudy:versionSource")} *`}
-            label={t("singlestudy:versionSource")}
+            name={t("singlestudy:versionSource")}
             list={versionSourceList}
             data={versionSource}
             setValue={(data: string) => setVersionSource(data)}

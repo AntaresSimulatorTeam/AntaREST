@@ -172,8 +172,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         }}
       >
         <SelectSingle
-          name={`${t("studymanager:exportOptions")} *`}
-          label={t("studymanager:exportOptions")}
+          name={t("studymanager:exportOptions")}
           list={optionsList}
           data={optionSelection}
           setValue={(data: string) => setOptionSelection(data)}
@@ -188,8 +187,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             () =>
               (
                 <SelectSingle
-                  name={`${t("studymanager:selectOutput")} *`}
-                  label={t("studymanager:selectOutput")}
+                  name={t("studymanager:selectOutput")}
                   list={outputList as Array<GenericInfo>}
                   data={currentOutput}
                   setValue={(data: string) => setCurrentOutput(data)}

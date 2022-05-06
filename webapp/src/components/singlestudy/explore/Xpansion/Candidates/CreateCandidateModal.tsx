@@ -69,8 +69,8 @@ function CreateCandidateModal(props: PropType) {
           value={candidate.name}
         />
         <SelectSingle
-          name={t("xpansion:link")}
-          label="link"
+          name="link"
+          label={t("xpansion:link")}
           list={tabLinks.map((item) => {
             return { id: item, name: item };
           })}

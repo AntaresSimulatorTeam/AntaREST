@@ -91,8 +91,7 @@ function ExportFilterModal(props: PropTypes) {
   return (
     <Root>
       <SelectSingle
-        name={`${t("singlestudy:type")} *`}
-        label={t("singlestudy:type")}
+        name={t("singlestudy:type")}
         list={typeList.map((elm) => ({
           id: elm,
           name: t(`singlestudy:${elm.toLowerCase()}`),
@@ -118,8 +117,7 @@ function ExportFilterModal(props: PropTypes) {
         />
       )}
       <SelectSingle
-        name={`${t("singlestudy:level")} *`}
-        label={t("singlestudy:level")}
+        name={t("singlestudy:level")}
         list={levelList.map((elm) => ({
           id: elm,
           name: t(`singlestudy:${elm.toLowerCase()}`),
