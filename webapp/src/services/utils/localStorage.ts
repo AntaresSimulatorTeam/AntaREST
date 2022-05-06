@@ -10,7 +10,7 @@ export const loadState = <T>(path: string, defaultValue?: T): T | undefined => {
   }
 };
 
-export const saveState = <T>(path: string, data: T|undefined): void => {
+export const saveState = <T>(path: string, data: T | undefined): void => {
   try {
     if (data === undefined) {
       localStorage.removeItem(path);
