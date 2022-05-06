@@ -98,10 +98,9 @@ function Users() {
     data: initialUsers,
     isLoading,
     reload: reloadFetchUsers,
-  } = usePromiseWithSnackbarError(
-    () => getUsers({ details: true }),
-    t("settings:usersError")
-  );
+  } = usePromiseWithSnackbarError(() => getUsers({ details: true }), {
+    errorMessage: t("settings:usersError"),
+  });
 
   useUpdateEffect(() => {
     setUserToDelete(undefined);

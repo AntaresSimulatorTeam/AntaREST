@@ -1,14 +1,20 @@
 import { DependencyList, useEffect } from "react";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import usePromise, { UsePromiseResponse } from "./usePromise";
+import usePromise, { UsePromiseResponse, UsePromiseParams } from "./usePromise";
+
+export interface UsePromiseWithSnackbarErrorParams extends UsePromiseParams {
+  errorMessage: string;
+}
 
 function usePromiseWithSnackbarError<T>(
   fn: () => Promise<T>,
-  errorMessage: string,
+  params: UsePromiseWithSnackbarErrorParams,
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
-  const res = usePromise(fn, deps);
+  const res = usePromise(fn, params, deps);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  const { errorMessage } = params;
 
   useEffect(
     () => {
