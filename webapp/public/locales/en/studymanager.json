@@ -12,7 +12,7 @@
   "scanFolder": "Scan folder",
   "scanFolderSuccess": "Folder scan started",
   "scanFolderError": "Failed to start folder scan",
-  "importcopy": "Copy to managed",
+  "importcopy": "Copy to database",
   "copy": "Copy",
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",

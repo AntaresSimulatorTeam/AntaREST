@@ -20,14 +20,14 @@ export const isAuthUserInGroupAdmin = createSelector(getAuthUser, isGroupAdmin);
 // Studies
 ////////////////////////////////////////////////////////////////
 
-export const getFavorties = (state: AppState): StudyState["favorites"] =>
+export const getFavoriteStudies = (state: AppState): StudyState["favorites"] =>
   state.study.favorites;
 
-export const getCurrentStudy = (state: AppState): StudyState["current"] =>
+export const getCurrentStudyId = (state: AppState): StudyState["current"] =>
   state.study.current;
 
-export const isFavorite = createSelector(
-  getFavorties,
-  getCurrentStudy,
-  (favorites, current) => R.find(R.propEq("id", current), favorites)
+export const isCurrentStudyFavorite = createSelector(
+  getFavoriteStudies,
+  getCurrentStudyId,
+  (favorites, current) => !!R.find(R.propEq("id", current), favorites)
 );

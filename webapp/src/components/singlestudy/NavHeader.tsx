@@ -19,8 +19,6 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import StarPurple500OutlinedIcon from "@mui/icons-material/StarPurple500Outlined";
-import StarOutlineOutlinedIcon from "@mui/icons-material/StarOutlineOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -58,7 +56,8 @@ import {
 import DeleteStudyModal from "../studies/DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "../studies/ExportModal";
-import { isFavorite } from "../../store/selectors";
+import { isCurrentStudyFavorite } from "../../store/selectors";
+import StarToggle from "../common/StarToggle";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -118,7 +117,7 @@ function NavHeader(props: PropTypes) {
   const [openExportModal, setOpenExportModal] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const isStudyFavorite = useSelector(isFavorite);
+  const isStudyFavorite = useSelector(isCurrentStudyFavorite);
 
   const publicModeList: Array<GenericInfo> = [
     { id: "NONE", name: t("singlestudy:nonePublicModeText") },
@@ -202,10 +201,10 @@ function NavHeader(props: PropTypes) {
     navigate("/studies");
   };
 
-  const copyId = (): void => {
+  const copyId = async (): Promise<void> => {
     if (study) {
       try {
-        navigator.clipboard.writeText(study.id);
+        await navigator.clipboard.writeText(study.id);
         enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
           variant: "success",
         });
@@ -268,31 +267,16 @@ function NavHeader(props: PropTypes) {
               {study?.name}
             </Typography>
           </Tooltip>
-          {isStudyFavorite ? (
-            <Tooltip title={t("studymanager:removeFavorite") as string}>
-              <StarPurple500OutlinedIcon
-                sx={{ cursor: "pointer", ml: 1 }}
-                onClick={() => {
-                  if (study) {
-                    toggleFavorite({ id: study.id, name: study.name });
-                  }
-                }}
-                color="primary"
-              />
-            </Tooltip>
-          ) : (
-            <Tooltip title={t("studymanager:bookmark") as string}>
-              <StarOutlineOutlinedIcon
-                sx={{ cursor: "pointer", ml: 1 }}
-                onClick={() => {
-                  if (study) {
-                    toggleFavorite({ id: study.id, name: study.name });
-                  }
-                }}
-                color="primary"
-              />
-            </Tooltip>
-          )}
+          <StarToggle
+            isActive={isStudyFavorite}
+            activeTitle={t("studymanager:removeFavorite") as string}
+            unactiveTitle={t("studymanager:bookmark") as string}
+            onToggle={() => {
+              if (study) {
+                toggleFavorite({ id: study.id, name: study.name });
+              }
+            }}
+          />
           <Tooltip title={t("studymanager:copyID") as string}>
             <ContentCopyIcon
               sx={{
@@ -303,7 +287,7 @@ function NavHeader(props: PropTypes) {
                 color: "text.secondary",
                 "&:hover": { color: "primary.main" },
               }}
-              onClick={() => copyId()}
+              onClick={copyId}
             />
           </Tooltip>
           {study?.managed && (

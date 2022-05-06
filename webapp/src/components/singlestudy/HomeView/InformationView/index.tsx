@@ -95,7 +95,7 @@ function InformationView(props: Props) {
             >
               {study.managed
                 ? t("variants:createNewVariant")
-                : t("studymanager:copy")}
+                : t("studymanager:importcopy")}
             </Button>
           )}
         </Box>
