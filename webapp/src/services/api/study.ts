@@ -10,7 +10,6 @@ import {
   StudyOutput,
   StudyPublicMode,
   AreasConfig,
-  SingleAreaConfig,
   StudyProperties,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
@@ -61,16 +60,8 @@ export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
   return res.data;
 };
 
-export const getAreaPositions = async (
-  uuid: string,
-  path: string,
-  depth = -1
-): Promise<AreasConfig | SingleAreaConfig> => {
-  const res = await client.get(
-    `v1/studies/${uuid}/raw?path=/input/areas/${encodeURIComponent(
-      path
-    )}/ui&depth=${depth}`
-  );
+export const getAreaPositions = async (uuid: string): Promise<AreasConfig> => {
+  const res = await client.get(`v1/studies/${uuid}/areas?ui=true`);
   return res.data;
 };
 

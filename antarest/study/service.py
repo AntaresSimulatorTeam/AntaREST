@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict, Callable
+from typing import List, IO, Optional, cast, Union, Dict, Callable, Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -1547,12 +1547,17 @@ class StudyService:
         self,
         uuid: str,
         area_type: Optional[AreaType],
+        ui: bool,
         params: RequestParameters,
-    ) -> List[AreaInfoDTO]:
+    ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.areas.get_all_areas(study, area_type)
+        return (
+            self.areas.get_all_areas_ui_info(study)
+            if ui
+            else self.areas.get_all_areas(study, area_type)
+        )
 
     def get_all_links(
         self,
