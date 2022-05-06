@@ -70,7 +70,7 @@ function Candidates() {
 
       return tempCandidates;
     },
-    t("xpansion:xpansionError"),
+    { errorMessage: t("xpansion:xpansionError"), resetDataOnReload: false },
     [study]
   );
 
@@ -213,7 +213,7 @@ function Candidates() {
               {renderView()}
             </Box>
             <Backdrop
-              open={isLoading}
+              open={isLoading && !candidates}
               sx={{
                 position: "absolute",
                 zIndex: (theme) => theme.zIndex.drawer + 1,
