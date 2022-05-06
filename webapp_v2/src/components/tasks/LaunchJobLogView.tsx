@@ -108,7 +108,6 @@ function LaunchJobLogView(props: PropsType) {
       )}
       <LogModal
         isOpen={!!jobIdDetail}
-        title={t("singlestudy:taskLog")}
         followLogs={followLogs}
         jobId={jobIdDetail}
         content={logModalContent}

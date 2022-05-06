@@ -150,34 +150,14 @@ function Candidates() {
             "unit-size",
           ]) as XpansionCandidate
         );
+        enqueueSnackbar(t("studymanager:savedatasuccess"), {
+          variant: "success",
+        });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:updateCandidateError"), e as AxiosError);
     } finally {
-      if (name && value && value["annual-cost-per-mw"] && value.link) {
-        if (
-          (value["max-investment"] && value["max-investment"] >= 0) ||
-          (value["max-units"] &&
-            value["max-units"] >= 0 &&
-            value["unit-size"] &&
-            value["unit-size"] >= 0)
-        ) {
-          reload();
-          setSelectedItem(value.name);
-          if (
-            (value["max-investment"] &&
-              !value["max-units"] &&
-              !value["unit-size"]) ||
-            (!value["max-investment"] &&
-              value["max-units"] &&
-              value["unit-size"])
-          ) {
-            enqueueSnackbar(t("studymanager:savedatasuccess"), {
-              variant: "success",
-            });
-          }
-        }
-      }
+      reload();
     }
   };
 

@@ -58,6 +58,9 @@ const theme = createTheme({
         ul: {
           ...scrollbarStyle,
         },
+        pre: {
+          ...scrollbarStyle,
+        },
       },
     },
     MuiPaper: {

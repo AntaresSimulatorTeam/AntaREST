@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { XpansionSettings } from "../types";
-import { Fields, SelectFields, Title, StyledTextField } from "../Styles";
+import { Fields, SelectFields, Title, StyledTextField } from "../styles";
 import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {

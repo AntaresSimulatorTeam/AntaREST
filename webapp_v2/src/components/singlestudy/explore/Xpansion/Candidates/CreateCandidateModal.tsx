@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { TextField, Box, Divider, ButtonGroup, Button } from "@mui/material";
+import { TextField, Box, Divider, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicModal from "../../../../common/BasicModal";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";
+import { HoverButton, ActiveButton } from "../styles";
 
 interface PropType {
   open: boolean;
@@ -100,66 +101,22 @@ function CreateCandidateModal(props: PropType) {
             variant="outlined"
           >
             {toggleView ? (
-              <Button
-                size="small"
-                variant="outlined"
-                disabled
-                sx={(theme) => ({
-                  backgroundColor: "rgba(255,255,255,0.07) !important",
-                  color: `${theme.palette.text.primary} !important`,
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                })}
-              >
+              <ActiveButton size="small" variant="outlined" disabled>
                 {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
-              </Button>
+              </ActiveButton>
             ) : (
-              <Button
-                size="small"
-                variant="outlined"
-                sx={(theme) => ({
-                  color: "action.active",
-                  borderColor: theme.palette.text.disabled,
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.09)",
-                    borderColor: theme.palette.text.primary,
-                    color: theme.palette.text.primary,
-                  },
-                })}
-                onClick={changeView}
-              >
+              <HoverButton size="small" variant="outlined" onClick={changeView}>
                 {`${t("xpansion:unitSize")} & ${t("xpansion:maxUnits")}`}
-              </Button>
+              </HoverButton>
             )}
             {toggleView ? (
-              <Button
-                size="small"
-                variant="outlined"
-                sx={(theme) => ({
-                  color: "action.active",
-                  borderColor: theme.palette.text.disabled,
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.09)",
-                    borderColor: theme.palette.text.primary,
-                    color: theme.palette.text.primary,
-                  },
-                })}
-                onClick={changeView}
-              >
+              <HoverButton size="small" variant="outlined" onClick={changeView}>
                 {t("xpansion:maxInvestments")}
-              </Button>
+              </HoverButton>
             ) : (
-              <Button
-                size="small"
-                variant="outlined"
-                sx={(theme) => ({
-                  backgroundColor: "rgba(255,255,255,0.07) !important",
-                  color: `${theme.palette.text.primary} !important`,
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                })}
-                disabled
-              >
+              <ActiveButton size="small" variant="outlined" disabled>
                 {t("xpansion:maxInvestments")}
-              </Button>
+              </ActiveButton>
             )}
           </ButtonGroup>
         </Box>

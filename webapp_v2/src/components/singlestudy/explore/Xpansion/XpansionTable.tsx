@@ -18,7 +18,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ImportForm from "../../../common/ImportForm";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import { Title } from "./Styles";
+import { Title } from "./styles";
 
 const logErr = debug("antares:createimportform:error");
 

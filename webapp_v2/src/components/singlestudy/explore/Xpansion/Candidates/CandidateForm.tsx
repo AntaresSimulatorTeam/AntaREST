@@ -12,7 +12,7 @@ import {
   StyledTextField,
   HoverButton,
   ActiveButton,
-} from "../Styles";
+} from "../styles";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";

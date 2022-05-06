@@ -7,12 +7,12 @@ import {
   DialogTitle,
   styled,
   experimental_sx as sx,
+  DialogContentProps,
 } from "@mui/material";
 import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
-import { scrollbarStyle } from "../../../theme";
 
 /**
  * Types
@@ -32,6 +32,7 @@ export interface BasicDialogProps extends DialogProps {
   titleIcon?: ElementType<SvgIconComponent>;
   actions?: ReactNode;
   alert?: AlertValues;
+  contentProps?: DialogContentProps;
 }
 
 /**
@@ -60,8 +61,17 @@ const AlertBorder = styled("span", {
  */
 
 function BasicDialog(props: BasicDialogProps) {
-  const { title, titleIcon, children, actions, alert, ...dialogProps } = props;
+  const {
+    title,
+    titleIcon,
+    children,
+    actions,
+    alert,
+    contentProps,
+    ...dialogProps
+  } = props;
   const TitleIcon = titleIcon as SvgIconComponent;
+  const contentSx = contentProps?.sx || {};
 
   return (
     <Dialog {...dialogProps}>
@@ -80,7 +90,13 @@ function BasicDialog(props: BasicDialogProps) {
           {title}
         </DialogTitle>
       )}
-      <DialogContent sx={{ ...scrollbarStyle }}>
+      <DialogContent
+        {...contentProps}
+        sx={[
+          { display: "flex", flexDirection: "column" },
+          ...(Array.isArray(contentSx) ? contentSx : [contentSx]),
+        ]}
+      >
         {RA.isString(children) ? (
           <DialogContentText>{children}</DialogContentText>
         ) : (
@@ -97,6 +113,7 @@ BasicDialog.defaultProps = {
   titleIcon: null,
   actions: null,
   alert: false,
+  contentProps: null,
 };
 
 export default BasicDialog;
