@@ -581,18 +581,38 @@ def test_area_management(app: FastAPI):
     )
     assert res.status_code == 200
     res_ui = client.get(
-        f"/v1/studies/{study_id}/raw?path=input/areas/area%201/ui/ui",
+        f"/v1/studies/{study_id}/areas?ui=true",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
     assert res_ui.json() == {
-        "x": 100,
-        "y": 100,
-        "color_r": 255,
-        "color_g": 0,
-        "color_b": 100,
-        "layers": 0,
+        "area 1": {
+            "ui": {
+                "x": 100,
+                "y": 100,
+                "color_r": 255,
+                "color_g": 0,
+                "color_b": 100,
+                "layers": 0,
+            },
+            "layerX": {"O": 0},
+            "layerY": {"O": 0},
+            "layerColor": {"O": "230 , 108 , 44"},
+        },
+        "area 2": {
+            "ui": {
+                "x": 0,
+                "y": 0,
+                "color_r": 230,
+                "color_g": 108,
+                "color_b": 44,
+                "layers": 0,
+            },
+            "layerX": {"O": 0},
+            "layerY": {"O": 0},
+            "layerColor": {"O": "230 , 108 , 44"},
+        },
     }
 
     client.delete(
