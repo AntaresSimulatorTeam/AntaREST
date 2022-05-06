@@ -1,6 +1,5 @@
 // @flow
 import { CSSProperties, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { DraggableProvided } from "react-beautiful-dnd";
 import ReactJson, { InteractionProps } from "react-json-view";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -102,7 +101,6 @@ function CommandListItem({
   onCommandExport,
   onExpanded,
 }: PropsType) {
-  const [t] = useTranslation();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [logModalOpen, setLogModalOpen] = useState<boolean>(false);
 
@@ -232,10 +230,8 @@ function CommandListItem({
       {item.results !== undefined && (
         <LogModal
           isOpen={logModalOpen}
-          title={t("singlestudy:taskLog")}
           content={item.results.message}
           close={() => setLogModalOpen(false)}
-          style={{ width: "400px", height: "200px" }}
         />
       )}
     </ItemContainer>

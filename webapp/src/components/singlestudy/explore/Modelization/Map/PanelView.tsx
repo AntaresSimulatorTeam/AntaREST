@@ -180,7 +180,7 @@ function PanelView(props: PropType) {
                 color: "text.secondary",
               }}
             >
-              {t("singlestudy:link")}
+              {t("singlestudy:links")}
             </Typography>
             <Box
               width="90%"

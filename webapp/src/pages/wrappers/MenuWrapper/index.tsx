@@ -49,6 +49,7 @@ import {
 } from "../../../components/MenuWrapperComponents";
 import LogoutModal from "./LogoutModal";
 import { getConfig } from "../../../services/config";
+import { scrollbarStyle } from "../../../theme";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -279,7 +280,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
           flex={1}
           justifyContent="space-between"
           flexDirection="column"
-          sx={{ boxSizing: "border-box", overflowY: "auto" }}
+          sx={{ boxSizing: "border-box", overflowY: "auto", ...scrollbarStyle }}
         >
           <List>
             {navigation

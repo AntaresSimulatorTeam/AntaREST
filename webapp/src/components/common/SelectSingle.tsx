@@ -1,62 +1,108 @@
 import {
   FormControl,
   InputLabel,
-  ListItemText,
   MenuItem,
   Select,
   SelectChangeEvent,
   SxProps,
   Theme,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { GenericInfo } from "../../common/types";
 
 interface Props {
   name: string;
+  label?: string;
   list: Array<GenericInfo>;
   data: string | undefined;
-  setValue: (data: string) => void;
+  setValue?: (data: string) => void;
   sx?: SxProps<Theme> | undefined;
-  placeholder?: string;
+  optional?: boolean;
+  variant?: "filled" | "standard" | "outlined" | undefined;
+  handleChange?: (key: string, value: string | number) => void;
+  required?: boolean;
 }
 
 function SelectSingle(props: Props) {
-  const { name, list, data, setValue, placeholder, sx } = props;
+  const {
+    name,
+    label = name,
+    list,
+    data,
+    setValue,
+    sx,
+    variant,
+    optional,
+    handleChange,
+    required,
+  } = props;
+  const [t] = useTranslation();
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
+  const basicHandleChange = (event: SelectChangeEvent<string>) => {
     const {
       target: { value },
     } = event;
-    setValue(value);
+    if (setValue) {
+      setValue(value);
+    }
   };
 
   return (
-    <FormControl sx={sx}>
+    <FormControl
+      variant={variant}
+      sx={
+        variant === "filled"
+          ? {
+              ...sx,
+              ".Mui-focused": { backgroundColor: "rgba(255, 255, 255, 0.09)" },
+              ".MuiInputLabel-root": { backgroundColor: "unset" },
+            }
+          : sx
+      }
+      required={required}
+    >
       <InputLabel
         id={`single-checkbox-label-${name}`}
         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
       >
-        {name}
+        {label}
       </InputLabel>
       <Select
         labelId={`single-checkbox-label-${name}`}
         id={`single-checkbox-${name}`}
         value={data}
-        variant="filled"
-        placeholder={placeholder}
-        onChange={handleChange}
-        sx={{
-          minHeight: 0,
-          background: "rgba(255, 255, 255, 0.09)",
-          borderRadius: "4px 4px 0px 0px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-          ".MuiSelect-icon": {
-            backgroundColor: "#222333",
-          },
-        }}
+        label={label}
+        onChange={
+          handleChange
+            ? (e) => handleChange(name, e.target.value as string)
+            : basicHandleChange
+        }
+        sx={
+          variant === "filled"
+            ? {
+                background: "rgba(255, 255, 255, 0.09)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+                ".MuiSelect-icon": {
+                  backgroundColor: "#222333",
+                },
+                "&:focus": {
+                  backgroundColor: "rgba(255, 255, 255, 0.09) !important",
+                },
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.09)",
+                },
+              }
+            : {}
+        }
       >
+        {optional && (
+          <MenuItem value="" key="None">
+            {t("main:none")}
+          </MenuItem>
+        )}
         {list.map(({ id, name }) => (
           <MenuItem key={id} value={id}>
-            <ListItemText primary={name} />
+            {name}
           </MenuItem>
         ))}
       </Select>
@@ -66,7 +112,12 @@ function SelectSingle(props: Props) {
 
 SelectSingle.defaultProps = {
   sx: { m: 0, width: 200 },
-  placeholder: undefined,
+  variant: "filled",
+  label: undefined,
+  optional: false,
+  setValue: undefined,
+  handleChange: undefined,
+  required: false,
 };
 
 export default SelectSingle;

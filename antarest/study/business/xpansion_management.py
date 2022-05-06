@@ -1,11 +1,15 @@
 import logging
+import shutil
 from enum import Enum
 from http import HTTPStatus
+from io import BytesIO
 from typing import Optional, Union, List, cast
+from zipfile import ZipFile, BadZipFile
 
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, BaseModel
 
+from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
@@ -20,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
     Expansion,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.utils import fix_study_root
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +110,16 @@ class IllegalCharacterInNameError(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class CandidateNameIsEmpty(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST)
+
+
+class WrongTypeFormat(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class WrongLinkFormatError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
@@ -144,7 +159,9 @@ class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
 
-    def create_xpansion_configuration(self, study: Study) -> None:
+    def create_xpansion_configuration(
+        self, study: Study, zipped_config: Optional[UploadFile] = None
+    ) -> None:
         logger.info(
             f"Initiating xpansion configuration for study '{study.id}'"
         )
@@ -155,11 +172,33 @@ class XpansionManager:
             file_study.tree.get(["user", "expansion"])
             logger.info(f"Using existing configuration for study '{study.id}'")
         except ChildNotFoundError:
+            if zipped_config:
+                try:
+                    with ZipFile(
+                        BytesIO(zipped_config.file.read())
+                    ) as zip_output:
+                        logger.info(
+                            f"Importing zipped xpansion configuration for study '{study.id}'"
+                        )
+                        zip_output.extractall(
+                            path=file_study.config.path / "user" / "expansion"
+                        )
+                        fix_study_root(
+                            file_study.config.path / "user" / "expansion"
+                        )
+                    return
+                except BadZipFile:
+                    shutil.rmtree(
+                        file_study.config.path / "user" / "expansion",
+                        ignore_errors=True,
+                    )
+                    raise BadZipBinary("Only zip file are allowed.")
+
             study_version = file_study.config.version
 
             xpansion_settings = {
                 "optimality_gap": 1,
-                "max_iteration": float("inf"),
+                "max_iteration": "inf",
                 "uc_type": "expansion_fast",
                 "master": "integer",
                 "yearly-weights": None,
@@ -168,7 +207,7 @@ class XpansionManager:
 
             if study_version < 800:
                 xpansion_settings["relaxed-optimality-gap"] = 1e6
-                xpansion_settings["cut-type"] = "average"
+                xpansion_settings["cut-type"] = "yearly"
                 xpansion_settings["ampl.solver"] = "cbc"
                 xpansion_settings["ampl.presolve"] = 0
                 xpansion_settings["ampl.solve_bounds_frequency"] = 1000000
@@ -222,6 +261,28 @@ class XpansionManager:
                     f"The 'additional-constraints' file '{additional_constraints}' does not exist"
                 )
 
+    def _assert_is_positive(
+        self,
+        name: str,
+        param: Union[float, int],
+    ) -> None:
+        if param < 0:
+            raise WrongTypeFormat(
+                f"'{name}' must be a float greater than or equal to 0"
+            )
+
+    def _assert_max_iteration_is_valid(
+        self, max_iteration: Union[int, MaxIteration]
+    ) -> None:
+        if (
+            isinstance(max_iteration, int)
+            and max_iteration < 0
+            or cast(str, max_iteration) != MaxIteration.INF
+        ):
+            raise WrongTypeFormat(
+                "'max_iteration' must be an integer greater than or equal to 0 OR '+Inf'"
+            )
+
     def update_xpansion_settings(
         self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
@@ -229,6 +290,20 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
+        if new_xpansion_settings_dto.optimality_gap is not None:
+            self._assert_is_positive(
+                "optimality_gap", new_xpansion_settings_dto.optimality_gap
+            )
+        if new_xpansion_settings_dto.relative_gap is not None:
+            self._assert_is_positive(
+                "relative_gap", new_xpansion_settings_dto.relative_gap
+            )
+        if new_xpansion_settings_dto.max_iteration is not None and isinstance(
+            new_xpansion_settings_dto.max_iteration, int
+        ):
+            self._assert_is_positive(
+                "max_iteration", new_xpansion_settings_dto.max_iteration
+            )
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
@@ -301,6 +376,8 @@ class XpansionManager:
             "(",
             ")",
         ]
+        if xpansion_candidate_name.strip() == "":
+            raise CandidateNameIsEmpty()
         for char in illegal_chars:
             if char in xpansion_candidate_name:
                 raise IllegalCharacterInNameError(
@@ -335,8 +412,7 @@ class XpansionManager:
             )
         ):
             raise BadCandidateFormatError(
-                f"The candidate is not well formatted."
-                f"It should either contain max-investment or (max-units and unit-size)."
+                "The candidate is not well formatted.\nIt should either contain max-investment or (max-units and unit-size)."
             )
 
     def _assert_candidate_is_correct(
@@ -347,8 +423,6 @@ class XpansionManager:
         new_name: bool = False,
     ) -> None:
         logger.info(f"Checking given candidate is correct")
-        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
-        self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_no_illegal_character_is_in_candidate_name(
             xpansion_candidate_dto.name
         )
@@ -356,11 +430,38 @@ class XpansionManager:
             self._assert_candidate_name_is_not_already_taken(
                 candidates, xpansion_candidate_dto.name
             )
+        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
+        self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_investment_candidate_is_valid(
             xpansion_candidate_dto.max_investment,
             xpansion_candidate_dto.max_units,
             xpansion_candidate_dto.unit_size,
         )
+        if xpansion_candidate_dto.annual_cost_per_mw:
+            self._assert_is_positive(
+                "annual_cost_per_mw", xpansion_candidate_dto.annual_cost_per_mw
+            )
+        else:
+            raise BadCandidateFormatError(
+                "The candidate is not well formatted.\nIt should contain annual-cost-per-mw."
+            )
+        if xpansion_candidate_dto.unit_size is not None:
+            self._assert_is_positive(
+                "unit_size", xpansion_candidate_dto.unit_size
+            )
+        if xpansion_candidate_dto.max_investment is not None:
+            self._assert_is_positive(
+                "max_investment", xpansion_candidate_dto.max_investment
+            )
+        if xpansion_candidate_dto.already_installed_capacity is not None:
+            self._assert_is_positive(
+                "already_installed_capacity",
+                xpansion_candidate_dto.already_installed_capacity,
+            )
+        if xpansion_candidate_dto.max_units is not None:
+            self._assert_is_positive(
+                "max_units", xpansion_candidate_dto.max_units
+            )
 
     def add_candidate(
         self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO

@@ -14,9 +14,11 @@ interface Props {
   onChange?: (value: string) => void;
   sx?: SxProps<Theme> | undefined;
   inputProps?: InputBaseComponentProps | undefined;
+  required?: boolean;
 }
 function FilledTextInput(props: Props) {
-  const { label, fullWidth, value, onChange, sx, inputProps, type } = props;
+  const { label, fullWidth, value, onChange, sx, inputProps, type, required } =
+    props;
   return (
     <TextField
       label={label}
@@ -38,6 +40,7 @@ function FilledTextInput(props: Props) {
         borderRadius: "4px 4px 0px 0px",
         borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
       }}
+      required={required}
     />
   );
 }
@@ -49,6 +52,7 @@ FilledTextInput.defaultProps = {
   value: undefined,
   fullWidth: undefined,
   type: undefined,
+  required: false,
 };
 
 export default FilledTextInput;

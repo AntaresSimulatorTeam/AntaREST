@@ -54,5 +54,8 @@
   "form.field.required": "Field required",
   "form.field.minLength": "{{0}} character(s) minimum",
   "form.field.notAllowedValue": "Not allowed value",
-  "underConstruction": "Page under construction"
+  "underConstruction": "Page under construction",
+  "general": "General",
+  "files": "Files",
+  "none": "None"
 }

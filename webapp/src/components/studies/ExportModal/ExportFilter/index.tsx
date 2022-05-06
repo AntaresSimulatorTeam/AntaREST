@@ -91,7 +91,7 @@ function ExportFilterModal(props: PropTypes) {
   return (
     <Root>
       <SelectSingle
-        name={`${t("singlestudy:type")} *`}
+        name={t("singlestudy:type")}
         list={typeList.map((elm) => ({
           id: elm,
           name: t(`singlestudy:${elm.toLowerCase()}`),
@@ -99,10 +99,11 @@ function ExportFilterModal(props: PropTypes) {
         data={filter.type}
         setValue={(data: string) => onTypeChange(data)}
         sx={{ width: "300px", mb: 2 }}
+        required
       />
       {byYear.isByYear && byYear.nbYear > 0 && (
         <SelectMulti
-          name={`${t("singlestudy:years")} *`}
+          name={t("singlestudy:years")}
           list={_.range(byYear.nbYear).map((elm) => ({
             id: elm.toString(),
             name: elm.toString(),
@@ -114,10 +115,11 @@ function ExportFilterModal(props: PropTypes) {
             )
           }
           sx={{ width: "100%", mb: 2 }}
+          required
         />
       )}
       <SelectSingle
-        name={`${t("singlestudy:level")} *`}
+        name={t("singlestudy:level")}
         list={levelList.map((elm) => ({
           id: elm,
           name: t(`singlestudy:${elm.toLowerCase()}`),

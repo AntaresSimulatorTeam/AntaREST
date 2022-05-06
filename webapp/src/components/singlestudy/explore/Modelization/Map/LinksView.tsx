@@ -17,10 +17,6 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
     },
   },
   ...scrollbarStyle,
-  "&::-webkit-scrollbar-thumb": {
-    backgroundColor: theme.palette.secondary.main,
-    outline: "1px solid slategrey",
-  },
 }));
 
 interface PropsType {
@@ -77,7 +73,7 @@ function LinksView(props: PropsType) {
             fontWeight: "bold",
           }}
         >
-          {t("singlestudy:link")}
+          {t("singlestudy:links")}
         </Typography>
       )}
       <AutoSizer>

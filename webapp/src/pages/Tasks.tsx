@@ -541,10 +541,8 @@ function JobsListing(props: PropTypes) {
         )}
         <LogModal
           isOpen={!!messageModalOpen}
-          title={t("singlestudy:taskLog")}
           content={messageModalOpen}
           close={() => setMessageModalOpen(undefined)}
-          style={{ width: "600px", height: "300px" }}
         />
       </Box>
     </RootPage>

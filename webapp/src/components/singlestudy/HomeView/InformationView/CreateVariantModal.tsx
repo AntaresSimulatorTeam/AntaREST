@@ -91,10 +91,11 @@ function CreateVariantModal(props: Props) {
           boxSizing="border-box"
         >
           <FilledTextInput
-            label={`${t("variants:newVariant")} *`}
+            label={t("variants:newVariant")}
             value={studyName}
             onChange={setStudyName}
             sx={{ flexGrow: 1 }}
+            required
           />
         </Box>
         <Box
@@ -107,11 +108,12 @@ function CreateVariantModal(props: Props) {
           mt={3}
         >
           <SingleSelect
-            name={`${t("singlestudy:versionSource")} *`}
+            name={t("singlestudy:versionSource")}
             list={versionSourceList}
             data={versionSource}
             setValue={(data: string) => setVersionSource(data)}
             sx={{ flexGrow: 1 }}
+            required
           />
         </Box>
       </Box>

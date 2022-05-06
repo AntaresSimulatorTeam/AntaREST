@@ -54,6 +54,7 @@ function SingleStudy(props: Props) {
         label: t("singlestudy:configuration"),
         path: `/studies/${studyId}/explore/configuration`,
       },
+      { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
       {
         label: t("singlestudy:results"),
         path: `/studies/${studyId}/explore/results`,

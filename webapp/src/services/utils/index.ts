@@ -266,4 +266,58 @@ export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
   return sortByProp(R.prop("name"), list);
 };
 
+// This should work better
+export const transformNameToId = (name: string): string => {
+  let duppl = false;
+  let id = "";
+
+  for (
+    let char, index = 0, str = name, { length } = str;
+    index < length;
+    index += 1
+  ) {
+    char = str[index];
+
+    if (
+      (char >= "a" && char <= "z") ||
+      (char >= "A" && char <= "Z") ||
+      (char >= "0" && char <= "9") ||
+      char === "_" ||
+      char === "-" ||
+      char === "(" ||
+      char === ")" ||
+      char === "," ||
+      char === "&" ||
+      char === " "
+    ) {
+      id += char;
+      duppl = false;
+    } else if (!duppl) {
+      id += " ";
+      duppl = true;
+    }
+  }
+
+  const idTrimmed = id.trim();
+
+  return idTrimmed.toLowerCase();
+};
+
+export const removeEmptyFields = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: { [key: string]: any },
+  fieldsToCheck: Array<string>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): { [key: string]: any } => {
+  const cleanData = { ...data };
+
+  fieldsToCheck.forEach((fieldName) => {
+    if (R.isEmpty(data[fieldName])) {
+      delete cleanData[fieldName];
+    }
+  });
+
+  return cleanData;
+};
+
 export default {};

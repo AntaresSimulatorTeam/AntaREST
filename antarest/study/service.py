@@ -1846,12 +1846,17 @@ class StudyService:
         return list(STUDY_REFERENCE_TEMPLATES.keys())
 
     def create_xpansion_configuration(
-        self, uuid: str, params: RequestParameters
+        self,
+        uuid: str,
+        zipped_config: Optional[UploadFile],
+        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.create_xpansion_configuration(study)
+        self.xpansion_manager.create_xpansion_configuration(
+            study, zipped_config
+        )
 
     def delete_xpansion_configuration(
         self, uuid: str, params: RequestParameters

@@ -58,12 +58,22 @@ const theme = createTheme({
         ul: {
           ...scrollbarStyle,
         },
+        pre: {
+          ...scrollbarStyle,
+        },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
           backgroundColor: "#222333",
+        },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          ...scrollbarStyle,
         },
       },
     },

@@ -25,6 +25,11 @@ import Links from "./components/singlestudy/explore/Modelization/Links";
 import Areas from "./components/singlestudy/explore/Modelization/Areas";
 import Map from "./components/singlestudy/explore/Modelization/Map";
 import DebugView from "./components/singlestudy/explore/Modelization/DebugView";
+import Xpansion from "./components/singlestudy/explore/Xpansion";
+import Candidates from "./components/singlestudy/explore/Xpansion/Candidates";
+import XpansionSettings from "./components/singlestudy/explore/Xpansion/Settings";
+import Capacities from "./components/singlestudy/explore/Xpansion/Capacities";
+import Files from "./components/singlestudy/explore/Xpansion/Files";
 
 function App() {
   return (
@@ -60,6 +65,17 @@ function App() {
                           path="configuration"
                           element={<Configuration />}
                         />
+                        <Route path="xpansion" element={<Xpansion />}>
+                          <Route path="candidates" element={<Candidates />} />
+                          <Route
+                            path="settings"
+                            element={<XpansionSettings />}
+                          />
+                          <Route path="files" element={<Files />} />
+                          <Route path="capacities" element={<Capacities />} />
+                          <Route index element={<Candidates />} />
+                          <Route path="*" element={<Candidates />} />
+                        </Route>
                         <Route path="results" element={<Results />} />
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />

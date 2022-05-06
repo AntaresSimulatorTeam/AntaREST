@@ -172,11 +172,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         }}
       >
         <SelectSingle
-          name={`${t("studymanager:exportOptions")} *`}
+          name={t("studymanager:exportOptions")}
           list={optionsList}
           data={optionSelection}
           setValue={(data: string) => setOptionSelection(data)}
           sx={{ width: "300px" }}
+          required
         />
         {R.cond([
           [
@@ -187,11 +188,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             () =>
               (
                 <SelectSingle
-                  name={`${t("studymanager:selectOutput")} *`}
+                  name={t("studymanager:selectOutput")}
                   list={outputList as Array<GenericInfo>}
                   data={currentOutput}
                   setValue={(data: string) => setCurrentOutput(data)}
                   sx={{ width: "300px", my: 3 }}
+                  required
                 />
               ) as ReactNode,
           ],

@@ -22,10 +22,12 @@ interface Props {
   sx?: SxProps<Theme> | undefined;
   placeholder?: string;
   tagsMode?: boolean;
+  required?: boolean;
 }
 
 function SelectMulti(props: Props) {
-  const { name, list, data, setValue, placeholder, tagsMode, sx } = props;
+  const { name, list, data, setValue, placeholder, tagsMode, sx, required } =
+    props;
 
   const handleChange = (event: SelectChangeEvent<Array<string>>) => {
     const {
@@ -63,9 +65,9 @@ function SelectMulti(props: Props) {
       .join(", ");
 
   return (
-    <FormControl sx={sx}>
+    <FormControl sx={sx} required={required}>
       <InputLabel
-        id="multiple-checkbox-label"
+        id={`multiple-checkbox-label-${name}`}
         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
       >
         {name}
@@ -104,6 +106,7 @@ SelectMulti.defaultProps = {
   sx: { m: 1, width: 200 },
   placeholder: undefined,
   tagsMode: undefined,
+  required: false,
 };
 
 export default SelectMulti;

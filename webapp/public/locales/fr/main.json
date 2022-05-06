@@ -54,5 +54,8 @@
   "form.field.required": "Champ requis",
   "form.field.minLength": "{{0}} caractère(s) minimum",
   "form.field.notAllowedValue": "Valeur non autorisée",
-  "underConstruction": "Page en construction"
+  "underConstruction": "Page en construction",
+  "general": "Général",
+  "files": "Fichiers",
+  "none": "Aucun"
 }

@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Box, ButtonGroup } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import { HotTable, HotColumn } from "@handsontable/react";
+import { HotColumn } from "@handsontable/react";
 import { MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
-import { Root, StyledButton } from "./style";
+import { Root, StyledButton, StyledHotTable } from "./style";
 
 interface PropTypes {
   matrix: MatrixType;
@@ -28,7 +28,7 @@ export default function MatrixView(props: PropTypes) {
   const renderView = () => {
     if (toggleView) {
       return (
-        <HotTable
+        <StyledHotTable
           data={grid}
           licenseKey="non-commercial-and-evaluation"
           width="100%"
@@ -37,7 +37,7 @@ export default function MatrixView(props: PropTypes) {
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />
           ))}
-        </HotTable>
+        </StyledHotTable>
       );
     }
     return <MatrixGraphView matrix={matrix} />;
@@ -62,14 +62,12 @@ export default function MatrixView(props: PropTypes) {
       <Box width="100%" display="flex" justifyContent="center">
         <ButtonGroup sx={{ mb: 3 }} variant="contained">
           <StyledButton
-            color="primary"
             onClick={toggleView ? undefined : changeView}
             disabled={toggleView}
           >
             <TableViewIcon sx={{ color: "text.main" }} />
           </StyledButton>
           <StyledButton
-            color="primary"
             onClick={toggleView ? changeView : undefined}
             disabled={!toggleView}
           >

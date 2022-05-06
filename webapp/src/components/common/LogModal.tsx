@@ -19,7 +19,6 @@ import { scrollbarStyle } from "../../theme";
 
 interface OwnTypes {
   isOpen: boolean;
-  title: string;
   jobId?: string;
   followLogs?: boolean;
   content?: string;
@@ -41,7 +40,6 @@ type PropTypes = ReduxProps & OwnTypes;
 
 function LogModal(props: PropTypes) {
   const {
-    title,
     style,
     jobId,
     followLogs,
@@ -180,7 +178,7 @@ function LogModal(props: PropTypes) {
               boxSizing: "border-box",
             }}
           >
-            {title}
+            {t("singlestudy:taskLog")}
           </Typography>
           <DownloadIcon
             sx={{
