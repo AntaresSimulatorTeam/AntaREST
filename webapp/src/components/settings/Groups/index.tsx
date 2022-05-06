@@ -107,10 +107,9 @@ function Groups() {
     data: initialGroups,
     isLoading,
     reload: reloadFetchGroups,
-  } = usePromiseWithSnackbarError(
-    () => getGroups({ details: true }),
-    t("settings:groupsError")
-  );
+  } = usePromiseWithSnackbarError(() => getGroups({ details: true }), {
+    errorMessage: t("settings:groupsError"),
+  });
 
   useUpdateEffect(() => {
     setGroupToDelete(undefined);
