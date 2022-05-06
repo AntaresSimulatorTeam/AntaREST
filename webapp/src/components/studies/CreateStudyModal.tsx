@@ -168,7 +168,7 @@ function CreateStudyModal(props: PropTypes) {
             label={t("studymanager:studyName")}
             value={studyName}
             onChange={setStudyName}
-            sx={{ flexGrow: 1, mr: 2, height: "60px" }}
+            sx={{ flexGrow: 1, mr: 2 }}
             required
           />
           <SingleSelect
@@ -176,7 +176,7 @@ function CreateStudyModal(props: PropTypes) {
             list={versionList}
             data={version}
             setValue={setVersion}
-            sx={{ flexGrow: 1, height: "60px" }}
+            sx={{ flexGrow: 1 }}
             required
           />
         </Box>
@@ -203,14 +203,14 @@ function CreateStudyModal(props: PropTypes) {
               setValue={(value: string) =>
                 setPublicMode(value as StudyPublicMode)
               }
-              sx={{ flexGrow: 1, mr: 1, height: "60px" }}
+              sx={{ flexGrow: 1, mr: 1 }}
             />
             <MultiSelect
               name={t("studymanager:group")}
               list={groupList}
               data={group}
               setValue={setGroup}
-              sx={{ flexGrow: 1, ml: 1, height: "60px" }}
+              sx={{ flexGrow: 1, ml: 1 }}
             />
           </Box>
         </Box>
@@ -232,7 +232,7 @@ function CreateStudyModal(props: PropTypes) {
           >
             <TagTextInput
               label={t("studymanager:enterTag")}
-              sx={{ flexGrow: 1, mr: 2 }}
+              sx={{ flexGrow: 1 }}
               value={tags}
               onChange={setTags}
               tagList={tagList}

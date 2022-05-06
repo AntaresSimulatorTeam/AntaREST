@@ -34,6 +34,7 @@ function TagTextInput(props: Props) {
         background: "rgba(255, 255, 255, 0.09)",
         borderRadius: "4px 4px 0px 0px",
         borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+        p: "0px !important",
       }}
       renderTags={(value: readonly string[], getTagProps) =>
         value.map((option: string, index: number) => (
@@ -47,6 +48,7 @@ function TagTextInput(props: Props) {
           placeholder={label}
           type={type}
           required={required}
+          sx={{ "&>div": { p: "9.5px !important" } }}
         />
       )}
     />

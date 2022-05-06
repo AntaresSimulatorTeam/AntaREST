@@ -13,12 +13,11 @@ import {
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ImportForm from "../../../common/ImportForm";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import { Title } from "./styles";
+import { Title, StyledVisibilityIcon, StyledDeleteIcon } from "./styles";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -114,28 +113,11 @@ function XpansionTable(props: PropType) {
                       alignItems: "center",
                     }}
                   >
-                    <VisibilityIcon
+                    <StyledVisibilityIcon onClick={() => onRead(row)} />
+                    <StyledDeleteIcon
                       sx={{
                         mx: 1,
-                        color: "action.active",
-                        "&:hover": {
-                          color: "white",
-                          cursor: "pointer",
-                        },
                       }}
-                      color="primary"
-                      onClick={() => onRead(row)}
-                    />
-                    <DeleteIcon
-                      sx={{
-                        mx: 1,
-                        color: "error.light",
-                        "&:hover": {
-                          color: "error.main",
-                          cursor: "pointer",
-                        },
-                      }}
-                      color="primary"
                       onClick={() => setOpenConfirmationModal(row)}
                     />
                   </TableCell>

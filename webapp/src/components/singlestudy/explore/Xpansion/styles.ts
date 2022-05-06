@@ -1,4 +1,6 @@
 import { Box, Typography, TextField, Button, styled } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export const Fields = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -48,4 +50,23 @@ export const ActiveButton = styled(Button)(({ theme }) => ({
   color: `white !important`,
   borderColor: `${theme.palette.secondary.main} !important`,
 }));
+
+export const StyledVisibilityIcon = styled(VisibilityIcon)(({ theme }) => ({
+  marginLeft: theme.spacing(1),
+  marginRight: theme.spacing(1),
+  color: theme.palette.action.active,
+  "&:hover": {
+    color: "white",
+    cursor: "pointer",
+  },
+}));
+
+export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
+  cursor: "pointer",
+  color: theme.palette.error.light,
+  "&:hover": {
+    color: theme.palette.error.main,
+  },
+}));
+
 export default {};

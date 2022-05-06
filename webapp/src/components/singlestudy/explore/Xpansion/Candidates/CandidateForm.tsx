@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import {
@@ -12,6 +11,8 @@ import {
   StyledTextField,
   HoverButton,
   ActiveButton,
+  StyledVisibilityIcon,
+  StyledDeleteIcon,
 } from "../styles";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
@@ -112,16 +113,7 @@ function CandidateForm(props: PropType) {
                 {t("main:save")}
               </Typography>
             </Button>
-            <DeleteIcon
-              sx={{
-                cursor: "pointer",
-                color: "error.light",
-                "&:hover": {
-                  color: "error.main",
-                },
-              }}
-              onClick={() => setOpenConfirmationModal(true)}
-            />
+            <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
           </Box>
         </Box>
         <Divider sx={{ mt: 1, mb: 2 }} />
@@ -273,15 +265,7 @@ function CandidateForm(props: PropType) {
               }}
               optional
             />
-            <VisibilityIcon
-              sx={{
-                mx: 1,
-                color: "action.active",
-                "&:hover": {
-                  color: "white",
-                  cursor: "pointer",
-                },
-              }}
+            <StyledVisibilityIcon
               onClick={() =>
                 currentCandidate?.["link-profile"] &&
                 onRead(currentCandidate?.["link-profile"] || "")
@@ -302,16 +286,7 @@ function CandidateForm(props: PropType) {
               }}
               optional
             />
-            <VisibilityIcon
-              sx={{
-                mx: 1,
-                color: "action.active",
-                "&:hover": {
-                  color: "white",
-                  cursor: "pointer",
-                },
-              }}
-              color="primary"
+            <StyledVisibilityIcon
               onClick={() =>
                 currentCandidate?.["already-installed-link-profile"] &&
                 onRead(

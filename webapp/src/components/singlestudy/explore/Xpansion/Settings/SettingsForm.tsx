@@ -2,9 +2,14 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import { XpansionSettings } from "../types";
-import { Fields, SelectFields, Title, StyledTextField } from "../styles";
+import {
+  Fields,
+  SelectFields,
+  Title,
+  StyledTextField,
+  StyledVisibilityIcon,
+} from "../styles";
 import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {
@@ -232,16 +237,7 @@ function SettingsForm(props: PropType) {
               }}
               optional
             />
-            <VisibilityIcon
-              sx={{
-                mx: 1,
-                color: "action.active",
-                "&:hover": {
-                  color: "white",
-                  cursor: "pointer",
-                },
-              }}
-              color="primary"
+            <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["yearly-weights"] &&
                 onRead(currentSettings["yearly-weights"] || "")
@@ -262,16 +258,7 @@ function SettingsForm(props: PropType) {
               }}
               optional
             />
-            <VisibilityIcon
-              sx={{
-                mx: 1,
-                color: "action.active",
-                "&:hover": {
-                  color: "white",
-                  cursor: "pointer",
-                },
-              }}
-              color="primary"
+            <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["additional-constraints"] &&
                 onRead(currentSettings["additional-constraints"] || "")
