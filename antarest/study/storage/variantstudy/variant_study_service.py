@@ -715,13 +715,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 variant_study
             )
         )
+
+        is_parent_newer = (
+            parent_study.updated_at > variant_study.snapshot.created_at
+            if variant_study.snapshot
+            else True
+        )
         last_executed_command_index = (
             None
-            if (
+            if is_parent_newer
+            or from_scratch
+            or (
                 isinstance(parent_study, VariantStudy)
                 and not self.exists(parent_study)
             )
-            or from_scratch
             else last_executed_command_index
         )
 
