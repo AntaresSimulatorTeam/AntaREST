@@ -87,6 +87,8 @@ export interface StudyMetadata {
 }
 
 export interface StudyMetadataPatchDTO {
+  name?: string;
+  author?: string;
   horizon?: string;
   scenario?: string;
   status?: string;

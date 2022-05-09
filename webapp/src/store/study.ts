@@ -204,6 +204,7 @@ export default (state = initialState, action: StudyAction): StudyState => {
         ),
       };
     case "STUDY/ADD_STUDIES":
+      console.log("ADD STUDY: ", action.payload);
       return {
         ...state,
         studies: state.studies
