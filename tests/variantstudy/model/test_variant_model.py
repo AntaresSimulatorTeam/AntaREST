@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from unittest.mock import Mock, ANY
 
@@ -200,6 +201,7 @@ def test_smart_generation(tmp_path: Path) -> None:
             name="my-study",
             workspace=DEFAULT_WORKSPACE_NAME,
             additional_data=StudyAdditionalData(),
+            updated_at=datetime.datetime(year=2000, month=1, day=1),
         )
         repository.save(origin_study)
 
