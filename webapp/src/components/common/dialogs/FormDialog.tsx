@@ -77,7 +77,6 @@ function FormDialog(props: FormDialogProps) {
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("HAHAHA");
 
     handleSubmit((data, event) => {
       const dirtyValues = R.pickBy(
