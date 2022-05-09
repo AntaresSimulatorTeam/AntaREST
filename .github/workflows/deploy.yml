@@ -33,8 +33,6 @@ jobs:
         working-directory: scripts
         env:
           NODE_OPTIONS: --max-old-space-size=8192
-      - name: Copy build to app resources
-        run: cp -r webapp/build resources/webapp
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
