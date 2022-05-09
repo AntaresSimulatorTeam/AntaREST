@@ -1787,8 +1787,10 @@ class StudyService:
             groups = []
             for gid in group_ids:
                 group = next(filter(lambda g: g.id == gid, owner.groups), None)
-                if group is None or not group.role.is_higher_or_equals(
-                    RoleType.WRITER
+                if (
+                    group is None
+                    or not group.role.is_higher_or_equals(RoleType.WRITER)
+                    and not owner.is_site_admin()
                 ):
                     raise UserHasNotPermissionError()
                 groups.append(Group(id=group.id, name=group.name))
