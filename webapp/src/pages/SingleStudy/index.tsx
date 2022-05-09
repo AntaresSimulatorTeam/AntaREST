@@ -104,7 +104,7 @@ function SingleStudy(props: Props) {
           break;
       }
     },
-    [studyId, t]
+    [studyId, t, updateStudyData]
   );
 
   useEffect(() => {
