@@ -67,6 +67,15 @@ def test_update_config(
     )
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
 
+    update_settings_command = UpdateConfig(
+        target=f"input/areas/{area1_id}/optimization/nodal optimization/spread-unsupplied-energy-cost",
+        data=False,
+        command_context=command_context,
+    )
+    output = update_settings_command.apply(empty_study)
+    assert not output.status
+    assert not output.message == ""
+
 
 def test_match(command_context: CommandContext):
     base = UpdateConfig(

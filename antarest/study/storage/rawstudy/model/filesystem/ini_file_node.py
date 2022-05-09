@@ -56,6 +56,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.validator = validator
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
+        self.sub_path: Optional[List[str]] = None
 
     def _get(
         self,
@@ -65,6 +66,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         get_node: bool = False,
     ) -> Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
         if get_node:
+            self.sub_path = url
             return self
 
         if depth <= -1 and expanded:

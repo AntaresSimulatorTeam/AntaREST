@@ -42,6 +42,14 @@ class UpdateConfig(ICommand):
                 message=f"Study node at path {self.target} is invalid",
             )
 
+        # TODO check type at url when modify only a sub path of the object
+        errors = tree_node.check_errors(self.data, None)
+        if errors:
+            error_list = "\n".join(errors)
+            return CommandOutput(
+                status=False,
+                message=f"Study data for {self.target} is invalid :\n{error_list}",
+            )
         study_data.tree.save(self.data, url)
 
         output, _ = self._apply_config(study_data.config)
