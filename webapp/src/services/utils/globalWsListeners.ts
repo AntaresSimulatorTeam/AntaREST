@@ -31,7 +31,6 @@ const studyListener =
         )(removeStudies([studySummary.id]));
         break;
       case WSEvent.STUDY_EDITED:
-        console.log("EDITED MAAAAAAAAN: ", studySummary.name);
         reduxStore.dispatch(
           addStudies([await getStudyMetadata(studySummary.id)])
         );
