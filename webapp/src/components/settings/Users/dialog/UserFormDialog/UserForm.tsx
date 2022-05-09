@@ -110,6 +110,7 @@ function UserForm(props: Props) {
       {!onlyPermissions && (
         <>
           <TextField
+            autoFocus
             label={t("settings:usernameLabel")}
             error={!!errors.username}
             helperText={errors.username?.message}

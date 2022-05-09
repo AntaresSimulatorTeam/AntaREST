@@ -20,11 +20,7 @@ function TokenFormDialog(props: TokenFormDialogProps) {
   const { onlyPermissions, ...dialogProps } = props;
 
   return (
-    <FormDialog
-      maxWidth="sm"
-      formOptions={{ mode: "onTouched" }}
-      {...dialogProps}
-    >
+    <FormDialog maxWidth="sm" {...dialogProps}>
       {(formObj) => (
         <TokenForm onlyPermissions={onlyPermissions} {...formObj} />
       )}
