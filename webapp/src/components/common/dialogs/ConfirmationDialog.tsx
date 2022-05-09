@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from "@mui/material";
+import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
@@ -10,8 +10,6 @@ export interface ConfirmationDialogProps
   extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
   confirmButtonText?: string;
-  cancelButtonProps?: Omit<ButtonProps, "onClick">;
-  confirmButtonProps?: Omit<ButtonProps, "onClick">;
   onConfirm: VoidFunction;
   onCancel: VoidFunction;
 }
@@ -24,8 +22,6 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
   const {
     cancelButtonText,
     confirmButtonText,
-    cancelButtonProps,
-    confirmButtonProps,
     onConfirm,
     onCancel,
     onClose,
@@ -38,16 +34,12 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
     <BasicDialog
       title={t("main:confirmationModalTitle")}
       {...basicDialogProps}
-      onClose={(...args) => {
-        onCancel();
-        onClose?.(...args);
-      }}
       actions={
         <>
-          <Button autoFocus {...cancelButtonProps} onClick={onCancel}>
+          <Button onClick={onCancel}>
             {cancelButtonText || t("main:noButton")}
           </Button>
-          <Button {...confirmButtonProps} onClick={onConfirm}>
+          <Button onClick={onConfirm} variant="contained">
             {confirmButtonText || t("main:yesButton")}
           </Button>
         </>
@@ -59,8 +51,6 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
 ConfirmationDialog.defaultProps = {
   cancelButtonText: null,
   confirmButtonText: null,
-  cancelButtonProps: null,
-  confirmButtonProps: null,
 };
 
 export default ConfirmationDialog;

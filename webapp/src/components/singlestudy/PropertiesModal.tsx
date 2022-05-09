@@ -13,6 +13,7 @@ import {
   GenericInfo,
   GroupDTO,
   StudyMetadata,
+  StudyMetadataPatchDTO,
   StudyPublicMode,
 } from "../../common/types";
 import TextSeparator from "../common/TextSeparator";
@@ -20,7 +21,6 @@ import {
   addStudyGroup,
   changePublicMode,
   deleteStudyGroup,
-  renameStudy,
   updateStudyMetadata,
 } from "../../services/api/study";
 import { getGroups } from "../../services/api/user";
@@ -76,20 +76,13 @@ function PropertiesModal(props: Props) {
       try {
         const sid = study.id;
 
-        // Update study name
-        if (initStudyName !== studyName) {
-          await renameStudy(sid, studyName);
-        }
-
-        // Update tags
-        if (tagChanged) {
-          await updateStudyMetadata(sid, {
-            horizon: study.horizon,
-            scenario: study.scenario,
-            status: study.status,
-            doc: study.doc,
-            tags,
-          });
+        const newMetadata: StudyMetadataPatchDTO = {
+          name: initStudyName !== studyName ? studyName : initStudyName,
+          tags: tagChanged ? tags : study.tags,
+        };
+        // Update metadata
+        if (tagChanged || initStudyName !== studyName) {
+          await updateStudyMetadata(sid, newMetadata);
         }
 
         // Update public mode

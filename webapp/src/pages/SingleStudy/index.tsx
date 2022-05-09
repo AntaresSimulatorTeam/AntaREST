@@ -1,11 +1,17 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata, VariantTree } from "../../common/types";
+import {
+  StudyMetadata,
+  StudySummary,
+  VariantTree,
+  WSEvent,
+  WSMessage,
+} from "../../common/types";
 import { getStudyMetadata } from "../../services/api/study";
 import NavHeader from "../../components/singlestudy/NavHeader";
 import {
@@ -17,6 +23,7 @@ import HomeView from "../../components/singlestudy/HomeView";
 import { viewStudy } from "../../store/study";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
+import { addListener, removeListener } from "../../store/websockets";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -24,6 +31,8 @@ const mapState = () => ({});
 
 const mapDispatch = {
   setCurrentStudy: viewStudy,
+  addWsListener: addListener,
+  removeWsListener: removeListener,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -35,7 +44,7 @@ type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
-  const { setCurrentStudy } = props;
+  const { setCurrentStudy, addWsListener, removeWsListener } = props;
   const [t] = useTranslation();
   const { isExplorer } = props;
 
@@ -63,28 +72,55 @@ function SingleStudy(props: Props) {
     [studyId]
   );
 
+  const updateStudyData = useCallback(async () => {
+    if (!studyId) return;
+    try {
+      const tmpStudy = await getStudyMetadata(studyId);
+      if (tmpStudy) {
+        const tmpParents = await getVariantParents(tmpStudy.id);
+        let root: StudyMetadata = tmpStudy;
+        if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
+        const tmpTree = await getVariantChildren(root.id);
+        setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
+        setStudy(tmpStudy);
+        setTree(tmpTree);
+      }
+    } catch (e) {
+      logError("Failed to fetch study informations", study, e);
+    }
+  }, [studyId]);
+
+  const listener = useCallback(
+    async (ev: WSMessage) => {
+      const studySummary = ev.payload as StudySummary;
+      switch (ev.type) {
+        case WSEvent.STUDY_EDITED:
+          if (studySummary.id === studyId) {
+            updateStudyData();
+          }
+          break;
+
+        default:
+          break;
+      }
+    },
+    [studyId, t, updateStudyData]
+  );
+
   useEffect(() => {
     const init = async () => {
       if (studyId) {
         setCurrentStudy(studyId);
-        try {
-          const tmpStudy = await getStudyMetadata(studyId);
-          if (tmpStudy) {
-            const tmpParents = await getVariantParents(tmpStudy.id);
-            let root: StudyMetadata = tmpStudy;
-            if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
-            const tmpTree = await getVariantChildren(root.id);
-            setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
-            setStudy(tmpStudy);
-            setTree(tmpTree);
-          }
-        } catch (e) {
-          logError("Failed to fetch study informations", study, e);
-        }
+        updateStudyData();
       }
     };
     init();
   }, [studyId]);
+
+  useEffect(() => {
+    addWsListener(listener);
+    return () => removeWsListener(listener);
+  }, [listener, addWsListener, removeWsListener]);
 
   return (
     <Box

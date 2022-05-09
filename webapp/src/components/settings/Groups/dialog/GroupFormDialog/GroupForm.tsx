@@ -101,6 +101,7 @@ function GroupForm(props: Props) {
       {/* Name */}
       <TextField
         sx={{ mx: 0 }}
+        autoFocus
         label={t("main:name")}
         error={!!errors.name}
         helperText={errors.name?.message}

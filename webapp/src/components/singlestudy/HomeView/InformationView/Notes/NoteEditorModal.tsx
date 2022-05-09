@@ -90,7 +90,6 @@ function NoteEditorModal(props: Props) {
       closeButtonLabel={t("main:cancelButton")}
       actionButtonLabel={t("main:save")}
       onActionButtonClick={onContentSave}
-      closeColor="secondary"
       rootStyle={{
         width: "600px",
         display: "flex",
