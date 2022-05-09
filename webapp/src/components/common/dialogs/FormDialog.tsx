@@ -1,5 +1,5 @@
-import { Backdrop, Box, CircularProgress } from "@mui/material";
-import { ReactNode } from "react";
+import { Backdrop, Box, Button, CircularProgress } from "@mui/material";
+import { FormEvent, ReactNode, useRef } from "react";
 import {
   FieldValues,
   UnpackNestedValue,
@@ -8,12 +8,10 @@ import {
   UseFormReturn,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { F } from "ts-toolbelt";
 import * as R from "ramda";
+import { v4 as uuidv4 } from "uuid";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog, {
-  ConfirmationDialogProps,
-} from "./ConfirmationDialog";
+import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 /**
  * Types
@@ -29,13 +27,15 @@ export interface FormObj extends Omit<UseFormReturn, "handleSubmit"> {
   defaultValues: UseFormProps["defaultValues"];
 }
 
-export interface FormDialogProps
-  extends Omit<ConfirmationDialogProps, "onConfirm" | "onSubmit"> {
+export interface FormDialogProps extends Omit<BasicDialogProps, "onSubmit"> {
   formOptions?: UseFormProps;
+  cancelButtonText?: string;
+  submitButtonText?: string;
   onSubmit: <TFieldValues extends FieldValues>(
     data: SubmitHandlerData<TFieldValues>,
     event?: React.BaseSyntheticEvent
   ) => unknown | Promise<unknown>;
+  onCancel: VoidFunction;
   children: (formObj: FormObj) => ReactNode;
 }
 
@@ -44,28 +44,41 @@ export interface FormDialogProps
  */
 
 function FormDialog(props: FormDialogProps) {
-  const { onCancel, onClose, formOptions, onSubmit, children, ...dialogProps } =
-    props;
-  const { handleSubmit, ...formObj } = useForm(formOptions);
+  const {
+    onCancel,
+    onClose,
+    formOptions,
+    onSubmit,
+    cancelButtonText,
+    submitButtonText,
+    children,
+    ...dialogProps
+  } = props;
+  const { handleSubmit, ...formObj } = useForm({
+    mode: "onChange",
+    ...formOptions,
+  });
   const { t } = useTranslation();
+  const formId = useRef(uuidv4()).current;
   const {
     formState: { isValid, isSubmitting, isDirty, dirtyFields },
   } = formObj;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const allowSubmit = isDirty && isValid && !isSubmitting;
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const invokeIfNotSubmitting = <T extends unknown[]>(fn?: F.Function<T>) => {
-    return (...args: T) => {
-      if (!isSubmitting) {
-        fn?.(...args);
-      }
-    };
-  };
+  const handleClose = ((...args) => {
+    onCancel();
+    onClose?.(...args);
+  }) as FormDialogProps["onClose"];
 
-  const handleConfirm = () => {
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("HAHAHA");
+
     handleSubmit((data, event) => {
       const dirtyValues = R.pickBy(
         (val, key) => dirtyFields[key],
@@ -83,26 +96,31 @@ function FormDialog(props: FormDialogProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ConfirmationDialog
+    <BasicDialog
       maxWidth="xs"
       fullWidth
-      cancelButtonText={t("main:closeButton")}
-      confirmButtonText={t("main:save")}
       {...dialogProps}
-      onConfirm={handleConfirm}
-      cancelButtonProps={{
-        ...dialogProps.cancelButtonProps,
-        disabled: isSubmitting,
-      }}
-      confirmButtonProps={{
-        ...dialogProps.confirmButtonProps,
-        disabled: !isDirty || !isValid || isSubmitting,
-      }}
-      onCancel={invokeIfNotSubmitting(onCancel)}
-      onClose={invokeIfNotSubmitting(onClose)}
+      onClose={handleClose}
+      actions={
+        <>
+          <Button onClick={onCancel} disabled={isSubmitting}>
+            {cancelButtonText || t("main:closeButton")}
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            variant="contained"
+            disabled={!allowSubmit}
+          >
+            {submitButtonText || t("main:save")}
+          </Button>
+        </>
+      }
     >
       <Box>
-        {children({ defaultValues: formOptions?.defaultValues, ...formObj })}
+        <form id={formId} onSubmit={handleFormSubmit}>
+          {children({ defaultValues: formOptions?.defaultValues, ...formObj })}
+        </form>
         <Backdrop
           open={isSubmitting}
           sx={{
@@ -113,12 +131,14 @@ function FormDialog(props: FormDialogProps) {
           <CircularProgress color="inherit" />
         </Backdrop>
       </Box>
-    </ConfirmationDialog>
+    </BasicDialog>
   );
 }
 
 FormDialog.defaultProps = {
   formOptions: null,
+  cancelButtonText: null,
+  submitButtonText: null,
 };
 
 export default FormDialog;
