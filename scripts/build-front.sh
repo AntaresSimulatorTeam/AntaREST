@@ -14,7 +14,7 @@ sed -i 's|"homepage".*|"homepage": "/static",|g' package.json
 sed -i 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
 fi
 
-cross-env GENERATE_SOURCEMAP=false npm run build
+./node_modules/.bin/cross-env GENERATE_SOURCEMAP=false npm run build
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
 sed -i '' 's|"homepage".*|"homepage": "/",|g' package.json
