@@ -1,9 +1,9 @@
 import * as R from "ramda";
 import { createSelector } from "reselect";
 import { isGroupAdmin, isUserAdmin } from "../services/utils";
-import { AuthState } from "./auth";
-import { AppState } from "./reducers";
-import { StudyState } from "./study";
+import { AppState } from "./ducks";
+import { AuthState } from "./ducks/auth";
+import { StudyState } from "./ducks/study";
 
 ////////////////////////////////////////////////////////////////
 // Auth

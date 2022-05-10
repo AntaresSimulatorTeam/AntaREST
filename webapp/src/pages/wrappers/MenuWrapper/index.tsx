@@ -37,8 +37,8 @@ import {
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
-import { AppState } from "../../../store/reducers";
-import { setMenuExtensionStatusAction } from "../../../store/ui";
+import { AppState } from "../../../redux/ducks";
+import { setMenuExtensionStatusAction } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
   NavListItem,

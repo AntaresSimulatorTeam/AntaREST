@@ -21,7 +21,7 @@ import {
   subscribe,
   unsubscribe,
   WsChannel,
-} from "../../../../../store/websockets";
+} from "../../../../../redux/ducks/websockets";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 

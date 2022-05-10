@@ -8,10 +8,14 @@ import Dropzone from "react-dropzone";
 import { useSnackbar } from "notistack";
 import { usePromise } from "react-use";
 import { getStudyMetadata, importStudy } from "../../services/api/study";
-import { addStudies } from "../../store/study";
+import { addStudies } from "../../redux/ducks/study";
 import { StudyMetadata } from "../../common/types";
-import { addUpload, updateUpload, completeUpload } from "../../store/upload";
-import { AppState } from "../../store/reducers";
+import {
+  addUpload,
+  updateUpload,
+  completeUpload,
+} from "../../redux/ducks/upload";
+import { AppState } from "../../redux/ducks";
 import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 

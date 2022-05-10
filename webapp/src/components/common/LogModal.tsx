@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
 import { connect, ConnectedProps } from "react-redux";
 import { exportText } from "../../services/utils/index";
-import { addListener, removeListener } from "../../store/websockets";
+import { addListener, removeListener } from "../../redux/ducks/websockets";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import { scrollbarStyle } from "../../theme";

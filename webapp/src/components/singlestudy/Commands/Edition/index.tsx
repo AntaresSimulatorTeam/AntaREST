@@ -48,7 +48,7 @@ import {
   subscribe,
   unsubscribe,
   WsChannel,
-} from "../../../../store/websockets";
+} from "../../../../redux/ducks/websockets";
 import { getTask } from "../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../common/loaders/SimpleLoader";

@@ -1,15 +1,15 @@
 import { AnyAction, Store } from "redux";
 import { ThunkDispatch } from "redux-thunk";
-import { addStudies, removeStudies } from "../../store/study";
+import { addStudies, removeStudies } from "../../redux/ducks/study";
 import { getStudyMetadata } from "../api/study";
 import { StudySummary, WSEvent, WSMessage } from "../../common/types";
 import {
   addListenerAction,
   refreshHandlerAction,
-} from "../../store/websockets";
-import { AppState } from "../../store/reducers";
+} from "../../redux/ducks/websockets";
+import { AppState } from "../../redux/ducks";
 import { isStringEmpty } from ".";
-import { setMaintenanceMode, setMessageInfo } from "../../store/global";
+import { setMaintenanceMode, setMessageInfo } from "../../redux/ducks/global";
 
 const studyListener =
   (reduxStore: Store<AppState>) =>

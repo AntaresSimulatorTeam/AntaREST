@@ -2,7 +2,7 @@ import debug from "debug";
 import { v4 as uuidv4 } from "uuid";
 import { Action } from "redux";
 import { ThunkAction } from "redux-thunk";
-import { AppState } from "./reducers";
+import { AppState } from ".";
 
 const logError = debug("antares:global:error");
 

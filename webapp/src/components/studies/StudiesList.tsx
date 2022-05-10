@@ -44,8 +44,8 @@ import {
   STUDIES_HEIGHT_HEADER,
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
-import { AppState } from "../../store/reducers";
-import { removeStudies, updateScrollPosition } from "../../store/study";
+import { AppState } from "../../redux/ducks";
+import { removeStudies, updateScrollPosition } from "../../redux/ducks/study";
 import {
   deleteStudy as callDeleteStudy,
   copyStudy as callCopyStudy,

@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { ConnectedProps, connect } from "react-redux";
 import { useForm } from "react-hook-form";
 import debug from "debug";
-import { AppState } from "../../store/reducers";
-import { loginUser, logoutAction } from "../../store/auth";
+import { AppState } from "../../redux/ducks";
+import { loginUser, logoutAction } from "../../redux/ducks/auth";
 import {
   login as loginRequest,
   needAuth,
@@ -18,7 +18,7 @@ import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLo
 import AppLoader from "../../components/common/loaders/AppLoader";
 import { updateRefreshInterceptor } from "../../services/api/client";
 import { UserInfo } from "../../common/types";
-import { reconnectWebsocket } from "../../store/websockets";
+import { reconnectWebsocket } from "../../redux/ducks/websockets";
 import FilledTextInput from "../../components/common/FilledTextInput";
 
 const logError = debug("antares:loginwrapper:error");

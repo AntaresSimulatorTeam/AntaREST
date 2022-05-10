@@ -20,10 +20,10 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
-import { viewStudy } from "../../store/study";
+import { viewStudy } from "../../redux/ducks/study";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
-import { addListener, removeListener } from "../../store/websockets";
+import { addListener, removeListener } from "../../redux/ducks/websockets";
 
 const logError = debug("antares:singlestudy:error");
 

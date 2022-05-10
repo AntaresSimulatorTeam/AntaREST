@@ -41,21 +41,21 @@ import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
-import { AppState } from "../../store/reducers";
+import { AppState } from "../../redux/ducks";
 import {
   removeStudies,
   toggleFavorite as dispatchToggleFavorite,
-} from "../../store/study";
-import LauncherDialog from "../studies/LauncherDialog";
+} from "../../redux/ducks/study";
 import PropertiesDialog from "./PropertiesDialog";
+import LauncherDialog from "../studies/LauncherDialog";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   countAllChildrens,
 } from "../../services/utils";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import { isCurrentStudyFavorite } from "../../redux/selectors";
 import ExportDialog from "../studies/ExportModal";
-import { isCurrentStudyFavorite } from "../../store/selectors";
 import StarToggle from "../common/StarToggle";
 import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
 

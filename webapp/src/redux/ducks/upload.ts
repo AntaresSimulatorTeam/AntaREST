@@ -1,7 +1,7 @@
 import { Action, AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 import { v4 as uuidv4 } from "uuid";
-import { AppState } from "./reducers";
+import { AppState } from ".";
 import { addOnCloseListener, removeOnCloseListener } from "./global";
 
 /** ******************************************* */

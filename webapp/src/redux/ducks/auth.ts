@@ -4,10 +4,10 @@ import { ThunkAction } from "redux-thunk";
 import jwt_decode from "jwt-decode";
 import lodash from "lodash";
 import moment from "moment";
-import { loadState, saveState } from "../services/utils/localStorage";
-import { UserInfo } from "../common/types";
-import { setAuth } from "../services/api/client";
-import { AppState } from "./reducers";
+import { loadState, saveState } from "../../services/utils/localStorage";
+import { UserInfo } from "../../common/types";
+import { setAuth } from "../../services/api/client";
+import { AppState } from ".";
 import { reconnectWebsocket } from "./websockets";
 
 /** ******************************************* */

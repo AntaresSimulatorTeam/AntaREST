@@ -32,7 +32,7 @@ import {
   subscribe,
   unsubscribe,
   WsChannel,
-} from "../store/websockets";
+} from "../redux/ducks/websockets";
 import JobTableView from "../components/tasks/JobTableView";
 import { convertUTCToLocalTime } from "../services/utils/index";
 import {
@@ -48,7 +48,7 @@ import {
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
-import { initStudies } from "../store/study";
+import { initStudies } from "../redux/ducks/study";
 import {
   LaunchJob,
   TaskDTO,
@@ -59,7 +59,7 @@ import {
   TaskStatus,
 } from "../common/types";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
-import { AppState } from "../store/reducers";
+import { AppState } from "../redux/ducks";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";

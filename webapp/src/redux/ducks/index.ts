@@ -14,7 +14,7 @@ import auth, {
   logoutAction,
   persistState as persistAuthState,
 } from "./auth";
-import { setLogoutInterceptor } from "../services/api/client";
+import { setLogoutInterceptor } from "../../services/api/client";
 import upload, { UploadState } from "./upload";
 import global, { GlobalState } from "./global";
 import ui, { UIState } from "./ui";

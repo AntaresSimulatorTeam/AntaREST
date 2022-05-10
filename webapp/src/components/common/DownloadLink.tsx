@@ -1,9 +1,9 @@
 import { connect, ConnectedProps } from "react-redux";
+import { loginUser, logoutAction } from "../../redux/ducks/auth";
 import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
-import { loginUser, logoutAction } from "../../store/auth";
 import { refresh } from "../../services/api/auth";
-import { AppState } from "../../store/reducers";
+import { AppState } from "../../redux/ducks";
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,

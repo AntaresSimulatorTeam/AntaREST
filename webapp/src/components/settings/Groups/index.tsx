@@ -30,7 +30,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
-import { getAuthUser } from "../../../store/selectors";
+import { getAuthUser } from "../../../redux/selectors";
 
 /**
  * Types

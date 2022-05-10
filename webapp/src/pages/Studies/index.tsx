@@ -26,12 +26,12 @@ import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
 import { getStudies } from "../../services/api/study";
-import { AppState } from "../../store/reducers";
+import { AppState } from "../../redux/ducks";
 import {
   initStudies,
   initStudiesVersion,
   toggleFavorite as dipatchToggleFavorite,
-} from "../../store/study";
+} from "../../redux/ducks/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";

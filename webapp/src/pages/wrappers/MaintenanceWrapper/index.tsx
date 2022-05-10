@@ -6,11 +6,11 @@ import debug from "debug";
 import { Box, Button, keyframes, styled, Typography } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
-import { AppState } from "../../../store/reducers";
+import { AppState } from "../../../redux/ducks";
 import { isUserAdmin } from "../../../services/utils";
 import { getMaintenanceMode } from "../../../services/api/maintenance";
 import { getConfig } from "../../../services/config";
-import { setMaintenanceMode } from "../../../store/global";
+import { setMaintenanceMode } from "../../../redux/ducks/global";
 import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
 

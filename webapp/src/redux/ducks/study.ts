@@ -1,10 +1,14 @@
 import { Action, AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 import * as R from "ramda";
-import { AppState } from "./reducers";
-import { DefaultFilterKey, GenericInfo, StudyMetadata } from "../common/types";
-import { getStudyVersions } from "../services/api/study";
-import { loadState, saveState } from "../services/utils/localStorage";
+import { AppState } from ".";
+import {
+  DefaultFilterKey,
+  GenericInfo,
+  StudyMetadata,
+} from "../../common/types";
+import { getStudyVersions } from "../../services/api/study";
+import { loadState, saveState } from "../../services/utils/localStorage";
 
 /** ******************************************* */
 /* State                                        */

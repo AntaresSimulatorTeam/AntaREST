@@ -34,7 +34,7 @@ import { RoleType, UserDTO } from "../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../services/api/user";
-import { getAuthUser } from "../../../../../store/selectors";
+import { getAuthUser } from "../../../../../redux/selectors";
 
 /**
  * Types

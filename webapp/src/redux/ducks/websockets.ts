@@ -4,10 +4,10 @@ import debug from "debug";
 import { Action } from "redux";
 import { ThunkAction } from "redux-thunk";
 import moment from "moment";
-import { UserInfo, WSMessage } from "../common/types";
-import { AppState } from "./reducers";
-import { getConfig } from "../services/config";
-import { refresh } from "../services/api/auth";
+import { UserInfo, WSMessage } from "../../common/types";
+import { AppState } from ".";
+import { getConfig } from "../../services/config";
+import { refresh } from "../../services/api/auth";
 import { loginUser } from "./auth";
 
 const logInfo = debug("antares:websocket:info");

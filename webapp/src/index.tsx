@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { StyledEngineProvider } from "@mui/material";
-import createStore from "./store/reducers";
+import createStore from "./redux/ducks";
 import { addWsListeners } from "./services/utils/globalWsListeners";
 import { initI18n } from "./i18n";
 import "./index.css";

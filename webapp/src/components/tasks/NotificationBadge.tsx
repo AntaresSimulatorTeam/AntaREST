@@ -7,14 +7,14 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { addListener, removeListener } from "../../store/websockets";
+import { addListener, removeListener } from "../../redux/ducks/websockets";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
 import {
   addTasksNotification,
   clearTasksNotification,
-} from "../../store/global";
-import { AppState } from "../../store/reducers";
+} from "../../redux/ducks/global";
+import { AppState } from "../../redux/ducks";
 
 const logError = debug("antares:downloadbadge:error");
 
