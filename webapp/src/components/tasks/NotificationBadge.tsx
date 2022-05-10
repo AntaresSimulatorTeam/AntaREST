@@ -11,22 +11,22 @@ import { addListener, removeListener } from "../../redux/ducks/websockets";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
 import {
-  addTasksNotification,
-  clearTasksNotification,
+  incrementTaskNotifications,
+  resetTaskNotifications,
 } from "../../redux/ducks/global";
 import { AppState } from "../../redux/ducks";
 
 const logError = debug("antares:downloadbadge:error");
 
 const mapState = (state: AppState) => ({
-  notificationCount: state.global.tasksNotificationCount,
+  notificationCount: state.global.taskNotificationsCount,
 });
 
 const mapDispatch = {
   addWsListener: addListener,
   removeWsListener: removeListener,
-  addTasksNotification,
-  clearTasksNotification,
+  addTasksNotification: incrementTaskNotifications,
+  clearTasksNotification: resetTaskNotifications,
 };
 
 const connector = connect(mapState, mapDispatch);

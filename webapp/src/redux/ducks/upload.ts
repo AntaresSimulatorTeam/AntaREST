@@ -2,7 +2,10 @@ import { Action, AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 import { v4 as uuidv4 } from "uuid";
 import { AppState } from ".";
-import { addOnCloseListener, removeOnCloseListener } from "./global";
+import {
+  createAndInitOnCloseListener,
+  deleteAndClearOnCloseListener,
+} from "./global";
 
 /** ******************************************* */
 /* State                                        */
@@ -42,7 +45,7 @@ export const addUpload =
   (dispatch): string => {
     const uploadId = uuidv4();
     const listenerId = dispatch(
-      addOnCloseListener(() => "You must refresh false")
+      createAndInitOnCloseListener(() => "You must refresh false")
     );
     dispatch({
       type: "UPLOAD/UPDATE_GLOBAL_LISTENER",
@@ -85,7 +88,7 @@ export const completeUpload =
       !!upload.uploads.find((el) => el.id === id) &&
       upload.onWindowCloseListenerId
     ) {
-      dispatch(removeOnCloseListener(upload.onWindowCloseListenerId));
+      dispatch(deleteAndClearOnCloseListener(upload.onWindowCloseListenerId));
     }
     dispatch({
       type: "UPLOAD/COMPLETE",

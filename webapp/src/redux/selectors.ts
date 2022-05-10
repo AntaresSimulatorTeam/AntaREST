@@ -3,6 +3,7 @@ import { createSelector } from "reselect";
 import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
+import { OnCloseListenerIdType, OnCloseListenerType } from "./ducks/global";
 import { StudyState } from "./ducks/study";
 
 ////////////////////////////////////////////////////////////////
@@ -31,3 +32,12 @@ export const isCurrentStudyFavorite = createSelector(
   getCurrentStudyId,
   (favorites, current) => !!R.find(R.propEq("id", current), favorites)
 );
+
+////////////////////////////////////////////////////////////////
+// Global
+////////////////////////////////////////////////////////////////
+
+export const getOnCloseListener = (
+  state: AppState,
+  id: OnCloseListenerIdType
+): OnCloseListenerType => state.global.onCloseListeners[id];
