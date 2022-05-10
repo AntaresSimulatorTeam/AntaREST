@@ -46,7 +46,8 @@ class RemoveArea(ICommand):
         for id, set in study_data_config.sets.items():
             if set.areas and self.id in set.areas:
                 try:
-                    study_data_config.sets[id].areas.remove(self.id)
+                    set.areas.remove(self.id)
+                    study_data_config.sets[id] = set
                 except ValueError:
                     pass
 
@@ -55,7 +56,7 @@ class RemoveArea(ICommand):
             dict(),
         )
 
-    def _remove_area_from_links(self, study_data: FileStudy):
+    def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
             for link in area.links.keys():
                 if link == self.id:
@@ -66,7 +67,9 @@ class RemoveArea(ICommand):
                         ["input", "links", area_name, "properties", self.id]
                     )
 
-    def _remove_area_from_binding_constraints(self, study_data: FileStudy):
+    def _remove_area_from_binding_constraints(
+        self, study_data: FileStudy
+    ) -> None:
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -95,7 +98,7 @@ class RemoveArea(ICommand):
             ["input", "bindingconstraints", "bindingconstraints"],
         )
 
-    def _remove_area_from_districts(self, study_data: FileStudy):
+    def _remove_area_from_districts(self, study_data: FileStudy) -> None:
         districts = study_data.tree.get(["input", "areas", "sets"])
         for id, district in districts.items():
             if district.get("+", None):
@@ -113,10 +116,10 @@ class RemoveArea(ICommand):
 
         study_data.tree.save(districts, ["input", "areas", "sets"])
 
-    def _remove_area_from_cluster(self, study_data):
+    def _remove_area_from_cluster(self, study_data: FileStudy) -> None:
         study_data.tree.delete(["input", "thermal", "prepro", self.id])
 
-    def _remove_area_from_time_series(self, study_data):
+    def _remove_area_from_time_series(self, study_data: FileStudy) -> None:
         study_data.tree.delete(["input", "thermal", "series", self.id])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
