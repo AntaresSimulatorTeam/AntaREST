@@ -145,6 +145,13 @@ export const copyStudy = async (
   return res.data;
 };
 
+export const moveStudy = async (sid: string, folder: string): Promise<void> => {
+  const folderWithId = `${folder}/${sid}`;
+  await client.put(
+    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`
+  );
+};
+
 export const archiveStudy = async (sid: string): Promise<void> => {
   await client.put(`/v1/studies/${sid}/archive`);
 };

@@ -169,6 +169,23 @@ def create_study_routes(
 
         return task_id
 
+    @bp.put(
+        "/studies/{uuid}/move",
+        tags=[APITag.study_management],
+        summary="Move study",
+    )
+    def move_study(
+        uuid: str,
+        folder_dest: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Moving study {uuid} into folder '{folder_dest}'",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study_service.move_study(uuid, folder_dest, params)
+
     @bp.post(
         "/studies",
         status_code=HTTPStatus.CREATED,
