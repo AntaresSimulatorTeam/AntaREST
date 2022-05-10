@@ -115,7 +115,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
     },
     { id: "tasks", link: "/tasks", icon: AssignmentIcon },
     { id: "data", link: "/data", icon: StorageIcon },
-    { id: "api", link: "/api", icon: ApiIcon },
+    { id: "api", link: "/apidoc", icon: ApiIcon },
     {
       id: "documentation",
       link: "https://antares-web.readthedocs.io/en/latest",
