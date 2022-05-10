@@ -1,81 +1,40 @@
-import { Action } from "redux";
-import { ThunkAction } from "redux-thunk";
-import { AppState } from ".";
-
-/** ******************************************* */
-/* State                                        */
-/** ******************************************* */
+import { createAction, createReducer } from "@reduxjs/toolkit";
+import { makeActionName } from "../utils";
 
 export interface UIState {
   menuExtended: boolean;
   currentPage: string;
 }
 
-const initialState: UIState = {
+const initialState = {
   menuExtended: false,
   currentPage: "/",
-};
+} as UIState;
 
-/** ******************************************* */
-/* Actions                                      */
-/** ******************************************* */
+const n = makeActionName("ui");
 
-export interface SetMenuExtensionStatusAction extends Action {
-  type: "UI/SET_MENU_EXTENSION_STATUS";
-  payload: boolean;
-}
+////////////////////////////////////////////////////////////////
+// Action Creators
+////////////////////////////////////////////////////////////////
 
-export const setMenuExtensionStatusAction = (
-  status: boolean
-): SetMenuExtensionStatusAction => ({
-  type: "UI/SET_MENU_EXTENSION_STATUS",
-  payload: status,
+export const setMenuExtensionStatus = createAction<UIState["menuExtended"]>(
+  n("SET_MENU_EXTENSION_STATUS")
+);
+
+export const setCurrentPage = createAction<UIState["currentPage"]>(
+  n("SET_CURRENT_PAGE")
+);
+
+////////////////////////////////////////////////////////////////
+// Reducer
+////////////////////////////////////////////////////////////////
+
+export default createReducer(initialState, (builder) => {
+  builder
+    .addCase(setMenuExtensionStatus, (draftState, action) => {
+      draftState.menuExtended = action.payload;
+    })
+    .addCase(setCurrentPage, (draftState, action) => {
+      draftState.currentPage = action.payload;
+    });
 });
-
-export const setMenuExtension =
-  (
-    status: boolean
-  ): ThunkAction<void, AppState, unknown, SetMenuExtensionStatusAction> =>
-  (dispatch): void => {
-    dispatch(setMenuExtensionStatusAction(status));
-  };
-
-export interface SetAppPageAction extends Action {
-  type: "UI/SET_APP_PAGE";
-  payload: string;
-}
-
-export const setAppPage = (page: string): SetAppPageAction => ({
-  type: "UI/SET_APP_PAGE",
-  payload: page,
-});
-
-type UIAction = SetMenuExtensionStatusAction | SetAppPageAction;
-
-/** ******************************************* */
-/* Selectors / Misc                             */
-/** ******************************************* */
-
-/** ******************************************* */
-/* Reducer                                      */
-/** ******************************************* */
-
-// eslint-disable-next-line default-param-last
-export default (state = initialState, action: UIAction): UIState => {
-  switch (action.type) {
-    case "UI/SET_MENU_EXTENSION_STATUS": {
-      return {
-        ...state,
-        menuExtended: action.payload,
-      };
-    }
-    case "UI/SET_APP_PAGE": {
-      return {
-        ...state,
-        currentPage: action.payload,
-      };
-    }
-    default:
-      return state;
-  }
-};

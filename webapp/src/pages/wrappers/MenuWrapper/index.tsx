@@ -38,7 +38,7 @@ import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
 import { AppState } from "../../../redux/ducks";
-import { setMenuExtensionStatusAction } from "../../../redux/ducks/ui";
+import { setMenuExtensionStatus } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
   NavListItem,
@@ -95,7 +95,7 @@ const mapState = (state: AppState) => ({
 });
 
 const mapDispatch = {
-  setExtended: setMenuExtensionStatusAction,
+  setExtended: setMenuExtensionStatus,
   logout: logoutAction,
 };
 
