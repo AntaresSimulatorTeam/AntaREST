@@ -30,13 +30,94 @@ class RemoveArea(ICommand):
         )
 
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        del study_data.areas[self.id]
+        del study_data_config.areas[self.id]
+
+        link_to_remove = []
+        for area_name, area in study_data_config.areas.items():
+            for link in area.links.keys():
+                if link == self.id:
+                    link_to_remove.append((area_name, link))
+
+        for area_name, link in link_to_remove:
+            del study_data_config.areas[area_name].links[link]
+
+        for id, set in study_data_config.sets.items():
+            if self.id in set.areas:
+                try:
+                    study_data_config.sets[id].areas.remove(self.id)
+                except ValueError:
+                    pass
+
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
             dict(),
         )
+
+    def _remove_area_from_links(self, study_data: FileStudy):
+        for area_name, area in study_data.config.areas.items():
+            for link in area.links.keys():
+                if link == self.id:
+                    study_data.tree.delete(
+                        ["input", "links", area_name, self.id]
+                    )
+                    study_data.tree.delete(
+                        ["input", "links", area_name, "properties", self.id]
+                    )
+
+    def _remove_area_from_binding_constraints(self, study_data: FileStudy):
+        binding_constraints = study_data.tree.get(
+            ["input", "bindingconstraints", "bindingconstraints"]
+        )
+
+        id_to_remove = []
+
+        for id, bc in binding_constraints.items():
+            new_bc = {k: v for k, v in bc.items() if self.id not in k}
+            if [k for k in new_bc.keys() if "." in k or "%" in k]:
+                binding_constraints[id] = new_bc
+            else:
+                id_to_remove.append(id)
+
+        for id in id_to_remove:
+            study_data.tree.delete(
+                [
+                    "input",
+                    "bindingconstraints",
+                    binding_constraints[id]["id"],
+                ]
+            )
+            del binding_constraints[id]
+
+        study_data.tree.save(
+            binding_constraints,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )
+
+    def _remove_area_from_districts(self, study_data: FileStudy):
+        districts = study_data.tree.get(["input", "areas", "sets"])
+        for id, district in districts.items():
+            if district.get("+", None):
+                try:
+                    district["+"].remove(self.id)
+                except ValueError:
+                    pass
+            elif district.get("-", None):
+                try:
+                    district["-"].remove(self.id)
+                except ValueError:
+                    pass
+
+            districts[id] = district
+
+        study_data.tree.save(districts, ["input", "areas", "sets"])
+
+    def _remove_area_from_cluster(self, study_data):
+        study_data.tree.delete(["input", "thermal", "prepro", self.id])
+
+    def _remove_area_from_time_series(self, study_data):
+        study_data.tree.delete(["input", "thermal", "series", self.id])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
 
@@ -144,16 +225,13 @@ class RemoveArea(ICommand):
                 ]
             )
 
+        self._remove_area_from_links(study_data)
+        self._remove_area_from_binding_constraints(study_data)
+        self._remove_area_from_districts(study_data)
+        self._remove_area_from_cluster(study_data)
+        self._remove_area_from_time_series(study_data)
+
         output, _ = self._apply_config(study_data.config)
-        for area_name, area in study_data.config.areas.items():
-            for link in area.links.keys():
-                if link == self.id:
-                    study_data.tree.delete(
-                        ["input", "links", area_name, self.id]
-                    )
-                    study_data.tree.delete(
-                        ["input", "links", area_name, "properties", self.id]
-                    )
 
         new_area_data: JSON = {
             "input": {
@@ -166,8 +244,6 @@ class RemoveArea(ICommand):
         }
         study_data.tree.save(new_area_data)
 
-        # todo remove bindinconstraint using this area ?
-        # todo remove area from districts
         return output
 
     def to_dto(self) -> CommandDTO:
