@@ -58,7 +58,7 @@ function CreateTokenDialog(props: Props) {
       ) as BotCreateDTO["roles"];
 
       const tokenValue = await mounted(
-        createBot({ name, is_author: true, roles })
+        createBot({ name, is_author: false, roles })
       );
 
       setTokenValueToDisplay(tokenValue);
