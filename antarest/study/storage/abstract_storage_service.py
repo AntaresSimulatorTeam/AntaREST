@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO
+from typing import List, Union, Optional, IO, cast
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -29,6 +29,9 @@ from antarest.study.model import (
     StudyAdditionalData,
 )
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    ConfigPathBuilder,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
@@ -188,7 +191,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
-                file_metadata = FileStudyHelpers.get_config(study_data)
+                output_data: Simulation = study_data.config.outputs[output]
+                file_metadata = FileStudyHelpers.get_config(
+                    study_data, output_data.get_file()
+                )
                 settings = StudySimSettingsDTO(
                     general=file_metadata["general"],
                     input=file_metadata["input"],
@@ -199,8 +205,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     seedsMersenneTwister=file_metadata[
                         "seeds - Mersenne Twister"
                     ],
+                    playlist=ConfigPathBuilder.get_playlist(file_metadata),
                 )
-                output_data: Simulation = study_data.config.outputs[output]
+
                 results.append(
                     StudySimResultDTO(
                         name=output_data.get_file(),

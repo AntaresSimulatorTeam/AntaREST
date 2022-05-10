@@ -115,7 +115,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
                 synthesis=True,
                 by_year=True,
                 error=False,
-                playlist=[0],
+                playlist=[1],
             )
         },
     )

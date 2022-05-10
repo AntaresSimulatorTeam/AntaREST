@@ -17,7 +17,6 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 
 DUPLICATE_KEYS = [
-    "playlist_reset",
     "playlist_year_weight",
     "playlist_year +",
     "playlist_year -",
