@@ -129,6 +129,15 @@ def test_main(app: FastAPI):
     study_id = next(iter(res.json()))
     comments = "<text>Hello</text>"
 
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    res_output = res.json()
+    assert len(res_output) == 4
+
     # Set new comments
     res = client.put(
         f"/v1/studies/{study_id}/comments",

@@ -29,12 +29,13 @@ class FileStudyHelpers:
     @staticmethod
     def get_playlist(
         study: FileStudy, output_id: Optional[str] = None
-    ) -> List[int]:
+    ) -> Optional[List[int]]:
         config = FileStudyHelpers.get_config(study, output_id)
         return ConfigPathBuilder.get_playlist(config)
 
     @staticmethod
     def set_playlist(study: FileStudy, playlist: List[int]) -> None:
+        playlist_without_offset = [year - 1 for year in playlist]
         config = FileStudyHelpers.get_config(study)
         general_config: Optional[JSON] = config.get("general", None)
         assert_this(general_config is not None)
@@ -50,12 +51,14 @@ class FileStudyHelpers:
                 if "playlist_year +" in playlist_config:
                     del playlist_config["playlist_year +"]
                 playlist_config["playlist_year -"] = [
-                    year for year in range(0, nb_years) if year not in playlist
+                    year
+                    for year in range(0, nb_years)
+                    if year not in playlist_without_offset
                 ]
             else:
                 playlist_config["playlist_reset"] = False
                 if "playlist_year -" in playlist_config:
                     del playlist_config["playlist_year -"]
-                playlist_config["playlist_year +"] = playlist
+                playlist_config["playlist_year +"] = playlist_without_offset
             config["playlist"] = playlist_config
         FileStudyHelpers.save_config(study, config)

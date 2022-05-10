@@ -46,8 +46,8 @@ class AreaCreationDTO(BaseModel):
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
-    unitcount: int
-    nominalcapacity: int
+    unitcount: int = 0
+    nominalcapacity: int = 0
     group: Optional[str] = None
     min_stable_power: Optional[int] = None
     min_up_time: Optional[int] = None

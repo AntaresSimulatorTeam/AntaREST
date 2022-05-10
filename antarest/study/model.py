@@ -261,6 +261,7 @@ class StudySimSettingsDTO(BaseModel):
     otherPreferences: Dict[str, Any]
     advancedParameters: Dict[str, Any]
     seedsMersenneTwister: Dict[str, Any]
+    playlist: Optional[List[int]] = None
 
 
 class StudySimResultDTO(BaseModel):

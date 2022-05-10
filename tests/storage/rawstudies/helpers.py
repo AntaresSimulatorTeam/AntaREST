@@ -10,11 +10,11 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
     [
         (
             {"general": {"nbyears": 10, "user-playlist": False}},
-            list(range(0, 10)),
+            None,
         ),
         (
             {"general": {"nbyears": 10, "user-playlist": True}},
-            list(range(0, 10)),
+            list(range(1, 11)),
         ),
         (
             {
@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
                     "playlist_year +": [1, 2],
                 },
             },
-            list(range(0, 10)),
+            None,
         ),
         (
             {
@@ -34,7 +34,7 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
                     "playlist_year +": [1, 2],
                 },
             },
-            [1, 2],
+            [2, 3],
         ),
         (
             {
@@ -44,7 +44,7 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
                     "playlist_year -": [1, 2],
                 },
             },
-            [0, 3, 4, 5, 6, 7, 8, 9],
+            [1, 4, 5, 6, 7, 8, 9, 10],
         ),
     ],
 )
@@ -67,9 +67,9 @@ def test_set_playlist():
         },
         {"general": {"nbyears": 10, "user-playlist": False}},
     ]
-    FileStudyHelpers.set_playlist(study, [1, 3])
-    FileStudyHelpers.set_playlist(study, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    FileStudyHelpers.set_playlist(study, [1, 2, 3, 6, 7, 8])
+    FileStudyHelpers.set_playlist(study, [2, 4])
+    FileStudyHelpers.set_playlist(study, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    FileStudyHelpers.set_playlist(study, [2, 3, 4, 7, 8, 9])
     study.tree.save.assert_has_calls(
         [
             call(
