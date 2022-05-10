@@ -1,13 +1,9 @@
 from unittest.mock import Mock
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
@@ -36,6 +32,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
+)
+from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -279,6 +278,12 @@ def test_revert(command_context: CommandContext):
         values=[[0]],
         command_context=command_context,
     )
+    mock_command_extractor = Mock(spec=CommandExtractor)
+    object.__setattr__(
+        base,
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
+    )
     assert base.revert(
         [
             UpdateBindingConstraint(
@@ -348,11 +353,17 @@ def test_revert(command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     base.revert([], study)
-    base.command_context.command_extractor.extract_binding_constraint.assert_called_with(
+    mock_command_extractor.extract_binding_constraint.assert_called_with(
         study, "foo"
     )
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
+    mock_command_extractor = Mock(spec=CommandExtractor)
+    object.__setattr__(
+        base,
+        "_get_command_extractor",
+        Mock(return_value=mock_command_extractor),
+    )
     assert base.revert(
         [
             UpdateBindingConstraint(
@@ -385,11 +396,11 @@ def test_revert(command_context: CommandContext):
             command_context=command_context,
         )
     ]
-    base.command_context.command_extractor.extract_binding_constraint.side_effect = ChildNotFoundError(
-        ""
+    mock_command_extractor.extract_binding_constraint.side_effect = (
+        ChildNotFoundError("")
     )
     base.revert([], study)
-    base.command_context.command_extractor.extract_binding_constraint.assert_called_with(
+    mock_command_extractor.extract_binding_constraint.assert_called_with(
         study, "foo"
     )
 

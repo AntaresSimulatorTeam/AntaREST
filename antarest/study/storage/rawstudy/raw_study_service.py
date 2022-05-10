@@ -11,13 +11,14 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     Study,
+    Patch,
+    StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -25,6 +26,7 @@ from antarest.study.storage.abstract_storage_service import (
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
@@ -75,9 +77,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             fallback_on_default: use default values in case of failure
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, study_id="")
+        study = self.study_factory.create_from_fs(path, study_id="")
         try:
-            raw_meta = study.get(["study", "antares"])
+            raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
             metadata.created_at = datetime.utcfromtimestamp(
@@ -86,6 +88,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             metadata.updated_at = datetime.utcfromtimestamp(
                 raw_meta["lastsave"]
             )
+
+            metadata.additional_data = self._read_additional_data_from_files(
+                study
+            )
+
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -97,6 +104,18 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.version = metadata.version or 0
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                if not metadata.additional_data:
+                    metadata.additional_data = StudyAdditionalData()
+                metadata.additional_data.patch = (
+                    metadata.additional_data.patch or Patch()
+                )
+                metadata.additional_data.horizon = (
+                    metadata.additional_data.horizon
+                )
+                metadata.additional_data.author = (
+                    metadata.additional_data.author or "Unknown"
+                )
+
             else:
                 raise e
 
@@ -111,31 +130,34 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_raw(self, metadata: RawStudy, use_cache: bool = True) -> FileStudy:
+    def get_raw(
+        self,
+        metadata: RawStudy,
+        use_cache: bool = True,
+        output_dir: Optional[Path] = None,
+    ) -> FileStudy:
         """
         Fetch a study object and its config
         Args:
             metadata: study
             use_cache: use cache
+            output_dir: optional output dir override
         Returns: the config and study tree object
 
         """
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        study_config, study_tree = self.study_factory.create_from_fs(
-            study_path, metadata.id, use_cache=use_cache
+        return self.study_factory.create_from_fs(
+            study_path, metadata.id, output_dir, use_cache=use_cache
         )
-        return FileStudy(config=study_config, tree=study_tree)
 
     def get_synthesis(
         self, metadata: RawStudy, params: Optional[RequestParameters] = None
     ) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        study_config, _ = self.study_factory.create_from_fs(
-            study_path, metadata.id
-        )
-        return FileStudyTreeConfigDTO.from_build_config(study_config)
+        study = self.study_factory.create_from_fs(study_path, metadata.id)
+        return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
@@ -155,8 +177,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             path_resources=self.path_resources,
         )
 
-        _, tree = self.study_factory.create_from_fs(path_study, metadata.id)
-        update_antares_info(metadata, tree)
+        study = self.study_factory.create_from_fs(path_study, metadata.id)
+        update_antares_info(metadata, study.tree)
 
         metadata.path = str(path_study)
 
@@ -179,6 +201,15 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         self._check_study_exists(src_meta)
+
+        if not src_meta.additional_data:
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=src_meta.additional_data.horizon,
+                author=src_meta.additional_data.author,
+                patch=src_meta.additional_data.patch,
+            )
         dest_id = str(uuid4())
         dest_study = RawStudy(
             id=dest_id,
@@ -188,6 +219,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=src_meta.version,
+            additional_data=additional_data,
         )
 
         src_path = self.get_study_path(src_meta)
@@ -199,12 +231,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         if not with_outputs and output.exists():
             shutil.rmtree(output)
 
-        _, study = self.study_factory.create_from_fs(
+        study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_study.id
         )
-        update_antares_info(dest_study, study)
+        update_antares_info(dest_study, study.tree)
 
-        del study
+        del study.tree
         return dest_study
 
     def delete(self, metadata: RawStudy) -> None:
@@ -286,8 +318,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        study.denormalize()
+        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
+        study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
 
@@ -304,8 +336,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, metadata.id)
-        return study.check_errors(study.get())
+        study = self.study_factory.create_from_fs(path, metadata.id)
+        return study.tree.check_errors(study.tree.get())
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool
@@ -331,3 +363,49 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         return Path(metadata.path)
+
+    def initialize_additional_data(self, raw_study: RawStudy) -> bool:
+        try:
+            study = self.study_factory.create_from_fs(
+                self.get_study_path(raw_study),
+                study_id=raw_study.id,
+            )
+            raw_study.additional_data = self._read_additional_data_from_files(
+                study
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error while reading additional data for study {raw_study.id}",
+                exc_info=e,
+            )
+            return False
+
+    def check_and_update_study_version_in_database(
+        self, study: RawStudy
+    ) -> None:
+        try:
+            study_path = self.get_study_path(study)
+            if study_path:
+                config = FileStudyTreeConfig(
+                    study_path=study_path,
+                    path=study_path,
+                    study_id="",
+                    version=-1,
+                )
+                raw_study = self.study_factory.create_from_config(config)
+                file_metadata = raw_study.get(url=["study", "antares"])
+                study_version = str(
+                    file_metadata.get("version", study.version)
+                )
+                if study_version != study.version:
+                    logger.warning(
+                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                    )
+                    study.version = study_version
+        except Exception as e:
+            logger.error(
+                "Failed to check and/or update study version in database for study %s",
+                study.id,
+                exc_info=e,
+            )

@@ -1,7 +1,7 @@
 import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional, Callable, TypeVar
+from typing import IO, Any, Optional, Callable, TypeVar, List
 from zipfile import ZipFile, BadZipFile
 
 import redis
@@ -123,3 +123,11 @@ def retry(
 def assert_this(b: Any) -> None:
     if not b:
         raise AssertionError
+
+
+def concat_files(files: List[Path], target: Path) -> None:
+    with open(target, "w") as fh:
+        for item in files:
+            with open(item, "r") as infile:
+                for line in infile:
+                    fh.write(line)

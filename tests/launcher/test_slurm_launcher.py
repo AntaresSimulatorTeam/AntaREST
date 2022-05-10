@@ -410,8 +410,8 @@ def test_import_study_output(launcher_config, tmp_path):
         / "1"
         / "output",
         {
-            "antares-out.log": log_info,
-            "antares-err.log": log_error,
+            "antares-out.log": [log_info],
+            "antares-err.log": [log_error],
         },
     )
 

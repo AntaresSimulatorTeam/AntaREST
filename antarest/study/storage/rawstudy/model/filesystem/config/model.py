@@ -89,7 +89,7 @@ class Simulation(BaseModel):
     synthesis: bool
     by_year: bool
     error: bool
-    playlist: List[int]
+    playlist: Optional[List[int]]
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
@@ -137,6 +137,23 @@ class FileStudyTreeConfig(DTO):
             study_path=self.study_path,
             output_path=self.output_path,
             path=self.path / name,
+            study_id=self.study_id,
+            version=self.version,
+            areas=self.areas,
+            sets=self.sets,
+            outputs=self.outputs,
+            bindings=self.bindings,
+            store_new_set=self.store_new_set,
+            archive_input_series=self.archive_input_series,
+            enr_modelling=self.enr_modelling,
+            cache=self.cache,
+        )
+
+    def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
+        return FileStudyTreeConfig(
+            study_path=self.study_path,
+            output_path=self.output_path,
+            path=filepath,
             study_id=self.study_id,
             version=self.version,
             areas=self.areas,

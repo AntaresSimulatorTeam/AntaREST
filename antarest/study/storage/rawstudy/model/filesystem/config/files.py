@@ -170,33 +170,36 @@ class ConfigPathBuilder:
         return None
 
     @staticmethod
+    def get_playlist(config: JSON) -> Optional[List[int]]:
+        general_config = config.get("general", {})
+        nb_years = cast(int, general_config.get("nbyears"))
+        playlist_activated = cast(
+            bool, general_config.get("user-playlist", False)
+        )
+        if not playlist_activated:
+            return None
+        playlist_config = config.get("playlist", {})
+        playlist_reset = playlist_config.get("playlist_reset", True)
+        added = playlist_config.get("playlist_year +", [])
+        removed = playlist_config.get("playlist_year -", [])
+        if playlist_reset:
+            return [
+                year + 1 for year in range(0, nb_years) if year not in removed
+            ]
+        return [year + 1 for year in added if year not in removed]
+
+    @staticmethod
     def _parse_outputs_parameters(
         path: Path,
-    ) -> Tuple[int, bool, bool, List[int]]:
+    ) -> Tuple[int, bool, bool, Optional[List[int]]]:
         par: JSON = MultipleSameKeysIniReader(DUPLICATE_KEYS).read(
             path / "about-the-study/parameters.ini"
         )
-        nb_years = par["general"]["nbyears"]
-        playlist_activated = cast(
-            bool, par["general"].get("user-playlist", False)
-        )
-        playlist = list(range(0, nb_years))
-        if playlist_activated:
-            playlist_config = par.get("playlist", {})
-            playlist_reset = playlist_config.get("playlist_reset", True)
-            added = playlist_config.get("playlist_year +", [])
-            removed = playlist_config.get("playlist_year -", [])
-            if playlist_reset:
-                playlist = [
-                    year for year in range(0, nb_years) if year not in removed
-                ]
-            else:
-                playlist = [year for year in added if year not in removed]
         return (
             par["general"]["nbyears"],
             par["general"]["year-by-year"],
             par["output"]["synthesis"],
-            playlist,
+            ConfigPathBuilder.get_playlist(par),
         )
 
     @staticmethod

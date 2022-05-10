@@ -28,8 +28,8 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
 )
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
     StudyFactory,
 )
 from antarest.study.storage.utils import create_new_empty_study
@@ -159,10 +159,11 @@ class LocalVariantGenerator(IVariantGenerator):
         stopwatch = StopWatch()
         matrix_service = SimpleMatrixService(matrices_dir)
         matrix_resolver = UriResolverService(matrix_service)
+        local_cache = LocalCache(CacheConfig())
         study_factory = StudyFactory(
             matrix=matrix_service,
             resolver=matrix_resolver,
-            cache=LocalCache(CacheConfig()),
+            cache=local_cache,
         )
         generator = VariantCommandGenerator(study_factory)
         command_factory = CommandFactory(
@@ -170,6 +171,7 @@ class LocalVariantGenerator(IVariantGenerator):
                 matrix_service
             ),
             matrix_service=matrix_service,
+            patch_service=PatchService(),
         )
 
         command_objs: List[List[ICommand]] = []
@@ -184,12 +186,12 @@ class LocalVariantGenerator(IVariantGenerator):
         )
         if result.success:
             logger.info("Building new study tree")
-            config, study_tree = study_factory.create_from_fs(
+            study = study_factory.create_from_fs(
                 self.output_path, study_id="", use_cache=False
             )
             logger.info("Denormalizing study")
             stopwatch.reset_current()
-            study_tree.denormalize()
+            study.tree.denormalize()
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Denormalized done in {x}s")
             )
@@ -217,18 +219,21 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
 
     matrix_service = SimpleMatrixService(matrices_dir)
     matrix_resolver = UriResolverService(matrix_service)
+    cache = LocalCache(CacheConfig())
     study_factory = StudyFactory(
         matrix=matrix_service,
         resolver=matrix_resolver,
-        cache=LocalCache(CacheConfig()),
+        cache=cache,
     )
 
-    study_config, study_tree = study_factory.create_from_fs(
+    study = study_factory.create_from_fs(
         study_path, str(study_path), use_cache=False
     )
     local_matrix_service = SimpleMatrixService(matrices_dir)
-    extractor = VariantCommandsExtractor(local_matrix_service)
-    command_list = extractor.extract(FileStudy(study_config, study_tree))
+    extractor = VariantCommandsExtractor(
+        local_matrix_service, patch_service=PatchService()
+    )
+    command_list = extractor.extract(study)
 
     with open(commands_output_dir / COMMAND_FILE, "w") as fh:
         json.dump(
@@ -261,8 +266,9 @@ def generate_diff(
     local_matrix_service = SimpleMatrixService(matrices_dir)
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
+    cache = LocalCache()
     study_factory = StudyFactory(
-        matrix=local_matrix_service, resolver=resolver, cache=LocalCache()
+        matrix=local_matrix_service, resolver=resolver, cache=cache
     )
 
     create_new_empty_study(
@@ -271,8 +277,7 @@ def generate_diff(
         path_resources=get_local_path() / "resources",
     )
 
-    config, tree = study_factory.create_from_fs(path_study, study_id)
-    empty_study = FileStudy(config=config, tree=tree)
+    empty_study = study_factory.create_from_fs(path_study, study_id)
 
     base_command_file = base / COMMAND_FILE
     if not base_command_file.exists():
@@ -302,7 +307,9 @@ def generate_diff(
         lambda x: logger.info(f"Variant input matrix copied in {x}s")
     )
 
-    extractor = VariantCommandsExtractor(local_matrix_service)
+    extractor = VariantCommandsExtractor(
+        local_matrix_service, patch_service=PatchService()
+    )
     diff_commands = extractor.diff(
         base=parse_commands(base_command_file),
         variant=parse_commands(variant_command_file),

@@ -122,16 +122,15 @@ class VariantCommandGenerator:
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
-        study_config, study_tree = self.study_factory.create_from_fs(
+        study = self.study_factory.create_from_fs(
             dest_path, "", use_cache=False
         )
         if metadata:
-            update_antares_info(metadata, study_tree)
-        file_study = FileStudy(config=study_config, tree=study_tree)
+            update_antares_info(metadata, study.tree)
 
         results = VariantCommandGenerator._generate(
             commands,
-            file_study,
+            study,
             lambda command, data: command.apply(cast(FileStudy, data)),
             metadata,
             notifier,

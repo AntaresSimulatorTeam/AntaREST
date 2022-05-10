@@ -3,12 +3,11 @@ import io
 import json
 import logging
 import os
-import shutil
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict, Callable
+from typing import List, IO, Optional, cast, Union, Dict, Callable, Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -48,6 +47,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
@@ -84,6 +84,7 @@ from antarest.study.model import (
     PatchCluster,
     PatchArea,
     ExportFormat,
+    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -160,7 +161,7 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.areas = AreaManager(self.storage_service)
+        self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
@@ -300,12 +301,11 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, summary: bool, managed: bool, params: RequestParameters
+        self, managed: bool, params: RequestParameters
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
-            summary: indicate if just basic information should be retrieved
             managed: indicate if just managed studies should be retrieved
             params: request parameters
 
@@ -314,13 +314,11 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_keys = {
-            (True, True): CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value,
-            (True, False): CacheConstants.STUDY_LISTING_SUMMARY.value,
-            (False, True): CacheConstants.STUDY_LISTING_MANAGED.value,
-            (False, False): CacheConstants.STUDY_LISTING.value,
-        }
-        cache_key = cache_keys[(summary, managed)]
+        cache_key = (
+            CacheConstants.STUDY_LISTING_MANAGED.value
+            if managed
+            else CacheConstants.STUDY_LISTING.value
+        )
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
@@ -331,9 +329,7 @@ class StudyService:
             logger.info("Studies retrieved")
             for study in all_studies:
                 if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(
-                        study, summary
-                    )
+                    study_metadata = self._try_get_studies_information(study)
                     if study_metadata is not None:
                         studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
@@ -351,12 +347,12 @@ class StudyService:
         }
 
     def _try_get_studies_information(
-        self, study: Study, summary: bool
+        self, study: Study
     ) -> Optional[StudyMetadataDTO]:
         try:
             return self.storage_service.get_storage(
                 study
-            ).get_study_information(study, summary)
+            ).get_study_information(study)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",
@@ -387,6 +383,26 @@ class StudyService:
             study
         )
 
+    def initialize_additional_data_in_db(
+        self, params: RequestParameters
+    ) -> List[str]:
+        # TODO: remove this method once used
+        logger.info("Initializing additional data of studies")
+        if params.user and params.user.is_site_admin():
+            studies = self.repository.get_all()
+            studies_not_updated: List[str] = []
+            for study in studies:
+                if self.storage_service.get_storage(
+                    study
+                ).initialize_additional_data(study):
+                    self.repository.save(study)
+                else:
+                    studies_not_updated.append(f"{study.id} : {study.name}")
+            return studies_not_updated
+        else:
+            logger.error(f"User {params.user} is not site admin")
+            raise UserHasNotPermissionError()
+
     def update_study_information(
         self,
         uuid: str,
@@ -408,9 +424,6 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        if metadata_patch.name:
-            study.name = metadata_patch.name
-            self.repository.save(study)
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             self._assert_study_unarchived(study)
@@ -422,10 +435,29 @@ class StudyService:
             self._edit_study_using_command(
                 study=study, url=study_settings_url, data=study_settings
             )
+        if metadata_patch.author:
+            study_antares_url = "study/antares"
+            self._assert_study_unarchived(study)
+            study_antares = self.storage_service.get_storage(study).get(
+                study, study_antares_url
+            )
+            study_antares["author"] = metadata_patch.author
+
+            self._edit_study_using_command(
+                study=study, url=study_antares_url, data=study_antares
+            )
+        study.additional_data = study.additional_data or StudyAdditionalData()
+        if metadata_patch.name:
+            study.name = metadata_patch.name
+        if metadata_patch.author:
+            study.additional_data.author = metadata_patch.author
+        if metadata_patch.horizon:
+            study.additional_data.horizon = metadata_patch.horizon
 
         new_metadata = self.storage_service.get_storage(
             study
         ).patch_update_study_metadata(study, metadata_patch)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,
@@ -482,6 +514,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
+            additional_data=StudyAdditionalData(),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -984,69 +1017,99 @@ class StudyService:
             params.get_user_id(),
         )
 
-        matrix = StudyDownloader.build(
-            self.storage_service.get_storage(study).get_raw(study),
-            output_id,
-            data,
-        )
+        if use_task:
+            logger.info(f"Exporting {output_id} from study {study_id}")
+            export_name = (
+                f"Study filtered output {study.name}/{output_id} export"
+            )
+            export_file_download = self.file_transfer_manager.request_download(
+                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
+                export_name,
+                params.user,
+            )
+            export_path = Path(export_file_download.path)
+            export_id = export_file_download.id
 
-        if filetype != ExportFormat.JSON:
-            if use_task:
-                logger.info(f"Exporting {output_id} from study {study_id}")
-                export_name = (
-                    f"Study filtered output {study.name}/{output_id} export"
-                )
-                export_file_download = self.file_transfer_manager.request_download(
-                    f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
-                    export_name,
-                    params.user,
-                )
-                export_path = Path(export_file_download.path)
-                export_id = export_file_download.id
-
-                def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
-                    try:
-                        StudyDownloader.export(matrix, filetype, export_path)
-                        self.file_transfer_manager.set_ready(export_id)
-                        return TaskResult(
-                            success=True,
-                            message=f"Study filtered output {study_id}/{output_id} successfully exported",
+            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    matrix = StudyDownloader.build(
+                        self.storage_service.get_storage(study).get_raw(study),
+                        output_id,
+                        data,
+                    )
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} built in {x}s"
                         )
-                    except Exception as e:
-                        self.file_transfer_manager.fail(export_id, str(e))
-                        raise e
+                    )
+                    StudyDownloader.export(matrix, filetype, export_path)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Study {study_id} filtered output {output_id} exported in {x}s"
+                        )
+                    )
+                    self.file_transfer_manager.set_ready(export_id)
+                    return TaskResult(
+                        success=True,
+                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
+                    )
+                except Exception as e:
+                    self.file_transfer_manager.fail(export_id, str(e))
+                    raise e
 
-                task_id = self.task_service.add_task(
-                    export_task,
-                    export_name,
-                    task_type=TaskType.EXPORT,
-                    ref_id=study.id,
-                    custom_event_messages=None,
-                    request_params=params,
+            task_id = self.task_service.add_task(
+                export_task,
+                export_name,
+                task_type=TaskType.EXPORT,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return FileDownloadTaskDTO(
+                file=export_file_download.to_dto(), task=task_id
+            )
+        else:
+            stopwatch = StopWatch()
+            matrix = StudyDownloader.build(
+                self.storage_service.get_storage(study).get_raw(study),
+                output_id,
+                data,
+            )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Study {study_id} filtered output {output_id} built in {x}s"
                 )
-
-                return FileDownloadTaskDTO(
-                    file=export_file_download.to_dto(), task=task_id
+            )
+            if tmp_export_file is not None:
+                StudyDownloader.export(matrix, filetype, tmp_export_file)
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Study {study_id} filtered output {output_id} exported in {x}s"
+                    )
+                )
+                return FileResponse(
+                    tmp_export_file,
+                    headers={"Content-Disposition": "inline"}
+                    if filetype == ExportFormat.JSON
+                    else {
+                        "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
+                    },
+                    media_type=filetype,
                 )
             else:
-                if tmp_export_file is not None:
-                    StudyDownloader.export(matrix, filetype, tmp_export_file)
-                    return FileResponse(
-                        tmp_export_file,
-                        headers={
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                        },
-                        media_type=filetype,
-                    )
-
-        json_response = json.dumps(
-            matrix.dict(),
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return Response(content=json_response, media_type="application/json")
+                json_response = json.dumps(
+                    matrix.dict(),
+                    ensure_ascii=False,
+                    allow_nan=True,
+                    indent=None,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                return Response(
+                    content=json_response, media_type="application/json"
+                )
 
     def get_study_sim_result(
         self, study_id: str, params: RequestParameters
@@ -1130,10 +1193,13 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
+            additional_data=StudyAdditionalData(),
         )
         study = self.storage_service.raw_study_service.import_study(
             study, stream
         )
+        study.updated_at = datetime.utcnow()
+
         # status = self._analyse_study(study)
         self._save_study(
             study,
@@ -1159,7 +1225,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[Dict[str, Path]] = None,
+        additional_logs: Optional[Dict[str, List[Path]]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1184,9 +1250,9 @@ class StudyService:
             study, output
         )
         if res is not None and additional_logs:
-            for log_name, log_path in additional_logs.items():
-                shutil.copyfile(
-                    log_path, Path(study.path) / "output" / res / log_name
+            for log_name, log_paths in additional_logs.items():
+                concat_files(
+                    log_paths, Path(study.path) / "output" / res / log_name
                 )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
@@ -1481,12 +1547,17 @@ class StudyService:
         self,
         uuid: str,
         area_type: Optional[AreaType],
+        ui: bool,
         params: RequestParameters,
-    ) -> List[AreaInfoDTO]:
+    ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.areas.get_all_areas(study, area_type)
+        return (
+            self.areas.get_all_areas_ui_info(study)
+            if ui
+            else self.areas.get_all_areas(study, area_type)
+        )
 
     def get_all_links(
         self,
@@ -1693,7 +1764,7 @@ class StudyService:
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
-        Creeate new study with owner, group or content_status.
+        Create new study with owner, group or content_status.
         Args:
             study: study to save
             owner: new owner
@@ -1716,8 +1787,10 @@ class StudyService:
             groups = []
             for gid in group_ids:
                 group = next(filter(lambda g: g.id == gid, owner.groups), None)
-                if group is None or not group.role.is_higher_or_equals(
-                    RoleType.WRITER
+                if (
+                    group is None
+                    or not group.role.is_higher_or_equals(RoleType.WRITER)
+                    and not owner.is_site_admin()
                 ):
                     raise UserHasNotPermissionError()
                 groups.append(Group(id=group.id, name=group.name))
@@ -1780,12 +1853,17 @@ class StudyService:
         return list(STUDY_REFERENCE_TEMPLATES.keys())
 
     def create_xpansion_configuration(
-        self, uuid: str, params: RequestParameters
+        self,
+        uuid: str,
+        zipped_config: Optional[UploadFile],
+        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.create_xpansion_configuration(study)
+        self.xpansion_manager.create_xpansion_configuration(
+            study, zipped_config
+        )
 
     def delete_xpansion_configuration(
         self, uuid: str, params: RequestParameters
@@ -1962,3 +2040,15 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         self.matrix_manager.update_matrix(study, path, slices, operation)
+
+    def check_and_update_all_study_versions_in_database(
+        self, params: RequestParameters
+    ) -> None:
+        if params.user and not params.user.is_site_admin():
+            logger.error(f"User {params.user.id} is not site admin")
+            raise UserHasNotPermissionError()
+        studies = self.repository.get_all()
+        for study in studies:
+            if isinstance(study, RawStudy) and not is_managed(study):
+                storage = self.storage_service.raw_study_service
+                storage.check_and_update_study_version_in_database(study)

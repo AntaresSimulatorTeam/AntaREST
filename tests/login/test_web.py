@@ -26,6 +26,8 @@ from antarest.login.model import (
     IdentityDTO,
     BotRoleCreateDTO,
     RoleDetailDTO,
+    UserInfo,
+    GroupDTO,
 )
 from antarest.main import JwtSettings
 
@@ -181,7 +183,7 @@ def test_refresh() -> None:
 @pytest.mark.unit_test
 def test_user() -> None:
     service = Mock()
-    service.get_all_users.return_value = [User(id=1, name="user")]
+    service.get_all_users.return_value = [UserInfo(id=1, name="user")]
 
     app = create_app(service)
     client = TestClient(app)
@@ -272,7 +274,9 @@ def test_user_delete() -> None:
 @pytest.mark.unit_test
 def test_group() -> None:
     service = Mock()
-    service.get_all_groups.return_value = [Group(id="my-group", name="group")]
+    service.get_all_groups.return_value = [
+        GroupDTO(id="my-group", name="group")
+    ]
 
     app = create_app(service)
     client = TestClient(app)

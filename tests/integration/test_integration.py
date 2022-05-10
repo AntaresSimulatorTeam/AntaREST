@@ -1,6 +1,6 @@
 import time
-from typing import Callable
 from pathlib import Path
+from typing import Callable
 from unittest.mock import ANY
 
 from fastapi import FastAPI
@@ -129,6 +129,15 @@ def test_main(app: FastAPI):
     study_id = next(iter(res.json()))
     comments = "<text>Hello</text>"
 
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    res_output = res.json()
+    assert len(res_output) == 4
+
     # Set new comments
     res = client.put(
         f"/v1/studies/{study_id}/comments",
@@ -204,6 +213,14 @@ def test_main(app: FastAPI):
         },
     )
     assert len(res.json()) == 3
+
+    res = client.post(
+        "/v1/studies/_initialize_additional_data_in_db",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == []
 
     # Study delete
     client.delete(
@@ -324,7 +341,12 @@ def test_main(app: FastAPI):
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
-        json={"name": "STA-mini-copy", "status": "copied", "horizon": "2035"},
+        json={
+            "name": "STA-mini-copy",
+            "status": "copied",
+            "horizon": "2035",
+            "author": "Luffy",
+        },
     )
     new_meta = client.get(
         f"/v1/studies/{study_id}",
@@ -568,18 +590,38 @@ def test_area_management(app: FastAPI):
     )
     assert res.status_code == 200
     res_ui = client.get(
-        f"/v1/studies/{study_id}/raw?path=input/areas/area%201/ui/ui",
+        f"/v1/studies/{study_id}/areas?ui=true",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
     assert res_ui.json() == {
-        "x": 100,
-        "y": 100,
-        "color_r": 255,
-        "color_g": 0,
-        "color_b": 100,
-        "layers": 0,
+        "area 1": {
+            "ui": {
+                "x": 100,
+                "y": 100,
+                "color_r": 255,
+                "color_g": 0,
+                "color_b": 100,
+                "layers": 0,
+            },
+            "layerX": {"O": 0},
+            "layerY": {"O": 0},
+            "layerColor": {"O": "230 , 108 , 44"},
+        },
+        "area 2": {
+            "ui": {
+                "x": 0,
+                "y": 0,
+                "color_r": 230,
+                "color_g": 108,
+                "color_b": 44,
+                "layers": 0,
+            },
+            "layerX": {"O": 0},
+            "layerY": {"O": 0},
+            "layerColor": {"O": "230 , 108 , 44"},
+        },
     }
 
     client.delete(

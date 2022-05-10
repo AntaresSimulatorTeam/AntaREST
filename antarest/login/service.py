@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from fastapi import HTTPException
 
@@ -24,9 +24,10 @@ from antarest.login.model import (
     RoleDTO,
     RoleCreationDTO,
     BotIdentityDTO,
-    UserGroup,
+    GroupDetailDTO,
     UserRoleDTO,
     GroupDTO,
+    UserInfo,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -292,7 +293,7 @@ class LoginService:
 
     def get_group_info(
         self, id: str, params: RequestParameters
-    ) -> Optional[UserGroup]:
+    ) -> Optional[GroupDetailDTO]:
         """
         Get group.
         Permission: SADMIN, GADMIN (own group)
@@ -314,8 +315,8 @@ class LoginService:
                     user_list.append(
                         UserRoleDTO(id=user.id, name=user.name, role=role.type)
                     )
-            return UserGroup(
-                group=GroupDTO(id=group.id, name=group.name), users=user_list
+            return GroupDetailDTO(
+                id=group.id, name=group.name, users=user_list
             )
         else:
             logger.error(
@@ -563,33 +564,51 @@ class LoginService:
         logger.error("Can't claim JWT for user=%d", user_id)
         return None
 
-    def get_all_groups(self, params: RequestParameters) -> List[Group]:
+    def get_all_groups(
+        self, params: RequestParameters, details: Optional[bool] = False
+    ) -> List[Union[GroupDetailDTO, GroupDTO]]:
         """
         Get all groups.
         Permission: SADMIN
         Args:
             params: request parameters
+            details: get all user information, including users
 
         Returns: list of groups
 
         """
-        if not params.user:
+        if params.user:
+            group_list = []
+
+            if params.user.is_site_admin():
+                group_list = self.groups.get_all()
+            else:
+                roles_by_user = self.roles.get_all_by_user(user=params.user.id)
+
+                for role in roles_by_user:
+                    if not details or role.type == RoleType.ADMIN:
+                        tmp = self.groups.get(role.group_id)
+                        if tmp:
+                            group_list.append(tmp)
+        else:
             logger.error(
                 "user %s has not permission to get all groups",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
 
-        if params.user.is_site_admin():
-            return self.groups.get_all()
-        else:
-            roles_by_user = self.roles.get_all_by_user(user=params.user.id)
-            groups = []
-            for role in roles_by_user:
-                tmp = self.groups.get(role.group_id)
-                if tmp:
-                    groups.append(tmp)
-            return groups
+        return (
+            [
+                grp
+                for grp in [
+                    self.get_group_info(group.id, params)
+                    for group in group_list
+                ]
+                if grp is not None
+            ]
+            if details
+            else [group.to_dto() for group in group_list]
+        )
 
     def _get_user_by_group(self, group: str) -> List[Identity]:
         roles = self.roles.get_all_by_group(group)
@@ -600,17 +619,21 @@ class LoginService:
                 user_list.append(user)
         return user_list
 
-    def get_all_users(self, params: RequestParameters) -> List[Identity]:
+    def get_all_users(
+        self, params: RequestParameters, details: Optional[bool] = False
+    ) -> List[Union[UserInfo, IdentityDTO]]:
         """
         Get all users.
         Permission: SADMIN
         Args:
             params: request parameters
+            details: get all user information, including roles
 
         Returns: list of groups
 
         """
         if params.user:
+            user_list = []
             roles = self.roles.get_all_by_user(params.user.id)
             groups = [r.group for r in roles]
             if any(
@@ -619,18 +642,29 @@ class LoginService:
                     params.user.is_group_admin(groups),
                 )
             ):
-                return self.ldap.get_all() + self.users.get_all()
+                user_list = self.ldap.get_all() + self.users.get_all()
+            else:
+                for group in groups:
+                    user_list.extend(
+                        [
+                            usr
+                            for usr in self._get_user_by_group(group.id)
+                            if usr not in user_list
+                        ]
+                    )
 
-            user_list = []
-            for group in groups:
-                user_list.extend(
-                    [
-                        usr
-                        for usr in self._get_user_by_group(group.id)
-                        if usr not in user_list
+            return (
+                [
+                    usr
+                    for usr in [
+                        self.get_user_info(user.id, params)
+                        for user in user_list
                     ]
-                )
-            return user_list
+                    if usr is not None
+                ]
+                if details
+                else [user.to_dto() for user in user_list]
+            )
         else:
             logger.error(
                 "user %s has not permission to get all users",

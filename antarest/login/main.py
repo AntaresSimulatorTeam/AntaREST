@@ -10,6 +10,7 @@ from starlette.responses import JSONResponse
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.ldap import LdapService
 from antarest.login.repository import (
     UserRepository,
@@ -77,11 +78,12 @@ def build_login(
         subject = json.loads(decrypted_token["sub"])
         user_id = subject["id"]
         token_type = subject["type"]
-        return (
-            token_type == "bots"
-            and service is not None
-            and not service.exists_bot(user_id)
-        )
+        with db():
+            return (
+                token_type == "bots"
+                and service is not None
+                and not service.exists_bot(user_id)
+            )
 
     if application:
         application.include_router(create_login_api(service, config))

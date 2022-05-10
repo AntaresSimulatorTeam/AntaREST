@@ -61,7 +61,7 @@ def check_permission(
     Returns: true if user match permission requirements, false else.
 
     """
-    if user.is_site_admin():
+    if user.is_site_admin() or user.is_admin_token():
         return True
 
     if (

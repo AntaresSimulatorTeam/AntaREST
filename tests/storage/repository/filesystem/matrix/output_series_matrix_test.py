@@ -46,7 +46,7 @@ def test_get(tmp_path: Path):
         context=Mock(),
         config=config,
         date_serializer=serializer,
-        head_writer=AreaHeadWriter(area="", freq=""),
+        head_writer=AreaHeadWriter(area="", data_type="", freq=""),
         freq="",
     )
     assert node.load() == matrix.to_dict(orient="split")
@@ -73,7 +73,7 @@ def test_save(tmp_path: Path):
         context=Mock(),
         config=config,
         date_serializer=serializer,
-        head_writer=AreaHeadWriter(area="de", freq="hourly"),
+        head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
         freq="",
     )
 
@@ -89,7 +89,7 @@ def test_save(tmp_path: Path):
     print(file.read_text())
     assert (
         file.read_text()
-        == """DE	area	de	hourly
+        == """DE	area	va	hourly
 	VARIABLES	BEGIN	END
 	2	1	2
 

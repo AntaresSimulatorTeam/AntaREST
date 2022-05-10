@@ -368,14 +368,14 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
 
 
 @pytest.mark.unit_test
-def test_service_kill_job():
+def test_service_kill_job(tmp_path: Path):
     study_service = Mock()
     study_service.get_study.return_value = Mock(
         spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
     )
 
     launcher_service = LauncherService(
-        config=Mock(),
+        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
         study_service=study_service,
         job_result_repository=Mock(),
         event_bus=Mock(),
@@ -407,14 +407,14 @@ def test_service_kill_job():
     )
 
 
-def test_append_logs():
+def test_append_logs(tmp_path: Path):
     study_service = Mock()
     study_service.get_study.return_value = Mock(
         spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
     )
 
     launcher_service = LauncherService(
-        config=Mock(),
+        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
         study_service=study_service,
         job_result_repository=Mock(),
         event_bus=Mock(),
@@ -448,14 +448,14 @@ def test_append_logs():
     assert job_result_mock.logs[0].log_type == str(JobLogType.BEFORE)
 
 
-def test_get_logs():
+def test_get_logs(tmp_path: Path):
     study_service = Mock()
     study_service.get_study.return_value = Mock(
         spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
     )
 
     launcher_service = LauncherService(
-        config=Mock(),
+        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
         study_service=study_service,
         job_result_repository=Mock(),
         event_bus=Mock(),
@@ -590,7 +590,7 @@ def test_manage_output(tmp_path: Path):
 
     assert (
         launcher_service._import_output(
-            job_id, output_path, {"out.log": additional_log}
+            job_id, output_path, {"out.log": [additional_log]}
         )
         is None
     )
@@ -599,7 +599,7 @@ def test_manage_output(tmp_path: Path):
         f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}"
     )
     output_name = launcher_service._import_output(
-        job_id, output_path, {"out.log": additional_log}
+        job_id, output_path, {"out.log": [additional_log]}
     )
     assert output_name is not None
     assert launcher_service._get_job_output_fallback_path(job_id).exists()

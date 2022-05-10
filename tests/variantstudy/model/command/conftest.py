@@ -1,16 +1,15 @@
 import zipfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -25,14 +24,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtraction,
-)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
-)
-from antarest.study.storage.variantstudy.model.interfaces import (
-    ICommandExtractor,
 )
 
 
@@ -56,26 +49,15 @@ def matrix_service() -> MatrixService:
 
 @pytest.fixture
 def command_context(matrix_service: MatrixService) -> CommandContext:
-    command_extractor = Mock(spec=CommandExtraction)
-    command_extractor.generate_update_comments.side_effect = (
-        lambda x: CommandExtraction.generate_update_comments(
-            command_extractor, x
-        )
-    )
-    command_extractor.generate_update_rawfile.side_effect = (
-        lambda x, u: CommandExtraction.generate_update_rawfile(
-            command_extractor, x, u
-        )
-    )
     command_context = CommandContext(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service
         ),
         matrix_service=matrix_service,
-        patch_service=PatchService(),
-        command_extractor=command_extractor,
+        patch_service=PatchService(
+            repository=Mock(spec=StudyMetadataRepository)
+        ),
     )
-    command_extractor.command_context = command_context
     return command_context
 
 

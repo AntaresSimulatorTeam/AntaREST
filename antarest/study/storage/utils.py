@@ -20,6 +20,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.utils import assert_this
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -33,6 +34,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +108,13 @@ def fix_study_root(study_path: Path) -> None:
         for item in os.listdir(root_path):
             shutil.move(str(root_path / item), str(study_path))
         shutil.rmtree(sub_root_path)
+
+
+def find_single_output_path(all_output_path: Path) -> Path:
+    children = os.listdir(all_output_path)
+    if len(children) == 1:
+        return find_single_output_path(all_output_path / children[0])
+    return all_output_path
 
 
 def extract_output_name(path_output: Path) -> str:
@@ -224,19 +233,7 @@ def get_start_date(
         level: granularity of the steps
 
     """
-    config = (
-        file_study.tree.get(
-            [
-                "output",
-                output_id,
-                "about-the-study",
-                "parameters",
-                "general",
-            ]
-        )
-        if output_id is not None
-        else file_study.tree.get(["settings", "generaldata", "general"])
-    )
+    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
     starting_month = cast(str, config.get("first-month-in-year"))
     starting_day = cast(str, config.get("january.1st"))
     leapyear = cast(bool, config.get("leapyear"))

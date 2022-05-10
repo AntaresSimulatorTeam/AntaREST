@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 import os
 import re
@@ -104,7 +105,7 @@ class StudyDownloader:
             cluster_details += [f"details-res-{data.level.value}"]
 
         files_matcher = (
-            [f"values-{data.level.value}", cluster_details]
+            [f"values-{data.level.value}"] + cluster_details
             if data.includeClusters and target[0] != StudyDownloadType.LINK
             else [f"values-{data.level.value}"]
         )
@@ -373,57 +374,75 @@ class StudyDownloader:
         filetype: ExportFormat,
         target_file: Path,
     ) -> None:
-        # 1- Zip/tar+gz container
-        with (
-            ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
-            if filetype == ExportFormat.ZIP
-            else tarfile.open(target_file, mode="w:gz")
-        ) as output_data:
-
-            # 2 - Create CSV files
-            for ts_data in matrix.data:
-                output = StringIO()
-                writer = csv.writer(output, quoting=csv.QUOTE_NONE)
-                nb_rows, csv_titles = StudyDownloader.export_infos(
-                    ts_data.data
+        if filetype == ExportFormat.JSON:
+            # 1- JSON
+            with open(target_file, "w") as fh:
+                json.dump(
+                    matrix.dict(),
+                    fh,
+                    ensure_ascii=False,
+                    allow_nan=True,
+                    indent=None,
+                    separators=(",", ":"),
                 )
-                if nb_rows == -1:
-                    raise Exception(
-                        f"Outputs export:  No rows for  {ts_data.name} csv"
+        else:
+            # 1- Zip/tar+gz container
+            with (
+                ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
+                if filetype == ExportFormat.ZIP
+                else tarfile.open(target_file, mode="w:gz")
+            ) as output_data:
+
+                # 2 - Create CSV files
+                for ts_data in matrix.data:
+                    output = StringIO()
+                    writer = csv.writer(output, quoting=csv.QUOTE_NONE)
+                    nb_rows, csv_titles = StudyDownloader.export_infos(
+                        ts_data.data
                     )
-                writer.writerow(csv_titles)
-                row_date = datetime.strptime(
-                    matrix.index.start_date, "%Y-%m-%d %H:%M:%S"
-                )
-                for year in ts_data.data:
-                    for i in range(0, nb_rows):
-                        columns = ts_data.data[year]
-                        csv_row: List[Optional[Union[int, float, str]]] = [
-                            str(row_date),
-                            int(year),
-                        ]
-                        csv_row.extend(
-                            [column_data.data[i] for column_data in columns]
+                    if nb_rows == -1:
+                        raise Exception(
+                            f"Outputs export:  No rows for  {ts_data.name} csv"
                         )
-                        writer.writerow(csv_row)
-                        if (
-                            matrix.index.level == StudyDownloadLevelDTO.WEEKLY
-                            and i == 0
-                        ):
-                            row_date = row_date + timedelta(
-                                days=matrix.index.first_week_size
+                    writer.writerow(csv_titles)
+                    row_date = datetime.strptime(
+                        matrix.index.start_date, "%Y-%m-%d %H:%M:%S"
+                    )
+                    for year in ts_data.data:
+                        for i in range(0, nb_rows):
+                            columns = ts_data.data[year]
+                            csv_row: List[Optional[Union[int, float, str]]] = [
+                                str(row_date),
+                                int(year),
+                            ]
+                            csv_row.extend(
+                                [
+                                    column_data.data[i]
+                                    for column_data in columns
+                                ]
                             )
-                        else:
-                            row_date = matrix.index.level.inc_date(row_date)
+                            writer.writerow(csv_row)
+                            if (
+                                matrix.index.level
+                                == StudyDownloadLevelDTO.WEEKLY
+                                and i == 0
+                            ):
+                                row_date = row_date + timedelta(
+                                    days=matrix.index.first_week_size
+                                )
+                            else:
+                                row_date = matrix.index.level.inc_date(
+                                    row_date
+                                )
 
-                bytes_data = str.encode(output.getvalue(), "utf-8")
-                if isinstance(output_data, ZipFile):
-                    output_data.writestr(f"{ts_data.name}.csv", bytes_data)
-                else:
-                    data_file = BytesIO(bytes_data)
-                    data_file.seek(0, os.SEEK_END)
-                    file_size = data_file.tell()
-                    data_file.seek(0)
-                    info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
-                    info.size = file_size
-                    output_data.addfile(tarinfo=info, fileobj=data_file)
+                    bytes_data = str.encode(output.getvalue(), "utf-8")
+                    if isinstance(output_data, ZipFile):
+                        output_data.writestr(f"{ts_data.name}.csv", bytes_data)
+                    else:
+                        data_file = BytesIO(bytes_data)
+                        data_file.seek(0, os.SEEK_END)
+                        file_size = data_file.tell()
+                        data_file.seek(0)
+                        info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
+                        info.size = file_size
+                        output_data.addfile(tarinfo=info, fileobj=data_file)

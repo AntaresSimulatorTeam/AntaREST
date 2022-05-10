@@ -13,6 +13,7 @@ from antarest.matrixstore.matrix_garbage_collector import (
 from antarest.matrixstore.model import MatrixDataSet, MatrixDataSetRelation
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -46,6 +47,7 @@ def matrix_garbage_collector(tmp_path: Path):
     command_factory = CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService),
+        patch_service=Mock(spec=PatchService),
     )
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = (

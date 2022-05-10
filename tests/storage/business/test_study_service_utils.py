@@ -227,5 +227,5 @@ def test_create_matrix_index(
     config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
 ):
     file_study = Mock()
-    file_study.tree.get.return_value = config
+    file_study.tree.get.return_value = {"general": config}
     assert get_start_date(file_study, "some output", level) == expected

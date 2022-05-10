@@ -31,6 +31,7 @@ class JobResultDTO(BaseModel):
     id: str
     study_id: str
     launcher: Optional[str]
+    launcher_params: Optional[str]
     status: JobStatus
     creation_date: str
     completion_date: Optional[str]
@@ -72,6 +73,7 @@ class JobResult(DTO, Base):  # type: ignore
     id = Column(String(36), primary_key=True)
     study_id = Column(String(36))
     launcher = Column(String)
+    launcher_params = Column(String, nullable=True)
     job_status = Column(Enum(JobStatus))
     creation_date = Column(DateTime, default=datetime.utcnow)
     completion_date = Column(DateTime)
@@ -87,6 +89,7 @@ class JobResult(DTO, Base):  # type: ignore
             id=self.id,
             study_id=self.study_id,
             launcher=self.launcher,
+            launcher_params=self.launcher_params,
             status=self.job_status,
             creation_date=str(self.creation_date),
             completion_date=str(self.completion_date)

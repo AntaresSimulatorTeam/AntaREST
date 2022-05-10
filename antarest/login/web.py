@@ -29,7 +29,7 @@ from antarest.login.model import (
     BotDTO,
     BotIdentityDTO,
     RoleDetailDTO,
-    UserGroup,
+    GroupDetailDTO,
     IdentityDTO,
 )
 from antarest.login.service import LoginService
@@ -114,13 +114,18 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         else:
             raise HTTPException(status_code=403, detail="Token invalid")
 
-    @bp.get("/users", tags=[APITag.users], response_model=List[UserInfo])
+    @bp.get(
+        "/users",
+        tags=[APITag.users],
+        response_model=List[Union[IdentityDTO, UserInfo]],
+    )
     def users_get_all(
+        details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching users list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        return [u.to_dto() for u in service.get_all_users(params)]
+        return service.get_all_users(params, details)
 
     @bp.get(
         "/users/{id}",
@@ -197,18 +202,23 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_all_roles_from_user(id, params)
         return id
 
-    @bp.get("/groups", tags=[APITag.users], response_model=List[GroupDTO])
+    @bp.get(
+        "/groups",
+        tags=[APITag.users],
+        response_model=List[Union[GroupDetailDTO, GroupDTO]],
+    )
     def groups_get_all(
+        details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching groups list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        return [g.to_dto() for g in service.get_all_groups(params)]
+        return service.get_all_groups(params, details)
 
     @bp.get(
         "/groups/{id}",
         tags=[APITag.users],
-        response_model=Union[UserGroup, GroupDTO],  # type: ignore
+        response_model=Union[GroupDetailDTO, GroupDTO],  # type: ignore
     )
     def groups_get_id(
         id: str,

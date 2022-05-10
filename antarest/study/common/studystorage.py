@@ -110,18 +110,22 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_study_information(
-        self, metadata: T, summary: bool = False
-    ) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: T) -> StudyMetadataDTO:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_raw(self, metadata: T, use_cache: bool = True) -> FileStudy:
+    def get_raw(
+        self,
+        metadata: T,
+        use_cache: bool = True,
+        output_dir: Optional[Path] = None,
+    ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
             use_cache: use cache
+            output_dir: optional output dir override
         Returns: the config and study tree object
 
         """
@@ -264,4 +268,8 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: FileStudyTreeConfigDTO
 
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def initialize_additional_data(self, study: T) -> bool:
         raise NotImplementedError()

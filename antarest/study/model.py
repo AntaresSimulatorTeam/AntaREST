@@ -49,6 +49,35 @@ class CommentsDto(BaseModel):
 
 
 @dataclass
+class StudyAdditionalData(Base):  # type:ignore
+    """
+    Study additional data
+    """
+
+    __tablename__ = "study_additional_data"
+
+    study_id = Column(
+        String(36),
+        ForeignKey("study.id"),
+        primary_key=True,
+    )
+    author = Column(String(255), default="Unknown")
+    horizon = Column(String)
+    patch = Column(String(), nullable=True)
+
+    def __eq__(self, other: Any) -> bool:
+        if not super().__eq__(other):
+            return False
+        if not isinstance(other, StudyAdditionalData):
+            return False
+        return bool(
+            other.author == self.author
+            and other.horizon == self.horizon
+            and other.patch == self.patch
+        )
+
+
+@dataclass
 class Study(Base):  # type: ignore
     """
     Standard Study entity
@@ -77,6 +106,11 @@ class Study(Base):  # type: ignore
     archived = Column(Boolean(), default=False)
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
+    additional_data = relationship(
+        StudyAdditionalData,
+        uselist=False,
+        cascade="all, delete, delete-orphan",
+    )
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
@@ -211,6 +245,7 @@ class StudyMetadataDTO(BaseModel):
 
 class StudyMetadataPatchDTO(BaseModel):
     name: Optional[str] = None
+    author: Optional[str] = None
     horizon: Optional[str] = None
     scenario: Optional[str] = None
     status: Optional[str] = None
@@ -226,6 +261,7 @@ class StudySimSettingsDTO(BaseModel):
     otherPreferences: Dict[str, Any]
     advancedParameters: Dict[str, Any]
     seedsMersenneTwister: Dict[str, Any]
+    playlist: Optional[List[int]] = None
 
 
 class StudySimResultDTO(BaseModel):

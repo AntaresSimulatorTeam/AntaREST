@@ -18,7 +18,7 @@ The study listing view is the main view, which provides :
 - creation/import tool
 
 Studies are linked to a "workspace" which refers to a storage disk. The workspace "default" (orange colored) is
-the internal storage where "managed" studies live. These studies files aren't meant to be accessible directly (via disk mount for instance).\
+the internal storage where "managed" studies live. These studies files aren't meant to be accessible directly (via disk mount for instance).  
 The other workspaces are studies that are found on mounted workspace and their unique ID can change if the studies are moved.
 
 Copied studies are always copied within the managed workspace. These managed studies though not directly accessible offers additional features:
@@ -59,7 +59,7 @@ The overview provides access to :
 
 The variant tab is only available for managed studies and have one or two sections.
 
-The first section is the variant dependency view. It displays the relation between studies and allows the creation of a child variant for the current study.\
+The first section is the variant dependency view. It displays the relation between studies and allows the creation of a child variant for the current study.  
 We can open a study in the dependency tree by simply clicking on it.
 
 ![](../assets/media/img/screenshot_variant_tree.png)
@@ -76,7 +76,7 @@ Here we can:
 ### Detailed view
 
 The detailed view is a tree representation of a study files. 
-It can be browsed and node can be viewed and edited.\
+It can be browsed and node can be viewed and edited.  
 :warning: The view can take some time to load the first time.
 
 
@@ -102,7 +102,7 @@ The data which can be uploaded are either a single tsv file, or a zipped list of
 
 ## User account & api tokens
 
-For normal user, the account section allows the creation of "api token".\
+For normal user, the account section allows the creation of "api token".  
 These token can be used in scripts that will use the [API](#api-documentation).
 
 ![](../assets/media/img/screenshot_useraccount.png)

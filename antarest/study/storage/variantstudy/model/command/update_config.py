@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Any, Union, List, Tuple, Dict
 
 from antarest.core.model import JSON
@@ -47,6 +48,7 @@ class UpdateConfig(ICommand):
             )
 
         study_data.tree.save(self.data, url)
+
         output, _ = self._apply_config(study_data.config)
         return output
 
@@ -75,29 +77,43 @@ class UpdateConfig(ICommand):
     def revert(
         self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
+        update_config_list: List[UpdateConfig] = []
+        self_target_path = Path(self.target)
+        parent_path: Path = Path(".")
         for command in reversed(history):
-            if (
-                isinstance(command, UpdateConfig)
-                and command.target == self.target
-            ):
-                return [command]
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
+            if isinstance(command, UpdateConfig):
+                # adding all the UpdateConfig commands until we find one containing self (or the end)
+                update_config_list.append(command)
+                if command.target == self.target:
+                    return [command]
+                elif Path(command.target) in self_target_path.parents:
+                    # found the last parent command.
+                    parent_path = Path(command.target)
+                    break
 
-        try:
-            return [
-                (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
-                ).generate_update_config(base.tree, self.target.split("/"))
-            ]
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for update_config {self.target}",
-                exc_info=e,
-            )
-            return []
+        output_list: List[ICommand] = [
+            command
+            for command in update_config_list[::-1]
+            if parent_path in Path(command.target).parents
+            or str(parent_path) == command.target
+        ]
+
+        if not output_list:
+
+            try:
+                output_list = [
+                    self._get_command_extractor().generate_update_config(
+                        base.tree, self.target.split("/")
+                    )
+                ]
+            except ChildNotFoundError as e:
+                logging.getLogger(__name__).warning(
+                    f"Failed to extract revert command for update_config {self.target}",
+                    exc_info=e,
+                )
+                output_list = []
+
+        return output_list
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

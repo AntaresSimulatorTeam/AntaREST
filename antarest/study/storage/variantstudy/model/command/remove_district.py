@@ -1,14 +1,11 @@
 import logging
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -63,9 +60,6 @@ class RemoveDistrict(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_district import (
             CreateDistrict,
         )
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-            CommandExtraction,
-        )
 
         for command in reversed(history):
             if (
@@ -74,10 +68,9 @@ class RemoveDistrict(ICommand):
             ):
                 return [command]
         try:
-            return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).extract_district(base, self.id)
+            return self._get_command_extractor().extract_district(
+                base, self.id
+            )
         except Exception as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_district {self.id}",

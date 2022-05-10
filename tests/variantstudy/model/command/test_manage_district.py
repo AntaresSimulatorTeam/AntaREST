@@ -1,6 +1,5 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
@@ -11,9 +10,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -183,7 +179,10 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_revert(command_context: CommandContext):
+@patch(
+    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_district",
+)
+def test_revert(mock_extract_district, command_context: CommandContext):
     base = CreateDistrict(
         name="foo",
         base_filter=DistrictBaseFilter.add_all,
@@ -196,13 +195,9 @@ def test_revert(command_context: CommandContext):
 
     base = RemoveDistrict(id="id", command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.extract_district.side_effect = (
-        ChildNotFoundError("")
-    )
+    mock_extract_district.side_effect = ChildNotFoundError("")
     base.revert([], study)
-    base.command_context.command_extractor.extract_district.assert_called_with(
-        study, "id"
-    )
+    mock_extract_district.assert_called_with(study, "id")
     assert base.revert(
         [
             CreateDistrict(

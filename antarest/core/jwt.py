@@ -1,11 +1,11 @@
-from dataclasses import dataclass, field
 from typing import List, Union
 
 from pydantic import BaseModel
 
-from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, Identity
+
+ADMIN_ID = 1
 
 
 class JWTGroup(BaseModel):
@@ -27,6 +27,13 @@ class JWTUser(BaseModel):
     type: str
     impersonator: int
     groups: List[JWTGroup] = []
+
+    def is_admin_token(self) -> bool:
+        """
+        Returns: true if the user is a bot of admin
+
+        """
+        return self.impersonator == ADMIN_ID
 
     def is_site_admin(self) -> bool:
         """
@@ -85,8 +92,8 @@ class JWTUser(BaseModel):
 
 
 DEFAULT_ADMIN_USER = JWTUser(
-    id=1,
-    impersonator=1,
+    id=ADMIN_ID,
+    impersonator=ADMIN_ID,
     type="users",
     groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )

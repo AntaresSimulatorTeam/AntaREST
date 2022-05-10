@@ -10,7 +10,12 @@ from antarest.core.exceptions import (
     BadZipBinary,
     StudyValidationError,
 )
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyAdditionalData,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -37,7 +42,7 @@ def test_import_study(tmp_path: Path) -> None:
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
-    study_factory.create_from_fs.return_value = None, study
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
     study_service = RawStudyService(
         config=Mock(),
@@ -62,6 +67,7 @@ def test_import_study(tmp_path: Path) -> None:
         id="other-study",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=tmp_path / "other-study",
+        additional_data=StudyAdditionalData(),
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)

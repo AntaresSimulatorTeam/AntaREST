@@ -2,17 +2,17 @@ import logging
 import os
 import shutil
 import tempfile
-from abc import abstractmethod, ABC
-from datetime import datetime
+from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO
+from typing import List, Union, Optional, IO, cast
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from antarest.core.config import Config
-from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.requests import RequestParameters
+from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import extract_zip, StopWatch, assert_this
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -25,18 +25,21 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PatchStudy,
     StudyMetadataPatchDTO,
+    Patch,
+    StudyAdditionalData,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    ConfigPathBuilder,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
-    FileStudyTreeConfig,
-    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     fix_study_root,
     remove_from_cache,
@@ -81,52 +84,29 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def get_study_information(
         self,
         study: T,
-        summary: bool = False,
     ) -> StudyMetadataDTO:
-        file_settings = {}
-        file_metadata = {}
+        additional_data = study.additional_data or StudyAdditionalData()
 
-        patch_metadata = PatchStudy()
+        try:
+            patch = Patch.parse_raw(additional_data.patch or "{}")
+        except Exception as e:
+            logger.warning(
+                f"Failed to parse patch for study {study.id}", exc_info=e
+            )
+            patch = Patch()
 
-        if not summary:
-            try:
-                patch_metadata = (
-                    self.patch_service.get(study).study or PatchStudy()
-                )
-                study_path = self.get_study_path(study)
-                if study_path:
-                    config = FileStudyTreeConfig(
-                        study_path=study_path,
-                        path=study_path,
-                        study_id="",
-                        version=-1,
-                    )
-                    raw_study = self.study_factory.create_from_config(config)
-                    file_metadata = raw_study.get(url=["study", "antares"])
-                    study_version = str(
-                        file_metadata.get("version", study.version)
-                    )
-                    if study_version != study.version:
-                        logger.warning(
-                            f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                        )
-                        study.version = study_version
-                    file_settings = raw_study.get(
-                        url=["settings", "generaldata", "general"]
-                    )
-            except Exception as e:
-                logger.error(
-                    "Failed to retrieve general settings for study %s",
-                    study.id,
-                    exc_info=e,
-                )
+        patch_metadata = patch.study or PatchStudy()
 
-        study_workspace = DEFAULT_WORKSPACE_NAME
-        if hasattr(study, "workspace"):
-            study_workspace = study.workspace
+        study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
+
+        owner_info = (
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            if study.owner is not None
+            else OwnerInfo(name=additional_data.author or "Unknown")
+        )
 
         return StudyMetadataDTO(
             id=study.id,
@@ -138,15 +118,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             managed=study_workspace == DEFAULT_WORKSPACE_NAME,
             type=study.type,
             archived=study.archived if study.archived is not None else False,
-            owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
-            if study.owner is not None
-            else OwnerInfo(name=file_metadata.get("author", "Unknown")),
+            owner=owner_info,
             groups=[
                 GroupDTO(id=group.id, name=group.name)
                 for group in study.groups
             ],
             public_mode=study.public_mode or PublicMode.NONE,
-            horizon=file_settings.get("horizon", None),
+            horizon=additional_data.horizon,
             scenario=patch_metadata.scenario,
             status=patch_metadata.status,
             doc=patch_metadata.doc,
@@ -213,8 +191,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
-                file_metadata = study_data.tree.get(
-                    url=["output", output, "about-the-study", "parameters"]
+                output_data: Simulation = study_data.config.outputs[output]
+                file_metadata = FileStudyHelpers.get_config(
+                    study_data, output_data.get_file()
                 )
                 settings = StudySimSettingsDTO(
                     general=file_metadata["general"],
@@ -226,8 +205,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     seedsMersenneTwister=file_metadata[
                         "seeds - Mersenne Twister"
                     ],
+                    playlist=ConfigPathBuilder.get_playlist(file_metadata),
                 )
-                output_data: Simulation = study_data.config.outputs[output]
+
                 results.append(
                     StudySimResultDTO(
                         name=output_data.get_file(),
@@ -347,3 +327,19 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         )
         return target.parent / filename
+
+    def _read_additional_data_from_files(
+        self, file_study: FileStudy
+    ) -> StudyAdditionalData:
+        logger.info(
+            f"Reading additional data from files for study {file_study.config.study_id}"
+        )
+        horizon = file_study.tree.get(
+            url=["settings", "generaldata", "general", "horizon"]
+        )
+        author = file_study.tree.get(url=["study", "antares", "author"])
+        patch = self.patch_service.get_from_filestudy(file_study)
+        study_additional_data = StudyAdditionalData(
+            horizon=horizon, author=author, patch=patch.json()
+        )
+        return study_additional_data

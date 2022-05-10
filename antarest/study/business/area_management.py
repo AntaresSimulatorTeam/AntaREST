@@ -1,11 +1,8 @@
 from enum import Enum
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import CommandApplicationError
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.requests import RequestParameters
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     RawStudy,
@@ -14,6 +11,7 @@ from antarest.study.model import (
     PatchCluster,
     Study,
 )
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -22,9 +20,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -34,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.remove_area import (
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class AreaType(Enum):
@@ -52,8 +46,8 @@ class AreaCreationDTO(BaseModel):
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
-    unitcount: int
-    nominalcapacity: int
+    unitcount: int = 0
+    nominalcapacity: int = 0
     group: Optional[str] = None
     min_stable_power: Optional[int] = None
     min_up_time: Optional[int] = None
@@ -76,9 +70,13 @@ class AreaUI(BaseModel):
 
 
 class AreaManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
+    def __init__(
+        self,
+        storage_service: StudyStorageService,
+        repository: StudyMetadataRepository,
+    ) -> None:
         self.storage_service = storage_service
-        self.patch_service = PatchService()
+        self.patch_service = PatchService(repository=repository)
 
     def get_all_areas(
         self, study: RawStudy, area_type: Optional[AreaType] = None
@@ -117,6 +115,13 @@ class AreaManager:
                 )
 
         return result
+
+    def get_all_areas_ui_info(self, study: RawStudy) -> Dict[str, Any]:
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        return file_study.tree.get(
+            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+        )
 
     def create_area(
         self, study: Study, area_creation_info: AreaCreationDTO
