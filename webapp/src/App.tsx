@@ -86,7 +86,7 @@ function App() {
                   <Route path="/data" element={<Data />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/api" element={<Api />} />
+                  <Route path="/apidoc" element={<Api />} />
                   <Route path="*" element={<Navigate to="/studies" />} />
                 </Routes>
               </MenuWrapper>
