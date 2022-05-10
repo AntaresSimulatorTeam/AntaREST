@@ -1,34 +1,17 @@
-// import { useTranslation } from "react-i18next";
-// import UnderConstruction from "../components/common/page/UnderConstruction";
-
-// function Data() {
-//   const [t] = useTranslation();
-
-//   return (
-//     <RootPage title={t("main:data")} titleIcon={StorageIcon}>
-//       <UnderConstruction />
-//     </RootPage>
-//   );
-// }
-
-// export default Data;
-
 import { useState, useEffect } from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
-import StorageIcon from "@mui/icons-material/Storage";
-import { AppState } from "../store/reducers";
-import DataView from "../components/data/DataView";
-import { deleteDataSet, getMatrixList } from "../services/api/matrix";
-import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from "../common/types";
-import DataModal from "../components/data/DataModal";
-import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
-import RootPage from "../components/common/page/RootPage";
-import MatrixModal from "../components/data/MatrixModal";
-import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import { AppState } from "../../store/reducers";
+import DataView from "./DataView";
+import { deleteDataSet, getMatrixList } from "../../services/api/matrix";
+import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from "../../common/types";
+import DataModal from "./DataModal";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import MatrixModal from "./MatrixModal";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -127,7 +110,7 @@ function Data(props: PropTypes) {
   }, [user, t, enqueueErrorSnackbar]);
 
   return (
-    <RootPage title={t("main:data")} titleIcon={StorageIcon}>
+    <>
       <DataView
         data={dataList}
         filter={filter}
@@ -165,7 +148,7 @@ function Data(props: PropTypes) {
           {t("data:deleteMatrixConfirmation")}
         </ConfirmationDialog>
       )}
-    </RootPage>
+    </>
   );
 }
 
