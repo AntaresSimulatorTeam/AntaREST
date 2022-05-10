@@ -44,7 +44,7 @@ class RemoveArea(ICommand):
             del study_data_config.areas[area_name].links[link]
 
         for id, set in study_data_config.sets.items():
-            if self.id in set.areas:
+            if set.areas and self.id in set.areas:
                 try:
                     study_data_config.sets[id].areas.remove(self.id)
                 except ValueError:
