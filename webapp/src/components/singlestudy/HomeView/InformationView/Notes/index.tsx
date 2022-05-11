@@ -25,6 +25,7 @@ const Root = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   justifyContent: "flex-start",
   alignItems: "center",
+  overflow: "hidden",
 }));
 
 const Note = styled(Box)(({ theme }) => ({
@@ -57,7 +58,7 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   height: 0,
   flex: 1,
   padding: theme.spacing(0),
-  overflow: "hidden",
+  overflow: "auto",
 }));
 
 const FigureInfoContainer = styled(Box)(({ theme }) => ({
