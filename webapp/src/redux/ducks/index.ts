@@ -1,26 +1,12 @@
-import {
-  applyMiddleware,
-  combineReducers,
-  createStore,
-  Store,
-  CombinedState,
-} from "redux";
-import { composeWithDevTools } from "redux-devtools-extension";
-import thunk from "redux-thunk";
-import { throttle } from "lodash";
-import study, { StudyState, resetStudies } from "./study";
-import auth, {
-  AuthState,
-  logoutAction,
-  persistState as persistAuthState,
-} from "./auth";
-import { setLogoutInterceptor } from "../../services/api/client";
-import upload, { UploadState } from "./upload";
-import global, { GlobalState } from "./global";
-import ui, { UIState } from "./ui";
-import websockets, { WebsocketState } from "./websockets";
+import { combineReducers } from "redux";
+import study from "./study";
+import auth from "./auth";
+import upload from "./upload";
+import global from "./global";
+import ui from "./ui";
+import websockets from "./websockets";
 
-const reducers = combineReducers({
+const rootReducer = combineReducers({
   global,
   study,
   auth,
@@ -29,29 +15,6 @@ const reducers = combineReducers({
   websockets,
 });
 
-export type AppState = CombinedState<{
-  global: GlobalState;
-  study: StudyState;
-  auth: AuthState;
-  upload: UploadState;
-  ui: UIState;
-  websockets: WebsocketState;
-}>;
+export type AppState = ReturnType<typeof rootReducer>;
 
-export default function createMainStore(): Store<AppState> {
-  const reduxStore = createStore(
-    reducers,
-    composeWithDevTools(applyMiddleware(thunk))
-  );
-  setLogoutInterceptor(
-    () => reduxStore.dispatch(logoutAction()),
-    () => reduxStore.dispatch(resetStudies())
-  );
-  reduxStore.subscribe(
-    throttle(() => {
-      persistAuthState(reduxStore.getState().auth);
-    }, 1000)
-  );
-
-  return reduxStore;
-}
+export default rootReducer;
