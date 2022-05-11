@@ -12,7 +12,7 @@ import {
   addConstraints,
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import XpansionTable from "../XpansionTable";
+import FileTable from "../../../../common/FileTable";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
@@ -87,12 +87,15 @@ function Files() {
     <>
       {loaded ? (
         <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <XpansionTable
+          <FileTable
             title={t("main:files")}
-            content={constraints || []}
+            content={
+              constraints?.map((item) => ({ id: item, name: item })) || []
+            }
             onDelete={deleteConstraint}
             onRead={getOneConstraint}
             uploadFile={addOneConstraint}
+            allowImport
           />
         </Box>
       ) : (

@@ -1,121 +1,24 @@
 import { useState, useEffect, forwardRef, ChangeEvent } from "react";
 import {
-  createStyles,
-  makeStyles,
-  Theme,
+  Box,
   TextField,
   Typography,
   Button,
   Checkbox,
   Chip,
   Tooltip,
-  CircularProgress,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import axios, { AxiosError } from "axios";
+import HelpIcon from "@mui/icons-material/Help";
 import { getGroups } from "../../services/api/user";
 import { GroupDTO, MatrixDataSetDTO } from "../../common/types";
-import { loaderStyle, saveMatrix } from "./utils";
+import { saveMatrix } from "./utils";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      flex: "1",
-      width: "100%",
-      display: "flex",
-      flexFlow: "column nowrap",
-      justifyContent: "flex-start",
-      alignItems: "center",
-      overflowY: "auto",
-      overflowX: "hidden",
-      position: "relative",
-    },
-    mandatoryInfos: {
-      flex: "1",
-      width: "90%",
-      display: "flex",
-      flexFlow: "column nowrap",
-      justifyContent: "flex-start",
-      alignItems: "flex-start",
-      padding: theme.spacing(2),
-      marginBottom: theme.spacing(1),
-    },
-    info: {
-      width: "400px",
-      height: "30px",
-      boxSizing: "border-box",
-      margin: theme.spacing(2),
-    },
-    parameters: {
-      flex: "1",
-      width: "90%",
-      display: "flex",
-      flexFlow: "column nowrap",
-      justifyContent: "flex-start",
-      alignItems: "flex-start",
-      marginBottom: theme.spacing(2),
-    },
-    parameterHeader: {
-      width: "100%",
-      height: "40px",
-      display: "flex",
-      flexFlow: "row nowrap",
-      justifyContent: "flex-start",
-      alignItems: "center",
-      paddingLeft: theme.spacing(2),
-      boxSizing: "border-box",
-    },
-    parameterTitle: {
-      color: theme.palette.primary.main,
-      marginRight: theme.spacing(1),
-      fontWeight: "bold",
-    },
-    input: {
-      display: "none",
-    },
-    button: {
-      padding: theme.spacing(1),
-      height: "30px",
-      "&:hover": {
-        borderColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.main,
-      },
-      marginRight: theme.spacing(1),
-    },
-    filename: {
-      color: theme.palette.primary.main,
-    },
-    uploadLabel: {
-      display: "flex",
-      flexFlow: "row nowrap",
-      justifyContent: "flex-start",
-      alignItems: "center",
-    },
-    addElement: {
-      width: "24px",
-      height: "24px",
-      color: theme.palette.primary.main,
-      "&:hover": {
-        color: theme.palette.secondary.main,
-      },
-      cursor: "pointer",
-    },
-    groupManagement: {
-      width: "100%",
-      display: "flex",
-      flexFlow: "row nowrap",
-      justifyContent: "flex-start",
-      alignItems: "flex-start",
-      flexWrap: "wrap",
-      "& > *": {
-        margin: theme.spacing(0.5),
-      },
-    },
-    ...loaderStyle,
-  })
-);
+import SimpleLoader from "../common/loaders/SimpleLoader";
+import BasicDialog from "../common/dialogs/BasicDialog";
+import { BoxParamHeader, BoxParam, ParamTitle } from "./styles";
 
 interface PropTypes {
   open: boolean;
@@ -125,7 +28,6 @@ interface PropTypes {
 }
 
 function DataModal(props: PropTypes) {
-  const classes = useStyles();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -197,7 +99,7 @@ function DataModal(props: PropTypes) {
       // eslint-disable-next-line react/jsx-props-no-spreading
       return (
         <span {...p} style={{ marginLeft: "0.5em" }} ref={ref}>
-          <FontAwesomeIcon icon={["far", "question-circle"]} />
+          <HelpIcon />
         </span>
       );
     }
@@ -227,43 +129,71 @@ function DataModal(props: PropTypes) {
   }, [data, t, enqueueSnackbar]);
 
   return (
-    <GenericModal
+    <BasicDialog
       open={open}
-      handleClose={importing ? undefined : onClose}
-      handleAction={importing ? undefined : onSave}
+      onClose={importing ? undefined : onClose}
       title={data ? data.name : t("data:newMatrixTitle")}
-      buttonTitle={t("settings:saveButton")}
+      actions={
+        <Box>
+          <Button
+            variant="contained"
+            onClick={importing ? undefined : onClose}
+            sx={{ m: 2 }}
+          >
+            {t("settings:cancelButton")}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={importing ? undefined : onSave}
+            sx={{ m: 2 }}
+          >
+            {t("settings:saveButton")}
+          </Button>
+        </Box>
+      }
     >
-      <div className={classes.root}>
-        {importing && (
-          <>
-            <div className={classes.rootLoader}>
-              {uploadProgress < 100 ? (
-                <div className={classes.loaderContainer}>
-                  <CircularProgress
-                    variant="determinate"
-                    className={classes.loaderWheel}
-                    value={uploadProgress}
-                  />
-                  <div className={classes.loaderMessage}>
-                    {t("data:uploadingmatrix")}
-                  </div>
-                </div>
-              ) : (
-                <div className={classes.loaderContainer}>
-                  <CircularProgress className={classes.loaderWheel} />
-                  <div className={classes.loaderMessage}>
-                    {t("data:analyzingmatrix")}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={clsx(classes.rootLoader, classes.shadow)} />
-          </>
-        )}
-        <div className={classes.mandatoryInfos}>
+      <Box
+        sx={{
+          flex: "1",
+          width: "100%",
+          display: "flex",
+          flexFlow: "column nowrap",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+        }}
+      >
+        {importing &&
+          (uploadProgress < 100 ? (
+            <SimpleLoader
+              message="data:uploadingmatrix"
+              progress={uploadProgress}
+            />
+          ) : (
+            <SimpleLoader message="data:analyzingmatrix" />
+          ))}
+        <Box
+          sx={{
+            flex: "1",
+            width: "90%",
+            display: "flex",
+            flexFlow: "column nowrap",
+            justifyContent: "flex-start",
+            alignItems: "flex-start",
+            p: 2,
+            mb: 1,
+          }}
+        >
           <TextField
-            className={classes.info}
+            sx={{
+              width: "400px",
+              height: "30px",
+              boxSizing: "border-box",
+              m: 2,
+            }}
             size="small"
             value={name}
             onChange={(event) => setName(event.target.value as string)}
@@ -271,65 +201,101 @@ function DataModal(props: PropTypes) {
             variant="outlined"
           />
           {!data && (
-            <div className={classes.info}>
+            <Box
+              sx={{
+                width: "400px",
+                height: "30px",
+                boxSizing: "border-box",
+                m: 2,
+              }}
+            >
               <input
-                className={classes.input}
+                style={{
+                  display: "none",
+                }}
                 id="upload-file"
                 accept=".csv, .txt, .zip"
                 onChange={onUpload}
                 type="file"
               />
-              <label htmlFor="upload-file" className={classes.uploadLabel}>
+              <label
+                htmlFor="upload-file"
+                style={{
+                  display: "flex",
+                  flexFlow: "row nowrap",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
+                }}
+              >
                 <Button
-                  className={classes.button}
+                  sx={{
+                    p: 1,
+                    height: "30px",
+                    "&:hover": {
+                      borderColor: "secondary.main",
+                      color: "secondary.main",
+                    },
+                    mr: 1,
+                  }}
                   variant="outlined"
                   color="primary"
                   component="span"
                 >
                   {t("data:upload")}
                 </Button>
-                <Typography noWrap className={classes.filename}>
+                <Typography
+                  noWrap
+                  sx={{
+                    color: "action.active",
+                  }}
+                >
                   {currentFile ? currentFile.name : t("data:choosefile")}
                 </Typography>
                 <Tooltip title={t("data:uploadHelp") as string} placement="top">
                   <HelperIcon />
                 </Tooltip>
               </label>
-            </div>
+            </Box>
           )}
-        </div>
-        <div className={classes.parameters}>
-          <div className={classes.parameterHeader}>
-            <Typography className={classes.parameterTitle}>
-              {t("data:jsonFormat")}
-            </Typography>
+        </Box>
+        <BoxParam>
+          <BoxParamHeader>
+            <ParamTitle>{t("data:jsonFormat")}</ParamTitle>
             <Checkbox
               checked={isJson}
               onChange={() => setIsJson(!isJson)}
               inputProps={{ "aria-label": "primary checkbox" }}
             />
-          </div>
-        </div>
-        <div className={classes.parameters}>
-          <div className={classes.parameterHeader}>
-            <Typography className={classes.parameterTitle}>
-              {t("data:publicLabel")}
-            </Typography>
+          </BoxParamHeader>
+        </BoxParam>
+        <BoxParam>
+          <BoxParamHeader>
+            <ParamTitle>{t("data:publicLabel")}</ParamTitle>
             <Checkbox
               checked={publicStatus}
               onChange={() => setPublic(!publicStatus)}
               inputProps={{ "aria-label": "primary checkbox" }}
             />
-          </div>
-        </div>
+          </BoxParamHeader>
+        </BoxParam>
         {!publicStatus && (
-          <div className={classes.parameters}>
-            <div className={classes.parameterHeader}>
-              <Typography className={classes.parameterTitle}>
-                {t("data:groupsLabel")}
-              </Typography>
-            </div>
-            <div className={classes.groupManagement}>
+          <BoxParam>
+            <BoxParamHeader>
+              <ParamTitle>{t("data:groupsLabel")}</ParamTitle>
+            </BoxParamHeader>
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexFlow: "row nowrap",
+                justifyContent: "flex-start",
+                alignItems: "flex-start",
+                flexWrap: "wrap",
+                "& > *": {
+                  m: 0.5,
+                },
+              }}
+            >
               {groupList.map((item) => {
                 const index = selectedGroupList.findIndex(
                   (elm) => item.id === elm.id
@@ -352,11 +318,11 @@ function DataModal(props: PropTypes) {
                   />
                 );
               })}
-            </div>
-          </div>
+            </Box>
+          </BoxParam>
         )}
-      </div>
-    </GenericModal>
+      </Box>
+    </BasicDialog>
   );
 }
 

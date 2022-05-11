@@ -9,37 +9,42 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Tooltip,
 } from "@mui/material";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ImportForm from "../../../common/ImportForm";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import ImportForm from "../ImportForm";
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { Title, StyledVisibilityIcon, StyledDeleteIcon } from "./styles";
+import { GenericInfo } from "../../../common/types";
 
 const logErr = debug("antares:createimportform:error");
 
 interface PropType {
   title: string;
-  content: Array<string>;
-  onDelete: (filename: string) => Promise<void>;
-  onRead: (filename: string) => Promise<void>;
-  uploadFile: (file: File) => Promise<void>;
+  content: Array<GenericInfo>;
+  onDelete: (id: string) => Promise<void>;
+  onRead: (id: string) => Promise<void>;
+  uploadFile?: (file: File) => Promise<void>;
+  allowImport?: boolean;
 }
 
-function XpansionTable(props: PropType) {
+function FileTable(props: PropType) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { title, content, onDelete, onRead, uploadFile } = props;
+  const { title, content, onDelete, onRead, uploadFile, allowImport } = props;
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<string>("");
 
   const onImport = async (file: File) => {
     try {
-      await uploadFile(file);
+      if (uploadFile) {
+        await uploadFile(file);
+      }
     } catch (e) {
       logErr("Failed to import file", file, e);
       enqueueErrorSnackbar(t("studymanager:failtosavedata"), e as AxiosError);
@@ -61,9 +66,11 @@ function XpansionTable(props: PropType) {
     >
       <Title>{title}</Title>
       <Divider sx={{ mt: 1, mb: 2 }} />
-      <Box display="flex" justifyContent="flex-end">
-        <ImportForm text={t("main:import")} onImport={onImport} />
-      </Box>
+      {allowImport && (
+        <Box display="flex" justifyContent="flex-end">
+          <ImportForm text={t("main:import")} onImport={onImport} />
+        </Box>
+      )}
       <Box
         width="100%"
         flexGrow={1}
@@ -93,7 +100,7 @@ function XpansionTable(props: PropType) {
             <TableBody>
               {content.map((row) => (
                 <TableRow
-                  key={row}
+                  key={row.id}
                   sx={(theme) => ({
                     "&> th, >td": {
                       borderBottom: "solid 1px",
@@ -102,7 +109,7 @@ function XpansionTable(props: PropType) {
                   })}
                 >
                   <TableCell component="th" scope="row">
-                    {row}
+                    {row.name}
                   </TableCell>
                   <TableCell
                     align="right"
@@ -113,13 +120,21 @@ function XpansionTable(props: PropType) {
                       alignItems: "center",
                     }}
                   >
-                    <StyledVisibilityIcon onClick={() => onRead(row)} />
-                    <StyledDeleteIcon
+                    <Tooltip
+                      title="Lire"
+                      onClick={() => onRead(row.id as string)}
+                    >
+                      <StyledVisibilityIcon />
+                    </Tooltip>
+                    <Tooltip
+                      title="Supprimer"
                       sx={{
                         mx: 1,
                       }}
-                      onClick={() => setOpenConfirmationModal(row)}
-                    />
+                      onClick={() => setOpenConfirmationModal(row.id as string)}
+                    >
+                      <StyledDeleteIcon />
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -145,4 +160,9 @@ function XpansionTable(props: PropType) {
   );
 }
 
-export default XpansionTable;
+FileTable.defaultProps = {
+  uploadFile: undefined,
+  allowImport: false,
+};
+
+export default FileTable;

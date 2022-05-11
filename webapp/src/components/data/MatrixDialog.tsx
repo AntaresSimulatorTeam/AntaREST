@@ -2,31 +2,14 @@ import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import {
-  CircularProgress,
-  createStyles,
-  makeStyles,
-  Theme,
-  Tooltip,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import { MatrixInfoDTO, MatrixType } from "../../common/types";
-import InformationModal from "../ui/InformationModal";
 import MatrixView from "../common/MatrixView";
+import BasicDialog from "../common/dialogs/BasicDialog";
 import { getMatrix } from "../../services/api/matrix";
-import { CopyIcon, loaderStyle } from "./utils";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    matrixView: {
-      width: "100%",
-      height: "100%",
-      padding: theme.spacing(2),
-      position: "relative",
-    },
-    ...loaderStyle,
-  })
-);
+import NoContent from "../common/page/NoContent";
+import SimpleLoader from "../common/loaders/SimpleLoader";
 
 interface PropTypes {
   matrixInfo: MatrixInfoDTO;
@@ -34,7 +17,7 @@ interface PropTypes {
   onClose: () => void;
 }
 
-function MatrixModal(props: PropTypes) {
+function MatrixDialog(props: PropTypes) {
   const { matrixInfo, open, onClose } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -79,43 +62,36 @@ function MatrixModal(props: PropTypes) {
       setCurrentMatrix({ index: [], columns: [], data: [] });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enqueueSnackbar, matrixInfo, t]);
+  }, [enqueueErrorSnackbar, matrixInfo, t]);
 
   return (
-    <InformationModal
+    <BasicDialog
       open={open}
-      fixedSize
-      title={
-        <div>
-          <Tooltip title={matrixInfo.id} placement="top">
-            <span>{`Matrix- ${matrixInfo.name}`}</span>
-          </Tooltip>
-          <Tooltip title={t("data:copyid") as string} placement="top">
-            <CopyIcon
-              style={{ marginLeft: "0.5em", cursor: "pointer" }}
-              onClick={() => copyId(matrixInfo.id)}
-            />
-          </Tooltip>
-        </div>
-      }
-      onButtonClick={onClose}
-      buttonName={t("main:closeButton")}
+      title={`Matrix - ${matrixInfo.name}`}
+      onClose={onClose}
+      fullWidth
+      maxWidth="lg"
     >
-      <div className={classes.matrixView}>
-        {loading && (
-          <>
-            <div className={classes.rootLoader}>
-              <div className={classes.loaderContainer}>
-                <CircularProgress className={classes.loaderWheel} />
-              </div>
-            </div>
-            <div className={clsx(classes.rootLoader, classes.shadow)} />
-          </>
+      <Box sx={{ height: "60vh" }}>
+        {loading && <SimpleLoader />}
+        {matrix.columns.length > 0 ? (
+          <MatrixView readOnly matrix={matrix} />
+        ) : (
+          !loading && (
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                pt: "3%",
+              }}
+            >
+              <NoContent title="data:matrixEmpty" />
+            </Box>
+          )
         )}
-        <MatrixView readOnly={false} matrix={matrix} />
-      </div>
-    </InformationModal>
+      </Box>
+    </BasicDialog>
   );
 }
 
-export default MatrixModal;
+export default MatrixDialog;

@@ -13,7 +13,7 @@ import {
   ActiveButton,
   StyledVisibilityIcon,
   StyledDeleteIcon,
-} from "../styles";
+} from "../share/styles";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";

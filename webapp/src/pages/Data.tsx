@@ -1,18 +1,3 @@
-// import { useTranslation } from "react-i18next";
-// import UnderConstruction from "../components/common/page/UnderConstruction";
-
-// function Data() {
-//   const [t] = useTranslation();
-
-//   return (
-//     <RootPage title={t("main:data")} titleIcon={StorageIcon}>
-//       <UnderConstruction />
-//     </RootPage>
-//   );
-// }
-
-// export default Data;
-
 import { useState, useEffect } from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { AxiosError } from "axios";
@@ -20,15 +5,24 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StorageIcon from "@mui/icons-material/Storage";
+import { Box } from "@mui/material";
 import { AppState } from "../store/reducers";
-import DataView from "../components/data/DataView";
-import { deleteDataSet, getMatrixList } from "../services/api/matrix";
-import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from "../common/types";
-import DataModal from "../components/data/DataModal";
+import DataPropsView from "../components/data/DataPropsView";
+import {
+  deleteDataSet,
+  exportMatrixDataset,
+  getMatrixList,
+} from "../services/api/matrix";
+import { MatrixInfoDTO, MatrixDataSetDTO } from "../common/types";
+import DataDialog from "../components/data/DataDialog";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
 import RootPage from "../components/common/page/RootPage";
-import MatrixModal from "../components/data/MatrixModal";
+import MatrixDialog from "../components/data/MatrixDialog";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import NoContent from "../components/common/page/NoContent";
+import SimpleLoader from "../components/common/loaders/SimpleLoader";
+import SplitLayoutView from "../components/common/SplitLayoutView";
+import FileTable from "../components/common/FileTable";
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -43,9 +37,10 @@ function Data(props: PropTypes) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
   const [dataList, setDataList] = useState<Array<MatrixDataSetDTO>>([]);
-  const [idForDeletion, setIdForDeletion] = useState<IDType>(-1);
-  const [filter, setFilter] = useState<string>("");
+  const [idForDeletion, setIdForDeletion] = useState<string>();
+  const [selectedItem, setSelectedItem] = useState<string>();
   const { user } = props;
+  const [loaded, setLoaded] = useState(false);
 
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -59,17 +54,17 @@ function Data(props: PropTypes) {
     MatrixInfoDTO | undefined
   >();
 
-  const createNewData = () => {
+  const handleCreation = () => {
     setCurrentData(undefined);
     setOpenModal(true);
   };
 
-  const onUpdateClick = (id: IDType): void => {
+  const onUpdateClick = (id: string): void => {
     setCurrentData(dataList.find((item) => item.id === id));
     setOpenModal(true);
   };
 
-  const onDeleteClick = (id: IDType) => {
+  const handleDelete = async (id: string) => {
     setIdForDeletion(id);
     setOpenConfirmationModal(true);
   };
@@ -82,7 +77,7 @@ function Data(props: PropTypes) {
     } catch (e) {
       enqueueErrorSnackbar(t("data:onMatrixDeleteError"), e as AxiosError);
     }
-    setIdForDeletion(-1);
+    setIdForDeletion(undefined);
     setOpenConfirmationModal(false);
   };
 
@@ -106,9 +101,25 @@ function Data(props: PropTypes) {
     }
   };
 
-  const onMatrixClick = async (matrixInfo: MatrixInfoDTO) => {
-    setCurrentMatrix(matrixInfo);
+  const onMatrixClick = async (id: string) => {
+    if (selectedItem) {
+      const tmp = dataList.find((o) => o.id === selectedItem);
+      if (tmp) {
+        setCurrentMatrix({
+          id,
+          name: tmp.matrices.find((o) => o.id === id)?.id || "",
+        });
+      }
+    }
     setMatrixModal(true);
+  };
+
+  const onDownloadDataset = async (datasetId: string) => {
+    try {
+      await exportMatrixDataset(datasetId);
+    } catch (e) {
+      enqueueErrorSnackbar(t("data:matrixError"), e as AxiosError);
+    }
   };
 
   useEffect(() => {
@@ -117,7 +128,9 @@ function Data(props: PropTypes) {
         const matrix = await getMatrixList();
         setDataList(matrix);
       } catch (e) {
-        enqueueErrorSnackbar(t("data:matrixError"), e as AxiosError);
+        enqueueErrorSnackbar(t("data:matrixListError"), e as AxiosError);
+      } finally {
+        setLoaded(true);
       }
     };
     init();
@@ -126,25 +139,44 @@ function Data(props: PropTypes) {
     };
   }, [user, t, enqueueErrorSnackbar]);
 
+  const matrices = dataList.find((item) => item.id === selectedItem)?.matrices;
+
   return (
     <RootPage title={t("main:data")} titleIcon={StorageIcon}>
-      <DataView
-        data={dataList}
-        filter={filter}
-        user={user}
-        onDeleteClick={onDeleteClick}
-        onUpdateClick={onUpdateClick}
-        onMatrixClick={onMatrixClick}
-      />
+      {loaded && dataList.length > 0 ? (
+        <SplitLayoutView
+          left={
+            <DataPropsView
+              dataset={dataList}
+              onAdd={handleCreation}
+              selectedItem={selectedItem || ""}
+              setSelectedItem={setSelectedItem}
+            />
+          }
+          right={
+            <Box sx={{ width: "100%" }}>
+              <FileTable
+                title="Matrices"
+                content={matrices || []}
+                onDelete={handleDelete}
+                onRead={onMatrixClick}
+              />
+            </Box>
+          }
+        />
+      ) : (
+        loaded && <NoContent />
+      )}
+      {!loaded && <SimpleLoader />}
       {matrixModal && currentMatrix && (
-        <MatrixModal
+        <MatrixDialog
           open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present
           matrixInfo={currentMatrix}
           onClose={onMatrixModalClose}
         />
       )}
       {openModal && (
-        <DataModal
+        <DataDialog
           open={openModal} // Why 'openModal &&' ? => Otherwise previous data are still present
           data={currentData}
           onNewDataUpdate={onNewDataUpdate}
