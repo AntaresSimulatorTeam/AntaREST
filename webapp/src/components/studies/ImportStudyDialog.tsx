@@ -11,9 +11,9 @@ import { getStudyMetadata, importStudy } from "../../services/api/study";
 import { addStudies } from "../../redux/ducks/study";
 import { StudyMetadata } from "../../common/types";
 import {
-  addUpload,
+  createUploadWithListener,
   updateUpload,
-  completeUpload,
+  deleteUploadWithListener,
 } from "../../redux/ducks/upload";
 import { AppState } from "../../redux/ducks";
 import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
@@ -23,10 +23,10 @@ const mapState = (state: AppState) => ({ uploads: state.upload.uploads });
 
 const mapDispatch = {
   addStudy: (study: StudyMetadata) => addStudies([study]),
-  createUpload: (name: string) => addUpload(name),
+  createUpload: createUploadWithListener,
   updateUploadCompletion: (id: string, completion: number) =>
-    updateUpload(id, completion),
-  endUpload: (id: string) => completeUpload(id),
+    updateUpload({ id, completion }),
+  endUpload: deleteUploadWithListener,
 };
 
 const connector = connect(mapState, mapDispatch);
