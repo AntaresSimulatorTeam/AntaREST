@@ -35,7 +35,11 @@ function StudyDataView(props: PropTypes) {
     setLoaded(false);
     try {
       const res = await getStudyData(study, url);
-      setData(res);
+      if (typeof res === "object") {
+        setData(res.join("\n"));
+      } else {
+        setData(res);
+      }
     } catch (e) {
       enqueueErrorSnackbar(
         t("studymanager:failtoretrievedata"),
