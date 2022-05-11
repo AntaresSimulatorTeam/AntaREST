@@ -7,7 +7,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-class TsNumberVector(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]):
+class TsNumberVector(LazyNode[List[int], List[int], JSON]):
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -24,7 +24,11 @@ class TsNumberVector(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]):
         logger.warning(f"Missing file {self.config.path}")
         return []
 
-    def dump(self, data: List[int], url: Optional[List[str]] = None) -> None:
+    def dump(
+        self,
+        data: Union[str, bytes, List[int]],
+        url: Optional[List[str]] = None,
+    ) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         with open(self.config.path, "w") as fh:
             fh.write(f"size:1x{len(data)}\n")
