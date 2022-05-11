@@ -10,17 +10,21 @@ import { moveStudy } from "../../services/api/study";
 import { isStringEmpty } from "../../services/utils";
 import FormDialog, { SubmitHandlerData } from "../common/dialogs/FormDialog";
 
-interface Props {
+interface Props extends DialogProps {
   study: StudyMetadata;
   onClose: () => void;
 }
 
-function MoveStudyDialog(props: Props & DialogProps) {
+function MoveStudyDialog(props: Props) {
   const { study, open, onClose } = props;
   const [t] = useTranslation();
   const mounted = usePromise();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerData) => {
     const { folder } = data.values;
@@ -40,6 +44,10 @@ function MoveStudyDialog(props: Props & DialogProps) {
       );
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <FormDialog
