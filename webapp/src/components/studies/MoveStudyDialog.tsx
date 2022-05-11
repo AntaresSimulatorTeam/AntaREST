@@ -1,6 +1,7 @@
 import { DialogProps } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useSnackbar } from "notistack";
+import { dropLast, join, split } from "ramda";
 import { useTranslation } from "react-i18next";
 import { usePromise } from "react-use";
 import { StudyMetadata } from "../../common/types";
@@ -40,15 +41,14 @@ function MoveStudyDialog(props: Props & DialogProps) {
     }
   };
 
-  const pathComponents = study.folder?.split("/");
-  const defaultValue = pathComponents
-    ? pathComponents.slice(0, pathComponents.length - 1).join("/")
-    : undefined;
-
   return (
     <FormDialog
       open={open}
-      formOptions={{ defaultValues: { folder: defaultValue } }}
+      formOptions={{
+        defaultValues: {
+          folder: join("/", dropLast(1, split("/", study.folder || ""))),
+        },
+      }}
       onSubmit={handleSubmit}
       onCancel={onClose}
     >

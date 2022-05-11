@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from "axios";
+import { trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -146,7 +147,7 @@ export const copyStudy = async (
 };
 
 export const moveStudy = async (sid: string, folder: string): Promise<void> => {
-  const folderWithId = `${folder}/${sid}`;
+  const folderWithId = trimCharsStart("/", `${folder.trim()}/${sid}`);
   await client.put(
     `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`
   );
