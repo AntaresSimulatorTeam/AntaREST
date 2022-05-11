@@ -688,6 +688,7 @@ class StudyService:
                     # TODO re enable this on an async worker
                     # study.content_status = self._analyse_study(study)
 
+                    self.repository.save(study)
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_CREATED,
@@ -695,7 +696,6 @@ class StudyService:
                             permissions=create_permission_from_study(study),
                         )
                     )
-                    self.repository.save(study)
                 except Exception as e:
                     logger.error(
                         f"Failed to add study {folder.path}", exc_info=e
@@ -770,6 +770,23 @@ class StudyService:
             task_or_study_id = res.return_value or ""
 
         return task_or_study_id
+
+    def move_study(
+        self, study_id: str, new_folder: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        if not is_managed(study):
+            raise NotAManagedStudyException(study_id)
+        study.folder = new_folder
+        self.repository.save(study, update_modification_date=False)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
 
     def export_study(
         self,

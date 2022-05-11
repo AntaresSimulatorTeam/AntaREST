@@ -22,6 +22,7 @@ import { indigo } from "@mui/material/colors";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -41,6 +42,7 @@ import DeleteStudyModal from "./DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
 import StarToggle from "../common/StarToggle";
+import MoveStudyDialog from "./MoveStudyDialog";
 
 interface Props {
   study: StudyMetadata;
@@ -78,6 +80,7 @@ export default function StudyCard(props: Props) {
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
   const [openExportModal, setOpenExportModal] = useState<boolean>(false);
+  const [openMoveDialog, setOpenMoveDialog] = useState<boolean>(false);
 
   const handleFavoriteClick = () => {
     onFavoriteClick({ id: study.id, name: study.name });
@@ -343,6 +346,25 @@ export default function StudyCard(props: Props) {
                 </ListItemIcon>
                 <ListItemText>{t("studymanager:copy")}</ListItemText>
               </MenuItem>
+              {study.managed && (
+                <MenuItem
+                  onClick={() => {
+                    setOpenMoveDialog(true);
+                    handleClose();
+                  }}
+                >
+                  <ListItemIcon>
+                    <DriveFileMoveIcon
+                      sx={{
+                        color: "action.active",
+                        width: "24px",
+                        height: "24px",
+                      }}
+                    />
+                  </ListItemIcon>
+                  <ListItemText>{t("studymanager:moveStudy")}</ListItemText>
+                </MenuItem>
+              )}
               <MenuItem
                 onClick={() => {
                   setOpenExportModal(true);
@@ -411,6 +433,13 @@ export default function StudyCard(props: Props) {
         <ExportModal
           open={openExportModal}
           onClose={() => setOpenExportModal(false)}
+          study={study}
+        />
+      )}
+      {openMoveDialog && (
+        <MoveStudyDialog
+          open={openMoveDialog}
+          onClose={() => setOpenMoveDialog(false)}
           study={study}
         />
       )}

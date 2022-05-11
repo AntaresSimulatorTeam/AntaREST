@@ -206,6 +206,13 @@ def test_main(app: FastAPI):
         },
     )
 
+    client.put(
+        f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+
     res = client.get(
         "/v1/studies",
         headers={
@@ -213,6 +220,12 @@ def test_main(app: FastAPI):
         },
     )
     assert len(res.json()) == 3
+    assert (
+        filter(
+            lambda s: s["id"] == copied.json(), res.json().values()
+        ).__next__()["folder"]
+        == "foo/bar"
+    )
 
     res = client.post(
         "/v1/studies/_initialize_additional_data_in_db",
