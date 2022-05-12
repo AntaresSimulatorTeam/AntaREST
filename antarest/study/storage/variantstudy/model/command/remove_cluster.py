@@ -130,6 +130,7 @@ class RemoveCluster(ICommand):
         )
 
         self._remove_cluster(study_data.config)
+        self._remove_cluster_from_binding_constraints(study_data)
 
         return CommandOutput(
             status=True,
@@ -193,3 +194,39 @@ class RemoveCluster(ICommand):
 
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def _remove_cluster_from_binding_constraints(
+        self, study_data: FileStudy
+    ) -> None:
+
+        binding_constraints = study_data.tree.get(
+            ["input", "bindingconstraints", "bindingconstraints"]
+        )
+
+        id_to_remove = []
+
+        for id, bc in binding_constraints.items():
+            new_bc = {
+                k: v
+                for k, v in bc.items()
+                if f"{self.area_id}.{self.cluster_id}" not in k
+            }
+            if [k for k in new_bc.keys() if "." in k or "%" in k]:
+                binding_constraints[id] = new_bc
+            else:
+                id_to_remove.append(id)
+
+        for id in id_to_remove:
+            study_data.tree.delete(
+                [
+                    "input",
+                    "bindingconstraints",
+                    binding_constraints[id]["id"],
+                ]
+            )
+            del binding_constraints[id]
+
+        study_data.tree.save(
+            binding_constraints,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )
