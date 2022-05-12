@@ -116,7 +116,8 @@ export const NavListItemIcon = styled(ListItemIcon)({
 });
 
 const options = {
-  shouldForwardProp: (propName: PropertyKey) => propName !== "extended",
+  shouldForwardProp: (propName: PropertyKey): boolean =>
+    propName !== "extended",
 };
 
 export const NavDrawer = styled(
