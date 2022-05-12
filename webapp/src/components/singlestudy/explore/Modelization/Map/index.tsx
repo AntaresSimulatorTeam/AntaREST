@@ -278,19 +278,21 @@ function Map() {
           const data = await getSynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
             const areas = await getAreaPositions(study.id);
-            const tempNodeData = Object.keys(areas).map((areaId) => ({
-              id: areaId,
-              name: data.areas[areaId].name,
-              x: areas[areaId].ui.x,
-              y: areas[areaId].ui.y,
-              color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-              rgbColor: [
-                areas[areaId].ui.color_r,
-                areas[areaId].ui.color_g,
-                areas[areaId].ui.color_b,
-              ],
-              size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-            }));
+            const tempNodeData = Object.keys(areas).map((areaId) => {
+              return {
+                id: areaId,
+                name: data.areas[areaId].name,
+                x: areas[areaId].ui.x,
+                y: areas[areaId].ui.y,
+                color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+                rgbColor: [
+                  areas[areaId].ui.color_r,
+                  areas[areaId].ui.color_g,
+                  areas[areaId].ui.color_b,
+                ],
+                size: { width: calculateSize(areaId), height: NODE_HEIGHT },
+              };
+            });
             setNodeData(tempNodeData);
             setLinkData(
               Object.keys(data.areas).reduce(

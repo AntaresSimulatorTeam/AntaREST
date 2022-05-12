@@ -15,8 +15,8 @@ import {
   LinkProperties,
   UpdateAreaUi,
 } from "../../../../../common/types";
-import BasicModal from "../../../../common/BasicModal";
 import LinksView from "./LinksView";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   cursor: "pointer",
@@ -238,52 +238,23 @@ function PanelView(props: PropType) {
         </Box>
       </Box>
       {openConfirmationModal && node && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          closeButtonLabel={t("main:noButton")}
-          actionButtonLabel={t("main:yesButton")}
-          onActionButtonClick={() => {
-            onDelete(node.id);
+        <ConfirmationDialog
+          onCancel={() => setOpenConfirmationModal(false)}
+          onConfirm={() => {
+            if (node) {
+              onDelete(node.id);
+            }
+            if (link) {
+              onDelete(link.source, link.target);
+            }
             setOpenConfirmationModal(false);
           }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
+          alert="warning"
+          open
         >
-          <Typography sx={{ p: 3 }}>
-            {t("singlestudy:confirmDeleteArea")}
-          </Typography>
-        </BasicModal>
-      )}
-      {openConfirmationModal && link && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          closeButtonLabel={t("main:noButton")}
-          actionButtonLabel={t("main:yesButton")}
-          onActionButtonClick={() => {
-            onDelete(link.source, link.target);
-            setOpenConfirmationModal(false);
-          }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Typography sx={{ p: 3 }}>
-            {t("singlestudy:confirmDeleteLink")}
-          </Typography>
-        </BasicModal>
+          {node && t("singlestudy:confirmDeleteArea")}
+          {link && t("singlestudy:confirmDeleteLink")}
+        </ConfirmationDialog>
       )}
     </>
   );

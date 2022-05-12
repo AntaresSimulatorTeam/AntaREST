@@ -7,7 +7,7 @@ import {
   KeyboardEvent,
   CSSProperties,
 } from "react";
-import { Box, Button, Paper, Typography, Modal, Backdrop } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
 import { connect, ConnectedProps } from "react-redux";
@@ -16,6 +16,7 @@ import { addListener, removeListener } from "../../store/websockets";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import { scrollbarStyle } from "../../theme";
+import BasicDialog from "./dialogs/BasicDialog";
 
 interface OwnTypes {
   isOpen: boolean;
@@ -127,38 +128,10 @@ function LogModal(props: PropTypes) {
   }, [updateLog, followLogs, addWsListener, removeWsListener]);
 
   return (
-    <Modal
-      aria-labelledby="transition-modal-title"
-      aria-describedby="transition-modal-description"
+    <BasicDialog
       open={isOpen}
-      closeAfterTransition
-      BackdropComponent={Backdrop}
-      BackdropProps={{
-        timeout: 500,
-      }}
-      sx={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        boxSizing: "border-box",
-        overflowY: "auto",
-      }}
-    >
-      <Paper
-        onKeyDown={handleGlobalKeyDown}
-        sx={{
-          width: "80%",
-          height: "80%",
-          display: "flex",
-          flexFlow: "column nowrap",
-          alignItems: "center",
-          zIndex: 1,
-          ...style,
-        }}
-      >
+      onClose={close}
+      title={
         <Box
           width="100%"
           height="64px"
@@ -192,6 +165,30 @@ function LogModal(props: PropTypes) {
             onClick={onDownload}
           />
         </Box>
+      }
+      contentProps={{
+        sx: { p: 0, height: "60vh", overflow: "hidden" },
+      }}
+      fullWidth
+      maxWidth="lg"
+      actions={
+        <Button variant="text" color="primary" onClick={close}>
+          {t("main:closeButton")}
+        </Button>
+      }
+    >
+      <Box
+        onKeyDown={handleGlobalKeyDown}
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexFlow: "column nowrap",
+          alignItems: "center",
+          zIndex: 1,
+          ...style,
+        }}
+      >
         <Box
           width="100%"
           overflow="auto"
@@ -205,25 +202,45 @@ function LogModal(props: PropTypes) {
             <SimpleLoader />
           ) : (
             <Box sx={{ p: 3 }} id="log-content" ref={divRef}>
-              <code style={{ whiteSpace: "pre" }}>{logDetail}</code>
+              <code style={{ whiteSpace: "pre" }}>
+                {logDetail}
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Aut
+                consectetur voluptas autem officia, distinctio nobis error
+                facere ea, ab atque repellat laboriosam explicabo culpa beatae
+                labore natus laborum aperiam! Eos. Lorem, ipsum dolor sit amet
+                consectetur adipisicing elit. Reprehenderit eveniet consequuntur
+                dignissimos culpa nesciunt odit optio aspernatur modi
+                praesentium, architecto voluptatum asperiores unde placeat autem
+                consequatur sunt magnam est suscipit. Lorem ipsum dolor sit amet
+                consectetur adipisicing elit. Aut consectetur voluptas autem
+                officia, distinctio nobis error facere ea, ab atque repellat
+                laboriosam explicabo culpa beatae labore natus laborum aperiam!
+                Eos. Lorem, ipsum dolor sit amet consectetur adipisicing elit.
+                Reprehenderit eveniet consequuntur dignissimos culpa nesciunt
+                odit optio aspernatur modi praesentium, architecto voluptatum
+                asperiores unde placeat autem consequatur sunt magnam est
+                suscipit. Lorem ipsum dolor sit amet consectetur adipisicing
+                elit. Aut consectetur voluptas autem officia, distinctio nobis
+                error facere ea, ab atque repellat laboriosam explicabo culpa
+                beatae labore natus laborum aperiam! Eos. Lorem, ipsum dolor sit
+                amet consectetur adipisicing elit. Reprehenderit eveniet
+                consequuntur dignissimos culpa nesciunt odit optio aspernatur
+                modi praesentium, architecto voluptatum asperiores unde placeat
+                autem consequatur sunt magnam est suscipit. Lorem ipsum dolor
+                sit amet consectetur adipisicing elit. Aut consectetur voluptas
+                autem officia, distinctio nobis error facere ea, ab atque
+                repellat laboriosam explicabo culpa beatae labore natus laborum
+                aperiam! Eos. Lorem, ipsum dolor sit amet consectetur
+                adipisicing elit. Reprehenderit eveniet consequuntur dignissimos
+                culpa nesciunt odit optio aspernatur modi praesentium,
+                architecto voluptatum asperiores unde placeat autem consequatur
+                sunt magnam est suscipit.
+              </code>
             </Box>
           )}
         </Box>
-        <Box
-          height="60px"
-          width="100%"
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          overflow="hidden"
-          position="relative"
-        >
-          <Button variant="contained" sx={{ m: 2 }} onClick={close}>
-            {t("main:closeButton")}
-          </Button>
-        </Box>
-      </Paper>
-    </Modal>
+      </Box>
+    </BasicDialog>
   );
 }
 

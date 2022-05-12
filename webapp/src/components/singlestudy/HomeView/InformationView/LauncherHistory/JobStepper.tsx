@@ -13,7 +13,6 @@ import { AxiosError } from "axios";
 import { JobStatus, LaunchJob } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import { scrollbarStyle } from "../../../../../theme";
-import ConfirmationModal from "../../../../common/ConfirmationModal";
 import { killStudy } from "../../../../../services/api/study";
 import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
@@ -25,6 +24,7 @@ import {
   StepLabelRoot,
   StepLabelRow,
 } from "./style";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 
 export const ColorStatus = {
   running: "warning.main",
@@ -60,12 +60,12 @@ export default function VerticalLinearStepper(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [openConfirmationModal, setOpenConfirmationModal] =
+  const [openConfirmationDialog, setOpenConfirmationDialog] =
     useState<boolean>(false);
   const [jobIdKill, setJobIdKill] = useState<string>();
 
   const openConfirmModal = (jobId: string) => {
-    setOpenConfirmationModal(true);
+    setOpenConfirmationDialog(true);
     setJobIdKill(jobId);
   };
 
@@ -76,7 +76,7 @@ export default function VerticalLinearStepper(props: Props) {
       } catch (e) {
         enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
       }
-      setOpenConfirmationModal(false);
+      setOpenConfirmationDialog(false);
     })();
   };
 
@@ -168,13 +168,15 @@ export default function VerticalLinearStepper(props: Props) {
           </Step>
         ))}
       </Stepper>
-      {openConfirmationModal && (
-        <ConfirmationModal
-          open={openConfirmationModal}
-          message={t("singlestudy:confirmKill")}
-          handleYes={() => killTask(jobIdKill as string)}
-          handleNo={() => setOpenConfirmationModal(false)}
-        />
+      {openConfirmationDialog && (
+        <ConfirmationDialog
+          onCancel={() => setOpenConfirmationDialog(false)}
+          onConfirm={() => killTask(jobIdKill as string)}
+          alert="warning"
+          open
+        >
+          {t("singlestudy:confirmKill")}
+        </ConfirmationDialog>
       )}
     </JobRoot>
   );

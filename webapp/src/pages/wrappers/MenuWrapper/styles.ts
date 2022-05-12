@@ -4,8 +4,55 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
-import { styled } from "@mui/material";
-import { DRAWER_WIDTH, DRAWER_WIDTH_EXTENDED } from "../theme";
+import { Box, styled } from "@mui/material";
+import {
+  DRAWER_WIDTH,
+  DRAWER_WIDTH_EXTENDED,
+  scrollbarStyle,
+} from "../../../theme";
+
+export const Root = styled(Box)({
+  display: "flex",
+  width: "100vw",
+  height: "100vh",
+  overflow: "hidden",
+  background:
+    "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
+});
+
+export const TootlbarContent = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "extended",
+})<{ extended?: boolean }>(({ extended }) => ({
+  display: "flex",
+  width: "100%",
+  height: "100%",
+  justifyContent: extended ? "flex-start" : "center",
+  alignItems: "center",
+  flexDirection: "row",
+  flexWrap: "nowrap",
+  boxSizing: "border-box",
+}));
+
+export const MenuContainer = styled(Box)({
+  display: "flex",
+  flex: 1,
+  justifyContent: "space-between",
+  flexDirection: "column",
+  boxSizing: "border-box",
+  overflowY: "auto",
+  ...scrollbarStyle,
+});
+
+export const LogoContainer = styled(Box)({
+  position: "absolute",
+  top: "0px",
+  right: "0px",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "column nowrap",
+  boxSizing: "border-box",
+});
 
 export const NavExternalLink = styled("a")({
   color: "white",

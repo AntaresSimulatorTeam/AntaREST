@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Box,
+  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -12,10 +12,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import BasicModal from "../common/BasicModal";
-import { StudyMetadata } from "../../common/types";
-import { LaunchOptions, launchStudy } from "../../services/api/study";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import { StudyMetadata } from "../../../common/types";
+import { LaunchOptions, launchStudy } from "../../../services/api/study";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import BasicDialog from "../../common/dialogs/BasicDialog";
+import { Root } from "./style";
 
 interface Props {
   open: boolean;
@@ -67,35 +68,30 @@ function LauncherModal(props: Props) {
   };
 
   return (
-    <BasicModal
+    <BasicDialog
       title={t("singlestudy:runStudy")}
       open={open}
       onClose={onClose}
-      closeButtonLabel={t("main:cancelButton")}
-      actionButtonLabel={t("main:launch")}
-      onActionButtonClick={launch}
-      rootStyle={{
-        width: "600px",
-        height: "500px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
+      contentProps={{
+        sx: { width: "500px", height: "350px", p: 0, overflow: "hidden" },
       }}
+      actions={
+        <>
+          <Button variant="text" color="primary" onClick={onClose}>
+            {t("main:cancelButton")}
+          </Button>
+          <Button
+            sx={{ mx: 2 }}
+            color="primary"
+            variant="contained"
+            onClick={launch}
+          >
+            {t("main:launch")}
+          </Button>
+        </>
+      }
     >
-      <Box
-        minWidth="100px"
-        width="100%"
-        height="100%"
-        display="flex"
-        flexDirection="column"
-        justifyContent="flex-start"
-        alignItems="flex-start"
-        p={2}
-        boxSizing="border-box"
-        overflow="hidden"
-      >
+      <Root>
         <Typography
           sx={{
             fontSize: "1.2em",
@@ -190,8 +186,8 @@ function LauncherModal(props: Props) {
             label="Adequacy patch"
           />
         </FormGroup>
-      </Box>
-    </BasicModal>
+      </Root>
+    </BasicDialog>
   );
 }
 

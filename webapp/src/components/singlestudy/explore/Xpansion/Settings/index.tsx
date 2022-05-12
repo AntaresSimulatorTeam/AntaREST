@@ -15,9 +15,9 @@ import {
 } from "../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import BasicModal from "../../../../common/BasicModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../services/utils/index";
+import ReaderDialog from "../../../../common/dialogs/ReaderDialog";
 
 function Settings() {
   const [t] = useTranslation();
@@ -25,7 +25,7 @@ function Settings() {
   const [settings, setSettings] = useState<XpansionSettings>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [constraintViewModal, setConstraintViewModal] = useState<{
+  const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
   }>();
@@ -95,7 +95,7 @@ function Settings() {
     try {
       if (study) {
         const content = await getConstraint(study.id, filename);
-        setConstraintViewModal({ filename, content });
+        setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
@@ -120,32 +120,11 @@ function Settings() {
       ) : (
         <SimpleLoader />
       )}
-      {!!constraintViewModal && (
-        <BasicModal
-          open={!!constraintViewModal}
-          title={constraintViewModal.filename}
-          onClose={() => setConstraintViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="500px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            padding="8px"
-          >
-            <code style={{ whiteSpace: "pre" }}>
-              {constraintViewModal.content}
-            </code>
-          </Box>
-        </BasicModal>
+      {!!constraintViewDialog && (
+        <ReaderDialog
+          data={constraintViewDialog}
+          onClose={() => setConstraintViewDialog(undefined)}
+        />
       )}
     </>
   );

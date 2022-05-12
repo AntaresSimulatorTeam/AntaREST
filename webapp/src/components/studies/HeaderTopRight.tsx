@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import ImportStudy from "./ImportStudyDialog";
-import CreateStudyModal from "./CreateStudyModal";
+import CreateStudyDialog from "./CreateStudyDialog";
 
 function HeaderRight() {
-  const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [openImportModal, setOpenImportModal] = useState(false);
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [openImportDialog, setOpenImportDialog] = useState(false);
   const [t] = useTranslation();
 
   return (
@@ -17,7 +17,7 @@ function HeaderRight() {
         variant="outlined"
         color="primary"
         startIcon={<GetAppOutlinedIcon />}
-        onClick={() => setOpenImportModal(true)}
+        onClick={() => setOpenImportDialog(true)}
       >
         {t("main:import")}
       </Button>
@@ -26,20 +26,20 @@ function HeaderRight() {
         variant="contained"
         color="primary"
         startIcon={<AddCircleOutlineOutlinedIcon />}
-        onClick={() => setOpenCreateModal(true)}
+        onClick={() => setOpenCreateDialog(true)}
       >
         {t("main:create")}
       </Button>
-      {openCreateModal && (
-        <CreateStudyModal
-          open={openCreateModal}
-          onClose={() => setOpenCreateModal(false)}
+      {openCreateDialog && (
+        <CreateStudyDialog
+          open={openCreateDialog}
+          onClose={() => setOpenCreateDialog(false)}
         />
       )}
-      {openImportModal && (
+      {openImportDialog && (
         <ImportStudy
-          open={openImportModal}
-          onClose={() => setOpenImportModal(false)}
+          open={openImportDialog}
+          onClose={() => setOpenImportDialog(false)}
         />
       )}
     </>

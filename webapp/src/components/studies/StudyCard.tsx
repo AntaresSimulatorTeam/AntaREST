@@ -38,11 +38,11 @@ import {
   displayVersionName,
 } from "../../services/utils";
 import { scrollbarStyle } from "../../theme";
-import DeleteStudyModal from "./DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
 import StarToggle from "../common/StarToggle";
 import MoveStudyDialog from "./MoveStudyDialog";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
 
 interface Props {
   study: StudyMetadata;
@@ -78,7 +78,7 @@ export default function StudyCard(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
-  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [openExportModal, setOpenExportModal] = useState<boolean>(false);
   const [openMoveDialog, setOpenMoveDialog] = useState<boolean>(false);
 
@@ -112,7 +112,7 @@ export default function StudyCard(props: Props) {
 
   const onDeleteStudy = () => {
     onDeleteClick(study);
-    setOpenDeleteModal(false);
+    setOpenDeleteDialog(false);
   };
 
   return (
@@ -406,7 +406,7 @@ export default function StudyCard(props: Props) {
           {study.managed && (
             <MenuItem
               onClick={() => {
-                setOpenDeleteModal(true);
+                setOpenDeleteDialog(true);
                 handleClose();
               }}
             >
@@ -422,12 +422,16 @@ export default function StudyCard(props: Props) {
           )}
         </Menu>
       </CardActions>
-      {openDeleteModal && (
-        <DeleteStudyModal
-          open={openDeleteModal}
-          onClose={() => setOpenDeleteModal(false)}
-          onYesClick={onDeleteStudy}
-        />
+      {openDeleteDialog && (
+        <ConfirmationDialog
+          title={t("main:confirmationModalTitle")}
+          onCancel={() => setOpenDeleteDialog(false)}
+          onConfirm={onDeleteStudy}
+          alert="warning"
+          open
+        >
+          {t("studymanager:confirmdelete")}
+        </ConfirmationDialog>
       )}
       {openExportModal && (
         <ExportModal

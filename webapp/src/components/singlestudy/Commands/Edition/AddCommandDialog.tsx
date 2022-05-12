@@ -1,7 +1,7 @@
-import { Autocomplete, Box, TextField } from "@mui/material";
+import { Autocomplete, Box, Button, TextField } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import BasicModal from "../../../common/BasicModal";
+import BasicDialog from "../../../common/dialogs/BasicDialog";
 import { CommandList } from "./utils";
 
 interface PropTypes {
@@ -10,7 +10,7 @@ interface PropTypes {
   onClose: () => void;
 }
 
-function AddCommandModal(props: PropTypes) {
+function AddCommandDialog(props: PropTypes) {
   const [t] = useTranslation();
   const { open, onNewCommand, onClose } = props;
   const [action, setAction] = useState<string>(CommandList[0]);
@@ -21,49 +21,47 @@ function AddCommandModal(props: PropTypes) {
   };
 
   return (
-    <BasicModal
-      title={t("variants:newCommand")}
+    <BasicDialog
       open={open}
       onClose={onClose}
-      closeButtonLabel={t("main:cancelButton")}
-      actionButtonLabel={t("main:create")}
-      onActionButtonClick={onSave}
-      rootStyle={{
-        width: "600px",
-        height: "500px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
-      }}
+      title={t("variants:newCommand")}
+      actions={
+        <>
+          <Button variant="text" color="primary" onClick={onClose}>
+            {t("main:cancelButton")}
+          </Button>
+          <Button
+            sx={{ mx: 2 }}
+            color="primary"
+            variant="contained"
+            onClick={onSave}
+          >
+            {t("main:create")}
+          </Button>
+        </>
+      }
     >
       <Box
-        minWidth="100px"
-        width="100%"
-        height="100%"
-        display="flex"
-        flexDirection="column"
-        justifyContent="flex-start"
-        alignItems="flex-start"
-        p={2}
-        boxSizing="border-box"
-        overflow="hidden"
+        sx={{
+          width: "400px",
+          height: "100px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          boxSizing: "border-box",
+        }}
       >
         <Autocomplete
           options={CommandList}
           getOptionLabel={(option) => option}
           value={action || null}
-          sx={{
-            width: "70%",
-            height: "30px",
-            boxSizing: "border-box",
-            mx: 1,
-            my: 2.5,
-          }}
           onChange={(event, newValue: string | null) =>
             setAction(newValue !== null ? newValue : CommandList[0])
           }
+          sx={{
+            width: "70%",
+          }}
           renderInput={(params) => (
             <TextField
               // eslint-disable-next-line react/jsx-props-no-spreading
@@ -71,6 +69,7 @@ function AddCommandModal(props: PropTypes) {
               sx={{
                 width: "100%",
                 height: "30px",
+                m: 0,
                 boxSizing: "border-box",
               }}
               size="small"
@@ -80,8 +79,8 @@ function AddCommandModal(props: PropTypes) {
           )}
         />
       </Box>
-    </BasicModal>
+    </BasicDialog>
   );
 }
 
-export default AddCommandModal;
+export default AddCommandDialog;

@@ -32,7 +32,7 @@ import {
   applyCommands,
   getStudyTask,
 } from "../../../../services/api/variant";
-import AddCommandModal from "./AddCommandModal";
+import AddCommandDialog from "./AddCommandDialog";
 import {
   CommandDTO,
   WSEvent,
@@ -85,7 +85,7 @@ function EditionView(props: PropTypes) {
     subscribeChannel,
     unsubscribeChannel,
   } = props;
-  const [openAddCommandModal, setOpenAddCommandModal] =
+  const [openAddCommandDialog, setOpenAddCommandDialog] =
     useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
@@ -418,7 +418,7 @@ function EditionView(props: PropTypes) {
             />
             <QueueIcon
               sx={{ ...headerIconStyle }}
-              onClick={() => setOpenAddCommandModal(true)}
+              onClick={() => setOpenAddCommandDialog(true)}
             />
             <a
               href="https://antares-web.readthedocs.io/en/latest/user-guide/2-variant_manager/"
@@ -470,7 +470,7 @@ function EditionView(props: PropTypes) {
                   <Button
                     color="primary"
                     variant="outlined"
-                    onClick={() => setOpenAddCommandModal(true)}
+                    onClick={() => setOpenAddCommandDialog(true)}
                   >
                     {t("variants:newCommandButton")}
                   </Button>
@@ -485,10 +485,10 @@ function EditionView(props: PropTypes) {
           <SimpleLoader color="" />
         </Body>
       )}
-      {openAddCommandModal && (
-        <AddCommandModal
-          open={openAddCommandModal}
-          onClose={() => setOpenAddCommandModal(false)}
+      {openAddCommandDialog && (
+        <AddCommandDialog
+          open={openAddCommandDialog}
+          onClose={() => setOpenAddCommandDialog(false)}
           onNewCommand={onNewCommand}
         />
       )}

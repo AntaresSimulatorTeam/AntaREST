@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { TextField, Box, Divider, ButtonGroup } from "@mui/material";
+import { TextField, Button, Box, Divider, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import BasicModal from "../../../../common/BasicModal";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";
 import { HoverButton, ActiveButton } from "../styles";
+import BasicDialog from "../../../../common/dialogs/BasicDialog";
 
 interface PropType {
   open: boolean;
@@ -14,7 +14,7 @@ interface PropType {
   onSave: (candidate: XpansionCandidate) => void;
 }
 
-function CreateCandidateModal(props: PropType) {
+function CreateCandidateDialog(props: PropType) {
   const [t] = useTranslation();
   const { open, links, onClose, onSave } = props;
   const [candidate, setCandidate] = useState<XpansionCandidate>({
@@ -32,25 +32,32 @@ function CreateCandidateModal(props: PropType) {
   const changeView = () => setToggleView(!toggleView);
 
   return (
-    <BasicModal
+    <BasicDialog
       open={open}
       onClose={onClose}
-      closeButtonLabel={t("settings:cancelButton")}
-      actionButtonLabel={t("settings:saveButton")}
-      onActionButtonClick={() => onSave(candidate)}
       title={t("xpansion:newCandidate")}
-      rootStyle={{
-        maxWidth: "80%",
-        maxHeight: "70%",
-        display: "flex",
-        flexFlow: "column nowrap",
-        alignItems: "center",
+      contentProps={{
+        sx: { width: "auto", height: "60vh", p: 2 },
       }}
+      actions={
+        <>
+          <Button variant="text" color="primary" onClick={onClose}>
+            {t("main:cancelButton")}
+          </Button>
+          <Button
+            sx={{ mx: 2 }}
+            color="primary"
+            variant="contained"
+            onClick={() => onSave(candidate)}
+          >
+            {t("data:saveButton")}
+          </Button>
+        </>
+      }
     >
       <Box
         sx={{
-          width: "250px",
-          m: 2,
+          width: "280px",
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
@@ -154,8 +161,8 @@ function CreateCandidateModal(props: PropType) {
           />
         )}
       </Box>
-    </BasicModal>
+    </BasicDialog>
   );
 }
 
-export default CreateCandidateModal;
+export default CreateCandidateDialog;

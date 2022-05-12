@@ -27,8 +27,8 @@ enum Alert {
 
 type AlertValues = keyof typeof Alert;
 
-export interface BasicDialogProps extends DialogProps {
-  title?: string;
+export interface BasicDialogProps extends Omit<DialogProps, "title"> {
+  title?: ReactNode;
   titleIcon?: ElementType<SvgIconComponent>;
   actions?: ReactNode;
   alert?: AlertValues;

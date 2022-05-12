@@ -1,34 +1,34 @@
 import { useEffect, useState } from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
-import { Box } from "@mui/material";
+import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { connect, ConnectedProps } from "react-redux";
-import BasicModal from "../common/BasicModal";
-import SingleSelect from "../common/SelectSingle";
-import MultiSelect from "../common/SelectMulti";
-import { AppState } from "../../store/reducers";
-import { convertVersions } from "../../services/utils";
-import FilledTextInput from "../common/FilledTextInput";
+import SingleSelect from "../../common/SelectSingle";
+import MultiSelect from "../../common/SelectMulti";
+import { AppState } from "../../../store/reducers";
+import { convertVersions } from "../../../services/utils";
+import FilledTextInput from "../../common/FilledTextInput";
 import {
   GenericInfo,
   GroupDTO,
   StudyMetadata,
   StudyPublicMode,
-} from "../../common/types";
-import TextSeparator from "../common/TextSeparator";
+} from "../../../common/types";
+import TextSeparator from "../../common/TextSeparator";
 import {
   changePublicMode,
   createStudy,
   getStudyMetadata,
   updateStudyMetadata,
-} from "../../services/api/study";
-import { addStudies, initStudiesVersion } from "../../store/study";
-import { getGroups } from "../../services/api/user";
-import TagTextInput from "../common/TagTextInput";
-import { scrollbarStyle } from "../../theme";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+} from "../../../services/api/study";
+import { addStudies, initStudiesVersion } from "../../../store/study";
+import { getGroups } from "../../../services/api/user";
+import TagTextInput from "../../common/TagTextInput";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import BasicDialog from "../../common/dialogs/BasicDialog";
+import { Root, ElementContainer, InputElement } from "./style";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -128,42 +128,32 @@ function CreateStudyModal(props: PropTypes) {
   }, []);
 
   return (
-    <BasicModal
+    <BasicDialog
       title={t("studymanager:createNewStudy")}
       open={open}
       onClose={onClose}
-      closeButtonLabel={t("main:cancelButton")}
-      actionButtonLabel={t("main:create")}
-      actionButtonDisabled={actionButtonDisabled}
-      onActionButtonClick={onSubmit}
-      rootStyle={{
-        width: "600px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
+      contentProps={{
+        sx: { width: "500px", height: "380px", p: 0, overflow: "hidden" },
       }}
+      actions={
+        <>
+          <Button variant="text" color="primary" onClick={onClose}>
+            {t("main:cancelButton")}
+          </Button>
+          <Button
+            sx={{ mx: 2 }}
+            color="primary"
+            variant="contained"
+            onClick={onSubmit}
+            disabled={actionButtonDisabled}
+          >
+            {t("main:create")}
+          </Button>
+        </>
+      }
     >
-      <Box
-        width="100%"
-        height="400px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="flex-start"
-        alignItems="center"
-        p={2}
-        boxSizing="border-box"
-        sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
-      >
-        <Box
-          width="100%"
-          display="flex"
-          flexDirection="row"
-          justifyContent="flex-start"
-          alignItems="center"
-          boxSizing="border-box"
-        >
+      <Root>
+        <InputElement>
           <FilledTextInput
             label={t("studymanager:studyName")}
             value={studyName}
@@ -179,23 +169,10 @@ function CreateStudyModal(props: PropTypes) {
             sx={{ flexGrow: 1 }}
             required
           />
-        </Box>
-        <Box
-          width="100%"
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          alignItems="flex-start"
-          boxSizing="border-box"
-        >
+        </InputElement>
+        <ElementContainer>
           <TextSeparator text={t("studymanager:permission")} />
-          <Box
-            width="100%"
-            display="flex"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
-          >
+          <InputElement>
             <SingleSelect
               name={t("singlestudy:publicMode")}
               list={publicModeList}
@@ -212,24 +189,11 @@ function CreateStudyModal(props: PropTypes) {
               setValue={setGroup}
               sx={{ flexGrow: 1, ml: 1 }}
             />
-          </Box>
-        </Box>
-        <Box
-          width="100%"
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          alignItems="flex-start"
-          boxSizing="border-box"
-        >
+          </InputElement>
+        </ElementContainer>
+        <ElementContainer>
           <TextSeparator text="Metadata" />
-          <Box
-            width="100%"
-            display="flex"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
-          >
+          <InputElement>
             <TagTextInput
               label={t("studymanager:enterTag")}
               sx={{ flexGrow: 1 }}
@@ -238,10 +202,10 @@ function CreateStudyModal(props: PropTypes) {
               tagList={tagList}
               required
             />
-          </Box>
-        </Box>
-      </Box>
-    </BasicModal>
+          </InputElement>
+        </ElementContainer>
+      </Root>
+    </BasicDialog>
   );
 }
 
