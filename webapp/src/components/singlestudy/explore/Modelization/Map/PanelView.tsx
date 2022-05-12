@@ -237,7 +237,7 @@ function PanelView(props: PropType) {
           <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
         </Box>
       </Box>
-      {openConfirmationModal && node && (
+      {openConfirmationModal && (
         <ConfirmationDialog
           onCancel={() => setOpenConfirmationModal(false)}
           onConfirm={() => {
@@ -252,8 +252,10 @@ function PanelView(props: PropType) {
           alert="warning"
           open
         >
-          {node && t("singlestudy:confirmDeleteArea")}
-          {link && t("singlestudy:confirmDeleteLink")}
+          <Typography sx={{ p: 3 }}>
+            {node && t("singlestudy:confirmDeleteArea")}
+            {link && t("singlestudy:confirmDeleteLink")}
+          </Typography>
         </ConfirmationDialog>
       )}
     </>
