@@ -39,13 +39,14 @@ const Row = memo((props: ListChildComponentProps) => {
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <Box
       sx={
-        selectedItem && selectedItem.name === dataset.name
+        selectedItem && selectedItem === dataset.id
           ? {
               display: "flex",
               justifyContent: "space-evenly",
               alignItems: "center",
               ...style,
               textDecoration: "underline",
+              color: "white",
             }
           : {
               display: "flex",
@@ -68,13 +69,7 @@ const Row = memo((props: ListChildComponentProps) => {
       >
         {dataset.name}
       </Typography>
-      <ArrowRightIcon
-        sx={
-          selectedItem && selectedItem.name === data.name
-            ? { color: "action.secondary" }
-            : { color: "action.active" }
-        }
-      />
+      <ArrowRightIcon />
     </Box>
   );
 }, areEqual);

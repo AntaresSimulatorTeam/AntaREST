@@ -95,6 +95,8 @@ function Capacities() {
             onDelete={deleteCapa}
             onRead={getOneCapa}
             uploadFile={addOneCapa}
+            allowImport
+            allowDelete
           />
         </Box>
       ) : (

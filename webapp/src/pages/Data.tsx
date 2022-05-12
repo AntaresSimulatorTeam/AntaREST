@@ -5,13 +5,16 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StorageIcon from "@mui/icons-material/Storage";
-import { Box } from "@mui/material";
+import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DownloadIcon from "@mui/icons-material/Download";
 import { AppState } from "../store/reducers";
 import DataPropsView from "../components/data/DataPropsView";
 import {
   deleteDataSet,
   exportMatrixDataset,
   getMatrixList,
+  getExportMatrixUrl,
 } from "../services/api/matrix";
 import { MatrixInfoDTO, MatrixDataSetDTO } from "../common/types";
 import DataDialog from "../components/data/DataDialog";
@@ -19,7 +22,6 @@ import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog"
 import RootPage from "../components/common/page/RootPage";
 import MatrixDialog from "../components/data/MatrixDialog";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
-import NoContent from "../components/common/page/NoContent";
 import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import SplitLayoutView from "../components/common/SplitLayoutView";
 import FileTable from "../components/common/FileTable";
@@ -107,7 +109,7 @@ function Data(props: PropTypes) {
       if (tmp) {
         setCurrentMatrix({
           id,
-          name: tmp.matrices.find((o) => o.id === id)?.id || "",
+          name: tmp.matrices.find((o) => o.id === id)?.name || "",
         });
       }
     }
@@ -143,7 +145,7 @@ function Data(props: PropTypes) {
 
   return (
     <RootPage title={t("main:data")} titleIcon={StorageIcon}>
-      {loaded && dataList.length > 0 ? (
+      {loaded && (
         <SplitLayoutView
           left={
             <DataPropsView
@@ -155,17 +157,97 @@ function Data(props: PropTypes) {
           }
           right={
             <Box sx={{ width: "100%" }}>
-              <FileTable
-                title="Matrices"
-                content={matrices || []}
-                onDelete={handleDelete}
-                onRead={onMatrixClick}
-              />
+              {selectedItem ? (
+                <FileTable
+                  title={
+                    user &&
+                    user.id ===
+                      dataList.find((item) => item.id === selectedItem)?.owner
+                        .id ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: "text.primary",
+                            fontSize: "1.25rem",
+                            fontWeight: 400,
+                            lineHeight: 1.334,
+                          }}
+                        >
+                          {`Matrices - ${
+                            dataList.find((item) => item.id === selectedItem)
+                              ?.name
+                          }`}
+                        </Typography>
+                        <Box>
+                          <IconButton>
+                            <Tooltip title={t("main:edit") as string}>
+                              <EditIcon
+                                onClick={() => {
+                                  onUpdateClick(selectedItem);
+                                }}
+                              />
+                            </Tooltip>
+                          </IconButton>
+                          <IconButton
+                            onClick={() => {
+                              onDownloadDataset(selectedItem);
+                            }}
+                          >
+                            <Tooltip title={t("jobs:download") as string}>
+                              <DownloadIcon />
+                            </Tooltip>
+                          </IconButton>
+                          <IconButton
+                            onClick={() => {
+                              handleDelete(selectedItem);
+                            }}
+                            sx={{
+                              color: "error.light",
+                            }}
+                          >
+                            <Tooltip title={t("main:delete") as string}>
+                              <DeleteIcon />
+                            </Tooltip>
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Typography
+                        sx={{
+                          color: "text.primary",
+                          fontSize: "1.25rem",
+                          fontWeight: 400,
+                          lineHeight: 1.334,
+                          height: "40px",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        {`Matrices - ${
+                          dataList.find((item) => item.id === selectedItem)
+                            ?.name
+                        }`}
+                      </Typography>
+                    )
+                  }
+                  content={matrices || []}
+                  onDelete={handleDelete}
+                  onRead={onMatrixClick}
+                  onFileDownload={getExportMatrixUrl}
+                  copyId
+                />
+              ) : (
+                <Box />
+              )}
             </Box>
           }
         />
-      ) : (
-        loaded && <NoContent />
       )}
       {!loaded && <SimpleLoader />}
       {matrixModal && currentMatrix && (

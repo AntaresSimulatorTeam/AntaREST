@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { MatrixInfoDTO, MatrixType } from "../../common/types";
 import MatrixView from "../common/MatrixView";
-import BasicDialog from "../common/dialogs/BasicDialog";
+import OkDialog from "../common/dialogs/OkDialog";
 import { getMatrix } from "../../services/api/matrix";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import NoContent from "../common/page/NoContent";
@@ -65,10 +66,28 @@ function MatrixDialog(props: PropTypes) {
   }, [enqueueErrorSnackbar, matrixInfo, t]);
 
   return (
-    <BasicDialog
+    <OkDialog
       open={open}
-      title={`Matrix - ${matrixInfo.name}`}
-      onClose={onClose}
+      title={
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            sx={{ fontWeight: 500, fontSize: "1.25rem" }}
+          >{`Matrix - ${matrixInfo.name}`}</Typography>
+          <IconButton
+            onClick={() => copyId(matrixInfo.id)}
+            sx={{
+              mx: 1,
+              color: "action.active",
+            }}
+          >
+            <Tooltip title={t("studymanager:copyID") as string}>
+              <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
+            </Tooltip>
+          </IconButton>
+        </Box>
+      }
+      onOk={onClose}
+      okButtonText={t("main:closeButton")}
       fullWidth
       maxWidth="lg"
     >
@@ -90,7 +109,7 @@ function MatrixDialog(props: PropTypes) {
           )
         )}
       </Box>
-    </BasicDialog>
+    </OkDialog>
   );
 }
 

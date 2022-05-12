@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { AxiosError } from "axios";
 import {
   Box,
@@ -10,33 +10,51 @@ import {
   TableCell,
   TableBody,
   Tooltip,
+  IconButton,
+  Typography,
 } from "@mui/material";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import ImportForm from "../ImportForm";
-import ConfirmationDialog from "../dialogs/ConfirmationDialog";
-import { Title, StyledVisibilityIcon, StyledDeleteIcon } from "./styles";
-import { GenericInfo } from "../../../common/types";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DownloadIcon from "@mui/icons-material/Download";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import ImportForm from "./ImportForm";
+import ConfirmationDialog from "./dialogs/ConfirmationDialog";
+import { GenericInfo } from "../../common/types";
+import DownloadLink from "./DownloadLink";
 
 const logErr = debug("antares:createimportform:error");
 
 interface PropType {
-  title: string;
+  title: ReactNode;
   content: Array<GenericInfo>;
   onDelete: (id: string) => Promise<void>;
   onRead: (id: string) => Promise<void>;
   uploadFile?: (file: File) => Promise<void>;
+  onFileDownload?: (id: string) => string;
   allowImport?: boolean;
+  allowDelete?: boolean;
+  copyId?: boolean;
 }
 
 function FileTable(props: PropType) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { title, content, onDelete, onRead, uploadFile, allowImport } = props;
+  const {
+    title,
+    content,
+    onDelete,
+    onRead,
+    uploadFile,
+    onFileDownload,
+    allowImport,
+    allowDelete,
+    copyId,
+  } = props;
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<string>("");
 
@@ -64,7 +82,7 @@ function FileTable(props: PropType) {
       flexDirection="column"
       sx={{ px: 1 }}
     >
-      <Title>{title}</Title>
+      {title}
       <Divider sx={{ mt: 1, mb: 2 }} />
       {allowImport && (
         <Box display="flex" justifyContent="flex-end">
@@ -109,7 +127,26 @@ function FileTable(props: PropType) {
                   })}
                 >
                   <TableCell component="th" scope="row">
-                    {row.name}
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      {copyId && (
+                        <IconButton
+                          onClick={() =>
+                            navigator.clipboard.writeText(row.id as string)
+                          }
+                          sx={{
+                            mx: 1,
+                            color: "action.active",
+                          }}
+                        >
+                          <Tooltip title={t("studymanager:copyID") as string}>
+                            <ContentCopyIcon
+                              sx={{ height: "20px", width: "20px" }}
+                            />
+                          </Tooltip>
+                        </IconButton>
+                      )}
+                      <Typography>{row.name}</Typography>
+                    </Box>
                   </TableCell>
                   <TableCell
                     align="right"
@@ -120,21 +157,38 @@ function FileTable(props: PropType) {
                       alignItems: "center",
                     }}
                   >
-                    <Tooltip
-                      title="Lire"
+                    <IconButton
                       onClick={() => onRead(row.id as string)}
-                    >
-                      <StyledVisibilityIcon />
-                    </Tooltip>
-                    <Tooltip
-                      title="Supprimer"
                       sx={{
-                        mx: 1,
+                        color: "action.active",
                       }}
-                      onClick={() => setOpenConfirmationModal(row.id as string)}
                     >
-                      <StyledDeleteIcon />
-                    </Tooltip>
+                      <Tooltip title="Lire">
+                        <VisibilityIcon />
+                      </Tooltip>
+                    </IconButton>
+                    {onFileDownload && (
+                      <DownloadLink
+                        title={t("jobs:download") as string}
+                        url={onFileDownload(row.id as string)}
+                      >
+                        <DownloadIcon />
+                      </DownloadLink>
+                    )}
+                    {allowDelete && (
+                      <IconButton
+                        onClick={() =>
+                          setOpenConfirmationModal(row.id as string)
+                        }
+                        sx={{
+                          color: "error.light",
+                        }}
+                      >
+                        <Tooltip title="Supprimer">
+                          <DeleteIcon />
+                        </Tooltip>
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -163,6 +217,9 @@ function FileTable(props: PropType) {
 FileTable.defaultProps = {
   uploadFile: undefined,
   allowImport: false,
+  allowDelete: false,
+  onFileDownload: undefined,
+  copyId: false,
 };
 
 export default FileTable;

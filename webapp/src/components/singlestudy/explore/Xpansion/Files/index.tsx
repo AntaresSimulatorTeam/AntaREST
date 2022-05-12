@@ -96,6 +96,7 @@ function Files() {
             onRead={getOneConstraint}
             uploadFile={addOneConstraint}
             allowImport
+            allowDelete
           />
         </Box>
       ) : (
