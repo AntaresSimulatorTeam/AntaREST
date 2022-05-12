@@ -363,23 +363,23 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
-            b"size:1x1\n1\n",
+            [1],
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
-            b"size:1x1\n1\n",
+            [1],
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
-            b"size:1x1\n1\n",
+            [1],
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
-            b"size:1x1\n1\n",
+            [1],
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
-            b"size:1x1\n1\n",
+            [1],
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
@@ -609,17 +609,17 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
             {
-                "de": b"size:1x1\n1\n",
-                "fr": b"size:1x1\n1\n",
+                "de": [1],
+                "fr": [1],
             },
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
             {
-                "de": b"size:1x1\n1\n",
-                "fr": b"size:1x1\n1\n",
-                "it": b"size:1x1\n1\n",
-                "es": b"size:1x1\n1\n",
+                "de": [1],
+                "fr": [1],
+                "it": [1],
+                "es": [1],
             },
         ),
     ],
