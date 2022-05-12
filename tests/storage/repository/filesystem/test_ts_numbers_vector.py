@@ -33,7 +33,7 @@ def test_save(tmp_path: Path) -> None:
         ),
     )
     node.save([4, 5, 100, 8, 2, 10])
-    assert file.read_text() == "size:1x6\n4\n5\n100\n8\n2\n10"
+    assert file.read_text() == "size:1x6\n4\n5\n100\n8\n2\n10\n"
 
 
 def test_coverage() -> None:
