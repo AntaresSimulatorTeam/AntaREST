@@ -7,7 +7,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-class TsNumberVector(LazyNode[List[int], List[int], JSON]):
+class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -44,7 +44,9 @@ class TsNumberVector(LazyNode[List[int], List[int], JSON]):
         return []
 
     def normalize(self) -> None:
+        # this is not normalizable
         pass
 
     def denormalize(self) -> None:
+        # this is not normalizable
         pass

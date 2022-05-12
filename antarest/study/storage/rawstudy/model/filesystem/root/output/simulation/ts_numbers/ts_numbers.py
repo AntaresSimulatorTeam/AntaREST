@@ -14,7 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
-    TsNumberVector,
+    TsNumbersVector,
 )
 
 
@@ -24,28 +24,28 @@ class OutputSimulationTsNumbers(FolderNode):
             "hydro": AreaMatrixList(
                 self.context,
                 self.config.next_file("hydro"),
-                matrix_class=TsNumberVector,
+                matrix_class=TsNumbersVector,
             ),
             "load": AreaMatrixList(
                 self.context,
                 self.config.next_file("load"),
-                matrix_class=TsNumberVector,
+                matrix_class=TsNumbersVector,
             ),
             "solar": AreaMatrixList(
                 self.context,
                 self.config.next_file("solar"),
-                matrix_class=TsNumberVector,
+                matrix_class=TsNumbersVector,
             ),
             "wind": AreaMatrixList(
                 self.context,
                 self.config.next_file("wind"),
-                matrix_class=TsNumberVector,
+                matrix_class=TsNumbersVector,
             ),
             "thermal": AreaMultipleMatrixList(
                 self.context,
                 self.config.next_file("thermal"),
                 ThermalMatrixList,
-                TsNumberVector,
+                TsNumbersVector,
             ),
         }
         return children
