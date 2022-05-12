@@ -66,7 +66,8 @@ class RemoveCluster(ICommand):
                 dict(),
             )
         self._remove_cluster(study_data)
-        # todo remove binding constraint using this cluster ?
+        # We should remove here the potential binding constraints using this cluster.
+        # However, with only the FileStudyTreeConfig, and without reading the actual file, there is no way to do it.
 
         return (
             CommandOutput(
@@ -224,6 +225,7 @@ class RemoveCluster(ICommand):
                     binding_constraints[id]["id"],
                 ]
             )
+            study_data.config.bindings.remove(binding_constraints[id]["id"])
             del binding_constraints[id]
 
         study_data.tree.save(
