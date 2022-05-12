@@ -1,15 +1,10 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -51,6 +46,10 @@ class RemoveArea(ICommand):
                 except ValueError:
                     pass
 
+        for binding in study_data_config.bindings:
+            if self.id in binding.areas:
+                study_data_config.bindings.remove(binding)
+
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
             dict(),
@@ -77,11 +76,9 @@ class RemoveArea(ICommand):
         id_to_remove = []
 
         for id, bc in binding_constraints.items():
-            new_bc = {k: v for k, v in bc.items() if self.id not in k}
-            if [k for k in new_bc.keys() if "." in k or "%" in k]:
-                binding_constraints[id] = new_bc
-            else:
-                id_to_remove.append(id)
+            for key in bc.keys():
+                if self.id in key:
+                    id_to_remove.append(id)
 
         for id in id_to_remove:
             study_data.tree.delete(
@@ -266,35 +263,6 @@ class RemoveArea(ICommand):
         if not isinstance(other, RemoveArea):
             return False
         return self.id == other.id
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_area import (
-            CreateArea,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateArea)
-                and transform_name_to_id(command.area_name) == self.id
-            ):
-                # todo revert binding constraints that has the area in constraint and also search in base for one
-                return [command]
-
-        try:
-            (
-                area_commands,
-                links_commands,
-            ) = self._get_command_extractor().extract_area(base, self.id)
-            # todo revert binding constraints that has the area in constraint
-            return area_commands + links_commands
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_area {self.id}",
-                exc_info=e,
-            )
-            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

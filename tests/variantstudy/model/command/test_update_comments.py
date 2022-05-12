@@ -3,14 +3,17 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.command_extractor import (
+    CommandExtractor,
+)
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
 )
 from antarest.study.storage.variantstudy.model.command.update_comments import (
     UpdateComments,
-)
-from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -74,15 +77,16 @@ def test_revert(
         Mock(return_value=mock_command_extractor),
     )
 
-    base_command.revert([], empty_study)
+    CommandReverter().revert(base_command, [], empty_study)
     mock_command_extractor.generate_update_comments.assert_called_with(
         empty_study.tree
     )
-    assert base_command.revert(
+    assert CommandReverter().revert(
+        base_command,
         [UpdateComments(comments="comments", command_context=command_context)],
         empty_study,
     ) == [UpdateComments(comments="comments", command_context=command_context)]
-    assert base_command.revert([], base=empty_study) == [
+    assert CommandReverter().revert(base_command, [], base=empty_study) == [
         UpdateComments(
             comments='<?xml version="1.0" encoding="UTF-8"?>\n<richtext version="1.0.0.0" '
             'xmlns="http://www.wxwidgets.org">\n  <paragraphlayout textcolor="#000000" fontpointsize="9" '

@@ -97,6 +97,12 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
+class BindingConstraintDTO(BaseModel):
+    id: str
+    areas: List[str]
+    clusters: List[str]
+
+
 class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
@@ -112,7 +118,7 @@ class FileStudyTreeConfig(DTO):
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, Set]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[str]] = None,
+        bindings: Optional[List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
@@ -265,7 +271,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     areas: Dict[str, Area] = dict()
     sets: Dict[str, Set] = dict()
     outputs: Dict[str, Simulation] = dict()
-    bindings: List[str] = list()
+    bindings: List[BindingConstraintDTO] = list()
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = ENR_MODELLING.AGGREGATED.value

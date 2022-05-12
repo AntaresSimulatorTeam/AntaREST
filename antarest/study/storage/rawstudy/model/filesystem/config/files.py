@@ -16,6 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
     transform_name_to_id,
     Cluster,
+    BindingConstraintDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
@@ -92,11 +93,32 @@ class ConfigPathBuilder:
         return store_new_set, archive_input_series, enr_modelling
 
     @staticmethod
-    def _parse_bindings(root: Path) -> List[str]:
+    def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
         bindings = IniReader().read(
             root / "input/bindingconstraints/bindingconstraints.ini"
         )
-        return [bind["id"] for bind in bindings.values()]
+        output_list = []
+        for id, bind in bindings.items():
+            area_set = set()
+            cluster_list = (
+                []
+            )  # contains a list of strings in the following format: "area.cluster"
+            for key in bind.keys():
+                if "%" in key:
+                    areas = key.split("%")
+                    area_set.add(areas[0])
+                    area_set.add(areas[1])
+                elif "." in key:
+                    cluster_list.append(key)
+                    area_set.add(key.split(".")[0])
+
+            output_list.append(
+                BindingConstraintDTO(
+                    id=id, areas=list(area_set), clusters=cluster_list
+                )
+            )
+
+        return output_list
 
     @staticmethod
     def _parse_sets(root: Path) -> Dict[str, Set]:

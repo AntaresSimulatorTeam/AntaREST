@@ -1,17 +1,15 @@
 import configparser
-from unittest.mock import Mock
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.business.default_values import (
     FilteringOptions,
     LinkProperties,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -294,7 +292,7 @@ def test_revert(command_context: CommandContext):
     base = CreateLink(
         area1="foo", area2="bar", series=[[0]], command_context=command_context
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveLink(
             area1="foo",
             area2="bar",

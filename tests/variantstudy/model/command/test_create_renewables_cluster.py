@@ -5,6 +5,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -132,7 +135,7 @@ def test_revert(command_context: CommandContext):
         parameters={},
         command_context=command_context,
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveRenewablesCluster(
             area_id="foo",
             cluster_id="foo",

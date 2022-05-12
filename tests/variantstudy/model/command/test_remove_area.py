@@ -10,6 +10,9 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
     BindingConstraintOperator,
@@ -277,12 +280,14 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_area",
+    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_area",
 )
 def test_revert(mock_extract_area, command_context: CommandContext):
     base = RemoveArea(id="foo", command_context=command_context)
-    assert base.revert(
-        [CreateArea(area_name="foo", command_context=command_context)], None
+    assert CommandReverter().revert(
+        base,
+        [CreateArea(area_name="foo", command_context=command_context)],
+        None,
     ) == [CreateArea(area_name="foo", command_context=command_context)]
     study = FileStudy(config=Mock(), tree=Mock())
     mock_extract_area.return_value = (
@@ -290,7 +295,7 @@ def test_revert(mock_extract_area, command_context: CommandContext):
         [Mock()],
     )
     mock_extract_area.side_effect = ChildNotFoundError("")
-    base.revert([], study)
+    CommandReverter().revert(base, [], study)
     mock_extract_area.assert_called_with(study, "foo")
 
 

@@ -1,8 +1,10 @@
 from typing import Optional, Dict, List, Union
 
 from antarest.core.model import JSON
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    BindingConstraintDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
@@ -64,8 +66,20 @@ def apply_binding_constraint(
             [str(coeff_val) for coeff_val in coeffs[link_or_thermal]]
         )
 
-    if bd_id not in study_data.config.bindings:
-        study_data.config.bindings.append(bd_id)
+    if bd_id not in [bind.id for bind in study_data.config.bindings]:
+        areas_set = set()
+        clusters = []
+        for k, v in coeffs.items():
+            if "%" in k:
+                areas_set.add(k.split("%")[0])
+                areas_set.add(k.split("%")[1])
+            elif "." in k:
+                clusters.append(k)
+                areas_set.add(k.split(".")[0])
+        areas = list(areas_set)
+        study_data.config.bindings.append(
+            BindingConstraintDTO(id=id, areas=areas, clusters=clusters)
+        )
     study_data.tree.save(
         binding_constraints,
         ["input", "bindingconstraints", "bindingconstraints"],

@@ -10,6 +10,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     Set,
     Cluster,
+    BindingConstraintDTO,
 )
 
 
@@ -70,10 +71,14 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         version=-1,
-        bindings=["bindA", "bindB"],
+        bindings=[
+            BindingConstraintDTO(id="bindA", areas=[], clusters=[]),
+            BindingConstraintDTO(id="bindB", areas=[], clusters=[]),
+        ],
         study_id="id",
         output_path=study_path / "output",
     )
+
     assert ConfigPathBuilder.build(study_path, "id") == config
 
 

@@ -127,20 +127,6 @@ class CreateDistrict(ICommand):
             and self.comments == other.comments
         )
 
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_district import (
-            RemoveDistrict,
-        )
-
-        district_id = transform_name_to_id(self.name)
-        return [
-            RemoveDistrict(
-                id=district_id, command_context=self.command_context
-            )
-        ]
-
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateDistrict, other)
         district_id = transform_name_to_id(self.name)

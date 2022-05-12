@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.variantstudy.model.command.utils import (
+from antarest.study.storage.variantstudy.business.utils import (
     AliasDecoder,
 )
 

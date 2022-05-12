@@ -1,14 +1,9 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -70,6 +65,10 @@ class RemoveRenewablesCluster(ICommand):
                 dict(),
             )
         self._remove_renewables_cluster(study_data)
+
+        for binding in study_data.bindings:
+            if f"{self.area_id}.{self.cluster_id}" in binding.clusters:
+                study_data.bindings.remove(binding)
 
         return (
             CommandOutput(
@@ -160,33 +159,6 @@ class RemoveRenewablesCluster(ICommand):
             self.cluster_id == other.cluster_id
             and self.area_id == other.area_id
         )
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
-            CreateRenewablesCluster,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateRenewablesCluster)
-                and transform_name_to_id(command.cluster_name)
-                == self.cluster_id
-                and command.area_id == self.area_id
-            ):
-                return [command]
-
-        try:
-            return self._get_command_extractor().extract_renewables_cluster(
-                base, self.area_id, self.cluster_id
-            )
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_cluster {self.area_id}#{self.cluster_id}",
-                exc_info=e,
-            )
-            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

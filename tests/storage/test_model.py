@@ -6,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Set,
     Simulation,
+    BindingConstraintDTO,
 )
 
 
@@ -39,7 +40,7 @@ def test_file_study_tree_config_dto():
                 playlist=[0],
             )
         },
-        bindings=["b1"],
+        bindings=[BindingConstraintDTO("b1", [], [])],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",

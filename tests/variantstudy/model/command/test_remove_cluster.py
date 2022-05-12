@@ -9,6 +9,9 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
     TimeStep,
@@ -176,13 +179,14 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_cluster",
+    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_cluster",
 )
 def test_revert(mock_extract_cluster, command_context: CommandContext):
     base = RemoveCluster(
         area_id="foo", cluster_id="bar", command_context=command_context
     )
-    assert base.revert(
+    assert CommandReverter().revert(
+        base,
         [
             CreateCluster(
                 area_id="foo",
@@ -206,7 +210,7 @@ def test_revert(mock_extract_cluster, command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     mock_extract_cluster.side_effect = ChildNotFoundError("")
-    base.revert([], study)
+    CommandReverter().revert(base, [], study)
     mock_extract_cluster.assert_called_with(study, "foo", "bar")
 
 

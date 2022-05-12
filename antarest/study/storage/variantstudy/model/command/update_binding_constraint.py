@@ -6,10 +6,16 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils import (
+    validate_matrix,
+    strip_matrix_protocol,
+)
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    apply_binding_constraint,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     TimeStep,
@@ -19,13 +25,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.model.command.utils_binding_constraint import (
-    apply_binding_constraint,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -126,40 +125,6 @@ class UpdateBindingConstraint(ICommand):
             and self.coeffs == other.coeffs
             and self.values == other.values
             and self.comments == other.comments
-        )
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-            CreateBindingConstraint,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, UpdateBindingConstraint)
-                and command.id == self.id
-            ):
-                return [command]
-            elif (
-                isinstance(command, CreateBindingConstraint)
-                and transform_name_to_id(command.name) == self.id
-            ):
-                return [
-                    UpdateBindingConstraint(
-                        id=self.id,
-                        enabled=command.enabled,
-                        time_step=command.time_step,
-                        operator=command.operator,
-                        coeffs=command.coeffs,
-                        values=strip_matrix_protocol(command.values),
-                        comments=command.comments,
-                        command_context=command.command_context,
-                    )
-                ]
-
-        return self._get_command_extractor().extract_binding_constraint(
-            base, self.id
         )
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

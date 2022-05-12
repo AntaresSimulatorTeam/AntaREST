@@ -8,11 +8,11 @@ from antarest.matrixstore.business.matrix_editor import (
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.business.utils import (
+    strip_matrix_protocol,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    strip_matrix_protocol,
 )
 
 

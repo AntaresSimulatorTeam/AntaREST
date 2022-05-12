@@ -10,6 +10,9 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -83,7 +86,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.generate_update_config"
+    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config"
 )
 def test_revert(mock_generate_update_config, command_context: CommandContext):
     base = UpdateConfig(
@@ -91,11 +94,12 @@ def test_revert(mock_generate_update_config, command_context: CommandContext):
     )
     study = FileStudy(config=Mock(), tree=Mock())
     mock_generate_update_config.side_effect = ChildNotFoundError("")
-    res = base.revert([], study)
+    res = CommandReverter().revert(base, [], study)
     mock_generate_update_config.assert_called_with(study.tree, ["foo"])
     assert res == []
 
-    assert base.revert(
+    assert CommandReverter().revert(
+        base,
         [
             UpdateConfig(
                 target="foo", data="baz", command_context=command_context

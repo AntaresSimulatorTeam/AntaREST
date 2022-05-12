@@ -5,6 +5,12 @@ from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.command_extractor import (
+    CommandExtractor,
+)
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -13,9 +19,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtractor,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)
@@ -221,8 +224,10 @@ class VariantCommandsExtractor:
             command_list.extend(
                 [
                     (priority, command)
-                    for command in command_obj.revert(
-                        history=base_commands[:index], base=empty_study
+                    for command in CommandReverter().revert(
+                        command_obj,
+                        history=base_commands[:index],
+                        base=empty_study,
                     )
                 ]
             )
