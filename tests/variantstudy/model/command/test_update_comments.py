@@ -73,7 +73,7 @@ def test_revert(
 
     object.__setattr__(
         base_command,
-        "_get_command_extractor",
+        "get_command_extractor",
         Mock(return_value=mock_command_extractor),
     )
 

@@ -78,7 +78,7 @@ def apply_binding_constraint(
                 areas_set.add(k.split(".")[0])
         areas = list(areas_set)
         study_data.config.bindings.append(
-            BindingConstraintDTO(id=id, areas=areas, clusters=clusters)
+            BindingConstraintDTO(id=bd_id, areas=areas, clusters=clusters)
         )
     study_data.tree.save(
         binding_constraints,

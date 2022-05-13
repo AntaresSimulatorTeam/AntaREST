@@ -43,9 +43,6 @@ from antarest.study.storage.variantstudy.model.command.remove_district import (
 from antarest.study.storage.variantstudy.model.command.remove_link import (
     RemoveLink,
 )
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -71,8 +68,6 @@ class TestRemoveArea:
         area_id = transform_name_to_id(area_name)
         area_name2 = "Area2"
         area_id2 = transform_name_to_id(area_name2)
-        area_name3 = "Area3"
-        area_id3 = transform_name_to_id(area_name3)
         empty_study.tree.save(
             {
                 "input": {
@@ -106,6 +101,27 @@ class TestRemoveArea:
         output = create_area_command.apply(study_data=empty_study)
         assert output.status
 
+        parameters = {
+            "group": "Other",
+            "unitcount": "1",
+            "nominalcapacity": "1000000",
+            "marginal-cost": "30",
+            "market-bid-cost": "30",
+        }
+
+        create_district_command = CreateDistrict(
+            name="foo",
+            base_filter=DistrictBaseFilter.add_all,
+            filter_items=[area_id],
+            command_context=command_context,
+        )
+        output = create_district_command.apply(study_data=empty_study)
+        assert output.status
+
+        ########################################################################################
+
+        empty_study_hash = dirhash(empty_study.config.study_path, "md5")
+
         create_area_command: ICommand = CreateArea.parse_obj(
             {
                 "area_name": area_name2,
@@ -125,17 +141,9 @@ class TestRemoveArea:
         output = create_link_command.apply(study_data=empty_study)
         assert output.status
 
-        parameters = {
-            "group": "Other",
-            "unitcount": "1",
-            "nominalcapacity": "1000000",
-            "marginal-cost": "30",
-            "market-bid-cost": "30",
-        }
-
         create_cluster_command = CreateCluster.parse_obj(
             {
-                "area_id": area_id,
+                "area_id": area_id2,
                 "cluster_name": "cluster",
                 "parameters": parameters,
                 "prepro": [[0]],
@@ -144,81 +152,6 @@ class TestRemoveArea:
             }
         )
         output = create_cluster_command.apply(study_data=empty_study)
-        assert output.status
-
-        bind1_cmd = CreateBindingConstraint(
-            name="BD 1",
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.LESS,
-            coeffs={
-                f"{area_id}%{area_id2}": [800, 30],
-                f"{area_id}.cluster": [800, 30],
-            },
-            comments="Hello",
-            command_context=command_context,
-        )
-        output = bind1_cmd.apply(study_data=empty_study)
-        assert output.status
-
-        create_district_command = CreateDistrict(
-            name="foo",
-            base_filter=DistrictBaseFilter.add_all,
-            filter_items=[area_id, area_id2],
-            command_context=command_context,
-        )
-        output = create_district_command.apply(study_data=empty_study)
-        assert output.status
-
-        ########################################################################################
-
-        empty_study_hash = dirhash(empty_study.config.study_path, "md5")
-
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name3,
-                "command_context": command_context,
-            }
-        )
-        output = create_area_command.apply(study_data=empty_study)
-        assert output.status
-
-        create_link_command: ICommand = CreateLink(
-            area1=transform_name_to_id(area_name2),
-            area2=transform_name_to_id(area_name3),
-            parameters={},
-            command_context=command_context,
-            series=[[0]],
-        )
-        output = create_link_command.apply(study_data=empty_study)
-        assert output.status
-
-        create_cluster_command = CreateCluster.parse_obj(
-            {
-                "area_id": area_id3,
-                "cluster_name": "cluster",
-                "parameters": parameters,
-                "prepro": [[0]],
-                "modulation": [[0]],
-                "command_context": command_context,
-            }
-        )
-        output = create_cluster_command.apply(study_data=empty_study)
-        assert output.status
-
-        bind_update = UpdateBindingConstraint(
-            id=transform_name_to_id("BD 1"),
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.LESS,
-            coeffs={
-                f"{area_id}%{area_id2}": [800, 30],
-                f"{area_id}.cluster": [800, 30],
-                f"{area_id2}%{area_id3}": [800, 30],
-                f"{area_id3}.cluster": [800, 30],
-            },
-            comments="Hello",
-            command_context=command_context,
-        )
-        output = bind_update.apply(empty_study)
         assert output.status
 
         bind1_cmd = CreateBindingConstraint(
@@ -226,8 +159,8 @@ class TestRemoveArea:
             time_step=TimeStep.HOURLY,
             operator=BindingConstraintOperator.LESS,
             coeffs={
-                f"{area_id2}%{area_id3}": [400, 30],
-                f"{area_id3}.cluster": [400, 30],
+                f"{area_id}%{area_id2}": [400, 30],
+                f"{area_id2}.cluster": [400, 30],
             },
             comments="Hello",
             command_context=command_context,
@@ -245,7 +178,7 @@ class TestRemoveArea:
         create_district_command = CreateDistrict(
             name="foo",
             base_filter=DistrictBaseFilter.add_all,
-            filter_items=[area_id, area_id2, area_id3],
+            filter_items=[area_id, area_id2],
             command_context=command_context,
         )
         output = create_district_command.apply(study_data=empty_study)
@@ -253,7 +186,7 @@ class TestRemoveArea:
 
         remove_area_command: ICommand = RemoveArea.parse_obj(
             {
-                "id": transform_name_to_id(area_name3),
+                "id": transform_name_to_id(area_name2),
                 "command_context": command_context,
             }
         )

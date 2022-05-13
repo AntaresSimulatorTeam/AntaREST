@@ -31,9 +31,6 @@ from antarest.study.storage.variantstudy.model.command.remove_area import (
 from antarest.study.storage.variantstudy.model.command.remove_cluster import (
     RemoveCluster,
 )
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -50,8 +47,6 @@ class TestRemoveCluster:
         area_id = transform_name_to_id(area_name)
         cluster_name = "cluster_name"
         cluster_id = transform_name_to_id(cluster_name)
-        cluster_name2 = "cluster_name2"
-        cluster_id2 = transform_name_to_id(cluster_name2)
 
         CreateArea.parse_obj(
             {
@@ -59,6 +54,9 @@ class TestRemoveCluster:
                 "command_context": command_context,
             }
         ).apply(empty_study)
+
+        ################################################################################################
+        hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
 
         CreateCluster(
             area_id=area_id,
@@ -88,54 +86,9 @@ class TestRemoveCluster:
         output = bind1_cmd.apply(study_data=empty_study)
         assert output.status
 
-        ################################################################################################
-        hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
-
-        CreateCluster(
-            area_id=area_id,
-            cluster_name=cluster_name2,
-            parameters={
-                "group": "group",
-                "unitcount": "unitcount",
-                "nominalcapacity": "nominalcapacity",
-                "marginal-cost": "marginal-cost",
-                "market-bid-cost": "market-bid-cost",
-            },
-            command_context=command_context,
-            prepro=[[0]],
-            modulation=[[0]],
-        ).apply(empty_study)
-
-        bind_update = UpdateBindingConstraint(
-            id=transform_name_to_id("BD 1"),
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.LESS,
-            coeffs={
-                f"{area_id}.{cluster_id}": [800, 30],
-                f"{area_id}.{cluster_id2}": [800, 30],
-            },
-            comments="Hello",
-            command_context=command_context,
-        )
-        output = bind_update.apply(empty_study)
-        assert output.status
-
-        bind1_cmd = CreateBindingConstraint(
-            name="BD 2",
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.LESS,
-            coeffs={
-                f"{area_id}.{cluster_id2}": [800, 30],
-            },
-            comments="Hello",
-            command_context=command_context,
-        )
-        output = bind1_cmd.apply(study_data=empty_study)
-        assert output.status
-
         output = RemoveCluster(
             area_id=area_id,
-            cluster_id=cluster_id2,
+            cluster_id=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
 

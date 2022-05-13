@@ -114,7 +114,7 @@ class ConfigPathBuilder:
 
             output_list.append(
                 BindingConstraintDTO(
-                    id=id, areas=list(area_set), clusters=cluster_list
+                    id=bind["id"], areas=list(area_set), clusters=cluster_list
                 )
             )
 

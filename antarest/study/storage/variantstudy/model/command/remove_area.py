@@ -73,12 +73,12 @@ class RemoveArea(ICommand):
             ["input", "bindingconstraints", "bindingconstraints"]
         )
 
-        id_to_remove = []
+        id_to_remove = set()
 
         for id, bc in binding_constraints.items():
             for key in bc.keys():
                 if self.id in key:
-                    id_to_remove.append(id)
+                    id_to_remove.add(id)
 
         for id in id_to_remove:
             study_data.tree.delete(

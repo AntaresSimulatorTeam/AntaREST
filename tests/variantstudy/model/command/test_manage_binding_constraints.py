@@ -284,7 +284,7 @@ def test_revert(command_context: CommandContext):
     mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
         base,
-        "_get_command_extractor",
+        "get_command_extractor",
         Mock(return_value=mock_command_extractor),
     )
     assert CommandReverter().revert(
@@ -366,7 +366,7 @@ def test_revert(command_context: CommandContext):
     mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
         base,
-        "_get_command_extractor",
+        "get_command_extractor",
         Mock(return_value=mock_command_extractor),
     )
     assert CommandReverter().revert(

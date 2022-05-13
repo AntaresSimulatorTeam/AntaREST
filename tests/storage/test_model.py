@@ -40,7 +40,7 @@ def test_file_study_tree_config_dto():
                 playlist=[0],
             )
         },
-        bindings=[BindingConstraintDTO("b1", [], [])],
+        bindings=[BindingConstraintDTO(id="b1", areas=[], clusters=[])],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",

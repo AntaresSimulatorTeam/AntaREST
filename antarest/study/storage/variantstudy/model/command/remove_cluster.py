@@ -176,14 +176,7 @@ class RemoveCluster(ICommand):
         id_to_remove = []
 
         for id, bc in binding_constraints.items():
-            new_bc = {
-                k: v
-                for k, v in bc.items()
-                if f"{self.area_id}.{self.cluster_id}" not in k
-            }
-            if [k for k in new_bc.keys() if "." in k or "%" in k]:
-                binding_constraints[id] = new_bc
-            else:
+            if f"{self.area_id}.{self.cluster_id}" in bc.keys():
                 id_to_remove.append(id)
 
         for id in id_to_remove:
@@ -194,7 +187,18 @@ class RemoveCluster(ICommand):
                     binding_constraints[id]["id"],
                 ]
             )
-            study_data.config.bindings.remove(binding_constraints[id]["id"])
+            study_data.config.bindings.remove(
+                next(
+                    iter(
+                        [
+                            bind
+                            for bind in study_data.config.bindings
+                            if bind.id == binding_constraints[id]["id"]
+                        ]
+                    )
+                )
+            )
+
             del binding_constraints[id]
 
         study_data.tree.save(
