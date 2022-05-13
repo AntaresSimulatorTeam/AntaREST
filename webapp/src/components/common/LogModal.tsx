@@ -202,40 +202,7 @@ function LogModal(props: PropTypes) {
             <SimpleLoader />
           ) : (
             <Box sx={{ p: 3 }} id="log-content" ref={divRef}>
-              <code style={{ whiteSpace: "pre" }}>
-                {logDetail}
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Aut
-                consectetur voluptas autem officia, distinctio nobis error
-                facere ea, ab atque repellat laboriosam explicabo culpa beatae
-                labore natus laborum aperiam! Eos. Lorem, ipsum dolor sit amet
-                consectetur adipisicing elit. Reprehenderit eveniet consequuntur
-                dignissimos culpa nesciunt odit optio aspernatur modi
-                praesentium, architecto voluptatum asperiores unde placeat autem
-                consequatur sunt magnam est suscipit. Lorem ipsum dolor sit amet
-                consectetur adipisicing elit. Aut consectetur voluptas autem
-                officia, distinctio nobis error facere ea, ab atque repellat
-                laboriosam explicabo culpa beatae labore natus laborum aperiam!
-                Eos. Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                Reprehenderit eveniet consequuntur dignissimos culpa nesciunt
-                odit optio aspernatur modi praesentium, architecto voluptatum
-                asperiores unde placeat autem consequatur sunt magnam est
-                suscipit. Lorem ipsum dolor sit amet consectetur adipisicing
-                elit. Aut consectetur voluptas autem officia, distinctio nobis
-                error facere ea, ab atque repellat laboriosam explicabo culpa
-                beatae labore natus laborum aperiam! Eos. Lorem, ipsum dolor sit
-                amet consectetur adipisicing elit. Reprehenderit eveniet
-                consequuntur dignissimos culpa nesciunt odit optio aspernatur
-                modi praesentium, architecto voluptatum asperiores unde placeat
-                autem consequatur sunt magnam est suscipit. Lorem ipsum dolor
-                sit amet consectetur adipisicing elit. Aut consectetur voluptas
-                autem officia, distinctio nobis error facere ea, ab atque
-                repellat laboriosam explicabo culpa beatae labore natus laborum
-                aperiam! Eos. Lorem, ipsum dolor sit amet consectetur
-                adipisicing elit. Reprehenderit eveniet consequuntur dignissimos
-                culpa nesciunt odit optio aspernatur modi praesentium,
-                architecto voluptatum asperiores unde placeat autem consequatur
-                sunt magnam est suscipit.
-              </code>
+              <code style={{ whiteSpace: "pre" }}>{logDetail}</code>
             </Box>
           )}
         </Box>
