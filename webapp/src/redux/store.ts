@@ -1,12 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { AnyAction } from "redux";
-import { ThunkAction } from "redux-thunk";
 import { throttle } from "lodash";
+import { ThunkAction } from "redux-thunk";
+import { AnyAction } from "redux";
 import { setLogoutInterceptor } from "../services/api/client";
 import { addWsListeners } from "../services/utils/globalWsListeners";
 import rootReducer, { AppState } from "./ducks";
 import { logoutAction, persistState } from "./ducks/auth";
-import { resetStudies } from "./ducks/study";
+import localStorageMiddleware from "./middlewares/localStorageMiddleware";
 
 const store = configureStore({
   reducer: rootReducer,
@@ -15,12 +15,13 @@ const store = configureStore({
       // TODO: fix all issue then set it to true (default value)
       immutableCheck: false,
       serializableCheck: false,
-    }),
+    }).prepend(localStorageMiddleware.middleware),
 });
 
 setLogoutInterceptor(
-  () => store.dispatch(logoutAction()),
-  () => store.dispatch(resetStudies())
+  () => store.dispatch(logoutAction())
+  // TODO: to include in logout thunk
+  // () => store.dispatch(fetchStudies([]))
 );
 
 store.subscribe(
@@ -31,13 +32,21 @@ store.subscribe(
 
 addWsListeners(store);
 
+export type AppStore = typeof store;
+
 export type AppDispatch = typeof store.dispatch;
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
   AppState,
-  unknown,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any, // TODO: issue with unknown
   AnyAction
 >;
+
+export type AppAsyncThunkConfig = {
+  state: AppState;
+  dispatch: AppDispatch;
+};
 
 export default store;

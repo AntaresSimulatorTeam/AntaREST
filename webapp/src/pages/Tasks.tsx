@@ -39,7 +39,6 @@ import {
   downloadJobOutput,
   killStudy,
   getStudyJobs,
-  getStudies,
 } from "../services/api/study";
 import {
   convertFileDownloadDTO,
@@ -48,7 +47,7 @@ import {
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
-import { initStudies } from "../redux/ducks/study";
+import { fetchStudies } from "../redux/ducks/study";
 import {
   LaunchJob,
   TaskDTO,
@@ -71,7 +70,7 @@ const mapState = (state: AppState) => ({
 });
 
 const mapDispatch = {
-  loadStudies: initStudies,
+  loadStudies: fetchStudies,
   addWsListener: addListener,
   removeWsListener: removeListener,
   subscribeChannel: subscribe,
@@ -109,8 +108,7 @@ function JobsListing(props: PropTypes) {
     setLoaded(false);
     try {
       if (studies.length === 0) {
-        const allStudies = await getStudies();
-        loadStudies(allStudies);
+        await loadStudies().unwrap();
       }
       const allJobs = await getStudyJobs(undefined, false);
       setJobs(allJobs);

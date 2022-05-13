@@ -1,39 +1,23 @@
-import { AnyAction, Store } from "redux";
-import { ThunkDispatch } from "redux-thunk";
-import { addStudies, removeStudies } from "../../redux/ducks/study";
-import { getStudyMetadata } from "../api/study";
+import { createOrUpdateStudy, deleteStudy } from "../../redux/ducks/study";
 import { StudySummary, WSEvent, WSMessage } from "../../common/types";
 import {
   addListenerAction,
   refreshHandlerAction,
 } from "../../redux/ducks/websockets";
-import { AppState } from "../../redux/ducks";
 import { isStringEmpty } from ".";
 import { setMaintenanceMode, setMessageInfo } from "../../redux/ducks/global";
+import { AppStore } from "../../redux/store";
 
 const studyListener =
-  (reduxStore: Store<AppState>) =>
-  async (ev: WSMessage): Promise<void> => {
-    const studySummary = ev.payload as StudySummary;
+  (reduxStore: AppStore) =>
+  async (ev: WSMessage<StudySummary>): Promise<void> => {
     switch (ev.type) {
       case WSEvent.STUDY_CREATED:
-        reduxStore.dispatch(
-          addStudies([await getStudyMetadata(studySummary.id)])
-        );
+      case WSEvent.STUDY_EDITED:
+        reduxStore.dispatch(createOrUpdateStudy(ev));
         break;
       case WSEvent.STUDY_DELETED:
-        (
-          reduxStore.dispatch as ThunkDispatch<
-            AppState,
-            Array<string>,
-            AnyAction
-          >
-        )(removeStudies([studySummary.id]));
-        break;
-      case WSEvent.STUDY_EDITED:
-        reduxStore.dispatch(
-          addStudies([await getStudyMetadata(studySummary.id)])
-        );
+        reduxStore.dispatch(deleteStudy(ev));
         break;
 
       default:
@@ -42,7 +26,7 @@ const studyListener =
   };
 
 const maintenanceListener =
-  (reduxStore: Store<AppState>) =>
+  (reduxStore: AppStore) =>
   (ev: WSMessage): void => {
     switch (ev.type) {
       case WSEvent.MAINTENANCE_MODE:
@@ -60,9 +44,7 @@ const maintenanceListener =
     }
   };
 
-export const addWsListeners = async (
-  reduxStore: Store<AppState>
-): Promise<void> => {
+export const addWsListeners = async (reduxStore: AppStore): Promise<void> => {
   /* ADD LISTENERS HERE */
   reduxStore.dispatch(addListenerAction(studyListener(reduxStore)));
   reduxStore.dispatch(addListenerAction(maintenanceListener(reduxStore)));

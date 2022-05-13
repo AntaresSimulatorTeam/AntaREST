@@ -45,9 +45,8 @@ import {
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
 import { AppState } from "../../redux/ducks";
-import { removeStudies, updateScrollPosition } from "../../redux/ducks/study";
+import { deleteStudy, setStudyScrollPosition } from "../../redux/ducks/study";
 import {
-  deleteStudy as callDeleteStudy,
   copyStudy as callCopyStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
@@ -101,8 +100,8 @@ const mapState = (state: AppState) => ({
 });
 
 const mapDispatch = {
-  removeStudy: (sid: string) => removeStudies([sid]),
-  updateScroll: updateScrollPosition,
+  removeStudy: deleteStudy,
+  updateScroll: setStudyScrollPosition,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -200,8 +199,7 @@ function StudiesList(props: PropTypes) {
   const deleteStudy = async (study: StudyMetadata) => {
     // eslint-disable-next-line no-alert
     try {
-      await callDeleteStudy(study.id);
-      removeStudy(study.id);
+      await removeStudy(study.id).unwrap();
     } catch (e) {
       enqueueErrorSnackbar(
         t("studymanager:failtodeletestudy"),

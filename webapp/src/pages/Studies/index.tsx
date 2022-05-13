@@ -28,8 +28,8 @@ import { getGroups, getUsers } from "../../services/api/user";
 import { getStudies } from "../../services/api/study";
 import { AppState } from "../../redux/ducks";
 import {
-  initStudies,
-  initStudiesVersion,
+  fetchStudies,
+  fetchStudyVersions,
   toggleFavorite as dipatchToggleFavorite,
 } from "../../redux/ducks/study";
 import FilterDrawer from "../../components/studies/FilterDrawer";
@@ -52,8 +52,8 @@ const mapState = (state: AppState) => ({
 });
 
 const mapDispatch = {
-  loadStudies: initStudies,
-  loadVersions: initStudiesVersion,
+  loadStudies: fetchStudies,
+  loadVersions: fetchStudyVersions,
   toggleFavorite: dipatchToggleFavorite,
 };
 
@@ -136,8 +136,9 @@ function Studies(props: PropTypes) {
       setLoaded(false);
       try {
         if (studies.length === 0 || refresh) {
+          await loadStudies().unwrap();
+          // TODO: update with a useEffect with `studies` in dep
           const allStudies = await getStudies();
-          loadStudies(allStudies);
           setFilteredStudies(allStudies);
         }
       } catch (e) {
@@ -280,9 +281,11 @@ function Studies(props: PropTypes) {
     }
   };
 
+  // TODO: no promise in useEffect
   useEffect(() => {
     init();
     if (!versions) {
+      // TODO: try catch
       loadVersions();
     }
     getAllStudies(false);

@@ -297,9 +297,10 @@ export enum DefaultFilterKey {
   ARCHIVED = "v2.studylisting.filter.archived",
 }
 
-export interface WSMessage {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface WSMessage<T = any> {
   type: string;
-  payload: unknown;
+  payload: T;
 }
 
 export interface WSLogMessage {

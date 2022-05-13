@@ -37,15 +37,11 @@ import { connect, ConnectedProps, useSelector } from "react-redux";
 import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import {
-  deleteStudy as callDeleteStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
 import { AppState } from "../../redux/ducks";
-import {
-  removeStudies,
-  toggleFavorite as dispatchToggleFavorite,
-} from "../../redux/ducks/study";
+import { deleteStudy, toggleFavorite } from "../../redux/ducks/study";
 import PropertiesDialog from "./PropertiesDialog";
 import LauncherDialog from "../studies/LauncherDialog";
 import {
@@ -81,8 +77,8 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
 const mapState = (state: AppState) => ({});
 
 const mapDispatch = {
-  removeStudy: (sid: string) => removeStudies([sid]),
-  toggleFavorite: dispatchToggleFavorite,
+  removeStudy: deleteStudy,
+  toggleFavorite,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -184,8 +180,7 @@ function NavHeader(props: PropTypes) {
   const deleteStudy = async (study: StudyMetadata) => {
     // eslint-disable-next-line no-alert
     try {
-      await callDeleteStudy(study.id);
-      removeStudy(study.id);
+      await removeStudy(study.id).unwrap();
     } catch (e) {
       enqueueErrorSnackbar(
         t("studymanager:failtodeletestudy"),

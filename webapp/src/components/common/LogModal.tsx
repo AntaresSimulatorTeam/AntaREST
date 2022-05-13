@@ -58,9 +58,9 @@ function LogModal(props: PropTypes) {
   const [t] = useTranslation();
 
   const updateLog = useCallback(
-    (ev: WSMessage) => {
+    (ev: WSMessage<WSLogMessage>) => {
       if (ev.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
-        const logEvent = ev.payload as WSLogMessage;
+        const logEvent = ev.payload;
         if (logEvent.job_id === jobId) {
           setLogDetail((logDetail || "") + logEvent.log);
         }

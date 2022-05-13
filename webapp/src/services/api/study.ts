@@ -202,7 +202,7 @@ export const exportOuput = async (
 export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void
-): Promise<string> => {
+): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
