@@ -8,7 +8,6 @@ export const BoxParamHeader = styled(Box)(({ theme }) => ({
   flexFlow: "row nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  paddingLeft: theme.spacing(2),
   boxSizing: "border-box",
 }));
 
@@ -23,9 +22,9 @@ export const BoxParam = styled(Box)(({ theme }) => ({
 }));
 
 export const ParamTitle = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
+  color: theme.palette.text.primary,
   marginRight: theme.spacing(1),
-  fontWeight: "bold",
+  fontWeight: "500",
 }));
 
 export const StyledDownloadIcon = styled(DownloadIcon)(({ theme }) => ({

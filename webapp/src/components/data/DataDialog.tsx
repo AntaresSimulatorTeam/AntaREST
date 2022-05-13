@@ -136,7 +136,7 @@ function DataModal(props: PropTypes) {
       actions={
         <Box>
           <Button
-            variant="contained"
+            color="primary"
             onClick={importing ? undefined : onClose}
             sx={{ m: 2 }}
           >
@@ -144,7 +144,6 @@ function DataModal(props: PropTypes) {
           </Button>
           <Button
             variant="contained"
-            color="primary"
             onClick={importing ? undefined : onSave}
             sx={{ m: 2 }}
           >
@@ -178,7 +177,7 @@ function DataModal(props: PropTypes) {
         <Box
           sx={{
             flex: "1",
-            width: "90%",
+            width: "100%",
             display: "flex",
             flexFlow: "column nowrap",
             justifyContent: "flex-start",
@@ -292,7 +291,7 @@ function DataModal(props: PropTypes) {
                 alignItems: "flex-start",
                 flexWrap: "wrap",
                 "& > *": {
-                  m: 0.5,
+                  m: "4px !important",
                 },
               }}
             >
@@ -315,6 +314,7 @@ function DataModal(props: PropTypes) {
                     key={item.id}
                     label={item.name}
                     onClick={() => onGroupClick(true, item)}
+                    color="secondary"
                   />
                 );
               })}

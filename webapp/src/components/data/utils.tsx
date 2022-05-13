@@ -1,6 +1,3 @@
-import { CSSProperties, forwardRef } from "react";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { Box } from "@mui/material";
 import {
   GroupDTO,
   MatrixDataSetDTO,
@@ -19,6 +16,7 @@ const updateMatrix = async (
   publicStatus: boolean,
   selectedGroupList: Array<GroupDTO>,
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const matrixMetadata: MatrixDataSetUpdateDTO = {
     name,
@@ -40,6 +38,7 @@ const createMatrix = async (
   selectedGroupList: Array<GroupDTO>,
   matrices: Array<MatrixInfoDTO>,
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const matrixMetadata: MatrixDataSetUpdateDTO = {
     name,
@@ -90,70 +89,6 @@ export const saveMatrix = async (
 
   return data ? "data:onMatrixUpdate" : "data:onMatrixCreation";
 };
-
-interface LoaderStyle {
-  rootLoader: CSSProperties;
-  shadow: CSSProperties;
-  loaderWheel: CSSProperties;
-  loaderMessage: CSSProperties;
-  loaderContainer: CSSProperties;
-}
-
-export const loaderStyle: LoaderStyle = {
-  rootLoader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    zIndex: 999,
-  },
-  shadow: {
-    zIndex: 998,
-    opacity: 0.9,
-    backgroundColor: "#fff",
-  },
-  loaderWheel: {
-    width: "98px",
-    height: "98px",
-  },
-  loaderMessage: {
-    marginTop: "1em",
-  },
-  loaderContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexFlow: "column",
-  },
-};
-
-export const CopyIcon = forwardRef<
-  HTMLInputElement,
-  React.DetailedHTMLProps<
-    React.HTMLAttributes<HTMLSpanElement>,
-    HTMLSpanElement
-  >
->(
-  (
-    p: React.DetailedHTMLProps<
-      React.HTMLAttributes<HTMLSpanElement>,
-      HTMLSpanElement
-    >,
-    ref
-  ) => {
-    if (ref) {
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      return (
-        <span {...p} ref={ref}>
-          <ContentCopyIcon />
-        </span>
-      );
-    }
-    return <Box />;
-  }
-);
 
 // export const updateDataset = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO>
 // export const createDataset = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO>

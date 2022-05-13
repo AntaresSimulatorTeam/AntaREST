@@ -51,7 +51,7 @@ function DataPropsView(props: PropTypes) {
         filteredDatas && (
           <StyledListingBox>
             <DataListing
-              datasets={dataset}
+              datasets={filteredDatas}
               selectedItem={selectedItem}
               setSelectedItem={setSelectedItem}
             />
