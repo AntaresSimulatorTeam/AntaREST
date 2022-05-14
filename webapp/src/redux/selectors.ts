@@ -1,5 +1,5 @@
+import { createSelector } from "@reduxjs/toolkit";
 import * as R from "ramda";
-import { createSelector } from "reselect";
 import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
