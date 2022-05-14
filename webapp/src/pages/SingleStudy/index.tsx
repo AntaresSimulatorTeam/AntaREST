@@ -20,7 +20,7 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
-import { setCurrentStudy } from "../../redux/ducks/study";
+import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
 import { addListener, removeListener } from "../../redux/ducks/websockets";

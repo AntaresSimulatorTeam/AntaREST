@@ -52,8 +52,10 @@ import {
   LogoContainer,
 } from "./styles";
 import { getConfig } from "../../../services/config";
-import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
+import { getCurrentStudyId } from "../../../redux/selectors";
 import { logoutAction } from "../../../store/auth";
+import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
+import { scrollbarStyle } from "../../../theme";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -90,7 +92,7 @@ interface MenuItem {
 
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
-  currentStudy: state.study.current,
+  currentStudy: getCurrentStudyId(state),
   websocketConnected: state.websockets.connected,
 });
 

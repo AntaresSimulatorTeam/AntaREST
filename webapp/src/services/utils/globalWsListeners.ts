@@ -1,4 +1,4 @@
-import { createOrUpdateStudy, deleteStudy } from "../../redux/ducks/study";
+import { setStudy, deleteStudy } from "../../redux/ducks/studies";
 import { StudySummary, WSEvent, WSMessage } from "../../common/types";
 import {
   addListenerAction,
@@ -14,7 +14,7 @@ const studyListener =
     switch (ev.type) {
       case WSEvent.STUDY_CREATED:
       case WSEvent.STUDY_EDITED:
-        reduxStore.dispatch(createOrUpdateStudy(ev));
+        reduxStore.dispatch(setStudy(ev));
         break;
       case WSEvent.STUDY_DELETED:
         reduxStore.dispatch(deleteStudy(ev));

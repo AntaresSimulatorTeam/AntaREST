@@ -41,9 +41,9 @@ import {
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
 import { AppState } from "../../redux/ducks";
-import { deleteStudy, toggleFavorite } from "../../redux/ducks/study";
-import PropertiesDialog from "./PropertiesDialog";
+import { deleteStudy, toggleFavorite } from "../../redux/ducks/studies";
 import LauncherDialog from "../studies/LauncherDialog";
+import PropertiesDialog from "./PropertiesDialog";
 import {
   buildModificationDate,
   convertUTCToLocalTime,

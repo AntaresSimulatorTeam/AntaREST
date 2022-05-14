@@ -1,5 +1,5 @@
 import { combineReducers } from "redux";
-import study from "./study";
+import studies from "./studies";
 import auth from "./auth";
 import global from "./global";
 import ui from "./ui";
@@ -7,7 +7,7 @@ import websockets from "./websockets";
 
 const rootReducer = combineReducers({
   global,
-  study,
+  studies,
   auth,
   ui,
   websockets,

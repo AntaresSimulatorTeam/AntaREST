@@ -1,6 +1,7 @@
 import {
   createAction,
   createAsyncThunk,
+  createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
@@ -15,11 +16,16 @@ import {
 } from "../../common/types";
 import * as api from "../../services/api/study";
 import { loadState } from "../../services/utils/localStorage";
-import { getFavoriteStudies, getStudy, getStudyVersions } from "../selectors";
+import { getFavoriteStudies, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 
-export interface StudyState {
+export const studiesAdapter = createEntityAdapter<StudyMetadata>({
+  selectId: (study) => study.id,
+});
+
+export interface StudiesState
+  extends ReturnType<typeof studiesAdapter.getInitialState> {
   current?: StudyMetadata["id"];
   studies: StudyMetadata[];
   scrollPosition: number;
@@ -43,12 +49,11 @@ type StudyUpload = {
 
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
-const initialState = {
-  studies: [],
+const initialState = studiesAdapter.getInitialState({
   scrollPosition: 0,
   directory: "root",
   favorites: loadState(DefaultFilterKey.FAVORITE_STUDIES) || [],
-} as StudyState;
+}) as StudiesState;
 
 const n = makeActionName("study");
 
@@ -56,21 +61,19 @@ const n = makeActionName("study");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-const updateStudy = createAction<StudyMetadata>(n("UPDATE_STUDY"));
-
-export const setCurrentStudy = createAction<NonNullable<StudyState["current"]>>(
-  n("SET_CURRENT")
-);
+export const setCurrentStudy = createAction<
+  NonNullable<StudiesState["current"]>
+>(n("SET_CURRENT"));
 
 export const setStudyScrollPosition = createAction<
-  StudyState["scrollPosition"]
+  StudiesState["scrollPosition"]
 >(n("SET_SCROLL_POSITION"));
 
-const setStudyDirectory = createAction<StudyState["directory"]>(
+const setStudyDirectory = createAction<StudiesState["directory"]>(
   n("SET_DIRECTORY")
 );
 
-export const setFavoriteStudies = createAction<StudyState["favorites"]>(
+export const setFavoriteStudies = createAction<StudiesState["favorites"]>(
   n("SET_FAVORITES")
 );
 
@@ -115,16 +118,14 @@ export const createStudy = createAsyncThunk<
   }
 });
 
-export const createOrUpdateStudy =
-  (event: WSMessage<StudySummary>): AppThunk =>
-  async (dispatch, getState) => {
-    const { id } = event.payload;
-    const state = getState();
-    const isStudyPresent = !!getStudy(state, id);
-    const studyUpToDate = await api.getStudyMetadata(id);
-    const actionCreator = isStudyPresent ? updateStudy : createStudy;
-    dispatch(actionCreator(studyUpToDate));
-  };
+export const setStudy = createAsyncThunk<
+  StudyMetadata,
+  WSMessage<StudySummary>,
+  AppAsyncThunkConfig
+>(n("SET_STUDY"), (event) => {
+  const { id } = event.payload;
+  return api.getStudyMetadata(id);
+});
 
 export const deleteStudy = createAsyncThunk<
   StudyMetadata["id"],
@@ -206,24 +207,12 @@ export const toggleFavorite =
 
 export default createReducer(initialState, (builder) => {
   builder
-    .addCase(createStudy.fulfilled, (draftState, action) => {
-      draftState.studies.push(action.payload);
-    })
-    .addCase(updateStudy, (draftState, action) => {
-      const index = draftState.studies.findIndex(
-        (study) => study.id === action.payload.id
-      );
-      if (index > -1) {
-        draftState.studies[index] = action.payload;
-      }
-    })
-    .addCase(deleteStudy.fulfilled, (draftState, action) => {
-      draftState.studies = draftState.studies.filter(
-        (study) => study.id === action.payload
-      );
-    })
+    .addCase(createStudy.fulfilled, studiesAdapter.addOne)
+    .addCase(setStudy.fulfilled, studiesAdapter.setOne)
+    .addCase(deleteStudy.fulfilled, studiesAdapter.removeOne)
     .addCase(fetchStudies.fulfilled, (draftState, action) => {
-      draftState.studies = action.payload;
+      studiesAdapter.removeAll(draftState);
+      studiesAdapter.addMany(draftState, action);
     })
     .addCase(setFavoriteStudies, (draftState, action) => {
       draftState.favorites = action.payload;

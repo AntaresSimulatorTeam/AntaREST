@@ -47,7 +47,7 @@ import {
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
-import { fetchStudies } from "../redux/ducks/study";
+import { fetchStudies } from "../redux/ducks/studies";
 import {
   LaunchJob,
   TaskDTO,
@@ -61,12 +61,13 @@ import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
 import { AppState } from "../redux/ducks";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import { getStudies } from "../redux/selectors";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
 
 const logError = debug("antares:studymanagement:error");
 
 const mapState = (state: AppState) => ({
-  studies: state.study.studies,
+  studies: getStudies(state),
 });
 
 const mapDispatch = {

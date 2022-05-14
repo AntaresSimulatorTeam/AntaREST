@@ -25,19 +25,24 @@ import {
 import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
-import { getStudies } from "../../services/api/study";
+import * as studyApi from "../../services/api/study";
 import { AppState } from "../../redux/ducks";
 import {
   fetchStudies,
   fetchStudyVersions,
   toggleFavorite as dipatchToggleFavorite,
-} from "../../redux/ducks/study";
+} from "../../redux/ducks/studies";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";
 import HeaderBottom from "../../components/studies/HeaderBottom";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../components/common/loaders/SimpleLoader";
+import {
+  getFavoriteStudies,
+  getStudies,
+  getStudyVersions,
+} from "../../redux/selectors";
 
 const logErr = debug("antares:studies:error");
 
@@ -46,9 +51,9 @@ const StudiesListMemo = memo((props: StudyListProps) => (
 ));
 
 const mapState = (state: AppState) => ({
-  studies: state.study.studies,
-  versions: state.study.versionList,
-  favorites: state.study.favorites,
+  studies: getStudies(state),
+  versions: getStudyVersions(state),
+  favorites: getFavoriteStudies(state),
 });
 
 const mapDispatch = {
@@ -138,7 +143,7 @@ function Studies(props: PropTypes) {
         if (studies.length === 0 || refresh) {
           await loadStudies().unwrap();
           // TODO: update with a useEffect with `studies` in dep
-          const allStudies = await getStudies();
+          const allStudies = await studyApi.getStudies();
           setFilteredStudies(allStudies);
         }
       } catch (e) {

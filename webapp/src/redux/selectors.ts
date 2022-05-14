@@ -1,10 +1,9 @@
 import * as R from "ramda";
 import { createSelector } from "reselect";
-import { StudyMetadata } from "../common/types";
 import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
-import { StudyState } from "./ducks/study";
+import { studiesAdapter, StudiesState } from "./ducks/studies";
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -22,40 +21,35 @@ export const isAuthUserInGroupAdmin = createSelector(getAuthUser, isGroupAdmin);
 // Study
 ////////////////////////////////////////////////////////////////
 
-export const getStudyState = (state: AppState): StudyState => state.study;
+export const getStudiesState = (state: AppState): StudiesState => state.studies;
 
-export const getStudies = (state: AppState): StudyState["studies"] => {
-  return getStudyState(state).studies;
-};
+const studiesSelectors = studiesAdapter.getSelectors(getStudiesState);
 
-export const getStudy = (
-  state: AppState,
-  id: StudyMetadata["id"]
-): StudyMetadata | undefined => {
-  return getStudyState(state).studies.find((study) => study.id === id);
-};
+export const getStudies = studiesSelectors.selectAll;
+
+export const getStudy = studiesSelectors.selectById;
 
 export const getFavoriteStudies = (
   state: AppState
-): StudyState["favorites"] => {
-  return getStudyState(state).favorites;
+): StudiesState["favorites"] => {
+  return getStudiesState(state).favorites;
 };
 
 export const getStudyVersions = (
   state: AppState
-): StudyState["versionList"] => {
-  return getStudyState(state).versionList;
+): StudiesState["versionList"] => {
+  return getStudiesState(state).versionList;
 };
 
-export const getCurrentStudyId = (state: AppState): StudyState["current"] => {
-  return getStudyState(state).current;
+export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
+  return getStudiesState(state).current;
 };
 
 export const getCurrentStudy = createSelector(
-  getStudies,
+  studiesSelectors.selectEntities,
   getCurrentStudyId,
   (studies, currentStudyId) => {
-    return studies.find((study) => study.id === currentStudyId);
+    return currentStudyId ? studies[currentStudyId] : null;
   }
 );
 

@@ -45,7 +45,7 @@ import {
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
 import { AppState } from "../../redux/ducks";
-import { deleteStudy, setStudyScrollPosition } from "../../redux/ducks/study";
+import { deleteStudy, setStudyScrollPosition } from "../../redux/ducks/studies";
 import {
   copyStudy as callCopyStudy,
   archiveStudy as callArchiveStudy,
@@ -96,7 +96,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
 }, areEqual);
 
 const mapState = (state: AppState) => ({
-  scrollPosition: state.study.scrollPosition,
+  scrollPosition: state.studies.scrollPosition,
 });
 
 const mapDispatch = {
