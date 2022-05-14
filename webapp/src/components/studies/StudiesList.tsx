@@ -45,7 +45,11 @@ import {
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
 import { AppState } from "../../redux/ducks";
-import { deleteStudy, setStudyScrollPosition } from "../../redux/ducks/studies";
+import {
+  deleteStudy,
+  setStudyScrollPosition,
+  StudiesState,
+} from "../../redux/ducks/studies";
 import {
   copyStudy as callCopyStudy,
   archiveStudy as callArchiveStudy,
@@ -81,7 +85,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
         <StudyCard
           study={study}
           width={columnWidth}
-          favorite={favorites.map((f: GenericInfo) => f.id).includes(study.id)}
+          favorite={favorites.includes(study.id)}
           onLaunchClick={() => onLaunchClick(study)}
           onFavoriteClick={onFavoriteClick}
           onImportStudy={importStudy}
@@ -110,7 +114,7 @@ export interface StudyListProps {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
-  favorites: Array<GenericInfo>;
+  favorites: StudiesState["favorites"];
   onFavoriteClick: (value: GenericInfo) => void;
   sortItem: SortItem;
   setSortItem: (value: SortItem) => void;

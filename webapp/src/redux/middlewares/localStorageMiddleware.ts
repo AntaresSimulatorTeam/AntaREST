@@ -5,6 +5,8 @@ import { setFavoriteStudies } from "../ducks/studies";
 
 const localStorageMiddleware = createListenerMiddleware();
 
+// TODO: save data by user id
+
 localStorageMiddleware.startListening({
   actionCreator: setFavoriteStudies,
   effect: (action) => {

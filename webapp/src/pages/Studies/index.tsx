@@ -276,6 +276,9 @@ function Studies(props: PropTypes) {
 
   const init = async () => {
     try {
+      if (versions.length === 0) {
+        await loadVersions().unwrap();
+      }
       const userRes = await getUsers();
       setUserList(userRes);
 
@@ -289,10 +292,6 @@ function Studies(props: PropTypes) {
   // TODO: no promise in useEffect
   useEffect(() => {
     init();
-    if (!versions) {
-      // TODO: try catch
-      loadVersions();
-    }
     getAllStudies(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -366,7 +365,7 @@ function Studies(props: PropTypes) {
           studies={studies}
           folder={currentFolder as string}
           setFolder={setCurrentFolder}
-          favorite={favorites as Array<GenericInfo>}
+          favorites={favorites}
         />
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
         {!loaded && <SimpleLoader />}

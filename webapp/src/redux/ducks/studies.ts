@@ -18,7 +18,7 @@ import * as api from "../../services/api/study";
 import { loadState } from "../../services/utils/localStorage";
 import { getFavoriteStudies, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
-import { makeActionName } from "../utils";
+import { makeActionName, Status } from "../utils";
 
 export const studiesAdapter = createEntityAdapter<StudyMetadata>({
   selectId: (study) => study.id,
@@ -26,12 +26,13 @@ export const studiesAdapter = createEntityAdapter<StudyMetadata>({
 
 export interface StudiesState
   extends ReturnType<typeof studiesAdapter.getInitialState> {
-  current?: StudyMetadata["id"];
-  studies: StudyMetadata[];
+  status: Status;
+  error?: string;
+  current: string;
   scrollPosition: number;
   directory: string;
-  versionList?: string[];
-  favorites: GenericInfo[];
+  versionList: string[];
+  favorites: Array<StudyMetadata["id"]>;
 }
 
 type StudyCreator = {
@@ -50,9 +51,15 @@ type StudyUpload = {
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
 const initialState = studiesAdapter.getInitialState({
+  status: Status.Idle,
+  error: null as string | null,
+  current: "",
   scrollPosition: 0,
   directory: "root",
-  favorites: loadState(DefaultFilterKey.FAVORITE_STUDIES) || [],
+  versionList: [] as string[],
+  favorites:
+    loadState<Array<StudyMetadata["id"]>>(DefaultFilterKey.FAVORITE_STUDIES) ||
+    [],
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -147,7 +154,7 @@ export const deleteStudy = createAsyncThunk<
 
   const state = getState();
   const currentFavorites = getFavoriteStudies(state);
-  const newFavorites = currentFavorites.filter((fav) => fav.id !== studyId);
+  const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
   dispatch(setFavoriteStudies(newFavorites));
 
   return studyId;
@@ -163,7 +170,7 @@ export const fetchStudies = createAsyncThunk<
     const state = getState();
     const currentFavorites = getFavoriteStudies(state);
     const newFavorites = R.innerJoin(
-      (study, fav) => study.id === fav.id,
+      (fav, study) => fav === study.id,
       currentFavorites,
       studies
     );
@@ -190,13 +197,13 @@ export const toggleFavorite =
   (dispatch, getState) => {
     const state = getState();
     const currentFavorites = getFavoriteStudies(state);
-    const isFav = !!currentFavorites.find((fav) => fav.id === studyInfo.id);
+    const isFav = !!currentFavorites.find((fav) => fav === studyInfo.id);
 
     dispatch(
       setFavoriteStudies(
         isFav
-          ? currentFavorites.filter((fav) => fav.id !== studyInfo.id)
-          : [...currentFavorites, studyInfo]
+          ? currentFavorites.filter((fav) => fav !== studyInfo.id)
+          : [...currentFavorites, studyInfo.id.toString()]
       )
     );
   };
@@ -210,9 +217,17 @@ export default createReducer(initialState, (builder) => {
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)
     .addCase(deleteStudy.fulfilled, studiesAdapter.removeOne)
+    .addCase(fetchStudies.pending, (draftState) => {
+      draftState.status = Status.Loading;
+    })
     .addCase(fetchStudies.fulfilled, (draftState, action) => {
+      draftState.status = Status.Succeeded;
       studiesAdapter.removeAll(draftState);
       studiesAdapter.addMany(draftState, action);
+    })
+    .addCase(fetchStudies.rejected, (draftState, action) => {
+      draftState.status = Status.Failed;
+      draftState.error = action.error.message;
     })
     .addCase(setFavoriteStudies, (draftState, action) => {
       draftState.favorites = action.payload;

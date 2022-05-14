@@ -292,7 +292,7 @@ export enum DefaultFilterKey {
   MANAGED = "v2.studylisting.filter.managed",
   SORTING = "v2.studylisting.filter.sorting",
   FOLDER = "v2.studylisting.filter.folder",
-  FAVORITE_STUDIES = "v2.studylisting.favorite",
+  FAVORITE_STUDIES = "v2.studylisting.favorites",
   TAGS = "v2.studylisting.filter.tag",
   ARCHIVED = "v2.studylisting.filter.archived",
 }

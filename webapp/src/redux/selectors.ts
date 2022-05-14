@@ -1,5 +1,4 @@
 import { createSelector } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
@@ -22,6 +21,10 @@ export const isAuthUserInGroupAdmin = createSelector(getAuthUser, isGroupAdmin);
 ////////////////////////////////////////////////////////////////
 
 export const getStudiesState = (state: AppState): StudiesState => state.studies;
+
+export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
+  return getStudiesState(state).status;
+};
 
 const studiesSelectors = studiesAdapter.getSelectors(getStudiesState);
 
@@ -48,13 +51,11 @@ export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
 export const getCurrentStudy = createSelector(
   studiesSelectors.selectEntities,
   getCurrentStudyId,
-  (studies, currentStudyId) => {
-    return currentStudyId ? studies[currentStudyId] : null;
-  }
+  (studies, current) => studies[current]
 );
 
 export const isCurrentStudyFavorite = createSelector(
   getFavoriteStudies,
   getCurrentStudyId,
-  (favorites, current) => !!R.find(R.propEq("id", current), favorites)
+  (favorites, current) => favorites.includes(current)
 );

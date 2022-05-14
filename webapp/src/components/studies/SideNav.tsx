@@ -4,19 +4,20 @@ import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from "../../theme";
 import StudyTree from "./StudyTree";
-import { GenericInfo, StudyMetadata } from "../../common/types";
+import { StudyMetadata } from "../../common/types";
 import { buildStudyTree, StudyTreeNode } from "./utils";
+import { StudiesState } from "../../redux/ducks/studies";
 
 interface Props {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
-  favorite: Array<GenericInfo>;
+  favorites: StudiesState["favorites"];
 }
 
 function SideNav(props: Props) {
   const navigate = useNavigate();
-  const { studies, folder, setFolder, favorite } = props;
+  const { studies, folder, setFolder, favorites } = props;
   const { t } = useTranslation();
   const [tree, setTree] = useState<StudyTreeNode>(buildStudyTree(studies));
 
@@ -40,10 +41,10 @@ function SideNav(props: Props) {
         {t("studymanager:favorites")}
       </Typography>
       <List sx={{ width: "100%" }}>
-        {favorite.map((elm) => (
+        {favorites.map((fav) => (
           <ListItem
-            key={elm.id}
-            onClick={() => navigate(`/studies/${elm.id}`)}
+            key={fav}
+            onClick={() => navigate(`/studies/${fav}`)}
             sx={{
               width: "100%",
               m: 0,
@@ -55,7 +56,9 @@ function SideNav(props: Props) {
               },
             }}
           >
-            <ListItemText primary={elm.name} />
+            <ListItemText
+              primary={studies.find((study) => study.id === fav)?.name}
+            />
           </ListItem>
         ))}
       </List>
