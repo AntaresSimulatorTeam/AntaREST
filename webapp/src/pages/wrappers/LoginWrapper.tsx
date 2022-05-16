@@ -6,12 +6,8 @@ import { ConnectedProps, connect } from "react-redux";
 import { useForm } from "react-hook-form";
 import debug from "debug";
 import { AppState } from "../../redux/ducks";
-import { loginUser, logoutAction } from "../../redux/ducks/auth";
-import {
-  login as loginRequest,
-  needAuth,
-  refresh,
-} from "../../services/api/auth";
+import { login, refresh } from "../../redux/ducks/auth";
+
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
 import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLoadingError";
@@ -20,6 +16,8 @@ import { updateRefreshInterceptor } from "../../services/api/client";
 import { UserInfo } from "../../common/types";
 import { reconnectWebsocket } from "../../redux/ducks/websockets";
 import FilledTextInput from "../../components/common/FilledTextInput";
+import { needAuth } from "../../services/api/auth";
+import { getAuthUser } from "../../redux/selectors";
 
 const logError = debug("antares:loginwrapper:error");
 
@@ -31,12 +29,12 @@ interface Inputs {
 }
 
 const mapState = (state: AppState) => ({
-  user: state.auth.user,
+  user: getAuthUser(state),
 });
 
 const mapDispatch = {
-  login: loginUser,
-  logout: logoutAction,
+  login,
+  refresh,
   reconnectWs: reconnectWebsocket,
 };
 
@@ -52,16 +50,15 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
   const [loginError, setLoginError] = useState<string>();
   const [t] = useTranslation();
   const { children } = props;
-  const { user, login, logout, reconnectWs } = props;
+  const { user, login, refresh, reconnectWs } = props;
 
   const onSubmit = async (data: Inputs) => {
     setStatus("loading");
     setLoginError("");
     setTimeout(async () => {
       try {
-        const res = await loginRequest(data.username, data.password);
+        await login(data).unwrap();
         setStatus("success");
-        login(res);
       } catch (e) {
         setStatus("default");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +75,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
         if (user) {
           updateRefreshInterceptor(async (): Promise<UserInfo | undefined> => {
             try {
-              return refresh(user, login, logout);
+              return await refresh().unwrap();
             } catch (e) {
               logError("Failed to refresh token");
             }

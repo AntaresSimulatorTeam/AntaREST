@@ -7,8 +7,8 @@ import moment from "moment";
 import { UserInfo, WSMessage } from "../../common/types";
 import { AppState } from ".";
 import { getConfig } from "../../services/config";
-import { refresh } from "../../services/api/auth";
-import { loginUser } from "./auth";
+import { refresh } from "./auth";
+import { AppThunk } from "../store";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -137,7 +137,7 @@ const RECONNECTION_DEFAULT_DELAY = 3000;
 let reconnectionTimer: NodeJS.Timeout | null = null;
 
 export const connectWebsocket =
-  (user?: UserInfo): ThunkAction<void, AppState, unknown, Action> =>
+  (user?: UserInfo): AppThunk =>
   (dispatch, getState): void => {
     const config = getConfig();
     const { websockets } = getState();
@@ -163,13 +163,8 @@ export const connectWebsocket =
 
     try {
       if (user && user.expirationDate && user.expirationDate < moment()) {
-        refresh(
-          user,
-          (updatedUser: UserInfo) => dispatch(loginUser(updatedUser)),
-          () => {
-            /* noop */
-          }
-        )
+        dispatch(refresh({ logoutOnError: false }))
+          .unwrap()
           .then((updatedUser?: UserInfo) => {
             if (!updatedUser) {
               reconnectionTimer = null;

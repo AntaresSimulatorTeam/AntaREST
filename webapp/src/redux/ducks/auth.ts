@@ -1,98 +1,136 @@
-/* eslint-disable camelcase */
-import { Action } from "redux";
-import { ThunkAction } from "redux-thunk";
-import jwt_decode from "jwt-decode";
-import lodash from "lodash";
-import moment from "moment";
-import { loadState, saveState } from "../../services/utils/localStorage";
+import {
+  createAsyncThunk,
+  createReducer,
+  PayloadAction,
+} from "@reduxjs/toolkit";
+import jwtDecode, { JwtPayload } from "jwt-decode";
+import moment, { Moment } from "moment";
+import * as RA from "ramda-adjunct";
+import { AnyAction } from "redux";
 import { UserInfo } from "../../common/types";
-import { setAuth } from "../../services/api/client";
-import { AppState } from ".";
+import * as authApi from "../../services/api/auth";
+import * as clientApi from "../../services/api/client";
+import { loadState } from "../../services/utils/localStorage";
+import { getAuthUser } from "../selectors";
+import { AppAsyncThunkConfig } from "../store";
+import { createThunk, makeActionName } from "../utils";
 import { reconnectWebsocket } from "./websockets";
-
-/** ******************************************* */
-/* State                                        */
-/** ******************************************* */
 
 export interface AuthState {
   user?: UserInfo;
 }
 
-const initialState: AuthState = {
+interface LoginArg {
+  username: string;
+  password: string;
+}
+
+interface RefreshArg {
+  logoutOnError: boolean;
+}
+
+type AccessTokenSub = Pick<UserInfo, "id" | "groups" | "impersonator" | "type">;
+
+const initialState = {
   user: loadState("auth.user"),
+} as AuthState;
+
+////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////
+
+const isActionWithUser = (
+  action: AnyAction
+): action is PayloadAction<UserInfo> => {
+  return RA.isPlainObj(action.payload) ? "id" in action.payload : false;
 };
 
-const ref = JSON.parse(JSON.stringify(initialState));
-export const persistState = (state: AuthState): void => {
-  const user = state.user ? { ...state.user } : undefined;
-  if (user) {
-    delete user.expirationDate;
-  }
-  if (!lodash.isEqual(ref.user, user)) {
-    saveState("auth.user", user);
-    ref.user = user;
-  }
+const n = makeActionName("auth");
+
+const makeExpirationDate = (payload: JwtPayload): Moment | undefined => {
+  return payload.exp ? moment.unix(payload.exp) : undefined;
 };
 
-setAuth(initialState.user?.accessToken);
+////////////////////////////////////////////////////////////////
+// Thunks
+////////////////////////////////////////////////////////////////
 
-/** ******************************************* */
-/* Actions                                      */
-/** ******************************************* */
+export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
+  n("LOGIN"),
+  async ({ username, password }, { dispatch, rejectWithValue }) => {
+    try {
+      const tokens = await authApi.login(username, password);
+      const decoded = jwtDecode<JwtPayload>(tokens.access_token);
+      const userData = JSON.parse(decoded.sub as string) as AccessTokenSub;
 
-export interface LoginAction extends Action {
-  type: "AUTH/LOGIN";
-  payload: UserInfo;
-}
+      clientApi.setAuth(tokens.access_token);
 
-export const loginUser =
-  (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> =>
-  (dispatch): void => {
-    const tokenData = jwt_decode(user.accessToken);
-    setAuth(user.accessToken);
-    const updatedUser = {
-      ...user,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expirationDate: moment.unix((tokenData as any).exp),
-    };
-    dispatch({
-      type: "AUTH/LOGIN",
-      payload: updatedUser,
-    });
-    dispatch(reconnectWebsocket(updatedUser));
-  };
+      const user = {
+        ...userData,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expirationDate: makeExpirationDate(decoded),
+        user: username,
+      } as UserInfo;
 
-export interface LogoutAction extends Action {
-  type: "AUTH/LOGOUT";
-}
+      dispatch(reconnectWebsocket(user));
 
-export const logoutAction = (): LogoutAction => ({
-  type: "AUTH/LOGOUT",
+      return user;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  }
+);
+
+export const logout = createThunk(n("LOGOUT"), () => {
+  clientApi.setAuth(undefined);
 });
 
-type AuthAction = LoginAction | LogoutAction;
+export const refresh = createAsyncThunk<
+  UserInfo | undefined,
+  RefreshArg | undefined,
+  AppAsyncThunkConfig
+>(n("REFRESH"), async (arg, { dispatch, getState, rejectWithValue }) => {
+  const state = getState();
+  const user = getAuthUser(state);
 
-/** ******************************************* */
-/* Selectors                                    */
-/** ******************************************* */
+  if (
+    user &&
+    (!user.expirationDate || user.expirationDate < moment().add(5, "s"))
+  ) {
+    try {
+      const tokens = await authApi.refresh(user.refreshToken);
+      const decoded = jwtDecode<JwtPayload>(tokens.access_token);
+      const newUserData = JSON.parse(decoded.sub as string) as AccessTokenSub;
 
-/** ******************************************* */
-/* Reducer                                      */
-/** ******************************************* */
+      clientApi.setAuth(tokens.access_token);
 
-// eslint-disable-next-line default-param-last
-export default (state = initialState, action: AuthAction): AuthState => {
-  switch (action.type) {
-    case "AUTH/LOGIN":
       return {
-        ...state,
-        user: action.payload,
+        ...user,
+        ...newUserData,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expirationDate: makeExpirationDate(decoded),
       };
-    case "AUTH/LOGOUT": {
-      setAuth(undefined);
-      return {};
+    } catch (err) {
+      if (arg?.logoutOnError) {
+        dispatch(logout());
+      }
+      return rejectWithValue(err);
     }
-    default:
-      return state;
   }
-};
+
+  return user;
+});
+
+////////////////////////////////////////////////////////////////
+// Reducer
+////////////////////////////////////////////////////////////////
+
+export default createReducer(initialState, (builder) => {
+  builder
+    .addCase(logout, () => ({}))
+    .addMatcher(isActionWithUser, (draftState, action) => {
+      draftState.user = action.payload;
+    });
+});

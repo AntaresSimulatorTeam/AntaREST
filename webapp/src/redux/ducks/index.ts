@@ -1,11 +1,12 @@
-import { combineReducers } from "redux";
+import { Action, combineReducers } from "redux";
+import { L } from "ts-toolbelt";
 import studies from "./studies";
-import auth from "./auth";
+import auth, { logout } from "./auth";
 import global from "./global";
 import ui from "./ui";
 import websockets from "./websockets";
 
-const rootReducer = combineReducers({
+const appReducer = combineReducers({
   global,
   studies,
   auth,
@@ -13,6 +14,16 @@ const rootReducer = combineReducers({
   websockets,
 });
 
-export type AppState = ReturnType<typeof rootReducer>;
+type AppReducerType = typeof appReducer;
+type AppReducerStateArg = L.Head<Parameters<AppReducerType>>;
+
+export type AppState = ReturnType<AppReducerType>;
+
+const rootReducer = (state: AppReducerStateArg, action: Action): AppState => {
+  if (action.type === logout.toString()) {
+    return appReducer(undefined, action);
+  }
+  return appReducer(state, action);
+};
 
 export default rootReducer;

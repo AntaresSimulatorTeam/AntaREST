@@ -1,12 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { throttle } from "lodash";
 import { ThunkAction } from "redux-thunk";
 import { AnyAction } from "redux";
-import { setLogoutInterceptor } from "../services/api/client";
 import { addWsListeners } from "../services/utils/globalWsListeners";
 import rootReducer, { AppState } from "./ducks";
-import { logoutAction, persistState } from "./ducks/auth";
 import localStorageMiddleware from "./middlewares/localStorageMiddleware";
+import { setLogoutInterceptor } from "../services/api/client";
+import { logout } from "./ducks/auth";
 
 const store = configureStore({
   reducer: rootReducer,
@@ -18,17 +17,7 @@ const store = configureStore({
     }).prepend(localStorageMiddleware.middleware),
 });
 
-setLogoutInterceptor(
-  () => store.dispatch(logoutAction())
-  // TODO: to include in logout thunk
-  // () => store.dispatch(fetchStudies([]))
-);
-
-store.subscribe(
-  throttle(() => {
-    persistState(store.getState().auth);
-  }, 1000)
-);
+setLogoutInterceptor(() => store.dispatch(logout()));
 
 addWsListeners(store);
 

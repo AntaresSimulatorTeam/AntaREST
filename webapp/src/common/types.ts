@@ -188,7 +188,7 @@ export interface JWTGroup {
 }
 
 export interface UserInfo {
-  user: string; // TODO: contains user id instead of user name
+  user: string;
   groups: Array<JWTGroup>;
   id: number;
   impersonator: number;
@@ -197,6 +197,13 @@ export interface UserInfo {
   refreshToken: string;
   expirationDate?: Moment;
 }
+
+export interface RefreshDTO {
+  access_token: string;
+  refresh_token: string;
+  user: number;
+}
+
 export interface BotDTO extends IdentityDTO<number> {
   owner: number;
   is_author: boolean;

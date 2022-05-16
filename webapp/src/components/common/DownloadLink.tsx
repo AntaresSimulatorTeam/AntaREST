@@ -3,15 +3,16 @@ import { loginUser, logoutAction } from "../../redux/ducks/auth";
 import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
 import { refresh } from "../../services/api/auth";
+import { refresh } from "../../redux/ducks/auth";
 import { AppState } from "../../redux/ducks";
+import { getAuthUser } from "../../redux/selectors";
 
 const mapState = (state: AppState) => ({
-  user: state.auth.user,
+  user: getAuthUser(state),
 });
 
 const mapDispatch = {
-  login: loginUser,
-  logout: logoutAction,
+  refresh,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -26,10 +27,11 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 function DownloadLink(props: PropTypes) {
   const { user, title, login, logout, children, url } = props;
+  const { user, refresh, children, url } = props;
 
   const handleClick = async () => {
     if (user) {
-      await refresh(user, login, logout);
+      await refresh().unwrap();
     }
     // eslint-disable-next-line no-restricted-globals
     location.href = url;
