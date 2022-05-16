@@ -68,6 +68,8 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class CommandReverter:
     def __init__(self) -> None:
@@ -94,6 +96,7 @@ class CommandReverter:
     def _revert_remove_area(
         base_command: RemoveArea, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
+        logger.warning("The reversion of RemoveArea is not complete yet")
         for command in reversed(history):
             if (
                 isinstance(command, CreateArea)
@@ -112,7 +115,7 @@ class CommandReverter:
             # todo revert binding constraints that has the area in constraint
             return area_commands + links_commands
         except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_area {base_command.id}",
                 exc_info=e,
             )
@@ -148,7 +151,7 @@ class CommandReverter:
                 base, base_command.id
             )
         except Exception as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_district {base_command.id}",
                 exc_info=e,
             )
@@ -183,7 +186,7 @@ class CommandReverter:
                 base, area_from, area_to
             )
         except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_link {base_command.area1}/{base_command.area2}",
                 exc_info=e,
             )
@@ -253,7 +256,7 @@ class CommandReverter:
                 base, base_command.id
             )
         except Exception as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_binding_constraint {base_command.id}",
                 exc_info=e,
             )
@@ -276,6 +279,7 @@ class CommandReverter:
     def _revert_remove_cluster(
         base_command: RemoveCluster, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
+        logger.warning("The reversion of RemoveCluster is not complete yet")
         for command in reversed(history):
             if (
                 isinstance(command, CreateCluster)
@@ -292,7 +296,7 @@ class CommandReverter:
             )
             # todo revert binding constraints that has the cluster in constraint
         except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_cluster {base_command.area_id}#{base_command.cluster_id}",
                 exc_info=e,
             )
@@ -334,7 +338,7 @@ class CommandReverter:
                 base, base_command.area_id, base_command.cluster_id
             )
         except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for remove_cluster {base_command.area_id}#{base_command.cluster_id}",
                 exc_info=e,
             )
@@ -397,7 +401,7 @@ class CommandReverter:
                 )
             ]
         except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Failed to extract revert command for update_config {base_command.target}",
                 exc_info=e,
             )
