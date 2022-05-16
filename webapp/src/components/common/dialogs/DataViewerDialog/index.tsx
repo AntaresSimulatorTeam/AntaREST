@@ -20,7 +20,7 @@ interface Props {
   isMatrix?: boolean;
 }
 
-function ReaderDialog(props: PropsWithChildren<Props>) {
+function DataViewerDialog(props: PropsWithChildren<Props>) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const { data, onClose, isMatrix } = props;
@@ -84,8 +84,8 @@ function ReaderDialog(props: PropsWithChildren<Props>) {
   );
 }
 
-ReaderDialog.defaultProps = {
+DataViewerDialog.defaultProps = {
   isMatrix: false,
 };
 
-export default ReaderDialog;
+export default DataViewerDialog;

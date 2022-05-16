@@ -14,7 +14,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import XpansionTable from "../XpansionTable";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import ReaderDialog from "../../../../common/dialogs/ReaderDialog";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Files() {
   const [t] = useTranslation();
@@ -99,7 +99,7 @@ function Files() {
         <SimpleLoader />
       )}
       {!!constraintViewDialog && (
-        <ReaderDialog
+        <DataViewerDialog
           data={constraintViewDialog}
           onClose={() => setConstraintViewDialog(undefined)}
         />

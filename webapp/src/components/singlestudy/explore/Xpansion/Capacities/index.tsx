@@ -14,7 +14,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import XpansionTable from "../XpansionTable";
-import ReaderDialog from "../../../../common/dialogs/ReaderDialog";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Capacities() {
   const [t] = useTranslation();
@@ -99,7 +99,7 @@ function Capacities() {
         <SimpleLoader />
       )}
       {!!capacityViewDialog && (
-        <ReaderDialog
+        <DataViewerDialog
           data={capacityViewDialog}
           onClose={() => setCapacityViewDialog(undefined)}
           isMatrix

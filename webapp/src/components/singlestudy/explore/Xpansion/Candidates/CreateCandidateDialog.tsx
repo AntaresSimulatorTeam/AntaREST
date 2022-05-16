@@ -37,7 +37,7 @@ function CreateCandidateDialog(props: PropType) {
       onClose={onClose}
       title={t("xpansion:newCandidate")}
       contentProps={{
-        sx: { width: "auto", height: "60vh", p: 2 },
+        sx: { width: "auto", height: "480px", p: 2 },
       }}
       actions={
         <>

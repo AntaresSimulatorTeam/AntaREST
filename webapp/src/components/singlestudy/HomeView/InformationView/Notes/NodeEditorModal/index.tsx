@@ -72,8 +72,15 @@ function NoteEditorModal(props: Props) {
       onClose={onClose}
       title={t("singlestudy:notes")}
       contentProps={{
-        sx: { width: "100%", height: "500px", p: 0 },
+        sx: {
+          width: "100%",
+          minHeight: "600px",
+          p: 0,
+          overflow: "hidden",
+        },
       }}
+      fullWidth
+      maxWidth="lg"
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>

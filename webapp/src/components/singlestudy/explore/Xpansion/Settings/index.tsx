@@ -17,7 +17,7 @@ import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../services/utils/index";
-import ReaderDialog from "../../../../common/dialogs/ReaderDialog";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Settings() {
   const [t] = useTranslation();
@@ -121,7 +121,7 @@ function Settings() {
         <SimpleLoader />
       )}
       {!!constraintViewDialog && (
-        <ReaderDialog
+        <DataViewerDialog
           data={constraintViewDialog}
           onClose={() => setConstraintViewDialog(undefined)}
         />

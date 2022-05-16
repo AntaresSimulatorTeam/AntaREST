@@ -29,7 +29,7 @@ import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import ReaderDialog from "../../../../common/dialogs/ReaderDialog";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -241,7 +241,7 @@ function Candidates() {
         />
       )}
       {!!capacityViewDialog && (
-        <ReaderDialog
+        <DataViewerDialog
           data={capacityViewDialog}
           onClose={() => setCapacityViewDialog(undefined)}
           isMatrix
