@@ -14,7 +14,7 @@ import {
 import { convertXMLToDraftJS } from "./utils";
 import { StudyMetadata } from "../../../../../common/types";
 import { scrollbarStyle } from "../../../../../theme";
-import NoteEditorModal from "./NoteEditorModal";
+import NoteEditorModal from "./NodeEditorModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 

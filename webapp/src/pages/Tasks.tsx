@@ -58,11 +58,11 @@ import {
   TaskType,
   TaskStatus,
 } from "../common/types";
-import BasicModal from "../components/common/BasicModal";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
 import { AppState } from "../store/reducers";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -98,7 +98,7 @@ function JobsListing(props: PropTypes) {
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
   const [loaded, setLoaded] = useState(false);
-  const [openConfirmationModal, setOpenConfirmationModal] = useState<
+  const [openConfirmationDialog, setOpenConfirmationDialog] = useState<
     string | undefined
   >();
   const [messageModalOpen, setMessageModalOpen] = useState<
@@ -171,7 +171,7 @@ function JobsListing(props: PropTypes) {
       } catch (e) {
         enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
       }
-      setOpenConfirmationModal(undefined);
+      setOpenConfirmationDialog(undefined);
     })();
   };
 
@@ -325,7 +325,7 @@ function JobsListing(props: PropTypes) {
                       color: "error.light",
                       "&:hover": { color: "error.dark" },
                     }}
-                    onClick={() => setOpenConfirmationModal(job.id)}
+                    onClick={() => setOpenConfirmationDialog(job.id)}
                   />
                 </Tooltip>
               ) : (
@@ -518,26 +518,18 @@ function JobsListing(props: PropTypes) {
       >
         {!loaded && <SimpleLoader />}
         {loaded && <JobTableView content={content || []} refresh={init} />}
-        {openConfirmationModal && (
-          <BasicModal
-            open={!!openConfirmationModal}
+        {openConfirmationDialog && (
+          <ConfirmationDialog
             title={t("main:confirmationModalTitle")}
-            closeButtonLabel={t("main:noButton")}
-            actionButtonLabel={t("main:yesButton")}
-            onActionButtonClick={() => killTask(openConfirmationModal)}
-            onClose={() => setOpenConfirmationModal(undefined)}
-            rootStyle={{
-              maxWidth: "800px",
-              maxHeight: "800px",
-              display: "flex",
-              flexFlow: "column nowrap",
-              alignItems: "center",
-            }}
+            onCancel={() => setOpenConfirmationDialog(undefined)}
+            onConfirm={() => killTask(openConfirmationDialog)}
+            alert="warning"
+            open={!!openConfirmationDialog}
           >
             <Typography sx={{ p: 3 }}>
               {t("singlestudy:confirmKill")}
             </Typography>
-          </BasicModal>
+          </ConfirmationDialog>
         )}
         <LogModal
           isOpen={!!messageModalOpen}

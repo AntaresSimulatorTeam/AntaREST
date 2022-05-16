@@ -7,7 +7,7 @@ import { StudyMetadata, VariantTree } from "../../../../common/types";
 import CreateVariantModal from "./CreateVariantModal";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
-import LauncherModal from "../../../studies/LauncherModal";
+import LauncherModal from "../../../studies/LauncherDialog";
 import { copyStudy } from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 

@@ -11,7 +11,7 @@ import { isUserAdmin } from "../../../services/utils";
 import { getMaintenanceMode } from "../../../services/api/maintenance";
 import { getConfig } from "../../../services/config";
 import { setMaintenanceMode } from "../../../store/global";
-import MessageInfoModal from "./MessageInfoModal";
+import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
 
 const logError = debug("antares:maintenancewrapper:error");
@@ -121,7 +121,7 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
             {t("main:comeBackLater")}
           </Typography>
         </Box>
-        <MessageInfoModal />
+        <MessageInfoDialog />
       </Box>
     );
   }
@@ -129,7 +129,7 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
   return (
     <>
       {children}
-      <MessageInfoModal />
+      <MessageInfoDialog />
     </>
   );
 }

@@ -46,10 +46,14 @@ import {
   NavInternalLink,
   NavListItemText,
   NavListItemIcon,
-} from "../../../components/MenuWrapperComponents";
-import LogoutModal from "./LogoutModal";
+  Root,
+  TootlbarContent,
+  MenuContainer,
+  LogoContainer,
+} from "./styles";
 import { getConfig } from "../../../services/config";
-import { scrollbarStyle } from "../../../theme";
+import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
+import { logoutAction } from "../../../store/auth";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -92,6 +96,7 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = {
   setExtended: setMenuExtensionStatusAction,
+  logout: logoutAction,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -99,11 +104,17 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function MenuWrapper(props: PropsWithChildren<PropTypes>) {
-  const { children, extended, setExtended, currentStudy, websocketConnected } =
-    props;
+  const {
+    children,
+    extended,
+    setExtended,
+    logout,
+    currentStudy,
+    websocketConnected,
+  } = props;
   const theme = useTheme();
   const [t] = useTranslation();
-  const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
+  const [openLogoutDialog, setOpenLogoutDialog] = useState<boolean>(false);
   const versionInfo = getConfig().version;
 
   let navigation: Array<MenuItem> = [
@@ -200,42 +211,14 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const topMenuLastIndexOffset = currentStudy ? 1 : 0;
 
   return (
-    <Box
-      display="flex"
-      width="100vw"
-      height="100vh"
-      overflow="hidden"
-      sx={{
-        background:
-          "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
-      }}
-    >
+    <Root>
       <CssBaseline />
-      <Box
-        position="absolute"
-        top="0px"
-        right="0px"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        flexDirection="column"
-        flexWrap="nowrap"
-        boxSizing="border-box"
-      >
+      <LogoContainer>
         <img src={topRightBackground} alt="logo" style={{ height: "auto" }} />
-      </Box>
+      </LogoContainer>
       <NavDrawer extended={extended} variant="permanent" anchor="left">
         <Toolbar>
-          <Box
-            display="flex"
-            width="100%"
-            height="100%"
-            justifyContent={extended ? "flex-start" : "center"}
-            alignItems="center"
-            flexDirection="row"
-            flexWrap="nowrap"
-            boxSizing="border-box"
-          >
+          <TootlbarContent extended={extended}>
             <NavLink to="/">
               {websocketConnected ? (
                 <img
@@ -273,15 +256,9 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
                 </Typography>
               </Tooltip>
             )}
-          </Box>
+          </TootlbarContent>
         </Toolbar>
-        <Box
-          display="flex"
-          flex={1}
-          justifyContent="space-between"
-          flexDirection="column"
-          sx={{ boxSizing: "border-box", overflowY: "auto", ...scrollbarStyle }}
-        >
+        <MenuContainer>
           <List>
             {navigation
               .slice(0, 3 + topMenuLastIndexOffset)
@@ -292,11 +269,11 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
               .slice(3 + topMenuLastIndexOffset, 6 + topMenuLastIndexOffset)
               .map((elm: MenuItem, index) => drawMenuItem(elm))}
           </List>
-        </Box>
+        </MenuContainer>
         <Divider />
         <List>
           {drawMenuItem(settings)}
-          <NavListItem onClick={() => setOpenLogoutModal(true)}>
+          <NavListItem onClick={() => setOpenLogoutDialog(true)}>
             <NavListItemIcon>
               <LogoutIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
@@ -309,11 +286,16 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             {extended && <NavListItemText primary={t("main:hide")} />}
           </NavListItem>
         </List>
-        {openLogoutModal && (
-          <LogoutModal
-            open={openLogoutModal}
-            onClose={() => setOpenLogoutModal(false)}
-          />
+        {openLogoutDialog && (
+          <ConfirmationDialog
+            title={t("main:logout")}
+            onCancel={() => setOpenLogoutDialog(false)}
+            onConfirm={logout}
+            alert="warning"
+            open
+          >
+            {t("main:logoutModalMessage")}
+          </ConfirmationDialog>
         )}
       </NavDrawer>
       <Box
@@ -326,7 +308,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       >
         {children}
       </Box>
-    </Box>
+    </Root>
   );
 }
 

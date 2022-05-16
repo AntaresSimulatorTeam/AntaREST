@@ -52,7 +52,7 @@ import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
-import LauncherModal from "./LauncherModal";
+import LauncherDialog from "./LauncherDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
 const logError = debug("antares:studieslist:error");
@@ -136,7 +136,7 @@ function StudiesList(props: PropTypes) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [folderList, setFolderList] = useState<Array<string>>([]);
-  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
+  const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
   const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
 
   const filterList: Array<SortItem & { name: string }> = [
@@ -227,7 +227,7 @@ function StudiesList(props: PropTypes) {
 
   const onLaunchClick = (study: StudyMetadata): void => {
     setCurrentLaunchStudy(study);
-    setOpenLauncherModal(true);
+    setOpenLauncherDialog(true);
   };
 
   useEffect(() => {
@@ -438,11 +438,11 @@ function StudiesList(props: PropTypes) {
           }}
         </AutoSizer>
       </Box>
-      {openLauncherModal && (
-        <LauncherModal
-          open={openLauncherModal}
+      {openLauncherDialog && (
+        <LauncherDialog
+          open={openLauncherDialog}
           study={currentLaunchStudy}
-          onClose={() => setOpenLauncherModal(false)}
+          onClose={() => setOpenLauncherDialog(false)}
         />
       )}
     </Box>

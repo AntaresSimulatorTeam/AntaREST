@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router";
-import { Box } from "@mui/material";
+import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import BasicModal from "../../../common/BasicModal";
-import FilledTextInput from "../../../common/FilledTextInput";
-import SingleSelect from "../../../common/SelectSingle";
-import { GenericInfo, VariantTree } from "../../../../common/types";
-import { scrollbarStyle } from "../../../../theme";
-import { createVariant } from "../../../../services/api/variant";
-import { createListFromTree } from "../../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
+import FilledTextInput from "../../../../common/FilledTextInput";
+import SingleSelect from "../../../../common/SelectSingle";
+import { GenericInfo, VariantTree } from "../../../../../common/types";
+import { createVariant } from "../../../../../services/api/variant";
+import { createListFromTree } from "../../../../../services/utils";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import BasicDialog from "../../../../common/dialogs/BasicDialog";
+import { InputContainer, Root } from "./style";
 
 interface Props {
   open: boolean;
@@ -55,41 +55,28 @@ function CreateVariantModal(props: Props) {
   }, [tree]);
 
   return (
-    <BasicModal
-      title={t("studymanager:createNewStudy")}
+    <BasicDialog
       open={open}
       onClose={onClose}
-      closeButtonLabel={t("main:cancelButton")}
-      actionButtonLabel={t("main:create")}
-      onActionButtonClick={onSave}
-      rootStyle={{
-        width: "600px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
-      }}
+      title={t("studymanager:createNewStudy")}
+      actions={
+        <>
+          <Button variant="text" color="primary" onClick={onClose}>
+            {t("main:cancelButton")}
+          </Button>
+          <Button
+            sx={{ mx: 2 }}
+            color="primary"
+            variant="contained"
+            onClick={onSave}
+          >
+            {t("main:create")}
+          </Button>
+        </>
+      }
     >
-      <Box
-        width="100%"
-        height="180px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="flex-start"
-        alignItems="center"
-        p={2}
-        boxSizing="border-box"
-        sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
-      >
-        <Box
-          width="100%"
-          display="flex"
-          flexDirection="row"
-          justifyContent="flex-start"
-          alignItems="center"
-          boxSizing="border-box"
-        >
+      <Root>
+        <InputContainer>
           <FilledTextInput
             label={t("variants:newVariant")}
             value={studyName}
@@ -97,16 +84,8 @@ function CreateVariantModal(props: Props) {
             sx={{ flexGrow: 1 }}
             required
           />
-        </Box>
-        <Box
-          width="100%"
-          display="flex"
-          flexDirection="row"
-          justifyContent="flex-start"
-          alignItems="center"
-          boxSizing="border-box"
-          mt={3}
-        >
+        </InputContainer>
+        <InputContainer mt={3}>
           <SingleSelect
             name={t("singlestudy:versionSource")}
             list={versionSourceList}
@@ -115,9 +94,9 @@ function CreateVariantModal(props: Props) {
             sx={{ flexGrow: 1 }}
             required
           />
-        </Box>
-      </Box>
-    </BasicModal>
+        </InputContainer>
+      </Root>
+    </BasicDialog>
   );
 }
 

@@ -25,22 +25,21 @@ import {
 } from "../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { getAllLinks } from "../../../../../services/api/studydata";
-import MatrixView from "../../../../common/MatrixView";
-import BasicModal from "../../../../common/BasicModal";
 import XpansionPropsView from "./XpansionPropsView";
-import CreateCandidateModal from "./CreateCandidateModal";
+import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Candidates() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const navigate = useNavigate();
   const mounted = usePromiseWrapper();
-  const [candidateCreationModal, setCandidateCreationModal] =
+  const [candidateCreationDialog, setCandidateCreationDialog] =
     useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<string>();
-  const [capacityViewModal, setCapacityViewModal] = useState<{
+  const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
     content: MatrixType;
   }>();
@@ -112,7 +111,7 @@ function Candidates() {
     try {
       if (study) {
         await mounted(addCandidate(study.id, candidate));
-        setCandidateCreationModal(false);
+        setCandidateCreationDialog(false);
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:createCandidateError"), e as AxiosError);
@@ -172,14 +171,14 @@ function Candidates() {
     try {
       if (study) {
         const content = await getCapacity(study.id, filename);
-        setCapacityViewModal({ filename, content });
+        setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
     }
   };
 
-  const onClose = () => setCandidateCreationModal(false);
+  const onClose = () => setCandidateCreationDialog(false);
 
   const renderView = () => {
     const candidate = candidates?.find((o) => o.name === selectedItem);
@@ -208,7 +207,7 @@ function Candidates() {
         left={
           <XpansionPropsView
             candidateList={candidates || []}
-            onAdd={() => setCandidateCreationModal(true)}
+            onAdd={() => setCandidateCreationDialog(true)}
             selectedItem={selectedItem || ""}
             setSelectedItem={setSelectedItem}
             deleteXpansion={deleteXpansion}
@@ -233,39 +232,20 @@ function Candidates() {
         }
       />
 
-      {candidateCreationModal && (
-        <CreateCandidateModal
-          open={candidateCreationModal}
+      {candidateCreationDialog && (
+        <CreateCandidateDialog
+          open={candidateCreationDialog}
           onClose={onClose}
           onSave={createCandidate}
           links={capaLinks?.links || []}
         />
       )}
-      {!!capacityViewModal && (
-        <BasicModal
-          open={!!capacityViewModal}
-          title={capacityViewModal.filename}
-          onClose={() => setCapacityViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="600px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            overflow="auto"
-            padding="8px"
-          >
-            <MatrixView matrix={capacityViewModal.content} readOnly />
-          </Box>
-        </BasicModal>
+      {!!capacityViewDialog && (
+        <DataViewerDialog
+          data={capacityViewDialog}
+          onClose={() => setCapacityViewDialog(undefined)}
+          isMatrix
+        />
       )}
     </>
   );

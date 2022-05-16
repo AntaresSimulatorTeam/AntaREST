@@ -12,16 +12,16 @@ import {
   addConstraints,
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import BasicModal from "../../../../common/BasicModal";
 import XpansionTable from "../XpansionTable";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Files() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [constraintViewModal, setConstraintViewModal] = useState<{
+  const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
   }>();
@@ -58,7 +58,7 @@ function Files() {
     try {
       if (study) {
         const content = await getConstraint(study.id, filename);
-        setConstraintViewModal({ filename, content });
+        setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
@@ -98,32 +98,11 @@ function Files() {
       ) : (
         <SimpleLoader />
       )}
-      {!!constraintViewModal && (
-        <BasicModal
-          open={!!constraintViewModal}
-          title={constraintViewModal.filename}
-          onClose={() => setConstraintViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="500px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            padding="8px"
-          >
-            <code style={{ whiteSpace: "pre" }}>
-              {constraintViewModal.content}
-            </code>
-          </Box>
-        </BasicModal>
+      {!!constraintViewDialog && (
+        <DataViewerDialog
+          data={constraintViewDialog}
+          onClose={() => setConstraintViewDialog(undefined)}
+        />
       )}
     </>
   );

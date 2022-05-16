@@ -12,17 +12,16 @@ import {
   addCapacity,
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import MatrixView from "../../../../common/MatrixView";
-import BasicModal from "../../../../common/BasicModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import XpansionTable from "../XpansionTable";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Capacities() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [capacities, setCapacities] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [capacityViewModal, setCapacityViewModal] = useState<{
+  const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
     content: MatrixType;
   }>();
@@ -59,7 +58,7 @@ function Capacities() {
     try {
       if (study) {
         const content = await getCapacity(study.id, filename);
-        setCapacityViewModal({ filename, content });
+        setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
@@ -99,31 +98,12 @@ function Capacities() {
       ) : (
         <SimpleLoader />
       )}
-      {!!capacityViewModal && (
-        <BasicModal
-          open={!!capacityViewModal}
-          title={capacityViewModal.filename}
-          onClose={() => setCapacityViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="600px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            overflow="auto"
-            padding="8px"
-          >
-            <MatrixView matrix={capacityViewModal.content} readOnly />
-          </Box>
-        </BasicModal>
+      {!!capacityViewDialog && (
+        <DataViewerDialog
+          data={capacityViewDialog}
+          onClose={() => setCapacityViewDialog(undefined)}
+          isMatrix
+        />
       )}
     </>
   );

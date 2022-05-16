@@ -46,18 +46,18 @@ import {
   removeStudies,
   toggleFavorite as dispatchToggleFavorite,
 } from "../../store/study";
-import LauncherModal from "../studies/LauncherModal";
-import PropertiesModal from "./PropertiesModal";
+import LauncherDialog from "../studies/LauncherDialog";
+import PropertiesDialog from "./PropertiesDialog";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   countAllChildrens,
 } from "../../services/utils";
-import DeleteStudyModal from "../studies/DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import ExportModal from "../studies/ExportModal";
+import ExportDialog from "../studies/ExportModal";
 import { isCurrentStudyFavorite } from "../../store/selectors";
 import StarToggle from "../common/StarToggle";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -110,11 +110,11 @@ function NavHeader(props: PropTypes) {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
-  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
-  const [openPropertiesModal, setOpenPropertiesModal] =
+  const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
+  const [openPropertiesDialog, setOpenPropertiesDialog] =
     useState<boolean>(false);
-  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
-  const [openExportModal, setOpenExportModal] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const isStudyFavorite = useSelector(isCurrentStudyFavorite);
@@ -156,7 +156,7 @@ function NavHeader(props: PropTypes) {
   };
 
   const onLaunchClick = (): void => {
-    setOpenLauncherModal(true);
+    setOpenLauncherDialog(true);
   };
 
   const archiveStudy = async (study: StudyMetadata) => {
@@ -197,7 +197,7 @@ function NavHeader(props: PropTypes) {
 
   const onDeleteStudy = () => {
     if (study) deleteStudy(study);
-    setOpenDeleteModal(false);
+    setOpenDeleteDialog(false);
     navigate("/studies");
   };
 
@@ -368,7 +368,7 @@ function NavHeader(props: PropTypes) {
               <div>
                 <MenuItem
                   onClick={() => {
-                    setOpenPropertiesModal(true);
+                    setOpenPropertiesDialog(true);
                     handleClose();
                   }}
                 >
@@ -385,7 +385,7 @@ function NavHeader(props: PropTypes) {
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    setOpenExportModal(true);
+                    setOpenExportDialog(true);
                     handleClose();
                   }}
                 >
@@ -424,7 +424,7 @@ function NavHeader(props: PropTypes) {
             {study?.managed && (
               <MenuItem
                 onClick={() => {
-                  setOpenDeleteModal(true);
+                  setOpenDeleteDialog(true);
                   handleClose();
                 }}
               >
@@ -524,31 +524,35 @@ function NavHeader(props: PropTypes) {
           </Box>
         </Box>
       )}
-      {openLauncherModal && (
-        <LauncherModal
-          open={openLauncherModal}
+      {openLauncherDialog && (
+        <LauncherDialog
+          open={openLauncherDialog}
           study={study}
-          onClose={() => setOpenLauncherModal(false)}
+          onClose={() => setOpenLauncherDialog(false)}
         />
       )}
-      {openPropertiesModal && study && (
-        <PropertiesModal
-          open={openPropertiesModal}
-          onClose={() => setOpenPropertiesModal(false)}
+      {openPropertiesDialog && study && (
+        <PropertiesDialog
+          open={openPropertiesDialog}
+          onClose={() => setOpenPropertiesDialog(false)}
           study={study as StudyMetadata}
         />
       )}
-      {openDeleteModal && (
-        <DeleteStudyModal
-          open={openDeleteModal}
-          onClose={() => setOpenDeleteModal(false)}
-          onYesClick={onDeleteStudy}
-        />
+      {openDeleteDialog && (
+        <ConfirmationDialog
+          title={t("main:confirmationModalTitle")}
+          onCancel={() => setOpenDeleteDialog(false)}
+          onConfirm={onDeleteStudy}
+          alert="warning"
+          open
+        >
+          {t("studymanager:confirmdelete")}
+        </ConfirmationDialog>
       )}
-      {study && openExportModal && (
-        <ExportModal
-          open={openExportModal}
-          onClose={() => setOpenExportModal(false)}
+      {study && openExportDialog && (
+        <ExportDialog
+          open={openExportDialog}
+          onClose={() => setOpenExportDialog(false)}
           study={study}
         />
       )}
