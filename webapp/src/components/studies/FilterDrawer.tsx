@@ -186,7 +186,7 @@ function FilterDrawer(props: Props) {
           <Typography
             sx={{ color: "grey.500", fontSize: "0.9em", mb: theme.spacing(2) }}
           >
-            {t("main:filter").toUpperCase()}
+            {t("global:global.filter").toUpperCase()}
           </Typography>
           <FormControlLabel
             control={
@@ -319,7 +319,7 @@ function FilterDrawer(props: Props) {
             variant="contained"
             onClick={onFilterClick}
           >
-            {t("main:filter")}
+            {t("global:global.filter")}
           </Button>
         </Box>
       </Box>

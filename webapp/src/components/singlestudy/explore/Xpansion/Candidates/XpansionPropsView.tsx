@@ -80,7 +80,7 @@ function XpansionPropsView(props: PropsType) {
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >
-                  {t("main:delete")}
+                  {t("global:global.delete")}
                 </Button>
               </Box>
             </Box>
@@ -115,7 +115,7 @@ function XpansionPropsView(props: PropsType) {
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >
-                  {t("main:delete")}
+                  {t("global:global.delete")}
                 </Button>
               </Box>
             </Box>

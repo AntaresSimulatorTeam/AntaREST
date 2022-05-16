@@ -48,7 +48,7 @@ function Settings() {
   return (
     <TabContext value={tabValue}>
       <RootPage
-        title={t("main:settings")}
+        title={t("global:global.settings")}
         titleIcon={SettingsIcon}
         headerBottom={
           <Box

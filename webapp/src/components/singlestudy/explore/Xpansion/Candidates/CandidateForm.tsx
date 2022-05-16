@@ -110,7 +110,7 @@ function CandidateForm(props: PropType) {
             >
               <SaveIcon sx={{ m: 0.2, width: "16px", height: "16px" }} />
               <Typography sx={{ m: 0.2, fontSize: "12px" }}>
-                {t("main:save")}
+                {t("global:global.save")}
               </Typography>
             </Button>
             <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
@@ -139,7 +139,7 @@ function CandidateForm(props: PropType) {
         </Fields>
       </Box>
       <Box>
-        <Title>{t("main:settings")}</Title>
+        <Title>{t("global:global.settings")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
           <StyledTextField

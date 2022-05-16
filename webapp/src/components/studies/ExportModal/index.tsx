@@ -139,7 +139,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("studymanager:export")}
+      title={t("global:global.export")}
       actions={
         <Box>
           <Button
@@ -160,7 +160,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             }
             onClick={onExportClick}
           >
-            {t("main:export")}
+            {t("global:global.export")}
           </Button>
         </Box>
       }

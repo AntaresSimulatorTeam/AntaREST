@@ -27,7 +27,7 @@ function InformationView(props: Props) {
 
   const importStudy = async (study: StudyMetadata) => {
     try {
-      await copyStudy(study.id, `${study.name} (${t("main:copy")})`, false);
+      await copyStudy(study.id, `${study.name} (${t("global:global.copy)})`, false);
     } catch (e) {
       enqueueErrorSnackbar(t("studymanager:failtocopystudy"), e as AxiosError);
     }

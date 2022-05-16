@@ -96,7 +96,7 @@ function MaintenanceWrapper(props: Props) {
           }}
           onClick={onClick}
         >
-          {t("main:connexion")}
+          {t("global:global.connexion")}
         </Button>
         <Box
           display="flex"

@@ -116,7 +116,7 @@ function CreateStudyModal(props: Props) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("main:cancelButton")}
+            {t("global:global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -140,7 +140,7 @@ function CreateStudyModal(props: Props) {
             required
           />
           <SingleSelect
-            name={t("studymanager:version")}
+            name={t("global:global.version")}
             list={versionList}
             data={version}
             setValue={setVersion}

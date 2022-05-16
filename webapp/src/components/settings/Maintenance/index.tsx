@@ -130,7 +130,7 @@ function Maintenance() {
           disabled={!isDirty}
           onClick={() => setShowConfirmationModal(true)}
         >
-          {t("main:save")}
+          {t("global:global.save")}
         </Button>
         <Backdrop
           open={isLoading || isSubmitting}

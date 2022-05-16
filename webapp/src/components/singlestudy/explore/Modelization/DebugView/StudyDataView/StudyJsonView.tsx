@@ -83,7 +83,7 @@ function StudyJsonView(props: PropTypes) {
             disabled={!saveAllowed}
           >
             <Typography sx={{ fontSize: "12px", m: 0.2 }}>
-              {t("main:save")}
+              {t("global:global.save")}
             </Typography>
           </Button>
         </Header>

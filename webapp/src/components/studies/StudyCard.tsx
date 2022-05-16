@@ -344,7 +344,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:copy")}</ListItemText>
+                <ListItemText>{t("global:global.copy)}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
@@ -380,7 +380,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:export")}</ListItemText>
+                <ListItemText>{t("global:global.export")}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
@@ -398,7 +398,7 @@ export default function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:archive")}</ListItemText>
+                  <ListItemText>{t("global:global.delete")}</ListItemText>
                 </MenuItem>
               )}
             </div>
@@ -416,7 +416,7 @@ export default function StudyCard(props: Props) {
                 />
               </ListItemIcon>
               <ListItemText sx={{ color: "error.light" }}>
-                {t("studymanager:delete")}
+                {t("global:global.delete")}
               </ListItemText>
             </MenuItem>
           )}

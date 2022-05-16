@@ -296,7 +296,7 @@ function Studies() {
 
   return (
     <RootPage
-      title={t("main:studies")}
+      title={t("global:global.studies")}
       titleIcon={TravelExploreOutlinedIcon}
       headerTopRight={<HeaderTopRight />}
       headerBottom={

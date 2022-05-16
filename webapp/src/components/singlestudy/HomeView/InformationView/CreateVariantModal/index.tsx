@@ -62,7 +62,7 @@ function CreateVariantModal(props: Props) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("main:cancelButton")}
+            {t("global:global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}

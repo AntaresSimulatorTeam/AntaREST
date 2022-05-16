@@ -150,7 +150,7 @@ function StudiesList(props: StudiesListProps) {
     try {
       await callCopyStudy(
         study.id,
-        `${study.name} (${t("main:copy")})`,
+        `${study.name} (${t("global:global.copy)})`,
         withOutputs
       );
     } catch (e) {
@@ -292,7 +292,7 @@ function StudiesList(props: StudiesListProps) {
             )}
           </Breadcrumbs>
           <Typography mx={2} sx={{ color: "white" }}>
-            ({`${studies.length} ${t("studymanager:studies").toLowerCase()}`})
+            ({`${studies.length} ${t("global:global.studies").toLowerCase()}`})
           </Typography>
         </Box>
         <Box

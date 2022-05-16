@@ -184,7 +184,7 @@ function LoginWrapper(props: Props) {
                   {formState.isSubmitting && (
                     <CircularProgress size="1em" sx={{ mr: "1em" }} />
                   )}
-                  {t("main:connexion")}
+                  {t("global:global.connexion")}
                 </Button>
               </Box>
             </form>

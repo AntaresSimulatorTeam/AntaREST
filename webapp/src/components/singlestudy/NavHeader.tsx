@@ -216,7 +216,7 @@ function NavHeader(props: Props) {
           sx={{ cursor: "pointer" }}
         />
         <Button variant="text" color="secondary" onClick={onBackClick}>
-          {isExplorer === true && study ? study.name : t("main:studies")}
+          {isExplorer === true && study ? study.name : t("global:global.studies")}
         </Button>
       </Box>
       <Box
@@ -371,7 +371,7 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:export")}</ListItemText>
+                  <ListItemText>{t("global:global.export")}</ListItemText>
                 </MenuItem>
                 {study?.managed && (
                   <MenuItem
@@ -389,7 +389,7 @@ function NavHeader(props: Props) {
                         }}
                       />
                     </ListItemIcon>
-                    <ListItemText>{t("studymanager:archive")}</ListItemText>
+                    <ListItemText>{t("global:global.delete")}</ListItemText>
                   </MenuItem>
                 )}
               </div>
@@ -407,7 +407,7 @@ function NavHeader(props: Props) {
                   />
                 </ListItemIcon>
                 <ListItemText sx={{ color: "error.light" }}>
-                  {t("studymanager:delete")}
+                  {t("global:global.delete")}
                 </ListItemText>
               </MenuItem>
             )}

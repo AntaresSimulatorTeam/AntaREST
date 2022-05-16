@@ -45,7 +45,7 @@ function CreateAreaModal(props: PropType) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("main:cancelButton")}
+            {t("global:global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -55,7 +55,7 @@ function CreateAreaModal(props: PropType) {
               handleSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)
             }
           >
-            {t("data:saveButton")}
+            {t("global:global.save")}
           </Button>
         </>
       }

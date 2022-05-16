@@ -89,7 +89,7 @@ function HeaderBottom(props: PropTypes) {
         }}
       />
       <Button color="secondary" variant="outlined" onClick={onFilterClick}>
-        {t("main:filter")}
+        {t("global:global.filter")}
       </Button>
       <Box
         flex={1}

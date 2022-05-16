@@ -63,7 +63,7 @@ function Filter(props: PropTypes) {
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
       <SelectMulti
-        name={t("singlestudy:filter")}
+        name={t("global:global.filter")}
         list={areasOrDistrictsList.map((elm) => ({ id: elm, name: elm }))}
         data={filterValue}
         setValue={(elm: Array<string> | string) =>
@@ -88,7 +88,7 @@ function Filter(props: PropTypes) {
   ) : (
     <Root>
       <MultipleLinkElement
-        label={t("singlestudy:filter")}
+        label={t("global:global.filter")}
         areas={Object.keys(areas)}
         values={filterValue}
         onChange={setFilterValue}

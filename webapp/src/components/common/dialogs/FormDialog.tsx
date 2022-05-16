@@ -111,7 +111,7 @@ function FormDialog(props: FormDialogProps) {
             variant="contained"
             disabled={!allowSubmit}
           >
-            {submitButtonText || t("main:save")}
+            {submitButtonText || t("global:global.save")}
           </Button>
         </>
       }

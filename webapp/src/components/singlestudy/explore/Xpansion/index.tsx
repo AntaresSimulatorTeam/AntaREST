@@ -25,7 +25,7 @@ function Xpansion() {
         path: `/studies/${study?.id}/explore/xpansion/candidates`,
       },
       {
-        label: t("main:settings"),
+        label: t("global:global.settings"),
         path: `/studies/${study?.id}/explore/xpansion/settings`,
       },
       {
