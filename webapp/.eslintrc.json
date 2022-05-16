@@ -61,12 +61,6 @@
     "no-shadow": "off",
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
-    "prettier/prettier": [
-      "error",
-      {
-        "endOfLine": "auto"
-      }
-    ],
     "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
     "react/react-in-jsx-scope": "off",
     "react/jsx-props-no-spreading": "off",
