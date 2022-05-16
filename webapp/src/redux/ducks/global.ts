@@ -41,7 +41,6 @@ export const setMaintenanceMode = createAction<GlobalState["maintenanceMode"]>(
 
 export default createReducer(initialState, (builder) => {
   builder
-
     .addCase(incrementTaskNotifications, (draftState, action) => {
       const value = action.payload ?? 1;
       if (value > 0) {
