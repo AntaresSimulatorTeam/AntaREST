@@ -118,7 +118,7 @@ function FileTable(props: PropType) {
             <TableBody>
               {content.map((row) => (
                 <TableRow
-                  key={row.id}
+                  key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
                     "&> th, >td": {
                       borderBottom: "solid 1px",
@@ -126,7 +126,7 @@ function FileTable(props: PropType) {
                     },
                   })}
                 >
-                  <TableCell component="th" scope="row">
+                  <TableCell component="th" scope="row" key="name">
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       {copyId && (
                         <IconButton
@@ -156,6 +156,7 @@ function FileTable(props: PropType) {
                       justifyContent: "flex-end",
                       alignItems: "center",
                     }}
+                    key="actions"
                   >
                     <IconButton
                       onClick={() => onRead(row.id as string)}

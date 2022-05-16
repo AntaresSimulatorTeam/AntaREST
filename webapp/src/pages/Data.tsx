@@ -156,7 +156,7 @@ function Data(props: PropTypes) {
             />
           }
           right={
-            <Box sx={{ width: "100%" }}>
+            <Box sx={{ width: "100%", height: "100%" }}>
               {selectedItem ? (
                 <FileTable
                   title={
