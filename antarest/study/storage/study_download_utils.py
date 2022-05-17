@@ -5,10 +5,22 @@ import os
 import re
 import tarfile
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from zipfile import ZipFile, ZIP_DEFLATED
+
+from fastapi import HTTPException
 
 from antarest.study.model import (
     MatrixAggregationResult,
@@ -28,6 +40,11 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    OutputSeriesMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -446,3 +463,90 @@ class StudyDownloader:
                         info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
                         info.size = file_size
                         output_data.addfile(tarinfo=info, fileobj=data_file)
+
+
+class BadOutputFormat(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
+
+
+def find_first_child(
+    folder_node: INode[Any, Any, Any], filter_name: str = ".*"
+) -> INode[Any, Any, Any]:
+    children: Dict[str, INode[Any, Any, Any]] = cast(
+        FolderNode, folder_node
+    ).build()
+    try:
+        first_child = filter(
+            lambda el: re.search(filter_name, el) is not None,
+            children.keys(),
+        ).__next__()
+    except StopIteration:
+        raise BadOutputFormat("Couldn't find an output sample")
+    return children[first_child]
+
+
+def get_output_variables_information(
+    study: FileStudy, output_name: str
+) -> Dict[str, List[str]]:
+    if not study.config.outputs[output_name].by_year:
+        raise BadOutputFormat("Not a year by year simulation")
+
+    first_year_result: Dict[str, INode[Any, Any, Any]] = cast(
+        FolderNode,
+        find_first_child(
+            cast(
+                FolderNode,
+                study.tree.get_node(
+                    [
+                        "output",
+                        output_name,
+                        study.config.outputs[output_name].mode,
+                        "mc-ind",
+                    ]
+                ),
+            ),
+        ),
+    ).build()
+
+    output_variables = {
+        "area": (
+            cast(
+                OutputSeriesMatrix,
+                find_first_child(
+                    find_first_child(first_year_result["areas"]), "values-"
+                ),
+            )
+            .parse_dataframe()
+            .columns.to_list()
+        ),
+        "link": [],
+    }
+
+    first_area_with_link: Optional[str] = None
+    for area_id, area in study.config.areas.items():
+        if area.links.keys():
+            first_area_with_link = area_id
+            break
+    if first_area_with_link:
+        output_variables["link"] = (
+            cast(
+                OutputSeriesMatrix,
+                find_first_child(
+                    find_first_child(
+                        find_first_child(
+                            first_year_result["links"],
+                            f"^{first_area_with_link}$",
+                        ),
+                    ),
+                    "values-",
+                ),
+            )
+            .parse_dataframe()
+            .columns.to_list()
+        )
+
+    return {
+        "area": [col[0] for col in output_variables["area"]],
+        "link": [col[0] for col in output_variables["link"]],
+    }

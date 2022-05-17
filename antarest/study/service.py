@@ -104,7 +104,10 @@ from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.storage.study_download_utils import (
+    StudyDownloader,
+    get_output_variables_information,
+)
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
@@ -839,6 +842,26 @@ class StudyService:
 
         return FileDownloadTaskDTO(
             file=export_file_download.to_dto(), task=task_id
+        )
+
+    def output_variables_information(
+        self,
+        study_uuid: str,
+        output_uuid: str,
+        params: RequestParameters,
+    ) -> Dict[str, List[str]]:
+        """
+        Returns information about output variables using thematic and geographic trimming information
+        Args:
+            study_uuid: study id
+            output_uuid: output id
+            params: request parameters
+        """
+        study = self.get_study(study_uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return get_output_variables_information(
+            self.storage_service.get_storage(study).get_raw(study), output_uuid
         )
 
     def export_output(
