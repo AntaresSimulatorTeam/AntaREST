@@ -475,8 +475,12 @@ class BadOutputFormat(HTTPException):
         super().__init__(HTTPStatus.NOT_ACCEPTABLE)
 
 
-def find_first_child(folder_node: INode[Any, Any, Any], filter_name: str = ".*") -> INode[Any, Any, Any]:
-    children: Dict[str, INode[Any, Any, Any]] = cast(FolderNode, folder_node).build()
+def find_first_child(
+    folder_node: INode[Any, Any, Any], filter_name: str = ".*"
+) -> INode[Any, Any, Any]:
+    children: Dict[str, INode[Any, Any, Any]] = cast(
+        FolderNode, folder_node
+    ).build()
     try:
         first_child = filter(
             lambda el: re.search(filter_name, el) is not None,
