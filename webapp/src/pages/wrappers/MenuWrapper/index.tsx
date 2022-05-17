@@ -53,9 +53,8 @@ import {
 } from "./styles";
 import { getConfig } from "../../../services/config";
 import { getCurrentStudyId } from "../../../redux/selectors";
-import { logoutAction } from "../../../store/auth";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
-import { scrollbarStyle } from "../../../theme";
+import { logout } from "../../../redux/ducks/auth";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -98,7 +97,7 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = {
   setExtended: setMenuExtensionStatus,
-  logout: logoutAction,
+  logout,
 };
 
 const connector = connect(mapState, mapDispatch);
