@@ -7,6 +7,9 @@ from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import remove_from_cache
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -19,13 +22,16 @@ def execute_or_add_commands(
 ) -> None:
     if isinstance(study, RawStudy):
         executed_commands: List[ICommand] = []
+        command_reverter = CommandReverter()
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
                 for i in range(0, len(executed_commands)):
                     executed_command = executed_commands[i]
-                    revert_command_list = executed_command.revert(
-                        history=executed_commands[i + 1 :], base=file_study
+                    revert_command_list = command_reverter.revert(
+                        executed_command,
+                        history=executed_commands[i + 1 :],
+                        base=file_study,
                     )
                     for revert_command in revert_command_list:
                         revert_command.apply(file_study)

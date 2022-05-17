@@ -14,6 +14,10 @@ from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.business.utils import (
+    validate_matrix,
+    strip_matrix_protocol,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -21,10 +25,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -280,21 +280,6 @@ class CreateLink(ICommand):
             and self.direct == other.direct
             and self.indirect == other.indirect
         )
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_link import (
-            RemoveLink,
-        )
-
-        return [
-            RemoveLink(
-                area1=self.area1,
-                area2=self.area2,
-                command_context=self.command_context,
-            )
-        ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateLink, other)

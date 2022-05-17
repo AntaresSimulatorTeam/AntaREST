@@ -1,13 +1,11 @@
 import configparser
-from unittest.mock import Mock
 
-from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -15,7 +13,6 @@ from antarest.study.storage.variantstudy.model.command.create_area import (
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_cluster import (
     RemoveCluster,
 )
@@ -184,7 +181,7 @@ def test_revert(command_context: CommandContext):
         modulation=[[0]],
         command_context=command_context,
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveCluster(
             area_id="foo",
             cluster_id="foo",

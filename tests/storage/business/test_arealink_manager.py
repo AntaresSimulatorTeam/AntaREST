@@ -35,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
-    Set,
+    DistrictSet,
     Link,
     Cluster,
 )
@@ -286,7 +286,7 @@ def test_get_all_area():
                 filters_year=[],
             ),
         },
-        sets={"s1": Set(areas=["a1"])},
+        sets={"s1": DistrictSet(areas=["a1"])},
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
     raw_study_service.get_raw.return_value = FileStudy(
@@ -458,7 +458,7 @@ def test_update_area():
                 filters_year=[],
             ),
         },
-        sets={"s1": Set(areas=["a1"])},
+        sets={"s1": DistrictSet(areas=["a1"])},
     )
     raw_study_service.get_raw.return_value = FileStudy(
         config=config, tree=FileStudyTree(context=Mock(), config=config)

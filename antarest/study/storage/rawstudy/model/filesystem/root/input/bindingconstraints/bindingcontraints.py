@@ -1,6 +1,3 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -19,7 +16,7 @@ class BindingConstraints(FolderNode):
             bind: InputSeriesMatrix(
                 self.context, self.config.next_file(f"{bind}.txt")
             )
-            for bind in self.config.bindings
+            for bind in [binding.id for binding in self.config.bindings]
         }
 
         children["bindingconstraints"] = BindingConstraintsIni(

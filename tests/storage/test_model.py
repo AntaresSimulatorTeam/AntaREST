@@ -4,8 +4,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
     FileStudyTreeConfig,
     Area,
-    Set,
+    DistrictSet,
     Simulation,
+    BindingConstraintDTO,
 )
 
 
@@ -26,7 +27,7 @@ def test_file_study_tree_config_dto():
                 filters_year=[],
             )
         },
-        sets={"s": Set()},
+        sets={"s": DistrictSet()},
         outputs={
             "o": Simulation(
                 name="o",
@@ -39,7 +40,7 @@ def test_file_study_tree_config_dto():
                 playlist=[0],
             )
         },
-        bindings=["b1"],
+        bindings=[BindingConstraintDTO(id="b1", areas=[], clusters=[])],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",

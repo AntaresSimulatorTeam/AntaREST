@@ -14,6 +14,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from antarest.study.storage.variantstudy.business.utils import (
+    strip_matrix_protocol,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
     TimeStep,
@@ -49,9 +52,6 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    strip_matrix_protocol,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,

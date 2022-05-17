@@ -490,7 +490,7 @@ def test_area_management(app: FastAPI):
         }
     ]
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
@@ -637,12 +637,13 @@ def test_area_management(app: FastAPI):
         },
     }
 
-    client.delete(
+    result = client.delete(
         f"/v1/studies/{study_id}/areas/area%201",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
+    assert result.status_code == 200
     res_areas = client.get(
         f"/v1/studies/{study_id}/areas",
         headers={

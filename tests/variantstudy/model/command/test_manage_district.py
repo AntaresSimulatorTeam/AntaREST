@@ -11,6 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -180,7 +183,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_district",
+    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_district",
 )
 def test_revert(mock_extract_district, command_context: CommandContext):
     base = CreateDistrict(
@@ -189,16 +192,17 @@ def test_revert(mock_extract_district, command_context: CommandContext):
         filter_items=["a", "b"],
         command_context=command_context,
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveDistrict(id="foo", command_context=command_context)
     ]
 
     base = RemoveDistrict(id="id", command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
     mock_extract_district.side_effect = ChildNotFoundError("")
-    base.revert([], study)
+    CommandReverter().revert(base, [], study)
     mock_extract_district.assert_called_with(study, "id")
-    assert base.revert(
+    assert CommandReverter().revert(
+        base,
         [
             CreateDistrict(
                 name="id",

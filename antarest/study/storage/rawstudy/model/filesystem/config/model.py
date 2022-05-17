@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Set
 
 from pydantic.main import BaseModel
 
@@ -58,7 +58,7 @@ class Area(BaseModel):
     filters_year: List[str]
 
 
-class Set(BaseModel):
+class DistrictSet(BaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
@@ -97,6 +97,12 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
+class BindingConstraintDTO(BaseModel):
+    id: str
+    areas: Set[str]
+    clusters: Set[str]
+
+
 class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
@@ -110,9 +116,9 @@ class FileStudyTreeConfig(DTO):
         version: int,
         output_path: Optional[Path] = None,
         areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, Set]] = None,
+        sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[str]] = None,
+        bindings: Optional[List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
@@ -263,9 +269,9 @@ class FileStudyTreeConfigDTO(BaseModel):
     version: int
     output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
-    sets: Dict[str, Set] = dict()
+    sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
-    bindings: List[str] = list()
+    bindings: List[BindingConstraintDTO] = list()
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = ENR_MODELLING.AGGREGATED.value

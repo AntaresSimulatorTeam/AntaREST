@@ -5,9 +5,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -64,22 +61,6 @@ class UpdateComments(ICommand):
         if not isinstance(other, UpdateComments):
             return False
         return not equal or (self.comments == other.comments and equal)
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        for command in reversed(history):
-            if isinstance(command, UpdateComments):
-                return [command]
-
-        try:
-            return [
-                self._get_command_extractor().generate_update_comments(
-                    base.tree
-                )
-            ]
-        except ChildNotFoundError:
-            return []  # if the file does not exist, there is nothing to revert
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

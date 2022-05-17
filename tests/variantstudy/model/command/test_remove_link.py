@@ -20,6 +20,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
+)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -123,7 +126,7 @@ class TestRemoveLink:
 
     @pytest.mark.unit_test
     @patch(
-        "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_link",
+        "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_link",
     )
     def test_revert(self, mock_extract_link, command_context: CommandContext):
         base = RemoveLink(
@@ -131,9 +134,10 @@ class TestRemoveLink:
         )
         study = FileStudy(config=Mock(), tree=Mock())
         mock_extract_link.side_effect = ChildNotFoundError("")
-        base.revert([], study)
+        CommandReverter().revert(base, [], study)
         mock_extract_link.assert_called_with(study, "bar", "foo")
-        assert base.revert(
+        assert CommandReverter().revert(
+            base,
             [
                 CreateLink(
                     area1="foo",

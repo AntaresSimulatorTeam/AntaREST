@@ -11,6 +11,9 @@ from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.business.utils import (
+    get_or_create_section,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,9 +21,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    get_or_create_section,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -277,16 +277,6 @@ class CreateArea(ICommand):
         if not isinstance(other, CreateArea):
             return False
         return self.area_name == other.area_name
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_area import (
-            RemoveArea,
-        )
-
-        area_id = transform_name_to_id(self.area_name)
-        return [RemoveArea(id=area_id, command_context=self.command_context)]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
