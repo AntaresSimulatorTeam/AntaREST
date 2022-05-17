@@ -525,7 +525,7 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
-                job_launch_params: Optional[JSON] = (
+                job_launch_params: JSON = (
                     json.loads(job_result.launcher_params)
                     if job_result.launcher_params
                     else {}
@@ -543,8 +543,11 @@ class LauncherService:
                         output_true_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
                         additional_logs,
-                        job_launch_params.get(
-                            LAUNCHER_PARAM_NAME_SUFFIX, None
+                        cast(
+                            Optional[str],
+                            job_launch_params.get(
+                                LAUNCHER_PARAM_NAME_SUFFIX, None
+                            ),
                         ),
                     )
                 except StudyNotFoundError:
@@ -552,8 +555,11 @@ class LauncherService:
                         job_id,
                         output_true_path,
                         additional_logs,
-                        job_launch_params.get(
-                            LAUNCHER_PARAM_NAME_SUFFIX, None
+                        cast(
+                            Optional[str],
+                            job_launch_params.get(
+                                LAUNCHER_PARAM_NAME_SUFFIX, None
+                            ),
                         ),
                     )
         raise JobNotFound()
