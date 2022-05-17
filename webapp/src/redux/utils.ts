@@ -24,21 +24,21 @@ interface ThunkActionCreatorWithPayload<P, T = void>
   (thunkArg: T): AppThunk<P>;
 }
 
-export const createThunk = <P = void, T = void>(
+export function createThunk<P = void, T = void>(
   typePrefix: string,
   payloadCreator: (arg: T, thunkAPI: ThunkAPI) => P
-): ThunkActionCreatorWithPayload<P, T> => {
+): ThunkActionCreatorWithPayload<P, T> {
   const actionCreator = createAction<T>(typePrefix);
 
-  const thunkActionCreator =
-    (thunkArg: T): AppThunk<P> =>
-    (dispatch, getState) => {
+  function thunkActionCreator(thunkArg: T): AppThunk<P> {
+    return function thunkAction(dispatch, getState) {
       const payload = payloadCreator(thunkArg, { dispatch, getState });
       dispatch(actionCreator(payload));
       return payload;
     };
+  }
 
   Object.assign(thunkActionCreator, actionCreator);
 
   return thunkActionCreator as ThunkActionCreatorWithPayload<P, T>;
-};
+}

@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-import { Moment } from "moment";
 import { ReactNode } from "react";
 
 export type IdType = number | string;
@@ -195,7 +193,7 @@ export interface UserInfo {
   type: string;
   accessToken: string;
   refreshToken: string;
-  expirationDate?: Moment;
+  expirationDate?: number;
 }
 
 export interface RefreshDTO {

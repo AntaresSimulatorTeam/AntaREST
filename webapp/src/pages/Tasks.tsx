@@ -27,12 +27,10 @@ import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import DownloadLink from "../components/common/DownloadLink";
 import LogModal from "../components/common/LogModal";
 import {
-  addListener,
-  removeListener,
-  subscribe,
-  unsubscribe,
+  addMessageListener,
+  sendSubscribeMessage,
   WsChannel,
-} from "../redux/ducks/websockets";
+} from "../services/webSockets";
 import JobTableView from "../components/tasks/JobTableView";
 import { convertUTCToLocalTime } from "../services/utils/index";
 import {
@@ -72,10 +70,6 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = {
   loadStudies: fetchStudies,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-  subscribeChannel: subscribe,
-  unsubscribeChannel: unsubscribe,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -83,14 +77,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function JobsListing(props: PropTypes) {
-  const {
-    studies,
-    loadStudies,
-    addWsListener,
-    removeWsListener,
-    subscribeChannel,
-    unsubscribeChannel,
-  } = props;
+  const { studies, loadStudies } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
@@ -231,27 +218,16 @@ function JobsListing(props: PropTypes) {
         );
       }
     };
-    addWsListener(listener);
-    return () => {
-      removeWsListener(listener);
-    };
-  }, [addWsListener, removeWsListener, downloads, tasks, setTasks]);
+
+    return addMessageListener(listener);
+  }, [downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
-      tasks.forEach((task) => {
-        subscribeChannel(WsChannel.TASK + task.id);
-      });
-      return () => {
-        tasks.forEach((task) => {
-          unsubscribeChannel(WsChannel.TASK + task.id);
-        });
-      };
+      const channels = tasks.map((task) => WsChannel.Task + task.id);
+      return sendSubscribeMessage(channels);
     }
-    return () => {
-      /* noop */
-    };
-  }, [tasks, subscribeChannel, unsubscribeChannel]);
+  }, [tasks]);
 
   useEffect(() => {
     init();

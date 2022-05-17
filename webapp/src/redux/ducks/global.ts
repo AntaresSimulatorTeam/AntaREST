@@ -1,6 +1,8 @@
 import { createAction, createReducer } from "@reduxjs/toolkit";
 import { makeActionName } from "../utils";
 
+// TODO: merge to ui duck
+
 export interface GlobalState {
   maintenanceMode: boolean;
   messageInfo: string;

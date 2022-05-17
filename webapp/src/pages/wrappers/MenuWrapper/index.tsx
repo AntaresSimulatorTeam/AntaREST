@@ -52,7 +52,10 @@ import {
   LogoContainer,
 } from "./styles";
 import { getConfig } from "../../../services/config";
-import { getCurrentStudyId } from "../../../redux/selectors";
+import {
+  getCurrentStudyId,
+  getWebSocketConnected,
+} from "../../../redux/selectors";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
 import { logout } from "../../../redux/ducks/auth";
 
@@ -92,7 +95,7 @@ interface MenuItem {
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
   currentStudy: getCurrentStudyId(state),
-  websocketConnected: state.websockets.connected,
+  websocketConnected: getWebSocketConnected(state),
 });
 
 const mapDispatch = {

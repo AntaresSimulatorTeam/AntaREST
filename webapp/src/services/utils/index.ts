@@ -61,6 +61,13 @@ export const isUserAdmin = (user?: UserInfo): boolean => {
   return false;
 };
 
+export const isUserExpired = (user: UserInfo): boolean => {
+  return (
+    !user.expirationDate ||
+    moment.unix(user.expirationDate) < moment().add(5, "s")
+  );
+};
+
 export const isGroupAdmin = (user?: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find(

@@ -4,17 +4,21 @@ import {
   PayloadAction,
 } from "@reduxjs/toolkit";
 import jwtDecode, { JwtPayload } from "jwt-decode";
-import moment, { Moment } from "moment";
 import * as RA from "ramda-adjunct";
 import { AnyAction } from "redux";
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
+import { isUserExpired } from "../../services/utils";
 import { loadState } from "../../services/utils/localStorage";
+import {
+  closeWebSocket,
+  initWebSocket,
+  reloadWebSocket,
+} from "../../services/webSockets";
 import { getAuthUser } from "../selectors";
 import { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";
-import { reconnectWebsocket } from "./websockets";
 
 export interface AuthState {
   user?: UserInfo;
@@ -23,10 +27,6 @@ export interface AuthState {
 interface LoginArg {
   username: string;
   password: string;
-}
-
-interface RefreshArg {
-  logoutOnError: boolean;
 }
 
 type AccessTokenSub = Pick<UserInfo, "id" | "groups" | "impersonator" | "type">;
@@ -47,13 +47,49 @@ const isActionWithUser = (
 
 const n = makeActionName("auth");
 
-const makeExpirationDate = (payload: JwtPayload): Moment | undefined => {
-  return payload.exp ? moment.unix(payload.exp) : undefined;
-};
-
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
+
+export const logout = createThunk(n("LOGOUT"), () => {
+  clientApi.setAuth(undefined);
+  closeWebSocket();
+});
+
+export const refresh = createAsyncThunk<
+  UserInfo | undefined,
+  void,
+  AppAsyncThunkConfig
+>(n("REFRESH"), async (_, { dispatch, getState, rejectWithValue }) => {
+  const state = getState();
+  const user = getAuthUser(state);
+
+  if (user && isUserExpired(user)) {
+    try {
+      const tokens = await authApi.refresh(user.refreshToken);
+      const decoded = jwtDecode<JwtPayload>(tokens.access_token);
+      const newUserData = JSON.parse(decoded.sub as string) as AccessTokenSub;
+
+      const userUpdated = {
+        ...user,
+        ...newUserData,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expirationDate: decoded.exp,
+      };
+
+      clientApi.setAuth(tokens.access_token);
+      reloadWebSocket(dispatch, userUpdated);
+
+      return userUpdated;
+    } catch (err) {
+      dispatch(logout());
+      return rejectWithValue(err);
+    }
+  }
+
+  return user;
+});
 
 export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
   n("LOGIN"),
@@ -69,11 +105,14 @@ export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
         ...userData,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
-        expirationDate: makeExpirationDate(decoded),
+        expirationDate: decoded.exp,
         user: username,
       } as UserInfo;
 
-      dispatch(reconnectWebsocket(user));
+      initWebSocket(dispatch, user);
+
+      clientApi.setLogoutInterceptor(() => dispatch(logout()));
+      clientApi.updateRefreshInterceptor(() => dispatch(refresh()).unwrap());
 
       return user;
     } catch (err) {
@@ -81,47 +120,6 @@ export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
     }
   }
 );
-
-export const logout = createThunk(n("LOGOUT"), () => {
-  clientApi.setAuth(undefined);
-});
-
-export const refresh = createAsyncThunk<
-  UserInfo | undefined,
-  RefreshArg | undefined,
-  AppAsyncThunkConfig
->(n("REFRESH"), async (arg, { dispatch, getState, rejectWithValue }) => {
-  const state = getState();
-  const user = getAuthUser(state);
-
-  if (
-    user &&
-    (!user.expirationDate || user.expirationDate < moment().add(5, "s"))
-  ) {
-    try {
-      const tokens = await authApi.refresh(user.refreshToken);
-      const decoded = jwtDecode<JwtPayload>(tokens.access_token);
-      const newUserData = JSON.parse(decoded.sub as string) as AccessTokenSub;
-
-      clientApi.setAuth(tokens.access_token);
-
-      return {
-        ...user,
-        ...newUserData,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        expirationDate: makeExpirationDate(decoded),
-      };
-    } catch (err) {
-      if (arg?.logoutOnError) {
-        dispatch(logout());
-      }
-      return rejectWithValue(err);
-    }
-  }
-
-  return user;
-});
 
 ////////////////////////////////////////////////////////////////
 // Reducer

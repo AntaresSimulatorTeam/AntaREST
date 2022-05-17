@@ -18,7 +18,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import { Root, ElementContainer, InputElement } from "./style";
 import { AppState } from "../../../redux/ducks";
-import { createStudy, fetchStudyVersions } from "../../../redux/ducks/studies";
+import { createStudy } from "../../../redux/ducks/studies";
 import { getStudyVersions } from "../../../redux/selectors";
 
 const logErr = debug("antares:createstudyform:error");
@@ -29,7 +29,6 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = {
   addStudy: createStudy,
-  loadVersions: fetchStudyVersions,
 };
 
 const connector = connect(mapState, mapDispatch);

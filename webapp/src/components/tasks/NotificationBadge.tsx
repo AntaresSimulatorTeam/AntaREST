@@ -7,7 +7,6 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { addListener, removeListener } from "../../redux/ducks/websockets";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
 import {
@@ -15,6 +14,7 @@ import {
   resetTaskNotifications,
 } from "../../redux/ducks/global";
 import { AppState } from "../../redux/ducks";
+import { addMessageListener } from "../../services/webSockets";
 
 const logError = debug("antares:downloadbadge:error");
 
@@ -23,8 +23,6 @@ const mapState = (state: AppState) => ({
 });
 
 const mapDispatch = {
-  addWsListener: addListener,
-  removeWsListener: removeListener,
   addTasksNotification: incrementTaskNotifications,
   clearTasksNotification: resetTaskNotifications,
 };
@@ -35,8 +33,6 @@ type PropTypes = PropsWithChildren<ReduxProps>;
 
 function NotificationBadge(props: PropTypes) {
   const {
-    addWsListener,
-    removeWsListener,
     children,
     notificationCount,
     addTasksNotification,
@@ -83,9 +79,9 @@ function NotificationBadge(props: PropTypes) {
         }
       }
     };
-    addWsListener(listener);
-    return () => removeWsListener(listener);
-  }, [addWsListener, removeWsListener, newNotification]);
+
+    return addMessageListener(listener);
+  }, [newNotification]);
 
   useEffect(() => {
     if (location.pathname === "/tasks") {

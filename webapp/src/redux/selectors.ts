@@ -3,6 +3,7 @@ import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
 import { studiesAdapter, StudiesState } from "./ducks/studies";
+import { UIState } from "./ducks/ui";
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -59,3 +60,15 @@ export const isCurrentStudyFavorite = createSelector(
   getCurrentStudyId,
   (favorites, current) => favorites.includes(current)
 );
+
+////////////////////////////////////////////////////////////////
+// UI
+////////////////////////////////////////////////////////////////
+
+const getUIState = (state: AppState): AppState["ui"] => state.ui;
+
+export const getWebSocketConnected = (
+  state: AppState
+): UIState["webSocketConnected"] => {
+  return getUIState(state).webSocketConnected;
+};

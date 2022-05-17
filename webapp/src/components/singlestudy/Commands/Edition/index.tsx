@@ -5,7 +5,6 @@ import { DropResult } from "react-beautiful-dnd";
 import _ from "lodash";
 import QueueIcon from "@mui/icons-material/Queue";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
-import { connect, ConnectedProps } from "react-redux";
 import BoltIcon from "@mui/icons-material/Bolt";
 import debug from "debug";
 import { AxiosError } from "axios";
@@ -42,49 +41,28 @@ import {
   TaskStatus,
 } from "../../../../common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
-import {
-  addListener,
-  removeListener,
-  subscribe,
-  unsubscribe,
-  WsChannel,
-} from "../../../../redux/ducks/websockets";
 import { getTask } from "../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../common/loaders/SimpleLoader";
 import NoContent from "../../../common/page/NoContent";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
+import {
+  addMessageListener,
+  sendSubscribeMessage,
+  WsChannel,
+} from "../../../../services/webSockets";
 
 const logError = debug("antares:variantedition:error");
 
-interface OwnTypes {
+interface Props {
   studyId: string;
 }
 
-const mapState = () => ({});
-
-const mapDispatch = {
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-  subscribeChannel: subscribe,
-  unsubscribeChannel: unsubscribe,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps & OwnTypes;
-
-function EditionView(props: PropTypes) {
+function EditionView(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const {
-    studyId,
-    addWsListener,
-    removeWsListener,
-    subscribeChannel,
-    unsubscribeChannel,
-  } = props;
+  const { studyId } = props;
   const [openAddCommandDialog, setOpenAddCommandDialog] =
     useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
@@ -321,8 +299,9 @@ function EditionView(props: PropTypes) {
   );
 
   useEffect(() => {
-    const commandGenerationChannel = WsChannel.STUDY_GENERATION + studyId;
-    subscribeChannel(commandGenerationChannel);
+    const commandGenerationChannel = WsChannel.StudyGeneration + studyId;
+    const unsubscribe = sendSubscribeMessage(commandGenerationChannel);
+
     const init = async () => {
       let items: Array<CommandItem> = [];
       setLoaded(false);
@@ -368,39 +347,40 @@ function EditionView(props: PropTypes) {
       setLoaded(true);
     };
     init();
-    return () => unsubscribeChannel(commandGenerationChannel);
+
+    return () => unsubscribe();
   }, [
     commands.length,
     enqueueSnackbar,
     enqueueErrorSnackbar,
     studyId,
     t,
-    subscribeChannel,
-    unsubscribeChannel,
     debouncedFailureNotification,
   ]);
 
   useEffect(() => {
-    addWsListener(listen);
-    return () => removeWsListener(listen);
-  }, [addWsListener, listen, removeWsListener]);
+    return addMessageListener(listen);
+  }, [listen]);
 
   useEffect(() => {
     if (generationTaskId) {
-      const taskChannel = WsChannel.TASK + generationTaskId;
-      subscribeChannel(taskChannel);
+      // TODO Maybe WsChannel.StudyGeneration?
+      const taskChannel = WsChannel.Task + generationTaskId;
+      const unsubscribe = sendSubscribeMessage(taskChannel);
+
       if (taskTimeoutId.current) {
         clearTimeout(taskTimeoutId.current);
       }
       taskTimeoutId.current = setTimeout(fetchTask, taskFetchPeriod);
-      return () => unsubscribeChannel(taskChannel);
+
+      return () => unsubscribe();
     }
     return () => {
       if (taskTimeoutId.current) {
         clearTimeout(taskTimeoutId.current);
       }
     };
-  }, [fetchTask, generationTaskId, subscribeChannel, unsubscribeChannel]);
+  }, [fetchTask, generationTaskId]);
 
   return (
     <Root>
@@ -496,4 +476,4 @@ function EditionView(props: PropTypes) {
   );
 }
 
-export default connector(EditionView);
+export default EditionView;

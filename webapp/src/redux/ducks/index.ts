@@ -4,14 +4,12 @@ import studies from "./studies";
 import auth, { logout } from "./auth";
 import global from "./global";
 import ui from "./ui";
-import websockets from "./websockets";
 
 const appReducer = combineReducers({
   global,
   studies,
   auth,
   ui,
-  websockets,
 });
 
 type AppReducerType = typeof appReducer;

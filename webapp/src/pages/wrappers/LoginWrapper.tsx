@@ -1,66 +1,72 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { PropsWithChildren, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { ConnectedProps, connect } from "react-redux";
-import { useForm } from "react-hook-form";
-import debug from "debug";
-import { AppState } from "../../redux/ducks";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { login, refresh } from "../../redux/ducks/auth";
-
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
 import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLoadingError";
 import AppLoader from "../../components/common/loaders/AppLoader";
-import { updateRefreshInterceptor } from "../../services/api/client";
-import { UserInfo } from "../../common/types";
-import { reconnectWebsocket } from "../../redux/ducks/websockets";
 import FilledTextInput from "../../components/common/FilledTextInput";
 import { needAuth } from "../../services/api/auth";
 import { getAuthUser } from "../../redux/selectors";
-
-const logError = debug("antares:loginwrapper:error");
-
-type FormStatus = "loading" | "default" | "success";
+import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError";
+import { isUserExpired } from "../../services/utils";
+import { initWebSocket } from "../../services/webSockets";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 
 interface Inputs {
   username: string;
   password: string;
 }
 
-const mapState = (state: AppState) => ({
-  user: getAuthUser(state),
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  login,
-  refresh,
-  reconnectWs: reconnectWebsocket,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-type PropTypes = PropsFromRedux;
-
-function LoginWrapper(props: PropsWithChildren<PropTypes>) {
-  const { register, handleSubmit, reset } = useForm<Inputs>();
-  const [status, setStatus] = useState<FormStatus>("default");
-  const [authRequired, setAuthRequired] = useState<boolean>();
-  const [connexionError, setConnexionError] = useState(false);
-  const [loginError, setLoginError] = useState<string>();
-  const [t] = useTranslation();
+function LoginWrapper(props: Props) {
   const { children } = props;
-  const { user, login, refresh, reconnectWs } = props;
+  const { register, handleSubmit, reset, formState } = useForm<Inputs>();
+  const [loginError, setLoginError] = useState("");
+  const { t } = useTranslation();
+  const user = useAppSelector(getAuthUser);
+  const dispatch = useAppDispatch();
 
-  const onSubmit = async (data: Inputs) => {
-    setStatus("loading");
+  const {
+    data: canDisplayApp,
+    isLoading,
+    error,
+  } = usePromiseWithSnackbarError(
+    async () => {
+      const isAuthNeeded = await needAuth();
+      if (!isAuthNeeded) {
+        initWebSocket(dispatch);
+        return true;
+      }
+      if (user) {
+        if (isUserExpired(user)) {
+          await dispatch(refresh()).unwrap();
+        }
+        return true;
+      }
+      return false;
+    },
+    {
+      errorMessage: t("main:loginError"),
+    },
+    [user]
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleLoginSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoginError("");
     setTimeout(async () => {
       try {
-        await login(data).unwrap();
-        setStatus("success");
+        await dispatch(login(data)).unwrap();
       } catch (e) {
-        setStatus("default");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setLoginError((e as any).data?.message || t("main:loginError"));
       } finally {
@@ -69,42 +75,19 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
     }, 500);
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        if (user) {
-          updateRefreshInterceptor(async (): Promise<UserInfo | undefined> => {
-            try {
-              return await refresh().unwrap();
-            } catch (e) {
-              logError("Failed to refresh token");
-            }
-            return undefined;
-          });
-        }
-        const res = await needAuth();
-        setAuthRequired(res);
-      } catch (e) {
-        setConnexionError(true);
-      }
-    })();
-  }, [user]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
-  useEffect(() => {
-    if (authRequired !== undefined && !authRequired) {
-      reconnectWs();
-    }
-  }, [authRequired]);
-
-  if (authRequired === undefined) {
+  if (isLoading) {
     return <AppLoader />;
   }
 
-  if (connexionError) {
+  if (error) {
     return <GlobalPageLoadingError />;
   }
 
-  if (user || !authRequired) {
+  if (canDisplayApp) {
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return <>{children}</>;
   }
@@ -164,7 +147,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
           <Box width="70%" my={2}>
             <form
               style={{ marginTop: "16px" }}
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(handleLoginSubmit)}
             >
               <FilledTextInput
                 label="NNI *"
@@ -176,7 +159,10 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
                 type="password"
                 label={t("main:password")}
                 fullWidth
-                inputProps={{ ...register("password", { required: true }) }}
+                inputProps={{
+                  autoComplete: "current-password",
+                  ...register("password", { required: true }),
+                }}
               />
               {loginError && (
                 <Box
@@ -190,12 +176,12 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
               )}
               <Box display="flex" justifyContent="center" mt={6}>
                 <Button
-                  disabled={status === "loading"}
+                  disabled={formState.isSubmitting}
                   type="submit"
                   variant="contained"
                   color="primary"
                 >
-                  {status === "loading" && (
+                  {formState.isSubmitting && (
                     <CircularProgress size="1em" sx={{ mr: "1em" }} />
                   )}
                   {t("main:connexion")}
@@ -209,4 +195,4 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
   );
 }
 
-export default connector(LoginWrapper);
+export default LoginWrapper;
