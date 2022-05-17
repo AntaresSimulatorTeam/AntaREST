@@ -8,7 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Link,
     Simulation,
-    Set,
+    DistrictSet,
     Cluster,
     BindingConstraintDTO,
 )
@@ -138,7 +138,7 @@ output = true
     (study_path / "input/areas/sets.ini").write_text(content)
 
     assert ConfigPathBuilder._parse_sets(study_path) == {
-        "hello": Set(areas=["a", "b"], output=True, inverted_set=False)
+        "hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)
     }
 
 

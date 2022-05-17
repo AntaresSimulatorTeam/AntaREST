@@ -179,6 +179,7 @@ class CommandReverter:
                 and command.area1 == base_command.area1
                 and command.area2 == base_command.area2
             ):
+                # TODO: fetch update_config/replace_matrix concerning this link
                 return [command]
         area_from, area_to = sorted([base_command.area1, base_command.area2])
         try:
@@ -249,6 +250,7 @@ class CommandReverter:
                 isinstance(command, CreateBindingConstraint)
                 and transform_name_to_id(command.name) == base_command.id
             ):
+                # TODO: return also the update_binding_constraint commands
                 return [command]
 
         try:
@@ -331,6 +333,7 @@ class CommandReverter:
                 == base_command.cluster_id
                 and command.area_id == base_command.area_id
             ):
+                # TODO: fetch update_config/replace_matrix concerning this cluster
                 return [command]
 
         try:

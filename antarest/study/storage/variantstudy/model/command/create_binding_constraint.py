@@ -7,7 +7,6 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     FileStudyTreeConfig,
-    BindingConstraintDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import (
@@ -16,6 +15,7 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     apply_binding_constraint,
+    parse_bindings_coeffs_and_save_into_config,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -59,23 +59,12 @@ class CreateBindingConstraint(ICommand):
             return validate_matrix(v, values)
 
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
-        if bd_id not in [bind.id for bind in study_data.bindings]:
-            areas_set = set()
-            clusters = []
-            for k, v in self.coeffs.items():
-                if "%" in k:
-                    areas_set.add(k.split("%")[0])
-                    areas_set.add(k.split("%")[1])
-                elif "." in k:
-                    clusters.append(k)
-                    areas_set.add(k.split(".")[0])
-            areas = list(areas_set)
-            study_data.bindings.append(
-                BindingConstraintDTO(id=id, areas=areas, clusters=clusters)
-            )
+        parse_bindings_coeffs_and_save_into_config(
+            bd_id, study_data_config, self.coeffs
+        )
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:

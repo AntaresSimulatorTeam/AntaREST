@@ -221,10 +221,11 @@ class VariantCommandsExtractor:
                 command_list = first_commands
                 priority = 3
 
+            command_reverter = CommandReverter()
             command_list.extend(
                 [
                     (priority, command)
-                    for command in CommandReverter().revert(
+                    for command in command_reverter.revert(
                         command_obj,
                         history=base_commands[:index],
                         base=empty_study,

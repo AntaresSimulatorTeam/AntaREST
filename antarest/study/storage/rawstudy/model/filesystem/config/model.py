@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Set
 
 from pydantic.main import BaseModel
 
@@ -58,7 +58,7 @@ class Area(BaseModel):
     filters_year: List[str]
 
 
-class Set(BaseModel):
+class DistrictSet(BaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
@@ -99,8 +99,8 @@ class Simulation(BaseModel):
 
 class BindingConstraintDTO(BaseModel):
     id: str
-    areas: List[str]
-    clusters: List[str]
+    areas: Set[str]
+    clusters: Set[str]
 
 
 class FileStudyTreeConfig(DTO):
@@ -116,7 +116,7 @@ class FileStudyTreeConfig(DTO):
         version: int,
         output_path: Optional[Path] = None,
         areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, Set]] = None,
+        sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
@@ -269,7 +269,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     version: int
     output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
-    sets: Dict[str, Set] = dict()
+    sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraintDTO] = list()
     store_new_set: bool = False

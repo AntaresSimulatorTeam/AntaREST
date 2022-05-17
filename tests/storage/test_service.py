@@ -53,7 +53,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Simulation,
     Link,
-    Set,
+    DistrictSet,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
@@ -569,7 +569,7 @@ def test_download_output() -> None:
         study_id="",
         version=-1,
         areas={"east": area},
-        sets={"north": Set()},
+        sets={"north": DistrictSet()},
         outputs={"output-id": sim},
         store_new_set=False,
     )

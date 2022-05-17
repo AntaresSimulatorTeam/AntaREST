@@ -5,7 +5,7 @@ from pydantic import validator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
-    Set,
+    DistrictSet,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -61,7 +61,7 @@ class CreateDistrict(ICommand):
 
         base_filter = self.base_filter or DistrictBaseFilter.remove_all
         inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.sets[district_id] = Set(
+        study_data.sets[district_id] = DistrictSet(
             name=self.name,
             areas=self.filter_items or [],
             output=self.output if self.output is not None else True,

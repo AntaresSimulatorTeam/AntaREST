@@ -4,6 +4,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    remove_area_cluster_from_binding_constraints,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -27,13 +30,17 @@ class RemoveRenewablesCluster(ICommand):
         )
 
     def _remove_renewables_cluster(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> None:
-        study_data.areas[self.area_id].renewables = [
+        study_data_config.areas[self.area_id].renewables = [
             cluster
-            for cluster in study_data.areas[self.area_id].renewables
+            for cluster in study_data_config.areas[self.area_id].renewables
             if cluster.id != self.cluster_id.lower()
         ]
+
+        remove_area_cluster_from_binding_constraints(
+            study_data_config, self.area_id, self.cluster_id
+        )
 
     def _apply_config(
         self, study_data: FileStudyTreeConfig
@@ -65,10 +72,6 @@ class RemoveRenewablesCluster(ICommand):
                 dict(),
             )
         self._remove_renewables_cluster(study_data)
-
-        for binding in study_data.bindings:
-            if f"{self.area_id}.{self.cluster_id}" in binding.clusters:
-                study_data.bindings.remove(binding)
 
         return (
             CommandOutput(

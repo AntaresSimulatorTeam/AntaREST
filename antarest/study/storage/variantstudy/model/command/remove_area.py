@@ -5,6 +5,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    remove_area_cluster_from_binding_constraints,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -24,20 +27,20 @@ class RemoveArea(ICommand):
             command_name=CommandName.REMOVE_AREA, version=1, **data
         )
 
-    def _apply_config(
+    def _remove_area_from_links_in_config(
         self, study_data_config: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        del study_data_config.areas[self.id]
-
+    ) -> None:
         link_to_remove = []
         for area_name, area in study_data_config.areas.items():
             for link in area.links.keys():
                 if link == self.id:
                     link_to_remove.append((area_name, link))
-
         for area_name, link in link_to_remove:
             del study_data_config.areas[area_name].links[link]
 
+    def _remove_area_from_sets_in_config(
+        self, study_data_config: FileStudyTreeConfig
+    ) -> None:
         for id, set in study_data_config.sets.items():
             if set.areas and self.id in set.areas:
                 try:
@@ -46,9 +49,17 @@ class RemoveArea(ICommand):
                 except ValueError:
                     pass
 
-        for binding in study_data_config.bindings:
-            if self.id in binding.areas:
-                study_data_config.bindings.remove(binding)
+    def _apply_config(
+        self, study_data_config: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        del study_data_config.areas[self.id]
+
+        self._remove_area_from_links_in_config(study_data_config)
+        self._remove_area_from_sets_in_config(study_data_config)
+
+        remove_area_cluster_from_binding_constraints(
+            study_data_config, self.id
+        )
 
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),

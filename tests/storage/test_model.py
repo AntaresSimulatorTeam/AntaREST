@@ -4,7 +4,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
     FileStudyTreeConfig,
     Area,
-    Set,
+    DistrictSet,
     Simulation,
     BindingConstraintDTO,
 )
@@ -27,7 +27,7 @@ def test_file_study_tree_config_dto():
                 filters_year=[],
             )
         },
-        sets={"s": Set()},
+        sets={"s": DistrictSet()},
         outputs={
             "o": Simulation(
                 name="o",

@@ -15,7 +15,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    Set,
+    DistrictSet,
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -170,7 +170,7 @@ class AreaManager:
             else AreaType.DISTRICT,
             metadata=patch.areas.get(area_id),
             set=area_or_set.get_areas(list(file_study.config.areas.keys()))
-            if isinstance(area_or_set, Set)
+            if isinstance(area_or_set, DistrictSet)
             else [],
         )
 

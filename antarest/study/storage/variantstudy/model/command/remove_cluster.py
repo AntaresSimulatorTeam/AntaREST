@@ -4,6 +4,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    remove_area_cluster_from_binding_constraints,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -32,9 +35,9 @@ class RemoveCluster(ICommand):
         ]
 
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area_id not in study_data.areas:
+        if self.area_id not in study_data_config.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -47,7 +50,9 @@ class RemoveCluster(ICommand):
             len(
                 [
                     cluster
-                    for cluster in study_data.areas[self.area_id].thermals
+                    for cluster in study_data_config.areas[
+                        self.area_id
+                    ].thermals
                     if cluster.id == self.cluster_id
                 ]
             )
@@ -60,12 +65,10 @@ class RemoveCluster(ICommand):
                 ),
                 dict(),
             )
-        self._remove_cluster(study_data)
-        for binding in study_data.bindings:
-            if f"{self.area_id}.{self.cluster_id}" in binding.clusters:
-                study_data.bindings.remove(binding)
-        # We should remove here the potential binding constraints using this cluster.
-        # However, with only the FileStudyTreeConfig, and without reading the actual file, there is no way to do it.
+        self._remove_cluster(study_data_config)
+        remove_area_cluster_from_binding_constraints(
+            study_data_config, self.area_id, self.cluster_id
+        )
 
         return (
             CommandOutput(

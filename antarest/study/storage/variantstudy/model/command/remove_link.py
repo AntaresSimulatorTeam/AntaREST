@@ -132,11 +132,6 @@ class RemoveLink(ICommand):
             return False
         return self.area1 == other.area1 and self.area2 == other.area2
 
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        pass
-
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
 

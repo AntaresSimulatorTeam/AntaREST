@@ -22,12 +22,13 @@ def execute_or_add_commands(
 ) -> None:
     if isinstance(study, RawStudy):
         executed_commands: List[ICommand] = []
+        command_reverter = CommandReverter()
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
                 for i in range(0, len(executed_commands)):
                     executed_command = executed_commands[i]
-                    revert_command_list = CommandReverter().revert(
+                    revert_command_list = command_reverter.revert(
                         executed_command,
                         history=executed_commands[i + 1 :],
                         base=file_study,
