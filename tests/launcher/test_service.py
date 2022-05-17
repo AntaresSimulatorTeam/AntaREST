@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from datetime import datetime, timedelta
@@ -38,6 +39,7 @@ from antarest.launcher.service import (
     LauncherService,
     ORPHAN_JOBS_VISIBILITY_THRESHOLD,
     JobNotFound,
+    LAUNCHER_PARAM_NAME_SUFFIX,
 )
 from antarest.login.auth import Auth
 from antarest.login.model import User
@@ -565,7 +567,13 @@ def test_manage_output(tmp_path: Path):
         JobResult(id=job_id, study_id=study_id),
         JobResult(id=job_id, study_id=study_id, output_id="some id"),
         JobResult(id=job_id, study_id=study_id),
-        JobResult(id=job_id, study_id=study_id),
+        JobResult(
+            id=job_id,
+            study_id=study_id,
+            launcher_params=json.dumps(
+                {f"{LAUNCHER_PARAM_NAME_SUFFIX}": "hello"}
+            ),
+        ),
     ]
     with pytest.raises(JobNotFound):
         launcher_service._import_output(
@@ -602,6 +610,7 @@ def test_manage_output(tmp_path: Path):
         job_id, output_path, {"out.log": [additional_log]}
     )
     assert output_name is not None
+    assert output_name.endswith("-hello")
     assert launcher_service._get_job_output_fallback_path(job_id).exists()
     assert (
         launcher_service._get_job_output_fallback_path(job_id)

@@ -76,6 +76,7 @@ class LauncherServiceNotAvailableException(HTTPException):
 
 
 ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
+LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 
 
 class LauncherService:
@@ -485,6 +486,7 @@ class LauncherService:
         job_id: str,
         output_path: Path,
         additional_logs: Dict[str, List[Path]],
+        output_suffix_name: Optional[str] = None,
     ) -> Optional[str]:
         logger.info(
             f"Trying to import output in fallback tmp space for job {job_id}"
@@ -496,7 +498,9 @@ class LauncherService:
             imported_output = job_output_path / "imported"
             shutil.copytree(output_path, imported_output)
             fix_study_root(imported_output)
-            output_name = extract_output_name(imported_output)
+            output_name = extract_output_name(
+                imported_output, output_suffix_name
+            )
             imported_output.rename(Path(job_output_path, output_name))
             if additional_logs:
                 for log_name, log_paths in additional_logs.items():
@@ -521,14 +525,17 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
+                job_launch_params: Optional[JSON] = (
+                    json.loads(job_result.launcher_params)
+                    if job_result.launcher_params
+                    else {}
+                )
                 output_true_path = find_single_output_path(output_path)
                 self._before_import_hooks(
                     job_id,
                     job_result.study_id,
                     output_true_path,
-                    json.loads(job_result.launcher_params)
-                    if job_result.launcher_params
-                    else None,
+                    job_launch_params,
                 )
                 try:
                     return self.study_service.import_output(
@@ -536,10 +543,18 @@ class LauncherService:
                         output_true_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
                         additional_logs,
+                        job_launch_params.get(
+                            LAUNCHER_PARAM_NAME_SUFFIX, None
+                        ),
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
-                        job_id, output_true_path, additional_logs
+                        job_id,
+                        output_true_path,
+                        additional_logs,
+                        job_launch_params.get(
+                            LAUNCHER_PARAM_NAME_SUFFIX, None
+                        ),
                     )
         raise JobNotFound()
 

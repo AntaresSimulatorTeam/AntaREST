@@ -98,13 +98,17 @@ class IStudyStorageService(ABC, Generic[T]):
 
     @abstractmethod
     def import_output(
-        self, study: T, output: Union[IO[bytes], Path]
+        self,
+        study: T,
+        output: Union[IO[bytes], Path],
+        output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import an output
         Args:
             study: the study
             output: Path of the output or raw data
+            output_name: Optional name suffix to append to the output name
         Returns: None
         """
         raise NotImplementedError()

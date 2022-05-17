@@ -1266,6 +1266,7 @@ class StudyService:
         output: Union[IO[bytes], Path],
         params: RequestParameters,
         additional_logs: Optional[Dict[str, List[Path]]] = None,
+        output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1274,6 +1275,7 @@ class StudyService:
             output: zip file with simulation folder or simulation folder path
             params: request parameters
             additional_logs: path to the simulation log
+            output_name_suffix: optional suffix name for the output
 
         Returns: output simulation json formatted
 
@@ -1287,7 +1289,7 @@ class StudyService:
             )
 
         res = self.storage_service.get_storage(study).import_output(
-            study, output
+            study, output, output_name_suffix
         )
         if res is not None and additional_logs:
             for log_name, log_paths in additional_logs.items():
