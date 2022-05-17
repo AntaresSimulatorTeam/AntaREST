@@ -269,6 +269,8 @@ export interface LaunchOptions {
   post_processing?: boolean;
   // eslint-disable-next-line camelcase
   adequacy_patch?: object;
+  // eslint-disable-next-line camelcase
+  output_suffix?: string;
 }
 
 export const launchStudy = async (

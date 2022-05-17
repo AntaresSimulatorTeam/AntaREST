@@ -265,9 +265,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
-            output_name = None
+            output_full_name = None
 
-        return output_name
+        return output_full_name
 
     def export_study(
         self, metadata: T, target: Path, outputs: bool = True
