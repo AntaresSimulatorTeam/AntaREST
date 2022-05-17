@@ -138,6 +138,15 @@ def test_main(app: FastAPI):
     res_output = res.json()
     assert len(res_output) == 4
 
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 417
+    assert res.json()["description"] == "Not a year by year simulation"
+
     # Set new comments
     res = client.put(
         f"/v1/studies/{study_id}/comments",

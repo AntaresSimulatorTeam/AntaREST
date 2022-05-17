@@ -465,14 +465,9 @@ class StudyDownloader:
                         output_data.addfile(tarinfo=info, fileobj=data_file)
 
 
-class NotAByYearSimulation(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(HTTPStatus.NOT_ACCEPTABLE)
-
-
 class BadOutputFormat(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(HTTPStatus.NOT_ACCEPTABLE)
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
 def find_first_child(
@@ -487,7 +482,7 @@ def find_first_child(
             children.keys(),
         ).__next__()
     except StopIteration:
-        raise BadOutputFormat()
+        raise BadOutputFormat("Couldn't find an output sample")
     return children[first_child]
 
 
@@ -495,7 +490,7 @@ def get_output_variables_information(
     study: FileStudy, output_name: str
 ) -> Dict[str, List[str]]:
     if not study.config.outputs[output_name].by_year:
-        raise NotAByYearSimulation()
+        raise BadOutputFormat("Not a year by year simulation")
 
     first_year_result: Dict[str, INode[Any, Any, Any]] = cast(
         FolderNode,
