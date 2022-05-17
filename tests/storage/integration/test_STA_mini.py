@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.model import JSON
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -630,3 +630,60 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
         url=url,
         expected_output=expected_output,
     )
+
+
+def test_sta_mini_output_variables(storage_service):
+    variables = storage_service.output_variables_information(
+        "STA-mini",
+        "20201014-1422eco-hello",
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    assert variables["area"] == [
+        "OV. COST",
+        "OP. COST",
+        "MRG. PRICE",
+        "CO2 EMIS.",
+        "BALANCE",
+        "ROW BAL.",
+        "PSP",
+        "MISC. NDG",
+        "LOAD",
+        "H. ROR",
+        "WIND",
+        "SOLAR",
+        "NUCLEAR",
+        "LIGNITE",
+        "COAL",
+        "GAS",
+        "OIL",
+        "MIX. FUEL",
+        "MISC. DTG",
+        "H. STOR",
+        "H. PUMP",
+        "H. LEV",
+        "H. INFL",
+        "H. OVFL",
+        "H. VAL",
+        "H. COST",
+        "UNSP. ENRG",
+        "SPIL. ENRG",
+        "LOLD",
+        "LOLP",
+        "AVL DTG",
+        "DTG MRG",
+        "MAX MRG",
+        "NP COST",
+        "NODU",
+    ]
+    assert variables["link"] == [
+        "FLOW LIN.",
+        "UCAP LIN.",
+        "LOOP FLOW",
+        "FLOW QUAD.",
+        "CONG. FEE (ALG.)",
+        "CONG. FEE (ABS.)",
+        "MARG. COST",
+        "CONG. PROB +",
+        "CONG. PROB -",
+        "HURDLE COST",
+    ]
