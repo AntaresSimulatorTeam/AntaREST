@@ -49,9 +49,7 @@ export default function MatrixView(props: PropTypes) {
   useEffect(() => {
     const columnsData: Array<ColumnsType> = (
       prependIndex ? [{ title: "Time", readOnly }] : []
-    ).concat(
-      columns.map((title) => ({ title: String(title), readOnly: false }))
-    );
+    ).concat(columns.map((title) => ({ title: String(title), readOnly })));
     setColumns(columnsData);
 
     const tmpData = data.map((row, i) =>

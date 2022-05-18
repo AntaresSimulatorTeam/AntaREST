@@ -17,7 +17,7 @@ import {
   getExportMatrixUrl,
 } from "../services/api/matrix";
 import { MatrixInfoDTO, MatrixDataSetDTO } from "../common/types";
-import DataDialog from "../components/data/DataDialog";
+import DatasetCreationDialog from "../components/data/DatasetCreationDialog";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
 import RootPage from "../components/common/page/RootPage";
 import MatrixDialog from "../components/data/MatrixDialog";
@@ -258,7 +258,7 @@ function Data(props: PropTypes) {
         />
       )}
       {openModal && (
-        <DataDialog
+        <DatasetCreationDialog
           open={openModal} // Why 'openModal &&' ? => Otherwise previous data are still present
           data={currentData}
           onNewDataUpdate={onNewDataUpdate}

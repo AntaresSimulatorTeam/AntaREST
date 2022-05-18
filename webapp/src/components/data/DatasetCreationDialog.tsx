@@ -27,7 +27,7 @@ interface PropTypes {
   onClose: () => void;
 }
 
-function DataModal(props: PropTypes) {
+function DatasetCreationDialog(props: PropTypes) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -305,7 +305,7 @@ function DataModal(props: PropTypes) {
                       key={item.id}
                       label={item.name}
                       onClick={() => onGroupClick(false, item)}
-                      color="primary"
+                      color="secondary"
                     />
                   );
                 }
@@ -314,7 +314,6 @@ function DataModal(props: PropTypes) {
                     key={item.id}
                     label={item.name}
                     onClick={() => onGroupClick(true, item)}
-                    color="secondary"
                   />
                 );
               })}
@@ -326,4 +325,4 @@ function DataModal(props: PropTypes) {
   );
 }
 
-export default DataModal;
+export default DatasetCreationDialog;
