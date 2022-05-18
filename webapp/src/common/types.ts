@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-import { Moment } from "moment";
 import { ReactNode } from "react";
 
 export type IdType = number | string;
@@ -188,15 +186,22 @@ export interface JWTGroup {
 }
 
 export interface UserInfo {
-  user: string; // TODO: contains user id instead of user name
+  user: string;
   groups: Array<JWTGroup>;
   id: number;
   impersonator: number;
   type: string;
   accessToken: string;
   refreshToken: string;
-  expirationDate?: Moment;
+  expirationDate?: number;
 }
+
+export interface RefreshDTO {
+  access_token: string;
+  refresh_token: string;
+  user: number;
+}
+
 export interface BotDTO extends IdentityDTO<number> {
   owner: number;
   is_author: boolean;
@@ -292,14 +297,15 @@ export enum DefaultFilterKey {
   MANAGED = "v2.studylisting.filter.managed",
   SORTING = "v2.studylisting.filter.sorting",
   FOLDER = "v2.studylisting.filter.folder",
-  FAVORITE_STUDIES = "v2.studylisting.favorite",
+  FAVORITE_STUDIES = "v2.studylisting.favorites",
   TAGS = "v2.studylisting.filter.tag",
   ARCHIVED = "v2.studylisting.filter.archived",
 }
 
-export interface WSMessage {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface WSMessage<T = any> {
   type: string;
-  payload: unknown;
+  payload: T;
 }
 
 export interface WSLogMessage {

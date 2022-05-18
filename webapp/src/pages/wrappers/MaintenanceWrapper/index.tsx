@@ -6,13 +6,13 @@ import debug from "debug";
 import { Box, Button, keyframes, styled, Typography } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
-import { AppState } from "../../../store/reducers";
+import { AppState } from "../../../redux/ducks";
 import { isUserAdmin } from "../../../services/utils";
 import { getMaintenanceMode } from "../../../services/api/maintenance";
 import { getConfig } from "../../../services/config";
-import { setMaintenanceMode } from "../../../store/global";
 import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
+import { setMaintenanceMode } from "../../../redux/ducks/ui";
 
 const logError = debug("antares:maintenancewrapper:error");
 
@@ -31,7 +31,7 @@ const StyledErrorIcon = styled(ErrorIcon)(({ theme }) => ({
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
-  maintenance: state.global.maintenanceMode,
+  maintenance: state.ui.maintenanceMode,
 });
 
 const mapDispatch = {

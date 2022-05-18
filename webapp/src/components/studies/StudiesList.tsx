@@ -44,10 +44,13 @@ import {
   STUDIES_HEIGHT_HEADER,
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../theme";
-import { AppState } from "../../store/reducers";
-import { removeStudies, updateScrollPosition } from "../../store/study";
+import { AppState } from "../../redux/ducks";
 import {
-  deleteStudy as callDeleteStudy,
+  deleteStudy,
+  setStudyScrollPosition,
+  StudiesState,
+} from "../../redux/ducks/studies";
+import {
   copyStudy as callCopyStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
@@ -82,7 +85,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
         <StudyCard
           study={study}
           width={columnWidth}
-          favorite={favorites.map((f: GenericInfo) => f.id).includes(study.id)}
+          favorite={favorites.includes(study.id)}
           onLaunchClick={() => onLaunchClick(study)}
           onFavoriteClick={onFavoriteClick}
           onImportStudy={importStudy}
@@ -97,12 +100,12 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
 }, areEqual);
 
 const mapState = (state: AppState) => ({
-  scrollPosition: state.study.scrollPosition,
+  scrollPosition: state.studies.scrollPosition,
 });
 
 const mapDispatch = {
-  removeStudy: (sid: string) => removeStudies([sid]),
-  updateScroll: updateScrollPosition,
+  removeStudy: deleteStudy,
+  updateScroll: setStudyScrollPosition,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -111,7 +114,7 @@ export interface StudyListProps {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
-  favorites: Array<GenericInfo>;
+  favorites: StudiesState["favorites"];
   onFavoriteClick: (value: GenericInfo) => void;
   sortItem: SortItem;
   setSortItem: (value: SortItem) => void;
@@ -200,8 +203,7 @@ function StudiesList(props: PropTypes) {
   const deleteStudy = async (study: StudyMetadata) => {
     // eslint-disable-next-line no-alert
     try {
-      await callDeleteStudy(study.id);
-      removeStudy(study.id);
+      await removeStudy(study.id).unwrap();
     } catch (e) {
       enqueueErrorSnackbar(
         t("studymanager:failtodeletestudy"),

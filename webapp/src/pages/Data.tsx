@@ -8,7 +8,6 @@ import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Typography, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
-import { AppState } from "../store/reducers";
 import DataPropsView from "../components/data/DataPropsView";
 import {
   deleteDataSet,
@@ -25,6 +24,7 @@ import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import SplitLayoutView from "../components/common/SplitLayoutView";
 import FileTable from "../components/common/FileTable";
+import { AppState } from "../redux/ducks";
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,

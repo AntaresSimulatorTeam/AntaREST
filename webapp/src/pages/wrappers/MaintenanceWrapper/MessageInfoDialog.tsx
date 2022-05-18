@@ -3,12 +3,12 @@ import { Box, styled, Typography } from "@mui/material";
 import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import { AppState } from "../../../store/reducers";
 import { isStringEmpty, isUserAdmin } from "../../../services/utils";
 import { getMessageInfo } from "../../../services/api/maintenance";
-import { setMessageInfo } from "../../../store/global";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import OkDialog from "../../../components/common/dialogs/OkDialog";
+import { AppState } from "../../../redux/ducks";
+import { setMessageInfo } from "../../../redux/ducks/ui";
 
 export const Main = styled(Box)(({ theme }) => ({
   width: "600px",
@@ -24,7 +24,7 @@ export const Main = styled(Box)(({ theme }) => ({
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
-  messageInfo: state.global.messageInfo,
+  messageInfo: state.ui.messageInfo,
 });
 
 const mapDispatch = {

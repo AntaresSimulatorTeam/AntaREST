@@ -27,19 +27,16 @@ import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import DownloadLink from "../components/common/DownloadLink";
 import LogModal from "../components/common/LogModal";
 import {
-  addListener,
-  removeListener,
-  subscribe,
-  unsubscribe,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
-} from "../store/websockets";
+} from "../services/webSockets";
 import JobTableView from "../components/tasks/JobTableView";
 import { convertUTCToLocalTime } from "../services/utils/index";
 import {
   downloadJobOutput,
   killStudy,
   getStudyJobs,
-  getStudies,
 } from "../services/api/study";
 import {
   convertFileDownloadDTO,
@@ -48,7 +45,7 @@ import {
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
-import { initStudies } from "../store/study";
+import { fetchStudies } from "../redux/ducks/studies";
 import {
   LaunchJob,
   TaskDTO,
@@ -59,23 +56,20 @@ import {
   TaskStatus,
 } from "../common/types";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
-import { AppState } from "../store/reducers";
+import { AppState } from "../redux/ducks";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import { getStudies } from "../redux/selectors";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
 
 const logError = debug("antares:studymanagement:error");
 
 const mapState = (state: AppState) => ({
-  studies: state.study.studies,
+  studies: getStudies(state),
 });
 
 const mapDispatch = {
-  loadStudies: initStudies,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-  subscribeChannel: subscribe,
-  unsubscribeChannel: unsubscribe,
+  loadStudies: fetchStudies,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -83,14 +77,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 function JobsListing(props: PropTypes) {
-  const {
-    studies,
-    loadStudies,
-    addWsListener,
-    removeWsListener,
-    subscribeChannel,
-    unsubscribeChannel,
-  } = props;
+  const { studies, loadStudies } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
@@ -109,8 +96,7 @@ function JobsListing(props: PropTypes) {
     setLoaded(false);
     try {
       if (studies.length === 0) {
-        const allStudies = await getStudies();
-        loadStudies(allStudies);
+        await loadStudies().unwrap();
       }
       const allJobs = await getStudyJobs(undefined, false);
       setJobs(allJobs);
@@ -232,27 +218,16 @@ function JobsListing(props: PropTypes) {
         );
       }
     };
-    addWsListener(listener);
-    return () => {
-      removeWsListener(listener);
-    };
-  }, [addWsListener, removeWsListener, downloads, tasks, setTasks]);
+
+    return addWsMessageListener(listener);
+  }, [downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
-      tasks.forEach((task) => {
-        subscribeChannel(WsChannel.TASK + task.id);
-      });
-      return () => {
-        tasks.forEach((task) => {
-          unsubscribeChannel(WsChannel.TASK + task.id);
-        });
-      };
+      const channels = tasks.map((task) => WsChannel.Task + task.id);
+      return sendWsSubscribeMessage(channels);
     }
-    return () => {
-      /* noop */
-    };
-  }, [tasks, subscribeChannel, unsubscribeChannel]);
+  }, [tasks]);
 
   useEffect(() => {
     init();

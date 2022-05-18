@@ -9,7 +9,7 @@ import Groups from "../components/settings/Groups";
 import Maintenance from "../components/settings/Maintenance";
 import Tokens from "../components/settings/Tokens";
 import Users from "../components/settings/Users";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../store/selectors";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../redux/selectors";
 
 /**
  * Component

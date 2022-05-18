@@ -25,19 +25,23 @@ import {
 import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
-import { getStudies } from "../../services/api/study";
-import { AppState } from "../../store/reducers";
+import { AppState } from "../../redux/ducks";
 import {
-  initStudies,
-  initStudiesVersion,
+  fetchStudies,
+  fetchStudyVersions,
   toggleFavorite as dipatchToggleFavorite,
-} from "../../store/study";
+} from "../../redux/ducks/studies";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import RootPage from "../../components/common/page/RootPage";
 import HeaderTopRight from "../../components/studies/HeaderTopRight";
 import HeaderBottom from "../../components/studies/HeaderBottom";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../components/common/loaders/SimpleLoader";
+import {
+  getFavoriteStudies,
+  getStudies,
+  getStudyVersions,
+} from "../../redux/selectors";
 
 const logErr = debug("antares:studies:error");
 
@@ -46,14 +50,14 @@ const StudiesListMemo = memo((props: StudyListProps) => (
 ));
 
 const mapState = (state: AppState) => ({
-  studies: state.study.studies,
-  versions: state.study.versionList,
-  favorites: state.study.favorites,
+  studies: getStudies(state),
+  versions: getStudyVersions(state),
+  favorites: getFavoriteStudies(state),
 });
 
 const mapDispatch = {
-  loadStudies: initStudies,
-  loadVersions: initStudiesVersion,
+  loadStudies: fetchStudies,
+  loadVersions: fetchStudyVersions,
   toggleFavorite: dipatchToggleFavorite,
 };
 
@@ -136,9 +140,7 @@ function Studies(props: PropTypes) {
       setLoaded(false);
       try {
         if (studies.length === 0 || refresh) {
-          const allStudies = await getStudies();
-          loadStudies(allStudies);
-          setFilteredStudies(allStudies);
+          await loadStudies().unwrap();
         }
       } catch (e) {
         enqueueErrorSnackbar(
@@ -270,6 +272,9 @@ function Studies(props: PropTypes) {
 
   const init = async () => {
     try {
+      if (versions.length === 0) {
+        await loadVersions().unwrap();
+      }
       const userRes = await getUsers();
       setUserList(userRes);
 
@@ -280,11 +285,9 @@ function Studies(props: PropTypes) {
     }
   };
 
+  // TODO: no promise in useEffect
   useEffect(() => {
     init();
-    if (!versions) {
-      loadVersions();
-    }
     getAllStudies(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -358,7 +361,7 @@ function Studies(props: PropTypes) {
           studies={studies}
           folder={currentFolder as string}
           setFolder={setCurrentFolder}
-          favorite={favorites as Array<GenericInfo>}
+          favorites={favorites}
         />
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
         {!loaded && <SimpleLoader />}

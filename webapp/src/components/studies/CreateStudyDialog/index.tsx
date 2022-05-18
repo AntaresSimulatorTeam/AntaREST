@@ -5,40 +5,30 @@ import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { connect, ConnectedProps } from "react-redux";
+import { usePromise } from "react-use";
 import SingleSelect from "../../common/SelectSingle";
 import MultiSelect from "../../common/SelectMulti";
-import { AppState } from "../../../store/reducers";
 import { convertVersions } from "../../../services/utils";
 import FilledTextInput from "../../common/FilledTextInput";
-import {
-  GenericInfo,
-  GroupDTO,
-  StudyMetadata,
-  StudyPublicMode,
-} from "../../../common/types";
+import { GenericInfo, GroupDTO, StudyPublicMode } from "../../../common/types";
 import TextSeparator from "../../common/TextSeparator";
-import {
-  changePublicMode,
-  createStudy,
-  getStudyMetadata,
-  updateStudyMetadata,
-} from "../../../services/api/study";
-import { addStudies, initStudiesVersion } from "../../../store/study";
 import { getGroups } from "../../../services/api/user";
 import TagTextInput from "../../common/TagTextInput";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import { Root, ElementContainer, InputElement } from "./style";
+import { AppState } from "../../../redux/ducks";
+import { createStudy } from "../../../redux/ducks/studies";
+import { getStudyVersions } from "../../../redux/selectors";
 
 const logErr = debug("antares:createstudyform:error");
 
 const mapState = (state: AppState) => ({
-  versions: state.study.versionList,
+  versions: getStudyVersions(state),
 });
 
 const mapDispatch = {
-  addStudy: (study: StudyMetadata) => addStudies([study]),
-  loadVersions: initStudiesVersion,
+  addStudy: createStudy,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -55,6 +45,7 @@ function CreateStudyModal(props: PropTypes) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const versionList = convertVersions(versions || []);
+  const mounted = usePromise();
 
   // NOTE: GET TAG LIST FROM BACKEND
   const tagList: Array<string> = [];
@@ -64,7 +55,7 @@ function CreateStudyModal(props: PropTypes) {
   );
   const [studyName, setStudyName] = useState<string>("");
   const [publicMode, setPublicMode] = useState<StudyPublicMode>("NONE");
-  const [group, setGroup] = useState<Array<string>>([]);
+  const [groups, setGroups] = useState<Array<string>>([]);
   const [tags, setTags] = useState<Array<string>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [actionButtonDisabled, setActionButtonDisabled] =
@@ -74,20 +65,16 @@ function CreateStudyModal(props: PropTypes) {
     setActionButtonDisabled(true);
     if (studyName && studyName.replace(/\s+/g, "") !== "") {
       try {
-        let vrs = versionList[versionList.length - 1].id as number;
-        if (version) {
-          const index = versionList.findIndex(
-            (elm) => elm.id.toString() === version
-          );
-          if (index >= 0) {
-            vrs = versionList[index].id as number;
-          }
-        }
-        const sid = await createStudy(studyName, vrs, group);
-        const metadata = await getStudyMetadata(sid);
-        await changePublicMode(sid, publicMode);
-        if (tags.length > 0) await updateStudyMetadata(sid, { tags });
-        addStudy(metadata);
+        await mounted(
+          addStudy({
+            name: studyName,
+            version,
+            groups,
+            publicMode,
+            tags,
+          }).unwrap()
+        );
+
         enqueueSnackbar(
           t("studymanager:createStudySuccess", { studyname: studyName }),
           { variant: "success" }
@@ -185,8 +172,8 @@ function CreateStudyModal(props: PropTypes) {
             <MultiSelect
               name={t("studymanager:group")}
               list={groupList}
-              data={group}
-              setValue={setGroup}
+              data={groups}
+              setValue={setGroups}
               sx={{ flexGrow: 1, ml: 1 }}
             />
           </InputElement>

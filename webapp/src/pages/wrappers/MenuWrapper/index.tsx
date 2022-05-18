@@ -37,8 +37,8 @@ import {
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
-import { AppState } from "../../../store/reducers";
-import { setMenuExtensionStatusAction } from "../../../store/ui";
+import { AppState } from "../../../redux/ducks";
+import { setMenuExtensionStatus } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
   NavListItem,
@@ -52,8 +52,12 @@ import {
   LogoContainer,
 } from "./styles";
 import { getConfig } from "../../../services/config";
+import {
+  getCurrentStudyId,
+  getWebSocketConnected,
+} from "../../../redux/selectors";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
-import { logoutAction } from "../../../store/auth";
+import { logout } from "../../../redux/ducks/auth";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -90,13 +94,13 @@ interface MenuItem {
 
 const mapState = (state: AppState) => ({
   extended: state.ui.menuExtended,
-  currentStudy: state.study.current,
-  websocketConnected: state.websockets.connected,
+  currentStudy: getCurrentStudyId(state),
+  websocketConnected: getWebSocketConnected(state),
 });
 
 const mapDispatch = {
-  setExtended: setMenuExtensionStatusAction,
-  logout: logoutAction,
+  setExtended: setMenuExtensionStatus,
+  logout,
 };
 
 const connector = connect(mapState, mapDispatch);

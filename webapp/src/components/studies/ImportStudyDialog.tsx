@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as R from "ramda";
 import { AxiosError } from "axios";
 import { Box, LinearProgress, Paper, Typography } from "@mui/material";
@@ -6,86 +6,96 @@ import { useTranslation } from "react-i18next";
 import { connect, ConnectedProps } from "react-redux";
 import Dropzone from "react-dropzone";
 import { useSnackbar } from "notistack";
-import { usePromise } from "react-use";
-import { getStudyMetadata, importStudy } from "../../services/api/study";
-import { addStudies } from "../../store/study";
-import { StudyMetadata } from "../../common/types";
-import { addUpload, updateUpload, completeUpload } from "../../store/upload";
-import { AppState } from "../../store/reducers";
+import { usePromise, useMountedState } from "react-use";
+import { createStudy } from "../../redux/ducks/studies";
 import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 
-const mapState = (state: AppState) => ({ uploads: state.upload.uploads });
-
 const mapDispatch = {
-  addStudy: (study: StudyMetadata) => addStudies([study]),
-  createUpload: (name: string) => addUpload(name),
-  updateUploadCompletion: (id: string, completion: number) =>
-    updateUpload(id, completion),
-  endUpload: (id: string) => completeUpload(id),
+  addStudy: createStudy,
 };
 
-const connector = connect(mapState, mapDispatch);
+const connector = connect(null, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 type PropTypes = PropsFromRedux & BasicDialogProps;
 
 function ImportStudyDialog(props: PropTypes) {
-  const {
-    open,
-    onClose,
-    addStudy,
-    createUpload,
-    updateUploadCompletion,
-    endUpload,
-  } = props;
+  const { open, onClose, addStudy } = props;
   const [t] = useTranslation();
-  const [uploadProgress, setUploadProgress] = useState<number>();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(-1);
   const mounted = usePromise();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
+  const isMounted = useMountedState();
 
-  const onDrop = async (acceptedFiles: Array<File>) => {
+  useEffect(() => {
+    if (isUploading) {
+      const listener = (e: BeforeUnloadEvent) => {
+        // eslint-disable-next-line no-param-reassign
+        e.returnValue = "Study Import";
+      };
+
+      window.addEventListener("beforeunload", listener);
+
+      return () => {
+        window.removeEventListener("beforeunload", listener);
+      };
+    }
+  }, [isUploading]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleDrop = async (acceptedFiles: File[]) => {
     const fileToUpload = R.last(acceptedFiles);
+
     if (fileToUpload) {
-      const uploadId = createUpload("Study import");
+      setIsUploading(true);
+      setUploadProgress(0);
+
       try {
-        const sid = await mounted(
-          importStudy(fileToUpload, (completion) => {
-            updateUploadCompletion(uploadId, completion);
-            setUploadProgress(completion);
-          })
+        await mounted(
+          addStudy({
+            file: fileToUpload,
+            onUploadProgress: (progress) => {
+              if (isMounted()) {
+                setUploadProgress(progress);
+              }
+            },
+          }).unwrap()
         );
-        const metadata = await mounted(getStudyMetadata(sid));
-        addStudy(metadata);
+
         enqueueSnackbar(
           t("studymanager:importsuccess", { uploadFile: fileToUpload.name }),
-          {
-            variant: "success",
-          }
+          { variant: "success" }
         );
         (onClose as () => void)?.();
       } catch (e) {
         enqueueErrorSnackbar(
-          t("studymanager:importfailure", {
-            uploadFile: fileToUpload.name,
-          }),
+          t("studymanager:importfailure", { uploadFile: fileToUpload.name }),
           e as AxiosError
         );
       } finally {
-        setUploadProgress(undefined);
-        endUpload(uploadId);
+        setIsUploading(false);
+        setUploadProgress(-1);
       }
     }
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <BasicDialog
       open={open}
-      onClose={uploadProgress !== undefined ? undefined : onClose}
+      onClose={uploadProgress > -1 ? undefined : onClose}
       title={t("studymanager:importnewstudy")}
     >
       <Box sx={{ p: 2 }}>
-        {uploadProgress !== undefined ? (
+        {uploadProgress > -1 ? (
           <LinearProgress
             variant={
               uploadProgress > 2 && uploadProgress < 98
@@ -95,7 +105,7 @@ function ImportStudyDialog(props: PropTypes) {
             value={uploadProgress}
           />
         ) : (
-          <Dropzone onDrop={onDrop}>
+          <Dropzone onDrop={handleDrop} disabled={isUploading} multiple={false}>
             {({ getRootProps, getInputProps }) => (
               <Paper sx={{ border: "1px dashed grey", p: 4 }}>
                 <div {...getRootProps()}>

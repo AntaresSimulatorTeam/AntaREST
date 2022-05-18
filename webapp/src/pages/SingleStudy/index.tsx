@@ -20,19 +20,17 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
-import { viewStudy } from "../../store/study";
+import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
-import { addListener, removeListener } from "../../store/websockets";
+import { addWsMessageListener } from "../../services/webSockets";
 
 const logError = debug("antares:singlestudy:error");
 
 const mapState = () => ({});
 
 const mapDispatch = {
-  setCurrentStudy: viewStudy,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
+  setCurrentStudy,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -44,7 +42,7 @@ type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
   const { studyId } = useParams();
-  const { setCurrentStudy, addWsListener, removeWsListener } = props;
+  const { setCurrentStudy } = props;
   const [t] = useTranslation();
   const { isExplorer } = props;
 
@@ -118,9 +116,8 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   useEffect(() => {
-    addWsListener(listener);
-    return () => removeWsListener(listener);
-  }, [listener, addWsListener, removeWsListener]);
+    return addWsMessageListener(listener);
+  }, [listener]);
 
   return (
     <Box

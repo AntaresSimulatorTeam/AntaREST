@@ -63,9 +63,6 @@ function CreateTokenDialog(props: Props) {
 
       setTokenValueToDisplay(tokenValue);
 
-      // TODO
-      // addToken({ });
-
       enqueueSnackbar(t("settings:onTokenCreation", [name]), {
         variant: "success",
       });

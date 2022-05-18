@@ -33,7 +33,7 @@ import { isUserAdmin, sortByProp } from "../../../services/utils";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
-import { getAuthUser } from "../../../store/selectors";
+import { getAuthUser } from "../../../redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
 
 /**

@@ -1,7 +1,6 @@
 import { Box, Paper, styled, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps } from "react-redux";
 import { AxiosError } from "axios";
 import HistoryIcon from "@mui/icons-material/History";
 import {
@@ -16,12 +15,10 @@ import {
   mapLaunchJobDTO,
 } from "../../../../../services/api/study";
 import {
-  addListener,
-  removeListener,
-  subscribe,
-  unsubscribe,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
-} from "../../../../../store/websockets";
+} from "../../../../../services/webSockets";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
@@ -33,32 +30,13 @@ const TitleHeader = styled(Box)(({ theme }) => ({
   height: "60px",
 }));
 
-interface OwnTypes {
+interface Props {
   // eslint-disable-next-line react/no-unused-prop-types
   study: StudyMetadata | undefined;
 }
 
-const mapState = () => ({});
-
-const mapDispatch = {
-  subscribeChannel: subscribe,
-  unsubscribeChannel: unsubscribe,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps & OwnTypes;
-
-function LauncherHistory(props: PropTypes) {
-  const {
-    study,
-    addWsListener,
-    removeWsListener,
-    subscribeChannel,
-    unsubscribeChannel,
-  } = props;
+function LauncherHistory(props: Props) {
+  const { study } = props;
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<Array<LaunchJob>>([]);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -123,20 +101,13 @@ function LauncherHistory(props: PropTypes) {
   }, [study, t, enqueueErrorSnackbar]);
 
   useEffect(() => {
-    addWsListener(handleEvents);
-    return () => removeWsListener(handleEvents);
-  }, [addWsListener, removeWsListener, handleEvents]);
+    return addWsMessageListener(handleEvents);
+  }, [handleEvents]);
 
   useEffect(() => {
-    studyJobs.forEach((job) => {
-      subscribeChannel(WsChannel.JOB_STATUS + job.id);
-    });
-    return () => {
-      studyJobs.forEach((job) => {
-        unsubscribeChannel(WsChannel.JOB_STATUS + job.id);
-      });
-    };
-  }, [studyJobs, subscribeChannel, unsubscribeChannel]);
+    const channels = studyJobs.map((job) => WsChannel.JobStatus + job.id);
+    return sendWsSubscribeMessage(channels);
+  }, [studyJobs]);
 
   return (
     <Paper
@@ -163,4 +134,4 @@ function LauncherHistory(props: PropTypes) {
   );
 }
 
-export default connector(LauncherHistory);
+export default LauncherHistory;
