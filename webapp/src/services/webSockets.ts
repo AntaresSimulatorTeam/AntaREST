@@ -80,8 +80,6 @@ export function initWebSocket(
   webSocket.onclose = (): void => {
     logInfo("WebSocket connection closed");
     dispatch(setWebSocketConnected(false));
-    // Reconnect
-    webSocket = null;
 
     function reconnect(): void {
       logInfo("Attempt to reconnect to the WebSocket...");

@@ -1,11 +1,5 @@
-import {
-  createAsyncThunk,
-  createReducer,
-  PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import jwtDecode, { JwtPayload } from "jwt-decode";
-import * as RA from "ramda-adjunct";
-import { AnyAction } from "redux";
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
@@ -34,16 +28,6 @@ type AccessTokenSub = Pick<UserInfo, "id" | "groups" | "impersonator" | "type">;
 const initialState = {
   user: loadState("auth.user"),
 } as AuthState;
-
-////////////////////////////////////////////////////////////////
-// Utils
-////////////////////////////////////////////////////////////////
-
-const isActionWithUser = (
-  action: AnyAction
-): action is PayloadAction<UserInfo> => {
-  return RA.isPlainObj(action.payload) ? "id" in action.payload : false;
-};
 
 const n = makeActionName("auth");
 
@@ -128,7 +112,10 @@ export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(logout, () => ({}))
-    .addMatcher(isActionWithUser, (draftState, action) => {
-      draftState.user = action.payload;
-    });
+    .addMatcher(
+      isAnyOf(login.fulfilled, refresh.fulfilled),
+      (draftState, action) => {
+        draftState.user = action.payload;
+      }
+    );
 });
