@@ -1,7 +1,6 @@
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-import { ReactNode } from "react";
 import { connect, ConnectedProps } from "react-redux";
+import { IconButton, Tooltip } from "@mui/material";
+import { ReactElement } from "react";
 import { loginUser, logoutAction } from "../../store/auth";
 import { refresh } from "../../services/api/auth";
 import { AppState } from "../../store/reducers";
@@ -20,12 +19,13 @@ type PropsFromRedux = ConnectedProps<typeof connector>;
 
 interface OwnProps {
   url: string;
-  children?: ReactNode;
+  title: string;
+  children: ReactElement;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 function DownloadLink(props: PropTypes) {
-  const { user, login, logout, children, url } = props;
+  const { user, title, login, logout, children, url } = props;
 
   const handleClick = async () => {
     if (user) {
@@ -36,14 +36,10 @@ function DownloadLink(props: PropTypes) {
   };
 
   return (
-    <span style={{ cursor: "pointer" }} onClick={handleClick}>
-      {children}
-    </span>
+    <IconButton style={{ cursor: "pointer" }} onClick={handleClick}>
+      <Tooltip title={title}>{children}</Tooltip>
+    </IconButton>
   );
 }
-
-DownloadLink.defaultProps = {
-  children: null,
-};
 
 export default connector(DownloadLink);

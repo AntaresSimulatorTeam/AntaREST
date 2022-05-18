@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { LinkCreationInfo } from "../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../common/SelectSingle";
-import { HoverButton, ActiveButton } from "../styles";
+import { HoverButton, ActiveButton } from "../share/styles";
 import BasicDialog from "../../../../common/dialogs/BasicDialog";
 
 interface PropType {

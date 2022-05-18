@@ -33,6 +33,7 @@ export default function MatrixView(props: PropTypes) {
           licenseKey="non-commercial-and-evaluation"
           width="100%"
           height="100%"
+          stretchH="all"
         >
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />

@@ -58,9 +58,7 @@ export default function MatrixGraphView(props: PropTypes) {
             my: 1,
           }}
         >
-          <InputLabel sx={{ top: "-7px", left: "14px" }} id="chip-label">
-            {t("data:graphSelector")}
-          </InputLabel>
+          <InputLabel id="chip-label">{t("data:graphSelector")}</InputLabel>
           <Select
             labelId="chip-label"
             id="matrix-chip"

@@ -393,17 +393,18 @@ function JobsListing(props: PropTypes) {
         ) : (
           <Box>
             {download.ready ? (
-              <DownloadLink url={getDownloadUrl(download.id)}>
-                <Tooltip title={t("jobs:download") as string}>
-                  <DownloadIcon
-                    sx={{
-                      fontSize: 22,
-                      color: "action.active",
-                      cursor: "pointer",
-                      "&:hover": { color: "action.hover" },
-                    }}
-                  />
-                </Tooltip>
+              <DownloadLink
+                title={t("jobs:download") as string}
+                url={getDownloadUrl(download.id)}
+              >
+                <DownloadIcon
+                  sx={{
+                    fontSize: 22,
+                    color: "action.active",
+                    cursor: "pointer",
+                    "&:hover": { color: "action.hover" },
+                  }}
+                />
               </DownloadLink>
             ) : (
               <Tooltip title={t("jobs:loading") as string}>

@@ -9,7 +9,7 @@ import {
   Title,
   StyledTextField,
   StyledVisibilityIcon,
-} from "../styles";
+} from "../share/styles";
 import SelectSingle from "../../../../common/SelectSingle";
 
 interface PropType {

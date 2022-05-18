@@ -4,8 +4,8 @@ import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import { XpansionCandidate } from "../types";
-import { scrollbarStyle } from "../../../../../theme";
+import { scrollbarStyle } from "../../theme";
+import { MatrixDataSetDTO } from "../../common/types";
 
 const ROW_ITEM_SIZE = 45;
 const BUTTONS_SIZE = 40;
@@ -25,21 +25,21 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
 }));
 
 interface PropsType {
-  candidates: Array<XpansionCandidate> | undefined;
+  datasets: Array<MatrixDataSetDTO> | undefined;
   selectedItem: string;
   setSelectedItem: (item: string) => void;
 }
 
 const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { candidates, setSelectedItem, selectedItem } = data;
-  const candidate = candidates[index];
+  const { datasets, setSelectedItem, selectedItem } = data;
+  const dataset = datasets[index];
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <Box
       sx={
-        selectedItem && selectedItem === candidate.name
+        selectedItem && selectedItem === dataset.id
           ? {
               display: "flex",
               justifyContent: "space-evenly",
@@ -56,7 +56,7 @@ const Row = memo((props: ListChildComponentProps) => {
             }
       }
       onClick={() => {
-        setSelectedItem(candidate.name);
+        setSelectedItem(dataset.id);
       }}
     >
       <Typography
@@ -67,15 +67,15 @@ const Row = memo((props: ListChildComponentProps) => {
           overflow: "hidden",
         }}
       >
-        {candidate.name}
+        {dataset.name}
       </Typography>
       <ArrowRightIcon />
     </Box>
   );
 }, areEqual);
 
-function CandidateListing(props: PropsType) {
-  const { candidates = [], selectedItem, setSelectedItem } = props;
+function DataListing(props: PropsType) {
+  const { datasets = [], selectedItem, setSelectedItem } = props;
 
   return (
     <Box
@@ -89,10 +89,10 @@ function CandidateListing(props: PropsType) {
         marginBottom: "10px",
       }}
     >
-      {candidates && candidates.length > 0 && (
+      {datasets && datasets.length > 0 && (
         <AutoSizer>
           {({ height, width }) => {
-            const idealHeight = ROW_ITEM_SIZE * candidates.length;
+            const idealHeight = ROW_ITEM_SIZE * datasets.length;
             return (
               <StyledList
                 height={
@@ -101,10 +101,10 @@ function CandidateListing(props: PropsType) {
                     : idealHeight
                 }
                 width={width}
-                itemCount={candidates.length}
+                itemCount={datasets.length}
                 itemSize={ROW_ITEM_SIZE}
                 itemData={{
-                  candidates,
+                  datasets,
                   setSelectedItem,
                   selectedItem,
                 }}
@@ -119,4 +119,4 @@ function CandidateListing(props: PropsType) {
   );
 }
 
-export default CandidateListing;
+export default DataListing;
