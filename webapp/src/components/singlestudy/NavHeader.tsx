@@ -73,10 +73,6 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.divider,
 }));
 
-// const mapDispatch = {
-//   removeStudy: deleteStudy,
-//   toggleFavorite,
-// };
 interface Props {
   study: StudyMetadata | undefined;
   parent: StudyMetadata | undefined;
@@ -250,7 +246,7 @@ function NavHeader(props: Props) {
             unactiveTitle={t("studymanager:bookmark") as string}
             onToggle={() => {
               if (study) {
-                toggleFavorite({ id: study.id, name: study.name });
+                dispatch(toggleFavorite({ id: study.id, name: study.name }));
               }
             }}
           />
