@@ -568,8 +568,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
         async def _listen_to_kill_job(event: Event) -> None:
-            if event.type == EventType.STUDY_JOB_CANCEL_REQUEST:
-                self.kill_job(event.payload, dispatch=False)
+            self.kill_job(event.payload, dispatch=False)
 
         return _listen_to_kill_job
 

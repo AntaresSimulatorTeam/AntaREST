@@ -16,7 +16,9 @@ class EventBusService(IEventBus):
         self, backend: IEventBusBackend, autostart: bool = True
     ) -> None:
         self.backend = backend
-        self.listeners: Dict[str, Callable[[Event], Awaitable[None]]] = {}
+        self.listeners: Dict[
+            EventType, Dict[str, Callable[[Event], Awaitable[None]]]
+        ] = {ev_type: {} for ev_type in EventType}
         self.lock = threading.Lock()
         if autostart:
             self.start()
@@ -27,16 +29,20 @@ class EventBusService(IEventBus):
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
-        type_filter: Optional[List[str]] = None,
+        type_filter: Optional[List[EventType]] = None,
     ) -> str:
         with self.lock:
             listener_id = str(uuid4())
-            self.listeners[listener_id] = listener
+            types = type_filter or [EventType.ANY]
+            for listener_type in types:
+                self.listeners[listener_type][listener_id] = listener
             return listener_id
 
     def remove_listener(self, listener_id: str) -> None:
         with self.lock:
-            del self.listeners[listener_id]
+            for listener_type in self.listeners:
+                if listener_id in self.listeners[listener_type]:
+                    del self.listeners[listener_type][listener_id]
 
     async def _run_loop(self) -> None:
         while True:
@@ -46,13 +52,17 @@ class EventBusService(IEventBus):
     async def _on_events(self) -> None:
         with self.lock:
             for e in self.backend.get_events():
-                for listener in self.listeners.values():
-                    try:
-                        await listener(e)
-                    except Exception as ex:
-                        logger.error(
-                            f"Failed to process event {e.type}", exc_info=ex
-                        )
+                if e.type in self.listeners:
+                    for listener in list(
+                        self.listeners[e.type].values()
+                    ) + list(self.listeners[EventType.ANY].values()):
+                        try:
+                            await listener(e)
+                        except Exception as ex:
+                            logger.error(
+                                f"Failed to process event {e.type}",
+                                exc_info=ex,
+                            )
             self.backend.clear_events()
 
     def _async_loop(self, new_loop: bool = True) -> None:

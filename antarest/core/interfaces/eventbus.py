@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Any, Callable, Optional, List, Awaitable
 
 from pydantic import BaseModel
@@ -6,7 +7,8 @@ from pydantic import BaseModel
 from antarest.core.model import PermissionInfo
 
 
-class EventType:
+class EventType(str, Enum):
+    ANY = "_ANY"
     STUDY_CREATED = "STUDY_CREATED"
     STUDY_DELETED = "STUDY_DELETED"
     STUDY_EDITED = "STUDY_EDITED"
@@ -31,6 +33,9 @@ class EventType:
     DOWNLOAD_FAILED = "DOWNLOAD_FAILED"
     MESSAGE_INFO = "MESSAGE_INFO"
     MAINTENANCE_MODE = "MAINTENANCE_MODE"
+    WORKER_TASK = "WORKER_TASK"
+    WORKER_TASK_STARTED = "WORKER_TASK_STARTED"
+    WORKER_TASK_ENDED = "WORKER_TASK_ENDED"
 
 
 class EventChannelDirectory:
@@ -41,7 +46,7 @@ class EventChannelDirectory:
 
 
 class Event(BaseModel):
-    type: str
+    type: EventType
     payload: Any
     permissions: PermissionInfo = PermissionInfo()
     channel: Optional[str] = None
@@ -56,7 +61,7 @@ class IEventBus(ABC):
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
-        type_filter: Optional[List[str]] = None,
+        type_filter: Optional[List[EventType]] = None,
     ) -> str:
         """
         Add an event listener listener
@@ -84,7 +89,7 @@ class DummyEventBusService(IEventBus):
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
-        type_filter: Optional[List[str]] = None,
+        type_filter: Optional[List[EventType]] = None,
     ) -> str:
         return ""
 
