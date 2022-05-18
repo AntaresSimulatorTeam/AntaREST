@@ -95,7 +95,7 @@ jobs:
         run: npm run lint
         working-directory: webapp
       - name: Run tests
-        run: npm run test
+        run: npm run test-coverage
         working-directory: webapp
         env:
           CI: true
