@@ -128,6 +128,7 @@
     "eslint-plugin-react": "7.29.4",
     "eslint-plugin-react-hooks": "4.4.0",
     "husky": "7.0.4",
+    "jest-sonar-reporter": "^2.0.0",
     "prettier": "2.6.2",
     "process": "0.11.10",
     "react-app-rewired": "2.2.1",
