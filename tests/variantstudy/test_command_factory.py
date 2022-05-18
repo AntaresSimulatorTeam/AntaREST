@@ -267,6 +267,14 @@ class TestCommandFactory:
                     "b64Data": "",
                 },
             ),
+            CommandDTO(
+                action=CommandName.UPDATE_DISTRICT.value,
+                args={"id": "id", "filter_items": ["a"]},
+            ),
+            CommandDTO(
+                action=CommandName.UPDATE_DISTRICT.value,
+                args=[{"id": "id", "base_filter": "add-all"}],
+            ),
         ],
     )
     @pytest.mark.unit_test

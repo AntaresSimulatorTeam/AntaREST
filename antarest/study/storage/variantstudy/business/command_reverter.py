@@ -64,6 +64,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from antarest.study.storage.variantstudy.model.command.update_district import (
+    UpdateDistrict,
+)
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
@@ -96,30 +99,9 @@ class CommandReverter:
     def _revert_remove_area(
         base_command: RemoveArea, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
-        logger.warning("The reversion of RemoveArea is not complete yet")
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateArea)
-                and transform_name_to_id(command.area_name) == base_command.id
-            ):
-                # todo revert binding constraints that has the area in constraint and also search in base for one
-                return [command]
-
-        try:
-            (
-                area_commands,
-                links_commands,
-            ) = base_command.get_command_extractor().extract_area(
-                base, base_command.id
-            )
-            # todo revert binding constraints that has the area in constraint
-            return area_commands + links_commands
-        except ChildNotFoundError as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_area {base_command.id}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveArea is not available"
+        )
 
     @staticmethod
     def _revert_create_district(
@@ -140,22 +122,9 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateDistrict)
-                and transform_name_to_id(command.name) == base_command.id
-            ):
-                return [command]
-        try:
-            return base_command.get_command_extractor().extract_district(
-                base, base_command.id
-            )
-        except Exception as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_district {base_command.id}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveDistrict is not available"
+        )
 
     @staticmethod
     def _revert_create_link(
@@ -173,25 +142,9 @@ class CommandReverter:
     def _revert_remove_link(
         base_command: RemoveLink, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateLink)
-                and command.area1 == base_command.area1
-                and command.area2 == base_command.area2
-            ):
-                # TODO: fetch update_config/replace_matrix concerning this link
-                return [command]
-        area_from, area_to = sorted([base_command.area1, base_command.area2])
-        try:
-            return base_command.get_command_extractor().extract_link(
-                base, area_from, area_to
-            )
-        except ChildNotFoundError as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_link {base_command.area1}/{base_command.area2}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveLink is not available"
+        )
 
     @staticmethod
     def _revert_create_binding_constraint(
@@ -245,24 +198,9 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateBindingConstraint)
-                and transform_name_to_id(command.name) == base_command.id
-            ):
-                # TODO: return also the update_binding_constraint commands
-                return [command]
-
-        try:
-            return base_command.get_command_extractor().extract_binding_constraint(
-                base, base_command.id
-            )
-        except Exception as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_binding_constraint {base_command.id}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveBindingConstraint is not available"
+        )
 
     @staticmethod
     def _revert_create_cluster(
@@ -281,28 +219,9 @@ class CommandReverter:
     def _revert_remove_cluster(
         base_command: RemoveCluster, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
-        logger.warning("The reversion of RemoveCluster is not complete yet")
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateCluster)
-                and transform_name_to_id(command.cluster_name)
-                == base_command.cluster_id
-                and command.area_id == base_command.area_id
-            ):
-                # todo revert binding constraints that has the cluster in constraint and also search in base for one
-                return [command]
-
-        try:
-            return base_command.get_command_extractor().extract_cluster(
-                base, base_command.area_id, base_command.cluster_id
-            )
-            # todo revert binding constraints that has the cluster in constraint
-        except ChildNotFoundError as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_cluster {base_command.area_id}#{base_command.cluster_id}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveCluster is not available"
+        )
 
     @staticmethod
     def _revert_create_renewables_cluster(
@@ -325,27 +244,9 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        # TODO : Check and fix
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateRenewablesCluster)
-                and transform_name_to_id(command.cluster_name)
-                == base_command.cluster_id
-                and command.area_id == base_command.area_id
-            ):
-                # TODO: fetch update_config/replace_matrix concerning this cluster
-                return [command]
-
-        try:
-            return base_command.get_command_extractor().extract_renewables_cluster(
-                base, base_command.area_id, base_command.cluster_id
-            )
-        except ChildNotFoundError as e:
-            logger.warning(
-                f"Failed to extract revert command for remove_cluster {base_command.area_id}#{base_command.cluster_id}",
-                exc_info=e,
-            )
-            return []
+        raise NotImplementedError(
+            "The revert function for RemoveRenewablesCluster is not available"
+        )
 
     @staticmethod
     def _revert_replace_matrix(
@@ -443,6 +344,30 @@ class CommandReverter:
         return [
             base_command.get_command_extractor().generate_update_rawfile(
                 base.tree, base_command.target.split("/")
+            )
+        ]
+
+    @staticmethod
+    def _revert_update_district(
+        base_command: UpdateDistrict,
+        history: List["ICommand"],
+        base: FileStudy,
+    ) -> List[ICommand]:
+        for command in reversed(history):
+            if (
+                isinstance(command, UpdateDistrict)
+                and command.id == base_command.id
+            ):
+                return [command]
+            elif (
+                isinstance(command, CreateDistrict)
+                and transform_name_to_id(command.name) == base_command.id
+            ):
+                return [command]
+
+        return [
+            base_command.get_command_extractor().generate_update_district(
+                base, base_command.id
             )
         ]
 

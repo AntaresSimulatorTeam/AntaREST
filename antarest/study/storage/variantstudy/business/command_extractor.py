@@ -50,6 +50,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from antarest.study.storage.variantstudy.model.command.update_district import (
+    UpdateDistrict,
+)
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
@@ -583,3 +586,27 @@ class CommandExtractor(ICommandExtractor):
         elif raise_on_missing:
             raise ValueError("Invalid matrix")
         return None
+
+    def generate_update_district(
+        self,
+        study: FileStudy,
+        district_id: str,
+    ) -> ICommand:
+
+        study_config = study.config
+        study_tree = study.tree
+        district_config = study_config.sets[district_id]
+        district_fetched_config = study_tree.get(
+            ["input", "areas", "sets", district_id]
+        )
+        return UpdateDistrict(
+            name=district_config.name,
+            metadata={},
+            base_filter=DistrictBaseFilter.add_all
+            if district_config.inverted_set
+            else DistrictBaseFilter.remove_all,
+            filter_items=district_config.areas or [],
+            output=district_config.output,
+            comments=district_fetched_config.get("comments", None),
+            command_context=self.command_context,
+        )
