@@ -123,7 +123,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
+            "The revert function for RemoveDistrict is not available"
         )
 
     @staticmethod
@@ -143,7 +143,7 @@ class CommandReverter:
         base_command: RemoveLink, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
         raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
+            "The revert function for RemoveLink is not available"
         )
 
     @staticmethod
@@ -199,7 +199,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
+            "The revert function for RemoveBindingConstraint is not available"
         )
 
     @staticmethod
@@ -220,7 +220,7 @@ class CommandReverter:
         base_command: RemoveCluster, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
         raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
+            "The revert function for RemoveCluster is not available"
         )
 
     @staticmethod
@@ -245,7 +245,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
+            "The revert function for RemoveRenewablesCluster is not available"
         )
 
     @staticmethod
@@ -357,6 +357,11 @@ class CommandReverter:
             if (
                 isinstance(command, UpdateDistrict)
                 and command.id == base_command.id
+            ):
+                return [command]
+            elif (
+                isinstance(command, CreateDistrict)
+                and transform_name_to_id(command.name) == base_command.id
             ):
                 return [command]
 
