@@ -2,7 +2,7 @@ import dataclasses
 import json
 from unittest.mock import Mock
 
-from antarest.core.interfaces.eventbus import Event
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.eventbus.business.redis_eventbus import (
     RedisEventBus,
 )
@@ -15,7 +15,7 @@ def test_lifecycle():
     eventbus = RedisEventBus(redis_client)
     pubsub_mock.subscribe.assert_called_once_with("events")
 
-    event = Event(type="test", payload="foo")
+    event = Event(type=EventType.STUDY_EDITED, payload="foo")
     serialized = event.json()
     pubsub_mock.get_message.return_value = {"data": serialized}
     eventbus.push_event(event)

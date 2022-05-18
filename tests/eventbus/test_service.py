@@ -4,7 +4,7 @@ from typing import Callable
 from unittest.mock import Mock, MagicMock
 
 from antarest.core.config import Config, EventBusConfig, RedisConfig
-from antarest.core.interfaces.eventbus import Event
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.eventbus.main import build_eventbus
 
 
@@ -36,7 +36,7 @@ def test_lifecycle():
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     test_bucket = []
     lid = event_bus.add_listener(lambda event: test_bucket.append(event))
-    event = Event(type="test", payload="foo")
+    event = Event(type=EventType.STUDY_JOB_STARTED, payload="foo")
     event_bus.push(event)
     autoretry(lambda: len(test_bucket) == 1, 2)
 
