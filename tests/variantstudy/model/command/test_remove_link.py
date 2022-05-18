@@ -1,7 +1,7 @@
 import os
 import uuid
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
@@ -14,14 +14,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
-)
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -123,38 +117,6 @@ class TestRemoveLink:
         assert not base.match(other_other)
         assert base.match_signature() == "remove_link%foo%bar"
         assert base.get_inner_matrices() == []
-
-    @pytest.mark.unit_test
-    @patch(
-        "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_link",
-    )
-    def test_revert(self, mock_extract_link, command_context: CommandContext):
-        base = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context
-        )
-        study = FileStudy(config=Mock(), tree=Mock())
-        mock_extract_link.side_effect = ChildNotFoundError("")
-        CommandReverter().revert(base, [], study)
-        mock_extract_link.assert_called_with(study, "bar", "foo")
-        assert CommandReverter().revert(
-            base,
-            [
-                CreateLink(
-                    area1="foo",
-                    area2="bar",
-                    series=[[0]],
-                    command_context=command_context,
-                )
-            ],
-            None,
-        ) == [
-            CreateLink(
-                area1="foo",
-                area2="bar",
-                series=[[0]],
-                command_context=command_context,
-            )
-        ]
 
     @pytest.mark.unit_test
     def test_create_diff(self, command_context: CommandContext):
