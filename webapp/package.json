@@ -104,7 +104,7 @@
   "jest": {
     "verbose": true,
     "testPathIgnorePatterns" : [
-      "<rootDir>/src/" 
+      "<rootDir>/src/App.tsx" 
     ]
   },
   "proxy": "http://localhost:8080",
