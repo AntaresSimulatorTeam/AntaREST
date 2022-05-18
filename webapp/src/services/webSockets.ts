@@ -73,7 +73,7 @@ export function initWebSocket(
   webSocket.onopen = (): void => {
     logInfo("WebSocket connection opened");
     dispatch(setWebSocketConnected(true));
-    messagesToSendQueue.forEach((webSocket as WebSocket).send);
+    messagesToSendQueue.forEach((msg) => (webSocket as WebSocket).send(msg));
     messagesToSendQueue = [];
   };
 

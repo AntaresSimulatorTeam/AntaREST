@@ -417,7 +417,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/auth", include_in_schema=False)
     def auth_needed(
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        return current_user
+    ) -> bool:
+        return not config.security.disabled
 
     return bp

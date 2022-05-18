@@ -13,8 +13,8 @@ export const initRawAxiosClient = (config: Config): void => {
 
 export const needAuth = async (): Promise<boolean> => {
   try {
-    await client.get("/v1/auth");
-    return false;
+    const res = await client.get("/v1/auth");
+    return res.data;
   } catch (e) {
     if (axios.isAxiosError(e)) {
       if (e.response?.status === 401) {
