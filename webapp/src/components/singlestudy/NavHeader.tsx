@@ -33,14 +33,12 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps, useSelector } from "react-redux";
-import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
+import { StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
-import { AppState } from "../../redux/ducks";
 import { deleteStudy, toggleFavorite } from "../../redux/ducks/studies";
 import LauncherDialog from "../studies/LauncherDialog";
 import PropertiesDialog from "./PropertiesDialog";
@@ -54,6 +52,7 @@ import { isCurrentStudyFavorite } from "../../redux/selectors";
 import ExportDialog from "../studies/ExportModal";
 import StarToggle from "../common/StarToggle";
 import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -74,34 +73,20 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.divider,
 }));
 
-const mapState = (state: AppState) => ({});
-
-const mapDispatch = {
-  removeStudy: deleteStudy,
-  toggleFavorite,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+// const mapDispatch = {
+//   removeStudy: deleteStudy,
+//   toggleFavorite,
+// };
+interface Props {
   study: StudyMetadata | undefined;
   parent: StudyMetadata | undefined;
   childrenTree: VariantTree | undefined;
   isExplorer?: boolean;
-  openCommands?: () => void;
+  openCommands?: VoidFunction;
 }
-type PropTypes = PropsFromRedux & OwnProps;
 
-function NavHeader(props: PropTypes) {
-  const {
-    study,
-    parent,
-    childrenTree,
-    isExplorer,
-    removeStudy,
-    openCommands,
-    toggleFavorite,
-  } = props;
+function NavHeader(props: Props) {
+  const { study, parent, childrenTree, isExplorer, openCommands } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -113,27 +98,27 @@ function NavHeader(props: PropTypes) {
   const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const isStudyFavorite = useSelector(isCurrentStudyFavorite);
+  const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
+  const dispatch = useAppDispatch();
 
-  const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("singlestudy:nonePublicModeText") },
-    { id: "READ", name: t("singlestudy:readPublicModeText") },
-    { id: "EXECUTE", name: t("singlestudy:executePublicModeText") },
-    { id: "EDIT", name: t("singlestudy:editPublicModeText") },
-    { id: "FULL", name: t("singlestudy:fullPublicModeText") },
-  ];
-
-  const getPublicModeLabel = useMemo(
-    (): string => {
-      const publicModeLabel = publicModeList.find(
-        (elm) => elm.id === study?.publicMode
-      );
-      if (publicModeLabel) return publicModeLabel.name;
-      return "";
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [study]
+  const publicModeList = useMemo(
+    () => [
+      { id: "NONE", name: t("singlestudy:nonePublicModeText") },
+      { id: "READ", name: t("singlestudy:readPublicModeText") },
+      { id: "EXECUTE", name: t("singlestudy:executePublicModeText") },
+      { id: "EDIT", name: t("singlestudy:editPublicModeText") },
+      { id: "FULL", name: t("singlestudy:fullPublicModeText") },
+    ],
+    [t]
   );
+
+  const getPublicModeLabel = useMemo((): string => {
+    const publicModeLabel = publicModeList.find(
+      (elm) => elm.id === study?.publicMode
+    );
+    if (publicModeLabel) return publicModeLabel.name;
+    return "";
+  }, [publicModeList, study?.publicMode]);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -177,21 +162,18 @@ function NavHeader(props: PropTypes) {
     }
   };
 
-  const deleteStudy = async (study: StudyMetadata) => {
-    // eslint-disable-next-line no-alert
-    try {
-      await removeStudy(study.id).unwrap();
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studymanager:failtodeletestudy"),
-        e as AxiosError
-      );
-      logError("Failed to delete study", study, e);
-    }
-  };
-
   const onDeleteStudy = () => {
-    if (study) deleteStudy(study);
+    if (study) {
+      dispatch(deleteStudy(study.id))
+        .unwrap()
+        .catch((err) => {
+          enqueueErrorSnackbar(
+            t("studymanager:failtodeletestudy"),
+            err as AxiosError
+          );
+          logError("Failed to delete study", study, err);
+        });
+    }
     setOpenDeleteDialog(false);
     navigate("/studies");
   };
@@ -560,4 +542,4 @@ NavHeader.defaultProps = {
   openCommands: undefined,
 };
 
-export default connector(NavHeader);
+export default NavHeader;

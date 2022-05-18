@@ -3,10 +3,10 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useTranslation } from "react-i18next";
 import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
-import { useSelector } from "react-redux";
 import { GroupDetailsDTO } from "../../../common/types";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { isAuthUserAdmin } from "../../../redux/selectors";
+import { useAppSelector } from "../../../redux/hooks";
 
 /**
  * Types
@@ -26,7 +26,7 @@ function Header(props: Props) {
   const { setSearchValue, addGroup, reloadFetchGroups } = props;
   const { t } = useTranslation();
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
-  const isUserAdmin = useSelector(isAuthUserAdmin);
+  const isUserAdmin = useAppSelector(isAuthUserAdmin);
 
   return (
     <>

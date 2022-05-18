@@ -3,12 +3,12 @@ import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { SyntheticEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import RootPage from "../components/common/page/RootPage";
 import Groups from "../components/settings/Groups";
 import Maintenance from "../components/settings/Maintenance";
 import Tokens from "../components/settings/Tokens";
 import Users from "../components/settings/Users";
+import { useAppSelector } from "../redux/hooks";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../redux/selectors";
 
 /**
@@ -18,8 +18,8 @@ import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../redux/selectors";
 function Settings() {
   const [tabValue, setTabValue] = useState("1");
   const [t] = useTranslation();
-  const isUserAdmin = useSelector(isAuthUserAdmin);
-  const isUserInGroupAdmin = useSelector(isAuthUserInGroupAdmin);
+  const isUserAdmin = useAppSelector(isAuthUserAdmin);
+  const isUserInGroupAdmin = useAppSelector(isAuthUserInGroupAdmin);
 
   const tabList = useMemo(() => {
     return [

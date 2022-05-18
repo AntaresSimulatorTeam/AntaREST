@@ -1,6 +1,5 @@
-import { PropsWithChildren, useCallback, useEffect, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import debug from "debug";
-import { connect, ConnectedProps } from "react-redux";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -9,48 +8,37 @@ import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
-import { AppState } from "../../redux/ducks";
 import { addWsMessageListener } from "../../services/webSockets";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
 } from "../../redux/ducks/ui";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { getTaskNotificationsCount } from "../../redux/selectors";
 
 const logError = debug("antares:downloadbadge:error");
 
-const mapState = (state: AppState) => ({
-  notificationCount: state.ui.taskNotificationsCount,
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  addTasksNotification: incrementTaskNotifications,
-  clearTasksNotification: resetTaskNotifications,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = PropsWithChildren<ReduxProps>;
-
-function NotificationBadge(props: PropTypes) {
-  const {
-    children,
-    notificationCount,
-    addTasksNotification,
-    clearTasksNotification,
-  } = props;
+function NotificationBadge(props: Props) {
+  const { children } = props;
   const [t] = useTranslation();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const ref = useRef<HTMLDivElement>(null);
+  const notificationCount = useAppSelector(getTaskNotificationsCount);
+  const dispatch = useAppDispatch();
 
   const newNotification = useCallback(
     (message: string, variantType?: VariantType) => {
       if (location.pathname !== "/tasks") {
-        addTasksNotification();
+        dispatch(incrementTaskNotifications());
       }
       enqueueSnackbar(t(message), { variant: variantType || "info" });
     },
-    [addTasksNotification, enqueueSnackbar, location.pathname, t]
+    [dispatch, enqueueSnackbar, location.pathname, t]
   );
 
   useEffect(() => {
@@ -85,9 +73,9 @@ function NotificationBadge(props: PropTypes) {
 
   useEffect(() => {
     if (location.pathname === "/tasks") {
-      clearTasksNotification();
+      dispatch(resetTaskNotifications());
     }
-  }, [location, clearTasksNotification]);
+  }, [dispatch, location.pathname]);
 
   return (
     <Box position="relative">
@@ -119,4 +107,4 @@ function NotificationBadge(props: PropTypes) {
   );
 }
 
-export default connector(NotificationBadge);
+export default NotificationBadge;

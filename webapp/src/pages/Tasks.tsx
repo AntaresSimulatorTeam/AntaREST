@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { AxiosError } from "axios";
-import { connect, ConnectedProps } from "react-redux";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -56,28 +55,15 @@ import {
   TaskStatus,
 } from "../common/types";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
-import { AppState } from "../redux/ducks";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import { getStudies } from "../redux/selectors";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
 
 const logError = debug("antares:studymanagement:error");
 
-const mapState = (state: AppState) => ({
-  studies: getStudies(state),
-});
-
-const mapDispatch = {
-  loadStudies: fetchStudies,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function JobsListing(props: PropTypes) {
-  const { studies, loadStudies } = props;
+function JobsListing() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
@@ -91,12 +77,14 @@ function JobsListing(props: PropTypes) {
   const [messageModalOpen, setMessageModalOpen] = useState<
     string | undefined
   >();
+  const studies = useAppSelector(getStudies);
+  const dispatch = useAppDispatch();
 
   const init = async () => {
     setLoaded(false);
     try {
       if (studies.length === 0) {
-        await loadStudies().unwrap();
+        await dispatch(fetchStudies()).unwrap();
       }
       const allJobs = await getStudyJobs(undefined, false);
       setJobs(allJobs);
@@ -517,4 +505,4 @@ function JobsListing(props: PropTypes) {
   );
 }
 
-export default connector(JobsListing);
+export default JobsListing;
