@@ -10,7 +10,7 @@ import { red } from "@mui/material/colors";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
 import { AppState } from "../../redux/ducks";
-import { addMessageListener } from "../../services/webSockets";
+import { addWsMessageListener } from "../../services/webSockets";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
@@ -80,7 +80,7 @@ function NotificationBadge(props: PropTypes) {
       }
     };
 
-    return addMessageListener(listener);
+    return addWsMessageListener(listener);
   }, [newNotification]);
 
   useEffect(() => {

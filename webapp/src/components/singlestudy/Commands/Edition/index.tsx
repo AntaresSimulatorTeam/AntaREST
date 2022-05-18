@@ -47,8 +47,8 @@ import SimpleLoader from "../../../common/loaders/SimpleLoader";
 import NoContent from "../../../common/page/NoContent";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import {
-  addMessageListener,
-  sendSubscribeMessage,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
 } from "../../../../services/webSockets";
 
@@ -300,7 +300,7 @@ function EditionView(props: Props) {
 
   useEffect(() => {
     const commandGenerationChannel = WsChannel.StudyGeneration + studyId;
-    const unsubscribe = sendSubscribeMessage(commandGenerationChannel);
+    const unsubscribe = sendWsSubscribeMessage(commandGenerationChannel);
 
     const init = async () => {
       let items: Array<CommandItem> = [];
@@ -359,14 +359,14 @@ function EditionView(props: Props) {
   ]);
 
   useEffect(() => {
-    return addMessageListener(listen);
+    return addWsMessageListener(listen);
   }, [listen]);
 
   useEffect(() => {
     if (generationTaskId) {
       // TODO Maybe WsChannel.StudyGeneration?
       const taskChannel = WsChannel.Task + generationTaskId;
-      const unsubscribe = sendSubscribeMessage(taskChannel);
+      const unsubscribe = sendWsSubscribeMessage(taskChannel);
 
       if (taskTimeoutId.current) {
         clearTimeout(taskTimeoutId.current);

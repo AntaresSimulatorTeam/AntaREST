@@ -110,7 +110,7 @@ export function initWebSocket(
   return webSocket;
 }
 
-export function addMessageListener(listener: MessageListener): VoidFunction {
+export function addWsMessageListener(listener: MessageListener): VoidFunction {
   messageListeners.push(listener);
   // Remove listener callback
   return () => {
@@ -118,7 +118,7 @@ export function addMessageListener(listener: MessageListener): VoidFunction {
   };
 }
 
-export function sendSubscribeMessage(
+export function sendWsSubscribeMessage(
   channels: string | string[]
 ): VoidFunction {
   const socket = getWebSocket();
@@ -130,6 +130,7 @@ export function sendSubscribeMessage(
 
     if (socket.readyState !== WebSocket.OPEN) {
       messagesToSendQueue.push(...messagesToSend);
+      return;
     }
 
     messagesToSend.forEach(socket.send);

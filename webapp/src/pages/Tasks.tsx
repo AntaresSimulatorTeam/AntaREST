@@ -27,8 +27,8 @@ import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import DownloadLink from "../components/common/DownloadLink";
 import LogModal from "../components/common/LogModal";
 import {
-  addMessageListener,
-  sendSubscribeMessage,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
 } from "../services/webSockets";
 import JobTableView from "../components/tasks/JobTableView";
@@ -219,13 +219,13 @@ function JobsListing(props: PropTypes) {
       }
     };
 
-    return addMessageListener(listener);
+    return addWsMessageListener(listener);
   }, [downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
       const channels = tasks.map((task) => WsChannel.Task + task.id);
-      return sendSubscribeMessage(channels);
+      return sendWsSubscribeMessage(channels);
     }
   }, [tasks]);
 

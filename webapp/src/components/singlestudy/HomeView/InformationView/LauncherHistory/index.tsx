@@ -15,8 +15,8 @@ import {
   mapLaunchJobDTO,
 } from "../../../../../services/api/study";
 import {
-  addMessageListener,
-  sendSubscribeMessage,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
 } from "../../../../../services/webSockets";
 import JobStepper from "./JobStepper";
@@ -101,12 +101,12 @@ function LauncherHistory(props: Props) {
   }, [study, t, enqueueErrorSnackbar]);
 
   useEffect(() => {
-    return addMessageListener(handleEvents);
+    return addWsMessageListener(handleEvents);
   }, [handleEvents]);
 
   useEffect(() => {
     const channels = studyJobs.map((job) => WsChannel.JobStatus + job.id);
-    return sendSubscribeMessage(channels);
+    return sendWsSubscribeMessage(channels);
   }, [studyJobs]);
 
   return (

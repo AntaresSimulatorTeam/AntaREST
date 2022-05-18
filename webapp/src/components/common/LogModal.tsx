@@ -16,7 +16,7 @@ import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import { scrollbarStyle } from "../../theme";
 import BasicDialog from "./dialogs/BasicDialog";
-import { addMessageListener } from "../../services/webSockets";
+import { addWsMessageListener } from "../../services/webSockets";
 
 interface OwnTypes {
   isOpen: boolean;
@@ -104,7 +104,7 @@ function LogModal(props: PropTypes) {
 
   useEffect(() => {
     if (followLogs) {
-      return addMessageListener(updateLog);
+      return addWsMessageListener(updateLog);
     }
   }, [followLogs, updateLog]);
 

@@ -23,7 +23,7 @@ import HomeView from "../../components/singlestudy/HomeView";
 import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
-import { addMessageListener } from "../../services/webSockets";
+import { addWsMessageListener } from "../../services/webSockets";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -116,7 +116,7 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   useEffect(() => {
-    return addMessageListener(listener);
+    return addWsMessageListener(listener);
   }, [listener]);
 
   return (
