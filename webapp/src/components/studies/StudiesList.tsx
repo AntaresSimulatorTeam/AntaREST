@@ -1,7 +1,5 @@
-import { memo, useCallback, useEffect, useState } from "react";
-import { debounce } from "lodash";
+import { memo, useEffect, useMemo, useState } from "react";
 import debug from "debug";
-import { connect, ConnectedProps } from "react-redux";
 import {
   Box,
   Typography,
@@ -15,7 +13,6 @@ import {
   Tooltip,
   FormControl,
   InputLabel,
-  styled,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
@@ -39,12 +36,7 @@ import {
   SortStatus,
 } from "../../common/types";
 import StudyCard from "./StudyCard";
-import {
-  scrollbarStyle,
-  STUDIES_HEIGHT_HEADER,
-  STUDIES_LIST_HEADER_HEIGHT,
-} from "../../theme";
-import { AppState } from "../../redux/ducks";
+import { STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from "../../theme";
 import {
   deleteStudy,
   setStudyScrollPosition,
@@ -57,12 +49,11 @@ import {
 } from "../../services/api/study";
 import LauncherDialog from "./LauncherDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import useDebounce from "../../hooks/useDebounce";
+import { getStudiesScrollPosition } from "../../redux/selectors";
 
 const logError = debug("antares:studieslist:error");
-
-const StyledGrid = styled(FixedSizeGrid)(({ theme }) => ({
-  ...scrollbarStyle,
-}));
 
 const StudyCardCell = memo((props: GridChildComponentProps) => {
   const { data, columnIndex, rowIndex, style } = props;
@@ -99,18 +90,7 @@ const StudyCardCell = memo((props: GridChildComponentProps) => {
   return <div />;
 }, areEqual);
 
-const mapState = (state: AppState) => ({
-  scrollPosition: state.studies.scrollPosition,
-});
-
-const mapDispatch = {
-  removeStudy: deleteStudy,
-  updateScroll: setStudyScrollPosition,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-export interface StudyListProps {
+export interface StudiesListProps {
   studies: Array<StudyMetadata>;
   folder: string;
   setFolder: (folder: string) => void;
@@ -118,11 +98,10 @@ export interface StudyListProps {
   onFavoriteClick: (value: GenericInfo) => void;
   sortItem: SortItem;
   setSortItem: (value: SortItem) => void;
-  refresh: () => void;
+  refresh: VoidFunction;
 }
-type PropTypes = PropsFromRedux & StudyListProps;
 
-function StudiesList(props: PropTypes) {
+function StudiesList(props: StudiesListProps) {
   const {
     studies,
     folder,
@@ -131,9 +110,6 @@ function StudiesList(props: PropTypes) {
     favorites,
     setSortItem,
     onFavoriteClick,
-    removeStudy,
-    updateScroll,
-    scrollPosition,
     refresh,
   } = props;
   const [t] = useTranslation();
@@ -141,29 +117,34 @@ function StudiesList(props: PropTypes) {
   const [folderList, setFolderList] = useState<Array<string>>([]);
   const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
   const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
+  const scrollPosition = useAppSelector(getStudiesScrollPosition);
+  const dispatch = useAppDispatch();
 
-  const filterList: Array<SortItem & { name: string }> = [
-    {
-      element: SortElement.NAME,
-      name: t("studymanager:sortByName"),
-      status: SortStatus.INCREASE,
-    },
-    {
-      element: SortElement.NAME,
-      name: t("studymanager:sortByName"),
-      status: SortStatus.DECREASE,
-    },
-    {
-      element: SortElement.DATE,
-      name: t("studymanager:sortByDate"),
-      status: SortStatus.INCREASE,
-    },
-    {
-      element: SortElement.DATE,
-      name: t("studymanager:sortByDate"),
-      status: SortStatus.DECREASE,
-    },
-  ];
+  const filterList = useMemo(
+    () => [
+      {
+        element: SortElement.NAME,
+        name: t("studymanager:sortByName"),
+        status: SortStatus.INCREASE,
+      },
+      {
+        element: SortElement.NAME,
+        name: t("studymanager:sortByName"),
+        status: SortStatus.DECREASE,
+      },
+      {
+        element: SortElement.DATE,
+        name: t("studymanager:sortByDate"),
+        status: SortStatus.INCREASE,
+      },
+      {
+        element: SortElement.DATE,
+        name: t("studymanager:sortByDate"),
+        status: SortStatus.DECREASE,
+      },
+    ],
+    [t]
+  );
 
   const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
     try {
@@ -200,17 +181,16 @@ function StudiesList(props: PropTypes) {
     }
   };
 
-  const deleteStudy = async (study: StudyMetadata) => {
-    // eslint-disable-next-line no-alert
-    try {
-      await removeStudy(study.id).unwrap();
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studymanager:failtodeletestudy"),
-        e as AxiosError
-      );
-      logError("Failed to delete study", study, e);
-    }
+  const handleDeleteStudy = (study: StudyMetadata) => {
+    dispatch(deleteStudy(study.id))
+      .unwrap()
+      .catch((err) => {
+        enqueueErrorSnackbar(
+          t("studymanager:failtodeletestudy"),
+          err as AxiosError
+        );
+        logError("Failed to delete study", study, err);
+      });
   };
 
   const getSortItem = (element: string): SortItem => {
@@ -236,16 +216,12 @@ function StudiesList(props: PropTypes) {
     setFolderList(folder.split("/"));
   }, [folder]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateLastScroll = useCallback(
-    debounce(
-      (scrollProp: GridOnScrollProps) => {
-        updateScroll(scrollProp.scrollTop);
-      },
-      400,
-      { trailing: true }
-    ),
-    [updateScroll]
+  const updateLastScroll = useDebounce(
+    (scrollProp: GridOnScrollProps) => {
+      dispatch(setStudyScrollPosition(scrollProp.scrollTop));
+    },
+    400,
+    { trailing: true }
   );
 
   return (
@@ -412,7 +388,7 @@ function StudiesList(props: PropTypes) {
             const columnWidth = paddedWidth / Math.round(paddedWidth / 400);
             const columnCount = Math.floor(paddedWidth / columnWidth);
             return (
-              <StyledGrid
+              <FixedSizeGrid
                 columnCount={columnCount}
                 columnWidth={columnWidth}
                 height={height}
@@ -429,13 +405,13 @@ function StudiesList(props: PropTypes) {
                   columnWidth,
                   favorites,
                   onFavoriteClick,
-                  deleteStudy,
+                  deleteStudy: handleDeleteStudy,
                   archiveStudy,
                   unarchiveStudy,
                 }}
               >
                 {StudyCardCell}
-              </StyledGrid>
+              </FixedSizeGrid>
             );
           }}
         </AutoSizer>
@@ -451,4 +427,4 @@ function StudiesList(props: PropTypes) {
   );
 }
 
-export default connector(StudiesList);
+export default StudiesList;

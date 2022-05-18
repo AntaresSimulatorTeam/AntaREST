@@ -20,7 +20,6 @@ import InfoIcon from "@mui/icons-material/Info";
 import TokenIcon from "@mui/icons-material/Token";
 import * as R from "ramda";
 import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 import { BotDTO, BotDetailsDTO, UserDTO } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import {
@@ -35,6 +34,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
 import { getAuthUser } from "../../../redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
+import { useAppSelector } from "../../../redux/hooks";
 
 /**
  * Types
@@ -94,7 +94,7 @@ function Tokens() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
+  const authUser = useAppSelector(getAuthUser);
 
   const {
     data: initialTokens,

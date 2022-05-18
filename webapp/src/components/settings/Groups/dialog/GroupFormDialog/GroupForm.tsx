@@ -23,7 +23,6 @@ import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import { useSelector } from "react-redux";
 import {
   RESERVED_GROUP_NAMES,
   RESERVED_USER_NAMES,
@@ -35,6 +34,7 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../services/api/user";
 import { getAuthUser } from "../../../../../redux/selectors";
+import { useAppSelector } from "../../../../../redux/hooks";
 
 /**
  * Types
@@ -63,7 +63,7 @@ function GroupForm(props: Props) {
   const [selectedUser, setSelectedUser] = useState<UserDTO>();
   const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
+  const authUser = useAppSelector(getAuthUser);
   const allowToAddPermission =
     selectedUser &&
     !getValues("permissions").some(

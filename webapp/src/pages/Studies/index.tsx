@@ -2,16 +2,13 @@ import { useCallback, useEffect, useState, memo, useRef } from "react";
 import * as R from "ramda";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps } from "react-redux";
 import moment from "moment";
 import { AxiosError } from "axios";
 import debug from "debug";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import { useMountedState } from "react-use";
 import SideNav from "../../components/studies/SideNav";
-import StudiesList, {
-  StudyListProps,
-} from "../../components/studies/StudiesList";
+import StudiesList from "../../components/studies/StudiesList";
 import {
   GenericInfo,
   GroupDTO,
@@ -25,11 +22,10 @@ import {
 import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
-import { AppState } from "../../redux/ducks";
 import {
   fetchStudies,
   fetchStudyVersions,
-  toggleFavorite as dipatchToggleFavorite,
+  toggleFavorite,
 } from "../../redux/ducks/studies";
 import FilterDrawer from "../../components/studies/FilterDrawer";
 import RootPage from "../../components/common/page/RootPage";
@@ -42,41 +38,20 @@ import {
   getStudies,
   getStudyVersions,
 } from "../../redux/selectors";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 
 const logErr = debug("antares:studies:error");
 
-const StudiesListMemo = memo((props: StudyListProps) => (
-  <StudiesList {...props} />
-));
+const StudiesListMemo = memo(StudiesList);
 
-const mapState = (state: AppState) => ({
-  studies: getStudies(state),
-  versions: getStudyVersions(state),
-  favorites: getFavoriteStudies(state),
-});
-
-const mapDispatch = {
-  loadStudies: fetchStudies,
-  loadVersions: fetchStudyVersions,
-  toggleFavorite: dipatchToggleFavorite,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function Studies(props: PropTypes) {
-  const {
-    studies,
-    loadStudies,
-    loadVersions,
-    versions,
-    favorites,
-    toggleFavorite,
-  } = props;
+function Studies() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = useMountedState();
+  const studies = useAppSelector(getStudies);
+  const versions = useAppSelector(getStudyVersions);
+  const favorites = useAppSelector(getFavoriteStudies);
+  const dispatch = useAppDispatch();
   const [filteredStudies, setFilteredStudies] =
     useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(false);
@@ -140,7 +115,7 @@ function Studies(props: PropTypes) {
       setLoaded(false);
       try {
         if (studies.length === 0 || refresh) {
-          await loadStudies().unwrap();
+          await dispatch(fetchStudies()).unwrap();
         }
       } catch (e) {
         enqueueErrorSnackbar(
@@ -151,7 +126,7 @@ function Studies(props: PropTypes) {
         setLoaded(true);
       }
     },
-    [enqueueErrorSnackbar, loadStudies, studies.length, t]
+    [dispatch, enqueueErrorSnackbar, studies.length, t]
   );
 
   const versionList = convertVersions(versions || []);
@@ -273,7 +248,7 @@ function Studies(props: PropTypes) {
   const init = async () => {
     try {
       if (versions.length === 0) {
-        await loadVersions().unwrap();
+        await dispatch(fetchStudyVersions()).unwrap();
       }
       const userRes = await getUsers();
       setUserList(userRes);
@@ -374,7 +349,9 @@ function Studies(props: PropTypes) {
             folder={currentFolder as string}
             setFolder={setCurrentFolder}
             favorites={favorites}
-            onFavoriteClick={toggleFavorite}
+            onFavoriteClick={(value: GenericInfo) => {
+              dispatch(toggleFavorite(value));
+            }}
           />
         )}
         <FilterDrawer
@@ -397,4 +374,4 @@ function Studies(props: PropTypes) {
   );
 }
 
-export default connector(Studies);
+export default Studies;

@@ -20,7 +20,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 import { GroupDetailsDTO } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { deleteGroup, getGroups } from "../../../services/api/user";
@@ -31,6 +30,7 @@ import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
 import { getAuthUser } from "../../../redux/selectors";
+import { useAppSelector } from "../../../redux/hooks";
 
 /**
  * Types
@@ -101,7 +101,7 @@ function Groups() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
+  const authUser = useAppSelector(getAuthUser);
 
   const {
     data: initialGroups,

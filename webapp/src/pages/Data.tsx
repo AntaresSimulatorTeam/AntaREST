@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { connect, ConnectedProps } from "react-redux";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -24,25 +23,18 @@ import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import SplitLayoutView from "../components/common/SplitLayoutView";
 import FileTable from "../components/common/FileTable";
-import { AppState } from "../redux/ducks";
+import { useAppSelector } from "../redux/hooks";
+import { getAuthUser } from "../redux/selectors";
 
-const mapState = (state: AppState) => ({
-  user: state.auth.user,
-});
-
-const connector = connect(mapState);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function Data(props: PropTypes) {
+function Data() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
   const [dataList, setDataList] = useState<Array<MatrixDataSetDTO>>([]);
   const [idForDeletion, setIdForDeletion] = useState<string>();
   const [selectedItem, setSelectedItem] = useState<string>();
-  const { user } = props;
   const [loaded, setLoaded] = useState(false);
+  const user = useAppSelector(getAuthUser);
 
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -283,4 +275,4 @@ function Data(props: PropTypes) {
   );
 }
 
-export default connector(Data);
+export default Data;

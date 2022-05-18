@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Box, styled, Typography } from "@mui/material";
-import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { isStringEmpty, isUserAdmin } from "../../../services/utils";
-import { getMessageInfo } from "../../../services/api/maintenance";
+import { getMessageInfo as getMessageInfoAPI } from "../../../services/api/maintenance";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import OkDialog from "../../../components/common/dialogs/OkDialog";
-import { AppState } from "../../../redux/ducks";
 import { setMessageInfo } from "../../../redux/ducks/ui";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
+import { getAuthUser, getMessageInfo } from "../../../redux/selectors";
 
 export const Main = styled(Box)(({ theme }) => ({
   width: "600px",
@@ -22,43 +22,28 @@ export const Main = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
 }));
 
-const mapState = (state: AppState) => ({
-  user: state.auth.user,
-  messageInfo: state.ui.messageInfo,
-});
-
-const mapDispatch = {
-  setMessage: setMessageInfo,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function MessageInfoDialog(props: PropTypes) {
+function MessageInfoDialog() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { user, messageInfo, setMessage } = props;
   const [open, setOpen] = useState(false);
+  const user = useAppSelector(getAuthUser);
+  const messageInfo = useAppSelector(getMessageInfo);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const init = async () => {
       try {
-        const tmpMessage = await getMessageInfo();
-        setMessage(isStringEmpty(tmpMessage) ? "" : tmpMessage);
+        const tmpMessage = await getMessageInfoAPI();
+        dispatch(setMessageInfo(isStringEmpty(tmpMessage) ? "" : tmpMessage));
       } catch (e) {
         enqueueErrorSnackbar(t("main:onGetMessageInfoError"), e as AxiosError);
       }
     };
     init();
-  }, [enqueueErrorSnackbar, setMessage, t]);
+  }, [dispatch, enqueueErrorSnackbar, t]);
 
   useEffect(() => {
-    if (
-      messageInfo !== undefined &&
-      messageInfo !== "" &&
-      (user === undefined || !isUserAdmin(user))
-    )
+    if (messageInfo && (user === undefined || !isUserAdmin(user)))
       setOpen(true);
   }, [messageInfo, user]);
 
@@ -80,4 +65,4 @@ function MessageInfoDialog(props: PropTypes) {
   );
 }
 
-export default connector(MessageInfoDialog);
+export default MessageInfoDialog;

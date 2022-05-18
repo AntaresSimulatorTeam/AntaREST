@@ -3,7 +3,6 @@ import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
-import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
   StudyMetadata,
@@ -24,32 +23,23 @@ import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
 import { addWsMessageListener } from "../../services/webSockets";
+import { useAppDispatch } from "../../redux/hooks";
 
 const logError = debug("antares:singlestudy:error");
 
-const mapState = () => ({});
-
-const mapDispatch = {
-  setCurrentStudy,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+interface Props {
   isExplorer?: boolean;
 }
-type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
-  const { studyId } = useParams();
-  const { setCurrentStudy } = props;
-  const [t] = useTranslation();
   const { isExplorer } = props;
-
+  const { studyId } = useParams();
+  const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [parent, setParent] = useState<StudyMetadata>();
   const [tree, setTree] = useState<VariantTree>();
-  const [openCommands, setOpenCommands] = useState<boolean>(false);
+  const [openCommands, setOpenCommands] = useState(false);
+  const dispatch = useAppDispatch();
 
   const tabList = useMemo(
     () => [
@@ -108,7 +98,7 @@ function SingleStudy(props: Props) {
   useEffect(() => {
     const init = async () => {
       if (studyId) {
-        setCurrentStudy(studyId);
+        dispatch(setCurrentStudy(studyId));
         updateStudyData();
       }
     };
@@ -173,4 +163,4 @@ SingleStudy.defaultProps = {
   isExplorer: undefined,
 };
 
-export default connector(SingleStudy);
+export default SingleStudy;

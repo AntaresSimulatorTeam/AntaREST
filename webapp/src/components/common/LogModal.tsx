@@ -10,7 +10,6 @@ import {
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
-import { connect, ConnectedProps } from "react-redux";
 import { exportText } from "../../services/utils/index";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
@@ -18,23 +17,17 @@ import { scrollbarStyle } from "../../theme";
 import BasicDialog from "./dialogs/BasicDialog";
 import { addWsMessageListener } from "../../services/webSockets";
 
-interface OwnTypes {
+interface Props {
   isOpen: boolean;
   jobId?: string;
   followLogs?: boolean;
   content?: string;
-  close: () => void;
+  close: VoidFunction;
   style?: CSSProperties;
   loading?: boolean;
 }
 
-const mapState = () => ({});
-
-const connector = connect(mapState);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps & OwnTypes;
-
-function LogModal(props: PropTypes) {
+function LogModal(props: Props) {
   const { style, jobId, followLogs, loading, isOpen, content, close } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
@@ -200,4 +193,4 @@ LogModal.defaultProps = {
   style: {},
 };
 
-export default connector(LogModal);
+export default LogModal;

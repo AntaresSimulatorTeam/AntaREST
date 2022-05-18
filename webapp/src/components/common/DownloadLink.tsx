@@ -1,38 +1,35 @@
-import { connect, ConnectedProps } from "react-redux";
 import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
-import { getAuthUser } from "../../redux/selectors";
-import { AppState } from "../../redux/ducks";
 import { refresh } from "../../redux/ducks/auth";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { getAuthUser } from "../../redux/selectors";
 
-const mapState = (state: AppState) => ({
-  user: getAuthUser(state),
-});
-
-const mapDispatch = {
-  refresh,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-
-interface OwnProps {
+interface Props {
   url: string;
   title: string;
   children: ReactElement;
 }
-type PropTypes = PropsFromRedux & OwnProps;
 
-function DownloadLink(props: PropTypes) {
-  const { user, refresh, children, url, title } = props;
+function DownloadLink(props: Props) {
+  const { children, url, title } = props;
+  const user = useAppSelector(getAuthUser);
+  const dispatch = useAppDispatch();
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleClick = async () => {
     if (user) {
-      await refresh().unwrap();
+      await dispatch(refresh()).unwrap();
     }
     // eslint-disable-next-line no-restricted-globals
     location.href = url;
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <IconButton style={{ cursor: "pointer" }} onClick={handleClick}>
@@ -41,4 +38,4 @@ function DownloadLink(props: PropTypes) {
   );
 }
 
-export default connector(DownloadLink);
+export default DownloadLink;

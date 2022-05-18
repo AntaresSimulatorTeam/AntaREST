@@ -3,31 +3,28 @@ import * as R from "ramda";
 import { AxiosError } from "axios";
 import { Box, LinearProgress, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps } from "react-redux";
 import Dropzone from "react-dropzone";
 import { useSnackbar } from "notistack";
-import { usePromise, useMountedState } from "react-use";
+import { useMountedState } from "react-use";
 import { createStudy } from "../../redux/ducks/studies";
 import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import { useAppDispatch } from "../../redux/hooks";
 
-const mapDispatch = {
-  addStudy: createStudy,
-};
+interface Props {
+  open: BasicDialogProps["open"];
+  onClose: VoidFunction;
+}
 
-const connector = connect(null, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-type PropTypes = PropsFromRedux & BasicDialogProps;
-
-function ImportStudyDialog(props: PropTypes) {
-  const { open, onClose, addStudy } = props;
+function ImportStudyDialog(props: Props) {
+  const { open, onClose } = props;
   const [t] = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(-1);
-  const mounted = usePromise();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
   const isMounted = useMountedState();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (isUploading) {
@@ -48,39 +45,45 @@ function ImportStudyDialog(props: PropTypes) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDrop = async (acceptedFiles: File[]) => {
+  const handleDrop = (acceptedFiles: File[]) => {
     const fileToUpload = R.last(acceptedFiles);
 
     if (fileToUpload) {
       setIsUploading(true);
       setUploadProgress(0);
 
-      try {
-        await mounted(
-          addStudy({
-            file: fileToUpload,
-            onUploadProgress: (progress) => {
-              if (isMounted()) {
-                setUploadProgress(progress);
-              }
-            },
-          }).unwrap()
-        );
-
-        enqueueSnackbar(
-          t("studymanager:importsuccess", { uploadFile: fileToUpload.name }),
-          { variant: "success" }
-        );
-        (onClose as () => void)?.();
-      } catch (e) {
-        enqueueErrorSnackbar(
-          t("studymanager:importfailure", { uploadFile: fileToUpload.name }),
-          e as AxiosError
-        );
-      } finally {
-        setIsUploading(false);
-        setUploadProgress(-1);
-      }
+      dispatch(
+        createStudy({
+          file: fileToUpload,
+          onUploadProgress: (progress) => {
+            if (isMounted()) {
+              setUploadProgress(progress);
+            }
+          },
+        })
+      )
+        .unwrap()
+        .then(() => {
+          enqueueSnackbar(
+            t("studymanager:importsuccess", { uploadFile: fileToUpload.name }),
+            { variant: "success" }
+          );
+          if (isMounted()) {
+            onClose();
+          }
+        })
+        .catch((err) => {
+          enqueueErrorSnackbar(
+            t("studymanager:importfailure", { uploadFile: fileToUpload.name }),
+            err as AxiosError
+          );
+        })
+        .finally(() => {
+          if (isMounted()) {
+            setIsUploading(false);
+            setUploadProgress(-1);
+          }
+        });
     }
   };
 
@@ -123,4 +126,4 @@ function ImportStudyDialog(props: PropTypes) {
   );
 }
 
-export default connector(ImportStudyDialog);
+export default ImportStudyDialog;

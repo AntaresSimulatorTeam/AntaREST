@@ -4,55 +4,44 @@ import { useSnackbar } from "notistack";
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import { connect, ConnectedProps } from "react-redux";
 import { usePromise } from "react-use";
+import * as R from "ramda";
 import SingleSelect from "../../common/SelectSingle";
 import MultiSelect from "../../common/SelectMulti";
-import { convertVersions } from "../../../services/utils";
 import FilledTextInput from "../../common/FilledTextInput";
 import { GenericInfo, GroupDTO, StudyPublicMode } from "../../../common/types";
 import TextSeparator from "../../common/TextSeparator";
 import { getGroups } from "../../../services/api/user";
 import TagTextInput from "../../common/TagTextInput";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BasicDialog from "../../common/dialogs/BasicDialog";
+import BasicDialog, {
+  BasicDialogProps,
+} from "../../common/dialogs/BasicDialog";
 import { Root, ElementContainer, InputElement } from "./style";
-import { AppState } from "../../../redux/ducks";
 import { createStudy } from "../../../redux/ducks/studies";
-import { getStudyVersions } from "../../../redux/selectors";
+import { getStudyVersionsFormatted } from "../../../redux/selectors";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 
 const logErr = debug("antares:createstudyform:error");
 
-const mapState = (state: AppState) => ({
-  versions: getStudyVersions(state),
-});
-
-const mapDispatch = {
-  addStudy: createStudy,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
-  open: boolean;
-  onClose: () => void;
+interface Props {
+  open: BasicDialogProps["open"];
+  onClose: VoidFunction;
 }
-type PropTypes = PropsFromRedux & OwnProps;
 
-function CreateStudyModal(props: PropTypes) {
+function CreateStudyModal(props: Props) {
   const [t] = useTranslation();
-  const { versions, open, addStudy, onClose } = props;
+  const { open, onClose } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const versionList = convertVersions(versions || []);
+  const versionList = useAppSelector(getStudyVersionsFormatted);
   const mounted = usePromise();
+  const dispatch = useAppDispatch();
 
   // NOTE: GET TAG LIST FROM BACKEND
   const tagList: Array<string> = [];
 
-  const [version, setVersion] = useState<string>(
-    versionList[versionList.length - 1].id.toString()
-  );
+  const [version, setVersion] = useState(R.last(versionList)?.id.toString());
   const [studyName, setStudyName] = useState<string>("");
   const [publicMode, setPublicMode] = useState<StudyPublicMode>("NONE");
   const [groups, setGroups] = useState<Array<string>>([]);
@@ -66,13 +55,15 @@ function CreateStudyModal(props: PropTypes) {
     if (studyName && studyName.replace(/\s+/g, "") !== "") {
       try {
         await mounted(
-          addStudy({
-            name: studyName,
-            version,
-            groups,
-            publicMode,
-            tags,
-          }).unwrap()
+          dispatch(
+            createStudy({
+              name: studyName,
+              version,
+              groups,
+              publicMode,
+              tags,
+            })
+          ).unwrap()
         );
 
         enqueueSnackbar(
@@ -196,4 +187,4 @@ function CreateStudyModal(props: PropTypes) {
   );
 }
 
-export default connector(CreateStudyModal);
+export default CreateStudyModal;

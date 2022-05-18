@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import { useSelector } from "react-redux";
 import { TokenFormDialogProps } from ".";
 import { GroupDTO, RoleType } from "../../../../../common/types";
 import usePromise from "../../../../../hooks/usePromise";
@@ -32,6 +31,7 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
 import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
+import { useAppSelector } from "../../../../../redux/hooks";
 
 /**
  * Types
@@ -64,8 +64,8 @@ function TokenForm(props: Props) {
   const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
-  const isUserAdmin = useSelector(isAuthUserAdmin);
+  const authUser = useAppSelector(getAuthUser);
+  const isUserAdmin = useAppSelector(isAuthUserAdmin);
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(

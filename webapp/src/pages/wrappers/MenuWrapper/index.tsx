@@ -1,11 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import {
-  FunctionComponent,
-  PropsWithChildren,
-  ReactNode,
-  useState,
-} from "react";
-import { connect, ConnectedProps } from "react-redux";
+import { FunctionComponent, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -18,15 +12,12 @@ import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined
 import StorageIcon from "@mui/icons-material/Storage";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
-
 import ApiIcon from "@mui/icons-material/Api";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import GitHubIcon from "@mui/icons-material/GitHub";
-
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
-
 import {
   keyframes,
   styled,
@@ -37,7 +28,6 @@ import {
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
-import { AppState } from "../../../redux/ducks";
 import { setMenuExtensionStatus } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
@@ -54,10 +44,12 @@ import {
 import { getConfig } from "../../../services/config";
 import {
   getCurrentStudyId,
+  getMenuExtended,
   getWebSocketConnected,
 } from "../../../redux/selectors";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
 import { logout } from "../../../redux/ducks/auth";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -92,34 +84,20 @@ interface MenuItem {
   icon: FunctionComponent<SvgIconProps>;
 }
 
-const mapState = (state: AppState) => ({
-  extended: state.ui.menuExtended,
-  currentStudy: getCurrentStudyId(state),
-  websocketConnected: getWebSocketConnected(state),
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  setExtended: setMenuExtensionStatus,
-  logout,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function MenuWrapper(props: PropsWithChildren<PropTypes>) {
-  const {
-    children,
-    extended,
-    setExtended,
-    logout,
-    currentStudy,
-    websocketConnected,
-  } = props;
+function MenuWrapper(props: Props) {
+  const { children } = props;
   const theme = useTheme();
   const [t] = useTranslation();
   const [openLogoutDialog, setOpenLogoutDialog] = useState<boolean>(false);
   const versionInfo = getConfig().version;
+  const extended = useAppSelector(getMenuExtended);
+  const currentStudy = useAppSelector(getCurrentStudyId);
+  const websocketConnected = useAppSelector(getWebSocketConnected);
+  const dispatch = useAppDispatch();
 
   let navigation: Array<MenuItem> = [
     {
@@ -283,7 +261,9 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             </NavListItemIcon>
             {extended && <NavListItemText primary={t("main:logout")} />}
           </NavListItem>
-          <NavListItem onClick={() => setExtended(!extended)}>
+          <NavListItem
+            onClick={() => dispatch(setMenuExtensionStatus(!extended))}
+          >
             <NavListItemIcon>
               <ReadMoreOutlinedIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
@@ -294,7 +274,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
           <ConfirmationDialog
             title={t("main:logout")}
             onCancel={() => setOpenLogoutDialog(false)}
-            onConfirm={logout}
+            onConfirm={() => dispatch(logout())}
             alert="warning"
             open
           >
@@ -316,4 +296,4 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   );
 }
 
-export default connector(MenuWrapper);
+export default MenuWrapper;
