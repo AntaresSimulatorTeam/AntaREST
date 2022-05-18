@@ -8,7 +8,7 @@ import { getMessageInfo } from "../../../services/api/maintenance";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import OkDialog from "../../../components/common/dialogs/OkDialog";
 import { AppState } from "../../../redux/ducks";
-import { setMessageInfo } from "../../../redux/ducks/global";
+import { setMessageInfo } from "../../../redux/ducks/ui";
 
 export const Main = styled(Box)(({ theme }) => ({
   width: "600px",
@@ -24,7 +24,7 @@ export const Main = styled(Box)(({ theme }) => ({
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
-  messageInfo: state.global.messageInfo,
+  messageInfo: state.ui.messageInfo,
 });
 
 const mapDispatch = {

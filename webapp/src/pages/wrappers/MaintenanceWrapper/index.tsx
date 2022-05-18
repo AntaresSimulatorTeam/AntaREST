@@ -10,9 +10,9 @@ import { AppState } from "../../../redux/ducks";
 import { isUserAdmin } from "../../../services/utils";
 import { getMaintenanceMode } from "../../../services/api/maintenance";
 import { getConfig } from "../../../services/config";
-import { setMaintenanceMode } from "../../../redux/ducks/global";
 import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
+import { setMaintenanceMode } from "../../../redux/ducks/ui";
 
 const logError = debug("antares:maintenancewrapper:error");
 
@@ -31,7 +31,7 @@ const StyledErrorIcon = styled(ErrorIcon)(({ theme }) => ({
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
-  maintenance: state.global.maintenanceMode,
+  maintenance: state.ui.maintenanceMode,
 });
 
 const mapDispatch = {

@@ -9,17 +9,17 @@ import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
+import { AppState } from "../../redux/ducks";
+import { addMessageListener } from "../../services/webSockets";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
-} from "../../redux/ducks/global";
-import { AppState } from "../../redux/ducks";
-import { addMessageListener } from "../../services/webSockets";
+} from "../../redux/ducks/ui";
 
 const logError = debug("antares:downloadbadge:error");
 
 const mapState = (state: AppState) => ({
-  notificationCount: state.global.taskNotificationsCount,
+  notificationCount: state.ui.taskNotificationsCount,
 });
 
 const mapDispatch = {

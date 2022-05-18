@@ -5,12 +5,18 @@ export interface UIState {
   menuExtended: boolean;
   currentPage: string;
   webSocketConnected: boolean;
+  maintenanceMode: boolean;
+  messageInfo: string;
+  taskNotificationsCount: number;
 }
 
 const initialState = {
   menuExtended: false,
   currentPage: "/",
   webSocketConnected: false,
+  maintenanceMode: false,
+  messageInfo: "",
+  taskNotificationsCount: 0,
 } as UIState;
 
 const n = makeActionName("ui");
@@ -31,6 +37,22 @@ export const setWebSocketConnected = createAction<
   UIState["webSocketConnected"]
 >(n("SET_WEBSOCKET_CONNECTED"));
 
+export const incrementTaskNotifications = createAction<
+  UIState["taskNotificationsCount"] | undefined
+>(n("INCREMENT_TASK_NOTIFICATIONS"));
+
+export const resetTaskNotifications = createAction(
+  n("RESET_TASK_NOTIFICATIONS")
+);
+
+export const setMessageInfo = createAction<UIState["messageInfo"]>(
+  n("SET_MESSAGE_INFO")
+);
+
+export const setMaintenanceMode = createAction<UIState["maintenanceMode"]>(
+  n("SET_MAINTENANCE_MODE")
+);
+
 ////////////////////////////////////////////////////////////////
 // Reducer
 ////////////////////////////////////////////////////////////////
@@ -45,5 +67,20 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(setWebSocketConnected, (draftState, action) => {
       draftState.webSocketConnected = action.payload;
+    })
+    .addCase(incrementTaskNotifications, (draftState, action) => {
+      const value = action.payload ?? 1;
+      if (value > 0) {
+        draftState.taskNotificationsCount += value;
+      }
+    })
+    .addCase(resetTaskNotifications, (draftState) => {
+      draftState.taskNotificationsCount = 0;
+    })
+    .addCase(setMessageInfo, (draftState, action) => {
+      draftState.messageInfo = action.payload;
+    })
+    .addCase(setMaintenanceMode, (draftState, action) => {
+      draftState.maintenanceMode = action.payload;
     });
 });

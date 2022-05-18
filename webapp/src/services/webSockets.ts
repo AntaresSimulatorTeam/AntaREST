@@ -5,9 +5,12 @@ import { getConfig } from "./config";
 import { isStringEmpty, isUserExpired } from "./utils";
 import { AppDispatch } from "../redux/store";
 import { refresh as refreshUser } from "../redux/ducks/auth";
-import { setMaintenanceMode, setMessageInfo } from "../redux/ducks/global";
 import { deleteStudy, setStudy } from "../redux/ducks/studies";
-import { setWebSocketConnected } from "../redux/ducks/ui";
+import {
+  setMaintenanceMode,
+  setMessageInfo,
+  setWebSocketConnected,
+} from "../redux/ducks/ui";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
