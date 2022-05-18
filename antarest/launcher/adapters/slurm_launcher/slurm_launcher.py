@@ -323,6 +323,12 @@ class SlurmLauncher(AbstractLauncher):
                                 study.xpansion_mode,
                                 study.job_log_dir,
                             )
+                    except Exception as e:
+                        self.callbacks.append_after_log(
+                            study.name,
+                            f"Unexpected error when importing study output : {str(e)}",
+                        )
+                        raise e
                     finally:
                         self.callbacks.update_status(
                             study.name,

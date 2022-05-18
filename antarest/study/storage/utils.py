@@ -20,7 +20,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.utils import assert_this
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -30,6 +29,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -117,22 +117,28 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
-def extract_output_name(path_output: Path) -> str:
+def extract_output_name(
+    path_output: Path, new_suffix_name: Optional[str] = None
+) -> str:
     ini_reader = IniReader()
-    info_antares_output = ini_reader.read(path_output / "info.antares-output")[
-        "general"
-    ]
+    info_antares_output = ini_reader.read(path_output / "info.antares-output")
+    general_info = info_antares_output["general"]
 
-    date = datetime.fromtimestamp(
-        int(info_antares_output["timestamp"])
-    ).strftime("%Y%m%d-%H%M")
-
-    mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-    name = (
-        f"-{info_antares_output['name']}"
-        if info_antares_output["name"]
-        else ""
+    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime(
+        "%Y%m%d-%H%M"
     )
+
+    mode = "eco" if general_info["mode"] == "Economy" else "adq"
+    suffix_name = general_info["name"] if general_info["name"] else ""
+    if new_suffix_name:
+        suffix_name = new_suffix_name or suffix_name
+        general_info["name"] = suffix_name
+        ini_writer = IniWriter()
+        ini_writer.write(
+            info_antares_output, path_output / "info.antares-output"
+        )
+
+    name = f"-{suffix_name}" if suffix_name else ""
     return f"{date}{mode}{name}"
 
 

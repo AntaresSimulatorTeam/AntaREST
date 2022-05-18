@@ -73,7 +73,7 @@ function LauncherModal(props: Props) {
       open={open}
       onClose={onClose}
       contentProps={{
-        sx: { width: "500px", height: "350px", p: 0, overflow: "hidden" },
+        sx: { width: "500px", height: "450px", p: 0, overflow: "hidden" },
       }}
       actions={
         <>
@@ -101,6 +101,46 @@ function LauncherModal(props: Props) {
         >
           Options
         </Typography>
+        <FormControl
+          sx={{
+            width: "100%",
+          }}
+        >
+          <TextField
+            id="launcher-option-output-suffix"
+            label={t("main:name")}
+            type="text"
+            value={options.output_suffix}
+            onChange={(e) =>
+              handleChange("output_suffix", e.target.value.trim())
+            }
+            InputProps={{
+              sx: {
+                ".MuiOutlinedInput-root": {
+                  "&.MuiOutlinedInput-notchedOutline": {
+                    borderColor: `${theme.palette.primary.main} !important`,
+                  },
+                },
+                ".Mui-focused": {
+                  // borderColor: `${theme.palette.primary.main} !important`
+                },
+                ".MuiOutlinedInput-notchedOutline": {
+                  borderWidth: "1px",
+                  borderColor: `${theme.palette.text.secondary} !important`,
+                },
+              },
+            }}
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                ".MuiInputLabel-root": {
+                  color: theme.palette.text.secondary,
+                },
+                ".Mui-focused": {},
+              },
+            }}
+          />
+        </FormControl>
         <FormControl
           sx={{
             mt: 1,

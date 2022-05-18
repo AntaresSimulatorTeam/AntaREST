@@ -225,12 +225,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         metadata: T,
         output: Union[IO[bytes], Path],
+        output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import additional output on a existing study
         Args:
             metadata: study
             output: new output (path or zipped data)
+            output_name: optional suffix name to append to output name
 
         Returns: output id
         """
@@ -238,7 +240,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         )
         os.makedirs(path_output)
-        output_name: Optional[str] = None
+        output_full_name: Optional[str] = None
         try:
             if isinstance(output, Path):
                 if output != path_output:
@@ -247,13 +249,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 extract_zip(output, path_output)
 
             fix_study_root(path_output)
-            output_name = extract_output_name(path_output)
+            output_full_name = extract_output_name(path_output, output_name)
             path_output = path_output.rename(
-                Path(path_output.parent, output_name)
+                Path(path_output.parent, output_full_name)
             )
 
             data = self.get(
-                metadata, f"output/{output_name}", -1, use_cache=False
+                metadata, f"output/{output_full_name}", -1, use_cache=False
             )
 
             if data is None:
@@ -263,9 +265,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
-            output_name = None
+            output_full_name = None
 
-        return output_name
+        return output_full_name
 
     def export_study(
         self, metadata: T, target: Path, outputs: bool = True
