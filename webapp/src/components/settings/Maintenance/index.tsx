@@ -40,7 +40,7 @@ function Maintenance() {
   const {
     data: initialValues,
     isLoading,
-    error,
+    isRejected,
     reload: reloadFetchMaintenance,
   } = usePromiseWithSnackbarError(
     async () => ({
@@ -89,7 +89,7 @@ function Maintenance() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (error) {
+  if (isRejected) {
     return (
       <Typography sx={{ m: 2 }} align="center">
         {t("settings:maintenanceError")}
