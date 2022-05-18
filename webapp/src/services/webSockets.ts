@@ -133,7 +133,7 @@ export function sendWsSubscribeMessage(
       return;
     }
 
-    messagesToSend.forEach(socket.send);
+    messagesToSend.forEach((msg) => socket.send(msg));
   }
 
   send("SUBSCRIBE");
