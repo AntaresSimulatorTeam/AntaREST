@@ -128,52 +128,23 @@ function DatasetCreationDialog(props: PropTypes) {
     };
   }, [data, t, enqueueSnackbar]);
 
-  return (
-    <BasicDialog
-      open={open}
-      onClose={importing ? undefined : onClose}
-      title={data ? data.name : t("data:newMatrixTitle")}
-      actions={
-        <Box>
-          <Button
-            color="primary"
-            onClick={importing ? undefined : onClose}
-            sx={{ m: 2 }}
-          >
-            {t("settings:cancelButton")}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={importing ? undefined : onSave}
-            sx={{ m: 2 }}
-          >
-            {t("settings:saveButton")}
-          </Button>
-        </Box>
-      }
-    >
-      <Box
-        sx={{
-          flex: "1",
-          width: "100%",
-          display: "flex",
-          flexFlow: "column nowrap",
-          justifyContent: "flex-start",
-          alignItems: "center",
-          overflowY: "auto",
-          overflowX: "hidden",
-          position: "relative",
-        }}
-      >
-        {importing &&
-          (uploadProgress < 100 ? (
+  const renderContent = () => {
+    if (importing) {
+      return (
+        <Box sx={{ height: "200px", width: "100%" }}>
+          {uploadProgress < 100 ? (
             <SimpleLoader
               message="data:uploadingmatrix"
               progress={uploadProgress}
             />
           ) : (
             <SimpleLoader message="data:analyzingmatrix" />
-          ))}
+          )}
+        </Box>
+      );
+    }
+    return (
+      <>
         <Box
           sx={{
             flex: "1",
@@ -320,6 +291,42 @@ function DatasetCreationDialog(props: PropTypes) {
             </Box>
           </BoxParam>
         )}
+      </>
+    );
+  };
+
+  return (
+    <BasicDialog
+      open={open}
+      onClose={!importing ? onClose : undefined}
+      title={data ? data.name : t("data:newMatrixTitle")}
+      actions={
+        !importing && (
+          <Box>
+            <Button color="primary" onClick={onClose} sx={{ m: 2 }}>
+              {t("settings:cancelButton")}
+            </Button>
+            <Button variant="contained" onClick={onSave} sx={{ m: 2 }}>
+              {t("settings:saveButton")}
+            </Button>
+          </Box>
+        )
+      }
+    >
+      <Box
+        sx={{
+          flex: "1",
+          width: "100%",
+          display: "flex",
+          flexFlow: "column nowrap",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+        }}
+      >
+        {renderContent()}
       </Box>
     </BasicDialog>
   );

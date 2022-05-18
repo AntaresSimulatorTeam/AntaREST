@@ -1,5 +1,3 @@
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 import { connect, ConnectedProps } from "react-redux";
 import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
