@@ -1,11 +1,9 @@
 import { connect, ConnectedProps } from "react-redux";
-import { loginUser, logoutAction } from "../../redux/ducks/auth";
 import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
-import { refresh } from "../../services/api/auth";
-import { refresh } from "../../redux/ducks/auth";
-import { AppState } from "../../redux/ducks";
 import { getAuthUser } from "../../redux/selectors";
+import { AppState } from "../../redux/ducks";
+import { refresh } from "../../redux/ducks/auth";
 
 const mapState = (state: AppState) => ({
   user: getAuthUser(state),
@@ -26,8 +24,7 @@ interface OwnProps {
 type PropTypes = PropsFromRedux & OwnProps;
 
 function DownloadLink(props: PropTypes) {
-  const { user, title, login, logout, children, url } = props;
-  const { user, refresh, children, url } = props;
+  const { user, refresh, children, url, title } = props;
 
   const handleClick = async () => {
     if (user) {
