@@ -25,7 +25,6 @@ import {
 import { loadState, saveState } from "../../services/utils/localStorage";
 import { convertVersions } from "../../services/utils";
 import { getGroups, getUsers } from "../../services/api/user";
-import * as studyApi from "../../services/api/study";
 import { AppState } from "../../redux/ducks";
 import {
   fetchStudies,
@@ -142,9 +141,6 @@ function Studies(props: PropTypes) {
       try {
         if (studies.length === 0 || refresh) {
           await loadStudies().unwrap();
-          // TODO: update with a useEffect with `studies` in dep
-          const allStudies = await studyApi.getStudies();
-          setFilteredStudies(allStudies);
         }
       } catch (e) {
         enqueueErrorSnackbar(
