@@ -1,11 +1,13 @@
 import asyncio
 import logging
+import random
 import threading
 import time
-from typing import List, Callable, Optional, Dict, Awaitable
+from typing import List, Callable, Optional, Dict, Awaitable, Any, cast
 from uuid import uuid4
 
 from antarest.core.interfaces.eventbus import Event, IEventBus, EventType
+from antarest.core.utils.utils import suppress_exception
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
@@ -19,12 +21,35 @@ class EventBusService(IEventBus):
         self.listeners: Dict[
             EventType, Dict[str, Callable[[Event], Awaitable[None]]]
         ] = {ev_type: {} for ev_type in EventType}
+        self.consumers: Dict[
+            str, Dict[str, Callable[[Event], Awaitable[None]]]
+        ] = {ev_type: {} for ev_type in EventType}
+
         self.lock = threading.Lock()
         if autostart:
             self.start()
 
     def push(self, event: Event) -> None:
         self.backend.push_event(event)
+
+    def queue(self, event: Event, queue: str) -> None:
+        self.backend.queue_event(event, queue)
+
+    def add_queue_consumer(
+        self, listener: Callable[[Event], Awaitable[None]], queue: str
+    ) -> str:
+        with self.lock:
+            listener_id = str(uuid4())
+            if queue not in self.consumers:
+                self.consumers[queue] = {}
+            self.consumers[queue][listener_id] = listener
+            return listener_id
+
+    def remove_queue_consumer(self, listener_id: str) -> None:
+        with self.lock:
+            for queue in self.consumers:
+                if listener_id in self.consumers[queue]:
+                    del self.consumers[queue][listener_id]
 
     def add_listener(
         self,
@@ -51,18 +76,46 @@ class EventBusService(IEventBus):
 
     async def _on_events(self) -> None:
         with self.lock:
+            for queue in self.consumers:
+                if len(self.consumers[queue]) > 0:
+                    event = self.backend.pull_queue(queue)
+                    while event is not None:
+                        call = suppress_exception(
+                            lambda: list(self.consumers[queue].values())[
+                                random.randint(
+                                    0, len(self.consumers[queue]) - 1
+                                )
+                            ](cast(Event, event)),
+                            lambda ex: logger.error(
+                                f"Failed to process queue event {e.type}",
+                                exc_info=ex,
+                            ),
+                        )
+                        if call:
+                            await call
+                        event = self.backend.pull_queue(queue)
+
             for e in self.backend.get_events():
                 if e.type in self.listeners:
-                    for listener in list(
-                        self.listeners[e.type].values()
-                    ) + list(self.listeners[EventType.ANY].values()):
-                        try:
-                            await listener(e)
-                        except Exception as ex:
-                            logger.error(
-                                f"Failed to process event {e.type}",
-                                exc_info=ex,
-                            )
+                    await asyncio.gather(
+                        *[
+                            l
+                            for l in [
+                                suppress_exception(
+                                    lambda: listener(e),
+                                    lambda ex: logger.error(
+                                        f"Failed to process event {e.type}",
+                                        exc_info=ex,
+                                    ),
+                                )
+                                for listener in list(
+                                    self.listeners[e.type].values()
+                                )
+                                + list(self.listeners[EventType.ANY].values())
+                            ]
+                            if l is not None
+                        ]
+                    )
             self.backend.clear_events()
 
     def _async_loop(self, new_loop: bool = True) -> None:

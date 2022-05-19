@@ -58,6 +58,20 @@ class IEventBus(ABC):
         pass
 
     @abstractmethod
+    def queue(self, event: Event, queue: str) -> None:
+        pass
+
+    @abstractmethod
+    def add_queue_consumer(
+        self, listener: Callable[[Event], Awaitable[None]], queue: str
+    ) -> str:
+        pass
+
+    @abstractmethod
+    def remove_queue_consumer(self, listener_id: str) -> None:
+        pass
+
+    @abstractmethod
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
@@ -82,6 +96,20 @@ class IEventBus(ABC):
 
 
 class DummyEventBusService(IEventBus):
+    def queue(self, event: Event, queue: str) -> None:
+        # Noop
+        pass
+
+    def add_queue_consumer(
+        self, listener: Callable[[Event], Awaitable[None]], queue: str
+    ) -> str:
+        # Noop
+        pass
+
+    def remove_queue_consumer(self, listener_id: str) -> None:
+        # Noop
+        pass
+
     def push(self, event: Event) -> None:
         # Noop
         pass

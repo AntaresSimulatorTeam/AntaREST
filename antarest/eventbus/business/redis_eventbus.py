@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import logging
-from typing import List
+from typing import List, Optional, cast
 
 from redis.client import Redis
 
@@ -21,6 +21,12 @@ class RedisEventBus(IEventBusBackend):
 
     def push_event(self, event: Event) -> None:
         self.redis.publish(REDIS_STORE_KEY, event.json())
+
+    def queue_event(self, event: Event, queue: str) -> None:
+        self.redis.rpush(queue, event.json())
+
+    def pull_queue(self, queue: str) -> Optional[Event]:
+        return cast(Optional[Event], self.redis.lpop(queue))
 
     def get_events(self) -> List[Event]:
         try:

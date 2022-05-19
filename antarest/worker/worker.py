@@ -27,10 +27,8 @@ class WorkerTaskCommand(BaseModel):
 class AbstractWorker(abc.ABC):
     def __init__(self, event_bus: IEventBus, accept: List[str]) -> None:
         self.event_bus = event_bus
-        self.event_bus.add_listener(
-            self.listen_for_tasks, [EventType.WORKER_TASK]
-        )
-        self.task_type_accepted = accept
+        for task_type in accept:
+            self.event_bus.add_queue_consumer(self.listen_for_tasks, task_type)
         self.threadpool = ThreadPoolExecutor(
             max_workers=MAX_WORKERS, thread_name_prefix="workertask_"
         )
@@ -39,10 +37,9 @@ class AbstractWorker(abc.ABC):
 
     async def listen_for_tasks(self, event: Event) -> None:
         task_info = cast(WorkerTaskCommand, event.payload)
-        if task_info.task_type in self.task_type_accepted:
-            self.futures.append(
-                self.threadpool.submit(self.execute_task, task_info)
-            )
+        self.futures.append(
+            self.threadpool.submit(self.execute_task, task_info)
+        )
 
     @abstractmethod
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:

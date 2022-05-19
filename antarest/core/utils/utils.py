@@ -3,7 +3,7 @@ import shutil
 import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional, Callable, TypeVar, List
+from typing import IO, Any, Optional, Callable, TypeVar, List, Union, Awaitable
 from zipfile import (
     ZipFile,
     BadZipFile,
@@ -164,3 +164,13 @@ def unzip(
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
+
+def suppress_exception(
+    callback: Callable[[], T],
+    logger: Callable[[Exception], None],
+) -> Optional[T]:
+    try:
+        return callback()
+    except Exception as e:
+        logger(e)
+        return None

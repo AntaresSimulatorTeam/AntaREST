@@ -142,7 +142,7 @@ class TaskJobService(ITaskService):
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
             )
-            self.event_bus.push(
+            self.event_bus.queue(
                 Event(
                     type=EventType.WORKER_TASK,
                     payload=WorkerTaskCommand(
@@ -150,7 +150,8 @@ class TaskJobService(ITaskService):
                         task_type=task_type,
                         task_args=task_args,
                     ),
-                )
+                ),
+                task_type,
             )
             while not task_result_wrapper:
                 time.sleep(1)
