@@ -49,7 +49,7 @@ function Candidates() {
   const {
     data: candidates,
     isLoading,
-    error,
+    isRejected,
     reload,
   } = usePromiseWithSnackbarError(
     async () => {
@@ -197,7 +197,7 @@ function Candidates() {
   };
 
   // TODO
-  if (error) {
+  if (isRejected) {
     return <Box />;
   }
 

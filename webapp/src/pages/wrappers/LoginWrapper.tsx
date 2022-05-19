@@ -35,7 +35,7 @@ function LoginWrapper(props: Props) {
   const {
     data: canDisplayApp,
     isLoading,
-    error,
+    isRejected,
   } = usePromiseWithSnackbarError(
     async () => {
       const isAuthNeeded = await needAuth();
@@ -83,7 +83,7 @@ function LoginWrapper(props: Props) {
     return <AppLoader />;
   }
 
-  if (error) {
+  if (isRejected) {
     return <GlobalPageLoadingError />;
   }
 
