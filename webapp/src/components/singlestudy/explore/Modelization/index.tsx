@@ -13,23 +13,23 @@ function Modelization() {
   const tabList = useMemo(
     () => [
       {
-        label: t("singlestudy:map"),
+        label: t("global:study.modelization.map"),
         path: `/studies/${study?.id}/explore/modelization/map`,
       },
       {
-        label: t("singlestudy:areas"),
+        label: t("global:study.areas"),
         path: `/studies/${study?.id}/explore/modelization/area`,
       },
       {
-        label: t("singlestudy:links"),
+        label: t("global:study.links"),
         path: `/studies/${study?.id}/explore/modelization/links`,
       },
       {
-        label: t("singlestudy:bindingconstraints"),
+        label: t("global:study.bindingconstraints"),
         path: `/studies/${study?.id}/explore/modelization/bindingcontraint`,
       },
       {
-        label: t("singlestudy:debug"),
+        label: t("global:study.debug"),
         path: `/studies/${study?.id}/explore/modelization/debug`,
       },
     ],

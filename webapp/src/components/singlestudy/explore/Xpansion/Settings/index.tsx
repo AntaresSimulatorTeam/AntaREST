@@ -39,7 +39,10 @@ function Settings() {
         setSettings(tempSettings);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     }
   }, [study?.id, t]);
 
@@ -50,7 +53,10 @@ function Settings() {
         setConstraints(tempConstraints);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     }
   }, [study?.id, t]);
 
@@ -61,7 +67,10 @@ function Settings() {
         initFiles();
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -82,10 +91,13 @@ function Settings() {
         );
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:updateSettingsError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.updateSettings"),
+        e as AxiosError
+      );
     } finally {
       initSettings();
-      enqueueSnackbar(t("studymanager:savedatasuccess"), {
+      enqueueSnackbar(t("global:studies.success.saveData"), {
         variant: "success",
       });
     }
@@ -98,7 +110,7 @@ function Settings() {
         setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:xpansion.error.getFile"), e as AxiosError);
     }
   };
 

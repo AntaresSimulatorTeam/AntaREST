@@ -113,9 +113,9 @@ function MaintenanceWrapper(props: Props) {
               color: "primary.main",
             }}
           >
-            {t("main:appUnderMaintenance")}
+            {t("global:maintenance.message.underMaintenance")}
             <br />
-            {t("main:comeBackLater")}
+            {t("global:maintenance.message.comeBackLater")}
           </Typography>
         </Box>
         <MessageInfoDialog />

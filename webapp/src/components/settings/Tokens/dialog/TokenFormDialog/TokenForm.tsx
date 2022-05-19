@@ -117,7 +117,7 @@ function TokenForm(props: Props) {
         <TextField
           sx={{ mx: 0 }}
           autoFocus
-          label={t("main:name")}
+          label={t("global:global.name")}
           error={!!errors.name}
           helperText={errors.name?.message}
           required
@@ -155,11 +155,11 @@ function TokenForm(props: Props) {
               <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
                 <FormControl sx={{ mr: 2, flex: 1 }} size="small">
                   <InputLabel id={groupLabelId}>
-                    {t("settings:group")}
+                    {t("global:global.group")}
                   </InputLabel>
                   <Select
                     labelId={groupLabelId}
-                    label={t("settings:group")}
+                    label={t("global:global.group")}
                     defaultValue=""
                     onChange={handleGroupChange}
                   >
@@ -178,7 +178,7 @@ function TokenForm(props: Props) {
                     append({ group: selectedGroup, type: RoleType.READER });
                   }}
                 >
-                  {t("settings:addButton")}
+                  {t("global:button.add")}
                 </Button>
               </Box>
             )}

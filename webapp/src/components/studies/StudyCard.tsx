@@ -99,12 +99,12 @@ export default function StudyCard(props: Props) {
   const copyId = (): void => {
     try {
       navigator.clipboard.writeText(study.id);
-      enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
+      enqueueSnackbar(t("global:study.success.studyIdCopys"), {
         variant: "success",
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("singlestudy:onStudyIdCopyError"),
+        t("global:study.error.studyIdCopy"),
         e as AxiosError
       );
     }
@@ -157,11 +157,11 @@ export default function StudyCard(props: Props) {
           >
             <StarToggle
               isActive={favorite}
-              activeTitle={t("studymanager:removeFavorite") as string}
-              unactiveTitle={t("studymanager:bookmark") as string}
+              activeTitle={t("global:studies.removeFavorite") as string}
+              unactiveTitle={t("global:studies.bookmark") as string}
               onToggle={handleFavoriteClick}
             />
-            <Tooltip title={t("studymanager:copyID") as string}>
+            <Tooltip title={t("global:study.copyId") as string}>
               <ContentCopyIcon
                 sx={{
                   cursor: "pointer",
@@ -264,7 +264,7 @@ export default function StudyCard(props: Props) {
             color="primary"
             onClick={() => onUnarchiveClick(study)}
           >
-            {t("studymanager:unarchive")}
+            {t("global:global.unarchive")}
           </Button>
         ) : (
           <NavLink
@@ -272,11 +272,11 @@ export default function StudyCard(props: Props) {
             style={{ textDecoration: "none" }}
           >
             <Button size="small" color="primary">
-              {t("studymanager:exploreButton")}
+              {t("global:button.explore")}
             </Button>
           </NavLink>
         )}
-        <Tooltip title={t("singlestudy:more") as string}>
+        <Tooltip title={t("global:study.more") as string}>
           <Button
             size="small"
             aria-controls="menu-elements"
@@ -308,7 +308,7 @@ export default function StudyCard(props: Props) {
                   sx={{ color: "action.active", width: "24px", height: "24px" }}
                 />
               </ListItemIcon>
-              <ListItemText>{t("studymanager:unarchive")}</ListItemText>
+              <ListItemText>{t("global:global.unarchive")}</ListItemText>
             </MenuItem>
           ) : (
             <div>
@@ -327,7 +327,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("main:launch")}</ListItemText>
+                <ListItemText>{t("global:global.launch")}</ListItemText>
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -344,7 +344,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("global:global.copy)}</ListItemText>
+                <ListItemText>{t("global:study.copyId")}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
@@ -362,7 +362,7 @@ export default function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:moveStudy")}</ListItemText>
+                  <ListItemText>{t("global:studies.moveStudy")}</ListItemText>
                 </MenuItem>
               )}
               <MenuItem
@@ -424,13 +424,13 @@ export default function StudyCard(props: Props) {
       </CardActions>
       {openDeleteDialog && (
         <ConfirmationDialog
-          title={t("main:confirmationModalTitle")}
+          title={t("global:dialog.title.confirmation")}
           onCancel={() => setOpenDeleteDialog(false)}
           onConfirm={onDeleteStudy}
           alert="warning"
           open
         >
-          {t("studymanager:confirmdelete")}
+          {t("gobal:studies.question.delete")}
         </ConfirmationDialog>
       )}
       {openExportModal && (

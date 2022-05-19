@@ -102,7 +102,7 @@ function GroupForm(props: Props) {
       <TextField
         sx={{ mx: 0 }}
         autoFocus
-        label={t("main:name")}
+        label={t("global:global.name")}
         error={!!errors.name}
         helperText={errors.name?.message}
         placeholder={defaultValues?.name}
@@ -146,10 +146,12 @@ function GroupForm(props: Props) {
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={userLabelId}>{t("settings:user")}</InputLabel>
+                <InputLabel id={userLabelId}>
+                  {t("global:global.user")}
+                </InputLabel>
                 <Select
                   labelId={userLabelId}
-                  label={t("settings:user")}
+                  label={t("global:global.user")}
                   defaultValue=""
                   onChange={handleUserChange}
                 >
@@ -168,7 +170,7 @@ function GroupForm(props: Props) {
                   append({ user: selectedUser, type: RoleType.READER });
                 }}
               >
-                {t("settings:addButton")}
+                {t("global:button.add")}
               </Button>
             </Box>
             <List>

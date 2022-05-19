@@ -68,7 +68,7 @@ function LoginWrapper(props: Props) {
         await dispatch(login(data)).unwrap();
       } catch (e) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setLoginError((e as any).data?.message || t("main:loginError"));
+        setLoginError((e as any).data?.message || t("global:login.error"));
       } finally {
         reset({ username: data.username });
       }
@@ -157,7 +157,7 @@ function LoginWrapper(props: Props) {
               />
               <FilledTextInput
                 type="password"
-                label={t("main:password")}
+                label={t("global:global.password")}
                 fullWidth
                 inputProps={{
                   autoComplete: "current-password",

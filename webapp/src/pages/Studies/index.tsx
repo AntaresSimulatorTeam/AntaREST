@@ -119,7 +119,7 @@ function Studies() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("studymanager:failtoretrievestudies"),
+          t("global:studies.error.retrieveStudies"),
           e as AxiosError
         );
       } finally {

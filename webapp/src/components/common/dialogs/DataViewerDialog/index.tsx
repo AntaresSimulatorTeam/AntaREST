@@ -53,7 +53,7 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
                   color: "action.active",
                 }}
               >
-                <Tooltip title={t("studymanager:copyID") as string}>
+                <Tooltip title={t("global:study.copyId") as string}>
                   <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
                 </Tooltip>
               </IconButton>
@@ -69,7 +69,7 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
       }}
       fullWidth
       maxWidth="lg"
-      okButtonText={t("main:closeButton")}
+      okButtonText={t("global:button.close")}
     >
       {isMatrix === true ? (
         <Box width="100%" height="100%" p={2}>

@@ -59,7 +59,10 @@ function StudyTree(props: Props) {
     try {
       await scanFolder(folderPath);
     } catch (e) {
-      enqueueErrorSnackbar(t("studymanager:scanFolderError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:studies.error.scanFolder"),
+        e as AxiosError
+      );
     } finally {
       setContextMenu(null);
     }
@@ -119,7 +122,7 @@ function StudyTree(props: Props) {
             <MenuItem
               onClick={() => orderFolderScan((elm as StudyTreeNode).path)}
             >
-              {t("studymanager:scanFolder")}
+              {t("global:studies.scanFolder")}
             </MenuItem>
           </Menu>
         </Fragment>

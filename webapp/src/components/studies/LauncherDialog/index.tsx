@@ -34,18 +34,18 @@ function LauncherModal(props: Props) {
 
   const launch = async () => {
     if (!study) {
-      enqueueSnackbar(t("studymanager:failtorunstudy"), { variant: "error" });
+      enqueueSnackbar(t("global:studies.error.runStudy"), { variant: "error" });
       return;
     }
     try {
       await launchStudy(study.id, options);
       enqueueSnackbar(
-        t("studymanager:studylaunched", { studyname: study.name }),
+        t("global:studies.studylaunched", { studyname: study.name }),
         { variant: "success" }
       );
       onClose();
     } catch (e) {
-      enqueueErrorSnackbar(t("studymanager:failtorunstudy"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:studies.error.runStudy"), e as AxiosError);
     }
   };
 
@@ -69,7 +69,7 @@ function LauncherModal(props: Props) {
 
   return (
     <BasicDialog
-      title={t("singlestudy:runStudy")}
+      title={t("global:study.runStudy")}
       open={open}
       onClose={onClose}
       contentProps={{
@@ -86,7 +86,7 @@ function LauncherModal(props: Props) {
             variant="contained"
             onClick={launch}
           >
-            {t("main:launch")}
+            {t("global:global.launch")}
           </Button>
         </>
       }
@@ -149,7 +149,7 @@ function LauncherModal(props: Props) {
         >
           <TextField
             id="launcher-option-time-limit"
-            label={t("singlestudy:timeLimit")}
+            label={t("global:study.timeLimit")}
             type="number"
             value={
               (options.time_limit === undefined ? 172800 : options.time_limit) /
@@ -183,7 +183,7 @@ function LauncherModal(props: Props) {
                 ".Mui-focused": {},
               },
             }}
-            helperText={t("singlestudy:timeLimitHelper")}
+            helperText={t("global:study.timeLimitHelper")}
           />
         </FormControl>
         <FormGroup
@@ -201,7 +201,7 @@ function LauncherModal(props: Props) {
                 }}
               />
             }
-            label={t("singlestudy:xpansionMode") as string}
+            label={t("global:study.xpansionMode") as string}
           />
           <FormControlLabel
             control={
@@ -212,7 +212,7 @@ function LauncherModal(props: Props) {
                 }
               />
             }
-            label={t("singlestudy:useXpansionVersionR") as string}
+            label={t("global:study.useXpansionVersionR") as string}
           />
           <FormControlLabel
             control={

@@ -108,7 +108,7 @@ function Groups() {
     isLoading,
     reload: reloadFetchGroups,
   } = usePromiseWithSnackbarError(() => getGroups({ details: true }), {
-    errorMessage: t("settings:groupsError"),
+    errorMessage: t("global:settings.error.groupsError"),
   });
 
   useUpdateEffect(() => {
@@ -164,13 +164,16 @@ function Groups() {
     mounted(deleteGroup(group.id))
       .then(() => {
         dispatch({ type: GroupActionKind.DELETE, payload: group.id });
-        enqueueSnackbar(t("settings:onGroupDeleteSuccess", [group.name]), {
-          variant: "success",
-        });
+        enqueueSnackbar(
+          t("global:settings.success.groupDelete", [group.name]),
+          {
+            variant: "success",
+          }
+        );
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings:onGroupDeleteError", [group.name]),
+          t("global:settings.error.groupDelete", [group.name]),
           err
         );
       })
@@ -250,7 +253,7 @@ function Groups() {
             R.T,
             () => (
               <Typography sx={{ m: 2 }} align="center">
-                {t("settings:noGroup")}
+                {t("global:settings.noGroup")}
               </Typography>
             ),
           ],
@@ -264,7 +267,7 @@ function Groups() {
           alert="warning"
           open
         >
-          {t("settings:deleteGroupConfirmation", [groupToDelete.name])}
+          {t("global:settings.question.deleteGroup", [groupToDelete.name])}
         </ConfirmationDialog>
       )}
       {groupToEdit && (

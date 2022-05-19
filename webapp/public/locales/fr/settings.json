@@ -60,7 +60,7 @@
   "messageMode": "Message",
   "maintenanceMode": "Mode maintenance",
   "onUpdateMessageInfo": "Message d'information modifié avec succès",
-  "onUpdateMaintenance": "Configuration de la maintenance modifiée avec succès",
+  "updateMaintenance": "Configuration de la maintenance modifiée avec succès",
   "onUpdateMaintenanceError": "Erreur lors du changement du status de maintenance",
   "onUpdateMessageInfoError": "Erreur lors du changement du message d'information",
   "updateMaintenanceConfirmation": "Êtes vous sûr de vouloir changer la configuration de la maintenance ?",

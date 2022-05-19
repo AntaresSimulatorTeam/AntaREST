@@ -23,13 +23,13 @@ function Settings() {
 
   const tabList = useMemo(() => {
     return [
-      isUserAdmin && [t("settings:users"), () => <Users />],
+      isUserAdmin && [t("global:global.users"), () => <Users />],
       (isUserAdmin || isUserInGroupAdmin) && [
-        t("settings:groups"),
+        t("global:global.group"),
         () => <Groups />,
       ],
-      [t("settings:tokens"), () => <Tokens />],
-      isUserAdmin && [t("settings:maintenance"), () => <Maintenance />],
+      [t("global:global.tokens"), () => <Tokens />],
+      isUserAdmin && [t("global:global.maintenance"), () => <Maintenance />],
     ].filter(Boolean) as Array<[string, () => JSX.Element]>;
   }, [isUserAdmin, isUserInGroupAdmin, t]);
 

@@ -70,7 +70,9 @@ function AppLoader() {
               Antares Web
             </Typography>
           </Box>
-          <Typography sx={{ my: 3 }}>{`${t("main:loading")}${Array(value)
+          <Typography sx={{ my: 3 }}>{`${t("global:global.loading")}${Array(
+            value
+          )
             .fill(0)
             .map((elm) => ".")
             .join("")}`}</Typography>

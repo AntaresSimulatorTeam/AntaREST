@@ -38,7 +38,7 @@ function SideNav(props: Props) {
       sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
     >
       <Typography sx={{ color: "grey.400" }}>
-        {t("studymanager:favorites")}
+        {t("global:studies.favorites")}
       </Typography>
       <List sx={{ width: "100%" }}>
         {favorites.map((fav) => (

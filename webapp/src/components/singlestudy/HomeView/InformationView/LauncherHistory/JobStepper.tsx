@@ -74,7 +74,7 @@ export default function VerticalLinearStepper(props: Props) {
       try {
         await killStudy(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
+        enqueueErrorSnackbar(t("global:study.failtokilltask"), e as AxiosError);
       }
       setOpenConfirmationDialog(false);
     })();
@@ -83,11 +83,11 @@ export default function VerticalLinearStepper(props: Props) {
   const copyId = (jobId: string): void => {
     try {
       navigator.clipboard.writeText(jobId);
-      enqueueSnackbar(t("singlestudy:onJobIdCopySucces"), {
+      enqueueSnackbar(t("global:study.success.jobIdCopy"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("singlestudy:onJobIdCopyError"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:study.error.jobIdCopy"), e as AxiosError);
     }
   };
 
@@ -132,7 +132,7 @@ export default function VerticalLinearStepper(props: Props) {
                 </StepLabelRow>
                 <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
                 <StepLabelRow py={1}>
-                  <Tooltip title={t("singlestudy:copyJobId") as string}>
+                  <Tooltip title={t("global:study.copyJobId") as string}>
                     <ContentCopyIcon
                       onClick={() => copyId(job.id)}
                       sx={{
@@ -148,7 +148,7 @@ export default function VerticalLinearStepper(props: Props) {
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
                     <CancelContainer>
-                      <Tooltip title={t("singlestudy:killStudy") as string}>
+                      <Tooltip title={t("global:study.killStudy") as string}>
                         <BlockIcon
                           onClick={() => openConfirmModal(job.id)}
                           sx={{
@@ -175,7 +175,7 @@ export default function VerticalLinearStepper(props: Props) {
           alert="warning"
           open
         >
-          {t("singlestudy:confirmKill")}
+          {t("global:study.question.killJob")}
         </ConfirmationDialog>
       )}
     </JobRoot>

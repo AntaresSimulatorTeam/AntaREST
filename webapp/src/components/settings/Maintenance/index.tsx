@@ -47,7 +47,7 @@ function Maintenance() {
       mode: await getMaintenanceMode(),
       message: await getMessageInfo(),
     }),
-    { errorMessage: t("settings:maintenanceError") }
+    { errorMessage: t("global:maintenance.error.maintenanceError") }
   );
 
   useUpdateEffect(() => {
@@ -75,11 +75,14 @@ function Maintenance() {
         await updateMessageInfo(data.message);
       }
 
-      enqueueSnackbar(t("settings:onUpdateMaintenance"), {
+      enqueueSnackbar(t("global:settings.updateMaintenance"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings:onUpdateMaintenanceError"), e as Error);
+      enqueueErrorSnackbar(
+        t("global:settings.error.updateMaintenance"),
+        e as Error
+      );
     } finally {
       reloadFetchMaintenance();
     }
@@ -92,7 +95,7 @@ function Maintenance() {
   if (isRejected) {
     return (
       <Typography sx={{ m: 2 }} align="center">
-        {t("settings:maintenanceError")}
+        {t("global:maintenance.error.maintenanceError")}
       </Typography>
     );
   }
@@ -115,12 +118,12 @@ function Maintenance() {
                 )}
               />
             }
-            label={t("settings:maintenanceMode")}
+            label={t("global:settings.maintenanceMode")}
             labelPlacement="start"
           />
         </Box>
         <TextField
-          label={t("settings:messageMode")}
+          label={t("global:global.message")}
           InputLabelProps={{ shrink: true }}
           minRows={6}
           multiline
@@ -149,7 +152,7 @@ function Maintenance() {
           alert="warning"
           open
         >
-          {t("settings:updateMaintenanceConfirmation")}
+          {t("global:settings.question.updateMaintenance")}
         </ConfirmationDialog>
       )}
     </>

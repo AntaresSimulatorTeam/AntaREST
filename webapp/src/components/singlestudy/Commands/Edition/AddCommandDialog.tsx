@@ -24,7 +24,7 @@ function AddCommandDialog(props: PropTypes) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("variants:newCommand")}
+      title={t("global:variants.newCommand")}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -36,7 +36,7 @@ function AddCommandDialog(props: PropTypes) {
             variant="contained"
             onClick={onSave}
           >
-            {t("main:create")}
+            {t("global:global.create")}
           </Button>
         </>
       }
@@ -73,7 +73,7 @@ function AddCommandDialog(props: PropTypes) {
                 boxSizing: "border-box",
               }}
               size="small"
-              label={t("variants:commandActionLabel")}
+              label={t("global:variants.commandActionLabel")}
               variant="outlined"
             />
           )}

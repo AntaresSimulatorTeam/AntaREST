@@ -139,7 +139,7 @@ function Map() {
         ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("singlestudy:createAreaError"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:study.error.createArea"), e as AxiosError);
     }
   };
 
@@ -179,7 +179,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(t("singlestudy:updateUIError"), e as AxiosError);
+        enqueueErrorSnackbar(t("global:study.updateUIError"), e as AxiosError);
       }
     }
   };
@@ -210,7 +210,7 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("global:study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -228,7 +228,7 @@ function Map() {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("global:study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -261,7 +261,7 @@ function Map() {
               )
             );
             enqueueErrorSnackbar(
-              t("singlestudy:createLinkError"),
+              t("global:study.error.createLink"),
               e as AxiosError
             );
           }
@@ -311,7 +311,7 @@ function Map() {
           }
         } catch (e) {
           enqueueErrorSnackbar(
-            t("studymanager:failtoloadstudy"),
+            t("global:studies.error.loadStudy"),
             e as AxiosError
           );
         } finally {
@@ -415,10 +415,10 @@ function Map() {
               top="10px"
             >
               <Typography>
-                {`${nodeData.length} ${t("singlestudy:areas")}`}
+                {`${nodeData.length} ${t("global:study.areas")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t("singlestudy:links")}`}
+                {`${linkData.length} ${t("global:study.links")}`}
               </Typography>
             </Box>
           </Box>

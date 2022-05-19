@@ -58,7 +58,9 @@ export default function MatrixGraphView(props: PropTypes) {
             my: 1,
           }}
         >
-          <InputLabel id="chip-label">{t("data:graphSelector")}</InputLabel>
+          <InputLabel id="chip-label">
+            {t("global:matrix.graphSelector")}
+          </InputLabel>
           <Select
             labelId="chip-label"
             id="matrix-chip"
@@ -75,7 +77,10 @@ export default function MatrixGraphView(props: PropTypes) {
               },
             }}
             input={
-              <OutlinedInput id="select-chip" label={t("data:graphSelector")} />
+              <OutlinedInput
+                id="select-chip"
+                label={t("global:matrix.graphSelector")}
+              />
             }
             renderValue={(selected) => (
               <Box>
@@ -112,7 +117,7 @@ export default function MatrixGraphView(props: PropTypes) {
               color="primary"
             />
           }
-          label={t("data:monotonicView")}
+          label={t("global:matrix.monotonicView")}
         />
       </Box>
       <Box display="block" width="100%" height="100%">

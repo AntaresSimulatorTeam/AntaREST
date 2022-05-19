@@ -31,7 +31,7 @@ function MoveStudyDialog(props: Props) {
     try {
       await mounted(moveStudy(study.id, folder));
       enqueueSnackbar(
-        t("studymanager:moveStudySuccess", { study: study.name, folder }),
+        t("global:studies.success.moveStudy", { study: study.name, folder }),
         {
           variant: "success",
         }
@@ -39,7 +39,7 @@ function MoveStudyDialog(props: Props) {
       onClose();
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:moveStudyFailure", { study: study.name }),
+        t("global:studies.error.moveStudy", { study: study.name }),
         e as Error
       );
     }
@@ -64,10 +64,10 @@ function MoveStudyDialog(props: Props) {
         <TextField
           sx={{ mx: 0 }}
           autoFocus
-          label={t("studymanager:folder")}
+          label={t("global:studies.folder")}
           error={!!formObj.formState.errors.folder}
           helperText={formObj.formState.errors.folder?.message}
-          placeholder={t("studymanager:movefolderplaceholder") as string}
+          placeholder={t("global:studies.movefolderplaceholder") as string}
           InputLabelProps={
             // Allow to show placeholder when field is empty
             formObj.defaultValues?.folder ? { shrink: true } : {}

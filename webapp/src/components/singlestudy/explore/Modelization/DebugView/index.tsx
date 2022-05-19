@@ -36,7 +36,7 @@ function DebugView() {
         setStudyData(data);
       } catch (e) {
         enqueueErrorSnackbar(
-          t("studymanager:failtoretrievedata"),
+          t("global:studies.error.retrieveData"),
           e as AxiosError
         );
         logError("Failed to fetch study data", sid, e);

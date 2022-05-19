@@ -34,7 +34,9 @@ function CreateVariantModal(props: Props) {
 
   const onSave = async () => {
     if (!studyName) {
-      enqueueSnackbar(t("variants:nameEmptyError"), { variant: "error" });
+      enqueueSnackbar(t("global:variants.error.nameEmpty"), {
+        variant: "error",
+      });
       return;
     }
     try {
@@ -44,7 +46,7 @@ function CreateVariantModal(props: Props) {
       navigate(`/studies/${newId}`);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("variants:onVariantCreationError"),
+        t("global:variants.onVariantCreationError"),
         e as AxiosError
       );
     }
@@ -58,7 +60,7 @@ function CreateVariantModal(props: Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("studymanager:createNewStudy")}
+      title={t("global:studies.createNewStudy")}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -70,7 +72,7 @@ function CreateVariantModal(props: Props) {
             variant="contained"
             onClick={onSave}
           >
-            {t("main:create")}
+            {t("global:global.create")}
           </Button>
         </>
       }
@@ -78,7 +80,7 @@ function CreateVariantModal(props: Props) {
       <Root>
         <InputContainer>
           <FilledTextInput
-            label={t("variants:newVariant")}
+            label={t("global:variants.newVariant")}
             value={studyName}
             onChange={setStudyName}
             sx={{ flexGrow: 1 }}
@@ -87,7 +89,7 @@ function CreateVariantModal(props: Props) {
         </InputContainer>
         <InputContainer mt={3}>
           <SingleSelect
-            name={t("singlestudy:versionSource")}
+            name={t("global:study.versionSource")}
             list={versionSourceList}
             data={versionSource}
             setValue={(data: string) => setVersionSource(data)}

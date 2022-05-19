@@ -103,7 +103,7 @@ function FormDialog(props: FormDialogProps) {
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("main:closeButton")}
+            {cancelButtonText || t("global:button.close")}
           </Button>
           <Button
             type="submit"

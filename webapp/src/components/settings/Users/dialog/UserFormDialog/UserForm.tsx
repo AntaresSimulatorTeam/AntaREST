@@ -111,7 +111,7 @@ function UserForm(props: Props) {
         <>
           <TextField
             autoFocus
-            label={t("settings:usernameLabel")}
+            label={t("global:global.username")}
             error={!!errors.username}
             helperText={errors.username?.message}
             {...commonTextFieldProps}
@@ -125,7 +125,7 @@ function UserForm(props: Props) {
             })}
           />
           <TextField
-            label={t("settings:passwordLabel")}
+            label={t("global:global.password")}
             type="password"
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -166,10 +166,12 @@ function UserForm(props: Props) {
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={groupLabelId}>{t("settings:group")}</InputLabel>
+                <InputLabel id={groupLabelId}>
+                  {t("global:global.group")}
+                </InputLabel>
                 <Select
                   labelId={groupLabelId}
-                  label={t("settings:group")}
+                  label={t("global:global.group")}
                   defaultValue=""
                   onChange={handleGroupChange}
                 >
@@ -188,7 +190,7 @@ function UserForm(props: Props) {
                   append({ group: selectedGroup, type: RoleType.READER });
                 }}
               >
-                {t("settings:addButton")}
+                {t("global:button.add")}
               </Button>
             </Box>
             <List>

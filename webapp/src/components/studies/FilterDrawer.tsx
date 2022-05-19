@@ -196,7 +196,7 @@ function FilterDrawer(props: Props) {
                 sx={{ color: "white" }}
               />
             }
-            label={t("studymanager:managedStudiesFilter") as string}
+            label={t("global:studies.managedStudiesFilter") as string}
           />
           <FormControlLabel
             control={
@@ -206,7 +206,7 @@ function FilterDrawer(props: Props) {
                 sx={{ color: "white" }}
               />
             }
-            label={t("studymanager:archivedStudiesFilter") as string}
+            label={t("global:studies.archivedStudiesFilter") as string}
           />
         </Box>
       </Toolbar>
@@ -216,7 +216,7 @@ function FilterDrawer(props: Props) {
       <List>
         <ListItem>
           <SelectMulti
-            name={t("studymanager:versionsLabel")}
+            name={t("global:global.versions")}
             list={versionList}
             data={
               currentVersions !== undefined
@@ -262,14 +262,14 @@ function FilterDrawer(props: Props) {
                     marginTop: "2px",
                   },
                 }}
-                label={t("studymanager:usersLabel")}
+                label={t("global:global.usersLabel")}
               />
             )}
           />
         </ListItem>
         <ListItem>
           <SelectMulti
-            name={t("studymanager:groupsLabel")}
+            name={t("global:studies.groupsLabel")}
             list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))}
             data={
               currentGroups !== undefined
@@ -281,7 +281,7 @@ function FilterDrawer(props: Props) {
         </ListItem>
         <ListItem>
           <TagTextInput
-            label={t("studymanager:tagsLabel")}
+            label={t("global:global.tags")}
             sx={{ m: 1, width: "200px" }}
             value={currentTags || []}
             onChange={setCurrentTags}

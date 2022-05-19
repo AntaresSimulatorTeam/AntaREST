@@ -73,7 +73,10 @@ function Candidates() {
       }
       return [];
     },
-    { errorMessage: t("xpansion:xpansionError"), resetDataOnReload: false },
+    {
+      errorMessage: t("global:xpansion.error.loadConfiguration"),
+      resetDataOnReload: false,
+    },
     [study]
   );
 
@@ -91,7 +94,7 @@ function Candidates() {
       }
       return {};
     },
-    { errorMessage: t("xpansion:xpansionError") },
+    { errorMessage: t("global:xpansion.error.loadConfiguration") },
     [study]
   );
 
@@ -101,7 +104,10 @@ function Candidates() {
         await mounted(deleteXpansionConfiguration(study.id));
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:deleteXpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.question.deleteConfigurationError"),
+        e as AxiosError
+      );
     } finally {
       navigate("../../xpansion");
     }
@@ -114,7 +120,10 @@ function Candidates() {
         setCandidateCreationDialog(false);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:createCandidateError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.createCandidate"),
+        e as AxiosError
+      );
     } finally {
       reload();
       setSelectedItem(candidate.name);
@@ -128,7 +137,7 @@ function Candidates() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("xpansion:deleteCandidateError"),
+          t("global:xpansion.question.deleteCandidateError"),
           e as AxiosError
         );
       } finally {
@@ -156,12 +165,15 @@ function Candidates() {
             "unit-size",
           ]) as XpansionCandidate
         );
-        enqueueSnackbar(t("studymanager:savedatasuccess"), {
+        enqueueSnackbar(t("global:studies.success.saveData"), {
           variant: "success",
         });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:updateCandidateError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.updateCandidate"),
+        e as AxiosError
+      );
     } finally {
       reload();
     }
@@ -174,7 +186,7 @@ function Candidates() {
         setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:xpansion.error.getFile"), e as AxiosError);
     }
   };
 

@@ -21,7 +21,7 @@ function Xpansion() {
   const tabList = useMemo(
     () => [
       {
-        label: t("xpansion:candidates"),
+        label: t("global:xpansion.candidates"),
         path: `/studies/${study?.id}/explore/xpansion/candidates`,
       },
       {
@@ -29,11 +29,11 @@ function Xpansion() {
         path: `/studies/${study?.id}/explore/xpansion/settings`,
       },
       {
-        label: t("main:files"),
+        label: t("global:global.files"),
         path: `/studies/${study?.id}/explore/xpansion/files`,
       },
       {
-        label: t("xpansion:capacities"),
+        label: t("global:xpansion.capacities"),
         path: `/studies/${study?.id}/explore/xpansion/capacities`,
       },
     ],
@@ -46,7 +46,10 @@ function Xpansion() {
         await createXpansionConfiguration(study.id);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:createXpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:xpansion.error.createConfiguration"),
+        e as AxiosError
+      );
     } finally {
       setConfigExist(true);
     }
@@ -60,7 +63,10 @@ function Xpansion() {
           setConfigExist(exist);
         }
       } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+        enqueueErrorSnackbar(
+          t("global:xpansion.error.loadConfiguration"),
+          e as AxiosError
+        );
       }
     };
     init();
@@ -92,7 +98,7 @@ function Xpansion() {
             variant="contained"
             onClick={createXpansion}
           >
-            {t("xpansion:newXpansionConfig")}
+            {t("global:xpansion.newXpansionConfig")}
           </Button>
         </Box>
       ) : (

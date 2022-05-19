@@ -70,7 +70,7 @@ function NoteEditorModal(props: Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("singlestudy:notes")}
+      title={t("global:study.notes")}
       contentProps={{
         sx: {
           width: "100%",

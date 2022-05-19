@@ -124,22 +124,22 @@ function StudiesList(props: StudiesListProps) {
     () => [
       {
         element: SortElement.NAME,
-        name: t("studymanager:sortByName"),
+        name: t("global:studies.sortByName"),
         status: SortStatus.INCREASE,
       },
       {
         element: SortElement.NAME,
-        name: t("studymanager:sortByName"),
+        name: t("global:studies.sortByName"),
         status: SortStatus.DECREASE,
       },
       {
         element: SortElement.DATE,
-        name: t("studymanager:sortByDate"),
+        name: t("global:studies.sortByDate"),
         status: SortStatus.INCREASE,
       },
       {
         element: SortElement.DATE,
-        name: t("studymanager:sortByDate"),
+        name: t("global:studies.sortByDate"),
         status: SortStatus.DECREASE,
       },
     ],
@@ -150,11 +150,14 @@ function StudiesList(props: StudiesListProps) {
     try {
       await callCopyStudy(
         study.id,
-        `${study.name} (${t("global:global.copy)})`,
+        `${study.name} (${t("global:study.copyId")})`,
         withOutputs
       );
     } catch (e) {
-      enqueueErrorSnackbar(t("studymanager:failtocopystudy"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:studies.error.copyStudy"),
+        e as AxiosError
+      );
       logError("Failed to copy/import study", study, e);
     }
   };
@@ -164,7 +167,7 @@ function StudiesList(props: StudiesListProps) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:archivefailure", { studyname: study.name }),
+        t("global:studies.error.archive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -175,7 +178,7 @@ function StudiesList(props: StudiesListProps) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:unarchivefailure", { studyname: study.name }),
+        t("global:studies.error.unarchive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -186,7 +189,7 @@ function StudiesList(props: StudiesListProps) {
       .unwrap()
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("studymanager:failtodeletestudy"),
+          t("global:studies.error.deleteStudy"),
           err as AxiosError
         );
         logError("Failed to delete study", study, err);
@@ -302,7 +305,7 @@ function StudiesList(props: StudiesListProps) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Tooltip title={t("studymanager:refresh") as string} sx={{ mr: 4 }}>
+          <Tooltip title={t("global:studies.refresh") as string} sx={{ mr: 4 }}>
             <Button color="primary" onClick={refresh} variant="outlined">
               <RefreshIcon />
             </Button>
@@ -318,15 +321,15 @@ function StudiesList(props: StudiesListProps) {
           >
             <InputLabel
               variant="standard"
-              htmlFor={`single-checkbox-${t("studymanager:sortBy")}`}
+              htmlFor={`single-checkbox-${t("global:studies.sortBy")}`}
             >
-              {t("studymanager:sortBy")}
+              {t("global:studies.sortBy")}
             </InputLabel>
             <Select
-              labelId={`single-checkbox-label-${t("studymanager:sortBy")}`}
-              id={`single-checkbox-${t("studymanager:sortBy")}`}
+              labelId={`single-checkbox-label-${t("global:studies.sortBy")}`}
+              id={`single-checkbox-${t("global:studies.sortBy")}`}
               value={`${sortItem.element}-${sortItem.status}`}
-              label={t("studymanager:sortBy")}
+              label={t("global:studies.sortBy")}
               variant="filled"
               onChange={(e: SelectChangeEvent<string>) =>
                 setSortItem(getSortItem(e.target.value as string))

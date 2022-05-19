@@ -73,13 +73,13 @@ function Filter(props: PropTypes) {
         required
       />
       <TextField
-        label={t("singlestudy:filterIn")}
+        label={t("global:study.filterIn")}
         value={filterInValue}
         onChange={(event) => setFilterInValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
       <TextField
-        label={t("singlestudy:filterOut")}
+        label={t("global:study.filterOut")}
         value={filterOutValue}
         onChange={(event) => setFilterOutValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
@@ -94,11 +94,11 @@ function Filter(props: PropTypes) {
         onChange={setFilterValue}
       />
       <SingleLinkElement
-        label={t("singlestudy:filterIn")}
+        label={t("global:study.filterIn")}
         onChange={setFilterInValue}
       />
       <SingleLinkElement
-        label={t("singlestudy:filterOut")}
+        label={t("global:study.filterOut")}
         onChange={setFilterOutValue}
       />
     </Root>

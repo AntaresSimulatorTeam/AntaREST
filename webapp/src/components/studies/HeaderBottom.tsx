@@ -70,7 +70,7 @@ function HeaderBottom(props: PropTypes) {
         value={inputValue}
         variant="outlined"
         onChange={(event) => setInputValue(event.target.value as string)}
-        label={t("main:search")}
+        label={t("global:global.search")}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -102,7 +102,7 @@ function HeaderBottom(props: PropTypes) {
       >
         {managedFilter && (
           <Chip
-            label={t("studymanager:managedStudiesFilter")}
+            label={t("global:studies.managedStudiesFilter")}
             variant="filled"
             color="secondary"
             onDelete={handleManagedDeletion}
@@ -111,7 +111,7 @@ function HeaderBottom(props: PropTypes) {
         )}
         {archivedFilter && (
           <Chip
-            label={t("studymanager:archivedStudiesFilter")}
+            label={t("global:studies.archivedStudiesFilter")}
             variant="filled"
             color="secondary"
             onDelete={() => setArchivedFilter(false)}

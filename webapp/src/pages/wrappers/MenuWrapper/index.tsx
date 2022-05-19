@@ -101,16 +101,16 @@ function MenuWrapper(props: Props) {
 
   let navigation: Array<MenuItem> = [
     {
-      id: "studies",
+      id: "global:studies.title",
       link: "/studies",
       strict: true,
       icon: TravelExploreOutlinedIcon,
     },
-    { id: "tasks", link: "/tasks", icon: AssignmentIcon },
+    { id: "global:tasks.title", link: "/tasks", icon: AssignmentIcon },
     { id: "data", link: "/data", icon: StorageIcon },
-    { id: "api", link: "/apidoc", icon: ApiIcon },
+    { id: "global:api.title", link: "/apidoc", icon: ApiIcon },
     {
-      id: "documentation",
+      id: "global:documentation.title",
       link: "https://antares-web.readthedocs.io/en/latest",
       newTab: true,
       icon: ClassOutlinedIcon,
@@ -128,7 +128,7 @@ function MenuWrapper(props: Props) {
     navigation = (
       [
         {
-          id: "recentStudy",
+          id: "global:recentStudy.title",
           link: `/studies/${currentStudy}`,
           icon: CenterFocusStrongIcon,
         },
@@ -259,7 +259,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <LogoutIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t("main:logout")} />}
+            {extended && <NavListItemText primary={t("global:logout.title")} />}
           </NavListItem>
           <NavListItem
             onClick={() => dispatch(setMenuExtensionStatus(!extended))}
@@ -267,18 +267,18 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <ReadMoreOutlinedIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t("main:hide")} />}
+            {extended && <NavListItemText primary={t("global:button.hide")} />}
           </NavListItem>
         </List>
         {openLogoutDialog && (
           <ConfirmationDialog
-            title={t("main:logout")}
+            title={t("global:logout.title")}
             onCancel={() => setOpenLogoutDialog(false)}
             onConfirm={() => dispatch(logout())}
             alert="warning"
             open
           >
-            {t("main:logoutModalMessage")}
+            {t("global:dialog.message.logout")}
           </ConfirmationDialog>
         )}
       </NavDrawer>

@@ -29,7 +29,7 @@ function UnderConstruction(props: Props) {
         }}
       >
         <ConstructionIcon sx={{ width: "100px", height: "100px" }} />
-        <Typography>{t("main:underConstruction")}</Typography>
+        <Typography>{t("global:common.underConstruction")}</Typography>
       </Box>
       {previewImage ? (
         <Box

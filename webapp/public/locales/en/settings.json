@@ -60,7 +60,7 @@
   "messageMode": "Message",
   "maintenanceMode": "Maintenance mode",
   "onUpdateMessageInfo": "Message info updated successfully",
-  "onUpdateMaintenance": "Maintenance settings updated successfully",
+  "updateMaintenance": "Maintenance settings updated successfully",
   "onUpdateMaintenanceError": "Maintenance mode not updated",
   "onUpdateMessageInfoError": "Message info not updated",
   "updateMaintenanceConfirmation": "Are you sure you want to change the maintenance settings?",

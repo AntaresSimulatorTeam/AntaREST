@@ -52,7 +52,7 @@ function TokenInfoDialog(props: Props) {
       titleIcon={InfoIcon}
     >
       <DialogContentText>
-        {t("settings:currentToken", [token.name])}
+        {t("global:settings.currentToken", [token.name])}
       </DialogContentText>
       <TokenForm onlyPermissions readOnly {...formObj} />
     </OkDialog>

@@ -85,7 +85,7 @@ function UpdateUserDialog(props: Props) {
 
       editUser({ id: user.id, roles });
 
-      enqueueSnackbar(t("settings:onUserUpdate", [user.name]), {
+      enqueueSnackbar(t("global:settings.success.userUpdate", [user.name]), {
         variant: "success",
       });
     } catch (e) {
@@ -93,7 +93,7 @@ function UpdateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings:onUserRolesSaveError", [user.name]),
+        t("global:settings.error.userRolesSave", [user.name]),
         e as Error
       );
     }
@@ -107,8 +107,8 @@ function UpdateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
-      title={t("settings:updateUser")}
-      subtitle={t("settings:currentUser", [user.name])}
+      title={t("global:settings.updateUser")}
+      subtitle={t("global:settings.currentUser", [user.name])}
       titleIcon={EditIcon}
       defaultValues={defaultValues}
       onSubmit={handleSubmit}

@@ -30,13 +30,13 @@ function CreateAreaModal(props: PropType) {
     if (!isStringEmpty(id)) {
       onSave(id, posX, posY, color);
     } else {
-      enqueueSnackbar(t("singlestudy:createAreaError"), { variant: "error" });
+      enqueueSnackbar(t("global:study.error.createArea"), { variant: "error" });
     }
   };
 
   return (
     <BasicDialog
-      title={t("singlestudy:newArea")}
+      title={t("global:study.modelization.map.newArea")}
       open={open}
       onClose={onClose}
       contentProps={{
@@ -63,7 +63,7 @@ function CreateAreaModal(props: PropType) {
       <Box sx={{ m: 2 }}>
         <TextField
           sx={{ height: "40px" }}
-          label={t("main:name")}
+          label={t("global:global.name")}
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}
           value={name}

@@ -33,15 +33,18 @@ function StudyJsonView(props: PropTypes) {
     if (loaded && jsonData) {
       try {
         await editStudy(jsonData, study, tmpPath);
-        enqueueSnackbar(t("studymanager:savedatasuccess"), {
+        enqueueSnackbar(t("global:studies.success.saveData"), {
           variant: "success",
         });
         setSaveAllowed(false);
       } catch (e) {
-        enqueueErrorSnackbar(t("studymanager:failtosavedata"), e as AxiosError);
+        enqueueErrorSnackbar(
+          t("global:studies.error.saveData"),
+          e as AxiosError
+        );
       }
     } else {
-      enqueueSnackbar(t("studymanager:failtosavedata"), { variant: "error" });
+      enqueueSnackbar(t("global:studies.error.saveData"), { variant: "error" });
     }
   };
 
@@ -59,7 +62,7 @@ function StudyJsonView(props: PropTypes) {
         setSaveAllowed(false);
       } catch (e) {
         enqueueErrorSnackbar(
-          t("studymanager:failtoretrievedata"),
+          t("global:studies.error.retrieveData"),
           e as AxiosError
         );
       } finally {
