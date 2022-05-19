@@ -96,7 +96,6 @@ export const downloadOutput = async (
     headers: {
       Accept: "application/zip",
       responseType: "blob",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post(
@@ -218,7 +217,6 @@ export const importStudy = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
@@ -246,7 +244,6 @@ export const importFile = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.put(
