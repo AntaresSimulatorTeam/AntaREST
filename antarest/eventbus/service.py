@@ -23,7 +23,7 @@ class EventBusService(IEventBus):
         ] = {ev_type: {} for ev_type in EventType}
         self.consumers: Dict[
             str, Dict[str, Callable[[Event], Awaitable[None]]]
-        ] = {ev_type: {} for ev_type in EventType}
+        ] = {}
 
         self.lock = threading.Lock()
         if autostart:
@@ -80,42 +80,36 @@ class EventBusService(IEventBus):
                 if len(self.consumers[queue]) > 0:
                     event = self.backend.pull_queue(queue)
                     while event is not None:
-                        call = suppress_exception(
-                            lambda: list(self.consumers[queue].values())[
+                        try:
+                            await list(self.consumers[queue].values())[
                                 random.randint(
                                     0, len(self.consumers[queue]) - 1
                                 )
-                            ](cast(Event, event)),
-                            lambda ex: logger.error(
-                                f"Failed to process queue event {e.type}",
+                            ](event)
+                        except Exception as ex:
+                            logger.error(
+                                f"Failed to process queue event {event.type}",
                                 exc_info=ex,
-                            ),
-                        )
-                        if call:
-                            await call
+                            )
                         event = self.backend.pull_queue(queue)
 
             for e in self.backend.get_events():
                 if e.type in self.listeners:
-                    await asyncio.gather(
+                    responses = await asyncio.gather(
                         *[
-                            l
-                            for l in [
-                                suppress_exception(
-                                    lambda: listener(e),
-                                    lambda ex: logger.error(
-                                        f"Failed to process event {e.type}",
-                                        exc_info=ex,
-                                    ),
-                                )
-                                for listener in list(
-                                    self.listeners[e.type].values()
-                                )
-                                + list(self.listeners[EventType.ANY].values())
-                            ]
-                            if l is not None
+                            listener(e)
+                            for listener in list(
+                                self.listeners[e.type].values()
+                            )
+                            + list(self.listeners[EventType.ANY].values())
                         ]
                     )
+                    for res in responses:
+                        if isinstance(res, Exception):
+                            logger.error(
+                                f"Failed to process queue event {e.type}",
+                                exc_info=res,
+                            )
             self.backend.clear_events()
 
     def _async_loop(self, new_loop: bool = True) -> None:

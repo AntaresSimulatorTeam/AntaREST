@@ -26,7 +26,10 @@ class RedisEventBus(IEventBusBackend):
         self.redis.rpush(queue, event.json())
 
     def pull_queue(self, queue: str) -> Optional[Event]:
-        return cast(Optional[Event], self.redis.lpop(queue))
+        event = self.redis.lpop(queue)
+        if event:
+            return cast(Optional[Event], Event.parse_raw(event))
+        return None
 
     def get_events(self) -> List[Event]:
         try:

@@ -57,6 +57,8 @@ from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.tools.admin_lib import clean_locks
+from antarest.worker.archive_worker import ArchiveWorker
+from antarest.worker.worker import AbstractWorker
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,7 @@ class Module(str, Enum):
     APP = "app"
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"
+    ARCHIVE_WORKER = "archive_worker"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -101,11 +104,7 @@ def parse_arguments() -> argparse.Namespace:
         "--module",
         dest="module",
         help="Select a module to run (default is the application server)",
-        choices=[
-            Module.APP.value,
-            Module.WATCHER.value,
-            Module.MATRIX_GC.value,
-        ],
+        choices=[mod.value for mod in Module],
         action="store",
         default=Module.APP.value,
         required=False,
@@ -287,6 +286,14 @@ def create_matrix_gc(
             study_service=study_service,
             matrix_service=matrix_service,
         )
+
+
+def create_worker(
+    config: Config, event_bus: Optional[IEventBus] = None
+) -> AbstractWorker:
+    if not event_bus:
+        _, event_bus, _, _, _, _, _ = create_core_services(None, config)
+    return ArchiveWorker(event_bus, ["archive_test"])
 
 
 def create_services(
@@ -551,5 +558,12 @@ if __name__ == "__main__":
             init_db(config_file, config, False, None)
             matrix_gc = create_matrix_gc(config=config, application=None)
             matrix_gc.start(threaded=False)
+        elif module == Module.ARCHIVE_WORKER:
+            res = get_local_path() / "resources"
+            config = Config.from_yaml_file(res=res, file=config_file)
+            configure_logger(config)
+            init_db(config_file, config, False, None)
+            worker = create_worker(config)
+            worker.start()
         else:
             raise UnknownModuleError(module)

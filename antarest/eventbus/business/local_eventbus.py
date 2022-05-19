@@ -27,6 +27,6 @@ class LocalEventBus(IEventBusBackend):
         self.queues[queue].append(event)
 
     def pull_queue(self, queue: str) -> Optional[Event]:
-        if queue in self.queues and len(self.queues) > 0:
+        if queue in self.queues and len(self.queues[queue]) > 0:
             return self.queues[queue].pop(0)
         return None

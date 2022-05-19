@@ -1,5 +1,6 @@
 import abc
 import subprocess
+import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
 from threading import Thread
@@ -35,8 +36,17 @@ class AbstractWorker(abc.ABC):
         self.task_watcher = Thread(target=self._loop, daemon=True)
         self.futures: List[Future[TaskResult]] = []
 
+    def start(self, threaded: bool = False) -> None:
+        if threaded:
+            self.task_watcher.start()
+        else:
+            self._loop()
+
     async def listen_for_tasks(self, event: Event) -> None:
-        task_info = cast(WorkerTaskCommand, event.payload)
+        task_info = WorkerTaskCommand.parse_obj(event.payload)
+        self.event_bus.push(
+            Event(type=EventType.WORKER_TASK_STARTED, payload=task_info)
+        )
         self.futures.append(
             self.threadpool.submit(self.execute_task, task_info)
         )
@@ -55,13 +65,4 @@ class AbstractWorker(abc.ABC):
                             payload=future.result(),
                         )
                     )
-
-
-class WindowsWorker(AbstractWorker):
-    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
-        self.event_bus.push(Event(type=EventType.WORKER_TASK_STARTED))
-        proc = subprocess.Popen(
-            ["unzip", cast(str, task_info.task_args["file"])]
-        )
-        proc.wait()
-        return TaskResult(success=True, message="")
+            time.sleep(2)

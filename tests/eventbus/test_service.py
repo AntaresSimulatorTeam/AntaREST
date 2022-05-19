@@ -1,20 +1,13 @@
+import asyncio
 import time
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Callable, List, Awaitable
 from unittest.mock import Mock, MagicMock
 
 from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.eventbus.main import build_eventbus
-
-
-def autoretry(func: Callable[..., bool], timeout: int) -> None:
-    threshold = datetime.utcnow() + timedelta(seconds=timeout)
-    while datetime.utcnow() < threshold:
-        if func():
-            return
-        time.sleep(0.2)
-    raise AssertionError()
+from tests.conftest import autoretry_assert
 
 
 def test_service_factory():
@@ -34,13 +27,36 @@ def test_service_factory():
 
 def test_lifecycle():
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
-    test_bucket = []
-    lid = event_bus.add_listener(lambda event: test_bucket.append(event))
-    event = Event(type=EventType.STUDY_JOB_STARTED, payload="foo")
-    event_bus.push(event)
-    autoretry(lambda: len(test_bucket) == 1, 2)
+    test_bucket: List[Event] = []
 
-    event_bus.remove_listener(lid)
+    def append_to_bucket(
+        bucket: List[Event],
+    ) -> Callable[[Event], Awaitable[None]]:
+        async def _append_to_bucket(event: Event):
+            bucket.append(event)
+
+        return _append_to_bucket
+
+    lid1 = event_bus.add_listener(append_to_bucket(test_bucket))
+    lid2 = event_bus.add_listener(
+        append_to_bucket(test_bucket), [EventType.STUDY_CREATED]
+    )
+    event_bus.push(Event(type=EventType.STUDY_JOB_STARTED, payload="foo"))
+    event_bus.push(Event(type=EventType.STUDY_CREATED, payload="foo"))
+    autoretry_assert(lambda: len(test_bucket) == 3, 2)
+
+    event_bus.remove_listener(lid1)
+    event_bus.remove_listener(lid2)
     test_bucket.clear()
-    event_bus.push(event)
-    autoretry(lambda: len(test_bucket) == 0, 2)
+    event_bus.push(Event(type=EventType.STUDY_JOB_STARTED, payload="foo"))
+    autoretry_assert(lambda: len(test_bucket) == 0, 2)
+
+    queue_name = "some work job"
+    event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
+    event_bus.add_queue_consumer(
+        lambda event: test_bucket.append(event), queue_name
+    )
+    event_bus.queue(
+        Event(type=EventType.WORKER_TASK, payload="worker task"), queue_name
+    )
+    autoretry_assert(lambda: len(test_bucket) == 1, 2)
