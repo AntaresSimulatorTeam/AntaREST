@@ -57,7 +57,6 @@ export const createMatrixByImportation = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post(

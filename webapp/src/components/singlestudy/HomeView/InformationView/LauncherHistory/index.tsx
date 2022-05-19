@@ -86,8 +86,8 @@ function LauncherHistory(props: Props) {
           const data = await getStudyJobs(sid);
           setStudyJobs(
             data.sort((j1, j2) =>
-              (j1.creationDate || j1.creationDate) >
-              (j2.creationDate || j2.creationDate)
+              (j1.completionDate || j1.creationDate) >
+              (j2.completionDate || j2.creationDate)
                 ? -1
                 : 1
             )
