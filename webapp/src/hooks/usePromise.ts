@@ -20,11 +20,12 @@ export interface UsePromiseResponse<T> {
 
 export interface UsePromiseParams {
   resetDataOnReload?: boolean;
+  resetErrorOnReload?: boolean;
 }
 
 function usePromise<T>(
   fn: () => Promise<T>,
-  params?: UsePromiseParams,
+  params: UsePromiseParams = {},
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
   const [data, setData] = useState<T>();
@@ -33,7 +34,7 @@ function usePromise<T>(
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
   const mounted = usePromiseWrapper();
-  const resetDataOnReload = params?.resetDataOnReload ?? false;
+  const { resetDataOnReload, resetErrorOnReload } = params;
 
   useEffect(
     () => {
@@ -42,7 +43,9 @@ function usePromise<T>(
       if (resetDataOnReload) {
         setData(undefined);
       }
-      setError(undefined);
+      if (resetErrorOnReload) {
+        setError(undefined);
+      }
 
       mounted(fn())
         .then((res) => {
