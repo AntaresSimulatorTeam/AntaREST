@@ -65,7 +65,9 @@ function ImportStudyDialog(props: Props) {
         .unwrap()
         .then(() => {
           enqueueSnackbar(
-            t("global:studies.success.import", { uploadFile: fileToUpload.name }),
+            t("global:studies.success.import", {
+              uploadFile: fileToUpload.name,
+            }),
             { variant: "success" }
           );
           if (isMounted()) {

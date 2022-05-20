@@ -129,7 +129,7 @@ function GroupForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("settings:permissionsLabel")}</Typography>
+        <Typography>{t("global:global.permissions")}</Typography>
         {isUsersLoading && (
           <Box
             sx={{

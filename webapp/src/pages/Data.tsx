@@ -67,9 +67,14 @@ function Data() {
     try {
       await deleteDataSet(idForDeletion as string);
       setDataList(dataList.filter((item) => item.id !== idForDeletion));
-      enqueueSnackbar(t("data:onMatrixDeleteSuccess"), { variant: "success" });
+      enqueueSnackbar(t("global:data.success.matrixDelete"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(t("data:onMatrixDeleteError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global:data.error.matrixDelete"),
+        e as AxiosError
+      );
     }
     setIdForDeletion(undefined);
     setOpenConfirmationModal(false);
@@ -112,7 +117,7 @@ function Data() {
     try {
       await exportMatrixDataset(datasetId);
     } catch (e) {
-      enqueueErrorSnackbar(t("data:matrixError"), e as AxiosError);
+      enqueueErrorSnackbar(t("global:data.error.matrix"), e as AxiosError);
     }
   };
 
@@ -122,7 +127,10 @@ function Data() {
         const matrix = await getMatrixList();
         setDataList(matrix);
       } catch (e) {
-        enqueueErrorSnackbar(t("data:matrixListError"), e as AxiosError);
+        enqueueErrorSnackbar(
+          t("global:data.error.matrixList"),
+          e as AxiosError
+        );
       } finally {
         setLoaded(true);
       }
@@ -268,7 +276,7 @@ function Data() {
           onCancel={() => setOpenConfirmationModal(false)}
           alert="warning"
         >
-          {t("data:deleteMatrixConfirmation")}
+          {t("global:data.question.deleteMatrix")}
         </ConfirmationDialog>
       )}
     </RootPage>

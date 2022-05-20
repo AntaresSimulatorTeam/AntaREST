@@ -391,7 +391,7 @@ function NavHeader(props: Props) {
                         }}
                       />
                     </ListItemIcon>
-                    <ListItemText>{t("global:global.delete")}</ListItemText>
+                    <ListItemText>{t("global:global.archive")}</ListItemText>
                   </MenuItem>
                 )}
               </div>
@@ -521,7 +521,7 @@ function NavHeader(props: Props) {
           alert="warning"
           open
         >
-          {t("gobal:studies.question.delete")}
+          {t("global:studies.question.delete")}
         </ConfirmationDialog>
       )}
       {study && openExportDialog && (

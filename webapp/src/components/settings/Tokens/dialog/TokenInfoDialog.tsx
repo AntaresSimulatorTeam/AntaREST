@@ -48,7 +48,7 @@ function TokenInfoDialog(props: Props) {
       maxWidth="sm"
       fullWidth
       {...dialogProps}
-      title={t("settings:permissionsLabel")}
+      title={t("global:global.permissions")}
       titleIcon={InfoIcon}
     >
       <DialogContentText>

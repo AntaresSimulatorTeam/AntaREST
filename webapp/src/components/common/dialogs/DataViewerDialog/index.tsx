@@ -28,7 +28,9 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   const copyId = (matrixId: string): void => {
     try {
       navigator.clipboard.writeText(matrixId);
-      enqueueSnackbar(t("data:onMatrixIdCopySuccess"), { variant: "success" });
+      enqueueSnackbar(t("global:data.success.matrixIdCopied"), {
+        variant: "success",
+      });
     } catch (e) {
       enqueueSnackbar(t("data:onMatrixIdCopyError"), { variant: "error" });
     }

@@ -101,34 +101,34 @@ function MenuWrapper(props: Props) {
 
   let navigation: Array<MenuItem> = [
     {
-      id: "global:studies.title",
+      id: "studies.title",
       link: "/studies",
       strict: true,
       icon: TravelExploreOutlinedIcon,
     },
-    { id: "global:tasks.title", link: "/tasks", icon: AssignmentIcon },
-    { id: "data", link: "/data", icon: StorageIcon },
-    { id: "global:api.title", link: "/apidoc", icon: ApiIcon },
+    { id: "tasks.title", link: "/tasks", icon: AssignmentIcon },
+    { id: "data.title", link: "/data", icon: StorageIcon },
+    { id: "api.title", link: "/apidoc", icon: ApiIcon },
     {
-      id: "global:documentation.title",
+      id: "documentation.title",
       link: "https://antares-web.readthedocs.io/en/latest",
       newTab: true,
       icon: ClassOutlinedIcon,
     },
     {
-      id: "github",
+      id: "github.title",
       link: "https://github.com/AntaresSimulatorTeam/AntaREST",
       newTab: true,
       icon: GitHubIcon,
     },
-    { id: "settings", link: "/settings", icon: SettingsOutlinedIcon },
+    { id: "settings.title", link: "/settings", icon: SettingsOutlinedIcon },
   ];
 
   if (currentStudy) {
     navigation = (
       [
         {
-          id: "global:recentStudy.title",
+          id: "recentStudy.title",
           link: `/studies/${currentStudy}`,
           icon: CenterFocusStrongIcon,
         },
@@ -139,7 +139,7 @@ function MenuWrapper(props: Props) {
   const settings = navigation[navigation.length - 1];
 
   const drawMenuItem = (elm: MenuItem): ReactNode => {
-    if (elm.id === "tasks") {
+    if (elm.id === "tasks.title") {
       return (
         <NavListItem link key={elm.id}>
           <NavInternalLink
@@ -156,7 +156,7 @@ function MenuWrapper(props: Props) {
                 <elm.icon sx={{ color: "grey.400" }} />
               </NavListItemIcon>
             </NotificationBadge>
-            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
           </NavInternalLink>
         </NavListItem>
       );
@@ -168,7 +168,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <elm.icon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
           </NavExternalLink>
         ) : (
           <NavInternalLink
@@ -183,7 +183,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <elm.icon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
           </NavInternalLink>
         )}
       </NavListItem>
@@ -278,7 +278,9 @@ function MenuWrapper(props: Props) {
             alert="warning"
             open
           >
-            {t("global:dialog.message.logout")}
+            <Typography sx={{ px: 3, py: 1 }}>
+              {t("global:dialog.message.logout")}
+            </Typography>
           </ConfirmationDialog>
         )}
       </NavDrawer>

@@ -430,7 +430,7 @@ export default function StudyCard(props: Props) {
           alert="warning"
           open
         >
-          {t("gobal:studies.question.delete")}
+          {t("global:studies.question.delete")}
         </ConfirmationDialog>
       )}
       {openExportModal && (

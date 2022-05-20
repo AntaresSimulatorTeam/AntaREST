@@ -65,8 +65,8 @@ function DatasetCreationDialog(props: PropTypes) {
         const error = e as Error;
         enqueueSnackbar(t(error.message), { variant: "error" });
         if (
-          error.message === "data:fileNotUploaded" ||
-          error.message === "data:emptyName"
+          error.message === "global:data.error.fileNotUploaded" ||
+          error.message === "global:global.error.emptyName"
         )
           closeModal = false;
       }
@@ -119,7 +119,9 @@ function DatasetCreationDialog(props: PropTypes) {
           setName(data.name);
         }
       } catch (e) {
-        enqueueSnackbar(t("settings:groupsError"), { variant: "error" });
+        enqueueSnackbar(t("global:settings.error.groupsError"), {
+          variant: "error",
+        });
       }
     };
     init();
@@ -134,11 +136,11 @@ function DatasetCreationDialog(props: PropTypes) {
         <Box sx={{ height: "200px", width: "100%" }}>
           {uploadProgress < 100 ? (
             <SimpleLoader
-              message="data:uploadingmatrix"
+              message="global:data.uploadingmatrix"
               progress={uploadProgress}
             />
           ) : (
-            <SimpleLoader message="data:analyzingmatrix" />
+            <SimpleLoader message="global:data.analyzingmatrix" />
           )}
         </Box>
       );
@@ -167,7 +169,7 @@ function DatasetCreationDialog(props: PropTypes) {
             size="small"
             value={name}
             onChange={(event) => setName(event.target.value as string)}
-            label={t("data:matrixNameLabel")}
+            label={t("global:data.matrixName")}
             variant="outlined"
           />
           {!data && (
@@ -211,7 +213,7 @@ function DatasetCreationDialog(props: PropTypes) {
                   color="primary"
                   component="span"
                 >
-                  {t("data:upload")}
+                  {t("global:global.upload")}
                 </Button>
                 <Typography
                   noWrap
@@ -219,9 +221,14 @@ function DatasetCreationDialog(props: PropTypes) {
                     color: "action.active",
                   }}
                 >
-                  {currentFile ? currentFile.name : t("data:choosefile")}
+                  {currentFile
+                    ? currentFile.name
+                    : t("global:global.chooseFile")}
                 </Typography>
-                <Tooltip title={t("data:uploadHelp") as string} placement="top">
+                <Tooltip
+                  title={t("global:data.message.uploadHelp") as string}
+                  placement="top"
+                >
                   <HelperIcon />
                 </Tooltip>
               </label>
@@ -230,7 +237,7 @@ function DatasetCreationDialog(props: PropTypes) {
         </Box>
         <BoxParam>
           <BoxParamHeader>
-            <ParamTitle>{t("data:jsonFormat")}</ParamTitle>
+            <ParamTitle>{t("global:data.jsonFormat")}</ParamTitle>
             <Checkbox
               checked={isJson}
               onChange={() => setIsJson(!isJson)}
@@ -240,7 +247,7 @@ function DatasetCreationDialog(props: PropTypes) {
         </BoxParam>
         <BoxParam>
           <BoxParamHeader>
-            <ParamTitle>{t("data:publicLabel")}</ParamTitle>
+            <ParamTitle>{t("global:global.public")}</ParamTitle>
             <Checkbox
               checked={publicStatus}
               onChange={() => setPublic(!publicStatus)}
@@ -251,7 +258,7 @@ function DatasetCreationDialog(props: PropTypes) {
         {!publicStatus && (
           <BoxParam>
             <BoxParamHeader>
-              <ParamTitle>{t("data:groupsLabel")}</ParamTitle>
+              <ParamTitle>{t("global:global.groups")}</ParamTitle>
             </BoxParamHeader>
             <Box
               sx={{
@@ -299,15 +306,15 @@ function DatasetCreationDialog(props: PropTypes) {
     <BasicDialog
       open={open}
       onClose={!importing ? onClose : undefined}
-      title={data ? data.name : t("data:newMatrixTitle")}
+      title={data ? data.name : t("global:data.newMatrixTitle")}
       actions={
         !importing && (
           <Box>
             <Button color="primary" onClick={onClose} sx={{ m: 2 }}>
-              {t("settings:cancelButton")}
+              {t("global:button.cancel")}
             </Button>
             <Button variant="contained" onClick={onSave} sx={{ m: 2 }}>
-              {t("settings:saveButton")}
+              {t("global:button.save")}
             </Button>
           </Box>
         )

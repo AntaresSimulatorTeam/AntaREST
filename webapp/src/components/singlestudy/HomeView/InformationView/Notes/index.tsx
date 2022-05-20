@@ -225,8 +225,8 @@ export default function Notes(props: Props) {
       </Note>
       <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
       <FigureInfoContainer>
-        <Figure title={t("global:study.area")} data={nbAreas} />
-        <Figure title={t("global:study.link")} data={nbLinks} />
+        <Figure title={t("global:study.areas")} data={nbAreas} />
+        <Figure title={t("global:study.links")} data={nbLinks} />
       </FigureInfoContainer>
       {editionMode && (
         <NoteEditorModal

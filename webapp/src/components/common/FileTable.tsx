@@ -138,7 +138,7 @@ function FileTable(props: PropType) {
                             color: "action.active",
                           }}
                         >
-                          <Tooltip title={t("studymanager:copyID") as string}>
+                          <Tooltip title={t("global:global.copyId") as string}>
                             <ContentCopyIcon
                               sx={{ height: "20px", width: "20px" }}
                             />

@@ -149,7 +149,7 @@ function CreateStudyModal(props: Props) {
           />
         </InputElement>
         <ElementContainer>
-          <TextSeparator text={t("gobal:global.permission")} />
+          <TextSeparator text={t("global:global.permission")} />
           <InputElement>
             <SingleSelect
               name={t("global:study.publicMode")}
