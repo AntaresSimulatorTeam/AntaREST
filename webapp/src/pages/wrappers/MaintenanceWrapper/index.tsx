@@ -10,9 +10,10 @@ import { getConfig } from "../../../services/config";
 import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
 import { setMaintenanceMode } from "../../../redux/ducks/ui";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { getAuthUser, getMaintenanceMode } from "../../../redux/selectors";
 import { getMaintenanceMode as getMaintenanceModeAPI } from "../../../services/api/maintenance";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:maintenancewrapper:error");
 

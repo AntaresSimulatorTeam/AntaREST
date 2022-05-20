@@ -9,7 +9,7 @@ import { useMountedState } from "react-use";
 import { createStudy } from "../../redux/ducks/studies";
 import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import { useAppDispatch } from "../../redux/hooks";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 interface Props {
   open: BasicDialogProps["open"];

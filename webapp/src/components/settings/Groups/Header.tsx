@@ -6,7 +6,7 @@ import { useState } from "react";
 import { GroupDetailsDTO } from "../../../common/types";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { isAuthUserAdmin } from "../../../redux/selectors";
-import { useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
 
 /**
  * Types

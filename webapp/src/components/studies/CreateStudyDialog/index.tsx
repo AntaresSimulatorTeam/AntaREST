@@ -20,7 +20,8 @@ import BasicDialog, {
 import { Root, ElementContainer, InputElement } from "./style";
 import { createStudy } from "../../../redux/ducks/studies";
 import { getStudyVersionsFormatted } from "../../../redux/selectors";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 const logErr = debug("antares:createstudyform:error");
 

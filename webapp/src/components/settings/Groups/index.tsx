@@ -30,7 +30,7 @@ import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
 import { getAuthUser } from "../../../redux/selectors";
-import { useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
 
 /**
  * Types

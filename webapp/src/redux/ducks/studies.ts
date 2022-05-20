@@ -18,16 +18,11 @@ import * as api from "../../services/api/study";
 import { loadState } from "../../services/utils/localStorage";
 import { getFavoriteStudies, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
-import { makeActionName, Status } from "../utils";
+import { makeActionName, FetchStatus, AsyncEntityState } from "../utils";
 
-export const studiesAdapter = createEntityAdapter<StudyMetadata>({
-  selectId: (study) => study.id,
-});
+export const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
-export interface StudiesState
-  extends ReturnType<typeof studiesAdapter.getInitialState> {
-  status: Status;
-  error?: string;
+export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   scrollPosition: number;
   directory: string;

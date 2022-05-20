@@ -1,4 +1,8 @@
-import { createAction, ActionCreatorWithPayload } from "@reduxjs/toolkit";
+import {
+  createAction,
+  ActionCreatorWithPayload,
+  EntityState,
+} from "@reduxjs/toolkit";
 import * as R from "ramda";
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
@@ -10,6 +14,11 @@ export enum Status {
   Loading = "loading",
   Succeeded = "succeeded",
   Failed = "failed",
+}
+
+export interface AsyncEntityState<T> extends EntityState<T> {
+  status: FetchStatus;
+  error?: string;
 }
 
 export const makeActionName = R.curry(

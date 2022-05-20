@@ -49,9 +49,11 @@ import {
 } from "../../services/api/study";
 import LauncherDialog from "./LauncherDialog";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import useDebounce from "../../hooks/useDebounce";
 import { getStudiesScrollPosition } from "../../redux/selectors";
+import { FilterValues } from "../../pages/Studies/utils";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:studieslist:error");
 

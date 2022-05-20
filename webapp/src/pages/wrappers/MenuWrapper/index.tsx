@@ -49,7 +49,8 @@ import {
 } from "../../../redux/selectors";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
 import { logout } from "../../../redux/ducks/auth";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 const pulsatingAnimation = keyframes`
   0% {

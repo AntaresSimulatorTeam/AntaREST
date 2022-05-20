@@ -52,7 +52,8 @@ import { isCurrentStudyFavorite } from "../../redux/selectors";
 import ExportDialog from "../studies/ExportModal";
 import StarToggle from "../common/StarToggle";
 import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:singlestudy:navheader:error");
 

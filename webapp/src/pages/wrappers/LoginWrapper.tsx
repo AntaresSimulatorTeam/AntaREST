@@ -13,7 +13,8 @@ import { getAuthUser } from "../../redux/selectors";
 import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError";
 import { isUserExpired } from "../../services/utils";
 import { initWebSocket } from "../../services/webSockets";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 interface Inputs {
   username: string;

@@ -23,8 +23,8 @@ import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import SplitLayoutView from "../components/common/SplitLayoutView";
 import FileTable from "../components/common/FileTable";
-import { useAppSelector } from "../redux/hooks";
 import { getAuthUser } from "../redux/selectors";
+import useAppSelector from "../redux/hooks/useAppSelector";
 
 function Data() {
   const [t] = useTranslation();

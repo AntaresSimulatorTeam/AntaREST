@@ -8,7 +8,7 @@ import Groups from "../components/settings/Groups";
 import Maintenance from "../components/settings/Maintenance";
 import Tokens from "../components/settings/Tokens";
 import Users from "../components/settings/Users";
-import { useAppSelector } from "../redux/hooks";
+import useAppSelector from "../redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../redux/selectors";
 
 /**
