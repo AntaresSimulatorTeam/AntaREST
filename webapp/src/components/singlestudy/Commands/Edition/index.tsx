@@ -103,12 +103,12 @@ function EditionView(props: Props) {
         tmpCommand = tmpCommand.concat(commands);
         tmpCommand[index].updated = false;
         setCommands(tmpCommand);
-        enqueueSnackbar(t("variants.error.commandUpdated"), {
+        enqueueSnackbar(t("variants.success.save"), {
           variant: "success",
         });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.save"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.commandUpdated"), e as AxiosError);
     }
   };
 

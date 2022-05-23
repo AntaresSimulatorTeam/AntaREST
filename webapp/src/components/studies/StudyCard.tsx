@@ -99,7 +99,7 @@ export default function StudyCard(props: Props) {
   const copyId = (): void => {
     try {
       navigator.clipboard.writeText(study.id);
-      enqueueSnackbar(t("study.success.studyIdCopys"), {
+      enqueueSnackbar(t("study.success.studyIdCopy"), {
         variant: "success",
       });
     } catch (e) {
@@ -273,7 +273,7 @@ export default function StudyCard(props: Props) {
             </Button>
           </NavLink>
         )}
-        <Tooltip title={t("study.more") as string}>
+        <Tooltip title={t("studies.moreActions") as string}>
           <Button
             size="small"
             aria-controls="menu-elements"

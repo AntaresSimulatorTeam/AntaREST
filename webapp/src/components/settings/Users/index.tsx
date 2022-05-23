@@ -99,7 +99,7 @@ function Users() {
     isLoading,
     reload: reloadFetchUsers,
   } = usePromiseWithSnackbarError(() => getUsers({ details: true }), {
-    errorMessage: t("global.usersError"),
+    errorMessage: t("settings.error.usersError"),
   });
 
   useUpdateEffect(() => {

@@ -105,7 +105,7 @@ function Candidates() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("xpansion.question.deleteConfigurationError"),
+        t("xpansion.error.deleteConfiguration"),
         e as AxiosError
       );
     } finally {
@@ -137,7 +137,7 @@ function Candidates() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("xpansion.question.deleteCandidateError"),
+          t("xpansion.error.deleteCandidate"),
           e as AxiosError
         );
       } finally {

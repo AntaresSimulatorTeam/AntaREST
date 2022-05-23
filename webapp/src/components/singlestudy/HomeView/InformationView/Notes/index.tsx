@@ -188,7 +188,7 @@ export default function Notes(props: Props) {
           setNbAreas(areas.length);
           setNbLinks(links);
         } catch (e) {
-          enqueueErrorSnackbar(t("study.getAreasInfo"), e as AxiosError);
+          enqueueErrorSnackbar(t("study.error.getAreasInfo"), e as AxiosError);
         }
       }
     })();

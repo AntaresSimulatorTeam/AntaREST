@@ -46,7 +46,7 @@ function CreateVariantModal(props: Props) {
       navigate(`/studies/${newId}`);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("variants.onVariantCreationError"),
+        t("variants.error.variantCreation"),
         e as AxiosError
       );
     }

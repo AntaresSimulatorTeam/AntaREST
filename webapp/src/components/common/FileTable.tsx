@@ -164,7 +164,7 @@ function FileTable(props: PropType) {
                         color: "action.active",
                       }}
                     >
-                      <Tooltip title="Lire">
+                      <Tooltip title={t("global.view") as string}>
                         <VisibilityIcon />
                       </Tooltip>
                     </IconButton>
@@ -185,7 +185,7 @@ function FileTable(props: PropType) {
                           color: "error.light",
                         }}
                       >
-                        <Tooltip title="Supprimer">
+                        <Tooltip title={t("global.delete") as string}>
                           <DeleteIcon />
                         </Tooltip>
                       </IconButton>

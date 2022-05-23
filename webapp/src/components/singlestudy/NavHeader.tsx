@@ -178,7 +178,7 @@ function NavHeader(props: Props) {
     if (study) {
       try {
         await navigator.clipboard.writeText(study.id);
-        enqueueSnackbar(t("study.success.studyIdCopys"), {
+        enqueueSnackbar(t("study.success.studyIdCopy"), {
           variant: "success",
         });
       } catch (e) {
