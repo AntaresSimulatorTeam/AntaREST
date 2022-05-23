@@ -156,7 +156,7 @@ function MenuWrapper(props: Props) {
                 <elm.icon sx={{ color: "grey.400" }} />
               </NavListItemIcon>
             </NotificationBadge>
-            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
           </NavInternalLink>
         </NavListItem>
       );
@@ -168,7 +168,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <elm.icon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
           </NavExternalLink>
         ) : (
           <NavInternalLink
@@ -183,7 +183,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <elm.icon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`global:${elm.id}`)} />}
+            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
           </NavInternalLink>
         )}
       </NavListItem>

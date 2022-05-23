@@ -94,7 +94,7 @@ function ExportFilterModal(props: PropTypes) {
         name={t("study.type")}
         list={typeList.map((elm) => ({
           id: elm,
-          name: t(`global:study.${elm.toLowerCase()}`),
+          name: t(`study.${elm.toLowerCase()}`),
         }))}
         data={filter.type}
         setValue={(data: string) => onTypeChange(data)}
@@ -122,7 +122,7 @@ function ExportFilterModal(props: PropTypes) {
         name={t("study.level")}
         list={levelList.map((elm) => ({
           id: elm,
-          name: t(`global:study.${elm.toLowerCase()}`),
+          name: t(`study.${elm.toLowerCase()}`),
         }))}
         data={filter.level}
         setValue={(data: string) => onLevelChange(data)}
