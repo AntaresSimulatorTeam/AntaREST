@@ -90,7 +90,9 @@ def get_local_path() -> Path:
 
 
 def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
-    redis_client = redis.Redis(host=config.host, port=config.port, password=config.password, db=0)
+    redis_client = redis.Redis(
+        host=config.host, port=config.port, password=config.password, db=0
+    )
     return redis_client
 
 

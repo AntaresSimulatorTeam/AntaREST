@@ -251,7 +251,11 @@ class RedisConfig:
 
     @staticmethod
     def from_dict(data: JSON) -> "RedisConfig":
-        return RedisConfig(host=data["host"], port=data["port"], password=data.get("password", None))
+        return RedisConfig(
+            host=data["host"],
+            port=data["port"],
+            password=data.get("password", None),
+        )
 
 
 @dataclass(frozen=True)
