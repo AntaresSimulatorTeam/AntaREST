@@ -72,16 +72,26 @@ def make_xpansion_manager(empty_study):
 
 def make_areas(empty_study):
     CreateArea(
-        area_name="area1", command_context=Mock(spec=CommandContext)
+        area_name="area1",
+        command_context=Mock(
+            spec=CommandContext, generator_matrix_constants=Mock()
+        ),
     )._apply_config(empty_study.config)
     CreateArea(
-        area_name="area2", command_context=Mock(spec=CommandContext)
+        area_name="area2",
+        command_context=Mock(
+            spec=CommandContext, generator_matrix_constants=Mock()
+        ),
     )._apply_config(empty_study.config)
 
 
 def make_link(empty_study):
     CreateLink(
-        area1="area1", area2="area2", command_context=Mock(spec=CommandContext)
+        area1="area1",
+        area2="area2",
+        command_context=Mock(
+            spec=CommandContext, generator_matrix_constants=Mock()
+        ),
     )._apply_config(empty_study.config)
 
 
