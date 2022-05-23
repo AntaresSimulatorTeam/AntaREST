@@ -45,12 +45,9 @@ function StudyMatrixView(props: PropTypes) {
       }
     } catch (e) {
       if (axios.isAxiosError(e)) {
-        enqueueErrorSnackbar(
-          t("global:studies.error.retrieveData"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.retrieveData"), e as AxiosError);
       } else {
-        enqueueSnackbar(t("global:studies.error.retrieveData"), {
+        enqueueSnackbar(t("studies.error.retrieveData"), {
           variant: "error",
         });
       }
@@ -64,10 +61,10 @@ function StudyMatrixView(props: PropTypes) {
       await importFile(file, study, formatedPath);
     } catch (e) {
       logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("global:studies.error.saveData"), e as AxiosError);
+      enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
     }
     refreshView();
-    enqueueSnackbar(t("global:studies.success.saveData"), {
+    enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
   };
@@ -80,7 +77,7 @@ function StudyMatrixView(props: PropTypes) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
     if (urlParts.length < 2) {
-      enqueueSnackbar(t("global:studies.error.retrieveData"), {
+      enqueueSnackbar(t("studies.error.retrieveData"), {
         variant: "error",
       });
       return;
@@ -93,7 +90,7 @@ function StudyMatrixView(props: PropTypes) {
       <Root>
         {isEditable && (
           <Header>
-            <ImportForm text={t("global:global.import")} onImport={onImport} />
+            <ImportForm text={t("global.import")} onImport={onImport} />
           </Header>
         )}
         <Content>
@@ -103,12 +100,9 @@ function StudyMatrixView(props: PropTypes) {
           ) : (
             loaded && (
               <NoContent
-                title="global:matrix.matrixEmpty"
+                title="matrix.matrixEmpty"
                 callToAction={
-                  <ImportForm
-                    text={t("global:global.import")}
-                    onImport={onImport}
-                  />
+                  <ImportForm text={t("global.import")} onImport={onImport} />
                 }
               />
             )

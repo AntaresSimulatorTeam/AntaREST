@@ -102,7 +102,7 @@ function GroupForm(props: Props) {
       <TextField
         sx={{ mx: 0 }}
         autoFocus
-        label={t("global:global.name")}
+        label={t("global.name")}
         error={!!errors.name}
         helperText={errors.name?.message}
         placeholder={defaultValues?.name}
@@ -112,10 +112,10 @@ function GroupForm(props: Props) {
         }
         fullWidth
         {...register("name", {
-          required: t("main:form.field.required") as string,
+          required: t("form.field.required") as string,
           validate: (value) => {
             if (RESERVED_GROUP_NAMES.includes(value)) {
-              return t("main:form.field.notAllowedValue") as string;
+              return t("form.field.notAllowedValue") as string;
             }
           },
         })}
@@ -129,7 +129,7 @@ function GroupForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("global:global.permissions")}</Typography>
+        <Typography>{t("global.permissions")}</Typography>
         {isUsersLoading && (
           <Box
             sx={{
@@ -146,12 +146,10 @@ function GroupForm(props: Props) {
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={userLabelId}>
-                  {t("global:global.user")}
-                </InputLabel>
+                <InputLabel id={userLabelId}>{t("global.user")}</InputLabel>
                 <Select
                   labelId={userLabelId}
-                  label={t("global:global.user")}
+                  label={t("global.user")}
                   defaultValue=""
                   onChange={handleUserChange}
                 >
@@ -170,7 +168,7 @@ function GroupForm(props: Props) {
                   append({ user: selectedUser, type: RoleType.READER });
                 }}
               >
-                {t("global:button.add")}
+                {t("button.add")}
               </Button>
             </Box>
             <List>

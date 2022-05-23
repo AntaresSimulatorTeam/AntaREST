@@ -28,11 +28,11 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   const copyId = (matrixId: string): void => {
     try {
       navigator.clipboard.writeText(matrixId);
-      enqueueSnackbar(t("global:data.success.matrixIdCopied"), {
+      enqueueSnackbar(t("data.success.matrixIdCopied"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueSnackbar(t("data:onMatrixIdCopyError"), { variant: "error" });
+      enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
     }
   };
 
@@ -55,7 +55,7 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
                   color: "action.active",
                 }}
               >
-                <Tooltip title={t("global:study.copyId") as string}>
+                <Tooltip title={t("study.copyId") as string}>
                   <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
                 </Tooltip>
               </IconButton>
@@ -71,7 +71,7 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
       }}
       fullWidth
       maxWidth="lg"
-      okButtonText={t("global:button.close")}
+      okButtonText={t("button.close")}
     >
       {isMatrix === true ? (
         <Box width="100%" height="100%" p={2}>

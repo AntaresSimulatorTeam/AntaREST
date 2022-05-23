@@ -35,14 +35,14 @@ function CreateCandidateDialog(props: PropType) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("global:xpansion.newCandidate")}
+      title={t("xpansion.newCandidate")}
       contentProps={{
         sx: { width: "auto", height: "480px", p: 2 },
       }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("global:global.cancel")}
+            {t("global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -50,7 +50,7 @@ function CreateCandidateDialog(props: PropType) {
             variant="contained"
             onClick={() => onSave(candidate)}
           >
-            {t("global:global.save")}
+            {t("global.save")}
           </Button>
         </>
       }
@@ -70,14 +70,14 @@ function CreateCandidateDialog(props: PropType) {
         }}
       >
         <TextField
-          label={t("global:global.name")}
+          label={t("global.name")}
           variant="outlined"
           onChange={(e) => handleChange("name", e.target.value)}
           value={candidate.name}
         />
         <SelectSingle
           name="link"
-          label={t("global:xpansion.link")}
+          label={t("xpansion.link")}
           list={tabLinks.map((item) => {
             return { id: item, name: item };
           })}
@@ -88,7 +88,7 @@ function CreateCandidateDialog(props: PropType) {
         />
         <TextField
           type="number"
-          label={t("global:xpansion.annualCost")}
+          label={t("xpansion.annualCost")}
           variant="outlined"
           value={candidate["annual-cost-per-mw"] || ""}
           onChange={(e) =>
@@ -109,24 +109,20 @@ function CreateCandidateDialog(props: PropType) {
           >
             {toggleView ? (
               <ActiveButton size="small" variant="outlined" disabled>
-                {`${t("global:xpansion.unitSize")} & ${t(
-                  "global:xpansion.maxUnits"
-                )}`}
+                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
               </ActiveButton>
             ) : (
               <HoverButton size="small" variant="outlined" onClick={changeView}>
-                {`${t("global:xpansion.unitSize")} & ${t(
-                  "global:xpansion.maxUnits"
-                )}`}
+                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
               </HoverButton>
             )}
             {toggleView ? (
               <HoverButton size="small" variant="outlined" onClick={changeView}>
-                {t("global:xpansion.maxInvestments")}
+                {t("xpansion.maxInvestments")}
               </HoverButton>
             ) : (
               <ActiveButton size="small" variant="outlined" disabled>
-                {t("global:xpansion.maxInvestments")}
+                {t("xpansion.maxInvestments")}
               </ActiveButton>
             )}
           </ButtonGroup>
@@ -135,7 +131,7 @@ function CreateCandidateDialog(props: PropType) {
           <>
             <TextField
               type="number"
-              label={t("global:xpansion.unitSize")}
+              label={t("xpansion.unitSize")}
               variant="outlined"
               value={candidate["unit-size"] || ""}
               onChange={(e) =>
@@ -144,7 +140,7 @@ function CreateCandidateDialog(props: PropType) {
             />
             <TextField
               type="number"
-              label={t("global:xpansion.maxUnits")}
+              label={t("xpansion.maxUnits")}
               variant="outlined"
               value={candidate["max-units"] || ""}
               onChange={(e) =>
@@ -156,7 +152,7 @@ function CreateCandidateDialog(props: PropType) {
         {!toggleView && (
           <TextField
             type="number"
-            label={t("global:xpansion.maxInvestments")}
+            label={t("xpansion.maxInvestments")}
             variant="outlined"
             value={candidate["max-investment"] || ""}
             onChange={(e) =>

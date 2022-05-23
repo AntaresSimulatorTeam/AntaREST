@@ -19,7 +19,7 @@ function HeaderRight() {
         startIcon={<GetAppOutlinedIcon />}
         onClick={() => setOpenImportDialog(true)}
       >
-        {t("global:global.import")}
+        {t("global.import")}
       </Button>
       <Button
         sx={{ ml: 2 }}
@@ -28,7 +28,7 @@ function HeaderRight() {
         startIcon={<AddCircleOutlineOutlinedIcon />}
         onClick={() => setOpenCreateDialog(true)}
       >
-        {t("global:global.create")}
+        {t("global.create")}
       </Button>
       {openCreateDialog && (
         <CreateStudyDialog

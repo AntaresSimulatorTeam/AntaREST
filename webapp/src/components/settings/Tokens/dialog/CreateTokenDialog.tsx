@@ -63,14 +63,11 @@ function CreateTokenDialog(props: Props) {
 
       setTokenValueToDisplay(tokenValue);
 
-      enqueueSnackbar(t("global:settings.success.tokenCreation", [name]), {
+      enqueueSnackbar(t("settings.success.tokenCreation", [name]), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:settings.error.tokenSave", [name]),
-        e as Error
-      );
+      enqueueErrorSnackbar(t("settings.error.tokenSave", [name]), e as Error);
       closeDialog();
     } finally {
       reloadFetchTokens();
@@ -90,7 +87,7 @@ function CreateTokenDialog(props: Props) {
   return (
     <>
       <TokenFormDialog
-        title={t("global:settings.createToken")}
+        title={t("settings.createToken")}
         titleIcon={TokenIcon}
         onSubmit={handleSubmit}
         onCancel={closeDialog}
@@ -99,7 +96,7 @@ function CreateTokenDialog(props: Props) {
       {tokenValueToDisplay && (
         <OkDialog
           open
-          title={t("global:settings.message.printToken") as string}
+          title={t("settings.message.printToken") as string}
           onOk={() => {
             setTokenValueToDisplay("");
             closeDialog();
@@ -129,7 +126,7 @@ function CreateTokenDialog(props: Props) {
                 disableFocusListener
                 disableHoverListener
                 disableTouchListener
-                title={t("global:global.copied") as string}
+                title={t("global.copied") as string}
               >
                 <ContentCopyIcon onClick={handleCopyClick} />
               </Tooltip>

@@ -23,13 +23,13 @@ function Settings() {
 
   const tabList = useMemo(() => {
     return [
-      isUserAdmin && [t("global:global.users"), () => <Users />],
+      isUserAdmin && [t("global.users"), () => <Users />],
       (isUserAdmin || isUserInGroupAdmin) && [
-        t("global:global.group"),
+        t("global.group"),
         () => <Groups />,
       ],
-      [t("global:global.tokens"), () => <Tokens />],
-      isUserAdmin && [t("global:global.maintenance"), () => <Maintenance />],
+      [t("global.tokens"), () => <Tokens />],
+      isUserAdmin && [t("global.maintenance"), () => <Maintenance />],
     ].filter(Boolean) as Array<[string, () => JSX.Element]>;
   }, [isUserAdmin, isUserInGroupAdmin, t]);
 
@@ -48,7 +48,7 @@ function Settings() {
   return (
     <TabContext value={tabValue}>
       <RootPage
-        title={t("global:global.settings")}
+        title={t("global.settings")}
         titleIcon={SettingsIcon}
         headerBottom={
           <Box

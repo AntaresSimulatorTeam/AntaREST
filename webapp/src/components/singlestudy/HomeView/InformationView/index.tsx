@@ -27,16 +27,9 @@ function InformationView(props: Props) {
 
   const importStudy = async (study: StudyMetadata) => {
     try {
-      await copyStudy(
-        study.id,
-        `${study.name} (${t("global:study.copyId")})`,
-        false
-      );
+      await copyStudy(study.id, `${study.name} (${t("study.copyId")})`, false);
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:studies.error.copyStudy"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
     }
   };
 
@@ -89,7 +82,7 @@ function InformationView(props: Props) {
               if (study) navigate(`/studies/${study.id}/explore`);
             }}
           >
-            {t("global:global.open")}
+            {t("global.open")}
           </Button>
           {study && (
             <Button
@@ -101,8 +94,8 @@ function InformationView(props: Props) {
               sx={{ mx: 2 }}
             >
               {study.managed
-                ? t("global:variants.createNewVariant")
-                : t("global:studies.importcopy")}
+                ? t("variants.createNewVariant")
+                : t("studies.importcopy")}
             </Button>
           )}
         </Box>
@@ -111,7 +104,7 @@ function InformationView(props: Props) {
           color="primary"
           onClick={() => setOpenLauncherModal(true)}
         >
-          {t("global:global.launch")}
+          {t("global.launch")}
         </Button>
       </Box>
       {study && tree && openVariantModal && (

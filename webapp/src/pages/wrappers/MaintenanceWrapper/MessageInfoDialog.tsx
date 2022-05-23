@@ -37,7 +37,7 @@ function MessageInfoDialog() {
         dispatch(setMessageInfo(isStringEmpty(tmpMessage) ? "" : tmpMessage));
       } catch (e) {
         enqueueErrorSnackbar(
-          t("global:maintenance.error.messageInfoError"),
+          t("maintenance.error.messageInfoError"),
           e as AxiosError
         );
       }

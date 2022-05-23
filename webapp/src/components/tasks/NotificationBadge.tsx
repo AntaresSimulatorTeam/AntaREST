@@ -44,23 +44,23 @@ function NotificationBadge(props: Props) {
   useEffect(() => {
     const listener = async (ev: WSMessage) => {
       if (ev.type === WSEvent.DOWNLOAD_CREATED) {
-        newNotification("global:downloads.newDownload");
+        newNotification("downloads.newDownload");
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
-        newNotification("global:downloads.downloadReady");
+        newNotification("downloads.downloadReady");
       } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
-        newNotification("global:study.error.exportOutput", "error");
+        newNotification("study.error.exportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
         const taskId = (ev.payload as TaskEventPayload).id;
         try {
           const task = await getTask(taskId);
           if (task.type === "COPY") {
-            newNotification("global:studies.studycopying");
+            newNotification("studies.studycopying");
           } else if (task.type === "ARCHIVE") {
-            newNotification("global:studies.studyarchiving");
+            newNotification("studies.studyarchiving");
           } else if (task.type === "UNARCHIVE") {
-            newNotification("global:studies.studyunarchiving");
+            newNotification("studies.studyunarchiving");
           } else if (task.type === "SCAN") {
-            newNotification("global:studies.success.scanFolder");
+            newNotification("studies.success.scanFolder");
           }
         } catch (error) {
           logError(error);

@@ -3,6 +3,7 @@
     "global.settings": "Paramètres",
     "global.version": "Version",
     "global.versions": "Versions",
+    "global.reset": "Réinitialiser",
     "global.delete": "Supprimer",
     "global.archive": "Archiver",
     "global.unarchive": "Désarchive",
@@ -101,6 +102,13 @@
     "tasks.scan": "Scan",
     "tasks.typeFilter": "Filtrer par type",
     "tasks.runningTasks": "Tâches en cours",
+    "tasks.DOWNLOAD": "Téléchargement",
+    "tasks.LAUNCH": "Lancement",
+    "tasks.COPY": "Copie",
+    "tasks.ARCHIVE": "Archivage",
+    "tasks.UNARCHIVE": "Désarchivage",
+    "tasks.SCAN": "Scan",
+    "tasks.UNKNOWN": "Inconnu",
     "settings.createUser": "Créer un utilisateur",
     "settings.createToken": "Créer un token",
     "settings.createGroup": "Créer un groupe",
@@ -345,10 +353,10 @@
     "data.error.matrix": "Impossible de récupérer les données de la matrice",
     "data.error.fileNotUploaded": "Veuillez sélectionner un fichier",
     "data.error.matrixDelete": "Matrice non supprimée",
+    "data.error.copyMatrixId": "Erreur lors de la copie de l'Id de la matrice", 
     "data.success.matrixUpdate": "Matrice chargée avec succès",
     "data.success.matrixCreation": "Matrice créée avec succès",
     "data.success.matrixDelete": "Matrice supprimée avec succès",
     "data.question.deleteMatrix": "Êtes-vous sûr de vouloir supprimer cette matrice ? ?",
-    "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices"
-    }
-    
+    "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices"   
+}

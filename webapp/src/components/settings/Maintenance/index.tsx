@@ -47,7 +47,7 @@ function Maintenance() {
       mode: await getMaintenanceMode(),
       message: await getMessageInfo(),
     }),
-    { errorMessage: t("global:maintenance.error.maintenanceError") }
+    { errorMessage: t("maintenance.error.maintenanceError") }
   );
 
   useUpdateEffect(() => {
@@ -75,14 +75,11 @@ function Maintenance() {
         await updateMessageInfo(data.message);
       }
 
-      enqueueSnackbar(t("global:settings.updateMaintenance"), {
+      enqueueSnackbar(t("settings.updateMaintenance"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:settings.error.updateMaintenance"),
-        e as Error
-      );
+      enqueueErrorSnackbar(t("settings.error.updateMaintenance"), e as Error);
     } finally {
       reloadFetchMaintenance();
     }
@@ -95,7 +92,7 @@ function Maintenance() {
   if (isRejected) {
     return (
       <Typography sx={{ m: 2 }} align="center">
-        {t("global:maintenance.error.maintenanceError")}
+        {t("maintenance.error.maintenanceError")}
       </Typography>
     );
   }
@@ -118,12 +115,12 @@ function Maintenance() {
                 )}
               />
             }
-            label={t("global:settings.maintenanceMode")}
+            label={t("settings.maintenanceMode")}
             labelPlacement="start"
           />
         </Box>
         <TextField
-          label={t("global:global.message")}
+          label={t("global.message")}
           InputLabelProps={{ shrink: true }}
           minRows={6}
           multiline
@@ -133,7 +130,7 @@ function Maintenance() {
           disabled={!isDirty}
           onClick={() => setShowConfirmationModal(true)}
         >
-          {t("global:global.save")}
+          {t("global.save")}
         </Button>
         <Backdrop
           open={isLoading || isSubmitting}
@@ -152,7 +149,7 @@ function Maintenance() {
           alert="warning"
           open
         >
-          {t("global:settings.question.updateMaintenance")}
+          {t("settings.question.updateMaintenance")}
         </ConfirmationDialog>
       )}
     </>

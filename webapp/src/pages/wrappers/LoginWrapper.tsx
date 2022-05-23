@@ -52,7 +52,7 @@ function LoginWrapper(props: Props) {
       return false;
     },
     {
-      errorMessage: t("main:loginError"),
+      errorMessage: t("login.error"),
     },
     [user]
   );
@@ -68,7 +68,7 @@ function LoginWrapper(props: Props) {
         await dispatch(login(data)).unwrap();
       } catch (e) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setLoginError((e as any).data?.message || t("global:login.error"));
+        setLoginError((e as any).data?.message || t("login.error"));
       } finally {
         reset({ username: data.username });
       }
@@ -157,7 +157,7 @@ function LoginWrapper(props: Props) {
               />
               <FilledTextInput
                 type="password"
-                label={t("global:global.password")}
+                label={t("global.password")}
                 fullWidth
                 inputProps={{
                   autoComplete: "current-password",
@@ -184,7 +184,7 @@ function LoginWrapper(props: Props) {
                   {formState.isSubmitting && (
                     <CircularProgress size="1em" sx={{ mr: "1em" }} />
                   )}
-                  {t("global:global.connexion")}
+                  {t("global.connexion")}
                 </Button>
               </Box>
             </form>

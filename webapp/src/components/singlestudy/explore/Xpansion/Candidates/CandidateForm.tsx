@@ -84,7 +84,7 @@ function CandidateForm(props: PropType) {
           justifyContent="space-between"
           alignItems="flex-end"
         >
-          <Title>{t("global:global.general")}</Title>
+          <Title>{t("global.general")}</Title>
           <Box
             display="flex"
             justifyContent="space-between"
@@ -110,7 +110,7 @@ function CandidateForm(props: PropType) {
             >
               <SaveIcon sx={{ m: 0.2, width: "16px", height: "16px" }} />
               <Typography sx={{ m: 0.2, fontSize: "12px" }}>
-                {t("global:global.save")}
+                {t("global.save")}
               </Typography>
             </Button>
             <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
@@ -119,7 +119,7 @@ function CandidateForm(props: PropType) {
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
           <StyledTextField
-            label={t("global:global.name")}
+            label={t("global.name")}
             variant="filled"
             value={currentCandidate?.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
@@ -127,7 +127,7 @@ function CandidateForm(props: PropType) {
           <SelectFields>
             <SelectSingle
               name="link"
-              label={t("global:xpansion.link")}
+              label={t("xpansion.link")}
               list={tabLinks}
               data={currentCandidate?.link || ""}
               handleChange={handleChange}
@@ -139,12 +139,12 @@ function CandidateForm(props: PropType) {
         </Fields>
       </Box>
       <Box>
-        <Title>{t("global:global.settings")}</Title>
+        <Title>{t("global.settings")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
           <StyledTextField
             type="number"
-            label={t("global:xpansion.annualCost")}
+            label={t("xpansion.annualCost")}
             variant="filled"
             value={currentCandidate?.["annual-cost-per-mw"] || ""}
             onChange={(e) =>
@@ -153,7 +153,7 @@ function CandidateForm(props: PropType) {
           />
           <StyledTextField
             type="number"
-            label={t("global:xpansion.alreadyICapacity")}
+            label={t("xpansion.alreadyICapacity")}
             variant="filled"
             value={currentCandidate?.["already-installed-capacity"] || ""}
             onChange={(e) =>
@@ -173,9 +173,7 @@ function CandidateForm(props: PropType) {
             <ButtonGroup sx={{ width: "270px", mb: 2 }} variant="outlined">
               {toggleView ? (
                 <ActiveButton size="small" variant="outlined" disabled>
-                  {`${t("global:xpansion.unitSize")} & ${t(
-                    "global:xpansion.maxUnits"
-                  )}`}
+                  {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
                 </ActiveButton>
               ) : (
                 <HoverButton
@@ -183,9 +181,7 @@ function CandidateForm(props: PropType) {
                   variant="outlined"
                   onClick={changeView}
                 >
-                  {`${t("global:xpansion.unitSize")} & ${t(
-                    "global:xpansion.maxUnits"
-                  )}`}
+                  {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
                 </HoverButton>
               )}
               {toggleView ? (
@@ -194,11 +190,11 @@ function CandidateForm(props: PropType) {
                   variant="outlined"
                   onClick={changeView}
                 >
-                  {t("global:xpansion.maxInvestments")}
+                  {t("xpansion.maxInvestments")}
                 </HoverButton>
               ) : (
                 <ActiveButton size="small" variant="outlined" disabled>
-                  {t("global:xpansion.maxInvestments")}
+                  {t("xpansion.maxInvestments")}
                 </ActiveButton>
               )}
             </ButtonGroup>
@@ -208,7 +204,7 @@ function CandidateForm(props: PropType) {
               <StyledTextField
                 sx={{ mr: 2 }}
                 type="number"
-                label={t("global:xpansion.unitSize")}
+                label={t("xpansion.unitSize")}
                 variant="filled"
                 value={currentCandidate?.["unit-size"] || ""}
                 onChange={(e) =>
@@ -217,7 +213,7 @@ function CandidateForm(props: PropType) {
               />
               <StyledTextField
                 type="number"
-                label={t("global:xpansion.maxUnits")}
+                label={t("xpansion.maxUnits")}
                 variant="filled"
                 value={currentCandidate?.["max-units"] || ""}
                 onChange={(e) =>
@@ -229,7 +225,7 @@ function CandidateForm(props: PropType) {
           {!toggleView && (
             <StyledTextField
               type="number"
-              label={t("global:xpansion.maxInvestments")}
+              label={t("xpansion.maxInvestments")}
               variant="filled"
               value={currentCandidate?.["max-investment"] || ""}
               onChange={(e) =>
@@ -240,7 +236,7 @@ function CandidateForm(props: PropType) {
         </Fields>
       </Box>
       <Box>
-        <Title>{t("global:xpansion.timeSeries")}</Title>
+        <Title>{t("xpansion.timeSeries")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Box
           sx={{
@@ -258,7 +254,7 @@ function CandidateForm(props: PropType) {
           <SelectFields>
             <SelectSingle
               name="link-profile"
-              label={t("global:xpansion.linkProfile")}
+              label={t("xpansion.linkProfile")}
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}
@@ -279,7 +275,7 @@ function CandidateForm(props: PropType) {
           <SelectFields>
             <SelectSingle
               name="already-installed-link-profile"
-              label={t("global:xpansion.alreadyILinkProfile")}
+              label={t("xpansion.alreadyILinkProfile")}
               list={capacities.map((item) => {
                 return { id: item, name: item };
               })}
@@ -312,7 +308,7 @@ function CandidateForm(props: PropType) {
           alert="warning"
           open
         >
-          {t("global:xpansion.question.deleteCandidate")}
+          {t("xpansion.question.deleteCandidate")}
         </ConfirmationDialog>
       )}
     </Box>

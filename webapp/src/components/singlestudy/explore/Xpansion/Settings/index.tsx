@@ -40,7 +40,7 @@ function Settings() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.loadConfiguration"),
+        t("xpansion.error.loadConfiguration"),
         e as AxiosError
       );
     }
@@ -54,7 +54,7 @@ function Settings() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.loadConfiguration"),
+        t("xpansion.error.loadConfiguration"),
         e as AxiosError
       );
     }
@@ -68,7 +68,7 @@ function Settings() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.loadConfiguration"),
+        t("xpansion.error.loadConfiguration"),
         e as AxiosError
       );
     } finally {
@@ -91,13 +91,10 @@ function Settings() {
         );
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:xpansion.error.updateSettings"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
       initSettings();
-      enqueueSnackbar(t("global:studies.success.saveData"), {
+      enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
     }
@@ -110,7 +107,7 @@ function Settings() {
         setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("global:xpansion.error.getFile"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 

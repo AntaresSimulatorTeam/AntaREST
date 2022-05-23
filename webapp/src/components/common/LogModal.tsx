@@ -125,7 +125,7 @@ function LogModal(props: Props) {
               boxSizing: "border-box",
             }}
           >
-            {t("global:global.logs")}
+            {t("global.logs")}
           </Typography>
           <DownloadIcon
             sx={{
@@ -147,7 +147,7 @@ function LogModal(props: Props) {
       maxWidth="lg"
       actions={
         <Button variant="text" color="primary" onClick={close}>
-          {t("global:button.close")}
+          {t("button.close")}
         </Button>
       }
     >

@@ -65,9 +65,9 @@ function FileTable(props: PropType) {
       }
     } catch (e) {
       logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("studymanager:failtosavedata"), e as AxiosError);
+      enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
     } finally {
-      enqueueSnackbar(t("studymanager:savedatasuccess"), {
+      enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
     }
@@ -86,7 +86,7 @@ function FileTable(props: PropType) {
       <Divider sx={{ mt: 1, mb: 2 }} />
       {allowImport && (
         <Box display="flex" justifyContent="flex-end">
-          <ImportForm text={t("main:import")} onImport={onImport} />
+          <ImportForm text={t("global.import")} onImport={onImport} />
         </Box>
       )}
       <Box
@@ -108,10 +108,10 @@ function FileTable(props: PropType) {
                 })}
               >
                 <TableCell sx={{ color: "text.secondary" }}>
-                  {t("xpansion:fileName")}
+                  {t("xpansion.fileName")}
                 </TableCell>
                 <TableCell align="right" sx={{ color: "text.secondary" }}>
-                  {t("xpansion:options")}
+                  {t("xpansion.options")}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -138,7 +138,7 @@ function FileTable(props: PropType) {
                             color: "action.active",
                           }}
                         >
-                          <Tooltip title={t("global:global.copyId") as string}>
+                          <Tooltip title={t("global.copyId") as string}>
                             <ContentCopyIcon
                               sx={{ height: "20px", width: "20px" }}
                             />
@@ -170,7 +170,7 @@ function FileTable(props: PropType) {
                     </IconButton>
                     {onFileDownload && (
                       <DownloadLink
-                        title={t("jobs:download") as string}
+                        title={t("global.download") as string}
                         url={onFileDownload(row.id as string)}
                       >
                         <DownloadIcon />
@@ -208,7 +208,7 @@ function FileTable(props: PropType) {
           onCancel={() => setOpenConfirmationModal("")}
           alert="warning"
         >
-          {t("xpansion:deleteFile")}
+          {t("xpansion.question.deleteFile")}
         </ConfirmationDialog>
       )}
     </Box>

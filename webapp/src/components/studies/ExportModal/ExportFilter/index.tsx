@@ -91,7 +91,7 @@ function ExportFilterModal(props: PropTypes) {
   return (
     <Root>
       <SelectSingle
-        name={t("global:study.type")}
+        name={t("study.type")}
         list={typeList.map((elm) => ({
           id: elm,
           name: t(`global:study.${elm.toLowerCase()}`),
@@ -103,7 +103,7 @@ function ExportFilterModal(props: PropTypes) {
       />
       {byYear.isByYear && byYear.nbYear > 0 && (
         <SelectMulti
-          name={t("global:study.years")}
+          name={t("study.years")}
           list={_.range(byYear.nbYear).map((elm) => ({
             id: elm.toString(),
             name: elm.toString(),
@@ -119,7 +119,7 @@ function ExportFilterModal(props: PropTypes) {
         />
       )}
       <SelectSingle
-        name={t("global:study.level")}
+        name={t("study.level")}
         list={levelList.map((elm) => ({
           id: elm,
           name: t(`global:study.${elm.toLowerCase()}`),
@@ -129,7 +129,7 @@ function ExportFilterModal(props: PropTypes) {
         sx={{ width: "300px", mb: 2 }}
       />
       <TagSelect
-        label={t("global:study.columns")}
+        label={t("study.columns")}
         values={filter.columns !== undefined ? filter.columns : []}
         onChange={(value: Array<string>) =>
           setFilter({ ...filter, columns: value })
@@ -159,11 +159,11 @@ function ExportFilterModal(props: PropTypes) {
             onChange={(e, checked) =>
               setFilter({ ...filter, synthesis: checked })
             }
-            name={t("global:study.synthesis")}
+            name={t("study.synthesis")}
           />
         }
         sx={{ my: 1 }}
-        label={t("global:study.synthesis")}
+        label={t("study.synthesis")}
       />
       <FormControlLabel
         control={
@@ -172,10 +172,10 @@ function ExportFilterModal(props: PropTypes) {
             onChange={(e, checked) =>
               setFilter({ ...filter, includeClusters: checked })
             }
-            name={t("global:study.includeClusters")}
+            name={t("study.includeClusters")}
           />
         }
-        label={t("global:study.includeClusters")}
+        label={t("study.includeClusters")}
       />
     </Root>
   );

@@ -32,15 +32,15 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
 
   return (
     <BasicDialog
-      title={t("global:dialog.title.confirmation")}
+      title={t("dialog.title.confirmation")}
       {...basicDialogProps}
       actions={
         <>
           <Button onClick={onCancel}>
-            {cancelButtonText || t("main:noButton")}
+            {cancelButtonText || t("button.no")}
           </Button>
           <Button onClick={onConfirm} variant="contained">
-            {confirmButtonText || t("global:button.yes")}
+            {confirmButtonText || t("button.yes")}
           </Button>
         </>
       }

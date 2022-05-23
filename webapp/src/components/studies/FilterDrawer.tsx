@@ -186,7 +186,7 @@ function FilterDrawer(props: Props) {
           <Typography
             sx={{ color: "grey.500", fontSize: "0.9em", mb: theme.spacing(2) }}
           >
-            {t("global:global.filter").toUpperCase()}
+            {t("global.filter").toUpperCase()}
           </Typography>
           <FormControlLabel
             control={
@@ -196,7 +196,7 @@ function FilterDrawer(props: Props) {
                 sx={{ color: "white" }}
               />
             }
-            label={t("global:studies.managedStudiesFilter") as string}
+            label={t("studies.managedStudiesFilter") as string}
           />
           <FormControlLabel
             control={
@@ -206,7 +206,7 @@ function FilterDrawer(props: Props) {
                 sx={{ color: "white" }}
               />
             }
-            label={t("global:studies.archivedStudiesFilter") as string}
+            label={t("studies.archivedStudiesFilter") as string}
           />
         </Box>
       </Toolbar>
@@ -216,7 +216,7 @@ function FilterDrawer(props: Props) {
       <List>
         <ListItem>
           <SelectMulti
-            name={t("global:global.versions")}
+            name={t("global.versions")}
             list={versionList}
             data={
               currentVersions !== undefined
@@ -262,14 +262,14 @@ function FilterDrawer(props: Props) {
                     marginTop: "2px",
                   },
                 }}
-                label={t("global:global.usersLabel")}
+                label={t("global.users")}
               />
             )}
           />
         </ListItem>
         <ListItem>
           <SelectMulti
-            name={t("global:studies.groupsLabel")}
+            name={t("global.groups")}
             list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))}
             data={
               currentGroups !== undefined
@@ -281,7 +281,7 @@ function FilterDrawer(props: Props) {
         </ListItem>
         <ListItem>
           <TagTextInput
-            label={t("global:global.tags")}
+            label={t("global.tags")}
             sx={{ m: 1, width: "200px" }}
             value={currentTags || []}
             onChange={setCurrentTags}
@@ -311,7 +311,7 @@ function FilterDrawer(props: Props) {
           p={1}
         >
           <Button variant="text" color="primary" onClick={onResetFilterClick}>
-            {t("main:reset")}
+            {t("global.reset")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -319,7 +319,7 @@ function FilterDrawer(props: Props) {
             variant="contained"
             onClick={onFilterClick}
           >
-            {t("global:global.filter")}
+            {t("global.filter")}
           </Button>
         </Box>
       </Box>

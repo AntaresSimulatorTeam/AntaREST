@@ -27,7 +27,7 @@ export function initI18n(version = "unknown") {
       interpolation: {
         escapeValue: false, // not needed for react as it escapes by default
       },
-      ns: ["global"],
+      ns: ["main"],
       defaultNS: "main",
     });
 }

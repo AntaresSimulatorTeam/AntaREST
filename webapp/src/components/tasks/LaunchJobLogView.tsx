@@ -37,10 +37,7 @@ function LaunchJobLogView(props: PropsType) {
         );
         setLogModalContent(logData);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:study.failtofetchlogs"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.failtofetchlogs"), e as AxiosError);
       } finally {
         setLogModalContentLoading(false);
       }
@@ -50,7 +47,7 @@ function LaunchJobLogView(props: PropsType) {
   return (
     <Box display="flex">
       {logButton && (
-        <Tooltip title={t("global:global.logs") as string}>
+        <Tooltip title={t("global.logs") as string}>
           <Box
             sx={{
               width: "auto",
@@ -75,7 +72,7 @@ function LaunchJobLogView(props: PropsType) {
         </Tooltip>
       )}
       {logErrorButton && (
-        <Tooltip title={t("global:global.errorLogs") as string}>
+        <Tooltip title={t("global.errorLogs") as string}>
           <Box
             sx={{
               position: "relative",

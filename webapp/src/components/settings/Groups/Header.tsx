@@ -40,7 +40,7 @@ function Header(props: Props) {
       >
         <TextField
           sx={{ m: 0 }}
-          placeholder={t("global:global.search")}
+          placeholder={t("global.search")}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -56,7 +56,7 @@ function Header(props: Props) {
             variant="outlined"
             onClick={() => setShowCreateGroupModal(true)}
           >
-            {t("global:global.create")}
+            {t("global.create")}
           </Button>
         )}
       </Box>

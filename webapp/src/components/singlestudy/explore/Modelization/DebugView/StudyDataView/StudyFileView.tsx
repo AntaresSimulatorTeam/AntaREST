@@ -41,10 +41,7 @@ function StudyDataView(props: PropTypes) {
         setData(res);
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:studies.error.retrieveData"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studies.error.retrieveData"), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -55,10 +52,10 @@ function StudyDataView(props: PropTypes) {
       await importFile(file, study, formatedPath);
     } catch (e) {
       logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("global:studies.error.saveData"), e as AxiosError);
+      enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
     }
     refreshView();
-    enqueueSnackbar(t("global:studies.success.saveData"), {
+    enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
   };
@@ -71,7 +68,7 @@ function StudyDataView(props: PropTypes) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
     if (urlParts.length < 2) {
-      enqueueSnackbar(t("global:studies.error.retrieveData"), {
+      enqueueSnackbar(t("studies.error.retrieveData"), {
         variant: "error",
       });
       return;
@@ -85,10 +82,7 @@ function StudyDataView(props: PropTypes) {
         <Root>
           {isEditable && (
             <Header>
-              <ImportForm
-                text={t("global:global.import")}
-                onImport={onImport}
-              />
+              <ImportForm text={t("global.import")} onImport={onImport} />
             </Header>
           )}
           <Content>

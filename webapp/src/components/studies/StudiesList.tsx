@@ -124,22 +124,22 @@ function StudiesList(props: StudiesListProps) {
     () => [
       {
         element: SortElement.NAME,
-        name: t("global:studies.sortByName"),
+        name: t("studies.sortByName"),
         status: SortStatus.INCREASE,
       },
       {
         element: SortElement.NAME,
-        name: t("global:studies.sortByName"),
+        name: t("studies.sortByName"),
         status: SortStatus.DECREASE,
       },
       {
         element: SortElement.DATE,
-        name: t("global:studies.sortByDate"),
+        name: t("studies.sortByDate"),
         status: SortStatus.INCREASE,
       },
       {
         element: SortElement.DATE,
-        name: t("global:studies.sortByDate"),
+        name: t("studies.sortByDate"),
         status: SortStatus.DECREASE,
       },
     ],
@@ -150,14 +150,11 @@ function StudiesList(props: StudiesListProps) {
     try {
       await callCopyStudy(
         study.id,
-        `${study.name} (${t("global:study.copyId")})`,
+        `${study.name} (${t("study.copyId")})`,
         withOutputs
       );
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:studies.error.copyStudy"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
       logError("Failed to copy/import study", study, e);
     }
   };
@@ -167,7 +164,7 @@ function StudiesList(props: StudiesListProps) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:studies.error.archive", { studyname: study.name }),
+        t("studies.error.archive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -178,7 +175,7 @@ function StudiesList(props: StudiesListProps) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:studies.error.unarchive", { studyname: study.name }),
+        t("studies.error.unarchive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -188,10 +185,7 @@ function StudiesList(props: StudiesListProps) {
     dispatch(deleteStudy(study.id))
       .unwrap()
       .catch((err) => {
-        enqueueErrorSnackbar(
-          t("global:studies.error.deleteStudy"),
-          err as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
         logError("Failed to delete study", study, err);
       });
   };
@@ -295,7 +289,7 @@ function StudiesList(props: StudiesListProps) {
             )}
           </Breadcrumbs>
           <Typography mx={2} sx={{ color: "white" }}>
-            ({`${studies.length} ${t("global:global.studies").toLowerCase()}`})
+            ({`${studies.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
         </Box>
         <Box
@@ -305,7 +299,7 @@ function StudiesList(props: StudiesListProps) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Tooltip title={t("global:studies.refresh") as string} sx={{ mr: 4 }}>
+          <Tooltip title={t("studies.refresh") as string} sx={{ mr: 4 }}>
             <Button color="primary" onClick={refresh} variant="outlined">
               <RefreshIcon />
             </Button>
@@ -321,15 +315,15 @@ function StudiesList(props: StudiesListProps) {
           >
             <InputLabel
               variant="standard"
-              htmlFor={`single-checkbox-${t("global:studies.sortBy")}`}
+              htmlFor={`single-checkbox-${t("studies.sortBy")}`}
             >
-              {t("global:studies.sortBy")}
+              {t("studies.sortBy")}
             </InputLabel>
             <Select
-              labelId={`single-checkbox-label-${t("global:studies.sortBy")}`}
-              id={`single-checkbox-${t("global:studies.sortBy")}`}
+              labelId={`single-checkbox-label-${t("studies.sortBy")}`}
+              id={`single-checkbox-${t("studies.sortBy")}`}
               value={`${sortItem.element}-${sortItem.status}`}
-              label={t("global:studies.sortBy")}
+              label={t("studies.sortBy")}
               variant="filled"
               onChange={(e: SelectChangeEvent<string>) =>
                 setSortItem(getSortItem(e.target.value as string))

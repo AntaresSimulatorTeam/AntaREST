@@ -67,14 +67,11 @@ function Data() {
     try {
       await deleteDataSet(idForDeletion as string);
       setDataList(dataList.filter((item) => item.id !== idForDeletion));
-      enqueueSnackbar(t("global:data.success.matrixDelete"), {
+      enqueueSnackbar(t("data.success.matrixDelete"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("global:data.error.matrixDelete"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("data.error.matrixDelete"), e as AxiosError);
     }
     setIdForDeletion(undefined);
     setOpenConfirmationModal(false);
@@ -117,7 +114,7 @@ function Data() {
     try {
       await exportMatrixDataset(datasetId);
     } catch (e) {
-      enqueueErrorSnackbar(t("global:data.error.matrix"), e as AxiosError);
+      enqueueErrorSnackbar(t("data.error.matrix"), e as AxiosError);
     }
   };
 
@@ -127,10 +124,7 @@ function Data() {
         const matrix = await getMatrixList();
         setDataList(matrix);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:data.error.matrixList"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("data.error.matrixList"), e as AxiosError);
       } finally {
         setLoaded(true);
       }
@@ -144,7 +138,7 @@ function Data() {
   const matrices = dataList.find((item) => item.id === selectedItem)?.matrices;
 
   return (
-    <RootPage title={t("main:data")} titleIcon={StorageIcon}>
+    <RootPage title={t("data.title")} titleIcon={StorageIcon}>
       {loaded && (
         <SplitLayoutView
           left={
@@ -186,7 +180,7 @@ function Data() {
                         </Typography>
                         <Box>
                           <IconButton>
-                            <Tooltip title={t("main:edit") as string}>
+                            <Tooltip title={t("global.edit") as string}>
                               <EditIcon
                                 onClick={() => {
                                   onUpdateClick(selectedItem);
@@ -199,7 +193,7 @@ function Data() {
                               onDownloadDataset(selectedItem);
                             }}
                           >
-                            <Tooltip title={t("jobs:download") as string}>
+                            <Tooltip title={t("global.download") as string}>
                               <DownloadIcon />
                             </Tooltip>
                           </IconButton>
@@ -211,7 +205,7 @@ function Data() {
                               color: "error.light",
                             }}
                           >
-                            <Tooltip title={t("main:delete") as string}>
+                            <Tooltip title={t("global.delete") as string}>
                               <DeleteIcon />
                             </Tooltip>
                           </IconButton>
@@ -276,7 +270,7 @@ function Data() {
           onCancel={() => setOpenConfirmationModal(false)}
           alert="warning"
         >
-          {t("global:data.question.deleteMatrix")}
+          {t("data.question.deleteMatrix")}
         </ConfirmationDialog>
       )}
     </RootPage>

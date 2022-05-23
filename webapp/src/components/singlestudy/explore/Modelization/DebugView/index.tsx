@@ -35,10 +35,7 @@ function DebugView() {
         const data = await getStudyData(sid, "", -1);
         setStudyData(data);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:studies.error.retrieveData"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.retrieveData"), e as AxiosError);
         logError("Failed to fetch study data", sid, e);
       } finally {
         setLoaded(true);

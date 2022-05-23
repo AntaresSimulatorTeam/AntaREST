@@ -259,7 +259,7 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <LogoutIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t("global:logout.title")} />}
+            {extended && <NavListItemText primary={t("logout.title")} />}
           </NavListItem>
           <NavListItem
             onClick={() => dispatch(setMenuExtensionStatus(!extended))}
@@ -267,19 +267,19 @@ function MenuWrapper(props: Props) {
             <NavListItemIcon>
               <ReadMoreOutlinedIcon sx={{ color: "grey.400" }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t("global:button.hide")} />}
+            {extended && <NavListItemText primary={t("button.hide")} />}
           </NavListItem>
         </List>
         {openLogoutDialog && (
           <ConfirmationDialog
-            title={t("global:logout.title")}
+            title={t("logout.title")}
             onCancel={() => setOpenLogoutDialog(false)}
             onConfirm={() => dispatch(logout())}
             alert="warning"
             open
           >
             <Typography sx={{ px: 3, py: 1 }}>
-              {t("global:dialog.message.logout")}
+              {t("dialog.message.logout")}
             </Typography>
           </ConfirmationDialog>
         )}

@@ -119,7 +119,7 @@ function Studies() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("global:studies.error.retrieveStudies"),
+          t("studies.error.retrieveStudies"),
           e as AxiosError
         );
       } finally {
@@ -296,7 +296,7 @@ function Studies() {
 
   return (
     <RootPage
-      title={t("global:global.studies")}
+      title={t("global.studies")}
       titleIcon={TravelExploreOutlinedIcon}
       headerTopRight={<HeaderTopRight />}
       headerBottom={

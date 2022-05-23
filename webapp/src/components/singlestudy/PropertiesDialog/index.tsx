@@ -109,28 +109,28 @@ function PropertiesModal(props: Props) {
           );
         }
         enqueueSnackbar(
-          t("global:study.success.modifiedStudy", { studyname: studyName }),
+          t("study.success.modifiedStudy", { studyname: studyName }),
           { variant: "success" }
         );
       } catch (e) {
         logErr("Failed to modify study", studyName, e);
         enqueueErrorSnackbar(
-          t("global:study.error.modifiedStudy", { studyname: studyName }),
+          t("study.error.modifiedStudy", { studyname: studyName }),
           e as AxiosError
         );
       }
       onClose();
     } else {
-      enqueueSnackbar(t("global:global.error.emptyName"), { variant: "error" });
+      enqueueSnackbar(t("global.error.emptyName"), { variant: "error" });
     }
   };
 
   const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("global:study.nonePublicMode") },
-    { id: "READ", name: t("global:study.readPublicMode") },
-    { id: "EXECUTE", name: t("global:study.executePublicMode") },
-    { id: "EDIT", name: t("global:global.edit") },
-    { id: "FULL", name: t("global:study.fullPublicMode") },
+    { id: "NONE", name: t("study.nonePublicMode") },
+    { id: "READ", name: t("study.readPublicMode") },
+    { id: "EXECUTE", name: t("study.executePublicMode") },
+    { id: "EDIT", name: t("global.edit") },
+    { id: "FULL", name: t("study.fullPublicMode") },
   ];
 
   const init = async () => {
@@ -177,14 +177,14 @@ function PropertiesModal(props: Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("global:study.properties")}
+      title={t("study.properties")}
       contentProps={{
         sx: { width: "600px", height: "350px", p: 0 },
       }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("global:global.cancel")}
+            {t("global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -193,7 +193,7 @@ function PropertiesModal(props: Props) {
             onClick={onSubmit}
             disabled={!dataChanged}
           >
-            {t("global:study.validate")}
+            {t("study.validate")}
           </Button>
         </>
       }
@@ -201,7 +201,7 @@ function PropertiesModal(props: Props) {
       <Root>
         <InputElement>
           <FilledTextInput
-            label={t("global:studies.studyName")}
+            label={t("studies.studyName")}
             value={studyName}
             onChange={setStudyName}
             sx={{ flexGrow: 1 }}
@@ -209,10 +209,10 @@ function PropertiesModal(props: Props) {
           />
         </InputElement>
         <ElementContainer>
-          <TextSeparator text={t("global:global.permission")} />
+          <TextSeparator text={t("global.permission")} />
           <InputElement>
             <SingleSelect
-              name={t("global:study.publicMode")}
+              name={t("study.publicMode")}
               list={publicModeList}
               data={publicMode}
               setValue={(value: string) =>
@@ -221,7 +221,7 @@ function PropertiesModal(props: Props) {
               sx={{ flexGrow: 1, mr: 1, height: "60px" }}
             />
             <MultiSelect
-              name={t("global:global.group")}
+              name={t("global.group")}
               list={groupList}
               data={group}
               setValue={setGroup}
@@ -233,7 +233,7 @@ function PropertiesModal(props: Props) {
           <TextSeparator text="Metadata" />
           <InputElement>
             <TagTextInput
-              label={t("global:studies.enterTag")}
+              label={t("studies.enterTag")}
               sx={{ flexGrow: 1 }}
               value={tags}
               onChange={setTags}

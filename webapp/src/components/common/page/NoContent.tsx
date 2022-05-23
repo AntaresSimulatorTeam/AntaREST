@@ -27,7 +27,7 @@ interface Props {
 }
 
 function NoContent(props: Props) {
-  const { title = "global:common.nocontent", icon, callToAction } = props;
+  const { title = "common.nocontent", icon, callToAction } = props;
   const [t] = useTranslation();
 
   return (
@@ -40,7 +40,7 @@ function NoContent(props: Props) {
 }
 
 NoContent.defaultProps = {
-  title: "global:common.nocontent",
+  title: "common.nocontent",
   icon: (
     <LiveHelpRoundedIcon
       sx={{ height: "100px", width: "100%", color: "text.primary" }}

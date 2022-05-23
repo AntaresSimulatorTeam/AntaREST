@@ -123,7 +123,7 @@ function Tokens() {
       const user = await getUser(authUser.id);
       return bots.map((bot) => ({ ...bot, user }));
     },
-    { errorMessage: t("global:global.tokensError") },
+    { errorMessage: t("global.tokensError") },
     [authUser]
   );
 
@@ -171,16 +171,13 @@ function Tokens() {
     mounted(deleteBot(token.id))
       .then(() => {
         dispatch({ type: TokenActionKind.DELETE, payload: token.id });
-        enqueueSnackbar(
-          t("global:settings.success.tokenDelete", [token.name]),
-          {
-            variant: "success",
-          }
-        );
+        enqueueSnackbar(t("settings.success.tokenDelete", [token.name]), {
+          variant: "success",
+        });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("global:settings.error.tokenDelete", [token.name]),
+          t("settings.error.tokenDelete", [token.name]),
           err
         );
       })
@@ -273,7 +270,7 @@ function Tokens() {
             R.T,
             () => (
               <Typography sx={{ m: 2 }} align="center">
-                {t("global:settings.noToken")}
+                {t("settings.noToken")}
               </Typography>
             ),
           ],
@@ -287,7 +284,7 @@ function Tokens() {
           alert="warning"
           open
         >
-          {t("global:settings.question.deleteToken", [tokenToDelete.name])}
+          {t("settings.question.deleteToken", [tokenToDelete.name])}
         </ConfirmationDialog>
       )}
       {tokenToDisplayInfo && (

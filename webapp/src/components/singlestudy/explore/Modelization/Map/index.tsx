@@ -139,7 +139,7 @@ function Map() {
         ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("global:study.error.createArea"), e as AxiosError);
+      enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
     }
   };
 
@@ -179,7 +179,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(t("global:study.updateUIError"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.updateUIError"), e as AxiosError);
       }
     }
   };
@@ -210,7 +210,7 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             enqueueErrorSnackbar(
-              t("global:study.error.deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -228,7 +228,7 @@ function Map() {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
             enqueueErrorSnackbar(
-              t("global:study.error.deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -260,10 +260,7 @@ function Map() {
                 (o) => o.source !== firstNode || o.target !== secondNode
               )
             );
-            enqueueErrorSnackbar(
-              t("global:study.error.createLink"),
-              e as AxiosError
-            );
+            enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
           }
         }
       };
@@ -310,10 +307,7 @@ function Map() {
             );
           }
         } catch (e) {
-          enqueueErrorSnackbar(
-            t("global:studies.error.loadStudy"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("studies.error.loadStudy"), e as AxiosError);
         } finally {
           setLoaded(true);
         }
@@ -415,10 +409,10 @@ function Map() {
               top="10px"
             >
               <Typography>
-                {`${nodeData.length} ${t("global:study.areas")}`}
+                {`${nodeData.length} ${t("study.areas")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t("global:study.links")}`}
+                {`${linkData.length} ${t("study.links")}`}
               </Typography>
             </Box>
           </Box>

@@ -70,7 +70,7 @@ function HeaderBottom(props: PropTypes) {
         value={inputValue}
         variant="outlined"
         onChange={(event) => setInputValue(event.target.value as string)}
-        label={t("global:global.search")}
+        label={t("global.search")}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -89,7 +89,7 @@ function HeaderBottom(props: PropTypes) {
         }}
       />
       <Button color="secondary" variant="outlined" onClick={onFilterClick}>
-        {t("global:global.filter")}
+        {t("global.filter")}
       </Button>
       <Box
         flex={1}
@@ -102,7 +102,7 @@ function HeaderBottom(props: PropTypes) {
       >
         {managedFilter && (
           <Chip
-            label={t("global:studies.managedStudiesFilter")}
+            label={t("studies.managedStudiesFilter")}
             variant="filled"
             color="secondary"
             onDelete={handleManagedDeletion}
@@ -111,7 +111,7 @@ function HeaderBottom(props: PropTypes) {
         )}
         {archivedFilter && (
           <Chip
-            label={t("global:studies.archivedStudiesFilter")}
+            label={t("studies.archivedStudiesFilter")}
             variant="filled"
             color="secondary"
             onDelete={() => setArchivedFilter(false)}

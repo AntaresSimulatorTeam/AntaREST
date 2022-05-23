@@ -122,21 +122,21 @@ function PanelView(props: PropType) {
           >
             <TextField
               sx={{ mt: 1 }}
-              label={t("global:study.modelization.map.areaName")}
+              label={t("study.modelization.map.areaName")}
               variant="filled"
               value={node.name}
               disabled
             />
             <TextField
               sx={{ mt: 1 }}
-              label={t("global:study.modelization.posX")}
+              label={t("study.modelization.posX")}
               variant="filled"
               value={node.x}
               disabled
             />
             <TextField
               sx={{ mt: 1 }}
-              label={t("global:study.modelization.posY")}
+              label={t("study.modelization.posY")}
               variant="filled"
               value={node.y}
               disabled
@@ -180,7 +180,7 @@ function PanelView(props: PropType) {
                 color: "text.secondary",
               }}
             >
-              {t("global:study.links")}
+              {t("study.links")}
             </Typography>
             <Box
               width="90%"
@@ -191,7 +191,7 @@ function PanelView(props: PropType) {
               marginBottom="8px"
             >
               <Typography sx={{ fontWeight: "bold", color: "text.secondary" }}>
-                {t("global:study.area1")}
+                {t("study.area1")}
               </Typography>
               <StyledLinkTypo
                 variant="body2"
@@ -209,7 +209,7 @@ function PanelView(props: PropType) {
               marginBottom="8px"
             >
               <Typography sx={{ fontWeight: "bold", color: "text.secondary" }}>
-                {t("global:study.area2")}
+                {t("study.area2")}
               </Typography>
               <StyledLinkTypo
                 variant="body2"
@@ -232,7 +232,7 @@ function PanelView(props: PropType) {
             size="small"
             onClick={() => setSelectedItem(undefined)}
           >
-            {t("global:button.back")}
+            {t("button.back")}
           </Button>
           <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
         </Box>
@@ -253,8 +253,8 @@ function PanelView(props: PropType) {
           open
         >
           <Typography sx={{ p: 3 }}>
-            {node && t("global:study.question.deleteArea")}
-            {link && t("global:study.question.deleteLink")}
+            {node && t("study.question.deleteArea")}
+            {link && t("study.question.deleteLink")}
           </Typography>
         </ConfirmationDialog>
       )}

@@ -111,30 +111,30 @@ function UserForm(props: Props) {
         <>
           <TextField
             autoFocus
-            label={t("global:global.username")}
+            label={t("global.username")}
             error={!!errors.username}
             helperText={errors.username?.message}
             {...commonTextFieldProps}
             {...register("username", {
-              required: t("main:form.field.required") as string,
+              required: t("form.field.required") as string,
               validate: (value) => {
                 if (RESERVED_USER_NAMES.includes(value)) {
-                  return t("main:form.field.notAllowedValue") as string;
+                  return t("form.field.notAllowedValue") as string;
                 }
               },
             })}
           />
           <TextField
-            label={t("global:global.password")}
+            label={t("global.password")}
             type="password"
             error={!!errors.password}
             helperText={errors.password?.message}
             {...commonTextFieldProps}
             {...register("password", {
-              required: t("main:form.field.required") as string,
+              required: t("form.field.required") as string,
               minLength: {
                 value: PASSWORD_MIN_LENGTH,
-                message: t("main:form.field.minLength", [PASSWORD_MIN_LENGTH]),
+                message: t("form.field.minLength", [PASSWORD_MIN_LENGTH]),
               },
             })}
           />
@@ -149,7 +149,7 @@ function UserForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("global:global.permissions")}</Typography>
+        <Typography>{t("global.permissions")}</Typography>
         {isGroupsLoading && (
           <Box
             sx={{
@@ -166,12 +166,10 @@ function UserForm(props: Props) {
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={groupLabelId}>
-                  {t("global:global.group")}
-                </InputLabel>
+                <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
                 <Select
                   labelId={groupLabelId}
-                  label={t("global:global.group")}
+                  label={t("global.group")}
                   defaultValue=""
                   onChange={handleGroupChange}
                 >
@@ -190,7 +188,7 @@ function UserForm(props: Props) {
                   append({ group: selectedGroup, type: RoleType.READER });
                 }}
               >
-                {t("global:button.add")}
+                {t("button.add")}
               </Button>
             </Box>
             <List>

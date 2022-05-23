@@ -38,7 +38,7 @@ function CommandImportButton(props: PropTypes) {
           onImport(json);
         }
       } catch (error) {
-        enqueueSnackbar(t("global:variants.error.jsonParsing"), {
+        enqueueSnackbar(t("variants.error.jsonParsing"), {
           variant: "error",
         });
       }

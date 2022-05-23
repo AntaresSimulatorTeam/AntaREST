@@ -29,7 +29,7 @@ function PropertiesView(props: PropsType) {
       }}
     >
       <TextField
-        label={t("global:global.search")}
+        label={t("global.search")}
         variant="outlined"
         InputProps={{
           startAdornment: (

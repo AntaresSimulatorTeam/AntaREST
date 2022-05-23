@@ -117,13 +117,13 @@ function TokenForm(props: Props) {
         <TextField
           sx={{ mx: 0 }}
           autoFocus
-          label={t("global:global.name")}
+          label={t("global.name")}
           error={!!errors.name}
           helperText={errors.name?.message}
           required
           fullWidth
           {...register("name", {
-            required: t("main:form.field.required") as string,
+            required: t("form.field.required") as string,
           })}
         />
       )}
@@ -136,7 +136,7 @@ function TokenForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("global:global.permissions")}</Typography>
+        <Typography>{t("global.permissions")}</Typography>
         {isGroupsLoading && (
           <Box
             sx={{
@@ -154,12 +154,10 @@ function TokenForm(props: Props) {
             {!readOnly && (
               <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
                 <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                  <InputLabel id={groupLabelId}>
-                    {t("global:global.group")}
-                  </InputLabel>
+                  <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
                   <Select
                     labelId={groupLabelId}
-                    label={t("global:global.group")}
+                    label={t("global.group")}
                     defaultValue=""
                     onChange={handleGroupChange}
                   >
@@ -178,7 +176,7 @@ function TokenForm(props: Props) {
                     append({ group: selectedGroup, type: RoleType.READER });
                   }}
                 >
-                  {t("global:button.add")}
+                  {t("button.add")}
                 </Button>
               </Box>
             )}

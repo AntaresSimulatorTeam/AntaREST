@@ -44,19 +44,19 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const optionsList: Array<GenericInfo> = [
     {
       id: "exportWith",
-      name: t("global:studies.exportWith"),
+      name: t("studies.exportWith"),
     },
     {
       id: "exportWithout",
-      name: t("global:studies.exportWithout"),
+      name: t("studies.exportWithout"),
     },
     {
       id: "exportOutput",
-      name: t("global:studies.exportOutput"),
+      name: t("studies.exportOutput"),
     },
     {
       id: "exportOutputFilter",
-      name: t("global:studies.exportOutputFilter"),
+      name: t("studies.exportOutputFilter"),
     },
   ];
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
@@ -76,10 +76,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         try {
           await callExportOutput(study.id, output);
         } catch (e) {
-          enqueueErrorSnackbar(
-            t("global:study.error.exportOutput"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
         }
       }
     },
@@ -94,14 +91,11 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     if (study) {
       try {
         await downloadOutput(study.id, output, filter);
-        enqueueSnackbar(t("global:study.message.outputExportInProgress"), {
+        enqueueSnackbar(t("study.message.outputExportInProgress"), {
           variant: "info",
         });
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:study.error.exportOutput"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
       }
     }
   };
@@ -130,7 +124,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         setCurrentOutput(res.length > 0 ? res[0].name : undefined);
         setStudySynthesis(tmpSynth);
       } catch (e) {
-        logError(t("global:study.error.listOutputs"), study, e);
+        logError(t("study.error.listOutputs"), study, e);
       }
     })();
   }, [study, t]);
@@ -139,7 +133,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("global:global.export")}
+      title={t("global.export")}
       actions={
         <Box>
           <Button
@@ -147,7 +141,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             color="error"
             onClick={onClose ? () => onClose({}, "backdropClick") : undefined}
           >
-            {t("global:button.close")}
+            {t("button.close")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -160,7 +154,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             }
             onClick={onExportClick}
           >
-            {t("global:global.export")}
+            {t("global.export")}
           </Button>
         </Box>
       }
@@ -172,7 +166,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         }}
       >
         <SelectSingle
-          name={t("global:studies.exportOptions")}
+          name={t("studies.exportOptions")}
           list={optionsList}
           data={optionSelection}
           setValue={(data: string) => setOptionSelection(data)}
@@ -188,7 +182,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             () =>
               (
                 <SelectSingle
-                  name={t("global:studies.selectOutput")}
+                  name={t("studies.selectOutput")}
                   list={outputList as Array<GenericInfo>}
                   data={currentOutput}
                   setValue={(data: string) => setCurrentOutput(data)}

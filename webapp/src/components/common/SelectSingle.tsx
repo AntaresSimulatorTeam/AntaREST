@@ -97,7 +97,7 @@ function SelectSingle(props: Props) {
       >
         {optional && (
           <MenuItem value="" key="None">
-            {t("global:global.none")}
+            {t("global.none")}
           </MenuItem>
         )}
         {list.map(({ id, name }) => (

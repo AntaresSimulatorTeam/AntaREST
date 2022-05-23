@@ -73,7 +73,7 @@ function LinksView(props: PropsType) {
             fontWeight: "bold",
           }}
         >
-          {t("global:study.links")}
+          {t("study.links")}
         </Typography>
       )}
       <AutoSizer>

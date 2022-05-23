@@ -102,7 +102,7 @@ function JobsListing() {
     } catch (e) {
       logError("woops", e);
       enqueueErrorSnackbar(
-        t("global:global.error.failedtoretrievejobs"),
+        t("global.error.failedtoretrievejobs"),
         e as AxiosError
       );
     } finally {
@@ -131,10 +131,7 @@ function JobsListing() {
       try {
         await downloadJobOutput(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:study.error.exportOutput"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
       }
     },
     2000,
@@ -146,7 +143,7 @@ function JobsListing() {
       try {
         await killStudy(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(t("global:study.failtokilltask"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.failtokilltask"), e as AxiosError);
       }
       setOpenConfirmationDialog(undefined);
     })();
@@ -237,7 +234,7 @@ function JobsListing() {
             >
               <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
                 {studies.find((s) => s.id === job.studyId)?.name ||
-                  `${t("global:global.unknown")} (${job.id})`}
+                  `${t("global.unknown")} (${job.id})`}
               </Typography>
             </Link>
           </Box>
@@ -283,7 +280,7 @@ function JobsListing() {
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             <Box display="flex" alignItems="center" justifyContent="flex-end">
               {job.status === "running" ? (
-                <Tooltip title={t("global:study.killStudy") as string}>
+                <Tooltip title={t("study.killStudy") as string}>
                   <BlockIcon
                     sx={{
                       mb: "4px",
@@ -300,7 +297,7 @@ function JobsListing() {
             </Box>
             <Box>
               {job.status === "success" ? (
-                <Tooltip title={t("global:tasks.download") as string}>
+                <Tooltip title={t("global.download") as string}>
                   <DownloadIcon
                     sx={{
                       fontSize: 22,
@@ -336,13 +333,13 @@ function JobsListing() {
         ),
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
-            {`(${t(
-              "global:downloads.expirationDate"
-            )} : ${convertUTCToLocalTime(download.expirationDate)})`}
+            {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
+              download.expirationDate
+            )})`}
           </Box>
         ),
         action: download.failed ? (
-          <Tooltip title={t("global:study.error.exportOutput") as string}>
+          <Tooltip title={t("study.error.exportOutput") as string}>
             <InfoIcon
               sx={{
                 width: "18px",
@@ -360,7 +357,7 @@ function JobsListing() {
           <Box>
             {download.ready ? (
               <DownloadLink
-                title={t("global:tasks.download") as string}
+                title={t("global.download") as string}
                 url={getDownloadUrl(download.id)}
               >
                 <DownloadIcon
@@ -373,7 +370,7 @@ function JobsListing() {
                 />
               </DownloadLink>
             ) : (
-              <Tooltip title={t("global:global.loading") as string}>
+              <Tooltip title={t("global.loading") as string}>
                 <CircularProgress
                   color="primary"
                   style={{ width: "18px", height: "18px" }}
@@ -440,7 +437,7 @@ function JobsListing() {
         action: (
           <Box>
             {!task.completion_date_utc && (
-              <Tooltip title={t("global:global.loading") as string}>
+              <Tooltip title={t("global.loading") as string}>
                 <CircularProgress
                   color="primary"
                   style={{ width: "18px", height: "18px" }}
@@ -448,7 +445,7 @@ function JobsListing() {
               </Tooltip>
             )}
             {task.result && !task.result.success && (
-              <Tooltip title={t("global:variants.error.taskFailed") as string}>
+              <Tooltip title={t("variants.error.taskFailed") as string}>
                 <InfoIcon
                   sx={{
                     width: "18px",
@@ -475,7 +472,7 @@ function JobsListing() {
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
 
   return (
-    <RootPage title={t("global:tasks.title")} titleIcon={AssignmentIcon}>
+    <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
       <Box
         flexGrow={1}
         overflow="hidden"
@@ -487,15 +484,13 @@ function JobsListing() {
         {loaded && <JobTableView content={content || []} refresh={init} />}
         {openConfirmationDialog && (
           <ConfirmationDialog
-            title={t("global:dialog.title.confirmation")}
+            title={t("dialog.title.confirmation")}
             onCancel={() => setOpenConfirmationDialog(undefined)}
             onConfirm={() => killTask(openConfirmationDialog)}
             alert="warning"
             open={!!openConfirmationDialog}
           >
-            <Typography sx={{ p: 3 }}>
-              {t("global:study.question.killJob")}
-            </Typography>
+            <Typography sx={{ p: 3 }}>{t("study.question.killJob")}</Typography>
           </ConfirmationDialog>
         )}
         <LogModal

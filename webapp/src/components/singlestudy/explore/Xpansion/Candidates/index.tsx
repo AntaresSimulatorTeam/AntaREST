@@ -74,7 +74,7 @@ function Candidates() {
       return [];
     },
     {
-      errorMessage: t("global:xpansion.error.loadConfiguration"),
+      errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
     },
     [study]
@@ -94,7 +94,7 @@ function Candidates() {
       }
       return {};
     },
-    { errorMessage: t("global:xpansion.error.loadConfiguration") },
+    { errorMessage: t("xpansion.error.loadConfiguration") },
     [study]
   );
 
@@ -105,7 +105,7 @@ function Candidates() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.question.deleteConfigurationError"),
+        t("xpansion.question.deleteConfigurationError"),
         e as AxiosError
       );
     } finally {
@@ -121,7 +121,7 @@ function Candidates() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.createCandidate"),
+        t("xpansion.error.createCandidate"),
         e as AxiosError
       );
     } finally {
@@ -137,7 +137,7 @@ function Candidates() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("global:xpansion.question.deleteCandidateError"),
+          t("xpansion.question.deleteCandidateError"),
           e as AxiosError
         );
       } finally {
@@ -165,13 +165,13 @@ function Candidates() {
             "unit-size",
           ]) as XpansionCandidate
         );
-        enqueueSnackbar(t("global:studies.success.saveData"), {
+        enqueueSnackbar(t("studies.success.saveData"), {
           variant: "success",
         });
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.updateCandidate"),
+        t("xpansion.error.updateCandidate"),
         e as AxiosError
       );
     } finally {
@@ -186,7 +186,7 @@ function Candidates() {
         setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("global:xpansion.error.getFile"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 

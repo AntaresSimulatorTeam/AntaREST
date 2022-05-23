@@ -47,15 +47,12 @@ function CreateUserDialog(props: Props) {
 
     try {
       newUser = await mounted(createUser(username, password));
-      enqueueSnackbar(
-        t("global:settings.success.userCreation", [newUser.name]),
-        {
-          variant: "success",
-        }
-      );
+      enqueueSnackbar(t("settings.success.userCreation", [newUser.name]), {
+        variant: "success",
+      });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:settings.error.userSave", [username]),
+        t("settings.error.userSave", [username]),
         e as Error
       );
       throw e;
@@ -90,7 +87,7 @@ function CreateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("global:settings.error.userRolesSave", [newUser.name]),
+        t("settings.error.userRolesSave", [newUser.name]),
         e as Error
       );
     }
@@ -104,7 +101,7 @@ function CreateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
-      title={t("global:settings.createUser")}
+      title={t("settings.createUser")}
       titleIcon={PersonAddIcon}
       onSubmit={handleSubmit}
       onCancel={closeDialog}

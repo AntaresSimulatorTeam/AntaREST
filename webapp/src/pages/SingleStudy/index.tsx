@@ -44,16 +44,16 @@ function SingleStudy(props: Props) {
   const tabList = useMemo(
     () => [
       {
-        label: t("global:study.modelization"),
+        label: t("study.modelization"),
         path: `/studies/${studyId}/explore/modelization`,
       },
       {
-        label: t("global:study.configuration"),
+        label: t("study.configuration"),
         path: `/studies/${studyId}/explore/configuration`,
       },
       { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
       {
-        label: t("global:study.results"),
+        label: t("study.results"),
         path: `/studies/${studyId}/explore/results`,
       },
     ],

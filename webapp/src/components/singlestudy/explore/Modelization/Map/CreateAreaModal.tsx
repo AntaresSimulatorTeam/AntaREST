@@ -30,13 +30,13 @@ function CreateAreaModal(props: PropType) {
     if (!isStringEmpty(id)) {
       onSave(id, posX, posY, color);
     } else {
-      enqueueSnackbar(t("global:study.error.createArea"), { variant: "error" });
+      enqueueSnackbar(t("study.error.createArea"), { variant: "error" });
     }
   };
 
   return (
     <BasicDialog
-      title={t("global:study.modelization.map.newArea")}
+      title={t("study.modelization.map.newArea")}
       open={open}
       onClose={onClose}
       contentProps={{
@@ -45,7 +45,7 @@ function CreateAreaModal(props: PropType) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("global:global.cancel")}
+            {t("global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -55,7 +55,7 @@ function CreateAreaModal(props: PropType) {
               handleSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)
             }
           >
-            {t("global:global.save")}
+            {t("global.save")}
           </Button>
         </>
       }
@@ -63,7 +63,7 @@ function CreateAreaModal(props: PropType) {
       <Box sx={{ m: 2 }}>
         <TextField
           sx={{ height: "40px" }}
-          label={t("global:global.name")}
+          label={t("global.name")}
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}
           value={name}

@@ -33,18 +33,15 @@ function StudyJsonView(props: PropTypes) {
     if (loaded && jsonData) {
       try {
         await editStudy(jsonData, study, tmpPath);
-        enqueueSnackbar(t("global:studies.success.saveData"), {
+        enqueueSnackbar(t("studies.success.saveData"), {
           variant: "success",
         });
         setSaveAllowed(false);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:studies.error.saveData"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
       }
     } else {
-      enqueueSnackbar(t("global:studies.error.saveData"), { variant: "error" });
+      enqueueSnackbar(t("studies.error.saveData"), { variant: "error" });
     }
   };
 
@@ -61,10 +58,7 @@ function StudyJsonView(props: PropTypes) {
         setJsonData(res);
         setSaveAllowed(false);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:studies.error.retrieveData"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.retrieveData"), e as AxiosError);
       } finally {
         setLoaded(true);
       }
@@ -86,7 +80,7 @@ function StudyJsonView(props: PropTypes) {
             disabled={!saveAllowed}
           >
             <Typography sx={{ fontSize: "12px", m: 0.2 }}>
-              {t("global:global.save")}
+              {t("global.save")}
             </Typography>
           </Button>
         </Header>

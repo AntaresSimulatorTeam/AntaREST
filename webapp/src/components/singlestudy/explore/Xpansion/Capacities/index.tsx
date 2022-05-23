@@ -35,7 +35,7 @@ function Capacities() {
       }
     } catch (e) {
       enqueueErrorSnackbar(
-        t("global:xpansion.error.loadConfiguration"),
+        t("xpansion.error.loadConfiguration"),
         e as AxiosError
       );
     } finally {
@@ -50,10 +50,7 @@ function Capacities() {
           await addCapacity(study.id, file);
         }
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("global:xpansion.error.addFile"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("xpansion.error.addFile"), e as AxiosError);
       } finally {
         init();
       }
@@ -67,7 +64,7 @@ function Capacities() {
         setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("global:xpansion.error.getFile"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 
@@ -81,7 +78,7 @@ function Capacities() {
         }
       } catch (e) {
         enqueueErrorSnackbar(
-          t("global:xpansion.question.deleteFileError"),
+          t("xpansion.question.deleteFileError"),
           e as AxiosError
         );
       }
@@ -97,7 +94,7 @@ function Capacities() {
       {loaded ? (
         <Box width="100%" height="100%" padding={2} boxSizing="border-box">
           <FileTable
-            title={t("global:xpansion.capacities")}
+            title={t("xpansion.capacities")}
             content={
               capacities?.map((item) => ({ id: item, name: item })) || []
             }

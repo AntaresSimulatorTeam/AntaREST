@@ -67,29 +67,29 @@ function CreateStudyModal(props: Props) {
         );
 
         enqueueSnackbar(
-          t("global:studies.success.createStudy", { studyname: studyName }),
+          t("studies.success.createStudy", { studyname: studyName }),
           { variant: "success" }
         );
       } catch (e) {
         logErr("Failed to create new study", studyName, e);
         enqueueErrorSnackbar(
-          t("global:studies.error.createStudy", { studyname: studyName }),
+          t("studies.error.createStudy", { studyname: studyName }),
           e as AxiosError
         );
       }
       onClose();
     } else {
-      enqueueSnackbar(t("global:global.error.emptyName"), { variant: "error" });
+      enqueueSnackbar(t("global.error.emptyName"), { variant: "error" });
       setActionButtonDisabled(false);
     }
   };
 
   const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("global:study.nonePublicMode") },
-    { id: "READ", name: t("global:study.readPublicMode") },
-    { id: "EXECUTE", name: t("global:study.executePublicMode") },
-    { id: "EDIT", name: t("global:global.edit") },
-    { id: "FULL", name: t("global:study.fullPublicMode") },
+    { id: "NONE", name: t("study.nonePublicMode") },
+    { id: "READ", name: t("study.readPublicMode") },
+    { id: "EXECUTE", name: t("study.executePublicMode") },
+    { id: "EDIT", name: t("global.edit") },
+    { id: "FULL", name: t("study.fullPublicMode") },
   ];
 
   const init = async () => {
@@ -107,7 +107,7 @@ function CreateStudyModal(props: Props) {
 
   return (
     <BasicDialog
-      title={t("global:studies.createNewStudy")}
+      title={t("studies.createNewStudy")}
       open={open}
       onClose={onClose}
       contentProps={{
@@ -116,7 +116,7 @@ function CreateStudyModal(props: Props) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("global:global.cancel")}
+            {t("global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -125,7 +125,7 @@ function CreateStudyModal(props: Props) {
             onClick={onSubmit}
             disabled={actionButtonDisabled}
           >
-            {t("global:global.create")}
+            {t("global.create")}
           </Button>
         </>
       }
@@ -133,14 +133,14 @@ function CreateStudyModal(props: Props) {
       <Root>
         <InputElement>
           <FilledTextInput
-            label={t("global:studies.studyName")}
+            label={t("studies.studyName")}
             value={studyName}
             onChange={setStudyName}
             sx={{ flexGrow: 1, mr: 2 }}
             required
           />
           <SingleSelect
-            name={t("global:global.version")}
+            name={t("global.version")}
             list={versionList}
             data={version}
             setValue={setVersion}
@@ -149,10 +149,10 @@ function CreateStudyModal(props: Props) {
           />
         </InputElement>
         <ElementContainer>
-          <TextSeparator text={t("global:global.permission")} />
+          <TextSeparator text={t("global.permission")} />
           <InputElement>
             <SingleSelect
-              name={t("global:study.publicMode")}
+              name={t("study.publicMode")}
               list={publicModeList}
               data={publicMode}
               setValue={(value: string) =>
@@ -161,7 +161,7 @@ function CreateStudyModal(props: Props) {
               sx={{ flexGrow: 1, mr: 1 }}
             />
             <MultiSelect
-              name={t("global:global.group")}
+              name={t("global.group")}
               list={groupList}
               data={groups}
               setValue={setGroups}
@@ -173,7 +173,7 @@ function CreateStudyModal(props: Props) {
           <TextSeparator text="Metadata" />
           <InputElement>
             <TagTextInput
-              label={t("global:studies.enterTag")}
+              label={t("studies.enterTag")}
               sx={{ flexGrow: 1 }}
               value={tags}
               onChange={setTags}
