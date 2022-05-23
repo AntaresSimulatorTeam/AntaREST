@@ -179,7 +179,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(t("study.updateUIError"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.error.updateUI"), e as AxiosError);
       }
     }
   };

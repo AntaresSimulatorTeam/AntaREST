@@ -77,10 +77,7 @@ function Files() {
           setConstraints(tempConstraints);
         }
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("xpansion.question.deleteFileError"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
       }
     }
   };
