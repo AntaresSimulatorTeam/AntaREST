@@ -6,10 +6,9 @@ import {
 import * as R from "ramda";
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
+import packages from "../../package.json";
 
-const APP_NAME = "antarest";
-
-export enum Status {
+export enum FetchStatus {
   Idle = "idle",
   Loading = "loading",
   Succeeded = "succeeded",
@@ -23,7 +22,7 @@ export interface AsyncEntityState<T> extends EntityState<T> {
 
 export const makeActionName = R.curry(
   (reducerName: string, actionType: string) =>
-    `${APP_NAME}/${reducerName}/${actionType}`
+    `${packages.name}/${reducerName}/${actionType}`
 );
 
 type ThunkAPI = { dispatch: AppDispatch; getState: () => AppState };

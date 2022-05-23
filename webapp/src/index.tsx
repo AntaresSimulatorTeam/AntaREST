@@ -5,16 +5,14 @@ import { initI18n } from "./i18n";
 import "./index.css";
 import App from "./App";
 import { Config, initConfig } from "./services/config";
-import { loadState, saveState } from "./services/utils/localStorage";
+import storage, { StorageKey } from "./services/utils/localStorage";
 import store from "./redux/store";
 
 initConfig((config: Config) => {
-  const VERSION_INSTALLED_KEY = "antaresweb.version";
-  const versionInstalled = loadState(VERSION_INSTALLED_KEY);
-  saveState(VERSION_INSTALLED_KEY, config.version.gitcommit);
+  const versionInstalled = storage.getItem(StorageKey.Version);
+  storage.setItem(StorageKey.Version, config.version.gitcommit);
   if (versionInstalled !== config.version.gitcommit) {
-    // eslint-disable-next-line no-restricted-globals
-    location.reload();
+    window.location.reload();
   }
 
   initI18n(config.version.gitcommit);

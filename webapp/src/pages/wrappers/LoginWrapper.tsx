@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { login, refresh } from "../../redux/ducks/auth";
+import { login } from "../../redux/ducks/auth";
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
 import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLoadingError";
@@ -11,10 +11,9 @@ import FilledTextInput from "../../components/common/FilledTextInput";
 import { needAuth } from "../../services/api/auth";
 import { getAuthUser } from "../../redux/selectors";
 import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError";
-import { isUserExpired } from "../../services/utils";
-import { initWebSocket } from "../../services/webSockets";
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import storage, { StorageKey } from "../../services/utils/localStorage";
 
 interface Inputs {
   username: string;
@@ -39,15 +38,16 @@ function LoginWrapper(props: Props) {
     isRejected,
   } = usePromiseWithSnackbarError(
     async () => {
-      const isAuthNeeded = await needAuth();
-      if (!isAuthNeeded) {
-        initWebSocket(dispatch);
+      if (user) {
         return true;
       }
-      if (user) {
-        if (isUserExpired(user)) {
-          await dispatch(refresh()).unwrap();
-        }
+      if (!(await needAuth())) {
+        await dispatch(login());
+        return true;
+      }
+      const userFromStorage = storage.getItem(StorageKey.AuthUser);
+      if (userFromStorage) {
+        await dispatch(login(userFromStorage));
         return true;
       }
       return false;
