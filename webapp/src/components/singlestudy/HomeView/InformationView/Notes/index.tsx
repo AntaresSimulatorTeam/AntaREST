@@ -133,11 +133,13 @@ export default function Notes(props: Props) {
           EditorState.createWithContent(convertXMLToDraftJS(newContent))
         );
         setContent(newContent);
-        enqueueSnackbar(t("singlestudy:commentsSaved"), { variant: "success" });
+        enqueueSnackbar(t("study.success.commentsSaved"), {
+          variant: "success",
+        });
         setEditionMode(false);
       } catch (e) {
         enqueueErrorSnackbar(
-          t("singlestudy:commentsNotSaved"),
+          t("study.error.commentsNotSaved"),
           e as AxiosError
         );
       }
@@ -156,7 +158,7 @@ export default function Notes(props: Props) {
         } catch (e) {
           setEditorState(
             EditorState.createWithContent(
-              ContentState.createFromText(t("singlestudy:fetchCommentsError"))
+              ContentState.createFromText(t("study.error.fetchComments"))
             )
           );
         } finally {
@@ -186,7 +188,7 @@ export default function Notes(props: Props) {
           setNbAreas(areas.length);
           setNbLinks(links);
         } catch (e) {
-          enqueueErrorSnackbar(t("singlestudy:getAreasInfo"), e as AxiosError);
+          enqueueErrorSnackbar(t("study.error.getAreasInfo"), e as AxiosError);
         }
       }
     })();
@@ -196,9 +198,7 @@ export default function Notes(props: Props) {
       <Note>
         <NoteHeader>
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-          <Typography color="text.secondary">
-            {t("singlestudy:notes")}
-          </Typography>
+          <Typography color="text.secondary">{t("study.notes")}</Typography>
         </NoteHeader>
         <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
           {!loaded && <SimpleLoader />}
@@ -217,14 +217,14 @@ export default function Notes(props: Props) {
             color="secondary"
             onClick={() => setEditionMode(true)}
           >
-            {t("main:edit")}
+            {t("global.edit")}
           </Button>
         </NoteFooter>
       </Note>
       <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
       <FigureInfoContainer>
-        <Figure title={t("singlestudy:area")} data={nbAreas} />
-        <Figure title={t("singlestudy:link")} data={nbLinks} />
+        <Figure title={t("study.areas")} data={nbAreas} />
+        <Figure title={t("study.links")} data={nbLinks} />
       </FigureInfoContainer>
       {editionMode && (
         <NoteEditorModal

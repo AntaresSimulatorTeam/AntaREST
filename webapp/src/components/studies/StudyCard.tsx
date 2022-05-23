@@ -99,14 +99,11 @@ export default function StudyCard(props: Props) {
   const copyId = (): void => {
     try {
       navigator.clipboard.writeText(study.id);
-      enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
+      enqueueSnackbar(t("study.success.studyIdCopy"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("singlestudy:onStudyIdCopyError"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("study.error.studyIdCopy"), e as AxiosError);
     }
   };
 
@@ -157,11 +154,11 @@ export default function StudyCard(props: Props) {
           >
             <StarToggle
               isActive={favorite}
-              activeTitle={t("studymanager:removeFavorite") as string}
-              unactiveTitle={t("studymanager:bookmark") as string}
+              activeTitle={t("studies.removeFavorite") as string}
+              unactiveTitle={t("studies.bookmark") as string}
               onToggle={handleFavoriteClick}
             />
-            <Tooltip title={t("studymanager:copyID") as string}>
+            <Tooltip title={t("study.copyId") as string}>
               <ContentCopyIcon
                 sx={{
                   cursor: "pointer",
@@ -264,7 +261,7 @@ export default function StudyCard(props: Props) {
             color="primary"
             onClick={() => onUnarchiveClick(study)}
           >
-            {t("studymanager:unarchive")}
+            {t("global.unarchive")}
           </Button>
         ) : (
           <NavLink
@@ -272,11 +269,11 @@ export default function StudyCard(props: Props) {
             style={{ textDecoration: "none" }}
           >
             <Button size="small" color="primary">
-              {t("studymanager:exploreButton")}
+              {t("button.explore")}
             </Button>
           </NavLink>
         )}
-        <Tooltip title={t("singlestudy:more") as string}>
+        <Tooltip title={t("studies.moreActions") as string}>
           <Button
             size="small"
             aria-controls="menu-elements"
@@ -308,7 +305,7 @@ export default function StudyCard(props: Props) {
                   sx={{ color: "action.active", width: "24px", height: "24px" }}
                 />
               </ListItemIcon>
-              <ListItemText>{t("studymanager:unarchive")}</ListItemText>
+              <ListItemText>{t("global.unarchive")}</ListItemText>
             </MenuItem>
           ) : (
             <div>
@@ -327,7 +324,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("main:launch")}</ListItemText>
+                <ListItemText>{t("global.launch")}</ListItemText>
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -344,7 +341,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:copy")}</ListItemText>
+                <ListItemText>{t("study.copyId")}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
@@ -362,7 +359,7 @@ export default function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:moveStudy")}</ListItemText>
+                  <ListItemText>{t("studies.moveStudy")}</ListItemText>
                 </MenuItem>
               )}
               <MenuItem
@@ -380,7 +377,7 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:export")}</ListItemText>
+                <ListItemText>{t("global.export")}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
@@ -398,7 +395,7 @@ export default function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:archive")}</ListItemText>
+                  <ListItemText>{t("global.delete")}</ListItemText>
                 </MenuItem>
               )}
             </div>
@@ -416,7 +413,7 @@ export default function StudyCard(props: Props) {
                 />
               </ListItemIcon>
               <ListItemText sx={{ color: "error.light" }}>
-                {t("studymanager:delete")}
+                {t("global.delete")}
               </ListItemText>
             </MenuItem>
           )}
@@ -424,13 +421,13 @@ export default function StudyCard(props: Props) {
       </CardActions>
       {openDeleteDialog && (
         <ConfirmationDialog
-          title={t("main:confirmationModalTitle")}
+          title={t("dialog.title.confirmation")}
           onCancel={() => setOpenDeleteDialog(false)}
           onConfirm={onDeleteStudy}
           alert="warning"
           open
         >
-          {t("studymanager:confirmdelete")}
+          {t("studies.question.delete")}
         </ConfirmationDialog>
       )}
       {openExportModal && (

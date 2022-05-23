@@ -36,7 +36,10 @@ function MessageInfoDialog() {
         const tmpMessage = await getMessageInfoAPI();
         dispatch(setMessageInfo(isStringEmpty(tmpMessage) ? "" : tmpMessage));
       } catch (e) {
-        enqueueErrorSnackbar(t("main:onGetMessageInfoError"), e as AxiosError);
+        enqueueErrorSnackbar(
+          t("maintenance.error.messageInfoError"),
+          e as AxiosError
+        );
       }
     };
     init();

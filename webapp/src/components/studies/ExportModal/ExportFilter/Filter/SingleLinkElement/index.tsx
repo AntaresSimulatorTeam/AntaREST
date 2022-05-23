@@ -33,12 +33,12 @@ export default function SingleLinkElement(props: {
       <TextSeparator text={label} />
       <Box display="flex" flex={1}>
         <TextField
-          label={`${t("singlestudy:area1")}`}
+          label={`${t("study.area1")}`}
           value={link.area1}
           onChange={(event) => onSelectChange(0, event.target.value)}
         />
         <TextField
-          label={`${t("singlestudy:area2")}`}
+          label={`${t("study.area2")}`}
           value={link.area2}
           onChange={(event) => onSelectChange(1, event.target.value)}
         />

@@ -86,7 +86,7 @@ function FormDialog(props: FormDialogProps) {
 
       return onSubmit({ values: data, modifiedValues: dirtyValues }, event);
     })().catch((error) => {
-      enqueueErrorSnackbar(t("main:form.submit.error"), error);
+      enqueueErrorSnackbar(t("form.submit.error"), error);
     });
   };
 
@@ -103,7 +103,7 @@ function FormDialog(props: FormDialogProps) {
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("main:closeButton")}
+            {cancelButtonText || t("button.close")}
           </Button>
           <Button
             type="submit"
@@ -111,7 +111,7 @@ function FormDialog(props: FormDialogProps) {
             variant="contained"
             disabled={!allowSubmit}
           >
-            {submitButtonText || t("main:save")}
+            {submitButtonText || t("global.save")}
           </Button>
         </>
       }

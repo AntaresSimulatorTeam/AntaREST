@@ -48,11 +48,11 @@ function TokenInfoDialog(props: Props) {
       maxWidth="sm"
       fullWidth
       {...dialogProps}
-      title={t("settings:permissionsLabel")}
+      title={t("global.permissions")}
       titleIcon={InfoIcon}
     >
       <DialogContentText>
-        {t("settings:currentToken", [token.name])}
+        {t("settings.currentToken", [token.name])}
       </DialogContentText>
       <TokenForm onlyPermissions readOnly {...formObj} />
     </OkDialog>

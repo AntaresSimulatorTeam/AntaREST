@@ -80,7 +80,7 @@ function XpansionPropsView(props: PropsType) {
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >
-                  {t("main:delete")}
+                  {t("global.delete")}
                 </Button>
               </Box>
             </Box>
@@ -115,7 +115,7 @@ function XpansionPropsView(props: PropsType) {
                   size="small"
                   onClick={() => setOpenConfirmationModal(true)}
                 >
-                  {t("main:delete")}
+                  {t("global.delete")}
                 </Button>
               </Box>
             </Box>
@@ -135,7 +135,7 @@ function XpansionPropsView(props: PropsType) {
           onCancel={() => setOpenConfirmationModal(false)}
           alert="warning"
         >
-          {t("xpansion:confirmDeleteXpansion")}
+          {t("xpansion.question.deleteConfiguration")}
         </ConfirmationDialog>
       )}
     </>

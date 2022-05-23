@@ -99,11 +99,11 @@ function NavHeader(props: Props) {
 
   const publicModeList = useMemo(
     () => [
-      { id: "NONE", name: t("singlestudy:nonePublicModeText") },
-      { id: "READ", name: t("singlestudy:readPublicModeText") },
-      { id: "EXECUTE", name: t("singlestudy:executePublicModeText") },
-      { id: "EDIT", name: t("singlestudy:editPublicModeText") },
-      { id: "FULL", name: t("singlestudy:fullPublicModeText") },
+      { id: "NONE", name: t("study.nonePublicModeText") },
+      { id: "READ", name: t("study.readPublicModeText") },
+      { id: "EXECUTE", name: t("study.executePublicModeText") },
+      { id: "EDIT", name: t("study.editPublicModeText") },
+      { id: "FULL", name: t("study.fullPublicModeText") },
     ],
     [t]
   );
@@ -141,7 +141,7 @@ function NavHeader(props: Props) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:archivefailure", { studyname: study.name }),
+        t("studies.error.archive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -152,7 +152,7 @@ function NavHeader(props: Props) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:unarchivefailure", { studyname: study.name }),
+        t("studies.error.unarchive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -164,7 +164,7 @@ function NavHeader(props: Props) {
         .unwrap()
         .catch((err) => {
           enqueueErrorSnackbar(
-            t("studymanager:failtodeletestudy"),
+            t("studies.error.deleteStudy"),
             err as AxiosError
           );
           logError("Failed to delete study", study, err);
@@ -178,14 +178,11 @@ function NavHeader(props: Props) {
     if (study) {
       try {
         await navigator.clipboard.writeText(study.id);
-        enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
+        enqueueSnackbar(t("study.success.studyIdCopy"), {
           variant: "success",
         });
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("singlestudy:onStudyIdCopyError"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.error.studyIdCopy"), e as AxiosError);
       }
     }
   };
@@ -216,7 +213,7 @@ function NavHeader(props: Props) {
           sx={{ cursor: "pointer" }}
         />
         <Button variant="text" color="secondary" onClick={onBackClick}>
-          {isExplorer === true && study ? study.name : t("main:studies")}
+          {isExplorer === true && study ? study.name : t("global.studies")}
         </Button>
       </Box>
       <Box
@@ -242,15 +239,15 @@ function NavHeader(props: Props) {
           </Tooltip>
           <StarToggle
             isActive={isStudyFavorite}
-            activeTitle={t("studymanager:removeFavorite") as string}
-            unactiveTitle={t("studymanager:bookmark") as string}
+            activeTitle={t("studies.removeFavorite") as string}
+            unactiveTitle={t("studies.bookmark") as string}
             onToggle={() => {
               if (study) {
                 dispatch(toggleFavorite({ id: study.id, name: study.name }));
               }
             }}
           />
-          <Tooltip title={t("studymanager:copyID") as string}>
+          <Tooltip title={t("study.copyId") as string}>
             <ContentCopyIcon
               sx={{
                 cursor: "pointer",
@@ -265,7 +262,7 @@ function NavHeader(props: Props) {
           </Tooltip>
           {study?.managed && (
             <Chip
-              label={t("singlestudy:managedStudy")}
+              label={t("study.managedStudy")}
               variant="outlined"
               color="secondary"
               sx={{ mx: 2 }}
@@ -286,7 +283,7 @@ function NavHeader(props: Props) {
               color="primary"
               onClick={() => onLaunchClick()}
             >
-              {t("main:launch")}
+              {t("global.launch")}
             </Button>
           )}
           {study && study.type === "variantstudy" && (
@@ -335,7 +332,7 @@ function NavHeader(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:unarchive")}</ListItemText>
+                <ListItemText>{t("global.unarchive")}</ListItemText>
               </MenuItem>
             ) : (
               <div>
@@ -354,7 +351,7 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("singlestudy:properties")}</ListItemText>
+                  <ListItemText>{t("study.properties")}</ListItemText>
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -371,7 +368,7 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:export")}</ListItemText>
+                  <ListItemText>{t("global.export")}</ListItemText>
                 </MenuItem>
                 {study?.managed && (
                   <MenuItem
@@ -389,7 +386,7 @@ function NavHeader(props: Props) {
                         }}
                       />
                     </ListItemIcon>
-                    <ListItemText>{t("studymanager:archive")}</ListItemText>
+                    <ListItemText>{t("global.archive")}</ListItemText>
                   </MenuItem>
                 )}
               </div>
@@ -407,7 +404,7 @@ function NavHeader(props: Props) {
                   />
                 </ListItemIcon>
                 <ListItemText sx={{ color: "error.light" }}>
-                  {t("studymanager:delete")}
+                  {t("global.delete")}
                 </ListItemText>
               </MenuItem>
             )}
@@ -513,13 +510,13 @@ function NavHeader(props: Props) {
       )}
       {openDeleteDialog && (
         <ConfirmationDialog
-          title={t("main:confirmationModalTitle")}
+          title={t("dialog.title.confirmation")}
           onCancel={() => setOpenDeleteDialog(false)}
           onConfirm={onDeleteStudy}
           alert="warning"
           open
         >
-          {t("studymanager:confirmdelete")}
+          {t("studies.question.delete")}
         </ConfirmationDialog>
       )}
       {study && openExportDialog && (

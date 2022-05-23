@@ -33,9 +33,11 @@ function MatrixDialog(props: PropTypes) {
   const copyId = (matrixId: string): void => {
     try {
       navigator.clipboard.writeText(matrixId);
-      enqueueSnackbar(t("data:onMatrixIdCopySuccess"), { variant: "success" });
+      enqueueSnackbar(t("data.success.matrixIdCopied"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueSnackbar(t("data:onMatrixIdCopyError"), { variant: "error" });
+      enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
     }
   };
 
@@ -53,7 +55,7 @@ function MatrixDialog(props: PropTypes) {
           setCurrentMatrix(matrixContent);
         }
       } catch (error) {
-        enqueueErrorSnackbar(t("data:matrixError"), error as AxiosError);
+        enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
       } finally {
         setLoading(false);
       }
@@ -80,14 +82,14 @@ function MatrixDialog(props: PropTypes) {
               color: "action.active",
             }}
           >
-            <Tooltip title={t("studymanager:copyID") as string}>
+            <Tooltip title={t("global.copyId") as string}>
               <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
             </Tooltip>
           </IconButton>
         </Box>
       }
       onOk={onClose}
-      okButtonText={t("main:closeButton")}
+      okButtonText={t("button.close")}
       fullWidth
       maxWidth="lg"
     >
@@ -104,7 +106,7 @@ function MatrixDialog(props: PropTypes) {
                 pt: "3%",
               }}
             >
-              <NoContent title="data:matrixEmpty" />
+              <NoContent title="matrix.matrixEmpty" />
             </Box>
           )
         )}

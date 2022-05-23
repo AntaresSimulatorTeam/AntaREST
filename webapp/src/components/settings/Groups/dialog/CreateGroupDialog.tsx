@@ -46,11 +46,11 @@ function CreateGroupDialog(props: Props) {
 
     try {
       newGroup = await mounted(createGroup(name));
-      enqueueSnackbar(t("settings:onGroupCreation", [newGroup.name]), {
+      enqueueSnackbar(t("settings.success.groupCreation", [newGroup.name]), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings:onGroupSaveError", [name]), e as Error);
+      enqueueErrorSnackbar(t("settings.error.groupSave", [name]), e as Error);
       throw e;
     }
 
@@ -82,7 +82,7 @@ function CreateGroupDialog(props: Props) {
       reloadFetchGroups();
 
       enqueueErrorSnackbar(
-        t("settings:onUserRolesSaveError", [newGroup.name]),
+        t("settings.error.userRolesSave", [newGroup.name]),
         e as Error
       );
     }
@@ -96,7 +96,7 @@ function CreateGroupDialog(props: Props) {
 
   return (
     <GroupFormDialog
-      title={t("settings:createGroup")}
+      title={t("settings.createGroup")}
       titleIcon={GroupAddIcon}
       onSubmit={handleSubmit}
       onCancel={closeDialog}

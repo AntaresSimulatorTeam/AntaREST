@@ -37,7 +37,7 @@ function Header(props: Props) {
       >
         <TextField
           sx={{ m: 0 }}
-          placeholder={t("main:search")}
+          placeholder={t("global.search")}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -52,7 +52,7 @@ function Header(props: Props) {
           variant="outlined"
           onClick={() => setShowCreateTokenModal(true)}
         >
-          {t("main:create")}
+          {t("global.create")}
         </Button>
       </Box>
       {showCreateTokenModal && (

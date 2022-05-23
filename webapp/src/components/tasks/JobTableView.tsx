@@ -91,7 +91,7 @@ function JobTableView(props: PropType) {
       }}
     >
       <Box display="flex" alignItems="center">
-        <Tooltip title={t("jobs:refresh") as string} sx={{ mr: 4 }}>
+        <Tooltip title={t("tasks.refresh") as string} sx={{ mr: 4 }}>
           <Button color="primary" onClick={refresh} variant="outlined">
             <RefreshIcon />
           </Button>
@@ -103,22 +103,22 @@ function JobTableView(props: PropType) {
               onChange={handleFilterStatusChange}
             />
           }
-          label={t("jobs:runningTasks") as string}
+          label={t("tasks.runningTasks") as string}
         />
         <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>
           <InputLabel id="jobsView-select-outlined-label">
-            {t("jobs:typeFilter")}
+            {t("tasks.typeFilter")}
           </InputLabel>
           <Select
             labelId="jobsView-select-outlined-label"
             id="jobsView-select-outlined"
             value={type}
             onChange={handleChange}
-            label={t("jobs:typeFilter")}
+            label={t("tasks.typeFilter")}
           >
             {filterList.map((item) => (
               <MenuItem value={item} key={item}>
-                {t(`jobs:${item}`)}
+                {t(`tasks.${item}`)}
               </MenuItem>
             ))}
           </Select>
@@ -136,15 +136,15 @@ function JobTableView(props: PropType) {
                 },
               }}
             >
-              <TableCell>{t("main:jobs")}</TableCell>
-              <TableCell align="right">{t("singlestudy:type")}</TableCell>
+              <TableCell>{t("global.jobs")}</TableCell>
+              <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
                 <Box
                   display="flex"
                   alignItems="center"
                   justifyContent="flex-end"
                 >
-                  {t("main:date")}
+                  {t("global.date")}
                   {!sorted ? (
                     <ArrowDropUpIcon
                       sx={{
@@ -166,7 +166,7 @@ function JobTableView(props: PropType) {
                   )}
                 </Box>
               </TableCell>
-              <TableCell align="right">{t("jobs:action")}</TableCell>
+              <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -192,7 +192,7 @@ function JobTableView(props: PropType) {
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
-                  <TableCell align="right">{t(`jobs:${row.type}`)}</TableCell>
+                  <TableCell align="right">{t(`tasks.${row.type}`)}</TableCell>
                   <TableCell align="right">{row.dateView}</TableCell>
                   <TableCell align="right">{row.action}</TableCell>
                 </TableRow>

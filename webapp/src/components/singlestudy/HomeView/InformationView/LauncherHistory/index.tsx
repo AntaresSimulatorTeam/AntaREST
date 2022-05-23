@@ -93,7 +93,10 @@ function LauncherHistory(props: Props) {
             )
           );
         } catch (e) {
-          enqueueErrorSnackbar(t("jobs:failedtoretrievejobs"), e as AxiosError);
+          enqueueErrorSnackbar(
+            t("global.error.failedtoretrievejobs"),
+            e as AxiosError
+          );
         }
       };
       fetchStudyJob(study.id);
@@ -127,7 +130,7 @@ function LauncherHistory(props: Props) {
     >
       <TitleHeader>
         <HistoryIcon sx={{ color: "text.secondary", mr: 1 }} />
-        <Typography color="text.secondary">{t("main:jobs")}</Typography>
+        <Typography color="text.secondary">{t("global.jobs")}</Typography>
       </TitleHeader>
       <JobStepper jobs={studyJobs} />
     </Paper>

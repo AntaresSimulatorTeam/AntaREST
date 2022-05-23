@@ -51,7 +51,7 @@ function SettingsForm(props: PropType) {
           justifyContent="space-between"
           alignItems="flex-end"
         >
-          <Title>{t("main:settings")}</Title>
+          <Title>{t("global.settings")}</Title>
           <Button
             variant="outlined"
             color="primary"
@@ -72,7 +72,7 @@ function SettingsForm(props: PropType) {
           >
             <SaveIcon sx={{ m: 0.2, width: "16px", height: "16px" }} />
             <Typography sx={{ m: 0.2, fontSize: "12px" }}>
-              {t("main:save")}
+              {t("global.save")}
             </Typography>
           </Button>
         </Box>
@@ -84,7 +84,7 @@ function SettingsForm(props: PropType) {
               list={ucType.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:ucType")}
+              label={t("xpansion.ucType")}
               data={currentSettings.uc_type}
               handleChange={handleChange}
               sx={{
@@ -98,7 +98,7 @@ function SettingsForm(props: PropType) {
               list={master.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:master")}
+              label={t("xpansion.master")}
               data={currentSettings.master}
               handleChange={handleChange}
               sx={{
@@ -108,7 +108,7 @@ function SettingsForm(props: PropType) {
           </SelectFields>
           <StyledTextField
             type="number"
-            label={t("xpansion:optimalyGap")}
+            label={t("xpansion.optimalyGap")}
             variant="filled"
             value={currentSettings.optimality_gap}
             onChange={(e) =>
@@ -117,7 +117,7 @@ function SettingsForm(props: PropType) {
             sx={{ mb: 1 }}
           />
           <StyledTextField
-            label={t("xpansion:maxIteration")}
+            label={t("xpansion.maxIteration")}
             variant="filled"
             value={currentSettings.max_iteration || ""}
             onChange={(e) =>
@@ -127,7 +127,7 @@ function SettingsForm(props: PropType) {
           />
           <StyledTextField
             type="number"
-            label={t("xpansion:relaxedOptimalityGap")}
+            label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
             value={currentSettings["relaxed-optimality-gap"] || ""}
             onChange={(e) =>
@@ -141,7 +141,7 @@ function SettingsForm(props: PropType) {
               list={cutType.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:cutType")}
+              label={t("xpansion.cutType")}
               data={currentSettings["cut-type"] || ""}
               sx={{
                 minWidth: "100%",
@@ -151,7 +151,7 @@ function SettingsForm(props: PropType) {
             />
           </SelectFields>
           <StyledTextField
-            label={t("xpansion:amplSolver")}
+            label={t("xpansion.amplSolver")}
             variant="filled"
             value={currentSettings["ampl.solver"] || ""}
             onChange={(e) => handleChange("ampl.solver", e.target.value)}
@@ -159,7 +159,7 @@ function SettingsForm(props: PropType) {
           />
           <StyledTextField
             type="number"
-            label={t("xpansion:amplPresolve")}
+            label={t("xpansion.amplPresolve")}
             variant="filled"
             value={currentSettings["ampl.presolve"] || ""}
             onChange={(e) =>
@@ -169,7 +169,7 @@ function SettingsForm(props: PropType) {
           />
           <StyledTextField
             type="number"
-            label={t("xpansion:amplSolverBoundsFrequency")}
+            label={t("xpansion.amplSolverBoundsFrequency")}
             variant="filled"
             value={currentSettings["ampl.solve_bounds_frequency"] || ""}
             onChange={(e) =>
@@ -182,7 +182,7 @@ function SettingsForm(props: PropType) {
           />
           <StyledTextField
             type="number"
-            label={t("xpansion:relativeGap")}
+            label={t("xpansion.relativeGap")}
             variant="filled"
             value={currentSettings.relative_gap || ""}
             onChange={(e) =>
@@ -196,7 +196,7 @@ function SettingsForm(props: PropType) {
               list={solver.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:solver")}
+              label={t("xpansion.solver")}
               data={currentSettings.solver || ""}
               handleChange={handleChange}
               sx={{
@@ -208,7 +208,7 @@ function SettingsForm(props: PropType) {
         </Fields>
       </Box>
       <Box>
-        <Title>{t("xpansion:extra")}</Title>
+        <Title>{t("xpansion.extra")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Box
           sx={{
@@ -229,7 +229,7 @@ function SettingsForm(props: PropType) {
               list={constraints.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:yearlyWeight")}
+              label={t("xpansion.yearlyWeight")}
               data={currentSettings["yearly-weights"] || ""}
               handleChange={handleChange}
               sx={{
@@ -250,7 +250,7 @@ function SettingsForm(props: PropType) {
               list={constraints.map((item) => {
                 return { id: item, name: item };
               })}
-              label={t("xpansion:additionalConstraints")}
+              label={t("xpansion.additionalConstraints")}
               data={currentSettings["additional-constraints"] || ""}
               handleChange={handleChange}
               sx={{

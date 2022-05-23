@@ -65,7 +65,9 @@ function ImportStudyDialog(props: Props) {
         .unwrap()
         .then(() => {
           enqueueSnackbar(
-            t("studymanager:importsuccess", { uploadFile: fileToUpload.name }),
+            t("studies.success.import", {
+              uploadFile: fileToUpload.name,
+            }),
             { variant: "success" }
           );
           if (isMounted()) {
@@ -74,7 +76,7 @@ function ImportStudyDialog(props: Props) {
         })
         .catch((err) => {
           enqueueErrorSnackbar(
-            t("studymanager:importfailure", { uploadFile: fileToUpload.name }),
+            t("studies.error.import", { uploadFile: fileToUpload.name }),
             err as AxiosError
           );
         })
@@ -95,7 +97,7 @@ function ImportStudyDialog(props: Props) {
     <BasicDialog
       open={open}
       onClose={uploadProgress > -1 ? undefined : onClose}
-      title={t("studymanager:importnewstudy")}
+      title={t("studies.importnewstudy")}
     >
       <Box sx={{ p: 2 }}>
         {uploadProgress > -1 ? (
@@ -114,7 +116,7 @@ function ImportStudyDialog(props: Props) {
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
                   <Typography sx={{ cursor: "pointer" }}>
-                    {t("studymanager:importhint")}
+                    {t("studies.importhint")}
                   </Typography>
                 </div>
               </Paper>

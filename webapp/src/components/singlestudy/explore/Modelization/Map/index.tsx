@@ -139,7 +139,7 @@ function Map() {
         ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("singlestudy:createAreaError"), e as AxiosError);
+      enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
     }
   };
 
@@ -179,7 +179,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(t("singlestudy:updateUIError"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.error.updateUI"), e as AxiosError);
       }
     }
   };
@@ -210,7 +210,7 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -228,7 +228,7 @@ function Map() {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -260,10 +260,7 @@ function Map() {
                 (o) => o.source !== firstNode || o.target !== secondNode
               )
             );
-            enqueueErrorSnackbar(
-              t("singlestudy:createLinkError"),
-              e as AxiosError
-            );
+            enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
           }
         }
       };
@@ -310,10 +307,7 @@ function Map() {
             );
           }
         } catch (e) {
-          enqueueErrorSnackbar(
-            t("studymanager:failtoloadstudy"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("studies.error.loadStudy"), e as AxiosError);
         } finally {
           setLoaded(true);
         }
@@ -415,10 +409,10 @@ function Map() {
               top="10px"
             >
               <Typography>
-                {`${nodeData.length} ${t("singlestudy:areas")}`}
+                {`${nodeData.length} ${t("study.areas")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t("singlestudy:links")}`}
+                {`${linkData.length} ${t("study.links")}`}
               </Typography>
             </Box>
           </Box>

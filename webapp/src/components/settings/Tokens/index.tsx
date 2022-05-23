@@ -123,7 +123,7 @@ function Tokens() {
       const user = await getUser(authUser.id);
       return bots.map((bot) => ({ ...bot, user }));
     },
-    { errorMessage: t("settings:tokensError") },
+    { errorMessage: t("settings.error.tokensError") },
     [authUser]
   );
 
@@ -171,13 +171,13 @@ function Tokens() {
     mounted(deleteBot(token.id))
       .then(() => {
         dispatch({ type: TokenActionKind.DELETE, payload: token.id });
-        enqueueSnackbar(t("settings:onTokenDeleteSuccess", [token.name]), {
+        enqueueSnackbar(t("settings.success.tokenDelete", [token.name]), {
           variant: "success",
         });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings:onTokenDeleteError", [token.name]),
+          t("settings.error.tokenDelete", [token.name]),
           err
         );
       })
@@ -270,7 +270,7 @@ function Tokens() {
             R.T,
             () => (
               <Typography sx={{ m: 2 }} align="center">
-                {t("settings:noToken")}
+                {t("settings.noToken")}
               </Typography>
             ),
           ],
@@ -284,7 +284,7 @@ function Tokens() {
           alert="warning"
           open
         >
-          {t("settings:deleteTokenConfirmation", [tokenToDelete.name])}
+          {t("settings.question.deleteToken", [tokenToDelete.name])}
         </ConfirmationDialog>
       )}
       {tokenToDisplayInfo && (

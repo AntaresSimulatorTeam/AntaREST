@@ -81,13 +81,13 @@ export const isGroupAdmin = (user?: UserInfo): boolean => {
 export const roleToString = (role: RoleType): string => {
   switch (role) {
     case RoleType.ADMIN:
-      return i18n.t("settings:adminRole");
+      return i18n.t("settings.adminRole");
     case RoleType.RUNNER:
-      return i18n.t("settings:runnerRole");
+      return i18n.t("settings.runnerRole");
     case RoleType.WRITER:
-      return i18n.t("settings:writerRole");
+      return i18n.t("settings.writerRole");
     case RoleType.READER:
-      return i18n.t("settings:readerRole");
+      return i18n.t("settings.readerRole");
     default:
       return "";
   }

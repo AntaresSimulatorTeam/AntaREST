@@ -96,7 +96,7 @@ function MaintenanceWrapper(props: Props) {
           }}
           onClick={onClick}
         >
-          {t("main:connexion")}
+          {t("global.connexion")}
         </Button>
         <Box
           display="flex"
@@ -113,9 +113,9 @@ function MaintenanceWrapper(props: Props) {
               color: "primary.main",
             }}
           >
-            {t("main:appUnderMaintenance")}
+            {t("maintenance.message.underMaintenance")}
             <br />
-            {t("main:comeBackLater")}
+            {t("maintenance.message.comeBackLater")}
           </Typography>
         </Box>
         <MessageInfoDialog />

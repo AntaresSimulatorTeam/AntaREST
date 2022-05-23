@@ -85,10 +85,12 @@ function EditionView(props: Props) {
       const newItems = reorder(commands, source.index, destination.index);
       setCommands(newItems.map((item) => ({ ...item, results: undefined })));
       await moveCommand(studyId, elm.id as string, destination.index);
-      enqueueSnackbar(t("variants:moveSuccess"), { variant: "success" });
+      enqueueSnackbar(t("variants.success.commandMoved"), {
+        variant: "success",
+      });
     } catch (e) {
       setCommands(oldCommands);
-      enqueueErrorSnackbar(t("variants:moveError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.moveCommand"), e as AxiosError);
     }
   };
 
@@ -101,10 +103,12 @@ function EditionView(props: Props) {
         tmpCommand = tmpCommand.concat(commands);
         tmpCommand[index].updated = false;
         setCommands(tmpCommand);
-        enqueueSnackbar(t("variants:saveSuccess"), { variant: "success" });
+        enqueueSnackbar(t("variants.success.save"), {
+          variant: "success",
+        });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:saveError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.commandUpdated"), e as AxiosError);
     }
   };
 
@@ -117,9 +121,11 @@ function EditionView(props: Props) {
           .filter((item, idx) => idx !== index)
           .map((item) => ({ ...item, results: undefined }))
       );
-      enqueueSnackbar(t("variants:deleteSuccess"), { variant: "success" });
+      enqueueSnackbar(t("variants.success.delete"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:deleteError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.commandDeleted"), e as AxiosError);
     }
   };
 
@@ -128,9 +134,11 @@ function EditionView(props: Props) {
       const elmDTO: CommandDTO = { action, args: {} };
       const newId = await appendCommand(studyId, elmDTO);
       setCommands(commands.concat([{ ...elmDTO, id: newId, updated: false }]));
-      enqueueSnackbar(t("variants:addSuccess"), { variant: "success" });
+      enqueueSnackbar(t("variants.success.commandAdded"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:addError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.addCommand"), e as AxiosError);
     }
   };
 
@@ -152,9 +160,11 @@ function EditionView(props: Props) {
       elm.updated = false;
       await updateCommand(studyId, elm.id as string, elm);
       setCommands(tmpCommand);
-      enqueueSnackbar(t("variants:importSuccess"), { variant: "success" });
+      enqueueSnackbar(t("variants.success.import"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:importError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
     }
   };
 
@@ -166,7 +176,7 @@ function EditionView(props: Props) {
         `${elm.id}_command.json`
       );
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:exportError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     }
   };
 
@@ -178,7 +188,7 @@ function EditionView(props: Props) {
         `${studyId}_commands.json`
       );
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:exportError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     }
   };
 
@@ -190,9 +200,11 @@ function EditionView(props: Props) {
 
       const dtoItems = await getCommands(studyId);
       setCommands(fromCommandDTOToCommandItem(dtoItems));
-      enqueueSnackbar(t("variants:importSuccess"), { variant: "success" });
+      enqueueSnackbar(t("variants.success.import"), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(t("variants:importError"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -208,12 +220,12 @@ function EditionView(props: Props) {
       const res = await applyCommands(studyId);
       setGenerationTaskId(res);
       setGenerationStatus(true);
-      enqueueSnackbar(t("variants:launchGenerationSuccess"), {
+      enqueueSnackbar(t("variants.success.launchGeneration"), {
         variant: "success",
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("variants:launchGenerationError"),
+        t("variants.error.launchGeneration"),
         e as AxiosError
       );
     }
@@ -249,10 +261,13 @@ function EditionView(props: Props) {
         if (taskPayload.message === studyId) {
           setCurrentCommandGenerationIndex(-1);
           if (event === WSEvent.TASK_COMPLETED)
-            enqueueSnackbar(t("variants:taskCompleted"), {
+            enqueueSnackbar(t("variants.taskCompleted"), {
               variant: "success",
             });
-          else enqueueSnackbar(t("variants:taskFailed"), { variant: "error" });
+          else
+            enqueueSnackbar(t("variants.error.taskFailed"), {
+              variant: "error",
+            });
           setGenerationStatus(false);
           setGenerationTaskId(undefined);
         }
@@ -290,7 +305,9 @@ function EditionView(props: Props) {
   const debouncedFailureNotification = useCallback(
     _.debounce(
       () => {
-        enqueueSnackbar(t("variants:taskFailed"), { variant: "error" });
+        enqueueSnackbar(t("variants.error.taskFailed"), {
+          variant: "error",
+        });
       },
       1000,
       { trailing: false, leading: true }
@@ -310,7 +327,7 @@ function EditionView(props: Props) {
         items = fromCommandDTOToCommandItem(dtoItems);
       } catch (e) {
         logError("Error: ", e);
-        enqueueErrorSnackbar(t("variants:fetchCommandError"), e as AxiosError);
+        enqueueErrorSnackbar(t("variants.error.fetchCommand"), e as AxiosError);
       }
 
       try {
@@ -420,7 +437,7 @@ function EditionView(props: Props) {
               mx: 3,
             }}
           >
-            {t("variants:generationInProgress")}
+            {t("variants.generationInProgress")}
           </Typography>
         </Header>
       )}
@@ -445,14 +462,14 @@ function EditionView(props: Props) {
           <Body sx={{ alignItems: "left" }}>
             <Box height="85%">
               <NoContent
-                title="variants:noCommands"
+                title="variants.error.noCommands"
                 callToAction={
                   <Button
                     color="primary"
                     variant="outlined"
                     onClick={() => setOpenAddCommandDialog(true)}
                   >
-                    {t("variants:newCommandButton")}
+                    {t("button.newCommand")}
                   </Button>
                 }
               />

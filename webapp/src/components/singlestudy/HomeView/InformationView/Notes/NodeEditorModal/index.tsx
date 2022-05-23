@@ -70,7 +70,7 @@ function NoteEditorModal(props: Props) {
     <BasicDialog
       open={open}
       onClose={onClose}
-      title={t("singlestudy:notes")}
+      title={t("study.notes")}
       contentProps={{
         sx: {
           width: "100%",
@@ -84,7 +84,7 @@ function NoteEditorModal(props: Props) {
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
-            {t("main:cancelButton")}
+            {t("global.cancel")}
           </Button>
           <Button
             sx={{ mx: 2 }}
@@ -92,7 +92,7 @@ function NoteEditorModal(props: Props) {
             variant="contained"
             onClick={onContentSave}
           >
-            {t("main:save")}
+            {t("global.save")}
           </Button>
         </>
       }

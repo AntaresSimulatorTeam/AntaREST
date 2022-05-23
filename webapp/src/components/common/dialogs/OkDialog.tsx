@@ -30,7 +30,7 @@ function OkDialog(props: OkDialogProps) {
       {...basicDialogProps}
       actions={
         <Button autoFocus variant="contained" {...okButtonProps} onClick={onOk}>
-          {okButtonText || t("main:okButton")}
+          {okButtonText || t("button.ok")}
         </Button>
       }
     />
