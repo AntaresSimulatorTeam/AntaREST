@@ -15,7 +15,11 @@ import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import { scrollbarStyle } from "../../theme";
 import BasicDialog from "./dialogs/BasicDialog";
-import { addWsMessageListener } from "../../services/webSockets";
+import {
+  addWsMessageListener,
+  sendWsSubscribeMessage,
+  WsChannel,
+} from "../../services/webSockets";
 
 interface Props {
   isOpen: boolean;
@@ -97,9 +101,18 @@ function LogModal(props: Props) {
 
   useEffect(() => {
     if (followLogs) {
-      return addWsMessageListener(updateLog);
+      if (jobId) {
+        const removeSubscription = sendWsSubscribeMessage(
+          WsChannel.JobLogs + jobId
+        );
+        const removeMessageListener = addWsMessageListener(updateLog);
+        return () => {
+          removeSubscription();
+          removeMessageListener();
+        };
+      }
     }
-  }, [followLogs, updateLog]);
+  }, [followLogs, jobId, updateLog]);
 
   return (
     <BasicDialog

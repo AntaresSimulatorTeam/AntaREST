@@ -23,7 +23,7 @@ interface MessageListener {
 
 let webSocket: WebSocket | null;
 let messageListeners = [] as MessageListener[];
-let messagesToSendQueue = [] as string[];
+let channelSubscriptions = [] as string[];
 let reconnectTimerId: NodeJS.Timeout | null = null;
 
 export enum WsChannel {
@@ -73,8 +73,7 @@ export function initWebSocket(
   webSocket.onopen = (): void => {
     logInfo("WebSocket connection opened");
     dispatch(setWebSocketConnected(true));
-    messagesToSendQueue.forEach((msg) => (webSocket as WebSocket).send(msg));
-    messagesToSendQueue = [];
+    sendWsSubscribeMessage(channelSubscriptions);
   };
 
   webSocket.onclose = (): void => {
@@ -116,18 +115,26 @@ export function addWsMessageListener(listener: MessageListener): VoidFunction {
   };
 }
 
-export function sendWsSubscribeMessage(
+export function trySendWsSubscribeMessage(
   channels: string | string[]
 ): VoidFunction {
+  const channelsList = RA.ensureArray(channels);
+  channelSubscriptions = channelSubscriptions.filter(
+    (chan) => channelsList.indexOf(chan) === -1
+  );
+
   const socket = getWebSocket();
 
   function send(action: string): void {
-    const messagesToSend = RA.ensureArray(channels).map((chan) =>
+    if (action === "SUBSCRIBE") {
+      channelSubscriptions.push(...channelsList);
+    }
+
+    const messagesToSend = channelsList.map((chan) =>
       JSON.stringify({ action, payload: chan })
     );
 
     if (socket.readyState !== WebSocket.OPEN) {
-      messagesToSendQueue.push(...messagesToSend);
       return;
     }
 
@@ -137,7 +144,22 @@ export function sendWsSubscribeMessage(
   send("SUBSCRIBE");
 
   // Unsubscribe callback
-  return () => send("UNSUBSCRIBE");
+  return () => {
+    send("UNSUBSCRIBE");
+  };
+}
+
+export function sendWsSubscribeMessage(
+  channels: string | string[]
+): VoidFunction {
+  try {
+    return trySendWsSubscribeMessage(channels);
+  } catch (e) {
+    logError("Failed to subscribe to channel", e);
+  }
+  return () => {
+    /* noop */
+  };
 }
 
 export function closeWebSocket(clean = true): void {
@@ -160,7 +182,7 @@ export function closeWebSocket(clean = true): void {
 
   if (clean) {
     messageListeners = [];
-    messagesToSendQueue = [];
+    channelSubscriptions = [];
   }
 }
 

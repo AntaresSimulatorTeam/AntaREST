@@ -54,6 +54,7 @@ function LoginWrapper(props: Props) {
     },
     {
       errorMessage: t("login.error"),
+      resetDataOnReload: false,
     },
     [user]
   );
