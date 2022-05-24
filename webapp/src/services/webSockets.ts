@@ -33,13 +33,6 @@ export enum WsChannel {
   StudyGeneration = "GENERATION_TASK/",
 }
 
-function getWebSocket(): WebSocket {
-  if (!webSocket) {
-    throw new Error("WebSocket not initialized");
-  }
-  return webSocket;
-}
-
 export function initWebSocket(
   dispatch: AppDispatch,
   user?: UserInfo
@@ -115,7 +108,7 @@ export function addWsMessageListener(listener: MessageListener): VoidFunction {
   };
 }
 
-export function trySendWsSubscribeMessage(
+export function sendWsSubscribeMessage(
   channels: string | string[]
 ): VoidFunction {
   const channelsList = RA.ensureArray(channels);
