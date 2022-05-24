@@ -1,7 +1,8 @@
+import calendar
 import logging
 import os
 import shutil
-import calendar
+import tempfile
 from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
@@ -81,10 +82,11 @@ def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
 
 def fix_study_root(study_path: Path) -> None:
     """
-    Fix possibly the wrong study root on zipped archive (when the study root is nested)
+    Fix possibly the wrong study root in zipped archive (when the study root is nested)
 
     @param study_path the study initial root path
     """
+    # TODO: what if it is a zipped output ?
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory")
 
@@ -121,7 +123,21 @@ def extract_output_name(
     path_output: Path, new_suffix_name: Optional[str] = None
 ) -> str:
     ini_reader = IniReader()
-    info_antares_output = ini_reader.read(path_output / "info.antares-output")
+    is_output_archived = path_output.suffix == ".zip"
+    temp_dir = None
+    if is_output_archived:
+        temp_dir = tempfile.TemporaryDirectory()
+        with ZipFile(path_output, "r") as zip_obj:
+            zip_obj.extract("info.antares-output", temp_dir.name)
+            info_antares_output = ini_reader.read(
+                Path(temp_dir.name) / "info.antares-output"
+            )
+
+    else:
+        info_antares_output = ini_reader.read(
+            path_output / "info.antares-output"
+        )
+
     general_info = info_antares_output["general"]
 
     date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime(
@@ -131,12 +147,17 @@ def extract_output_name(
     mode = "eco" if general_info["mode"] == "Economy" else "adq"
     suffix_name = general_info["name"] if general_info["name"] else ""
     if new_suffix_name:
-        suffix_name = new_suffix_name or suffix_name
+        suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        ini_writer = IniWriter()
-        ini_writer.write(
-            info_antares_output, path_output / "info.antares-output"
-        )
+        if not is_output_archived:
+            ini_writer = IniWriter()
+            ini_writer.write(
+                info_antares_output, path_output / "info.antares-output"
+            )
+        else:
+            logger.warning(
+                "Could not rewrite the new name inside the output: the output is archived"
+            )
 
     name = f"-{suffix_name}" if suffix_name else ""
     return f"{date}{mode}{name}"

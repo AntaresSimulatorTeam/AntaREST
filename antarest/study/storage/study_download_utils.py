@@ -329,6 +329,7 @@ class StudyDownloader:
         Returns: JSON content file
 
         """
+        # TODO: unarchive output
         url = f"/output/{output_id}"
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=get_start_date(file_study, output_id, data.level),
@@ -491,6 +492,8 @@ def get_output_variables_information(
 ) -> Dict[str, List[str]]:
     if not study.config.outputs[output_name].by_year:
         raise BadOutputFormat("Not a year by year simulation")
+
+    # TODO: unzip if archived
 
     first_year_result: Dict[str, INode[Any, Any, Any]] = cast(
         FolderNode,

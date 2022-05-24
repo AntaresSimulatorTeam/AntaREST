@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import shutil
-import time
 from datetime import datetime, timedelta
 from functools import reduce
 from http import HTTPStatus
@@ -23,6 +22,10 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.model import (
+    StudyPermissionType,
+    JSON,
+)
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -30,7 +33,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, concat_files
+from antarest.core.utils.utils import concat_files
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -45,13 +48,7 @@ from antarest.launcher.model import (
     JobLogType,
 )
 from antarest.launcher.repository import JobResultRepository
-from antarest.study.model import ExportFormat
 from antarest.study.service import StudyService
-from antarest.core.model import (
-    StudyPermissionType,
-    PermissionInfo,
-    JSON,
-)
 from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
@@ -493,15 +490,20 @@ class LauncherService:
         )
         output_name: Optional[str] = None
         job_output_path = self._get_job_output_fallback_path(job_id)
+        # TODO: does this copy a whole study or just the output ?
         try:
             os.mkdir(job_output_path)
-            imported_output = job_output_path / "imported"
-            shutil.copytree(output_path, imported_output)
-            fix_study_root(imported_output)
+            imported_output_path = job_output_path / "imported"
+            if output_path.suffix != ".zip":
+                shutil.copytree(output_path, imported_output_path)
+            else:
+                shutil.copy(output_path, imported_output_path)
+
+            fix_study_root(imported_output_path)
             output_name = extract_output_name(
-                imported_output, output_suffix_name
+                imported_output_path, output_suffix_name
             )
-            imported_output.rename(Path(job_output_path, output_name))
+            imported_output_path.rename(Path(job_output_path, output_name))
             if additional_logs:
                 for log_name, log_paths in additional_logs.items():
                     concat_files(
@@ -624,15 +626,15 @@ class LauncherService:
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
-        output_dict = {}
+        version_dict = {}
         if self.config.launcher.local:
-            output_dict["local"] = list(
+            version_dict["local"] = list(
                 self.config.launcher.local.binaries.keys()
             )
 
         if self.config.launcher.slurm:
-            output_dict[
+            version_dict[
                 "slurm"
             ] = self.config.launcher.slurm.antares_versions_on_remote_server
 
-        return output_dict
+        return version_dict

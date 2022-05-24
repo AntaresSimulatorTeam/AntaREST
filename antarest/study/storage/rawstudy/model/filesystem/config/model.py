@@ -79,7 +79,7 @@ class DistrictSet(BaseModel):
 
 class Simulation(BaseModel):
     """
-    Object linked to /output/<simulation>/about-the-study/** informations
+    Object linked to /output/<simulation_name>/about-the-study/** informations
     """
 
     name: str
@@ -90,6 +90,7 @@ class Simulation(BaseModel):
     by_year: bool
     error: bool
     playlist: Optional[List[int]]
+    archived: bool = False
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}

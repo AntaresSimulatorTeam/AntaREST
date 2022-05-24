@@ -4,10 +4,8 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO, cast
+from typing import List, Union, Optional, IO
 from uuid import uuid4
-
-from pydantic import ValidationError
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -192,6 +190,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
+                # TODO: unarchive output
                 file_metadata = FileStudyHelpers.get_config(
                     study_data, output_data.get_file()
                 )
@@ -228,7 +227,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Import additional output on a existing study
+        Import additional output in an existing study
         Args:
             metadata: study
             output: new output (path or zipped data)
@@ -239,11 +238,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = (
             Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         )
-        os.makedirs(path_output)
+        path_output.mkdir(parents=True)
         output_full_name: Optional[str] = None
         try:
             if isinstance(output, Path):
-                if output != path_output:
+                if output != path_output and output.suffix != ".zip":
                     shutil.copytree(output, path_output / "imported")
             else:
                 extract_zip(output, path_output)
@@ -315,14 +314,16 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Exporting output {output_id} from study {metadata.id}")
 
         path_output = Path(metadata.path) / "output" / output_id
-        if not path_output.exists():
+        path_output_zip = Path(metadata.path) / "output" / f"{output_id}.zip"
+        if not path_output.exists() and not path_output_zip.exists():
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
-        filename = shutil.make_archive(
-            base_name=os.path.splitext(target)[0],
-            format="zip",
-            root_dir=path_output,
-        )
+        if not path_output_zip.exists():
+            filename = shutil.make_archive(
+                base_name=os.path.splitext(target)[0],
+                format="zip",
+                root_dir=path_output,
+            )
         stopwatch.log_elapsed(
             lambda x: logger.info(
                 f"Output {output_id} from study {metadata.path} exported in {x}s"

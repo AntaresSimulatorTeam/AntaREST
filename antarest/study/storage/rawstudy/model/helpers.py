@@ -13,6 +13,7 @@ class FileStudyHelpers:
     def get_config(study: FileStudy, output_id: Optional[str] = None) -> JSON:
         config_path = ["settings", "generaldata"]
         if output_id:
+            # TODO: unarchive output
             config_path = [
                 "output",
                 output_id,
