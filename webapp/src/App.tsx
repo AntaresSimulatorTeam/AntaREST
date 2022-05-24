@@ -25,6 +25,7 @@ import Links from "./components/singlestudy/explore/Modelization/Links";
 import Areas from "./components/singlestudy/explore/Modelization/Areas";
 import Map from "./components/singlestudy/explore/Modelization/Map";
 import DebugView from "./components/singlestudy/explore/Modelization/DebugView";
+import Matrix from "./components/singlestudy/explore/Modelization/Matrix";
 import Xpansion from "./components/singlestudy/explore/Xpansion";
 import Candidates from "./components/singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./components/singlestudy/explore/Xpansion/Settings";
@@ -58,6 +59,7 @@ function App() {
                             element={<BindingConstraints />}
                           />
                           <Route path="debug" element={<DebugView />} />
+                          <Route path="matrix" element={<Matrix />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>

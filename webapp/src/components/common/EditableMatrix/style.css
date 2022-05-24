@@ -1,0 +1,11 @@
+.test {
+    background-color: #222333 !important;
+    color: white;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+thead th {
+    background-color: #222333 !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}

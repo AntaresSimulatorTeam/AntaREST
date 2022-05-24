@@ -4,6 +4,7 @@ import { scrollbarStyle } from "../../../../../../theme";
 export const Root = styled(Box)(({ theme }) => ({
   flex: 1,
   height: "100%",
+  width: "100%",
   display: "flex",
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
