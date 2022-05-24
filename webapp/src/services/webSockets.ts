@@ -119,13 +119,11 @@ export function trySendWsSubscribeMessage(
   channels: string | string[]
 ): VoidFunction {
   const channelsList = RA.ensureArray(channels);
-  channelSubscriptions = channelSubscriptions.filter(
-    (chan) => channelsList.indexOf(chan) === -1
-  );
-
-  const socket = getWebSocket();
 
   function send(action: string): void {
+    channelSubscriptions = channelSubscriptions.filter(
+      (chan) => channelsList.indexOf(chan) === -1
+    );
     if (action === "SUBSCRIBE") {
       channelSubscriptions.push(...channelsList);
     }
@@ -134,11 +132,10 @@ export function trySendWsSubscribeMessage(
       JSON.stringify({ action, payload: chan })
     );
 
-    if (socket.readyState !== WebSocket.OPEN) {
-      return;
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      const socket: WebSocket = webSocket;
+      messagesToSend.forEach((msg) => socket.send(msg));
     }
-
-    messagesToSend.forEach((msg) => socket.send(msg));
   }
 
   send("SUBSCRIBE");
@@ -146,19 +143,6 @@ export function trySendWsSubscribeMessage(
   // Unsubscribe callback
   return () => {
     send("UNSUBSCRIBE");
-  };
-}
-
-export function sendWsSubscribeMessage(
-  channels: string | string[]
-): VoidFunction {
-  try {
-    return trySendWsSubscribeMessage(channels);
-  } catch (e) {
-    logError("Failed to subscribe to channel", e);
-  }
-  return () => {
-    /* noop */
   };
 }
 
