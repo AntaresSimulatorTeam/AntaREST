@@ -11,9 +11,11 @@ import { useTranslation } from "react-i18next";
 import { indigo, purple } from "@mui/material/colors";
 import useDebounce from "../../hooks/useDebounce";
 import useAppSelector from "../../redux/hooks/useAppSelector";
-import { getStudyFilters } from "../../redux/selectors";
+import { getGroups, getStudyFilters, getUsers } from "../../redux/selectors";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
 import { StudyFilters, updateStudyFilters } from "../../redux/ducks/studies";
+import { GroupDTO, UserDTO } from "../../common/types";
+import { displayVersionName } from "../../services/utils";
 
 type PropTypes = {
   onOpenFilterClick: VoidFunction;
@@ -24,6 +26,18 @@ function HeaderBottom(props: PropTypes) {
   const filters = useAppSelector(getStudyFilters);
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
+
+  const users = useAppSelector((state) => {
+    return getUsers(state)
+      .filter((user) => filters.users.includes(user.id))
+      .map((user) => ({ id: user.id, name: user.name } as UserDTO));
+  });
+
+  const groups = useAppSelector((state) => {
+    return getGroups(state)
+      .filter((group) => filters.groups.includes(group.id))
+      .map((group) => ({ id: group.id, name: group.name } as GroupDTO));
+  });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -106,45 +120,45 @@ function HeaderBottom(props: PropTypes) {
             sx={{ mx: 1 }}
           />
         )}
-        {filters.versions.map((version, _, versions) => (
+        {filters.versions.map((version) => (
           <Chip
-            key={version.id}
-            label={version.name}
+            key={version}
+            label={displayVersionName(version)}
             variant="filled"
             color="primary"
             onDelete={() => {
               setFilterValue(
                 "versions",
-                versions.filter((ver) => ver !== version)
+                filters.versions.filter((ver) => ver !== version)
               );
             }}
             sx={{ mx: 1 }}
           />
         ))}
-        {filters.users.map((userId, _, users) => (
+        {users.map((user, _) => (
           <Chip
-            key={userId}
-            label={userId} // TODO
+            key={user.id}
+            label={user.name}
             variant="filled"
             onDelete={() => {
               setFilterValue(
                 "users",
-                users.filter((u) => u !== userId)
+                filters.users.filter((u) => u !== user.id)
               );
             }}
             sx={{ mx: 1, bgcolor: purple[500] }}
           />
         ))}
-        {filters.groups.map((groupId, _, groups) => (
+        {groups.map((group, _) => (
           <Chip
-            key={groupId}
-            label={groupId}
+            key={group.id}
+            label={group.name}
             variant="filled"
             color="success"
             onDelete={() => {
               setFilterValue(
                 "groups",
-                groups.filter((gp) => gp !== groupId)
+                filters.groups.filter((gp) => gp !== group.id)
               );
             }}
             sx={{ mx: 1 }}

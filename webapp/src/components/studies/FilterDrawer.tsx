@@ -7,13 +7,23 @@ import {
   Checkbox,
   Drawer,
   FormControlLabel,
+  List,
+  ListItem,
   Typography,
 } from "@mui/material";
+import { useRef } from "react";
 import { STUDIES_FILTER_WIDTH } from "../../theme";
 import useAppSelector from "../../redux/hooks/useAppSelector";
-import { getStudyFilters } from "../../redux/selectors";
+import {
+  getGroups,
+  getStudyFilters,
+  getStudyVersions,
+  getUsers,
+} from "../../redux/selectors";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
 import { updateStudyFilters } from "../../redux/ducks/studies";
+import CheckboxesTags from "../common/inputs/CheckboxesTags";
+import { displayVersionName } from "../../services/utils";
 
 interface Props {
   open: boolean;
@@ -24,29 +34,30 @@ function FilterDrawer(props: Props) {
   const { open, onClose } = props;
   const [t] = useTranslation();
   const filters = useAppSelector(getStudyFilters);
-  //   const versions = useAppSelector(getStudyVersions);
+  const versions = useAppSelector(getStudyVersions);
+  const users = useAppSelector(getUsers);
+  const groups = useAppSelector(getGroups);
   const dispatch = useAppDispatch();
+  const managedValueRef = useRef(filters.managed);
+  const archivedValueRef = useRef(filters.archived);
+  const versionsSelectedRef = useRef(filters.versions);
+  const usersSelectedRef = useRef(filters.users);
+  const groupsSelectedRef = useRef(filters.groups);
+  const tagsSelectedRef = useRef(filters.tags);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const target = event.target as typeof event.target & {
-      managed: { checked: boolean };
-      archived: { checked: boolean };
-    };
-
+  const handleFilter = () => {
     dispatch(
       updateStudyFilters({
-        managed: target.managed.checked,
-        archived: target.archived.checked,
-        // versions: [],
-        // users: [],
-        // groups: [],
-        // tags: [],
+        managed: managedValueRef.current,
+        archived: archivedValueRef.current,
+        versions: versionsSelectedRef.current,
+        users: usersSelectedRef.current,
+        groups: groupsSelectedRef.current,
+        tags: tagsSelectedRef.current,
       })
     );
 
@@ -88,152 +99,130 @@ function FilterDrawer(props: Props) {
         },
       }}
     >
-      <form onSubmit={handleSubmit}>
-        <Toolbar sx={{ py: 3 }}>
-          <Box
-            display="flex"
-            width="100%"
-            height="100%"
-            justifyContent="flex-start"
-            alignItems="flex-start"
-            py={2}
-            flexDirection="column"
-            flexWrap="nowrap"
-            boxSizing="border-box"
-            color="white"
-          >
-            <Typography sx={{ color: "grey.500", fontSize: "0.9em", mb: 2 }}>
-              {t("global.filter").toUpperCase()}
-            </Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="managed"
-                  defaultChecked={filters.managed}
-                  sx={{ color: "white" }}
-                />
-              }
-              label={t("studies.managedStudiesFilter") as string}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="archived"
-                  defaultChecked={filters.archived}
-                  sx={{ color: "white" }}
-                />
-              }
-              label={t("studies.archivedStudiesFilter") as string}
-            />
-          </Box>
-        </Toolbar>
-        <Divider style={{ height: "1px", backgroundColor: "grey.800" }} />
-        {/* <List>
-        <ListItem>
-          <SelectMulti
-            name={t("global.versions")}
-            list={versionList}
-            data={
-              currentVersions !== undefined
-                ? currentVersions.map((elm) => elm.id as string)
-                : []
-            }
-            setValue={setVersions}
-          />
-        </ListItem>
-        <ListItem>
-          <Autocomplete
-            multiple
-            id="study-filter-users"
-            options={userList || []}
-            value={currentUsers || []}
-            getOptionLabel={(option: UserDTO) => option.name}
-            sx={{ width: 200, m: 1 }}
-            renderOption={(props, option, { selected }) => (
-              <li {...props}>
-                <Checkbox
-                  icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
-                  checkedIcon={<CheckBoxIcon fontSize="small" />}
-                  style={{ marginRight: 8 }}
-                  checked={selected}
-                />
-                {option.name}
-              </li>
-            )}
-            onChange={(event, value) =>
-              setUsers(value.map((el) => el.id.toString()))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="filled"
-                sx={{
-                  background: "rgba(255, 255, 255, 0.09)",
-                  borderRadius: "4px 4px 0px 0px",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-                  ".MuiIconButton-root": {
-                    backgroundColor: "#222333",
-                    padding: 0,
-                    marginTop: "2px",
-                  },
-                }}
-                label={t("global.users")}
-              />
-            )}
-          />
-        </ListItem>
-        <ListItem>
-          <SelectMulti
-            name={t("global.groups")}
-            list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))}
-            data={
-              currentGroups !== undefined
-                ? currentGroups.map((elm) => elm.id)
-                : []
-            }
-            setValue={setGroups}
-          />
-        </ListItem>
-        <ListItem>
-          <TagTextInput
-            label={t("global.tags")}
-            sx={{ m: 1, width: "200px" }}
-            value={currentTags || []}
-            onChange={setCurrentTags}
-            tagList={tagList}
-          />
-        </ListItem>
-      </List> */}
+      <Toolbar sx={{ py: 3 }}>
         <Box
           display="flex"
           width="100%"
-          flexGrow={1}
-          justifyContent="flex-end"
-          alignItems="center"
+          height="100%"
+          justifyContent="flex-start"
+          alignItems="flex-start"
+          py={2}
           flexDirection="column"
           flexWrap="nowrap"
           boxSizing="border-box"
+          color="white"
         >
-          <Box
-            display="flex"
-            width="100%"
-            height="auto"
-            justifyContent="flex-end"
-            alignItems="center"
-            flexDirection="row"
-            flexWrap="nowrap"
-            boxSizing="border-box"
-            p={1}
-          >
-            <Button variant="outlined" onClick={handleReset}>
-              {t("global.reset")}
-            </Button>
-            <Button sx={{ mx: 2 }} variant="contained" type="submit">
-              {t("global.filter")}
-            </Button>
-          </Box>
+          <Typography sx={{ color: "grey.500", fontSize: "0.9em", mb: 2 }}>
+            {t("global.filter").toUpperCase()}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                sx={{ color: "white" }}
+                name="managed"
+                defaultChecked={filters.managed}
+                onChange={(_, checked) => {
+                  managedValueRef.current = checked;
+                }}
+              />
+            }
+            label={t("studies.managedStudiesFilter") as string}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                sx={{ color: "white" }}
+                name="archived"
+                defaultChecked={filters.archived}
+                onChange={(_, checked) => {
+                  archivedValueRef.current = checked;
+                }}
+              />
+            }
+            label={t("studies.archivedStudiesFilter") as string}
+          />
         </Box>
-      </form>
+      </Toolbar>
+      <Divider style={{ height: "1px", backgroundColor: "grey.800" }} />
+      <List>
+        <ListItem>
+          <CheckboxesTags
+            label={t("global.versions")}
+            options={versions}
+            getOptionLabel={displayVersionName}
+            defaultValue={filters.versions}
+            onChange={(_, value) => {
+              versionsSelectedRef.current = value;
+            }}
+          />
+        </ListItem>
+        <ListItem>
+          <CheckboxesTags
+            label={t("global.users")}
+            options={users}
+            getOptionLabel={(option) => option.name}
+            defaultValue={users.filter((user) =>
+              filters.users.includes(user.id)
+            )}
+            onChange={(event, value) => {
+              usersSelectedRef.current = value.map((val) => val.id);
+            }}
+          />
+        </ListItem>
+        <ListItem>
+          <CheckboxesTags
+            label={t("global.groups")}
+            options={groups}
+            getOptionLabel={(option) => option.name}
+            defaultValue={groups.filter((group) =>
+              filters.groups.includes(group.id)
+            )}
+            onChange={(_, value) => {
+              groupsSelectedRef.current = value.map((val) => val.id);
+            }}
+          />
+        </ListItem>
+        <ListItem>
+          <CheckboxesTags
+            label={t("global.tags")}
+            options={[]}
+            defaultValue={filters.tags}
+            onChange={(_, value) => {
+              tagsSelectedRef.current = value;
+            }}
+            freeSolo
+          />
+        </ListItem>
+      </List>
+      <Box
+        display="flex"
+        width="100%"
+        flexGrow={1}
+        justifyContent="flex-end"
+        alignItems="center"
+        flexDirection="column"
+        flexWrap="nowrap"
+        boxSizing="border-box"
+      >
+        <Box
+          display="flex"
+          width="100%"
+          height="auto"
+          justifyContent="flex-end"
+          alignItems="center"
+          flexDirection="row"
+          flexWrap="nowrap"
+          boxSizing="border-box"
+          p={1}
+        >
+          <Button variant="outlined" onClick={handleReset}>
+            {t("global.reset")}
+          </Button>
+          <Button sx={{ mx: 2 }} variant="contained" onClick={handleFilter}>
+            {t("global.filter")}
+          </Button>
+        </Box>
+      </Box>
     </Drawer>
   );
 }

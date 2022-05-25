@@ -62,10 +62,7 @@ const tagsPredicate = R.curry(
 
 const versionsPredicate = R.curry(
   (versions: StudyFilters["versions"], study: StudyMetadata) => {
-    return (
-      versions.length === 0 ||
-      versions.map(R.prop("id")).includes(study.version)
-    );
+    return versions.length === 0 || versions.includes(study.version);
   }
 );
 

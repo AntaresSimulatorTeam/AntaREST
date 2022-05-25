@@ -8,7 +8,6 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { O } from "ts-toolbelt";
 import {
-  GenericInfo,
   GroupDTO,
   StudyMetadata,
   StudyPublicMode,
@@ -28,7 +27,7 @@ export interface StudyFilters {
   folder: string;
   managed: boolean;
   archived: boolean;
-  versions: GenericInfo[];
+  versions: string[];
   users: Array<UserDTO["id"]>;
   groups: Array<GroupDTO["id"]>;
   tags: string[];
@@ -196,6 +195,13 @@ export const deleteStudy = createAsyncThunk<
   return studyId;
 });
 
+export const fetchStudyVersions = createAsyncThunk(
+  n("FETCH_VERSIONS"),
+  (_, { rejectWithValue }) => {
+    return api.getStudyVersions().catch(rejectWithValue);
+  }
+);
+
 export const fetchStudies = createAsyncThunk<
   StudyMetadata[],
   undefined,
@@ -215,18 +221,13 @@ export const fetchStudies = createAsyncThunk<
       dispatch(setFavoriteStudies(newFavorites));
     }
 
+    dispatch(fetchStudyVersions());
+
     return studies;
   } catch (err) {
     return rejectWithValue(err);
   }
 });
-
-export const fetchStudyVersions = createAsyncThunk(
-  n("FETCH_VERSIONS"),
-  (_, { rejectWithValue }) => {
-    return api.getStudyVersions().catch(rejectWithValue);
-  }
-);
 
 export const toggleFavorite =
   (studyId: StudyMetadata["id"]): AppThunk =>
