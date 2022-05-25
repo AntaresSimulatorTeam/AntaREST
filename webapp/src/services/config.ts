@@ -9,6 +9,11 @@ const info = debug("antares:config:info");
 const warn = debug("antares:config:warn");
 const isDevEnv = process.env.NODE_ENV === "development";
 
+if (isDevEnv) {
+  // To display logs created with "debug" lib
+  localStorage.setItem("debug", "antares:*");
+}
+
 moment.locale("fr", {
   months:
     "janvier_février_mars_avril_mai_juin_juillet_août_septembre_octobre_novembre_décembre".split(

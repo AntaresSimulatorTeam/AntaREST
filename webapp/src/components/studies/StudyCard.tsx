@@ -416,7 +416,7 @@ function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("global.delete")}</ListItemText>
+                  <ListItemText>{t("global.archive")}</ListItemText>
                 </MenuItem>
               )}
             </div>
@@ -442,7 +442,7 @@ function StudyCard(props: Props) {
       </CardActions>
       {openConfirmDeleteDialog && (
         <ConfirmationDialog
-          title={t("main:confirmationModalTitle")}
+          title={t("dialog.title.confirmation")}
           onCancel={() => setOpenConfirmDeleteDialog(false)}
           onConfirm={handleDelete}
           alert="warning"
