@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { HotColumn } from "@handsontable/react";
+import { registerAllModules } from "handsontable/registry";
 import { MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
@@ -22,6 +23,13 @@ function EditableMatrix(props: PropTypes) {
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
 
+  const handleUpdate = (change: any[], source: string) => {
+    console.log(change);
+    console.log(source);
+  };
+
+  registerAllModules();
+
   const renderView = () => {
     if (toggleView) {
       return (
@@ -32,6 +40,8 @@ function EditableMatrix(props: PropTypes) {
           height="100%"
           stretchH="all"
           className="test"
+          colHeaders
+          afterChange={(change, source) => handleUpdate(change || [], source)}
         >
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />

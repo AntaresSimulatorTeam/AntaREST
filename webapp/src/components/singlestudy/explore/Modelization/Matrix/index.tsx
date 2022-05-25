@@ -108,7 +108,7 @@ function StudyMatrixView() {
             <ImportForm text={t("main:import")} onImport={onImport} />
           </Box>
         </Header>
-        <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
+        <Divider sx={{ width: "100%", mt: 2, mb: 4 }} />
         {!loaded && <SimpleLoader />}
         {loaded && data && Object.keys(data).length > 0 ? (
           <EditableMatrix
