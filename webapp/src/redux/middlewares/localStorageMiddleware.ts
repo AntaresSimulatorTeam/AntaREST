@@ -18,7 +18,7 @@ const localStorageMiddleware = createListenerMiddleware<AppState>();
 
 localStorageMiddleware.startListening({
   matcher: isAnyOf(login.fulfilled, refresh.fulfilled, logout),
-  effect: (action) => {
+  effect: (action, { dispatch }) => {
     const user = action.payload as UserInfo;
     if (user) {
       const { expirationDate, ...toSave } = user;
@@ -29,11 +29,13 @@ localStorageMiddleware.startListening({
 
     // Hydrate
     if (action.type === login.fulfilled.toString()) {
-      updateStudiesFromLocalStorage({
-        favorites: storage.getItem(StorageKey.StudiesFavorites),
-        filters: storage.getItem(StorageKey.StudiesFilters),
-        sort: storage.getItem(StorageKey.StudiesSort),
-      });
+      dispatch(
+        updateStudiesFromLocalStorage({
+          favorites: storage.getItem(StorageKey.StudiesFavorites),
+          filters: storage.getItem(StorageKey.StudiesFilters),
+          sort: storage.getItem(StorageKey.StudiesSort),
+        })
+      );
     }
   },
 });
