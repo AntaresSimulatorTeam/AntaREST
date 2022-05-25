@@ -28,6 +28,14 @@ function Areas() {
     [study?.id]
   );
 
+  const handleAreaClick = (areaName: string): void => {
+    console.log(areaName);
+    const elm = areas.find((elm) => elm.name === areaName);
+    if (elm) setSelectedArea(elm);
+    // Put selected area on Redux
+    //
+  };
+
   useEffect(() => {
     if (synthesis) {
       const areaList = Object.keys(synthesis.areas).map(
@@ -36,14 +44,20 @@ function Areas() {
       setAreas(areaList);
       if (areaList.length > 0) setSelectedArea(areaList[0]);
 
-      console.log("AREAS: ", synthesis.areas);
+      console.log("AREAS: ", areaList);
     }
   }, [synthesis?.areas]);
   return (
     <SplitLayoutView
       left={
         <Box width="100%" height="100%">
-          <AreaPropsView />
+          <AreaPropsView
+            areas={areas}
+            onClick={handleAreaClick}
+            currentArea={
+              selectedArea !== undefined ? selectedArea.name : undefined
+            }
+          />
         </Box>
       }
       right={
