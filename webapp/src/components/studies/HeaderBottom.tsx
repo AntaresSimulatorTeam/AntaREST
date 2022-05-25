@@ -9,67 +9,55 @@ import {
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { useTranslation } from "react-i18next";
 import { indigo, purple } from "@mui/material/colors";
-import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
-
-/**
- * Types
- */
+import useDebounce from "../../hooks/useDebounce";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudyFilters } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import { StudyFilters, updateStudyFilters } from "../../redux/ducks/studies";
 
 type PropTypes = {
-  inputValue: string;
-  setInputValue: (value: string) => void;
-  onFilterClick: () => void;
-  managedFilter: boolean;
-  archivedFilter: boolean;
-  versions: Array<GenericInfo> | undefined;
-  users: Array<UserDTO> | undefined;
-  groups: Array<GroupDTO> | undefined;
-  tags: Array<string> | undefined;
-  setManageFilter: (value: boolean) => void;
-  setArchivedFilter: (value: boolean) => void;
-  setVersions: (value: Array<GenericInfo> | undefined) => void;
-  setUsers: (value: Array<UserDTO> | undefined) => void;
-  setGroups: (value: Array<GroupDTO> | undefined) => void;
-  setTags: (value: Array<string> | undefined) => void;
+  onOpenFilterClick: VoidFunction;
 };
 
-/**
- * Component
- */
-
 function HeaderBottom(props: PropTypes) {
-  const {
-    inputValue,
-    setInputValue,
-    onFilterClick,
-    managedFilter,
-    setManageFilter,
-    archivedFilter,
-    setArchivedFilter,
-    versions,
-    setVersions,
-    users,
-    setUsers,
-    groups,
-    setGroups,
-    tags,
-    setTags,
-  } = props;
-
+  const { onOpenFilterClick } = props;
+  const filters = useAppSelector(getStudyFilters);
+  const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  const handleManagedDeletion = () => {
-    setManageFilter(false);
-    setArchivedFilter(false);
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const setFilterValue = <T extends keyof StudyFilters>(
+    string: T,
+    newValue: StudyFilters[T]
+  ) => {
+    dispatch(updateStudyFilters({ [string]: newValue }));
   };
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSearchChange = useDebounce(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFilterValue("inputValue", event.target.value);
+    },
+    150
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box display="flex" width="100%" alignItems="center">
       <TextField
         id="standard-basic"
-        value={inputValue}
         variant="outlined"
-        onChange={(event) => setInputValue(event.target.value as string)}
+        defaultValue={filters.inputValue}
+        onChange={handleSearchChange}
         label={t("global.search")}
         InputProps={{
           startAdornment: (
@@ -88,7 +76,7 @@ function HeaderBottom(props: PropTypes) {
           margin: "0px 16px",
         }}
       />
-      <Button color="secondary" variant="outlined" onClick={onFilterClick}>
+      <Button color="secondary" variant="outlined" onClick={onOpenFilterClick}>
         {t("global.filter")}
       </Button>
       <Box
@@ -100,80 +88,82 @@ function HeaderBottom(props: PropTypes) {
         px={2}
         sx={{ overflowX: "auto", overflowY: "hidden" }}
       >
-        {managedFilter && (
+        {filters.managed && (
           <Chip
             label={t("studies.managedStudiesFilter")}
             variant="filled"
             color="secondary"
-            onDelete={handleManagedDeletion}
+            onDelete={() => setFilterValue("managed", false)}
             sx={{ mx: 1 }}
           />
         )}
-        {archivedFilter && (
+        {filters.archived && (
           <Chip
             label={t("studies.archivedStudiesFilter")}
             variant="filled"
             color="secondary"
-            onDelete={() => setArchivedFilter(false)}
+            onDelete={() => setFilterValue("archived", false)}
             sx={{ mx: 1 }}
           />
         )}
-        {versions &&
-          versions.map((elm) => (
-            <Chip
-              key={elm.id}
-              label={elm.name}
-              variant="filled"
-              color="primary"
-              onDelete={() => {
-                const newVersions = versions.filter(
-                  (item) => item.id !== elm.id
-                );
-                setVersions(newVersions.length > 0 ? newVersions : undefined);
-              }}
-              sx={{ mx: 1 }}
-            />
-          ))}
-        {users &&
-          users.map((elm) => (
-            <Chip
-              key={elm.id}
-              label={elm.name}
-              variant="filled"
-              onDelete={() => {
-                const newUsers = users.filter((item) => item.id !== elm.id);
-                setUsers(newUsers.length > 0 ? newUsers : undefined);
-              }}
-              sx={{ mx: 1, bgcolor: purple[500] }}
-            />
-          ))}
-        {groups &&
-          groups.map((elm) => (
-            <Chip
-              key={elm.id}
-              label={elm.name}
-              variant="filled"
-              color="success"
-              onDelete={() => {
-                const newGroups = groups.filter((item) => item.id !== elm.id);
-                setGroups(newGroups.length > 0 ? newGroups : undefined);
-              }}
-              sx={{ mx: 1 }}
-            />
-          ))}
-        {tags &&
-          tags.map((elm) => (
-            <Chip
-              key={elm}
-              label={elm}
-              variant="filled"
-              onDelete={() => {
-                const newTags = tags.filter((item) => item !== elm);
-                setTags(newTags.length > 0 ? newTags : undefined);
-              }}
-              sx={{ mx: 1, color: "black", bgcolor: indigo[300] }}
-            />
-          ))}
+        {filters.versions.map((version, _, versions) => (
+          <Chip
+            key={version.id}
+            label={version.name}
+            variant="filled"
+            color="primary"
+            onDelete={() => {
+              setFilterValue(
+                "versions",
+                versions.filter((ver) => ver !== version)
+              );
+            }}
+            sx={{ mx: 1 }}
+          />
+        ))}
+        {filters.users.map((userId, _, users) => (
+          <Chip
+            key={userId}
+            label={userId} // TODO
+            variant="filled"
+            onDelete={() => {
+              setFilterValue(
+                "users",
+                users.filter((u) => u !== userId)
+              );
+            }}
+            sx={{ mx: 1, bgcolor: purple[500] }}
+          />
+        ))}
+        {filters.groups.map((groupId, _, groups) => (
+          <Chip
+            key={groupId}
+            label={groupId}
+            variant="filled"
+            color="success"
+            onDelete={() => {
+              setFilterValue(
+                "groups",
+                groups.filter((gp) => gp !== groupId)
+              );
+            }}
+            sx={{ mx: 1 }}
+          />
+        ))}
+        {filters.tags.map((tag, _, tags) => (
+          <Chip
+            key={tag}
+            label={tag}
+            variant="filled"
+            onDelete={() => {
+              setFilterValue(
+                "tags",
+                tags.filter((t) => t !== tag)
+              );
+            }}
+            sx={{ mx: 1, color: "black", bgcolor: indigo[300] }}
+          />
+        ))}
       </Box>
     </Box>
   );

@@ -244,7 +244,7 @@ function NavHeader(props: Props) {
             unactiveTitle={t("studies.bookmark") as string}
             onToggle={() => {
               if (study) {
-                dispatch(toggleFavorite({ id: study.id, name: study.name }));
+                dispatch(toggleFavorite(study.id));
               }
             }}
           />
@@ -495,10 +495,10 @@ function NavHeader(props: Props) {
           </Box>
         </Box>
       )}
-      {openLauncherDialog && (
+      {study && openLauncherDialog && (
         <LauncherDialog
           open={openLauncherDialog}
-          study={study}
+          studyId={study.id}
           onClose={() => setOpenLauncherDialog(false)}
         />
       )}

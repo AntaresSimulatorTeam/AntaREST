@@ -7,21 +7,6 @@ export interface IdentityDTO<T extends IdType = string> {
   name: string;
 }
 
-export enum SortElement {
-  DATE = "DATE",
-  NAME = "NAME",
-}
-
-export enum SortStatus {
-  INCREASE = "INCREASE",
-  DECREASE = "DECREASE",
-}
-
-export interface SortItem {
-  element: SortElement;
-  status: SortStatus;
-}
-
 export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";

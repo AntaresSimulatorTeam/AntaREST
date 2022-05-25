@@ -1,9 +1,14 @@
-import { createSelector } from "@reduxjs/toolkit";
+import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import { StudyMetadata } from "../common/types";
+import { buildStudyTree } from "../components/studies/utils";
+import { filterStudies, sortStudies } from "../pages/Studies/utils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
-import { studiesAdapter, StudiesState } from "./ducks/studies";
+import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
 import { UIState } from "./ducks/ui";
+
+// TODO resultEqualityCheck
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -33,17 +38,64 @@ export const getStudiesScrollPosition = (
   return getStudiesState(state).scrollPosition;
 };
 
-const studiesSelectors = studiesAdapter.getSelectors(getStudiesState);
+const studiesSelectors =
+  createEntityAdapter<StudyMetadata>().getSelectors(getStudiesState);
 
 export const getStudies = studiesSelectors.selectAll;
 
+export const getStudiesById = studiesSelectors.selectEntities;
+
+export const getStudyIds = studiesSelectors.selectIds;
+
 export const getStudy = studiesSelectors.selectById;
 
-export const getFavoriteStudies = (
+export const getFavoriteStudyIds = (
   state: AppState
 ): StudiesState["favorites"] => {
   return getStudiesState(state).favorites;
 };
+
+export const getFavoriteStudies = createSelector(
+  getStudiesById,
+  getFavoriteStudyIds,
+  (studiesById, favoriteIds) => {
+    return favoriteIds
+      .map((favId) => studiesById[favId])
+      .filter((item): item is StudyMetadata => !!item);
+  }
+);
+
+export const isStudyFavorite = (
+  state: AppState,
+  id: StudyMetadata["id"]
+): boolean => {
+  return getFavoriteStudyIds(state).includes(id);
+};
+
+export const getStudyFilters = (state: AppState): StudyFilters => {
+  return getStudiesState(state).filters;
+};
+
+export const getStudiesSortConf = (state: AppState): StudiesSortConf => {
+  return getStudiesState(state).sort;
+};
+
+export const getStudiesFilteredAndSorted = createSelector(
+  getStudies,
+  getStudyFilters,
+  getStudiesSortConf,
+  (studies, filters, sortConf) => {
+    const sorted = sortStudies(sortConf, studies);
+    return filterStudies(filters, sorted);
+  }
+);
+
+export const getStudyIdsFilteredAndSorted = createSelector(
+  getStudiesFilteredAndSorted,
+  (studies) => studies.map((study) => study.id)
+);
+
+export const getStudiesTree = createSelector(getStudies, buildStudyTree);
 
 export const getStudyVersions = (
   state: AppState
@@ -67,7 +119,7 @@ export const getCurrentStudy = createSelector(
 );
 
 export const isCurrentStudyFavorite = createSelector(
-  getFavoriteStudies,
+  getFavoriteStudyIds,
   getCurrentStudyId,
   (favorites, current) => favorites.includes(current)
 );

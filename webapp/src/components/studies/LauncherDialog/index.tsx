@@ -11,52 +11,59 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { AxiosError } from "axios";
 import { StudyMetadata } from "../../../common/types";
 import { LaunchOptions, launchStudy } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import { Root } from "./style";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { getStudy } from "../../../redux/selectors";
 
 interface Props {
   open: boolean;
-  study?: StudyMetadata;
+  studyId: StudyMetadata["id"];
   onClose: () => void;
 }
 
 function LauncherModal(props: Props) {
-  const { study, open, onClose } = props;
+  const { studyId, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({});
+  const studyName = useAppSelector((state) => getStudy(state, studyId)?.name);
 
-  const launch = async () => {
-    if (!study) {
-      enqueueSnackbar(t("studies.error.runStudy"), { variant: "error" });
-      return;
-    }
-    try {
-      await launchStudy(study.id, options);
-      enqueueSnackbar(t("studies.studylaunched", { studyname: study.name }), {
-        variant: "success",
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleLaunchClick = async () => {
+    launchStudy(studyId, options)
+      .then(() => {
+        enqueueSnackbar(t("studies.studylaunched", { studyname: studyName }), {
+          variant: "success",
+        });
+        onClose();
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.runStudy"), err);
       });
-      onClose();
-    } catch (e) {
-      enqueueErrorSnackbar(t("studies.error.runStudy"), e as AxiosError);
-    }
   };
 
-  const handleChange = (
-    field: string,
-    value: number | string | boolean | object | undefined
+  const handleChange = <T extends keyof LaunchOptions>(
+    field: T,
+    value: LaunchOptions[T]
   ) => {
     setOptions({
       ...options,
       [field]: value,
     });
   };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
 
   const timeLimitParse = (value: string): number => {
     try {
@@ -65,6 +72,10 @@ function LauncherModal(props: Props) {
       return 48 * 3600;
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <BasicDialog
@@ -83,7 +94,7 @@ function LauncherModal(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            onClick={launch}
+            onClick={handleLaunchClick}
           >
             {t("global.launch")}
           </Button>
@@ -229,9 +240,5 @@ function LauncherModal(props: Props) {
     </BasicDialog>
   );
 }
-
-LauncherModal.defaultProps = {
-  study: undefined,
-};
 
 export default LauncherModal;

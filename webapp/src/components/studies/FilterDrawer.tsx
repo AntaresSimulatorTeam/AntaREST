@@ -1,158 +1,76 @@
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import {
-  Autocomplete,
   Button,
   Checkbox,
   Drawer,
   FormControlLabel,
-  ListItem,
-  TextField,
   Typography,
-  useTheme,
 } from "@mui/material";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import { STUDIES_FILTER_WIDTH } from "../../theme";
-import SelectMulti from "../common/SelectMulti";
-import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
-import { convertVersions } from "../../services/utils";
-import TagTextInput from "../common/TagTextInput";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudyFilters } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import { updateStudyFilters } from "../../redux/ducks/studies";
 
 interface Props {
   open: boolean;
-  managedFilter: boolean;
-  archivedFilter: boolean;
-  versionList: Array<GenericInfo>;
-  versions: Array<GenericInfo>;
-  tagList: Array<string>;
-  tags: Array<string>;
-  userList: Array<UserDTO>;
-  users: Array<UserDTO>;
-  groupList: Array<GroupDTO>;
-  groups: Array<GroupDTO>;
-  onFilterActionClick: (
-    managed: boolean,
-    archived: boolean,
-    versions: Array<GenericInfo> | undefined,
-    users: Array<UserDTO> | undefined,
-    groups: Array<GroupDTO> | undefined,
-    tags: Array<string> | undefined
-  ) => void;
   onClose: () => void;
 }
 
 function FilterDrawer(props: Props) {
-  const theme = useTheme();
+  const { open, onClose } = props;
   const [t] = useTranslation();
-  const {
-    open,
-    managedFilter,
-    archivedFilter,
-    tagList,
-    tags,
-    versionList,
-    versions,
-    userList,
-    users,
-    groupList,
-    groups,
-    onFilterActionClick,
-    onClose,
-  } = props;
+  const filters = useAppSelector(getStudyFilters);
+  //   const versions = useAppSelector(getStudyVersions);
+  const dispatch = useAppDispatch();
 
-  const [currentUsers, setCurrentUsers] = useState<Array<UserDTO> | undefined>(
-    users
-  );
-  const [currentGroups, setCurrentGroups] = useState<
-    Array<GroupDTO> | undefined
-  >(groups);
-  const [currentVersions, setCurrentVersions] = useState<
-    Array<GenericInfo> | undefined
-  >(versions);
-  const [currentTags, setCurrentTags] = useState<Array<string> | undefined>(
-    tags
-  );
-  const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
-  const [currentArchived, setCurrentArchived] =
-    useState<boolean>(archivedFilter);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
-  useEffect(() => {
-    setCurrentUsers(users);
-  }, [users]);
-  useEffect(() => {
-    setCurrentGroups(groups);
-  }, [groups]);
-  useEffect(() => {
-    setCurrentVersions(versions);
-  }, [versions]);
-  useEffect(() => {
-    setCurrentTags(tags);
-  }, [tags]);
-  useEffect(() => {
-    setCurrentManaged(managedFilter);
-  }, [managedFilter]);
-  useEffect(() => {
-    setCurrentArchived(archivedFilter);
-  }, [archivedFilter]);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  const setVersions = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentVersions(undefined);
-      return;
-    }
-    setCurrentVersions(convertVersions(data || []));
-  };
+    const target = event.target as typeof event.target & {
+      managed: { checked: boolean };
+      archived: { checked: boolean };
+    };
 
-  const setUsers = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentUsers(undefined);
-      return;
-    }
-    setCurrentUsers(
-      data.map((elm) => {
-        const index = userList.findIndex((item) => item.id.toString() === elm);
-        return { id: userList[index].id, name: userList[index].name };
+    dispatch(
+      updateStudyFilters({
+        managed: target.managed.checked,
+        archived: target.archived.checked,
+        // versions: [],
+        // users: [],
+        // groups: [],
+        // tags: [],
       })
     );
+
+    onClose();
   };
 
-  const setGroups = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentGroups(undefined);
-      return;
-    }
-    setCurrentGroups(
-      data.map((elm) => {
-        const index = groupList.findIndex((item) => item.id === elm);
-        return { id: groupList[index].id, name: groupList[index].name };
+  const handleReset = () => {
+    dispatch(
+      updateStudyFilters({
+        managed: false,
+        archived: false,
+        versions: [],
+        users: [],
+        groups: [],
+        tags: [],
       })
     );
+
+    onClose();
   };
 
-  const onFilterClick = (): void => {
-    onFilterActionClick(
-      currentManaged,
-      currentArchived,
-      currentVersions,
-      currentUsers,
-      currentGroups,
-      currentTags
-    );
-  };
-
-  const onResetFilterClick = (): void => {
-    setCurrentVersions(undefined);
-    setCurrentUsers(undefined);
-    setCurrentGroups(undefined);
-    setCurrentTags(undefined);
-    setCurrentManaged(false);
-    setCurrentArchived(false);
-  };
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Drawer
@@ -170,50 +88,47 @@ function FilterDrawer(props: Props) {
         },
       }}
     >
-      <Toolbar sx={{ py: 3 }}>
-        <Box
-          display="flex"
-          width="100%"
-          height="100%"
-          justifyContent="flex-start"
-          alignItems="flex-start"
-          py={2}
-          flexDirection="column"
-          flexWrap="nowrap"
-          boxSizing="border-box"
-          color="white"
-        >
-          <Typography
-            sx={{ color: "grey.500", fontSize: "0.9em", mb: theme.spacing(2) }}
+      <form onSubmit={handleSubmit}>
+        <Toolbar sx={{ py: 3 }}>
+          <Box
+            display="flex"
+            width="100%"
+            height="100%"
+            justifyContent="flex-start"
+            alignItems="flex-start"
+            py={2}
+            flexDirection="column"
+            flexWrap="nowrap"
+            boxSizing="border-box"
+            color="white"
           >
-            {t("global.filter").toUpperCase()}
-          </Typography>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={currentManaged}
-                onChange={() => setCurrentManaged(!currentManaged)}
-                sx={{ color: "white" }}
-              />
-            }
-            label={t("studies.managedStudiesFilter") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={currentArchived}
-                onChange={() => setCurrentArchived(!currentArchived)}
-                sx={{ color: "white" }}
-              />
-            }
-            label={t("studies.archivedStudiesFilter") as string}
-          />
-        </Box>
-      </Toolbar>
-      <Divider
-        style={{ height: "1px", backgroundColor: theme.palette.grey[800] }}
-      />
-      <List>
+            <Typography sx={{ color: "grey.500", fontSize: "0.9em", mb: 2 }}>
+              {t("global.filter").toUpperCase()}
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="managed"
+                  defaultChecked={filters.managed}
+                  sx={{ color: "white" }}
+                />
+              }
+              label={t("studies.managedStudiesFilter") as string}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="archived"
+                  defaultChecked={filters.archived}
+                  sx={{ color: "white" }}
+                />
+              }
+              label={t("studies.archivedStudiesFilter") as string}
+            />
+          </Box>
+        </Toolbar>
+        <Divider style={{ height: "1px", backgroundColor: "grey.800" }} />
+        {/* <List>
         <ListItem>
           <SelectMulti
             name={t("global.versions")}
@@ -288,41 +203,37 @@ function FilterDrawer(props: Props) {
             tagList={tagList}
           />
         </ListItem>
-      </List>
-      <Box
-        display="flex"
-        width="100%"
-        flexGrow={1}
-        justifyContent="flex-end"
-        alignItems="center"
-        flexDirection="column"
-        flexWrap="nowrap"
-        boxSizing="border-box"
-      >
+      </List> */}
         <Box
           display="flex"
           width="100%"
-          height="auto"
+          flexGrow={1}
           justifyContent="flex-end"
           alignItems="center"
-          flexDirection="row"
+          flexDirection="column"
           flexWrap="nowrap"
           boxSizing="border-box"
-          p={1}
         >
-          <Button variant="text" color="primary" onClick={onResetFilterClick}>
-            {t("global.reset")}
-          </Button>
-          <Button
-            sx={{ mx: 2 }}
-            color="success"
-            variant="contained"
-            onClick={onFilterClick}
+          <Box
+            display="flex"
+            width="100%"
+            height="auto"
+            justifyContent="flex-end"
+            alignItems="center"
+            flexDirection="row"
+            flexWrap="nowrap"
+            boxSizing="border-box"
+            p={1}
           >
-            {t("global.filter")}
-          </Button>
+            <Button variant="outlined" onClick={handleReset}>
+              {t("global.reset")}
+            </Button>
+            <Button sx={{ mx: 2 }} variant="contained" type="submit">
+              {t("global.filter")}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </form>
     </Drawer>
   );
 }

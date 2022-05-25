@@ -17,11 +17,9 @@ import {
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import storage, { StorageKey } from "../../services/utils/localStorage";
-import { getFavoriteStudies, getStudyVersions } from "../selectors";
+import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
 import { makeActionName, FetchStatus, AsyncEntityState } from "../utils";
-import { login } from "./auth";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -191,7 +189,7 @@ export const deleteStudy = createAsyncThunk<
   }
 
   const state = getState();
-  const currentFavorites = getFavoriteStudies(state);
+  const currentFavorites = getFavoriteStudyIds(state);
   const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
   dispatch(setFavoriteStudies(newFavorites));
 
@@ -206,7 +204,7 @@ export const fetchStudies = createAsyncThunk<
   try {
     const studies = await api.getStudies();
     const state = getState();
-    const currentFavorites = getFavoriteStudies(state);
+    const currentFavorites = getFavoriteStudyIds(state);
     const newFavorites = R.innerJoin(
       (fav, study) => fav === study.id,
       currentFavorites,
@@ -231,17 +229,17 @@ export const fetchStudyVersions = createAsyncThunk(
 );
 
 export const toggleFavorite =
-  (studyInfo: GenericInfo): AppThunk =>
+  (studyId: StudyMetadata["id"]): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const currentFavorites = getFavoriteStudies(state);
-    const isFav = !!currentFavorites.find((fav) => fav === studyInfo.id);
+    const currentFavorites = getFavoriteStudyIds(state);
+    const isFav = !!currentFavorites.find((fav) => fav === studyId);
 
     dispatch(
       setFavoriteStudies(
         isFav
-          ? currentFavorites.filter((fav) => fav !== studyInfo.id)
-          : [...currentFavorites, studyInfo.id.toString()]
+          ? currentFavorites.filter((fav) => fav !== studyId)
+          : [...currentFavorites, studyId]
       )
     );
   };
@@ -278,9 +276,11 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(updateStudyFilters, (draftState, action) => {
       Object.assign(draftState.filters, action.payload);
+      draftState.scrollPosition = 0;
     })
     .addCase(updateStudiesSortConf, (draftState, action) => {
       Object.assign(draftState.sort, action.payload);
+      draftState.scrollPosition = 0;
     })
     .addCase(fetchStudyVersions.fulfilled, (draftState, action) => {
       draftState.versionList = action.payload;
