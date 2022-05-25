@@ -1,12 +1,18 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import { StudyMetadata } from "../common/types";
+import {
+  GroupDetailsDTO,
+  StudyMetadata,
+  UserDetailsDTO,
+} from "../common/types";
 import { buildStudyTree } from "../components/studies/utils";
 import { filterStudies, sortStudies } from "../pages/Studies/utils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
+import { GroupsState } from "./ducks/groups";
 import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
 import { UIState } from "./ducks/ui";
+import { UsersState } from "./ducks/users";
 
 // TODO resultEqualityCheck
 
@@ -123,6 +129,40 @@ export const isCurrentStudyFavorite = createSelector(
   getCurrentStudyId,
   (favorites, current) => favorites.includes(current)
 );
+
+////////////////////////////////////////////////////////////////
+// Users
+////////////////////////////////////////////////////////////////
+
+const getUsersState = (state: AppState): UsersState => state.users;
+
+const usersSelectors =
+  createEntityAdapter<UserDetailsDTO>().getSelectors(getUsersState);
+
+export const getUsers = usersSelectors.selectAll;
+
+export const getUsersById = usersSelectors.selectEntities;
+
+export const getUserIds = usersSelectors.selectIds;
+
+export const getUser = usersSelectors.selectById;
+
+////////////////////////////////////////////////////////////////
+// Groups
+////////////////////////////////////////////////////////////////
+
+const getGroupsState = (state: AppState): GroupsState => state.groups;
+
+const groupsSelectors =
+  createEntityAdapter<GroupDetailsDTO>().getSelectors(getGroupsState);
+
+export const getGroups = groupsSelectors.selectAll;
+
+export const getGroupsById = groupsSelectors.selectEntities;
+
+export const getGroupIds = groupsSelectors.selectIds;
+
+export const getGroup = groupsSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
 // UI
