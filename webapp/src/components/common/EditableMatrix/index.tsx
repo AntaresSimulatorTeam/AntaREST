@@ -1,29 +1,26 @@
 import { useEffect, useState } from "react";
-import { Box, ButtonGroup } from "@mui/material";
-import TableViewIcon from "@mui/icons-material/TableView";
-import BarChartIcon from "@mui/icons-material/BarChart";
 import { HotColumn } from "@handsontable/react";
 import { MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
-import { Root, StyledButton, StyledHotTable } from "./style";
+import { Root, StyledHotTable } from "./style";
 import "./style.css";
 
 interface PropTypes {
   matrix: MatrixType;
   readOnly: boolean;
+  toggleView?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
 
-export default function MatrixView(props: PropTypes) {
-  const { readOnly, matrix } = props;
+function EditableMatrix(props: PropTypes) {
+  const { readOnly, matrix, toggleView } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && typeof index[0] === "string";
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
-  const [toggleView, setToggleView] = useState<boolean>(true);
 
   const renderView = () => {
     if (toggleView) {
@@ -45,8 +42,6 @@ export default function MatrixView(props: PropTypes) {
     return <MatrixGraphView matrix={matrix} />;
   };
 
-  const changeView = () => setToggleView(!toggleView);
-
   useEffect(() => {
     const columnsData: Array<ColumnsType> = (
       prependIndex ? [{ title: "Time", readOnly }] : []
@@ -59,25 +54,11 @@ export default function MatrixView(props: PropTypes) {
     setGrid(tmpData);
   }, [columns, data, index, prependIndex, readOnly]);
 
-  return (
-    <Root>
-      <Box width="100%" display="flex" justifyContent="center">
-        <ButtonGroup sx={{ mb: 3 }} variant="contained">
-          <StyledButton
-            onClick={toggleView ? undefined : changeView}
-            disabled={toggleView}
-          >
-            <TableViewIcon sx={{ color: "text.main" }} />
-          </StyledButton>
-          <StyledButton
-            onClick={toggleView ? changeView : undefined}
-            disabled={!toggleView}
-          >
-            <BarChartIcon sx={{ color: "text.main" }} />
-          </StyledButton>
-        </ButtonGroup>
-      </Box>
-      {renderView()}
-    </Root>
-  );
+  return <Root>{renderView()}</Root>;
 }
+
+EditableMatrix.defaultProps = {
+  toggleView: true,
+};
+
+export default EditableMatrix;

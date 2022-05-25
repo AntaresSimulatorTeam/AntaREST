@@ -9,16 +9,16 @@ export const Root = styled(Box)(({ theme }) => ({
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  padding: theme.spacing(1, 0),
+  padding: theme.spacing(1, 1),
 }));
 
 export const Header = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
   flexFlow: "row nowrap",
-  justifyContent: "flex-end",
+  justifyContent: "space-between",
   alignItems: "center",
-  padding: theme.spacing(1, 2),
+  padding: theme.spacing(0, 2),
 }));
 
 export const Content = styled(Paper)(({ theme }) => ({

@@ -8,7 +8,6 @@ export const Root = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  flexGrow: 1,
 }));
 
 export const StyledButton = styled(Button)(({ theme }) => ({

@@ -9,3 +9,11 @@ thead th {
     color: white !important;
     border-color: rgba(255, 255, 255, 0.12) !important;
 }
+
+thead th.ht__active_highlight {
+    background-color: #00B2FF !important;
+}
+.handsontableInput {
+    background-color: #333652;
+    color: #fff;
+}

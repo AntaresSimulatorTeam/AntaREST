@@ -32,6 +32,10 @@ function Modelization() {
         label: t("study.debug"),
         path: `/studies/${study?.id}/explore/modelization/debug`,
       },
+      {
+        label: "Matrix",
+        path: `/studies/${study?.id}/explore/modelization/matrix`,
+      },
     ],
     [study]
   );
