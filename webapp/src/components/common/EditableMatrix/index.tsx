@@ -11,22 +11,19 @@ interface PropTypes {
   matrix: MatrixType;
   readOnly: boolean;
   toggleView?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onUpdate?: (change: any[], source: string) => void;
 }
 
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
 
 function EditableMatrix(props: PropTypes) {
-  const { readOnly, matrix, toggleView } = props;
+  const { readOnly, matrix, toggleView, onUpdate } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && typeof index[0] === "string";
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
-
-  const handleUpdate = (change: any[], source: string) => {
-    console.log(change);
-    console.log(source);
-  };
 
   registerAllModules();
 
@@ -41,7 +38,9 @@ function EditableMatrix(props: PropTypes) {
           stretchH="all"
           className="test"
           colHeaders
-          afterChange={(change, source) => handleUpdate(change || [], source)}
+          afterChange={(change, source) =>
+            onUpdate && onUpdate(change || [], source)
+          }
         >
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />
@@ -69,6 +68,7 @@ function EditableMatrix(props: PropTypes) {
 
 EditableMatrix.defaultProps = {
   toggleView: true,
+  onUpdate: undefined,
 };
 
 export default EditableMatrix;

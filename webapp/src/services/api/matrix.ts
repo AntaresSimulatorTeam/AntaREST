@@ -8,6 +8,10 @@ import {
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
+import {
+  MatrixOperation,
+  MatrixSlice,
+} from "../../components/singlestudy/explore/Modelization/Matrix/type";
 
 export const getMatrixList = async (
   name = "",
@@ -86,6 +90,19 @@ export const updateDataSet = async (
 
 export const deleteDataSet = async (id: string): Promise<void> => {
   const res = await client.delete(`/v1/matrixdataset/${id}`);
+  return res.data;
+};
+
+export const editMatrix = async (
+  sid: string,
+  path: string,
+  slices: MatrixSlice[],
+  operation: MatrixOperation
+): Promise<void> => {
+  const res = await client.put(`/v1/studies/${sid}/matrix?path=${path}`, {
+    slices,
+    operation,
+  });
   return res.data;
 };
 

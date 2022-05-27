@@ -15,6 +15,8 @@ import ImportForm from "../../../../common/ImportForm";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import EditableMatrix from "../../../../common/EditableMatrix";
 import { StyledButton } from "./style";
+import { editMatrix } from "../../../../../services/api/matrix";
+import { Slicer } from "./utils";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -25,7 +27,7 @@ function StudyMatrixView() {
   const [data, setData] = useState<MatrixType>();
   const [loaded, setLoaded] = useState(false);
   const [toggleView, setToggleView] = useState(true);
-  const url = "/input/load/series/load_ii";
+  const url = "input/load/series/load_ii";
   const study = "5ed36c48-e655-45df-aae0-0ce7c6d0ff8e";
 
   const loadFileData = async () => {
@@ -63,6 +65,20 @@ function StudyMatrixView() {
       enqueueErrorSnackbar(t("studymanager:failtosavedata"), e as AxiosError);
     }
     enqueueSnackbar(t("studymanager:savedatasuccess"), { variant: "success" });
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleUpdate = async (change: any[], source: string) => {
+    if (source !== "loadData" && source !== "updateData") {
+      try {
+        const slice = Slicer(change);
+        await editMatrix(study, url, slice.slices, slice.operation);
+      } catch (e) {
+        enqueueErrorSnackbar("marche pas", e as AxiosError);
+      }
+      console.log(change);
+      console.log(source);
+    }
   };
 
   useEffect(() => {
@@ -115,6 +131,7 @@ function StudyMatrixView() {
             matrix={data}
             readOnly={false}
             toggleView={toggleView}
+            onUpdate={handleUpdate}
           />
         ) : (
           loaded && (
