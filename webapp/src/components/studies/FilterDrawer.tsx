@@ -11,7 +11,7 @@ import {
   ListItem,
   Typography,
 } from "@mui/material";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { STUDIES_FILTER_WIDTH } from "../../theme";
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import {
@@ -21,7 +21,7 @@ import {
   getUsers,
 } from "../../redux/selectors";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
-import { updateStudyFilters } from "../../redux/ducks/studies";
+import { StudyFilters, updateStudyFilters } from "../../redux/ducks/studies";
 import CheckboxesTags from "../common/inputs/CheckboxesTags";
 import { displayVersionName } from "../../services/utils";
 
@@ -38,29 +38,18 @@ function FilterDrawer(props: Props) {
   const users = useAppSelector(getUsers);
   const groups = useAppSelector(getGroups);
   const dispatch = useAppDispatch();
-  const managedValueRef = useRef(filters.managed);
-  const archivedValueRef = useRef(filters.archived);
-  const versionsSelectedRef = useRef(filters.versions);
-  const usersSelectedRef = useRef(filters.users);
-  const groupsSelectedRef = useRef(filters.groups);
-  const tagsSelectedRef = useRef(filters.tags);
+  const filterNewValuesRef = useRef<Partial<StudyFilters>>({});
+
+  useEffect(() => {
+    filterNewValuesRef.current = {};
+  }, [open]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleFilter = () => {
-    dispatch(
-      updateStudyFilters({
-        managed: managedValueRef.current,
-        archived: archivedValueRef.current,
-        versions: versionsSelectedRef.current,
-        users: usersSelectedRef.current,
-        groups: groupsSelectedRef.current,
-        tags: tagsSelectedRef.current,
-      })
-    );
-
+    dispatch(updateStudyFilters(filterNewValuesRef.current));
     onClose();
   };
 
@@ -122,7 +111,7 @@ function FilterDrawer(props: Props) {
                 name="managed"
                 defaultChecked={filters.managed}
                 onChange={(_, checked) => {
-                  managedValueRef.current = checked;
+                  filterNewValuesRef.current.managed = checked;
                 }}
               />
             }
@@ -135,7 +124,7 @@ function FilterDrawer(props: Props) {
                 name="archived"
                 defaultChecked={filters.archived}
                 onChange={(_, checked) => {
-                  archivedValueRef.current = checked;
+                  filterNewValuesRef.current.archived = checked;
                 }}
               />
             }
@@ -152,7 +141,7 @@ function FilterDrawer(props: Props) {
             getOptionLabel={displayVersionName}
             defaultValue={filters.versions}
             onChange={(_, value) => {
-              versionsSelectedRef.current = value;
+              filterNewValuesRef.current.versions = value;
             }}
           />
         </ListItem>
@@ -165,7 +154,7 @@ function FilterDrawer(props: Props) {
               filters.users.includes(user.id)
             )}
             onChange={(event, value) => {
-              usersSelectedRef.current = value.map((val) => val.id);
+              filterNewValuesRef.current.users = value.map((val) => val.id);
             }}
           />
         </ListItem>
@@ -178,7 +167,7 @@ function FilterDrawer(props: Props) {
               filters.groups.includes(group.id)
             )}
             onChange={(_, value) => {
-              groupsSelectedRef.current = value.map((val) => val.id);
+              filterNewValuesRef.current.groups = value.map((val) => val.id);
             }}
           />
         </ListItem>
@@ -188,7 +177,7 @@ function FilterDrawer(props: Props) {
             options={[]}
             defaultValue={filters.tags}
             onChange={(_, value) => {
-              tagsSelectedRef.current = value;
+              filterNewValuesRef.current.tags = value;
             }}
             freeSolo
           />

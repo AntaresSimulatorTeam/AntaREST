@@ -13,7 +13,11 @@ interface CheckboxesTagsProps<
   FreeSolo extends boolean | undefined = undefined
 > extends Omit<
     AutocompleteProps<T, true, DisableClearable, FreeSolo>,
-    "multiple" | "disableCloseOnSelect" | "renderOption" | "renderInput"
+    | "multiple"
+    | "disableCloseOnSelect"
+    | "renderOption"
+    | "renderInput"
+    | "renderTags"
   > {
   label?: string;
 }
@@ -23,13 +27,12 @@ function CheckboxesTags<
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined
 >(props: CheckboxesTagsProps<T, DisableClearable, FreeSolo>) {
-  const { label, getOptionLabel, sx, ...rest } = props;
+  const { label, sx, ...rest } = props;
 
   return (
     <Autocomplete
       {...rest}
       sx={[{ width: 1, p: "8px" }, ...(Array.isArray(sx) ? sx : [sx])]}
-      getOptionLabel={getOptionLabel}
       multiple
       disableCloseOnSelect
       renderOption={(props, option, { selected }) => (
@@ -40,7 +43,7 @@ function CheckboxesTags<
             style={{ marginRight: 8 }}
             checked={selected}
           />
-          {getOptionLabel?.(option) ?? String(option)}
+          {rest.getOptionLabel?.(option) ?? String(option)}
         </li>
       )}
       renderInput={(params) => (

@@ -62,8 +62,10 @@ function Studies() {
           [
             R.equals(FetchStatus.Failed),
             () => {
-              // TODO
-              return <div>Error</div>;
+              // TODO Create a generic component to display error
+              return (
+                <div>Error: {studiesFilteredAndSorted.error?.toString()}</div>
+              );
             },
           ],
         ])(studiesFilteredAndSorted.status)}
