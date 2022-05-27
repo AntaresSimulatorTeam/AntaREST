@@ -52,7 +52,8 @@ import { isCurrentStudyFavorite } from "../../redux/selectors";
 import ExportDialog from "../studies/ExportModal";
 import StarToggle from "../common/StarToggle";
 import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -243,7 +244,7 @@ function NavHeader(props: Props) {
             unactiveTitle={t("studies.bookmark") as string}
             onToggle={() => {
               if (study) {
-                dispatch(toggleFavorite({ id: study.id, name: study.name }));
+                dispatch(toggleFavorite(study.id));
               }
             }}
           />
@@ -494,10 +495,10 @@ function NavHeader(props: Props) {
           </Box>
         </Box>
       )}
-      {openLauncherDialog && (
+      {study && openLauncherDialog && (
         <LauncherDialog
           open={openLauncherDialog}
-          study={study}
+          studyId={study.id}
           onClose={() => setOpenLauncherDialog(false)}
         />
       )}

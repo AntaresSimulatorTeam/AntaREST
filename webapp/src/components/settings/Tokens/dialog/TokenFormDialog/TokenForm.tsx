@@ -31,7 +31,7 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
 import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
-import { useAppSelector } from "../../../../../redux/hooks";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 
 /**
  * Types

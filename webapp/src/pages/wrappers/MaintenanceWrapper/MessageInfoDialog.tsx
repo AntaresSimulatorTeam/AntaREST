@@ -7,8 +7,9 @@ import { getMessageInfo as getMessageInfoAPI } from "../../../services/api/maint
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import OkDialog from "../../../components/common/dialogs/OkDialog";
 import { setMessageInfo } from "../../../redux/ducks/ui";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { getAuthUser, getMessageInfo } from "../../../redux/selectors";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 export const Main = styled(Box)(({ theme }) => ({
   width: "600px",

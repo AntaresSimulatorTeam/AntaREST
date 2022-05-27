@@ -13,8 +13,9 @@ import {
   incrementTaskNotifications,
   resetTaskNotifications,
 } from "../../redux/ducks/ui";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { getTaskNotificationsCount } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../redux/hooks/useAppSelector";
 
 const logError = debug("antares:downloadbadge:error");
 

@@ -14,15 +14,15 @@ import { AxiosError } from "axios";
 import { StudyTreeNode } from "./utils";
 import { scanFolder } from "../../services/api/study";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudiesTree, getStudyFilters } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import { updateStudyFilters } from "../../redux/ducks/studies";
 
-interface Props {
-  tree: StudyTreeNode;
-  folder: string;
-  setFolder: (folder: string) => void;
-}
-
-function StudyTree(props: Props) {
-  const { tree, folder, setFolder } = props;
+function StudyTree() {
+  const folder = useAppSelector((state) => getStudyFilters(state).folder);
+  const studiesTree = useAppSelector(getStudiesTree);
+  const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const [menuId, setMenuId] = useState<string>("");
@@ -89,7 +89,7 @@ function StudyTree(props: Props) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setFolder(newId);
+                  dispatch(updateStudyFilters({ folder: newId }));
                 }}
                 onContextMenu={(e) => onContextMenu(e, elm.path)}
               >
@@ -140,22 +140,26 @@ function StudyTree(props: Props) {
       sx={{ flexGrow: 1, height: 0, width: "100%", py: 1 }}
     >
       <TreeItem
-        nodeId={tree.name}
+        nodeId={studiesTree.name}
         label={
           <Typography
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setFolder(tree.name);
+              dispatch(updateStudyFilters({ folder: studiesTree.name }));
             }}
           >
-            {tree.name}
+            {studiesTree.name}
           </Typography>
         }
-        collapseIcon={tree.children.length > 0 ? <ExpandMoreIcon /> : undefined}
-        expandIcon={tree.children.length > 0 ? <ChevronRightIcon /> : undefined}
+        collapseIcon={
+          studiesTree.children.length > 0 ? <ExpandMoreIcon /> : undefined
+        }
+        expandIcon={
+          studiesTree.children.length > 0 ? <ChevronRightIcon /> : undefined
+        }
       >
-        {buildTree(tree.children, tree.name)}
+        {buildTree(studiesTree.children, studiesTree.name)}
       </TreeItem>
     </TreeView>
   );

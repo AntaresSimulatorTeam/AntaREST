@@ -23,7 +23,7 @@ import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
 import { addWsMessageListener } from "../../services/webSockets";
-import { useAppDispatch } from "../../redux/hooks";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:singlestudy:error");
 

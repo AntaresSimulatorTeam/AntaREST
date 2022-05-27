@@ -1,20 +1,28 @@
-import { createAction, ActionCreatorWithPayload } from "@reduxjs/toolkit";
+import {
+  createAction,
+  ActionCreatorWithPayload,
+  EntityState,
+} from "@reduxjs/toolkit";
 import * as R from "ramda";
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
+import packages from "../../package.json";
 
-const APP_NAME = "antarest";
-
-export enum Status {
+export enum FetchStatus {
   Idle = "idle",
   Loading = "loading",
   Succeeded = "succeeded",
   Failed = "failed",
 }
 
+export interface AsyncEntityState<T> extends EntityState<T> {
+  status: FetchStatus;
+  error?: string;
+}
+
 export const makeActionName = R.curry(
   (reducerName: string, actionType: string) =>
-    `${APP_NAME}/${reducerName}/${actionType}`
+    `${packages.name}/${reducerName}/${actionType}`
 );
 
 type ThunkAPI = { dispatch: AppDispatch; getState: () => AppState };

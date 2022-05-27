@@ -25,6 +25,7 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
+import { useMount } from "react-use";
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../../components/tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
@@ -49,7 +50,10 @@ import {
 } from "../../../redux/selectors";
 import ConfirmationDialog from "../../../components/common/dialogs/ConfirmationDialog";
 import { logout } from "../../../redux/ducks/auth";
-import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { fetchUsers } from "../../../redux/ducks/users";
+import { fetchGroups } from "../../../redux/ducks/groups";
 
 const pulsatingAnimation = keyframes`
   0% {
@@ -98,6 +102,11 @@ function MenuWrapper(props: Props) {
   const currentStudy = useAppSelector(getCurrentStudyId);
   const websocketConnected = useAppSelector(getWebSocketConnected);
   const dispatch = useAppDispatch();
+
+  useMount(() => {
+    dispatch(fetchUsers());
+    dispatch(fetchGroups());
+  });
 
   let navigation: Array<MenuItem> = [
     {

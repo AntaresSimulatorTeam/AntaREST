@@ -99,12 +99,14 @@ const theme = createTheme({
           props: { variant: "outlined" },
           style: {
             margin: "8px",
-            "& .MuiOutlinedInput-root:not(.MuiInputBase-multiline)": {
-              height: "50px",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "rgba(255,255,255,0.09)",
+            // TODO Remove the fixed height?
+            "& .MuiOutlinedInput-root:not(.MuiInputBase-multiline):not(.MuiAutocomplete-inputRoot)":
+              {
+                height: "50px",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(255,255,255,0.09)",
+                },
               },
-            },
           },
         },
       ],

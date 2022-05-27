@@ -6,33 +6,45 @@ import {
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
+import { O } from "ts-toolbelt";
 import {
-  DefaultFilterKey,
-  GenericInfo,
+  GroupDTO,
   StudyMetadata,
   StudyPublicMode,
   StudySummary,
+  UserDTO,
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import { loadState } from "../../services/utils/localStorage";
-import { getFavoriteStudies, getStudyVersions } from "../selectors";
+import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
-import { makeActionName, Status } from "../utils";
+import { makeActionName, FetchStatus, AsyncEntityState } from "../utils";
 
-export const studiesAdapter = createEntityAdapter<StudyMetadata>({
-  selectId: (study) => study.id,
-});
+const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
-export interface StudiesState
-  extends ReturnType<typeof studiesAdapter.getInitialState> {
-  status: Status;
-  error?: string;
+export interface StudyFilters {
+  inputValue: string;
+  folder: string;
+  managed: boolean;
+  archived: boolean;
+  versions: string[];
+  users: Array<UserDTO["id"]>;
+  groups: Array<GroupDTO["id"]>;
+  tags: string[];
+}
+
+export interface StudiesSortConf {
+  property: keyof StudyMetadata;
+  order: "ascend" | "descend";
+}
+
+export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   scrollPosition: number;
-  directory: string;
   versionList: string[];
   favorites: Array<StudyMetadata["id"]>;
+  filters: StudyFilters;
+  sort: StudiesSortConf;
 }
 
 type StudyCreator = {
@@ -51,15 +63,26 @@ type StudyUpload = {
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
 const initialState = studiesAdapter.getInitialState({
-  status: Status.Idle,
+  status: FetchStatus.Idle,
   error: null as string | null,
   current: "",
   scrollPosition: 0,
-  directory: "root",
   versionList: [] as string[],
-  favorites:
-    loadState<Array<StudyMetadata["id"]>>(DefaultFilterKey.FAVORITE_STUDIES) ||
-    [],
+  favorites: [],
+  filters: {
+    inputValue: "",
+    folder: "root",
+    managed: false,
+    archived: false,
+    versions: [],
+    users: [],
+    groups: [],
+    tags: [],
+  },
+  sort: {
+    property: "name",
+    order: "ascend",
+  },
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -76,13 +99,25 @@ export const setStudyScrollPosition = createAction<
   StudiesState["scrollPosition"]
 >(n("SET_SCROLL_POSITION"));
 
-const setStudyDirectory = createAction<StudiesState["directory"]>(
-  n("SET_DIRECTORY")
-);
-
 export const setFavoriteStudies = createAction<StudiesState["favorites"]>(
   n("SET_FAVORITES")
 );
+
+export const updateStudyFilters = createAction<
+  Partial<StudiesState["filters"]>
+>(n("UPDATE_FILTERS"));
+
+export const updateStudiesSortConf = createAction<
+  Partial<StudiesState["sort"]>
+>(n("UPDATE_SORT_CONF"));
+
+export const updateStudiesFromLocalStorage = createAction<
+  O.Nullable<{
+    favorites: StudiesState["favorites"];
+    filters: Partial<StudyFilters>;
+    sort: Partial<StudiesSortConf>;
+  }>
+>(n("UPDATE_FROM_LOCAL_STORAGE"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -153,12 +188,19 @@ export const deleteStudy = createAsyncThunk<
   }
 
   const state = getState();
-  const currentFavorites = getFavoriteStudies(state);
+  const currentFavorites = getFavoriteStudyIds(state);
   const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
   dispatch(setFavoriteStudies(newFavorites));
 
   return studyId;
 });
+
+export const fetchStudyVersions = createAsyncThunk(
+  n("FETCH_VERSIONS"),
+  (_, { rejectWithValue }) => {
+    return api.getStudyVersions().catch(rejectWithValue);
+  }
+);
 
 export const fetchStudies = createAsyncThunk<
   StudyMetadata[],
@@ -168,7 +210,7 @@ export const fetchStudies = createAsyncThunk<
   try {
     const studies = await api.getStudies();
     const state = getState();
-    const currentFavorites = getFavoriteStudies(state);
+    const currentFavorites = getFavoriteStudyIds(state);
     const newFavorites = R.innerJoin(
       (fav, study) => fav === study.id,
       currentFavorites,
@@ -179,31 +221,26 @@ export const fetchStudies = createAsyncThunk<
       dispatch(setFavoriteStudies(newFavorites));
     }
 
+    dispatch(fetchStudyVersions());
+
     return studies;
   } catch (err) {
     return rejectWithValue(err);
   }
 });
 
-export const fetchStudyVersions = createAsyncThunk(
-  n("FETCH_VERSIONS"),
-  (_, { rejectWithValue }) => {
-    return api.getStudyVersions().catch(rejectWithValue);
-  }
-);
-
 export const toggleFavorite =
-  (studyInfo: GenericInfo): AppThunk =>
+  (studyId: StudyMetadata["id"]): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const currentFavorites = getFavoriteStudies(state);
-    const isFav = !!currentFavorites.find((fav) => fav === studyInfo.id);
+    const currentFavorites = getFavoriteStudyIds(state);
+    const isFav = !!currentFavorites.find((fav) => fav === studyId);
 
     dispatch(
       setFavoriteStudies(
         isFav
-          ? currentFavorites.filter((fav) => fav !== studyInfo.id)
-          : [...currentFavorites, studyInfo.id.toString()]
+          ? currentFavorites.filter((fav) => fav !== studyId)
+          : [...currentFavorites, studyId]
       )
     );
   };
@@ -214,23 +251,37 @@ export const toggleFavorite =
 
 export default createReducer(initialState, (builder) => {
   builder
+    .addCase(updateStudiesFromLocalStorage, (draftState, action) => {
+      const { favorites, filters, sort } = action.payload;
+      draftState.favorites = favorites || [];
+      Object.assign(draftState.filters, filters);
+      Object.assign(draftState.sort, sort);
+    })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)
     .addCase(deleteStudy.fulfilled, studiesAdapter.removeOne)
     .addCase(fetchStudies.pending, (draftState) => {
-      draftState.status = Status.Loading;
+      draftState.status = FetchStatus.Loading;
     })
     .addCase(fetchStudies.fulfilled, (draftState, action) => {
-      draftState.status = Status.Succeeded;
+      draftState.status = FetchStatus.Succeeded;
       studiesAdapter.removeAll(draftState);
       studiesAdapter.addMany(draftState, action);
     })
     .addCase(fetchStudies.rejected, (draftState, action) => {
-      draftState.status = Status.Failed;
+      draftState.status = FetchStatus.Failed;
       draftState.error = action.error.message;
     })
     .addCase(setFavoriteStudies, (draftState, action) => {
       draftState.favorites = action.payload;
+    })
+    .addCase(updateStudyFilters, (draftState, action) => {
+      Object.assign(draftState.filters, action.payload);
+      draftState.scrollPosition = 0;
+    })
+    .addCase(updateStudiesSortConf, (draftState, action) => {
+      Object.assign(draftState.sort, action.payload);
+      draftState.scrollPosition = 0;
     })
     .addCase(fetchStudyVersions.fulfilled, (draftState, action) => {
       draftState.versionList = action.payload;
@@ -240,8 +291,5 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(setStudyScrollPosition, (draftState, action) => {
       draftState.scrollPosition = action.payload;
-    })
-    .addCase(setStudyDirectory, (draftState, action) => {
-      draftState.directory = action.payload;
     });
 });

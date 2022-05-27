@@ -4,7 +4,6 @@ import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
 import { isUserExpired } from "../../services/utils";
-import { loadState } from "../../services/utils/localStorage";
 import {
   closeWebSocket,
   initWebSocket,
@@ -26,7 +25,7 @@ interface LoginArg {
 type AccessTokenSub = Pick<UserInfo, "id" | "groups" | "impersonator" | "type">;
 
 const initialState = {
-  user: loadState("auth.user"),
+  user: undefined,
 } as AuthState;
 
 const n = makeActionName("auth");
@@ -36,7 +35,7 @@ const n = makeActionName("auth");
 ////////////////////////////////////////////////////////////////
 
 export const logout = createThunk(n("LOGOUT"), () => {
-  clientApi.setAuth(undefined);
+  clientApi.setAuth(null);
   closeWebSocket();
 });
 
@@ -75,35 +74,44 @@ export const refresh = createAsyncThunk<
   return user;
 });
 
-export const login = createAsyncThunk<UserInfo, LoginArg, AppAsyncThunkConfig>(
-  n("LOGIN"),
-  async ({ username, password }, { dispatch, rejectWithValue }) => {
+export const login = createAsyncThunk<
+  UserInfo | undefined,
+  LoginArg | UserInfo | undefined,
+  AppAsyncThunkConfig
+>(n("LOGIN"), async (arg, { dispatch, rejectWithValue }) => {
+  let user;
+
+  // Authentication not required or login from localStorage
+  if (!arg || "id" in arg) {
+    user = arg;
+  }
+  // Login from form
+  else {
     try {
+      const { username, password } = arg;
       const tokens = await authApi.login(username, password);
       const decoded = jwtDecode<JwtPayload>(tokens.access_token);
       const userData = JSON.parse(decoded.sub as string) as AccessTokenSub;
 
       clientApi.setAuth(tokens.access_token);
 
-      const user = {
+      user = {
         ...userData,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
         expirationDate: decoded.exp,
         user: username,
       } as UserInfo;
-
-      initWebSocket(dispatch, user);
-
-      clientApi.setLogoutInterceptor(() => dispatch(logout()));
-      clientApi.updateRefreshInterceptor(() => dispatch(refresh()).unwrap());
-
-      return user;
     } catch (err) {
       return rejectWithValue(err);
     }
   }
-);
+
+  initWebSocket(dispatch, user);
+  clientApi.initAxiosInterceptors();
+
+  return user;
+});
 
 ////////////////////////////////////////////////////////////////
 // Reducer

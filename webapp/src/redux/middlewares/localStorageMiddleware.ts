@@ -1,29 +1,73 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import { DefaultFilterKey, UserInfo } from "../../common/types";
-import { saveState } from "../../services/utils/localStorage";
+import { UserInfo } from "../../common/types";
+import storage, { StorageKey } from "../../services/utils/localStorage";
+import { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
-import { setFavoriteStudies } from "../ducks/studies";
+import {
+  setFavoriteStudies,
+  updateStudiesFromLocalStorage,
+  updateStudiesSortConf,
+  updateStudyFilters,
+} from "../ducks/studies";
 
-const localStorageMiddleware = createListenerMiddleware();
+const localStorageMiddleware = createListenerMiddleware<AppState>();
 
-// TODO: save data by user id
+////////////////////////////////////////////////////////////////
+// Auth
+////////////////////////////////////////////////////////////////
+
+localStorageMiddleware.startListening({
+  matcher: isAnyOf(login.fulfilled, refresh.fulfilled, logout),
+  effect: (action, { dispatch }) => {
+    const user = action.payload as UserInfo;
+    if (user) {
+      const { expirationDate, ...toSave } = user;
+      storage.setItem(StorageKey.AuthUser, toSave);
+    } else {
+      storage.removeItem(StorageKey.AuthUser);
+    }
+
+    // Hydrate
+    if (action.type === login.fulfilled.toString()) {
+      dispatch(
+        updateStudiesFromLocalStorage({
+          favorites: storage.getItem(StorageKey.StudiesFavorites),
+          filters: storage.getItem(StorageKey.StudiesFilters),
+          sort: storage.getItem(StorageKey.StudiesSort),
+        })
+      );
+    }
+  },
+});
+
+////////////////////////////////////////////////////////////////
+// Studies
+////////////////////////////////////////////////////////////////
+
 localStorageMiddleware.startListening({
   actionCreator: setFavoriteStudies,
   effect: (action) => {
-    saveState(DefaultFilterKey.FAVORITE_STUDIES, action.payload);
+    storage.setItem(StorageKey.StudiesFavorites, action.payload);
   },
 });
 
 localStorageMiddleware.startListening({
-  matcher: isAnyOf(login.fulfilled, refresh.fulfilled, logout),
+  actionCreator: updateStudyFilters,
   effect: (action) => {
-    const user = action.payload as UserInfo;
-    if (user) {
-      const { expirationDate, ...toSave } = user;
-      saveState("auth.user", toSave);
-    } else {
-      saveState("auth.user", undefined);
-    }
+    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
+      ...prev,
+      ...action.payload,
+    }));
+  },
+});
+
+localStorageMiddleware.startListening({
+  actionCreator: updateStudiesSortConf,
+  effect: (action) => {
+    storage.setItem(StorageKey.StudiesSort, (prev) => ({
+      ...prev,
+      ...action.payload,
+    }));
   },
 });
 

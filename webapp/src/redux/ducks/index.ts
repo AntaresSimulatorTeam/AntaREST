@@ -1,11 +1,15 @@
 import { Action, combineReducers } from "redux";
 import { L } from "ts-toolbelt";
 import studies from "./studies";
+import users from "./users";
+import groups from "./groups";
 import auth, { logout } from "./auth";
 import ui from "./ui";
 
 const appReducer = combineReducers({
   studies,
+  users,
+  groups,
   auth,
   ui,
 });

@@ -59,7 +59,8 @@ import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
 import { getStudies } from "../redux/selectors";
 import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import useAppSelector from "../redux/hooks/useAppSelector";
+import useAppDispatch from "../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:studymanagement:error");
 

@@ -34,7 +34,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
 import { getAuthUser } from "../../../redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
-import { useAppSelector } from "../../../redux/hooks";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
 
 /**
  * Types

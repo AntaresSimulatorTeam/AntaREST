@@ -7,21 +7,6 @@ export interface IdentityDTO<T extends IdType = string> {
   name: string;
 }
 
-export enum SortElement {
-  DATE = "DATE",
-  NAME = "NAME",
-}
-
-export enum SortStatus {
-  INCREASE = "INCREASE",
-  DECREASE = "DECREASE",
-}
-
-export interface SortItem {
-  element: SortElement;
-  status: SortStatus;
-}
-
 export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
@@ -288,18 +273,6 @@ export enum WSEvent {
   DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
   MESSAGE_INFO = "MESSAGE_INFO",
   MAINTENANCE_MODE = "MAINTENANCE_MODE",
-}
-
-export enum DefaultFilterKey {
-  USERS = "v2.studylisting.filter.user",
-  GROUPS = "v2.studylisting.filter.group",
-  VERSIONS = "v2.studylisting.filter.version",
-  MANAGED = "v2.studylisting.filter.managed",
-  SORTING = "v2.studylisting.filter.sorting",
-  FOLDER = "v2.studylisting.filter.folder",
-  FAVORITE_STUDIES = "v2.studylisting.favorites",
-  TAGS = "v2.studylisting.filter.tag",
-  ARCHIVED = "v2.studylisting.filter.archived",
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
