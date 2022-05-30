@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Box, ButtonGroup } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import { HotColumn } from "@handsontable/react";
+import { HotColumn, HotTable } from "@handsontable/react";
 import { MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
-import { Root, StyledButton, StyledHotTable } from "./style";
+import { Root, StyledButton } from "./style";
 
 interface PropTypes {
   matrix: MatrixType;
@@ -28,7 +28,7 @@ export default function MatrixView(props: PropTypes) {
   const renderView = () => {
     if (toggleView) {
       return (
-        <StyledHotTable
+        <HotTable
           data={grid}
           licenseKey="non-commercial-and-evaluation"
           width="100%"
@@ -38,7 +38,7 @@ export default function MatrixView(props: PropTypes) {
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />
           ))}
-        </StyledHotTable>
+        </HotTable>
       );
     }
     return <MatrixGraphView matrix={matrix} />;
