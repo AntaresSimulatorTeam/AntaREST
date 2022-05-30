@@ -1397,7 +1397,7 @@ class StudyService:
         self,
         uuid: str,
         url: str,
-        new: Union[str, bytes, JSON],
+        new: SUB_JSON,
         params: RequestParameters,
     ) -> JSON:
         """
