@@ -9,7 +9,7 @@ from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON
+from antarest.core.model import JSON, SUB_JSON
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -82,7 +82,7 @@ def create_raw_study_routes(
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        data: JSON = Body(...),
+        data: SUB_JSON = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(

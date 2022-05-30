@@ -23,7 +23,7 @@ interface MessageListener {
 
 let webSocket: WebSocket | null;
 let messageListeners = [] as MessageListener[];
-let messagesToSendQueue = [] as string[];
+let channelSubscriptions = [] as string[];
 let reconnectTimerId: NodeJS.Timeout | null = null;
 
 export enum WsChannel {
@@ -31,13 +31,6 @@ export enum WsChannel {
   JobLogs = "JOB_LOGS/",
   Task = "TASK/",
   StudyGeneration = "GENERATION_TASK/",
-}
-
-function getWebSocket(): WebSocket {
-  if (!webSocket) {
-    throw new Error("WebSocket not initialized");
-  }
-  return webSocket;
 }
 
 export function initWebSocket(
@@ -73,8 +66,7 @@ export function initWebSocket(
   webSocket.onopen = (): void => {
     logInfo("WebSocket connection opened");
     dispatch(setWebSocketConnected(true));
-    messagesToSendQueue.forEach((msg) => (webSocket as WebSocket).send(msg));
-    messagesToSendQueue = [];
+    sendWsSubscribeMessage(channelSubscriptions);
   };
 
   webSocket.onclose = (): void => {
@@ -119,25 +111,31 @@ export function addWsMessageListener(listener: MessageListener): VoidFunction {
 export function sendWsSubscribeMessage(
   channels: string | string[]
 ): VoidFunction {
-  const socket = getWebSocket();
+  const channelsList = RA.ensureArray(channels);
 
   function send(action: string): void {
-    const messagesToSend = RA.ensureArray(channels).map((chan) =>
-      JSON.stringify({ action, payload: chan })
+    channelSubscriptions = channelSubscriptions.filter(
+      (chan) => channelsList.indexOf(chan) === -1
     );
-
-    if (socket.readyState !== WebSocket.OPEN) {
-      messagesToSendQueue.push(...messagesToSend);
-      return;
+    if (action === "SUBSCRIBE") {
+      channelSubscriptions.push(...channelsList);
     }
 
-    messagesToSend.forEach((msg) => socket.send(msg));
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      const socket: WebSocket = webSocket;
+      const messagesToSend = channelsList.map((chan) =>
+        JSON.stringify({ action, payload: chan })
+      );
+      messagesToSend.forEach((msg) => socket.send(msg));
+    }
   }
 
   send("SUBSCRIBE");
 
   // Unsubscribe callback
-  return () => send("UNSUBSCRIBE");
+  return () => {
+    send("UNSUBSCRIBE");
+  };
 }
 
 export function closeWebSocket(clean = true): void {
@@ -160,7 +158,7 @@ export function closeWebSocket(clean = true): void {
 
   if (clean) {
     messageListeners = [];
-    messagesToSendQueue = [];
+    channelSubscriptions = [];
   }
 }
 
