@@ -121,12 +121,11 @@ export function sendWsSubscribeMessage(
       channelSubscriptions.push(...channelsList);
     }
 
-    const messagesToSend = channelsList.map((chan) =>
-      JSON.stringify({ action, payload: chan })
-    );
-
     if (webSocket && webSocket.readyState === WebSocket.OPEN) {
       const socket: WebSocket = webSocket;
+      const messagesToSend = channelsList.map((chan) =>
+        JSON.stringify({ action, payload: chan })
+      );
       messagesToSend.forEach((msg) => socket.send(msg));
     }
   }
