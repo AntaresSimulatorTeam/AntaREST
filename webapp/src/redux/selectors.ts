@@ -11,6 +11,7 @@ import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
 import { GroupsState } from "./ducks/groups";
 import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import { synthesisAdapter, SynthesisState } from "./ducks/synthesis";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
 
@@ -163,6 +164,25 @@ export const getGroupsById = groupsSelectors.selectEntities;
 export const getGroupIds = groupsSelectors.selectIds;
 
 export const getGroup = groupsSelectors.selectById;
+
+////////////////////////////////////////////////////////////////
+// Synthesis
+////////////////////////////////////////////////////////////////
+
+export const getSynthesisState = (state: AppState): SynthesisState =>
+  state.synthesis;
+
+export const getSynthesisStatus = (
+  state: AppState
+): SynthesisState["status"] => {
+  return getSynthesisState(state).status;
+};
+
+const synthesisSelectors = synthesisAdapter.getSelectors(getSynthesisState);
+
+export const getAllSynthesis = synthesisSelectors.selectAll;
+
+export const getSynthesis = synthesisSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
 // UI

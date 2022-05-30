@@ -22,6 +22,10 @@ export interface StudySummary {
   workspace: string;
 }
 
+export interface SynthesisSummary {
+  study_id: string;
+}
+
 export interface StudyMetadataOwner {
   id?: number;
   name: string;

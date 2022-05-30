@@ -33,7 +33,7 @@ interface Props {
 
 function SingleStudy(props: Props) {
   const { isExplorer } = props;
-  const { studyId } = useParams();
+  const { studyId } = useParams(); // TO DO
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [parent, setParent] = useState<StudyMetadata>();
