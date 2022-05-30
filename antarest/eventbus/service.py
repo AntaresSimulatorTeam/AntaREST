@@ -72,7 +72,12 @@ class EventBusService(IEventBus):
     async def _run_loop(self) -> None:
         while True:
             time.sleep(0.2)
-            await self._on_events()
+            try:
+                await self._on_events()
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error when processing events", exc_info=e
+                )
 
     async def _on_events(self) -> None:
         with self.lock:
@@ -107,7 +112,7 @@ class EventBusService(IEventBus):
                     for res in responses:
                         if isinstance(res, Exception):
                             logger.error(
-                                f"Failed to process queue event {e.type}",
+                                f"Failed to process event {e.type}",
                                 exc_info=res,
                             )
             self.backend.clear_events()

@@ -138,7 +138,7 @@ class TaskJobService(ITaskService):
             return _await_task_end
 
         def _send_worker_task(logger: TaskUpdateNotifier) -> TaskResult:
-            self.event_bus.add_listener(
+            listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
             )
@@ -155,6 +155,7 @@ class TaskJobService(ITaskService):
             )
             while not task_result_wrapper:
                 time.sleep(1)
+            self.event_bus.remove_listener(listener_id)
             return task_result_wrapper[0]
 
         return _send_worker_task
