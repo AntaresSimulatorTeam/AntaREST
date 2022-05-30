@@ -19,4 +19,16 @@ export interface MatrixOperation {
   value: number;
 }
 
+export interface MatrixDTO {
+  slices: MatrixSlice[];
+  operation: MatrixOperation;
+}
+
+export interface CellChange {
+  "0": number;
+  "1": number | string;
+  "2": number;
+  "3": string;
+}
+
 export default {};

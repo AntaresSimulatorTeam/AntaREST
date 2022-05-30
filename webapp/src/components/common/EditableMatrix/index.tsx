@@ -6,13 +6,13 @@ import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
 import { Root, StyledHotTable } from "./style";
 import "./style.css";
+import { CellChange } from "../../singlestudy/explore/Modelization/Matrix/type";
 
 interface PropTypes {
   matrix: MatrixType;
   readOnly: boolean;
   toggleView?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onUpdate?: (change: any[], source: string) => void;
+  onUpdate?: (change: CellChange[], source: string) => void;
 }
 
 type CellType = Array<number | string | boolean>;

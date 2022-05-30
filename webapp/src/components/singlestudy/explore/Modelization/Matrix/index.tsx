@@ -17,6 +17,7 @@ import EditableMatrix from "../../../../common/EditableMatrix";
 import { StyledButton } from "./style";
 import { editMatrix } from "../../../../../services/api/matrix";
 import { Slicer } from "./utils";
+import { CellChange } from "./type";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -67,8 +68,7 @@ function StudyMatrixView() {
     enqueueSnackbar(t("studymanager:savedatasuccess"), { variant: "success" });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleUpdate = async (change: any[], source: string) => {
+  const handleUpdate = async (change: CellChange[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
       try {
         const slice = Slicer(change);
@@ -76,8 +76,6 @@ function StudyMatrixView() {
       } catch (e) {
         enqueueErrorSnackbar("marche pas", e as AxiosError);
       }
-      console.log(change);
-      console.log(source);
     }
   };
 
