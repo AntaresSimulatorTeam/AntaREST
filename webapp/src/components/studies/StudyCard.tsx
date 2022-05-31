@@ -38,7 +38,6 @@ import {
   convertUTCToLocalTime,
   displayVersionName,
 } from "../../services/utils";
-import { scrollbarStyle } from "../../theme";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
 import StarToggle from "../common/StarToggle";
