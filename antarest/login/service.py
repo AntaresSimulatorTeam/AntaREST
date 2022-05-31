@@ -28,6 +28,7 @@ from antarest.login.model import (
     UserRoleDTO,
     GroupDTO,
     UserInfo,
+    UserLdap,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -772,8 +773,12 @@ class LoginService:
             self.delete_all_roles_from_user(id, params)
 
             logger.info("user %s deleted by user %s", id, params.get_user_id())
-            # self.ldap.delete(id)
-            return self.users.delete(id)  # return for test purpose
+
+            user = self.get_user(id, params)
+            if isinstance(user, UserLdap):
+                return self.ldap.delete(id)
+            else:
+                return self.users.delete(id)  # return for test purpose
 
         else:
             logger.info(
