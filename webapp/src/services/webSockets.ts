@@ -1,6 +1,12 @@
 import debug from "debug";
 import * as RA from "ramda-adjunct";
-import { StudySummary, UserInfo, WSEvent, WSMessage } from "../common/types";
+import {
+  GenericInfo,
+  StudySummary,
+  UserInfo,
+  WSEvent,
+  WSMessage,
+} from "../common/types";
 import { getConfig } from "./config";
 import { isStringEmpty, isUserExpired } from "./utils";
 import { AppDispatch } from "../redux/store";
@@ -11,6 +17,7 @@ import {
   setMessageInfo,
   setWebSocketConnected,
 } from "../redux/ducks/ui";
+import { setStudyData } from "../redux/ducks/studydata";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -50,7 +57,8 @@ export function initWebSocket(
 
   messageListeners.push(
     makeStudyListener(dispatch),
-    makeMaintenanceListener(dispatch)
+    makeMaintenanceListener(dispatch),
+    makeStudyDataListener(dispatch)
   );
 
   webSocket.onmessage = (event: MessageEvent): void => {
@@ -183,6 +191,16 @@ function makeStudyListener(dispatch: AppDispatch) {
         break;
       case WSEvent.STUDY_DELETED:
         dispatch(deleteStudy(e));
+        break;
+    }
+  };
+}
+
+function makeStudyDataListener(dispatch: AppDispatch) {
+  return function listener(e: WSMessage<GenericInfo>): void {
+    switch (e.type) {
+      case WSEvent.STUDY_DATA_EDITED:
+        dispatch(setStudyData(e));
         break;
     }
   };

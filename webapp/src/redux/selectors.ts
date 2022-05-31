@@ -11,7 +11,7 @@ import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
 import { GroupsState } from "./ducks/groups";
 import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import { synthesisAdapter, SynthesisState } from "./ducks/synthesis";
+import { studyDataAdapter, StudyDataState } from "./ducks/studydata";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
 
@@ -166,23 +166,23 @@ export const getGroupIds = groupsSelectors.selectIds;
 export const getGroup = groupsSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
-// Synthesis
+// Study Data
 ////////////////////////////////////////////////////////////////
 
-export const getSynthesisState = (state: AppState): SynthesisState =>
-  state.synthesis;
+export const getStudyDataState = (state: AppState): StudyDataState =>
+  state.studydata;
 
-export const getSynthesisStatus = (
+const studyDataSelectors = studyDataAdapter.getSelectors(getStudyDataState);
+
+export const getAllStudyData = studyDataSelectors.selectAll;
+
+export const getStudyData = studyDataSelectors.selectById;
+
+export const getCurrentAreaId = (
   state: AppState
-): SynthesisState["status"] => {
-  return getSynthesisState(state).status;
+): StudyDataState["currentArea"] => {
+  return getStudyDataState(state).currentArea;
 };
-
-const synthesisSelectors = synthesisAdapter.getSelectors(getSynthesisState);
-
-export const getAllSynthesis = synthesisSelectors.selectAll;
-
-export const getSynthesis = synthesisSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
 // UI

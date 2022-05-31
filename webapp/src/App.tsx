@@ -66,8 +66,8 @@ function App() {
                             <Route path="wind" element={<Wind />} />
                             <Route path="reserve" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />
-                            <Route index element={<Areas />} />
-                            <Route path="*" element={<Areas />} />
+                            <Route index element={<Properties />} />
+                            <Route path="*" element={<Properties />} />
                           </Route>
                           <Route path="links" element={<Links />} />
                           <Route

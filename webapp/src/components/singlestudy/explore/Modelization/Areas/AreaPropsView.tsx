@@ -17,8 +17,6 @@ interface PropsType {
 }
 function AreaPropsView(props: PropsType) {
   const { areas, onClick, currentArea } = props;
-  console.log("MY AREAS: ", areas);
-
   const [areaNameFilter, setAreaNameFilter] = useState<string>();
   const [filteredAreas, setFilteredAreas] = useState<Array<Area>>(areas || []);
 
