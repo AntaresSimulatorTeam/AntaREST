@@ -27,6 +27,17 @@ interface PropTypes {
   onClose: () => void;
 }
 
+const HelperIcon = forwardRef<HTMLInputElement>((props, ref) => {
+  if (ref) {
+    return (
+      <span {...props} style={{ marginLeft: "0.5em" }} ref={ref}>
+        <HelpIcon />
+      </span>
+    );
+  }
+  return <div />;
+});
+
 function DatasetCreationDialog(props: PropTypes) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -93,18 +104,6 @@ function DatasetCreationDialog(props: PropTypes) {
       );
     }
   };
-
-  const HelperIcon = forwardRef<HTMLInputElement>((p, ref) => {
-    if (ref) {
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      return (
-        <span {...p} style={{ marginLeft: "0.5em" }} ref={ref}>
-          <HelpIcon />
-        </span>
-      );
-    }
-    return <div />;
-  });
 
   useEffect(() => {
     const init = async () => {
