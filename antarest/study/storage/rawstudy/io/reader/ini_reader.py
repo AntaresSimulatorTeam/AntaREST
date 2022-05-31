@@ -50,7 +50,7 @@ class IniReader(IReader):
             return None
 
     @staticmethod
-    def parse_value(value: str) -> Union[str, int, float, bool, None]:
+    def parse_value(value: str) -> Union[str, int, float, bool]:
         parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
             value
         )

@@ -36,7 +36,7 @@ class UpdateConfig(ICommand):
         cls, v: Union[str, int, bool, float, JSON]
     ) -> Union[str, int, bool, float, JSON]:
         if isinstance(v, str):
-            return IniReader.parse_value(v) or v
+            return IniReader.parse_value(v)
         return v
 
     def _apply_config(
