@@ -20,8 +20,8 @@ class WorkerTaskResult(BaseModel):
 
 
 class WorkerTaskCommand(BaseModel):
+    task_id: str
     task_type: str
-    task_name: str
     task_args: Dict[str, Union[int, float, bool, str]]
 
 
@@ -34,7 +34,7 @@ class AbstractWorker(abc.ABC):
             max_workers=MAX_WORKERS, thread_name_prefix="workertask_"
         )
         self.task_watcher = Thread(target=self._loop, daemon=True)
-        self.futures: List[Future[TaskResult]] = []
+        self.futures: Dict[str, Future[TaskResult]] = {}
 
     def start(self, threaded: bool = False) -> None:
         if threaded:
@@ -47,8 +47,8 @@ class AbstractWorker(abc.ABC):
         self.event_bus.push(
             Event(type=EventType.WORKER_TASK_STARTED, payload=task_info)
         )
-        self.futures.append(
-            self.threadpool.submit(self.execute_task, task_info)
+        self.futures[task_info.task_id] = self.threadpool.submit(
+            self.execute_task, task_info
         )
 
     @abstractmethod
@@ -57,12 +57,14 @@ class AbstractWorker(abc.ABC):
 
     def _loop(self) -> None:
         while True:
-            for future in self.futures:
+            for task_id, future in self.futures.items():
                 if future.done():
                     self.event_bus.push(
                         Event(
                             type=EventType.WORKER_TASK_ENDED,
-                            payload=future.result(),
+                            payload=WorkerTaskResult(
+                                task_id=task_id, task_result=future.result()
+                            ),
                         )
                     )
             time.sleep(2)

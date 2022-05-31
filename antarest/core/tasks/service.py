@@ -320,13 +320,14 @@ class TaskJobService(ITaskService):
             )
             end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
             while time.time() < end:
-                task = self.repo.get(task_id)
-                if not task:
-                    logger.error(f"Awaited task {task_id} was not found")
-                    break
-                if TaskStatus(task.status).is_final():
-                    break
-                time.sleep(2)
+                with db():
+                    task = self.repo.get(task_id)
+                    if not task:
+                        logger.error(f"Awaited task {task_id} was not found")
+                        break
+                    if TaskStatus(task.status).is_final():
+                        break
+                    time.sleep(2)
 
     def _run_task(
         self,

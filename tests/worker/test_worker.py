@@ -31,7 +31,7 @@ def test_simple_task(tmp_path: Path):
             type=EventType.WORKER_TASK,
             payload=WorkerTaskCommand(
                 task_type="touch stuff",
-                task_name="some task",
+                task_id="some task",
                 task_args={"file": "foo"},
             ),
         ),
