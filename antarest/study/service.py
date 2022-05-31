@@ -50,7 +50,11 @@ from antarest.core.tasks.service import (
 from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
+from antarest.matrixstore.business.matrix_editor import (
+    Operation,
+    MatrixSlice,
+    MatrixEditInstructionDTO,
+)
 from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
@@ -2074,14 +2078,13 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        slices: List[MatrixSlice],
-        operation: Operation,
+        matrix_edit_instruction: List[MatrixEditInstructionDTO],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.matrix_manager.update_matrix(study, path, slices, operation)
+        self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
 
     def check_and_update_all_study_versions_in_database(
         self, params: RequestParameters

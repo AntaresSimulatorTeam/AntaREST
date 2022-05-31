@@ -54,6 +54,11 @@ class Operation(BaseModel):
         return operation_dict[self.operation](x, self.value)  # type: ignore
 
 
+class MatrixEditInstructionDTO(BaseModel):
+    slices: List[MatrixSlice]
+    operation: Operation
+
+
 class MatrixEditor:
     @staticmethod
     def update_matrix_content_with_slices(

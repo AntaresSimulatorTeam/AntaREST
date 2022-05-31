@@ -99,10 +99,12 @@ export const editMatrix = async (
   slices: MatrixSlice[],
   operation: MatrixOperation
 ): Promise<void> => {
-  const res = await client.put(`/v1/studies/${sid}/matrix?path=${path}`, {
-    slices,
-    operation,
-  });
+  const res = await client.put(`/v1/studies/${sid}/matrix?path=${path}`, [
+    {
+      slices,
+      operation,
+    },
+  ]);
   return res.data;
 };
 

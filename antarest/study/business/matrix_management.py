@@ -4,6 +4,7 @@ from antarest.matrixstore.business.matrix_editor import (
     Operation,
     MatrixSlice,
     MatrixEditor,
+    MatrixEditInstructionDTO,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -24,8 +25,7 @@ class MatrixManager:
         self,
         study: Study,
         path: str,
-        slices: List[MatrixSlice],
-        operation: Operation,
+        edit_instructions: List[MatrixEditInstructionDTO],
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         matrix_service = (
@@ -35,12 +35,16 @@ class MatrixManager:
         whole_matrix = self.storage_service.get_storage(study).get(
             metadata=study, url=path
         )
-        matrix_data = whole_matrix["data"]
-
-        new_matrix_data = MatrixEditor.update_matrix_content_with_slices(
-            matrix_data=matrix_data, slices=slices, operation=operation
-        )
-        new_matrix_id = matrix_service.create(new_matrix_data)
+        updated_matrix_data = whole_matrix["data"]
+        for edit_instruction in edit_instructions:
+            updated_matrix_data = (
+                MatrixEditor.update_matrix_content_with_slices(
+                    matrix_data=updated_matrix_data,
+                    slices=edit_instruction.slices,
+                    operation=edit_instruction.operation,
+                )
+            )
+        new_matrix_id = matrix_service.create(updated_matrix_data)
 
         command = [
             ReplaceMatrix(
