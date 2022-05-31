@@ -1659,7 +1659,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_area = self.areas.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.areas.update_area_metadata(
+            study, area_id, area_patch_dto
+        )
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
