@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 from jsonschema import Draft7Validator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -18,7 +20,7 @@ class InputLinkAreaProperties(IniFileNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        link_schema = {
+        link_schema: Dict[str, Any] = {
             "type": "object",
             "properties": {
                 "hurdles-cost": {"type": "boolean"},
