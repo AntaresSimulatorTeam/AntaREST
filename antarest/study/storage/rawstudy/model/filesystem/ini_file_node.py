@@ -147,13 +147,13 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def check_errors(
         self,
-        data: JSON,
+        data: SUB_JSON,
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
         data_to_validate = data
         if isinstance(data, str) and data.startswith(LAZY_PREFIX):
-            data_to_validate = self._get([], -1, expanded=False)
+            data_to_validate = self._get([], -1, expanded=False)  # type: ignore
         errors = [
             error.message
             for error in self.validator.iter_errors(data_to_validate)
