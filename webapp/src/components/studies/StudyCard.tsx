@@ -168,24 +168,34 @@ function StudyCard(props: Props) {
   }
 
   return (
-    <Card variant="outlined" sx={{ width, height }}>
-      <CardContent>
+    <Card
+      variant="outlined"
+      sx={{ width, height, display: "flex", flexDirection: "column" }}
+    >
+      <CardContent
+        sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+      >
         <Box
           width="100%"
-          height="40px"
+          height="36px"
           display="flex"
           flexDirection="row"
           justifyContent="flex-start"
-          p={0.5}
+          sx={{ px: 0.5, paddingTop: 0.5 }}
         >
           <Tooltip title={study.name}>
             <Typography
               noWrap
-              variant="h5"
+              variant="h6"
               component="div"
               color="white"
               boxSizing="border-box"
-              sx={{ width: "81%" }}
+              sx={{
+                width: "calc(100% - 64px)",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+              }}
             >
               {study.name}
             </Typography>
@@ -218,6 +228,18 @@ function StudyCard(props: Props) {
             </Tooltip>
           </Box>
         </Box>
+        <Tooltip title={study.folder || ""}>
+          <Typography
+            noWrap
+            variant="caption"
+            component="div"
+            color="white"
+            boxSizing="border-box"
+            sx={{ px: 0.5, paddingBottom: 0.5 }}
+          >
+            {study.folder}
+          </Typography>
+        </Tooltip>
         <Box
           width="100%"
           height="25px"
@@ -271,13 +293,16 @@ function StudyCard(props: Props) {
         <Box
           my={1}
           width="100%"
-          height="70px"
+          height="35px"
           display="flex"
           flexDirection="row"
           flexWrap="wrap"
           justifyContent="flex-start"
           alignItems="center"
-          sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+          sx={{
+            overflowX: "hidden",
+            overflowY: "auto",
+          }}
         >
           <Chip
             label={study.workspace}
