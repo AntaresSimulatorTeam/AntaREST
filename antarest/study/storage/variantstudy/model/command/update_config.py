@@ -1,5 +1,7 @@
 from typing import Any, Union, List, Tuple, Dict, cast
 
+from pydantic import validator
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -21,12 +23,18 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateConfig(ICommand):
     target: str
-    data: Union[str, int, float, bool, JSON]
+    data: Union[float, int, bool, str, JSON]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.UPDATE_CONFIG, version=1, **data
         )
+
+    @validator("data")
+    def fix_data_int_type(cls, v):
+        if isinstance(v, float) and v.is_integer():
+            return int(v)
+        return v
 
     def _apply_config(
         self, study_data: FileStudyTreeConfig
@@ -42,8 +50,9 @@ class UpdateConfig(ICommand):
                 message=f"Study node at path {self.target} is invalid",
             )
 
-        # TODO check type at url when modify only a sub path of the object
-        errors = cast(IniFileNode, tree_node).check_errors(self.data, None)
+        errors = cast(IniFileNode, tree_node).check_errors(
+            self.data, tree_node.sub_path
+        )
         if errors:
             error_list = "\n".join(errors)
             return CommandOutput(

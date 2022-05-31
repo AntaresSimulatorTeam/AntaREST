@@ -1,10 +1,9 @@
-from functools import reduce
-from typing import List, Optional, cast, Dict, Any, Union
+import logging
+from typing import List, Optional, cast, Union
 
-from jsonschema import Validator, Draft6Validator
+from jsonschema import Validator, Draft7Validator
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import (
@@ -18,11 +17,12 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
     INode,
-    TREE,
 )
 
 
-DEFAULT_INI_VALIDATOR = Draft6Validator(
+logger = logging.getLogger(__name__)
+
+DEFAULT_INI_VALIDATOR = Draft7Validator(
     {
         "type": "object",
     }
@@ -106,7 +106,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         assert isinstance(output, INode)
         return output
 
-    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+    def _update(self, data: SUB_JSON, url: Optional[List[str]] = None) -> JSON:
         url = url or []
         json = self.reader.read(self.path) if self.path.exists() else {}
         if len(url) == 2:
@@ -117,6 +117,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json[url[0]] = data
         else:
             json = cast(JSON, data)
+        return json
+
+    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+        json = self._update(data, url)
         self.writer.write(json, self.path)
 
     def delete(self, url: Optional[List[str]] = None) -> None:
@@ -154,6 +158,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         data_to_validate = data
         if isinstance(data, str) and data.startswith(LAZY_PREFIX):
             data_to_validate = self._get([], -1, expanded=False)  # type: ignore
+        if url:
+            data_to_validate = self._update(data_to_validate, url)
         errors = [
             error.message
             for error in self.validator.iter_errors(data_to_validate)

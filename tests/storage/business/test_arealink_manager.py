@@ -183,16 +183,16 @@ def test_area_crud(
             CommandDTO(
                 action=CommandName.UPDATE_CONFIG.value,
                 args=[
-                    {"target": "input/areas/test/ui/ui/x", "data": "100"},
-                    {"target": "input/areas/test/ui/ui/y", "data": "200"},
+                    {"target": "input/areas/test/ui/ui/x", "data": 100},
+                    {"target": "input/areas/test/ui/ui/y", "data": 200},
                     {
                         "target": "input/areas/test/ui/ui/color_r",
-                        "data": "255",
+                        "data": 255,
                     },
-                    {"target": "input/areas/test/ui/ui/color_g", "data": "0"},
+                    {"target": "input/areas/test/ui/ui/color_g", "data": 0},
                     {
                         "target": "input/areas/test/ui/ui/color_b",
-                        "data": "100",
+                        "data": 100,
                     },
                 ],
             ),

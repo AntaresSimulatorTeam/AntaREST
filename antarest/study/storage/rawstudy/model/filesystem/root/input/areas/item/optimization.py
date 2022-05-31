@@ -8,7 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -29,8 +28,8 @@ class InputAreasOptimization(IniFileNode):
     filter-year-by-year = hourly, weekly, annual
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        base_schema = {
+    json_validator = Draft7Validator(
+        {
             "type": "object",
             "properties": {
                 "nodal optimization": {
@@ -59,6 +58,12 @@ class InputAreasOptimization(IniFileNode):
                 "additionalProperties": False,
             },
         }
+    )
+
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         IniFileNode.__init__(
-            self, context, config, validator=Draft7Validator(base_schema)
+            self,
+            context,
+            config,
+            validator=InputAreasOptimization.json_validator,
         )

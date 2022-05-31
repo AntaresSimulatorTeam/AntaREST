@@ -11,7 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
@@ -31,7 +30,14 @@ class PreproCorrelation(IniFileNode):
                     "properties": {
                         "mode": {
                             "type": "string",
-                            "enum": ["monthly", "annual", ""],
+                            "enum": [
+                                "monthly",
+                                "annual",
+                                "hourly",
+                                "weekly",
+                                "daily",
+                                "",
+                            ],
                         },
                     },
                 },

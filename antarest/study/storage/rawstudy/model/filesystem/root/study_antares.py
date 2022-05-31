@@ -8,7 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 
 

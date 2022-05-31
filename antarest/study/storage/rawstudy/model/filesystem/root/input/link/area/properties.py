@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -6,7 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -17,25 +18,35 @@ class InputLinkAreaProperties(IniFileNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        section = {
-            "hurdles-cost": bool,
-            "transmission-capacities": str,
-            "display-comments": bool,
-            "filter-synthesis": str,
-            "filter-year-by-year": str,
+        link_schema = {
+            "type": "object",
+            "properties": {
+                "hurdles-cost": {"type": "boolean"},
+                "transmission-capacities": {"type": "string"},
+                "display-comments": {"type": "boolean"},
+                "filter-synthesis": {"type": "string"},
+                "filter-year-by-year": {"type": "string"},
+            },
         }
 
         if config.version >= 650:
-            section["loop-flow"] = bool
-            section["use-phase-shifter"] = bool
-            section["asset-type"] = str
-            section["link-style"] = str
-            section["link-width"] = int
-            section["colorr"] = int
-            section["colorg"] = int
-            section["colorb"] = int
+            link_schema["properties"]["loop-flow"] = {"type": "boolean"}
+            link_schema["properties"]["use-phase-shifter"] = {
+                "type": "boolean"
+            }
+            link_schema["properties"]["asset-type"] = {"type": "string"}
+            link_schema["properties"]["link-style"] = {"type": "string"}
+            link_schema["properties"]["link-width"] = {"type": "number"}
+            link_schema["properties"]["colorr"] = {"type": "number"}
+            link_schema["properties"]["colorg"] = {"type": "number"}
+            link_schema["properties"]["colorb"] = {"type": "number"}
 
-        types = {link: section for link in config.get_links(area)}
+        schema = {
+            "type": "object",
+            "properties": {
+                link: link_schema for link in config.get_links(area)
+            },
+        }
         IniFileNode.__init__(
-            self, context, config, validator=DEFAULT_INI_VALIDATOR
+            self, context, config, validator=Draft7Validator(schema)
         )

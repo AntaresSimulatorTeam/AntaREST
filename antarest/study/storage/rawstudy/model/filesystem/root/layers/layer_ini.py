@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -6,7 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -22,11 +23,26 @@ class LayersIni(IniFileNode):
     showAllLayer = true
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        types = {
-            "layers": {},
-            "activeLayer": {"activeLayerID": int, "showAllLayer": bool},
+    schema_validator = Draft7Validator(
+        {
+            "type": "object",
+            "properties": {
+                "layers": {
+                    "type": "object",
+                    "patternProperties": {"\\d+": {"type": "string"}},
+                },
+                "activeLayer": {
+                    "type": "object",
+                    "properties": {
+                        "activeLayerID": {"type": "integer"},
+                        "showAllLayer": {"type": "boolean"},
+                    },
+                },
+            },
         }
+    )
+
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         IniFileNode.__init__(
-            self, context, config, validator=DEFAULT_INI_VALIDATOR
+            self, context, config, validator=LayersIni.schema_validator
         )

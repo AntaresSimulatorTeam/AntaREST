@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -9,7 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
-    DEFAULT_INI_VALIDATOR,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
@@ -22,19 +23,25 @@ class ClusteredRenewableClusterConfig(IniFileNode):
         area: str,
     ):
         section = {
-            "name": str,
-            "group": str,
-            "enabled": bool,
-            "unitcount": int,
-            "nomialcapacity": 0,
-            "ts-interpretation": str,
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "group": {"type": "string"},
+                "enabled": {"type": "boolean"},
+                "unitcount": {"type": "integer"},
+                "nomialcapacity": {"type": "number"},
+                "ts-interpretation": {"type": "string"},
+            },
         }
-        types = {
-            renewable: section
-            for renewable in config.get_renewable_names(area)
+        schema = {
+            "type": "object",
+            "properties": {
+                renewable: section
+                for renewable in config.get_renewable_names(area)
+            },
         }
         IniFileNode.__init__(
-            self, context, config, validator=DEFAULT_INI_VALIDATOR
+            self, context, config, validator=Draft7Validator(schema)
         )
 
 
