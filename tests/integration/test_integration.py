@@ -1141,13 +1141,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "column_from": 0}],
-            "operation": {
-                "operation": "+",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "column_from": 0}],
+                "operation": {
+                    "operation": "+",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1162,13 +1164,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
-            "operation": {
-                "operation": "=",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
+                "operation": {
+                    "operation": "=",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1183,13 +1187,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
-            "operation": {
-                "operation": "=",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
+                "operation": {
+                    "operation": "=",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1204,21 +1210,28 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [
-                {"row_from": 2, "row_to": 4, "column_from": 2, "column_to": 4},
-                {
-                    "row_from": 9,
-                    "row_to": 15,
-                    "column_from": 1,
-                    "column_to": 3,
+        json=[
+            {
+                "slices": [
+                    {
+                        "row_from": 2,
+                        "row_to": 4,
+                        "column_from": 2,
+                        "column_to": 4,
+                    },
+                    {
+                        "row_from": 9,
+                        "row_to": 15,
+                        "column_from": 1,
+                        "column_to": 3,
+                    },
+                ],
+                "operation": {
+                    "operation": "=",
+                    "value": 42,
                 },
-            ],
-            "operation": {
-                "operation": "=",
-                "value": 42,
-            },
-        },
+            }
+        ],
     )
     assert res.status_code == 200
 
