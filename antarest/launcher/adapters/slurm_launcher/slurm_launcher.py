@@ -425,7 +425,7 @@ class SlurmLauncher(AbstractLauncher):
                     self._delete_workspace_file(finished_zip)
 
     @staticmethod
-    def _override_solver_version(study_path: Path, version: str):
+    def _override_solver_version(study_path: Path, version: str) -> None:
         study_info_path = study_path / "study.antares"
         study_info = IniReader().read(study_info_path)
         if "antares" in study_info:

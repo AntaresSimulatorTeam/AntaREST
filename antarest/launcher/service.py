@@ -240,7 +240,7 @@ class LauncherService:
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
         )
-        study_version = study_version or study_info.version
+        solver_version = study_version or study_info.version
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -262,7 +262,7 @@ class LauncherService:
         self.launchers[launcher].run_study(
             study_uuid,
             job_uuid,
-            str(study_version),
+            str(solver_version),
             launcher_parameters,
             params,
         )
