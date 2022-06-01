@@ -8,7 +8,7 @@ import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import { getStudyData, importFile } from "../../../../../services/api/study";
-import { MatrixType } from "../../../../../common/types";
+import { MatrixIndex, MatrixType } from "../../../../../common/types";
 import { Header, Root, Content } from "../DebugView/StudyDataView/style";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import NoContent from "../../../../common/page/NoContent";
@@ -16,9 +16,11 @@ import ImportDialog from "../../../../common/dialogs/ImportDialog";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import EditableMatrix from "../../../../common/EditableMatrix";
 import { StyledButton } from "./style";
-import { editMatrix } from "../../../../../services/api/matrix";
-import { slice } from "./utils";
-import { CellChange } from "./type";
+import {
+  editMatrix,
+  getStudyMatrixIndex,
+} from "../../../../../services/api/matrix";
+import { MatrixEditDTO } from "./type";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -27,9 +29,10 @@ function StudyMatrixView() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const [data, setData] = useState<MatrixType>();
-  const [loaded, setLoaded] = useState(false);
-  const [toggleView, setToggleView] = useState(true);
-  const [openImportDialog, setOpenImportDialog] = useState(false);
+  const [loaded, setLoaded] = useState<boolean>(false);
+  const [toggleView, setToggleView] = useState<boolean>(true);
+  const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
+  const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
   const url = "input/load/series/load_ii";
   const study = "5ed36c48-e655-45df-aae0-0ce7c6d0ff8e";
 
@@ -74,11 +77,28 @@ function StudyMatrixView() {
     }
   };
 
-  const handleUpdate = async (change: CellChange[], source: string) => {
+  const getMatrixIndex = async () => {
+    try {
+      const res = await getStudyMatrixIndex(study);
+      setMatrixIndex(res);
+    } catch (e) {
+      enqueueErrorSnackbar(
+        t("studymanager:failtoretrievedata"),
+        e as AxiosError
+      );
+    }
+  };
+
+  const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
       try {
-        const operations = slice(change);
-        await editMatrix(study, url, operations);
+        if (change.length > 10) {
+          throw new Error("trop");
+        }
+        await editMatrix(study, url, change);
+        enqueueSnackbar("ça a chargé", {
+          variant: "success",
+        });
       } catch (e) {
         enqueueErrorSnackbar("marche pas", e as AxiosError);
       }
@@ -87,6 +107,7 @@ function StudyMatrixView() {
 
   useEffect(() => {
     loadFileData();
+    getMatrixIndex();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -140,6 +161,7 @@ function StudyMatrixView() {
         {loaded && data && data.data?.length > 1 ? (
           <EditableMatrix
             matrix={data}
+            matrixIndex={matrixIndex}
             readOnly={false}
             toggleView={toggleView}
             onUpdate={handleUpdate}

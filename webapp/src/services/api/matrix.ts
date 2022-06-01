@@ -5,6 +5,7 @@ import {
   MatrixDataSetDTO,
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
+  MatrixIndex,
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
@@ -99,6 +100,13 @@ export const editMatrix = async (
     `/v1/studies/${sid}/matrix?path=${path}`,
     matrixEdit
   );
+  return res.data;
+};
+
+export const getStudyMatrixIndex = async (
+  sid: string
+): Promise<MatrixIndex> => {
+  const res = await client.get(`/v1/studies/${sid}/matrixindex`);
   return res.data;
 };
 

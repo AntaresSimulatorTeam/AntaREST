@@ -31,4 +31,12 @@ export interface CellChange {
   "3": string;
 }
 
+export enum MatrixLevel {
+  ANNUAL = "annual",
+  MONTHLY = "monthly",
+  WEEKLY = "weekly",
+  DAILY = "daily",
+  HOURLY = "hourly",
+}
+
 export default {};
