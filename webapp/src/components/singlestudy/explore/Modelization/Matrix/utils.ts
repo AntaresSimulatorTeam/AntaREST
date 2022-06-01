@@ -1,6 +1,6 @@
-import { CellChange, MatrixDTO, MatrixSlice, Operator } from "./type";
+import { CellChange, MatrixEditDTO, MatrixSlice, Operator } from "./type";
 
-export const Slicer = (tab: CellChange[]): MatrixDTO => {
+export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
   let newTab = {
     slices: [
       {
@@ -69,7 +69,7 @@ export const Slicer = (tab: CellChange[]): MatrixDTO => {
       },
     };
   }
-  return newTab;
+  return [newTab];
 };
 
 export default {};

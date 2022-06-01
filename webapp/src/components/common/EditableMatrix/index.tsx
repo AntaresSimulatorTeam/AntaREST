@@ -21,7 +21,7 @@ type ColumnsType = { title: string; readOnly: boolean };
 function EditableMatrix(props: PropTypes) {
   const { readOnly, matrix, toggleView, onUpdate } = props;
   const { data = [], columns = [], index = [] } = matrix;
-  const prependIndex = index.length > 0 && typeof index[0] === "string";
+  const prependIndex = index.length > 0;
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
 
@@ -36,7 +36,7 @@ function EditableMatrix(props: PropTypes) {
           width="100%"
           height="100%"
           stretchH="all"
-          className="test"
+          className="editableMatrix"
           colHeaders
           afterChange={(change, source) =>
             onUpdate && onUpdate(change || [], source)

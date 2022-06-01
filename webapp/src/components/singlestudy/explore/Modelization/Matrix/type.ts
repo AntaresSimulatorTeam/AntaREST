@@ -19,7 +19,7 @@ export interface MatrixOperation {
   value: number;
 }
 
-export interface MatrixDTO {
+export interface MatrixEditDTO {
   slices: MatrixSlice[];
   operation: MatrixOperation;
 }

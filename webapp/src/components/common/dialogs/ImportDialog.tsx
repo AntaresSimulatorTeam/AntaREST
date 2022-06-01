@@ -1,36 +1,32 @@
 import { useEffect, useState } from "react";
 import * as R from "ramda";
-import { AxiosError } from "axios";
 import { Box, LinearProgress, Paper, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import Dropzone from "react-dropzone";
-import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
-import { createStudy } from "../../redux/ducks/studies";
-import BasicDialog, { BasicDialogProps } from "../common/dialogs/BasicDialog";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 interface Props {
   open: BasicDialogProps["open"];
+  title: string;
+  dropzoneText: string;
   onClose: VoidFunction;
+  onImport: (
+    file: File,
+    onUploadProgress: (progress: number) => void
+  ) => Promise<void>;
 }
 
-function ImportStudyDialog(props: Props) {
-  const { open, onClose } = props;
-  const [t] = useTranslation();
+function ImportDialog(props: Props) {
+  const { open, title, dropzoneText, onClose, onImport } = props;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(-1);
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { enqueueSnackbar } = useSnackbar();
   const isMounted = useMountedState();
-  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (isUploading) {
       const listener = (e: BeforeUnloadEvent) => {
         // eslint-disable-next-line no-param-reassign
-        e.returnValue = "Study Import";
+        e.returnValue = "Import";
       };
 
       window.addEventListener("beforeunload", listener);
@@ -45,47 +41,31 @@ function ImportStudyDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDrop = (acceptedFiles: File[]) => {
+  const handleDrop = async (acceptedFiles: File[]) => {
     const fileToUpload = R.last(acceptedFiles);
 
     if (fileToUpload) {
       setIsUploading(true);
       setUploadProgress(0);
 
-      dispatch(
-        createStudy({
-          file: fileToUpload,
-          onUploadProgress: (progress) => {
-            if (isMounted()) {
-              setUploadProgress(progress);
-            }
-          },
-        })
-      )
-        .unwrap()
-        .then(() => {
-          enqueueSnackbar(
-            t("studies.success.import", {
-              uploadFile: fileToUpload.name,
-            }),
-            { variant: "success" }
-          );
+      try {
+        await onImport(fileToUpload, (progress) => {
           if (isMounted()) {
-            onClose();
-          }
-        })
-        .catch((err) => {
-          enqueueErrorSnackbar(
-            t("studies.error.import", { uploadFile: fileToUpload.name }),
-            err as AxiosError
-          );
-        })
-        .finally(() => {
-          if (isMounted()) {
-            setIsUploading(false);
-            setUploadProgress(-1);
+            setUploadProgress(progress);
           }
         });
+
+        if (isMounted()) {
+          onClose();
+        }
+      } catch {
+        // noop
+      } finally {
+        if (isMounted()) {
+          setIsUploading(false);
+          setUploadProgress(-1);
+        }
+      }
     }
   };
 
@@ -97,7 +77,7 @@ function ImportStudyDialog(props: Props) {
     <BasicDialog
       open={open}
       onClose={uploadProgress > -1 ? undefined : onClose}
-      title={t("studies.importnewstudy")}
+      title={title}
     >
       <Box sx={{ p: 2 }}>
         {uploadProgress > -1 ? (
@@ -116,7 +96,7 @@ function ImportStudyDialog(props: Props) {
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
                   <Typography sx={{ cursor: "pointer" }}>
-                    {t("studies.importhint")}
+                    {dropzoneText}
                   </Typography>
                 </div>
               </Paper>
@@ -128,4 +108,4 @@ function ImportStudyDialog(props: Props) {
   );
 }
 
-export default ImportStudyDialog;
+export default ImportDialog;
