@@ -1,5 +1,8 @@
 import { useState } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Checkbox,
   FormControl,
@@ -11,6 +14,7 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { StudyMetadata } from "../../../common/types";
 import { LaunchOptions, launchStudy } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -32,6 +36,7 @@ function LauncherModal(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({});
+  const [solverVersion, setSolverVersion] = useState<string>();
   const studyName = useAppSelector((state) => getStudy(state, studyId)?.name);
 
   ////////////////////////////////////////////////////////////////
@@ -39,7 +44,7 @@ function LauncherModal(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleLaunchClick = async () => {
-    launchStudy(studyId, options)
+    launchStudy(studyId, options, solverVersion)
       .then(() => {
         enqueueSnackbar(t("studies.studylaunched", { studyname: studyName }), {
           variant: "success",
@@ -247,6 +252,95 @@ function LauncherModal(props: Props) {
             label="Adequacy patch"
           />
         </FormGroup>
+        <Accordion>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="panel-advanced-parameters"
+            id="panel-advanced-parameters-header"
+          >
+            <Typography>Advanced</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <FormControl
+              sx={{
+                width: "100%",
+              }}
+            >
+              <TextField
+                id="launcher-option-other-options"
+                label={t("study.otherOptions")}
+                type="text"
+                value={options.other_options}
+                onChange={(e) =>
+                  handleChange("other_options", e.target.value.trim())
+                }
+                InputProps={{
+                  sx: {
+                    ".MuiOutlinedInput-root": {
+                      "&.MuiOutlinedInput-notchedOutline": {
+                        borderColor: `${theme.palette.primary.main} !important`,
+                      },
+                    },
+                    ".Mui-focused": {
+                      // borderColor: `${theme.palette.primary.main} !important`
+                    },
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderWidth: "1px",
+                      borderColor: `${theme.palette.text.secondary} !important`,
+                    },
+                  },
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: {
+                    ".MuiInputLabel-root": {
+                      color: theme.palette.text.secondary,
+                    },
+                    ".Mui-focused": {},
+                  },
+                }}
+              />
+            </FormControl>
+            <FormControl
+              sx={{
+                width: "100%",
+              }}
+            >
+              <TextField
+                id="launcher-version"
+                label={t("global.version")}
+                type="text"
+                value={solverVersion}
+                onChange={(e) => setSolverVersion(e.target.value.trim())}
+                InputProps={{
+                  sx: {
+                    ".MuiOutlinedInput-root": {
+                      "&.MuiOutlinedInput-notchedOutline": {
+                        borderColor: `${theme.palette.primary.main} !important`,
+                      },
+                    },
+                    ".Mui-focused": {
+                      // borderColor: `${theme.palette.primary.main} !important`
+                    },
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderWidth: "1px",
+                      borderColor: `${theme.palette.text.secondary} !important`,
+                    },
+                  },
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: {
+                    ".MuiInputLabel-root": {
+                      color: theme.palette.text.secondary,
+                    },
+                    ".Mui-focused": {},
+                  },
+                }}
+              />
+            </FormControl>
+          </AccordionDetails>
+        </Accordion>
       </Root>
     </BasicDialog>
   );

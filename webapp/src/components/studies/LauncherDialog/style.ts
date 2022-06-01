@@ -10,7 +10,8 @@ export const Root = styled(Box)(({ theme }) => ({
   alignItems: "flex-start",
   padding: theme.spacing(2),
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflowY: "scroll",
+  overflowX: "hidden",
 }));
 
 export default {};

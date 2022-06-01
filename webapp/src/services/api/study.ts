@@ -270,13 +270,20 @@ export interface LaunchOptions {
   output_suffix?: string;
   // eslint-disable-next-line camelcase
   archive_output?: boolean;
+  // eslint-disable-next-line camelcase
+  other_options?: string;
 }
 
 export const launchStudy = async (
   sid: string,
-  options: LaunchOptions = {}
+  options: LaunchOptions = {},
+  version: string | undefined = undefined
 ): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`, options);
+  const versionArg = version ? `?version=${version}` : "";
+  const res = await client.post(
+    `/v1/launcher/run/${sid}${versionArg}`,
+    options
+  );
   return res.data;
 };
 

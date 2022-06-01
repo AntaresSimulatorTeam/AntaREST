@@ -155,6 +155,7 @@
     "settings.error.tokenSave": "'{{0}}' token not saved",
     "settings.error.updateMaintenance": "Maintenance mode not updated",
     "study.runStudy": "Run study",
+    "study.otherOptions": "Other options",
     "study.xpansionMode": "Xpansion mode",
     "study.archiveOutputMode": "Archive mode",
     "study.useXpansionVersionR": "Use the R legacy Xpansion mode",

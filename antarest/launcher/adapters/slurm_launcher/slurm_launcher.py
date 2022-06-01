@@ -491,6 +491,10 @@ class SlurmLauncher(AbstractLauncher):
     ) -> argparse.Namespace:
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
+            if launcher_params.other_options:
+                launcher_args.other_options = re.sub(
+                    "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
+                )
             if launcher_params.xpansion:
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"
