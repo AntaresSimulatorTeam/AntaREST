@@ -25,7 +25,6 @@ function Areas() {
     studyId: study ? study.id : "",
     selector: (state) => state.areas,
   });
-  console.log({ areas, isLoading, error });
   const currentArea = useAppSelector(getCurrentAreaId);
   const dispatch = useAppDispatch();
   const selectedArea = useMemo(() => {
@@ -41,7 +40,6 @@ function Areas() {
     if (elm) {
       dispatch(setCurrentArea(areaName.toLowerCase()));
     }
-    // Put selected area on Redux
   };
 
   return (

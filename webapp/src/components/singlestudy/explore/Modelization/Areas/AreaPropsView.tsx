@@ -79,7 +79,6 @@ function AreaPropsView(props: PropsType) {
       }
       secondaryContent={<div />}
       onSearchFilterChange={(e) => setAreaNameFilter(e as string)}
-      onAdd={() => console.log("ADD")}
     />
   );
 }
