@@ -455,6 +455,7 @@ def test_kill_job(
         wait_mode=False,
         wait_time=0,
         xpansion_mode=None,
+        other_options=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),
