@@ -292,7 +292,7 @@ function StudyCard(props: Props) {
         <Box
           my={1}
           width="100%"
-          height="35px"
+          height="38px"
           display="flex"
           flexDirection="row"
           flexWrap="wrap"
