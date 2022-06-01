@@ -45,6 +45,9 @@ import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
 
+const CARD_TARGET_WIDTH = 500;
+const CARD_HEIGHT = 250;
+
 export interface StudiesListProps {
   studyIds: Array<StudyMetadata["id"]>;
 }
@@ -272,9 +275,10 @@ function StudiesList(props: StudiesListProps) {
         <AutoSizer>
           {({ height, width }) => {
             const paddedWidth = width - 10;
-            const columnWidth = paddedWidth / Math.round(paddedWidth / 400);
+            const columnWidth =
+              paddedWidth / Math.floor(paddedWidth / CARD_TARGET_WIDTH);
             const columnCount = Math.floor(paddedWidth / columnWidth);
-            const rowHeight = 260;
+            const rowHeight = CARD_HEIGHT;
             return (
               <FixedSizeGrid
                 key={JSON.stringify(studyIds)}
