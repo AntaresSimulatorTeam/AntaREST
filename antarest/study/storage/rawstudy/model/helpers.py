@@ -1,11 +1,17 @@
+import tempfile
 from typing import Optional, List, cast
+from zipfile import ZipFile, Path
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    DUPLICATE_KEYS,
+)
 
 
 class FileStudyHelpers:
@@ -13,13 +19,35 @@ class FileStudyHelpers:
     def get_config(study: FileStudy, output_id: Optional[str] = None) -> JSON:
         config_path = ["settings", "generaldata"]
         if output_id:
-            # TODO: unarchive output
-            config_path = [
-                "output",
-                output_id,
-                "about-the-study",
-                "parameters",
-            ]
+            if study.config.outputs[output_id].archived:
+                # TODO: remove this part of code when study tree zipfile support is implemented
+                output_path = study.config.output_path / f"{output_id}.zip"
+                tmp_dir = tempfile.TemporaryDirectory()
+                with ZipFile(output_path, "r") as zip_obj:
+                    zip_obj.extract(
+                        str(
+                            output_path / "about-the-study" / "parameters.ini"
+                        ),
+                        tmp_dir.name,
+                    )
+                    full_path_parameters = (
+                        Path(tmp_dir.name)
+                        / "about-the-study"
+                        / "parameters.ini"
+                    )
+                config = MultipleSameKeysIniReader(DUPLICATE_KEYS).read(
+                    full_path_parameters
+                )
+                tmp_dir.cleanup()
+            else:
+                config_path = [
+                    "output",
+                    output_id,
+                    "about-the-study",
+                    "parameters",
+                ]
+                config = study.tree.get(config_path)
+            return config
         return study.tree.get(config_path)
 
     @staticmethod

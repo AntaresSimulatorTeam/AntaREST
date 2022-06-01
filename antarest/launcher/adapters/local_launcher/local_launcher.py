@@ -11,7 +11,6 @@ from uuid import UUID
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
@@ -19,7 +18,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class LocalLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         version: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
         if self.config.launcher.local is None:
@@ -91,7 +90,7 @@ class LocalLauncher(AbstractLauncher):
         antares_solver_path: Path,
         study_uuid: str,
         uuid: UUID,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
     ) -> None:
         end = False
 
@@ -150,14 +149,10 @@ class LocalLauncher(AbstractLauncher):
                 time.sleep(1)
 
             if launcher_parameters is not None:
-                post_processing = launcher_parameters.get(
-                    "post_processing", False
-                )
                 if (
-                    isinstance(post_processing, bool) and post_processing
-                ) or launcher_parameters.get(
-                    "adequacy_patch", None
-                ) is not None:
+                    launcher_parameters.post_processing
+                    or launcher_parameters.adequacy_patch is not None
+                ):
                     subprocess.run(
                         ["Rscript", "post-processing.R"], cwd=export_path
                     )

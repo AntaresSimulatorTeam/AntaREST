@@ -54,6 +54,11 @@ from antarest.study.storage.utils import get_start_date
 logger = logging.getLogger(__name__)
 
 
+class OutputArchivedError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class StudyDownloader:
     """Service to manage studies download"""
 
@@ -329,7 +334,9 @@ class StudyDownloader:
         Returns: JSON content file
 
         """
-        # TODO: unarchive output
+        if file_study.config.outputs[output_id].archived:
+            raise OutputArchivedError(f"The output {output_id} is archived")
+
         url = f"/output/{output_id}"
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=get_start_date(file_study, output_id, data.level),

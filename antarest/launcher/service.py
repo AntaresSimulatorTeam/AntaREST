@@ -33,7 +33,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import concat_files
+from antarest.core.utils.utils import concat_files, zip_dir
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -46,6 +46,7 @@ from antarest.launcher.model import (
     LogType,
     JobLog,
     JobLogType,
+    LauncherParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -124,12 +125,12 @@ class LauncherService:
         job_id: str,
         study_id: str,
         study_exported_path: Path,
-        launcher_opts: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
             if (
-                launcher_opts is not None
-                and launcher_opts.get(ext, None) is not None
+                launcher_params is not None
+                and launcher_params.__getattribute__(ext) is not None
             ):
                 logger.info(
                     f"Applying extension {ext} after_export_flat_hook on job {job_id}"
@@ -138,7 +139,7 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_exported_path,
-                    launcher_opts.get(ext),
+                    launcher_params.__getattribute__(ext),
                 )
 
     def _before_import_hooks(
@@ -228,7 +229,7 @@ class LauncherService:
         self,
         study_uuid: str,
         launcher: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> str:
         job_uuid = self._generate_new_id()
@@ -251,7 +252,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=json.dumps(launcher_parameters)
+            launcher_params=launcher_parameters.json()
             if launcher_parameters
             else None,
         )
@@ -458,7 +459,7 @@ class LauncherService:
         job_id: str,
         study_id: str,
         target_path: Path,
-        launcher_params: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
     ) -> None:
         with db():
             self.append_log(
@@ -482,15 +483,15 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        additional_logs: Dict[str, List[Path]],
         output_suffix_name: Optional[str] = None,
     ) -> Optional[str]:
+        # Temporary import the output in a tmp space if the study can not be found
         logger.info(
             f"Trying to import output in fallback tmp space for job {job_id}"
         )
         output_name: Optional[str] = None
         job_output_path = self._get_job_output_fallback_path(job_id)
-        # TODO: does this copy a whole study or just the output ?
+
         try:
             os.mkdir(job_output_path)
             imported_output_path = job_output_path / "imported"
@@ -499,17 +500,10 @@ class LauncherService:
             else:
                 shutil.copy(output_path, imported_output_path)
 
-            fix_study_root(imported_output_path)
             output_name = extract_output_name(
                 imported_output_path, output_suffix_name
             )
             imported_output_path.rename(Path(job_output_path, output_name))
-            if additional_logs:
-                for log_name, log_paths in additional_logs.items():
-                    concat_files(
-                        log_paths,
-                        Path(job_output_path, output_name) / log_name,
-                    )
         except Exception as e:
             logger.error(
                 "Failed to import output in fallback mode", exc_info=e
@@ -539,6 +533,21 @@ class LauncherService:
                     output_true_path,
                     job_launch_params,
                 )
+
+                if additional_logs:
+                    for log_name, log_paths in additional_logs.items():
+                        concat_files(
+                            log_paths,
+                            output_path / log_name,
+                        )
+
+                if LauncherParametersDTO.parse_raw(
+                    job_result.launcher_params
+                ).archive_output:
+                    zip_path = output_path.parent / f"{output_path.name}.zip"
+                    zip_dir(output_path, zip_path=zip_path)
+                    output_path.unlink()
+
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
@@ -556,7 +565,6 @@ class LauncherService:
                     return self._import_fallback_output(
                         job_id,
                         output_true_path,
-                        additional_logs,
                         cast(
                             Optional[str],
                             job_launch_params.get(

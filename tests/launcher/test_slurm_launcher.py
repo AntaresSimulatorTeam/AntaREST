@@ -14,7 +14,6 @@ from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     WORKSPACE_LOCK_FILE_NAME,
@@ -22,8 +21,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     MAX_TIME_LIMIT,
     MIN_TIME_LIMIT,
 )
-from antarest.launcher.model import JobStatus, JobResult
-from antarest.study.model import StudyMetadataDTO, RawStudy
+from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from antarest.tools.admin_lib import clean_locks_from_config
 
 
@@ -176,49 +174,51 @@ def test_extra_parameters(launcher_config: Config):
         callbacks=Mock(),
         event_bus=Mock(),
     )
-    launcher_params = slurm_launcher._check_and_apply_launcher_params({})
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        LauncherParametersDTO()
+    )
     assert launcher_params.n_cpu == 1
     assert launcher_params.time_limit == 0
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"nb_cpu": 12}
+        LauncherParametersDTO(nb_cpu=12)
     )
     assert launcher_params.n_cpu == 12
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"nb_cpu": 48}
+        LauncherParametersDTO(nb_cpu=48)
     )
     assert launcher_params.n_cpu == 1
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 10}
+        LauncherParametersDTO(time_limit=10)
     )
     assert launcher_params.time_limit == MIN_TIME_LIMIT
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 999999999}
+        LauncherParametersDTO(time_limit=999999999)
     )
     assert launcher_params.time_limit == MAX_TIME_LIMIT - 3600
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 99999}
+        LauncherParametersDTO(time_limit=99999)
     )
     assert launcher_params.time_limit == 99999
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"xpansion": True}
+        LauncherParametersDTO(xpansion=True)
     )
     assert launcher_params.xpansion_mode
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"post_processing": True}
+        LauncherParametersDTO(post_processing=True)
     )
     assert launcher_params.post_processing
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"adequacy_patch": {}}
+        LauncherParametersDTO(adequacy_patch={})
     )
     assert launcher_params.post_processing
 

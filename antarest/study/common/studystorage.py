@@ -277,3 +277,11 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def initialize_additional_data(self, study: T) -> bool:
         raise NotImplementedError()
+
+    @abstractmethod
+    def archive_study_output(self, study: T, output_id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def unarchive_study_output(self, study: T, output_id: str) -> bool:
+        raise NotImplementedError()

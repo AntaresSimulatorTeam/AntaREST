@@ -11,7 +11,13 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.utils import extract_zip, StopWatch, assert_this
+from antarest.core.utils.utils import (
+    extract_zip,
+    StopWatch,
+    assert_this,
+    zip_dir,
+    unzip,
+)
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -190,7 +196,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
-                # TODO: unarchive output
                 file_metadata = FileStudyHelpers.get_config(
                     study_data, output_data.get_file()
                 )
@@ -216,6 +221,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                         referenceStatus=(reference == output),
                         synchronized=False,
                         status="",
+                        archived=output_data.archived,
                     )
                 )
         return results
@@ -346,3 +352,22 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             horizon=horizon, author=author, patch=patch.json()
         )
         return study_additional_data
+
+    def archive_study_output(self, study: T, output_id: str) -> bool:
+        try:
+            zip_dir(
+                study.path / "output" / output_id,
+                study.path / "output" / f"{output_id}.zip",
+            )
+            remove_from_cache(self.cache, study.id)
+            return True
+        except Exception:
+            return False
+
+    def unarchive_study_output(self, study: T, output_id: str) -> bool:
+        try:
+            unzip()
+            remove_from_cache(self.cache, study.id)
+            return True
+        except Exception:
+            return False

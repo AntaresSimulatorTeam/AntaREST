@@ -523,6 +523,60 @@ def create_study_routes(
         )
         return content
 
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/_archive",
+        tags=[APITag.study_outputs],
+        summary="Archive output",
+    )
+    def archive_output(
+        study_id: str,
+        output_id: str,
+        use_task: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Archiving of the output {output_id} of the study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+
+        content = study_service.archive_output(
+            study_id,
+            output_id,
+            use_task,
+            params,
+        )
+        return content
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/_unarchive",
+        tags=[APITag.study_outputs],
+        summary="Unarchive output",
+    )
+    def unarchive_output(
+        study_id: str,
+        output_id: str,
+        use_task: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Unarchiving of the output {output_id} of the study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+
+        content = study_service.unarchive_output(
+            study_id,
+            output_id,
+            use_task,
+            params,
+        )
+        return content
+
     @bp.get(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",

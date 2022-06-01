@@ -9,7 +9,6 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.model import (
-    MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadLevelDTO,
     ExportFormat,
@@ -226,6 +225,12 @@ def test_output_downloads_export(tmp_path: Path):
 def test_create_matrix_index(
     config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
 ):
+    config_mock = Mock()
+    config_mock.archived = False
+    output_id = "some output"
+
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
-    assert get_start_date(file_study, "some output", level) == expected
+    file_study.config.outputs = {output_id: config_mock}
+
+    assert get_start_date(file_study, output_id, level) == expected

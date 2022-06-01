@@ -272,6 +272,7 @@ class StudySimResultDTO(BaseModel):
     referenceStatus: bool
     synchronized: bool
     status: str
+    archived: bool
 
 
 class StudyDownloadType(str, enum.Enum):
