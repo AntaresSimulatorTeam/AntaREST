@@ -1420,7 +1420,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url, data=new)
+        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
