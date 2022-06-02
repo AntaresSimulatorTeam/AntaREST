@@ -497,13 +497,15 @@ class LauncherService:
             imported_output_path = job_output_path / "imported"
             if output_path.suffix != ".zip":
                 shutil.copytree(output_path, imported_output_path)
+                output_name = extract_output_name(
+                    imported_output_path, output_suffix_name
+                )
+                imported_output_path.rename(Path(job_output_path, output_name))
             else:
-                shutil.copy(output_path, imported_output_path)
+                shutil.copy(
+                    output_path, job_output_path / f"{output_name}.zip"
+                )
 
-            output_name = extract_output_name(
-                imported_output_path, output_suffix_name
-            )
-            imported_output_path.rename(Path(job_output_path, output_name))
         except Exception as e:
             logger.error(
                 "Failed to import output in fallback mode", exc_info=e
@@ -544,13 +546,16 @@ class LauncherService:
                 if LauncherParametersDTO.parse_raw(
                     job_result.launcher_params or "{}"
                 ).archive_output:
-                    zip_path = output_path.parent / f"{output_path.name}.zip"
-                    zip_dir(output_path, zip_path=zip_path)
+                    zip_path = (
+                        output_true_path.parent
+                        / f"{output_true_path.name}.zip"
+                    )
+                    zip_dir(output_true_path, zip_path=zip_path)
 
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
-                        output_true_path,
+                        output_true_path,  # TODO:
                         RequestParameters(DEFAULT_ADMIN_USER),
                         additional_logs,
                         cast(
@@ -563,7 +568,7 @@ class LauncherService:
                 except StudyNotFoundError:
                     return self._import_fallback_output(
                         job_id,
-                        output_true_path,
+                        output_true_path,  # TODO:
                         cast(
                             Optional[str],
                             job_launch_params.get(
@@ -590,6 +595,7 @@ class LauncherService:
 
             def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
+                    #
                     shutil.make_archive(
                         base_name=os.path.splitext(export_path)[0],
                         format="zip",

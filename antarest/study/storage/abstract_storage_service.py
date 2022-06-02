@@ -321,6 +321,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         path_output = Path(metadata.path) / "output" / output_id
         path_output_zip = Path(metadata.path) / "output" / f"{output_id}.zip"
+
+        if path_output_zip.exists():
+            return path_output_zip
+
         if not path_output.exists() and not path_output_zip.exists():
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
