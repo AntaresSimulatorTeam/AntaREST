@@ -156,6 +156,7 @@
     "settings.error.updateMaintenance": "Erreur lors du changement du status de maintenance",
     "study.runStudy": "Lancer l'étude",
     "study.xpansionMode": "Mode Xpansion",
+    "study.archiveOutputMode": "Mode archivé",
     "study.useXpansionVersionR": "Utiliser la version R d'Xpansion",
     "study.postProcessing": "Post processing",
     "study.timeLimit": "Limite de temps",

@@ -156,6 +156,7 @@
     "settings.error.updateMaintenance": "Maintenance mode not updated",
     "study.runStudy": "Run study",
     "study.xpansionMode": "Xpansion mode",
+    "study.archiveOutputMode": "Archive mode",
     "study.useXpansionVersionR": "Use the R legacy Xpansion mode",
     "study.postProcessing": "Post processing",
     "study.timeLimit": "Time limit",
