@@ -11,14 +11,10 @@ import {
   getRolesForGroup,
   updateGroup,
 } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
-
-/**
- * Types
- */
+import { SubmitHandlerData } from "../../../common/inputs/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -33,10 +29,6 @@ interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
   editGroup: (user: GroupEdit) => void;
   reloadFetchGroups: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function UpdateGroupDialog(props: Props) {
   const {

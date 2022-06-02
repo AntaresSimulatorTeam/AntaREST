@@ -28,25 +28,15 @@ import {
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
 } from "../../../utils";
-import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RoleType, UserDTO } from "../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../services/api/user";
 import { getAuthUser } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { FormObj } from "../../../../common/inputs/Form";
 
-/**
- * Types
- */
-
-type Props = FormObj;
-
-/**
- * Component
- */
-
-function GroupForm(props: Props) {
+function GroupForm(props: FormObj) {
   const {
     control,
     register,
