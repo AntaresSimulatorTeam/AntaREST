@@ -33,7 +33,7 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../services/api/user";
 import { UserFormDialogProps } from ".";
-import { FormObj } from "../../../../common/inputs/Form";
+import { FormObj } from "../../../../common/Form";
 
 interface Props extends FormObj {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];

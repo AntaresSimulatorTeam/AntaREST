@@ -34,7 +34,7 @@ import usePromise from "../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../services/api/user";
 import { getAuthUser } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { FormObj } from "../../../../common/inputs/Form";
+import { FormObj } from "../../../../common/Form";
 
 function GroupForm(props: FormObj) {
   const {

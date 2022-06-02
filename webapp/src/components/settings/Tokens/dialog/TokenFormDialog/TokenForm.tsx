@@ -31,7 +31,7 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
 import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { FormObj } from "../../../../common/inputs/Form";
+import { FormObj } from "../../../../common/Form";
 
 interface Props extends Omit<FormObj, "defaultValues"> {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];

@@ -11,8 +11,8 @@ import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import { Button } from "@mui/material";
 import { useUpdateEffect } from "react-use";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BackdropLoading from "../loaders/BackdropLoading";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import BackdropLoading from "./loaders/BackdropLoading";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues

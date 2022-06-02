@@ -4,7 +4,7 @@ import { FieldValues, FormState } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
-import Form, { FormProps } from "../inputs/Form";
+import Form, { FormProps } from "../Form";
 
 type SuperType<TFieldValues extends FieldValues, TContext> = Omit<
   BasicDialogProps,
