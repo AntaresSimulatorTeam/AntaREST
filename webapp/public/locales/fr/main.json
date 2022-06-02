@@ -226,7 +226,6 @@
     "study.error.fetchComments": "Échec lors de la récupération des commentaires",
     "study.error.commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",
     "study.error.studyIdCopy": "Erreur lors de la copie de l'identifiant de l'étude",
-    "study.error.studyId": "Erreur lors du chargement de l'étude. Vérifiez que l'Id de l'étude est correcte !",
     "study.error.jobIdCopy": "Erreur lors de la copie de l'identifiant de la tâche",
     "study.error.createArea": "Échec lors de la création de la zone",
     "study.error.createLink": "Échec lors de la création du lien",

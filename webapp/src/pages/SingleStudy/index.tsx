@@ -25,7 +25,7 @@ import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
 import { addWsMessageListener } from "../../services/webSockets";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
-import NoContent from "../../components/common/page/NoContent";
+import SimpleLoader from "../../components/common/loaders/SimpleLoader";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -112,8 +112,7 @@ function SingleStudy(props: Props) {
     return addWsMessageListener(listener);
   }, [listener]);
 
-  if (study === undefined)
-    return <NoContent title={t("study.error.studyId")} />;
+  if (study === undefined) return <SimpleLoader />;
 
   return (
     <Box
