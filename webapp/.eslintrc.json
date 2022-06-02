@@ -72,6 +72,7 @@
     "react/jsx-props-no-spreading": "off",
     "react/jsx-uses-react": "off",
     "react/prop-types": "off",
+    "react/require-default-props": "off",
     "react-hooks/exhaustive-deps": "warn",
     "spaced-comment": [
       "error",
