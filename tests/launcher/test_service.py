@@ -577,11 +577,11 @@ def test_manage_output(tmp_path: Path):
     ]
     with pytest.raises(JobNotFound):
         launcher_service._import_output(
-            job_id, output_path, {"out.log": additional_log}
+            job_id, output_path, {"out.log": [additional_log]}
         )
 
     launcher_service._import_output(
-        job_id, output_path, {"out.log": additional_log}
+        job_id, output_path, {"out.log": [additional_log]}
     )
     assert not launcher_service._get_job_output_fallback_path(job_id).exists()
     launcher_service.study_service.import_output.assert_called()

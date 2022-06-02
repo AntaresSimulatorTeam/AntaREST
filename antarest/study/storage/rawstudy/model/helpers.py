@@ -1,6 +1,7 @@
 import tempfile
+from pathlib import Path
 from typing import Optional, List, cast
-from zipfile import ZipFile, Path
+from zipfile import ZipFile
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -21,6 +22,8 @@ class FileStudyHelpers:
         if output_id:
             if study.config.outputs[output_id].archived:
                 # TODO: remove this part of code when study tree zipfile support is implemented
+                if study.config.output_path is None:
+                    raise TypeError
                 output_path = study.config.output_path / f"{output_id}.zip"
                 tmp_dir = tempfile.TemporaryDirectory()
                 with ZipFile(output_path, "r") as zip_obj:

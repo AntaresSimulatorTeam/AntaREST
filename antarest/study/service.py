@@ -2102,6 +2102,7 @@ class StudyService:
             self.storage_service.get_storage(study).archive_study_output(
                 study, output_id
             )
+            return None
         else:
             task_name = f"Archive output {study_id}/{output_id}"
 
@@ -2162,6 +2163,7 @@ class StudyService:
                     f"Output {output_id} of study {study_id} unarchived in {x}s"
                 )
             )
+            return None
 
         else:
             task_name = f"Unarchive output {study_id}/{output_id}"

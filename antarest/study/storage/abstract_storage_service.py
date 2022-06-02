@@ -366,7 +366,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
     def unarchive_study_output(self, study: T, output_id: str) -> bool:
         try:
-            unzip()
+            unzip(
+                study.path / "output" / output_id,
+                study.path / "output" / f"{output_id}.zip",
+            )
             remove_from_cache(self.cache, study.id)
             return True
         except Exception:

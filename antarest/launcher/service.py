@@ -542,11 +542,10 @@ class LauncherService:
                         )
 
                 if LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params
+                    job_result.launcher_params or "{}"
                 ).archive_output:
                     zip_path = output_path.parent / f"{output_path.name}.zip"
                     zip_dir(output_path, zip_path=zip_path)
-                    output_path.unlink()
 
                 try:
                     return self.study_service.import_output(
