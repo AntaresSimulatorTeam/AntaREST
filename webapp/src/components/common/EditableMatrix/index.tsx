@@ -1,21 +1,20 @@
 import { useEffect, useState, useRef } from "react";
+import _ from "lodash";
 import HotTable, { HotColumn } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
-import moment from "moment";
-import { MatrixIndex, MatrixType } from "../../../common/types";
+// eslint-disable-next-line import/no-unresolved
+import { CellChange } from "handsontable/common";
+import { MatrixIndex, MatrixEditDTO, MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
 import { Root, StyledHotTable } from "./style";
 import "./style.css";
-import {
-  CellChange,
-  MatrixEditDTO,
-} from "../../singlestudy/explore/Modelization/Matrix/type";
-import { slice } from "../../singlestudy/explore/Modelization/Matrix/utils";
+import { createDateFromIndex, slice } from "./utils";
 
 interface PropTypes {
   matrix: MatrixType;
   matrixIndex?: MatrixIndex;
+  matrixTime: boolean;
   readOnly: boolean;
   toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
@@ -25,9 +24,10 @@ type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
 
 function EditableMatrix(props: PropTypes) {
-  const { readOnly, matrix, matrixIndex, toggleView, onUpdate } = props;
+  const { readOnly, matrix, matrixIndex, matrixTime, toggleView, onUpdate } =
+    props;
   const { data = [], columns = [], index = [] } = matrix;
-  const prependIndex = index.length > 0;
+  const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
   const hotTableComponent = useRef<HotTable>(null);
@@ -43,7 +43,6 @@ function EditableMatrix(props: PropTypes) {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "a" && e.ctrlKey) {
-      // CTRL + A
       e.preventDefault();
       e.stopImmediatePropagation();
       if (hotTableComponent.current) {
@@ -71,6 +70,9 @@ function EditableMatrix(props: PropTypes) {
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
+          colWidths={
+            prependIndex && matrixTime && columns.length <= 10 ? [120] : [220]
+          }
         >
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />
@@ -81,29 +83,18 @@ function EditableMatrix(props: PropTypes) {
     return <MatrixGraphView matrix={matrix} />;
   };
 
-  const createDateFromIndex = (
-    truc: string | number,
-    startDate: string
-  ): string | number => {
-    const date = moment
-      .utc(startDate)
-      .add(truc, "h")
-      .format("(ww) - ddd DD MMM HH:mm");
-    return `${truc.toString().padStart(4, "0")} ${date}`;
-  };
-
   useEffect(() => {
     const columnsData: Array<ColumnsType> = (
-      prependIndex && matrixIndex ? [{ title: "Time", readOnly: true }] : []
+      prependIndex ? [{ title: "Time", readOnly: true }] : []
     ).concat(columns.map((title) => ({ title: String(title), readOnly })));
     setColumns(columnsData);
 
     const tmpData = data.map((row, i) => {
       if (prependIndex) {
-        if (matrixIndex) {
-          return [createDateFromIndex(index[i], matrixIndex.start_date)].concat(
-            row
-          );
+        if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
+          return [
+            createDateFromIndex(index[i], matrixIndex.start_date, index),
+          ].concat(row);
         }
         return [index[i]].concat(row);
       }

@@ -1,17 +1,20 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { AxiosError } from "axios";
 import { Code } from "./styles";
-import MatrixView from "../../MatrixView";
-import { MatrixType } from "../../../../common/types";
+import { MatrixType, MatrixIndex } from "../../../../common/types";
 import OkDialog from "../OkDialog";
+import EditableMatrix from "../../EditableMatrix";
+import { getStudyMatrixIndex } from "../../../../services/api/matrix";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 
 interface Props {
+  studyId: string;
   data: {
     filename: string;
     content: string | MatrixTypeWithId;
@@ -23,7 +26,9 @@ interface Props {
 function DataViewerDialog(props: PropsWithChildren<Props>) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { data, onClose, isMatrix } = props;
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { studyId, data, onClose, isMatrix } = props;
+  const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
 
   const copyId = (matrixId: string): void => {
     try {
@@ -35,6 +40,23 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
       enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
     }
   };
+
+  const getMatrixIndex = async () => {
+    try {
+      const res = await getStudyMatrixIndex(studyId);
+      setMatrixIndex(res);
+    } catch (e) {
+      enqueueErrorSnackbar(
+        t("matrix.error.failedtoretrieveindex"),
+        e as AxiosError
+      );
+    }
+  };
+
+  useEffect(() => {
+    getMatrixIndex();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyId]);
 
   return (
     <OkDialog
@@ -75,7 +97,12 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
     >
       {isMatrix === true ? (
         <Box width="100%" height="100%" p={2}>
-          <MatrixView matrix={data.content as MatrixType} readOnly />
+          <EditableMatrix
+            matrix={data.content as MatrixType}
+            matrixTime
+            matrixIndex={matrixIndex}
+            readOnly
+          />
         </Box>
       ) : (
         <Code>

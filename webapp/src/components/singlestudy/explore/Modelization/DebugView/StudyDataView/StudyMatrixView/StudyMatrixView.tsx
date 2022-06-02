@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -7,24 +7,37 @@ import { Box, Typography, Divider, ButtonGroup, Button } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-import { getStudyData, importFile } from "../../../../../services/api/study";
-import { MatrixIndex, MatrixType } from "../../../../../common/types";
-import { Header, Root, Content } from "../DebugView/StudyDataView/style";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import NoContent from "../../../../common/page/NoContent";
-import ImportDialog from "../../../../common/dialogs/ImportDialog";
-import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import EditableMatrix from "../../../../common/EditableMatrix";
+import {
+  getStudyData,
+  importFile,
+} from "../../../../../../../services/api/study";
+import {
+  MatrixIndex,
+  MatrixType,
+  MatrixEditDTO,
+} from "../../../../../../../common/types";
+import { Header, Root, Content } from "../style";
 import { StyledButton } from "./style";
+import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import NoContent from "../../../../../../common/page/NoContent";
+import ImportDialog from "../../../../../../common/dialogs/ImportDialog";
+import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
+import EditableMatrix from "../../../../../../common/EditableMatrix";
 import {
   editMatrix,
   getStudyMatrixIndex,
-} from "../../../../../services/api/matrix";
-import { MatrixEditDTO } from "./type";
+} from "../../../../../../../services/api/matrix";
 
 const logErr = debug("antares:createimportform:error");
 
-function StudyMatrixView() {
+interface PropTypes {
+  study: string;
+  url: string;
+  filterOut: Array<string>;
+}
+
+function StudyMatrixView(props: PropTypes) {
+  const { study, url, filterOut } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -33,14 +46,14 @@ function StudyMatrixView() {
   const [toggleView, setToggleView] = useState<boolean>(true);
   const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
   const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
-  const url = "input/load/series/load_ii";
-  const study = "5ed36c48-e655-45df-aae0-0ce7c6d0ff8e";
+  const [isEditable, setEditable] = useState<boolean>(true);
+  const [formatedPath, setFormatedPath] = useState<string>("");
 
   const loadFileData = async () => {
     setData(undefined);
     setLoaded(false);
     try {
-      const res = await getStudyData(study, "/input/load/series/load_ii");
+      const res = await getStudyData(study, url);
       if (typeof res === "string") {
         const fixed = res.replace(/NaN/g, '"NaN"');
         setData(JSON.parse(fixed));
@@ -48,16 +61,7 @@ function StudyMatrixView() {
         setData(res);
       }
     } catch (e) {
-      if (axios.isAxiosError(e)) {
-        enqueueErrorSnackbar(
-          t("studymanager:failtoretrievedata"),
-          e as AxiosError
-        );
-      } else {
-        enqueueSnackbar(t("studymanager:failtoretrievedata"), {
-          variant: "error",
-        });
-      }
+      enqueueErrorSnackbar(t("data.error.matrix"), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -65,12 +69,12 @@ function StudyMatrixView() {
 
   const onImport = async (file: File) => {
     try {
-      await importFile(file, study, url);
+      await importFile(file, study, formatedPath);
     } catch (e) {
       logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("studymanager:failtosavedata"), e as AxiosError);
+      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
     } finally {
-      enqueueSnackbar(t("studymanager:savedatasuccess"), {
+      enqueueSnackbar(t("variants.success.import"), {
         variant: "success",
       });
       loadFileData();
@@ -82,10 +86,7 @@ function StudyMatrixView() {
       const res = await getStudyMatrixIndex(study);
       setMatrixIndex(res);
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("studymanager:failtoretrievedata"),
-        e as AxiosError
-      );
+      enqueueErrorSnackbar(t("matrix.failedtoretrieveindex"), e as AxiosError);
     }
   };
 
@@ -93,23 +94,35 @@ function StudyMatrixView() {
     if (source !== "loadData" && source !== "updateData") {
       try {
         if (change.length > 10) {
-          throw new Error("trop");
+          throw new Error(t("matrix.error.tooManyUpdates"));
         }
-        await editMatrix(study, url, change);
-        enqueueSnackbar("ça a chargé", {
+        await editMatrix(study, formatedPath, change);
+        enqueueSnackbar(t("matrix.success.matrixUpdate"), {
           variant: "success",
         });
       } catch (e) {
-        enqueueErrorSnackbar("marche pas", e as AxiosError);
+        enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), e as AxiosError);
       }
     }
   };
 
   useEffect(() => {
+    const urlParts = url.split("/");
+    const tmpUrl = urlParts.filter((item) => item);
+    setFormatedPath(tmpUrl.join("/"));
+    if (tmpUrl.length > 0) {
+      setEditable(!filterOut.includes(tmpUrl[0]));
+    }
+    if (urlParts.length < 2) {
+      enqueueSnackbar(t("studies.error.retrieveData"), {
+        variant: "error",
+      });
+      return;
+    }
     loadFileData();
     getMatrixIndex();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [url, filterOut, enqueueSnackbar, t]);
 
   return (
     <Root>
@@ -126,7 +139,7 @@ function StudyMatrixView() {
             {t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {loaded && data && data.data?.length > 1 && (
+            {loaded && data && data.columns?.length > 1 && (
               <ButtonGroup sx={{ mr: 2 }} variant="contained">
                 <StyledButton
                   onClick={
@@ -146,30 +159,33 @@ function StudyMatrixView() {
                 </StyledButton>
               </ButtonGroup>
             )}
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<GetAppOutlinedIcon />}
-              onClick={() => setOpenImportDialog(true)}
-            >
-              {t("global.import")}
-            </Button>
+            {isEditable && (
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<GetAppOutlinedIcon />}
+                onClick={() => setOpenImportDialog(true)}
+              >
+                {t("global.import")}
+              </Button>
+            )}
           </Box>
         </Header>
-        <Divider sx={{ width: "100%", mt: 2, mb: 4 }} />
+        <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
         {!loaded && <SimpleLoader />}
-        {loaded && data && data.data?.length > 1 ? (
+        {loaded && data && data.columns?.length > 1 ? (
           <EditableMatrix
             matrix={data}
+            matrixTime
             matrixIndex={matrixIndex}
-            readOnly={false}
+            readOnly={!isEditable}
             toggleView={toggleView}
             onUpdate={handleUpdate}
           />
         ) : (
           loaded && (
             <NoContent
-              title="matrix.matrixEmpty"
+              title="matrix.message.matrixEmpty"
               callToAction={
                 <Button
                   variant="outlined"
@@ -188,7 +204,7 @@ function StudyMatrixView() {
         <ImportDialog
           open={openImportDialog}
           title={t("matrix.importnewmatrix")}
-          dropzoneText={t("matrix.importhint")}
+          dropzoneText={t("matrix.message.importhint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={onImport}
         />

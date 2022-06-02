@@ -130,6 +130,9 @@ function FileTable(props: PropType) {
                 <TableRow
                   key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
+                    "&> th": {
+                      padding: theme.spacing(1),
+                    },
                     "&> th, >td": {
                       borderBottom: "solid 1px",
                       borderColor: theme.palette.divider,

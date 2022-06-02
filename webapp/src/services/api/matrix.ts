@@ -6,10 +6,10 @@ import {
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
   MatrixIndex,
+  MatrixEditDTO,
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
-import { MatrixEditDTO } from "../../components/singlestudy/explore/Modelization/Matrix/type";
 
 export const getMatrixList = async (
   name = "",
