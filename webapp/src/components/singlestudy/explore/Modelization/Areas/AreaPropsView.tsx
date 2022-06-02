@@ -1,86 +1,56 @@
-import {
-  Box,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
-import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Area } from "../../../../../common/types";
 import PropertiesView from "../../../../common/PropertiesView";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { getStudyAreas } from "../../../../../redux/selectors";
+import ListElement from "../../common/ListElement";
 
 interface PropsType {
-  areas: Array<Area> | undefined;
+  studyId: string;
   onClick: (name: string) => void;
-  currentArea: string | undefined;
+  currentArea?: string;
 }
 function AreaPropsView(props: PropsType) {
-  const { areas, onClick, currentArea } = props;
+  const { onClick, currentArea, studyId } = props;
+  const areas = useAppSelector((state) => getStudyAreas(state, studyId));
   const [areaNameFilter, setAreaNameFilter] = useState<string>();
   const [filteredAreas, setFilteredAreas] = useState<Array<Area>>(areas || []);
 
-  const filter = useCallback(
-    (currentName?: string): Array<Area> => {
+  useEffect(() => {
+    const filter = (): Array<Area> => {
       if (areas) {
         return areas.filter(
           (s) =>
-            !currentName || s.name.search(new RegExp(currentName, "i")) !== -1
+            !areaNameFilter ||
+            s.name.search(new RegExp(areaNameFilter, "i")) !== -1
         );
       }
       return [];
-    },
-    [areas]
-  );
+    };
+    setFilteredAreas(filter());
+  }, [areas, areaNameFilter]);
 
-  useEffect(() => {
-    setFilteredAreas(filter(areaNameFilter));
-  }, [filter, areas, areaNameFilter]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <PropertiesView
       mainContent={
-        <Box
-          width="100%"
-          flexGrow={1}
-          flexShrink={1}
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          alignItems="center"
-          overflow="auto"
-        >
-          <List sx={{ width: "95%" }}>
-            {filteredAreas?.map((elm) => (
-              <ListItemButton
-                selected={currentArea === elm.name}
-                onClick={() => onClick(elm.name)}
-                key={elm.name}
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <ListItemText>{elm.name}</ListItemText>
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    width: "auto",
-                    p: 0,
-                    display: "flex",
-                  }}
-                >
-                  <ArrowRightOutlinedIcon color="primary" />
-                </ListItemIcon>
-              </ListItemButton>
-            ))}
-          </List>
-        </Box>
+        <ListElement
+          list={filteredAreas}
+          currentElement={currentArea}
+          setSelectedItem={(elm) => onClick(elm.name)}
+        />
       }
       secondaryContent={<div />}
       onSearchFilterChange={(e) => setAreaNameFilter(e as string)}
     />
   );
 }
+
+AreaPropsView.defaultProps = {
+  currentArea: undefined,
+};
 
 export default AreaPropsView;

@@ -13,31 +13,31 @@ function AreasTab() {
     () => [
       {
         label: t("study.modelization.properties"),
-        path: `/studies/${study?.id}/explore/modelization/area/properties`,
+        path: `/studies/${study.id}/explore/modelization/area/properties`,
       },
       {
         label: t("study.modelization.load"),
-        path: `/studies/${study?.id}/explore/modelization/area/load`,
+        path: `/studies/${study.id}/explore/modelization/area/load`,
       },
       {
         label: t("study.modelization.thermal"),
-        path: `/studies/${study?.id}/explore/modelization/area/thermal`,
+        path: `/studies/${study.id}/explore/modelization/area/thermal`,
       },
       {
         label: t("study.modelization.hydro"),
-        path: `/studies/${study?.id}/explore/modelization/area/hydro`,
+        path: `/studies/${study.id}/explore/modelization/area/hydro`,
       },
       {
         label: t("study.modelization.wind"),
-        path: `/studies/${study?.id}/explore/modelization/area/wind`,
+        path: `/studies/${study.id}/explore/modelization/area/wind`,
       },
       {
         label: t("study.modelization.reserve"),
-        path: `/studies/${study?.id}/explore/modelization/area/reserve`,
+        path: `/studies/${study.id}/explore/modelization/area/reserve`,
       },
       {
         label: t("study.modelization.miscGen"),
-        path: `/studies/${study?.id}/explore/modelization/area/miscGen`,
+        path: `/studies/${study.id}/explore/modelization/area/miscGen`,
       },
     ],
     [study]

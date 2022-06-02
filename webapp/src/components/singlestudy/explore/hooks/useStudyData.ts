@@ -3,7 +3,7 @@ import {
   FileStudyTreeConfigDTO,
   StudyMetadata,
 } from "../../../../common/types";
-import { createStudyData } from "../../../../redux/ducks/studydata";
+import { createStudyData } from "../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudyData } from "../../../../redux/selectors";

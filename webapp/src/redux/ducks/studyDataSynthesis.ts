@@ -27,7 +27,7 @@ const initialState = studyDataAdapter.getInitialState({
   currentArea: "",
 }) as StudyDataState;
 
-const n = makeActionName("studydata");
+const n = makeActionName("studyDataSynthesis");
 
 ////////////////////////////////////////////////////////////////
 // Action Creators
@@ -47,9 +47,9 @@ export const createStudyData = createAsyncThunk<
   AppAsyncThunkConfig
 >(
   n("CREATE_STUDY_DATA"),
-  async (arg, { dispatch, getState, rejectWithValue }) => {
+  async (studyId, { dispatch, getState, rejectWithValue }) => {
     try {
-      const studyData = await api.getStudySynthesis(arg);
+      const studyData = await api.getStudySynthesis(studyId);
       const areas = Object.keys(studyData.areas);
       if (areas.length > 0) dispatch(setCurrentArea(areas[0].toLowerCase()));
       return studyData;
@@ -64,7 +64,6 @@ export const setStudyData = createAsyncThunk<
   WSMessage<GenericInfo>,
   AppAsyncThunkConfig
 >(n("SET_STUDY_DATA"), (event, { rejectWithValue }) => {
-  // eslint-disable-next-line camelcase
   const { id } = event.payload;
   return api.getStudySynthesis(id as string).catch(rejectWithValue);
 });

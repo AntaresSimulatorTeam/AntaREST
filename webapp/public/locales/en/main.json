@@ -226,6 +226,7 @@
     "study.error.fetchComments": "Failed to fetch comments",
     "study.error.commentsNotSaved": "Comments not saved",
     "study.error.studyIdCopy": "Failed to copy study id",
+    "study.error.studyId": "Failed to fetch the study. Please verify the study Id !",
     "study.error.jobIdCopy": "Failed to copy job id",
     "study.error.createArea": "Failed to create the area",
     "study.error.createLink": "Failed to create the link",

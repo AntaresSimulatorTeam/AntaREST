@@ -17,7 +17,7 @@ import {
   setMessageInfo,
   setWebSocketConnected,
 } from "../redux/ducks/ui";
-import { setStudyData } from "../redux/ducks/studydata";
+import { setStudyData } from "../redux/ducks/studyDataSynthesis";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");

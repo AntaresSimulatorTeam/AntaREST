@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { Box } from "@mui/material";
 import * as R from "ramda";
-import { ReactNode, useMemo } from "react";
+import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../common/types";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
@@ -13,26 +12,25 @@ import useStudyData from "../../hooks/useStudyData";
 import { getCurrentAreaId } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
-import { setCurrentArea } from "../../../../../redux/ducks/studydata";
+import { setCurrentArea } from "../../../../../redux/ducks/studyDataSynthesis";
 
 function Areas() {
-  const { study } = useOutletContext<{ study?: StudyMetadata }>();
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const {
     value: areas,
     error,
     isLoading,
   } = useStudyData({
-    studyId: study ? study.id : "",
+    studyId: study.id,
     selector: (state) => state.areas,
   });
   const currentArea = useAppSelector(getCurrentAreaId);
   const dispatch = useAppDispatch();
-  const selectedArea = useMemo(() => {
-    if (areas !== undefined && currentArea) {
-      return areas[currentArea];
-    }
-    return undefined;
-  }, [currentArea, areas]);
+  const selectedArea = areas && currentArea ? areas[currentArea] : undefined;
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleAreaClick = (areaName: string): void => {
     if (areas === undefined) return;
@@ -42,13 +40,17 @@ function Areas() {
     }
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <SplitLayoutView
       left={
         <Box width="100%" height="100%">
           {areas !== undefined && !isLoading && (
             <AreaPropsView
-              areas={Object.keys(areas).map((item) => areas[item])}
+              studyId={study.id}
               onClick={handleAreaClick}
               currentArea={
                 selectedArea !== undefined ? selectedArea.name : undefined
@@ -58,23 +60,23 @@ function Areas() {
         </Box>
       }
       right={
-        R.cond([
-          // Loading
-          [
-            () => selectedArea !== undefined && isLoading,
-            () => (<SimpleLoader />) as ReactNode,
-          ],
-          // Area list
-          [
-            () =>
-              selectedArea !== undefined &&
-              !isLoading &&
-              (!error || error === undefined),
-            () => (<AreasTab />) as ReactNode,
-          ],
-          // No Areas
-          [R.T, () => (<NoContent title="No areas" />) as ReactNode],
-        ])() as ReactNode
+        <>
+          {R.cond([
+            // Loading
+            [() => isLoading, () => (<SimpleLoader />) as ReactNode],
+            [
+              () => error !== undefined,
+              () => (<NoContent title={error?.message} />) as ReactNode,
+            ],
+            // Area list
+            [
+              () => selectedArea !== undefined,
+              () => (<AreasTab />) as ReactNode,
+            ],
+            // No Areas
+            [R.T, () => (<NoContent title="No areas" />) as ReactNode],
+          ])()}
+        </>
       }
     />
   );

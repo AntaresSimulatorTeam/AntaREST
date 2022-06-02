@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PropertiesView from "../../../../common/PropertiesView";
 import { XpansionCandidate } from "../types";
-import CandidateListing from "./CandidateListing";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import ListElement from "../../common/ListElement";
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
@@ -60,10 +60,10 @@ function XpansionPropsView(props: PropsType) {
               alignItems="flex-end"
               flexGrow={1}
             >
-              <CandidateListing
-                candidates={candidateList}
-                selectedItem={selectedItem}
-                setSelectedItem={setSelectedItem}
+              <ListElement
+                list={candidateList}
+                currentElement={selectedItem}
+                setSelectedItem={(elm) => setSelectedItem(elm.name)}
               />
               <Box
                 sx={{
@@ -95,10 +95,10 @@ function XpansionPropsView(props: PropsType) {
               alignItems="flex-end"
               flexGrow={1}
             >
-              <CandidateListing
-                candidates={filteredCandidates}
-                selectedItem={selectedItem}
-                setSelectedItem={setSelectedItem}
+              <ListElement
+                list={filteredCandidates}
+                currentElement={selectedItem}
+                setSelectedItem={(elm) => setSelectedItem(elm.name)}
               />
               <Box
                 sx={{
