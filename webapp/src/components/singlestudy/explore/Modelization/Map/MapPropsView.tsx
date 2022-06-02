@@ -7,8 +7,8 @@ import {
   isNode,
 } from "../../../../../common/types";
 import PanelView from "./PanelView";
-import NodeListing from "./NodeListing";
 import PropertiesView from "../../../../common/PropertiesView";
+import ListElement from "../../common/ListElement";
 
 interface PropsType {
   item?: NodeProperties | LinkProperties | undefined;
@@ -98,10 +98,7 @@ function MapPropsView(props: PropsType) {
       secondaryContent={
         filteredNodes &&
         !item && (
-          <NodeListing
-            nodes={filteredNodes}
-            setSelectedItem={setSelectedItem}
-          />
+          <ListElement list={filteredNodes} setSelectedItem={setSelectedItem} />
         )
       }
       onSearchFilterChange={(e) => setNodeNameFilter(e as string)}

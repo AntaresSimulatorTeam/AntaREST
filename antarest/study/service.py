@@ -463,7 +463,7 @@ class StudyService:
 
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -1010,7 +1010,7 @@ class StudyService:
         )
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -1420,7 +1420,7 @@ class StudyService:
 
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -1620,7 +1620,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.create_area(study, area_creation_dto)
+        new_area = self.areas.create_area(study, area_creation_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return new_area
 
     def create_link(
         self,
@@ -1631,7 +1639,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.links.create_link(study, link_creation_dto)
+        new_link = self.links.create_link(study, link_creation_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return new_link
 
     def update_area(
         self,
@@ -1643,7 +1659,17 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.areas.update_area_metadata(
+            study, area_id, area_patch_dto
+        )
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return updated_area
 
     def update_area_ui(
         self,
@@ -1677,7 +1703,14 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.delete_area(study, area_id)
+        self.areas.delete_area(study, area_id)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
 
     def delete_link(
         self,
@@ -1689,7 +1722,14 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.links.delete_link(study, area_from, area_to)
+        self.links.delete_link(study, area_from, area_to)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
 
     def archive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)

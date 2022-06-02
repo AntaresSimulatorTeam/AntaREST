@@ -30,6 +30,13 @@ import Candidates from "./components/singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./components/singlestudy/explore/Xpansion/Settings";
 import Capacities from "./components/singlestudy/explore/Xpansion/Capacities";
 import Files from "./components/singlestudy/explore/Xpansion/Files";
+import Properties from "./components/singlestudy/explore/Modelization/Areas/Properties";
+import Load from "./components/singlestudy/explore/Modelization/Areas/Load";
+import Thermal from "./components/singlestudy/explore/Modelization/Areas/Thermal";
+import Hydro from "./components/singlestudy/explore/Modelization/Areas/Hydro";
+import MiscGen from "./components/singlestudy/explore/Modelization/Areas/MiscGen";
+import Reserve from "./components/singlestudy/explore/Modelization/Areas/Reserve";
+import Wind from "./components/singlestudy/explore/Modelization/Areas/Wind";
 
 function App() {
   return (
@@ -51,7 +58,17 @@ function App() {
                       >
                         <Route path="modelization" element={<Modelization />}>
                           <Route path="map" element={<Map />} />
-                          <Route path="area" element={<Areas />} />
+                          <Route path="area" element={<Areas />}>
+                            <Route path="properties" element={<Properties />} />
+                            <Route path="load" element={<Load />} />
+                            <Route path="thermal" element={<Thermal />} />
+                            <Route path="hydro" element={<Hydro />} />
+                            <Route path="wind" element={<Wind />} />
+                            <Route path="reserve" element={<Reserve />} />
+                            <Route path="miscGen" element={<MiscGen />} />
+                            <Route index element={<Properties />} />
+                            <Route path="*" element={<Properties />} />
+                          </Route>
                           <Route path="links" element={<Links />} />
                           <Route
                             path="bindingcontraint"

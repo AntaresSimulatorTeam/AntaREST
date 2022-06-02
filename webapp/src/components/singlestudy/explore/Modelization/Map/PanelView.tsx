@@ -27,7 +27,7 @@ export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
 }));
 
 const StyledHuePicker = styled(HuePicker)(({ theme }) => ({
-  width: "276px !important",
+  width: "90% !important",
   margin: theme.spacing(1),
 }));
 

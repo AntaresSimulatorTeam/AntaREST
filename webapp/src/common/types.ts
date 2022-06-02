@@ -22,6 +22,10 @@ export interface StudySummary {
   workspace: string;
 }
 
+export interface SynthesisSummary {
+  study_id: string;
+}
+
 export interface StudyMetadataOwner {
   id?: number;
   name: string;
@@ -258,6 +262,7 @@ export enum WSEvent {
   STUDY_CREATED = "STUDY_CREATED",
   STUDY_DELETED = "STUDY_DELETED",
   STUDY_EDITED = "STUDY_EDITED",
+  STUDY_DATA_EDITED = "STUDY_DATA_EDITED",
   STUDY_JOB_STARTED = "STUDY_JOB_STARTED",
   STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE",
   STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED",

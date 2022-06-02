@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper } from "react-use";
 import {
   StudyMetadata,
   StudySummary,
@@ -24,6 +25,7 @@ import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
 import { addWsMessageListener } from "../../services/webSockets";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import SimpleLoader from "../../components/common/loaders/SimpleLoader";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -33,13 +35,14 @@ interface Props {
 
 function SingleStudy(props: Props) {
   const { isExplorer } = props;
-  const { studyId } = useParams();
+  const { studyId } = useParams(); // TO DO
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [parent, setParent] = useState<StudyMetadata>();
   const [tree, setTree] = useState<VariantTree>();
   const [openCommands, setOpenCommands] = useState(false);
   const dispatch = useAppDispatch();
+  const mounted = usePromiseWrapper();
 
   const tabList = useMemo(
     () => [
@@ -63,12 +66,12 @@ function SingleStudy(props: Props) {
   const updateStudyData = useCallback(async () => {
     if (!studyId) return;
     try {
-      const tmpStudy = await getStudyMetadata(studyId);
+      const tmpStudy = await mounted(getStudyMetadata(studyId));
       if (tmpStudy) {
-        const tmpParents = await getVariantParents(tmpStudy.id);
+        const tmpParents = await mounted(getVariantParents(tmpStudy.id));
         let root: StudyMetadata = tmpStudy;
         if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
-        const tmpTree = await getVariantChildren(root.id);
+        const tmpTree = await mounted(getVariantChildren(root.id));
         setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
         setStudy(tmpStudy);
         setTree(tmpTree);
@@ -108,6 +111,8 @@ function SingleStudy(props: Props) {
   useEffect(() => {
     return addWsMessageListener(listener);
   }, [listener]);
+
+  if (study === undefined) return <SimpleLoader />;
 
   return (
     <Box
