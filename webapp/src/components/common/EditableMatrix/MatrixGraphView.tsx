@@ -16,7 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { MatrixType } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
-import { createDatesFromIndex } from "./utils";
+import { formatDateFromIndex } from "./utils";
 
 interface PropTypes {
   matrix: MatrixType;
@@ -124,7 +124,7 @@ export default function MatrixGraphView(props: PropTypes) {
               data={selectedColumns.map((val) => ({
                 x: monotonic
                   ? unitChange(index as Array<number>)
-                  : createDatesFromIndex(index),
+                  : formatDateFromIndex(index),
                 y: monotonic
                   ? data.map((a) => a[val]).sort((b, c) => c - b)
                   : data.map((a) => a[val]),

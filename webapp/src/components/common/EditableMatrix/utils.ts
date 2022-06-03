@@ -4,7 +4,7 @@ import moment, { DurationInputArg2 } from "moment";
 import { CellChange } from "handsontable/common";
 import { MatrixEditDTO, Operator } from "../../../common/types";
 
-export const createDatesFromIndex = (
+export const formatDateFromIndex = (
   index: Array<string | number>
 ): Array<string> => {
   if (index.length === 0) {
