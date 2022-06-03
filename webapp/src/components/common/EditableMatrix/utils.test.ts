@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import moment from 'moment';
-import {createDatesFromIndex} from './utils';
+import {formatDateFromIndex} from './utils';
 
 test('Date from weekly input', () => {
   const weeks = Array(52).fill(0).map((e,i)=>1 + ((i+26) % 52));
   const startDate = moment("2005/07/04 00:00", "yyyy/MM/DD HH:mm");
   const weeksDate = Array(52).fill(0).map((e,i) => moment(startDate).add(i, 'w').format("yyyy/MM/DD HH:mm"));
-  expect(createDatesFromIndex(weeks)).toStrictEqual(weeksDate);
+  expect(formatDateFromIndex(weeks)).toStrictEqual(weeksDate);
 });
 
 
@@ -26,5 +26,5 @@ test('Date from monthly input', () => {
     "05/01 00:00",
     "06/01 00:00",
   ]
-  expect(createDatesFromIndex(months)).toStrictEqual(monthsDate);
+  expect(formatDateFromIndex(months)).toStrictEqual(monthsDate);
 });
