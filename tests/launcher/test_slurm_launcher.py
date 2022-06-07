@@ -249,16 +249,31 @@ def test_run_study(
     study_uuid = "study_uuid"
     params = Mock()
     argument = Mock()
-    argument.studies_in = "studies_in"
+    argument.studies_in = (
+        launcher_config.launcher.slurm.local_workspace / "studies_in"
+    )
     slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
-    slurm_launcher._run_study(
-        study_uuid, str(uuid.uuid4()), None, str(version)
+    job_id = str(uuid.uuid4())
+    study_dir = argument.studies_in / job_id
+    study_dir.mkdir(parents=True)
+    (study_dir / "study.antares").write_text(
+        """[antares]
+version=1
+    """
     )
 
+    slurm_launcher._run_study(study_uuid, job_id, None, str(version))
+
+    assert (
+        version
+        not in launcher_config.launcher.slurm.antares_versions_on_remote_server
+        or f"solver_version = {version}"
+        in (study_dir / "study.antares").read_text(encoding="utf-8")
+    )
     #    slurm_launcher._clean_local_workspace.assert_called_once()
     slurm_launcher.callbacks.export_study.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
