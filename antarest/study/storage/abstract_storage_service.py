@@ -250,6 +250,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             if isinstance(output, Path):
                 if output != path_output and output.suffix != ".zip":
                     shutil.copytree(output, path_output / "imported")
+                elif output.suffix == ".zip":
+                    shutil.copyfile(output, path_output)
             else:
                 extract_zip(output, path_output)
 

@@ -500,8 +500,6 @@ def get_output_variables_information(
     if not study.config.outputs[output_name].by_year:
         raise BadOutputFormat("Not a year by year simulation")
 
-    # TODO: unzip if archived
-
     first_year_result: Dict[str, INode[Any, Any, Any]] = cast(
         FolderNode,
         find_first_child(

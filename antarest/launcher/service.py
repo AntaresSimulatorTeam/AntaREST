@@ -494,8 +494,8 @@ class LauncherService:
 
         try:
             os.mkdir(job_output_path)
-            imported_output_path = job_output_path / "imported"
             if output_path.suffix != ".zip":
+                imported_output_path = job_output_path / "imported"
                 shutil.copytree(output_path, imported_output_path)
                 output_name = extract_output_name(
                     imported_output_path, output_suffix_name
@@ -543,6 +543,7 @@ class LauncherService:
                             output_path / log_name,
                         )
 
+                zip_path: Optional[Path] = None
                 if LauncherParametersDTO.parse_raw(
                     job_result.launcher_params or "{}"
                 ).archive_output:
@@ -552,12 +553,12 @@ class LauncherService:
                     )
                     zip_dir(output_true_path, zip_path=zip_path)
 
+                final_output_path = zip_path or output_true_path
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
-                        output_true_path,  # TODO:
+                        final_output_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
-                        additional_logs,
                         cast(
                             Optional[str],
                             job_launch_params.get(
@@ -568,7 +569,7 @@ class LauncherService:
                 except StudyNotFoundError:
                     return self._import_fallback_output(
                         job_id,
-                        output_true_path,  # TODO:
+                        final_output_path,
                         cast(
                             Optional[str],
                             job_launch_params.get(

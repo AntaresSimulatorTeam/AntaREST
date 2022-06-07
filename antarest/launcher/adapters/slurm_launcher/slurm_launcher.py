@@ -262,7 +262,6 @@ class SlurmLauncher(AbstractLauncher):
                 }.items()
                 if log_path
             }
-            # TODO:zip output
         return self.callbacks.import_output(
             job_id,
             self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",

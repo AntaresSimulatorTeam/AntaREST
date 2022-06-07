@@ -413,9 +413,3 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 study.id,
                 exc_info=e,
             )
-
-    def archive_study_output(self, study: RawStudy, output_id: str) -> bool:
-        pass
-
-    def unarchive_study_output(self, study: RawStudy, output_id: str) -> bool:
-        pass

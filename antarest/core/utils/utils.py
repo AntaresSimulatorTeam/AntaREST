@@ -142,7 +142,9 @@ def concat_files(files: List[Path], target: Path) -> None:
                     fh.write(line)
 
 
-def zip_dir(dir_path: Path, zip_path: Path) -> None:
+def zip_dir(
+    dir_path: Path, zip_path: Path, remove_source_dir: bool = False
+) -> None:
     with ZipFile(
         zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2
     ) as zipf:
@@ -151,10 +153,14 @@ def zip_dir(dir_path: Path, zip_path: Path) -> None:
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, file_path[len_dir_path:])
-    shutil.rmtree(dir_path)
+    if remove_source_dir:
+        shutil.rmtree(dir_path)
 
 
-def unzip(dir_path: Path, zip_path: Path) -> None:
+def unzip(
+    dir_path: Path, zip_path: Path, remove_source_zip: bool = False
+) -> None:
     with ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
-    zip_path.unlink()
+    if remove_source_zip:
+        zip_path.unlink()

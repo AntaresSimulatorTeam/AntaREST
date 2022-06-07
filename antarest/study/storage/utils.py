@@ -21,6 +21,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -87,6 +88,9 @@ def fix_study_root(study_path: Path) -> None:
     @param study_path the study initial root path
     """
     # TODO: what if it is a zipped output ?
+    if study_path.suffix == ".zip":
+        return None
+
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory")
 
@@ -124,14 +128,18 @@ def extract_output_name(
 ) -> str:
     ini_reader = IniReader()
     is_output_archived = path_output.suffix == ".zip"
-    temp_dir = None
     if is_output_archived:
         temp_dir = tempfile.TemporaryDirectory()
+        s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
             zip_obj.extract("info.antares-output", temp_dir.name)
             info_antares_output = ini_reader.read(
                 Path(temp_dir.name) / "info.antares-output"
             )
+        s.log_elapsed(
+            lambda x: logger.info(f"info.antares_output has been read in {x}s")
+        )
+        temp_dir.cleanup()
 
     else:
         info_antares_output = ini_reader.read(
@@ -160,7 +168,8 @@ def extract_output_name(
             )
 
     name = f"-{suffix_name}" if suffix_name else ""
-    return f"{date}{mode}{name}"
+    extension = ".zip" if is_output_archived else ""
+    return f"{date}{mode}{name}{extension}"
 
 
 def is_managed(study: Study) -> bool:
