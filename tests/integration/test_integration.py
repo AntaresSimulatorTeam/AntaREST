@@ -192,6 +192,23 @@ def test_main(app: FastAPI):
         ).dict()
     )
 
+    res = client.get(
+        f"/v1/studies/{study_id}/matrixindex?path=output/20201014-1427eco/economy/mc-all/areas/es/details-daily",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert (
+        res.json()
+        == MatrixIndex(
+            first_week_size=7,
+            start_date="2001-01-01 00:00:00",
+            steps=7,
+            level=StudyDownloadLevelDTO.DAILY,
+        ).dict()
+    )
+
     # study creation
     created = client.post(
         "/v1/studies?name=foo",

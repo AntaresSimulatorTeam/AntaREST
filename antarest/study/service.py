@@ -89,6 +89,7 @@ from antarest.study.model import (
     PatchArea,
     ExportFormat,
     StudyAdditionalData,
+    StudyDownloadLevelDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -100,6 +101,9 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    OutputSeriesMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
@@ -558,13 +562,23 @@ class StudyService:
         )
 
     def get_input_matrix_startdate(
-        self, study_id: str, params: RequestParameters
+        self, study_id: str, path: Optional[str], params: RequestParameters
     ) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return get_start_date(
-            self.storage_service.get_storage(study).get_raw(study)
-        )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        output_id = None
+        level = StudyDownloadLevelDTO.HOURLY
+        if path:
+            path_components = path.strip().strip("/").split("/")
+            if len(path_components) > 2 and path_components[0] == "output":
+                output_id = path_components[1]
+            data_node = file_study.tree.get_node(path_components)
+            if isinstance(data_node, OutputSeriesMatrix) or isinstance(
+                data_node, InputSeriesMatrix
+            ):
+                level = StudyDownloadLevelDTO(data_node.freq)
+        return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}
