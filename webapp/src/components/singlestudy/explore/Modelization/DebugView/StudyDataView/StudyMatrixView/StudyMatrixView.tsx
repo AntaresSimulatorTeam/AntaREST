@@ -49,6 +49,10 @@ function StudyMatrixView(props: PropTypes) {
   const [isEditable, setEditable] = useState(true);
   const [formatedPath, setFormatedPath] = useState("");
 
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
   const loadFileData = async () => {
     setData(undefined);
     setLoaded(false);
@@ -67,21 +71,7 @@ function StudyMatrixView(props: PropTypes) {
     }
   };
 
-  const onImport = async (file: File) => {
-    try {
-      await importFile(file, study, formatedPath);
-    } catch (e) {
-      logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
-    } finally {
-      enqueueSnackbar(t("variants.success.import"), {
-        variant: "success",
-      });
-      loadFileData();
-    }
-  };
-
-  const getMatrixIndex = async () => {
+  const initMatrixIndex = async () => {
     try {
       const res = await getStudyMatrixIndex(study);
       setMatrixIndex(res);
@@ -106,6 +96,24 @@ function StudyMatrixView(props: PropTypes) {
     }
   };
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const onImport = async (file: File) => {
+    try {
+      await importFile(file, study, formatedPath);
+    } catch (e) {
+      logErr("Failed to import file", file, e);
+      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
+    } finally {
+      enqueueSnackbar(t("variants.success.import"), {
+        variant: "success",
+      });
+      loadFileData();
+    }
+  };
+
   useEffect(() => {
     const urlParts = url.split("/");
     const tmpUrl = urlParts.filter((item) => item);
@@ -120,9 +128,13 @@ function StudyMatrixView(props: PropTypes) {
       return;
     }
     loadFileData();
-    getMatrixIndex();
+    initMatrixIndex();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, filterOut, enqueueSnackbar, t]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Root>

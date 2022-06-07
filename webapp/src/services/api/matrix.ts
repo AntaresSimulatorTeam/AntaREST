@@ -109,5 +109,3 @@ export const getStudyMatrixIndex = async (
   const res = await client.get(`/v1/studies/${sid}/matrixindex`);
   return res.data;
 };
-
-export default {};
