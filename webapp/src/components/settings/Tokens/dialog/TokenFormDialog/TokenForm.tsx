@@ -28,23 +28,15 @@ import { GroupDTO, RoleType } from "../../../../../common/types";
 import usePromise from "../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../services/utils";
-import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
 import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-
-/**
- * Types
- */
+import { FormObj } from "../../../../common/Form";
 
 interface Props extends Omit<FormObj, "defaultValues"> {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];
   readOnly?: boolean;
 }
-
-/**
- * Component
- */
 
 function TokenForm(props: Props) {
   const {

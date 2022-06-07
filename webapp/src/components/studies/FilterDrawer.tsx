@@ -22,7 +22,7 @@ import {
 } from "../../redux/selectors";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
 import { StudyFilters, updateStudyFilters } from "../../redux/ducks/studies";
-import CheckboxesTags from "../common/inputs/CheckboxesTags";
+import CheckboxesTagsFE from "../common/fieldEditors/CheckboxesTagsFE";
 import { displayVersionName } from "../../services/utils";
 
 interface Props {
@@ -135,7 +135,7 @@ function FilterDrawer(props: Props) {
       <Divider style={{ height: "1px", backgroundColor: "grey.800" }} />
       <List>
         <ListItem>
-          <CheckboxesTags
+          <CheckboxesTagsFE
             label={t("global.versions")}
             options={versions}
             getOptionLabel={displayVersionName}
@@ -146,7 +146,7 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <CheckboxesTags
+          <CheckboxesTagsFE
             label={t("global.users")}
             options={users}
             getOptionLabel={(option) => option.name}
@@ -159,7 +159,7 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <CheckboxesTags
+          <CheckboxesTagsFE
             label={t("global.groups")}
             options={groups}
             getOptionLabel={(option) => option.name}
@@ -172,7 +172,7 @@ function FilterDrawer(props: Props) {
           />
         </ListItem>
         <ListItem>
-          <CheckboxesTags
+          <CheckboxesTagsFE
             label={t("global.tags")}
             options={[]}
             defaultValue={filters.tags}

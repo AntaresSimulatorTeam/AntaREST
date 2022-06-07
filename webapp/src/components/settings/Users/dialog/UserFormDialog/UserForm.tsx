@@ -28,30 +28,18 @@ import {
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
 } from "../../../utils";
-import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { GroupDTO, RoleType } from "../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../services/api/user";
 import { UserFormDialogProps } from ".";
-
-/**
- * Types
- */
+import { FormObj } from "../../../../common/Form";
 
 interface Props extends FormObj {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];
 }
 
-/**
- * Constants
- */
-
 const PASSWORD_MIN_LENGTH = 8;
-
-/**
- * Component
- */
 
 function UserForm(props: Props) {
   const {

@@ -11,12 +11,8 @@ import {
 } from "../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
+import { SubmitHandlerData } from "../../../common/Form";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
-
-/**
- * Types
- */
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -25,10 +21,6 @@ interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
   reloadFetchUsers: VoidFunction;
   closeDialog: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function CreateUserDialog(props: Props) {
   const { addUser, reloadFetchUsers, closeDialog, ...dialogProps } = props;

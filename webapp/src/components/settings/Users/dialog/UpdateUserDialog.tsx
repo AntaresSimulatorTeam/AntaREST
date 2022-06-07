@@ -5,14 +5,10 @@ import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import { GroupDTO, RoleType, UserDetailsDTO } from "../../../../common/types";
 import { createRole, deleteUserRoles } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-
-/**
- * Types
- */
+import { SubmitHandlerData } from "../../../common/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -27,10 +23,6 @@ interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
   editUser: (user: UserEdit) => void;
   reloadFetchUsers: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function UpdateUserDialog(props: Props) {
   const { user, closeDialog, editUser, reloadFetchUsers, ...dialogProps } =

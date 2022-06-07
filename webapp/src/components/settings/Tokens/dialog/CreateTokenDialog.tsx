@@ -13,13 +13,9 @@ import {
 } from "../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import { createBot } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import OkDialog from "../../../common/dialogs/OkDialog";
 import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-
-/**
- * Types
- */
+import { SubmitHandlerData } from "../../../common/Form";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -28,10 +24,6 @@ interface Props extends Omit<TokenFormDialogProps, InheritPropsToOmit> {
   reloadFetchTokens: VoidFunction;
   closeDialog: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function CreateTokenDialog(props: Props) {
   const { addToken, reloadFetchTokens, closeDialog, ...dialogProps } = props;

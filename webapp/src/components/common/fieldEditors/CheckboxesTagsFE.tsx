@@ -7,7 +7,7 @@ import {
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 
-interface CheckboxesTagsProps<
+interface CheckboxesTagsFEProps<
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined
@@ -22,11 +22,11 @@ interface CheckboxesTagsProps<
   label?: string;
 }
 
-function CheckboxesTags<
+function CheckboxesTagsFE<
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined
->(props: CheckboxesTagsProps<T, DisableClearable, FreeSolo>) {
+>(props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   const { label, sx, ...rest } = props;
 
   return (
@@ -53,8 +53,8 @@ function CheckboxesTags<
   );
 }
 
-CheckboxesTags.defaultProps = {
+CheckboxesTagsFE.defaultProps = {
   label: undefined,
 };
 
-export default CheckboxesTags;
+export default CheckboxesTagsFE;
