@@ -477,6 +477,8 @@ def test_get_logs(tmp_path: Path):
         JobLog(message="second message", log_type=str(JobLogType.BEFORE)),
         JobLog(message="last message", log_type=str(JobLogType.AFTER)),
     ]
+    job_result_mock.launcher_params = None
+
     launcher_service.job_result_repository.get.return_value = job_result_mock
     slurm_launcher = Mock()
     launcher_service.launchers = {"slurm": slurm_launcher}

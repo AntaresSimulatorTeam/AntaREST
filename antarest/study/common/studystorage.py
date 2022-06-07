@@ -231,7 +231,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:

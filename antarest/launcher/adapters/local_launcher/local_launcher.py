@@ -204,6 +204,12 @@ class LocalLauncher(AbstractLauncher):
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs:
             return self.logs[job_id]
+        elif (
+            self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
+        ).exists():
+            return (
+                self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
+            ).read_text()
         return None
 
     def kill_job(self, job_id: str) -> None:

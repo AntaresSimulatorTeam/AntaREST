@@ -147,12 +147,12 @@ class LauncherService:
         job_id: str,
         study_id: str,
         study_output_path: Path,
-        launcher_opts: Optional[JSON],
+        launcher_opts: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
             if (
                 launcher_opts is not None
-                and launcher_opts.get(ext, None) is not None
+                and getattr(launcher_opts, ext, None) is not None
             ):
                 logger.info(
                     f"Applying extension {ext} before_import_hook on job {job_id}"
@@ -161,7 +161,7 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_output_path,
-                    launcher_opts.get(ext),
+                    getattr(launcher_opts, ext),
                 )
 
     def update(
@@ -400,8 +400,13 @@ class LauncherService:
         self, job_id: str, log_type: LogType, params: RequestParameters
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
+
         if job_result:
-            if job_result.output_id:
+            # TODO: remove this part of code when study tree zipfile support is implemented
+            launcher_parameters = LauncherParametersDTO.parse_raw(
+                job_result.launcher_params or "{}"
+            )
+            if job_result.output_id and not launcher_parameters.archive_output:
                 if log_type == LogType.STDOUT:
                     launcher_logs = cast(
                         bytes,
@@ -523,10 +528,9 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
-                job_launch_params: JSON = (
-                    json.loads(job_result.launcher_params)
-                    if job_result.launcher_params
-                    else {}
+
+                job_launch_params = LauncherParametersDTO.parse_raw(
+                    job_result.launcher_params or "{}"
                 )
                 output_true_path = find_single_output_path(output_path)
                 self._before_import_hooks(
@@ -561,8 +565,10 @@ class LauncherService:
                         RequestParameters(DEFAULT_ADMIN_USER),
                         cast(
                             Optional[str],
-                            job_launch_params.get(
-                                LAUNCHER_PARAM_NAME_SUFFIX, None
+                            getattr(
+                                job_launch_params,
+                                LAUNCHER_PARAM_NAME_SUFFIX,
+                                None,
                             ),
                         ),
                     )
@@ -572,8 +578,10 @@ class LauncherService:
                         final_output_path,
                         cast(
                             Optional[str],
-                            job_launch_params.get(
-                                LAUNCHER_PARAM_NAME_SUFFIX, None
+                            getattr(
+                                job_launch_params,
+                                LAUNCHER_PARAM_NAME_SUFFIX,
+                                None,
                             ),
                         ),
                     )

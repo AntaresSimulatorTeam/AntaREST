@@ -251,6 +251,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 if output != path_output and output.suffix != ".zip":
                     shutil.copytree(output, path_output / "imported")
                 elif output.suffix == ".zip":
+                    path_output.rmdir()
+                    path_output = Path(str(path_output) + ".zip")
                     shutil.copyfile(output, path_output)
             else:
                 extract_zip(output, path_output)
@@ -261,13 +263,20 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 Path(path_output.parent, output_full_name)
             )
 
-            data = self.get(
-                metadata, f"output/{output_full_name}", -1, use_cache=False
-            )
+            if output_full_name.split(".")[-1] != "zip":
+                data = self.get(
+                    metadata, f"output/{output_full_name}", -1, use_cache=False
+                )
 
-            if data is None:
-                self.delete_output(metadata, "imported_output")
-                raise BadOutputError("The output provided is not conform.")
+                if data is None:
+                    self.delete_output(metadata, "imported_output")
+                    raise BadOutputError("The output provided is not conform.")
+            else:
+                # TODO: remove this part of code when study tree zipfile support is implemented
+                logger.warning(
+                    "The imported output is zipped: no check is done"
+                )
+                output_full_name = "".join(output_full_name.split(".")[:-1])
 
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
@@ -309,15 +318,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         return target.parent / filename
 
-    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:
             metadata: study
             output_id: output id
             target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
         """
         logger.info(f"Exporting output {output_id} from study {metadata.id}")
 
@@ -325,13 +332,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output_zip = Path(metadata.path) / "output" / f"{output_id}.zip"
 
         if path_output_zip.exists():
-            return path_output_zip
+            shutil.copyfile(path_output_zip, target)
+            return None
 
         if not path_output.exists() and not path_output_zip.exists():
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
         if not path_output_zip.exists():
-            filename = shutil.make_archive(
+            shutil.make_archive(
                 base_name=os.path.splitext(target)[0],
                 format="zip",
                 root_dir=path_output,
@@ -341,7 +349,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 f"Output {output_id} from study {metadata.path} exported in {x}s"
             )
         )
-        return target.parent / filename
 
     def _read_additional_data_from_files(
         self, file_study: FileStudy
