@@ -443,21 +443,21 @@ export enum Operator {
   EQ = "=",
 }
 
-export interface MatrixSlice {
+export interface MatrixSliceDTO {
   row_from: number;
   row_to: number;
   column_from: number;
   column_to: number;
 }
 
-export interface MatrixOperation {
+export interface MatrixOperationDTO {
   operation: Operator;
   value: number;
 }
 
 export interface MatrixEditDTO {
-  slices: MatrixSlice[];
-  operation: MatrixOperation;
+  slices: MatrixSliceDTO[];
+  operation: MatrixOperationDTO;
 }
 
 export interface MatrixAggregationResult {

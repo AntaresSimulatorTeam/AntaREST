@@ -3,12 +3,13 @@ import * as R from "ramda";
 import { Box, LinearProgress, Paper, Typography } from "@mui/material";
 import Dropzone from "react-dropzone";
 import { useMountedState } from "react-use";
+import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 interface Props {
   open: BasicDialogProps["open"];
-  title: string;
-  dropzoneText: string;
+  title?: string;
+  dropzoneText?: string;
   onClose: VoidFunction;
   onImport: (
     file: File,
@@ -18,6 +19,7 @@ interface Props {
 
 function ImportDialog(props: Props) {
   const { open, title, dropzoneText, onClose, onImport } = props;
+  const [t] = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(-1);
   const isMounted = useMountedState();
@@ -77,7 +79,7 @@ function ImportDialog(props: Props) {
     <BasicDialog
       open={open}
       onClose={uploadProgress > -1 ? undefined : onClose}
-      title={title}
+      title={title || t("global.import")}
     >
       <Box sx={{ p: 2 }}>
         {uploadProgress > -1 ? (
@@ -96,7 +98,7 @@ function ImportDialog(props: Props) {
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
                   <Typography sx={{ cursor: "pointer" }}>
-                    {dropzoneText}
+                    {dropzoneText || t("global.importhint")}
                   </Typography>
                 </div>
               </Paper>
@@ -107,5 +109,10 @@ function ImportDialog(props: Props) {
     </BasicDialog>
   );
 }
+
+ImportDialog.defaultProps = {
+  title: null,
+  dropzoneText: null,
+};
 
 export default ImportDialog;

@@ -30,9 +30,13 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   const { studyId, data, onClose, isMatrix } = props;
   const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
 
-  const copyId = (matrixId: string): void => {
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const copyId = async (matrixId: string): Promise<void> => {
     try {
-      navigator.clipboard.writeText(matrixId);
+      await navigator.clipboard.writeText(matrixId);
       enqueueSnackbar(t("data.success.matrixIdCopied"), {
         variant: "success",
       });
@@ -41,7 +45,11 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
     }
   };
 
-  const getMatrixIndex = async () => {
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const initMatrixIndex = async () => {
     try {
       const res = await getStudyMatrixIndex(studyId);
       setMatrixIndex(res);
@@ -54,9 +62,13 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   };
 
   useEffect(() => {
-    getMatrixIndex();
+    initMatrixIndex();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <OkDialog

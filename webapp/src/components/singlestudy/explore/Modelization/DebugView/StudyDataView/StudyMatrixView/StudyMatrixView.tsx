@@ -42,12 +42,12 @@ function StudyMatrixView(props: PropTypes) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const [data, setData] = useState<MatrixType>();
-  const [loaded, setLoaded] = useState<boolean>(false);
-  const [toggleView, setToggleView] = useState<boolean>(true);
-  const [openImportDialog, setOpenImportDialog] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState(false);
+  const [toggleView, setToggleView] = useState(true);
+  const [openImportDialog, setOpenImportDialog] = useState(false);
   const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
-  const [isEditable, setEditable] = useState<boolean>(true);
-  const [formatedPath, setFormatedPath] = useState<string>("");
+  const [isEditable, setEditable] = useState(true);
+  const [formatedPath, setFormatedPath] = useState("");
 
   const loadFileData = async () => {
     setData(undefined);

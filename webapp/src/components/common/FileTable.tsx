@@ -131,7 +131,7 @@ function FileTable(props: PropType) {
                   key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
                     "&> th": {
-                      padding: theme.spacing(1),
+                      padding: 1,
                     },
                     "&> th, >td": {
                       borderBottom: "solid 1px",
@@ -227,8 +227,6 @@ function FileTable(props: PropType) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          title={t("global.import")}
-          dropzoneText={t("global.importhint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={onImport}
         />

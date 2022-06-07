@@ -24,10 +24,13 @@ export const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-export const StyledHotTable = styled(HotTable)(({ theme }) => ({
+export const StyledHotTable = styled(HotTable)(() => ({
   "&> div > div": {
     ...scrollbarStyle,
   },
+  backgroundColor: "#222333 !important",
+  color: "white",
+  borderColor: "rgba(255, 255, 255, 0.12) !important",
 }));
 
 export default {};

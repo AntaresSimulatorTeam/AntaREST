@@ -108,8 +108,6 @@ function StudyFileView(props: PropTypes) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          title={t("global.import")}
-          dropzoneText={t("global.importhint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={onImport}
         />

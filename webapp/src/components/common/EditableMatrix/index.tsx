@@ -23,6 +23,8 @@ interface PropTypes {
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
 
+registerAllModules();
+
 function EditableMatrix(props: PropTypes) {
   const { readOnly, matrix, matrixIndex, matrixTime, toggleView, onUpdate } =
     props;
@@ -32,7 +34,9 @@ function EditableMatrix(props: PropTypes) {
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
   const hotTableComponent = useRef<HotTable>(null);
 
-  registerAllModules();
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
 
   const handleSlice = (change: CellChange[], source: string) => {
     if (onUpdate) {
@@ -41,22 +45,49 @@ function EditableMatrix(props: PropTypes) {
     }
   };
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "a" && e.ctrlKey) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (hotTableComponent.current) {
-        if (hotTableComponent.current.hotInstance) {
-          const hot = hotTableComponent.current.hotInstance;
-          hot.selectCell(0, 1, hot.countRows() - 1, hot.countCols() - 1);
-        }
+      if (hotTableComponent.current?.hotInstance) {
+        const hot = hotTableComponent.current.hotInstance;
+        hot.selectCell(0, 1, hot.countRows() - 1, hot.countCols() - 1);
       }
     }
   };
 
-  const renderView = () => {
-    if (toggleView) {
-      return (
+  useEffect(() => {
+    setColumns([
+      ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
+      ...columns.map((title) => ({ title: String(title), readOnly })),
+    ]);
+
+    const tmpData = data.map((row, i) => {
+      if (prependIndex) {
+        if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
+          return [
+            createDateFromIndex(index[i], matrixIndex.start_date, index),
+          ].concat(row);
+        }
+        return [index[i]].concat(row);
+      }
+
+      return row;
+    });
+    setGrid(tmpData);
+  }, [columns, data, index, prependIndex, readOnly, matrixIndex]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <Root>
+      {toggleView ? (
         <StyledHotTable
           ref={hotTableComponent}
           data={grid}
@@ -78,33 +109,11 @@ function EditableMatrix(props: PropTypes) {
             <HotColumn key={column.title} settings={column} />
           ))}
         </StyledHotTable>
-      );
-    }
-    return <MatrixGraphView matrix={matrix} />;
-  };
-
-  useEffect(() => {
-    const columnsData: Array<ColumnsType> = (
-      prependIndex ? [{ title: "Time", readOnly: true }] : []
-    ).concat(columns.map((title) => ({ title: String(title), readOnly })));
-    setColumns(columnsData);
-
-    const tmpData = data.map((row, i) => {
-      if (prependIndex) {
-        if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
-          return [
-            createDateFromIndex(index[i], matrixIndex.start_date, index),
-          ].concat(row);
-        }
-        return [index[i]].concat(row);
-      }
-
-      return row;
-    });
-    setGrid(tmpData);
-  }, [columns, data, index, prependIndex, readOnly, matrixIndex]);
-
-  return <Root>{renderView()}</Root>;
+      ) : (
+        <MatrixGraphView matrix={matrix} />
+      )}
+    </Root>
+  );
 }
 
 EditableMatrix.defaultProps = {
