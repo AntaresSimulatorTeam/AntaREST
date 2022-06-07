@@ -2,7 +2,11 @@ import _ from "lodash";
 import moment, { DurationInputArg2 } from "moment";
 // eslint-disable-next-line import/no-unresolved
 import { CellChange } from "handsontable/common";
-import { MatrixEditDTO, Operator } from "../../../common/types";
+import {
+  MatrixEditDTO,
+  Operator,
+  StudyOutputDownloadLevelDTO,
+} from "../../../common/types";
 
 export const formatDateFromIndex = (
   index: Array<string | number>
@@ -46,24 +50,33 @@ export const formatDateFromIndex = (
   return index.map((e) => String(e));
 };
 
+const converseLevelDate = (
+  levelDate: StudyOutputDownloadLevelDTO
+): DurationInputArg2 => {
+  if (levelDate === StudyOutputDownloadLevelDTO.ANNUAL) {
+    return "year";
+  }
+  if (levelDate === StudyOutputDownloadLevelDTO.DAILY) {
+    return "day";
+  }
+  if (levelDate === StudyOutputDownloadLevelDTO.HOURLY) {
+    return "hour";
+  }
+  if (levelDate === StudyOutputDownloadLevelDTO.MONTHLY) {
+    return "month";
+  }
+  return "week";
+};
+
 export const createDateFromIndex = (
   indexDate: string | number,
   startDate: string,
-  index: (string | number)[]
+  index: (string | number)[],
+  levelDate: StudyOutputDownloadLevelDTO
 ): string | number => {
-  let levelDate: DurationInputArg2 = "h";
-  if (index.length === 8760) {
-    levelDate = "h";
-  } else if (index.length === 12) {
-    levelDate = "m";
-  } else if (index.length === 365 || index.length === 366) {
-    levelDate = "d";
-  } else if (index.length === 52) {
-    levelDate = "w";
-  }
   const date = moment
     .utc(startDate)
-    .add(indexDate, levelDate)
+    .add(indexDate, converseLevelDate(levelDate))
     .format("(ww) - ddd DD MMM HH:mm");
   return `${indexDate.toString().padStart(4, "0")} ${date}`.toUpperCase();
 };

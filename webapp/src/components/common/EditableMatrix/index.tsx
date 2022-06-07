@@ -23,6 +23,7 @@ interface PropTypes {
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
 
+// TODO https://handsontable.com/docs/react-modules/#step-1-import-the-handsontable-base-module
 registerAllModules();
 
 function EditableMatrix(props: PropTypes) {
@@ -70,7 +71,12 @@ function EditableMatrix(props: PropTypes) {
       if (prependIndex) {
         if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
           return [
-            createDateFromIndex(index[i], matrixIndex.start_date, index),
+            createDateFromIndex(
+              i,
+              matrixIndex.start_date,
+              index,
+              matrixIndex.level
+            ),
           ].concat(row);
         }
         return [index[i]].concat(row);

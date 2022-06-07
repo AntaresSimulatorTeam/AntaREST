@@ -1,15 +1,14 @@
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { AxiosError } from "axios";
 import { Code } from "./styles";
-import { MatrixType, MatrixIndex } from "../../../../common/types";
+import { MatrixType } from "../../../../common/types";
+import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import OkDialog from "../OkDialog";
 import EditableMatrix from "../../EditableMatrix";
 import { getStudyMatrixIndex } from "../../../../services/api/matrix";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 
@@ -26,9 +25,7 @@ interface Props {
 function DataViewerDialog(props: PropsWithChildren<Props>) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { studyId, data, onClose, isMatrix } = props;
-  const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -49,22 +46,16 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const initMatrixIndex = async () => {
-    try {
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    async () => {
       const res = await getStudyMatrixIndex(studyId);
-      setMatrixIndex(res);
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("matrix.error.failedtoretrieveindex"),
-        e as AxiosError
-      );
-    }
-  };
-
-  useEffect(() => {
-    initMatrixIndex();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studyId]);
+      return res;
+    },
+    {
+      errorMessage: t("matrix.error.failedtoretrieveindex"),
+    },
+    [studyId]
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
