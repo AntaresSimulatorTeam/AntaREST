@@ -51,7 +51,7 @@ class JobResultDTO(BaseModel):
     msg: Optional[str]
     output_id: Optional[str]
     exit_code: Optional[int]
-    solver_stats_json: Optional[str]
+    solver_stats: Optional[str]
 
 
 class JobLog(DTO, Base):  # type: ignore
@@ -113,7 +113,7 @@ class JobResult(DTO, Base):  # type: ignore
             msg=self.msg,
             output_id=self.output_id,
             exit_code=self.exit_code,
-            solver_stats_json=self.solver_stats_json,
+            solver_stats=self.solver_stats,
         )
 
     def __eq__(self, o: Any) -> bool:
