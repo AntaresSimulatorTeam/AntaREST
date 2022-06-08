@@ -24,7 +24,7 @@ function GroupFormDialog(props: GroupFormDialogProps) {
   const { defaultValues, ...dialogProps } = props;
 
   return (
-    <FormDialog maxWidth="sm" formOptions={{ defaultValues }} {...dialogProps}>
+    <FormDialog maxWidth="sm" config={{ defaultValues }} {...dialogProps}>
       {GroupForm}
     </FormDialog>
   );

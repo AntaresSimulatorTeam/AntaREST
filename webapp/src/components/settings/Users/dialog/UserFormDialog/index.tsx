@@ -27,7 +27,7 @@ function UserFormDialog(props: UserFormDialogProps) {
   const { defaultValues, onlyPermissions, subtitle, ...dialogProps } = props;
 
   return (
-    <FormDialog maxWidth="sm" formOptions={{ defaultValues }} {...dialogProps}>
+    <FormDialog maxWidth="sm" config={{ defaultValues }} {...dialogProps}>
       {(formObj) => (
         <>
           {subtitle && <DialogContentText>{subtitle}</DialogContentText>}
