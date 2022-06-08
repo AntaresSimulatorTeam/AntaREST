@@ -29,9 +29,7 @@ class FileStudyHelpers:
                 tmp_dir = tempfile.TemporaryDirectory()
                 with ZipFile(output_path, "r") as zip_obj:
                     zip_obj.extract(
-                        str(
-                            output_path / "about-the-study" / "parameters.ini"
-                        ),
+                        "about-the-study/parameters.ini",
                         tmp_dir.name,
                     )
                     full_path_parameters = (
