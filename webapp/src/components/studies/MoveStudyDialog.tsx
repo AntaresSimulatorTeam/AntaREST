@@ -53,7 +53,7 @@ function MoveStudyDialog(props: Props) {
   return (
     <FormDialog
       open={open}
-      formOptions={{
+      config={{
         defaultValues: {
           folder: join("/", dropLast(1, split("/", study.folder || ""))),
         },

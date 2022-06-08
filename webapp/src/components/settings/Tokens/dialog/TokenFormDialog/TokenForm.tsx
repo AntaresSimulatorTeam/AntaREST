@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -31,9 +31,8 @@ import { roleToString, sortByName } from "../../../../../services/utils";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
 import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { FormObj } from "../../../../common/Form";
 
-interface Props extends Omit<FormObj, "defaultValues"> {
+interface Props extends UseFormReturn {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];
   readOnly?: boolean;
 }

@@ -63,7 +63,7 @@ function UpdateGroupDialog(props: Props) {
 
   const handleSubmit = async (data: SubmitHandlerData) => {
     const { name, permissions }: GroupFormDialogProps["defaultValues"] =
-      data.modifiedValues;
+      data.dirtyValues;
     const groupName = name || group.name;
 
     const notifySuccess = R.once(() =>

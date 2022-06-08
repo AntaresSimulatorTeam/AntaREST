@@ -25,7 +25,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
   props: FormDialogProps<TFieldValues, TContext>
 ) {
   const {
-    formOptions,
+    config,
     onSubmit,
     children,
     onCancel,
@@ -36,7 +36,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
   } = props;
   const formId = useRef(uuidv4()).current;
   const formProps = {
-    formOptions,
+    config,
     onSubmit,
     children,
     id: formId,
