@@ -40,8 +40,16 @@ function EditableMatrix(props: PropTypes) {
   ////////////////////////////////////////////////////////////////
 
   const handleSlice = (change: CellChange[], source: string) => {
+    const isChanged = change.map((item) => {
+      if (parseInt(item[2], 10) === parseInt(item[3], 10)) {
+        return;
+      }
+      return item;
+    });
     if (onUpdate) {
-      const edit = slice(change);
+      const edit = slice(
+        isChanged.filter((e) => e !== undefined) as CellChange[]
+      );
       onUpdate(edit, source);
     }
   };

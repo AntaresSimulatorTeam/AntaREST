@@ -84,10 +84,12 @@ function StudyMatrixView(props: PropTypes) {
         if (change.length > 10) {
           throw new Error(t("matrix.error.tooManyUpdates"));
         }
-        await editMatrix(study, formatedPath, change);
-        enqueueSnackbar(t("matrix.success.matrixUpdate"), {
-          variant: "success",
-        });
+        if (change.length > 0) {
+          await editMatrix(study, formatedPath, change);
+          enqueueSnackbar(t("matrix.success.matrixUpdate"), {
+            variant: "success",
+          });
+        }
       } catch (e) {
         enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), e as AxiosError);
       }
