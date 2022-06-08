@@ -33,7 +33,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import concat_files, zip_dir
+from antarest.core.utils.utils import concat_files, zip_dir, StopWatch
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -548,14 +548,21 @@ class LauncherService:
                         )
 
                 zip_path: Optional[Path] = None
+                stopwatch = StopWatch()
                 if LauncherParametersDTO.parse_raw(
                     job_result.launcher_params or "{}"
                 ).archive_output:
+                    logger.info("Re zipping output for transfer")
                     zip_path = (
                         output_true_path.parent
                         / f"{output_true_path.name}.zip"
                     )
                     zip_dir(output_true_path, zip_path=zip_path)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Zipped output for job {job_id} in {x}s"
+                        )
+                    )
 
                 final_output_path = zip_path or output_true_path
                 try:
