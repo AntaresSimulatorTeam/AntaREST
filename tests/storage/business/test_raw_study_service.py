@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -435,6 +436,9 @@ def test_copy_study(
 
 @pytest.mark.unit_test
 def test_zipped_output(tmp_path: Path) -> None:
+    os.environ["TZ"] = "Europe/Paris"  # set new timezone
+    time.tzset()
+
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
