@@ -11,12 +11,9 @@ import {
   getStudyData,
   importFile,
 } from "../../../../../../../services/api/study";
-import {
-  MatrixIndex,
-  MatrixType,
-  MatrixEditDTO,
-} from "../../../../../../../common/types";
+import { MatrixType, MatrixEditDTO } from "../../../../../../../common/types";
 import { Header, Root, Content } from "../style";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import { StyledButton } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import NoContent from "../../../../../../common/page/NoContent";
@@ -45,7 +42,6 @@ function StudyMatrixView(props: PropTypes) {
   const [loaded, setLoaded] = useState(false);
   const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
-  const [matrixIndex, setMatrixIndex] = useState<MatrixIndex>();
   const [isEditable, setEditable] = useState(true);
   const [formatedPath, setFormatedPath] = useState("");
 
@@ -71,14 +67,16 @@ function StudyMatrixView(props: PropTypes) {
     }
   };
 
-  const initMatrixIndex = async () => {
-    try {
-      const res = await getStudyMatrixIndex(study);
-      setMatrixIndex(res);
-    } catch (e) {
-      enqueueErrorSnackbar(t("matrix.failedtoretrieveindex"), e as AxiosError);
-    }
-  };
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    async () => {
+      const res = await getStudyMatrixIndex(study, formatedPath);
+      return res;
+    },
+    {
+      errorMessage: t("matrix.error.failedtoretrieveindex"),
+    },
+    [study, formatedPath]
+  );
 
   const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
@@ -128,7 +126,6 @@ function StudyMatrixView(props: PropTypes) {
       return;
     }
     loadFileData();
-    initMatrixIndex();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, filterOut, enqueueSnackbar, t]);
 

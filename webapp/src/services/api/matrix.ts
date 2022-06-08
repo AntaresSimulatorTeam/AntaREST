@@ -104,8 +104,10 @@ export const editMatrix = async (
 };
 
 export const getStudyMatrixIndex = async (
-  sid: string
+  sid: string,
+  path?: string
 ): Promise<MatrixIndex> => {
-  const res = await client.get(`/v1/studies/${sid}/matrixindex`);
+  const query = path ? `?path=${encodeURIComponent(path)}` : "";
+  const res = await client.get(`/v1/studies/${sid}/matrixindex${query}`);
   return res.data;
 };

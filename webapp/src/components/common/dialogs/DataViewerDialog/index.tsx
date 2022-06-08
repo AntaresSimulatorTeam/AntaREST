@@ -42,10 +42,6 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
     }
   };
 
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     async () => {
       const res = await getStudyMatrixIndex(studyId);

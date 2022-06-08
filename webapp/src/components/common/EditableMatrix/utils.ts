@@ -50,7 +50,7 @@ export const formatDateFromIndex = (
   return index.map((e) => String(e));
 };
 
-const converseLevelDate = (
+const convertLevelDate = (
   levelDate: StudyOutputDownloadLevelDTO
 ): DurationInputArg2 => {
   if (levelDate === StudyOutputDownloadLevelDTO.ANNUAL) {
@@ -76,7 +76,7 @@ export const createDateFromIndex = (
 ): string | number => {
   const date = moment
     .utc(startDate)
-    .add(indexDate, converseLevelDate(levelDate))
+    .add(indexDate, convertLevelDate(levelDate))
     .format("(ww) - ddd DD MMM HH:mm");
   return `${indexDate.toString().padStart(4, "0")} ${date}`.toUpperCase();
 };

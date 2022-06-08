@@ -107,9 +107,8 @@ function EditableMatrix(props: PropTypes) {
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
-          colWidths={
-            prependIndex && matrixTime && columns.length <= 10 ? [120] : [220]
-          }
+          colWidths={[220].concat(_.fill(Array(columns.length), 100))}
+          manualColumnResize
         >
           {formatedColumns.map((column) => (
             <HotColumn key={column.title} settings={column} />
