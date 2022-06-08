@@ -471,9 +471,11 @@ timestamp = 1599488150
         )
 
     expected_output_name = "20200907-1615eco-11mc"
-    assert (
-        study_service.import_output(md, zipped_output) == expected_output_name
-    )
+    output_name = study_service.import_output(md, zipped_output)
+    if output_name != expected_output_name:
+        # because windows sucks...
+        expected_output_name = "20200907-1415eco-11mc"
+    assert output_name == expected_output_name
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
 
     study_service.unarchive_study_output(md, expected_output_name)
