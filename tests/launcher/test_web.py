@@ -1,4 +1,3 @@
-from typing import Dict, Any, cast
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -11,7 +10,13 @@ from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
-from antarest.launcher.model import JobResult, JobStatus, JobResultDTO, LogType
+from antarest.launcher.model import (
+    JobResult,
+    JobStatus,
+    JobResultDTO,
+    LogType,
+    LauncherParametersDTO,
+)
 
 ADMIN = JWTUser(
     id=1,
@@ -50,7 +55,7 @@ def test_run() -> None:
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
     service.run_study.assert_called_once_with(
-        study, "local", None, RequestParameters(ADMIN)
+        study, "local", LauncherParametersDTO(), RequestParameters(ADMIN)
     )
 
 

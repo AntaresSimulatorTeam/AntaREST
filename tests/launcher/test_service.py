@@ -477,6 +477,8 @@ def test_get_logs(tmp_path: Path):
         JobLog(message="second message", log_type=str(JobLogType.BEFORE)),
         JobLog(message="last message", log_type=str(JobLogType.AFTER)),
     ]
+    job_result_mock.launcher_params = None
+
     launcher_service.job_result_repository.get.return_value = job_result_mock
     slurm_launcher = Mock()
     launcher_service.launchers = {"slurm": slurm_launcher}
@@ -577,11 +579,11 @@ def test_manage_output(tmp_path: Path):
     ]
     with pytest.raises(JobNotFound):
         launcher_service._import_output(
-            job_id, output_path, {"out.log": additional_log}
+            job_id, output_path, {"out.log": [additional_log]}
         )
 
     launcher_service._import_output(
-        job_id, output_path, {"out.log": additional_log}
+        job_id, output_path, {"out.log": [additional_log]}
     )
     assert not launcher_service._get_job_output_fallback_path(job_id).exists()
     launcher_service.study_service.import_output.assert_called()

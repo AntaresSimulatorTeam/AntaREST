@@ -25,7 +25,6 @@ from antarest.core.interfaces.eventbus import (
     Event,
     EventType,
 )
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import (
@@ -34,7 +33,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -148,6 +147,7 @@ class SlurmLauncher(AbstractLauncher):
             time.sleep(2)
 
     def start(self) -> None:
+        logger.info("Starting slurm_launcher loop")
         self.check_state = True
         self.thread = threading.Thread(target=self._loop, daemon=True)
         self.thread.start()
@@ -155,6 +155,7 @@ class SlurmLauncher(AbstractLauncher):
     def stop(self) -> None:
         self.check_state = False
         self.thread = None
+        logger.info("slurm_launcher loop stopped")
 
     def _init_launcher_arguments(
         self, local_workspace: Optional[Path] = None
@@ -424,7 +425,7 @@ class SlurmLauncher(AbstractLauncher):
         self,
         study_uuid: str,
         launch_uuid: str,
-        launcher_params: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
         version: str,
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
@@ -472,17 +473,15 @@ class SlurmLauncher(AbstractLauncher):
         self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
-        self, launcher_params: Optional[JSON]
+        self, launcher_params: LauncherParametersDTO
     ) -> argparse.Namespace:
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
-            if launcher_params.get("xpansion", False):
+            if launcher_params.xpansion:
                 launcher_args.xpansion_mode = (
-                    "r"
-                    if launcher_params.get("xpansion_r_version", False)
-                    else "cpp"
+                    "r" if launcher_params.xpansion_r_version else "cpp"
                 )
-            time_limit = launcher_params.get("time_limit", None)
+            time_limit = launcher_params.time_limit
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
@@ -496,10 +495,10 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
                 else:
                     launcher_args.time_limit = time_limit
-            post_processing = launcher_params.get("post_processing", False)
+            post_processing = launcher_params.post_processing
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing
-            nb_cpu = launcher_params.get("nb_cpu", None)
+            nb_cpu = launcher_params.nb_cpu
             if nb_cpu and isinstance(nb_cpu, int):
                 if 0 < nb_cpu <= MAX_NB_CPU:
                     launcher_args.n_cpu = nb_cpu
@@ -508,7 +507,7 @@ class SlurmLauncher(AbstractLauncher):
                         f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
                     )
             if (
-                launcher_params.get("adequacy_patch", None) is not None
+                launcher_params.adequacy_patch is not None
             ):  # the adequacy patch can be an empty object
                 launcher_args.post_processing = True
             return launcher_args
@@ -519,7 +518,7 @@ class SlurmLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         version: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
 

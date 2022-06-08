@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock, call, ANY
+from unittest.mock import Mock, call
 
 import pytest
 from fastapi import FastAPI
@@ -34,7 +34,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
@@ -656,6 +655,7 @@ def test_sim_result() -> None:
             referenceStatus=True,
             synchronized=False,
             status="",
+            archived=False,
         )
     ]
     mock_service.get_study_sim_result.return_value = result_data

@@ -1,9 +1,12 @@
 import datetime
 import os
+import platform
 import re
+import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
 
@@ -430,6 +433,62 @@ def test_copy_study(
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     study.get.assert_called_once_with(["study"])
+
+
+@pytest.mark.unit_test
+def test_zipped_output(tmp_path: Path) -> None:
+    if not platform.platform().startswith("Windows"):
+        os.environ["TZ"] = "Europe/Paris"  # set new timezone
+        time.tzset()
+
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    cache = Mock()
+    study_service = RawStudyService(
+        config=build_config(
+            tmp_path, workspace_name="foo", allow_deletion=False
+        ),
+        cache=cache,
+        study_factory=Mock(),
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+
+    zipped_output = tmp_path / "output.zip"
+    with ZipFile(zipped_output, "w", ZIP_DEFLATED) as output_data:
+        output_data.writestr(
+            "info.antares-output",
+            """[general]
+version = 700
+name = 11mc
+mode = Economy
+date = 2020.09.07 - 16:15
+title = 2020.09.07 - 16:15
+timestamp = 1599488150
+        """,
+        )
+
+    expected_output_name = "20200907-1615eco-11mc"
+    output_name = study_service.import_output(md, zipped_output)
+    if output_name != expected_output_name:
+        # because windows sucks...
+        expected_output_name = "20200907-1415eco-11mc"
+    assert output_name == expected_output_name
+    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
+
+    study_service.unarchive_study_output(md, expected_output_name)
+    assert (study_path / "output" / expected_output_name).exists()
+    assert not (
+        study_path / "output" / (expected_output_name + ".zip")
+    ).exists()
+
+    study_service.archive_study_output(md, expected_output_name)
+    assert not (study_path / "output" / expected_output_name).exists()
+    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
 @pytest.mark.unit_test

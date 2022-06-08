@@ -1,8 +1,17 @@
+import os
+import shutil
 import time
 from glob import escape
 from pathlib import Path
 from typing import IO, Any, Optional, Callable, TypeVar, List
-from zipfile import ZipFile, BadZipFile
+from zipfile import (
+    ZipFile,
+    BadZipFile,
+    ZIP_STORED,
+    ZIP_DEFLATED,
+    ZIP_BZIP2,
+    ZIP_LZMA,
+)
 
 import redis
 
@@ -131,3 +140,27 @@ def concat_files(files: List[Path], target: Path) -> None:
             with open(item, "r") as infile:
                 for line in infile:
                     fh.write(line)
+
+
+def zip_dir(
+    dir_path: Path, zip_path: Path, remove_source_dir: bool = False
+) -> None:
+    with ZipFile(
+        zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2
+    ) as zipf:
+        len_dir_path = len(str(dir_path))
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, file_path[len_dir_path:])
+    if remove_source_dir:
+        shutil.rmtree(dir_path)
+
+
+def unzip(
+    dir_path: Path, zip_path: Path, remove_source_zip: bool = False
+) -> None:
+    with ZipFile(zip_path, mode="r") as zipf:
+        zipf.extractall(dir_path)
+    if remove_source_zip:
+        zip_path.unlink()

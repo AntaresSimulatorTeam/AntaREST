@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 
 from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime, Sequence, ForeignKey  # type: ignore
@@ -8,6 +8,18 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
+
+
+class LauncherParametersDTO(BaseModel):
+    adequacy_patch: Optional[Dict[str, Any]] = None
+    nb_cpu: Optional[int] = None
+    post_processing: bool = False
+    time_limit: Optional[int] = None
+    xpansion: bool = False
+    xpansion_r_version: bool = False
+    archive_output: bool = False
+    output_suffix: Optional[str] = None
+    # add extensions field here
 
 
 class LogType(str, enum.Enum):

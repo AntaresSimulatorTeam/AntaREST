@@ -1052,9 +1052,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         logger.info(
-            "study %s output download ask by %s",
-            study_id,
-            params.get_user_id(),
+            f"Study {study_id} output download asked by {params.get_user_id()}",
         )
 
         if use_task:
@@ -1265,7 +1263,6 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[Dict[str, List[Path]]] = None,
         output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         """
@@ -1274,7 +1271,6 @@ class StudyService:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
             params: request parameters
-            additional_logs: path to the simulation log
             output_name_suffix: optional suffix name for the output
 
         Returns: output simulation json formatted
@@ -1291,11 +1287,6 @@ class StudyService:
         res = self.storage_service.get_storage(study).import_output(
             study, output, output_name_suffix
         )
-        if res is not None and additional_logs:
-            for log_name, log_paths in additional_logs.items():
-                concat_files(
-                    log_paths, Path(study.path) / "output" / res / log_name
-                )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
@@ -2134,3 +2125,119 @@ class StudyService:
             if isinstance(study, RawStudy) and not is_managed(study):
                 storage = self.storage_service.raw_study_service
                 storage.check_and_update_study_version_in_database(study)
+
+    def archive_output(
+        self,
+        study_id: str,
+        output_id: str,
+        use_task: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        if not use_task:
+            self.storage_service.get_storage(study).archive_study_output(
+                study, output_id
+            )
+            return None
+        else:
+            task_name = f"Archive output {study_id}/{output_id}"
+
+            def archive_output_task(
+                notifier: TaskUpdateNotifier,
+            ) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    self.storage_service.get_storage(
+                        study
+                    ).archive_study_output(study, output_id)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Output {output_id} of study {study_id} archived in {x}s"
+                        )
+                    )
+                    return TaskResult(
+                        success=True,
+                        message=f"Study output {study_id}/{output_id} successfully archived",
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not archive the output {study_id}/{output_id}",
+                        exc_info=e,
+                    )
+                    raise e
+
+            task_id = self.task_service.add_task(
+                archive_output_task,
+                task_name,
+                task_type=TaskType.EXPORT,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return task_id
+
+    def unarchive_output(
+        self,
+        study_id: str,
+        output_id: str,
+        use_task: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+
+        if not use_task:
+            stopwatch = StopWatch()
+            self.storage_service.get_storage(study).unarchive_study_output(
+                study, output_id
+            )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Output {output_id} of study {study_id} unarchived in {x}s"
+                )
+            )
+            return None
+
+        else:
+            task_name = f"Unarchive output {study_id}/{output_id}"
+
+            def unarchive_output_task(
+                notifier: TaskUpdateNotifier,
+            ) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    self.storage_service.get_storage(
+                        study
+                    ).unarchive_study_output(study, output_id)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Output {output_id} of study {study_id} unarchived in {x}s"
+                        )
+                    )
+                    return TaskResult(
+                        success=True,
+                        message=f"Study output {study_id}/{output_id} successfully unarchived",
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not unarchive the output {study_id}/{output_id}",
+                        exc_info=e,
+                    )
+                    raise e
+
+            task_id = self.task_service.add_task(
+                unarchive_output_task,
+                task_name,
+                task_type=TaskType.EXPORT,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return task_id
