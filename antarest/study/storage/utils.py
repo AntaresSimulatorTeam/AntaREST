@@ -148,7 +148,7 @@ def extract_output_name(
 
     general_info = info_antares_output["general"]
 
-    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime(
+    date = datetime.utcfromtimestamp(int(general_info["timestamp"])).strftime(
         "%Y%m%d-%H%M"
     )
 
