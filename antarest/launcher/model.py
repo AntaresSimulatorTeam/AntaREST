@@ -51,6 +51,7 @@ class JobResultDTO(BaseModel):
     msg: Optional[str]
     output_id: Optional[str]
     exit_code: Optional[int]
+    solver_stats_json: Optional[str]
 
 
 class JobLog(DTO, Base):  # type: ignore
@@ -93,6 +94,7 @@ class JobResult(DTO, Base):  # type: ignore
     msg = Column(String())
     output_id = Column(String())
     exit_code = Column(Integer)
+    solver_stats = Column(String(), nullable=True)
     logs = relationship(
         JobLog, uselist=True, cascade="all, delete, delete-orphan"
     )
@@ -111,6 +113,7 @@ class JobResult(DTO, Base):  # type: ignore
             msg=self.msg,
             output_id=self.output_id,
             exit_code=self.exit_code,
+            solver_stats_json=self.solver_stats_json,
         )
 
     def __eq__(self, o: Any) -> bool:

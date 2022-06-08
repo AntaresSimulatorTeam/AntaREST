@@ -519,6 +519,21 @@ class LauncherService:
             shutil.rmtree(job_output_path, ignore_errors=True)
         return output_name
 
+    def _save_solver_stats(
+        self, job_result: JobResult, output_path: Path
+    ) -> None:
+        try:
+            measurement_file = output_path / "time_measurement.txt"
+            if measurement_file.exists():
+                job_result.solver_stats = measurement_file.read_text(
+                    encoding="utf-8"
+                )
+                self.job_result_repository.save(job_result)
+        except Exception as e:
+            logger.error(
+                "Failed to save solver performance measurements", exc_info=e
+            )
+
     def _import_output(
         self,
         job_id: str,
@@ -540,6 +555,7 @@ class LauncherService:
                     output_true_path,
                     job_launch_params,
                 )
+                self._save_solver_stats(job_result, output_path)
 
                 if additional_logs:
                     for log_name, log_paths in additional_logs.items():
