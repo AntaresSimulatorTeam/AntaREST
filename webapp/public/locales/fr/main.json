@@ -52,6 +52,7 @@
     "global.tags": "Tags",
     "global.logs": "Logs",
     "global.public": "Public",
+    "global.advancedParams": "Paramètres avancés",
     "global.matrix": "Matrice",
     "global.chooseFile": "Choisir un fichier",
     "global.errorLogs": "Logs d'erreurs",

@@ -88,7 +88,7 @@ function LauncherModal(props: Props) {
       open={open}
       onClose={onClose}
       contentProps={{
-        sx: { width: "500px", height: "450px", p: 0, overflow: "hidden" },
+        sx: { width: "500px", height: "500px", p: 0, overflow: "hidden" },
       }}
       actions={
         <>
@@ -204,6 +204,7 @@ function LauncherModal(props: Props) {
         <FormGroup
           sx={{
             mt: 1,
+            mx: 1,
             width: "100%",
           }}
         >
@@ -252,13 +253,13 @@ function LauncherModal(props: Props) {
             label="Adequacy patch"
           />
         </FormGroup>
-        <Accordion>
+        <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel-advanced-parameters"
             id="panel-advanced-parameters-header"
           >
-            <Typography>Advanced</Typography>
+            <Typography>{t("global.advancedParams")}</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <FormControl
