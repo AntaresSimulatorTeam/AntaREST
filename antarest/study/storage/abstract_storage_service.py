@@ -371,21 +371,31 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def archive_study_output(self, study: T, output_id: str) -> bool:
         try:
             zip_dir(
-                study.path / "output" / output_id,
-                study.path / "output" / f"{output_id}.zip",
+                Path(study.path) / "output" / output_id,
+                Path(study.path) / "output" / f"{output_id}.zip",
+                remove_source_dir=True,
             )
             remove_from_cache(self.cache, study.id)
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                f"Failed to archive study {study.name} output {output_id}",
+                exc_info=e,
+            )
             return False
 
     def unarchive_study_output(self, study: T, output_id: str) -> bool:
         try:
             unzip(
-                study.path / "output" / output_id,
-                study.path / "output" / f"{output_id}.zip",
+                Path(study.path) / "output" / output_id,
+                Path(study.path) / "output" / f"{output_id}.zip",
+                remove_source_zip=True,
             )
             remove_from_cache(self.cache, study.id)
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                f"Failed to unarchive study {study.name} output {output_id}",
+                exc_info=e,
+            )
             return False
