@@ -85,6 +85,9 @@ class LocalLauncher(AbstractLauncher):
         )
         job.start()
 
+    def _get_job_final_output_path(self, job_id: str) -> Path:
+        return self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
+
     def _compute(
         self,
         antares_solver_path: Path,
@@ -97,7 +100,7 @@ class LocalLauncher(AbstractLauncher):
         def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
                 with open(
-                    self.config.storage.tmp_dir / f"antares_solver-{uuid}.log",
+                    self._get_job_final_output_path(str(uuid)),
                     "w",
                 ) as log_file:
                     log_file.write(self.logs[str(uuid)])
@@ -204,12 +207,8 @@ class LocalLauncher(AbstractLauncher):
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs:
             return self.logs[job_id]
-        elif (
-            self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
-        ).exists():
-            return (
-                self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
-            ).read_text()
+        elif self._get_job_final_output_path(job_id).exists():
+            return self._get_job_final_output_path(job_id).read_text()
         return None
 
     def kill_job(self, job_id: str) -> None:

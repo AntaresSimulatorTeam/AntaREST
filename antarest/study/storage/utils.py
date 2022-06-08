@@ -168,8 +168,7 @@ def extract_output_name(
             )
 
     name = f"-{suffix_name}" if suffix_name else ""
-    extension = ".zip" if is_output_archived else ""
-    return f"{date}{mode}{name}{extension}"
+    return f"{date}{mode}{name}"
 
 
 def is_managed(study: Study) -> bool:

@@ -246,11 +246,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         )
         path_output.mkdir(parents=True)
         output_full_name: Optional[str] = None
+        is_zipped = False
         try:
             if isinstance(output, Path):
                 if output != path_output and output.suffix != ".zip":
                     shutil.copytree(output, path_output / "imported")
                 elif output.suffix == ".zip":
+                    is_zipped = True
                     path_output.rmdir()
                     path_output = Path(str(path_output) + ".zip")
                     shutil.copyfile(output, path_output)
@@ -259,11 +261,12 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
+            extension = ".zip" if is_zipped else ""
             path_output = path_output.rename(
-                Path(path_output.parent, output_full_name)
+                Path(path_output.parent, output_full_name + extension)
             )
 
-            if output_full_name.split(".")[-1] != "zip":
+            if not is_zipped:
                 data = self.get(
                     metadata, f"output/{output_full_name}", -1, use_cache=False
                 )
@@ -276,7 +279,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 logger.warning(
                     "The imported output is zipped: no check is done"
                 )
-                output_full_name = "".join(output_full_name.split(".")[:-1])
 
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
