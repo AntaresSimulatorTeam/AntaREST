@@ -3,7 +3,7 @@ import usePromise, { PromiseStatus } from "../../../../../../hooks/usePromise";
 import { getStudyData } from "../../../../../../services/api/study";
 
 export interface FieldElement<T = unknown> {
-  path: string;
+  path?: string;
   value?: T;
 }
 
