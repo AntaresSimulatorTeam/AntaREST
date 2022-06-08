@@ -33,6 +33,7 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
+import { indigo } from "@mui/material/colors";
 import { StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import {
@@ -266,9 +267,27 @@ function NavHeader(props: Props) {
               label={t("study.managedStudy")}
               variant="outlined"
               color="secondary"
-              sx={{ mx: 2 }}
+              sx={{ ml: 2, mr: 1 }}
             />
           )}
+          {!study?.managed && study?.workspace && (
+            <Chip
+              label={study.workspace}
+              variant="outlined"
+              color="secondary"
+              sx={{ ml: 2, mr: 1 }}
+            />
+          )}
+
+          {study?.tags &&
+            study.tags.map((elm) => (
+              <Chip
+                key={elm}
+                label={elm}
+                variant="filled"
+                sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+              />
+            ))}
         </Box>
         <Box
           display="flex"
