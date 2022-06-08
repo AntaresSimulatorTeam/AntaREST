@@ -34,6 +34,8 @@ from antarest.launcher.adapters.abstractlauncher import (
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
+from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -196,6 +198,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.xpansion_mode = None
         arguments.version = False
         arguments.post_processing = False
+        arguments.other_options = None
         return arguments
 
     def _init_launcher_parameters(
@@ -421,6 +424,16 @@ class SlurmLauncher(AbstractLauncher):
                 ):
                     self._delete_workspace_file(finished_zip)
 
+    @staticmethod
+    def _override_solver_version(study_path: Path, version: str) -> None:
+        study_info_path = study_path / "study.antares"
+        study_info = IniReader().read(study_info_path)
+        if "antares" in study_info:
+            study_info["antares"]["solver_version"] = version
+            IniWriter().write(study_info, study_info_path)
+        else:
+            logger.warning("Failed to find antares study info")
+
     def _run_study(
         self,
         study_uuid: str,
@@ -438,6 +451,7 @@ class SlurmLauncher(AbstractLauncher):
                 )
 
                 self._assert_study_version_is_supported(version)
+                SlurmLauncher._override_solver_version(study_path, version)
 
                 launcher_args = self._check_and_apply_launcher_params(
                     launcher_params
@@ -477,6 +491,10 @@ class SlurmLauncher(AbstractLauncher):
     ) -> argparse.Namespace:
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
+            if launcher_params.other_options:
+                launcher_args.other_options = re.sub(
+                    "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
+                )
             if launcher_params.xpansion:
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"
