@@ -1,5 +1,6 @@
+import { FieldValues } from "react-hook-form";
+import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../services/api/study";
-import { FieldElement, FieldsInfo } from "./common";
 
 export interface PropertiesType {
   ui: {
@@ -26,63 +27,82 @@ export interface PropertiesType {
   };
 }
 
-export interface PropertiesFields extends FieldsInfo {
-  name: FieldElement<string>;
-  color_r: FieldElement<number>;
-  color_g: FieldElement<number>;
-  color_b: FieldElement<number>;
-  posX: FieldElement<number>;
-  posY: FieldElement<number>;
-  energieCostUnsupplied: FieldElement<number>;
-  energieCostSpilled: FieldElement<number>;
-  nonDispatchPower: FieldElement<boolean>;
-  dispatchHydroPower: FieldElement<boolean>;
-  otherDispatchPower: FieldElement<boolean>;
+type FilteringType = "hourly" | "daily" | "weekly" | "monthly" | "annual";
+
+export interface PropertiesFields extends FieldValues {
+  name: string;
+  color: { r: number; g: number; b: number };
+  posX: number;
+  posY: number;
+  energieCostUnsupplied: number;
+  energieCostSpilled: number;
+  nonDispatchPower: boolean;
+  dispatchHydroPower: boolean;
+  otherDispatchPower: boolean;
+  filterSynthesis: Array<FilteringType>;
+  filterByYear: Array<FilteringType>;
+}
+
+export type PropertiesPath = Omit<
+  Record<keyof PropertiesFields, string>,
+  "name"
+>;
+
+export function getPropertiesPath(areaName: string): PropertiesPath {
+  const pathPrefix = `input/areas/${areaName.toLowerCase()}`;
+  const optimization = `${pathPrefix}/optimization`;
+  const ui = `${pathPrefix}/ui/ui`;
+  return {
+    color: ui,
+    posX: `${ui}/x`,
+    posY: `${ui}/y`,
+    energieCostUnsupplied: `${optimization}/nodal optimization/spread-unsupplied-energy-cost`,
+    energieCostSpilled: `${optimization}/nodal optimization/spread-spilled-energy-cost`,
+    nonDispatchPower: `${optimization}/nodal optimization/non-dispatchable-power`,
+    dispatchHydroPower: `${optimization}/nodal optimization/dispatchable-hydro-power`,
+    otherDispatchPower: `${optimization}/nodal optimization/other-dispatchable-power`,
+    filterSynthesis: `${optimization}/filtering/filter-synthesis`,
+    filterByYear: `${optimization}/filtering/filter-year-by-year`,
+  };
 }
 
 export async function getDefaultValues(
   studyId: string,
-  areaName: string
+  areaName: string,
+  t: TFunction<"translation", undefined>
 ): Promise<PropertiesFields> {
   // Path
-  const pathPrefix = `input/areas/${areaName.toLowerCase()}`;
-  const pathOptimization = `${pathPrefix}/optimization`;
-  const pathUI = `${pathPrefix}/ui`;
-
+  const pathPrefix = `/input/areas/${areaName.toLowerCase()}`;
   // Fetch fields
-  const fields: PropertiesType = await getStudyData(studyId, pathPrefix);
+  const fields: PropertiesType = await getStudyData(studyId, pathPrefix, 3);
   const nodalOptimization: PropertiesType["optimization"]["nodal optimization"] =
     fields.optimization["nodal optimization"];
   const uiElement: PropertiesType["ui"]["ui"] = fields.ui.ui;
+  const { filtering } = fields.optimization;
 
   // Return element
   return {
-    name: { value: areaName },
-    color_r: { value: uiElement.color_r, path: `${pathUI}/ui/color_r` },
-    color_g: { value: uiElement.color_g, path: `${pathUI}/ui/color_g` },
-    color_b: { value: uiElement.color_b, path: `${pathUI}/ui/color_b` },
-    posX: { value: uiElement.x, path: `${pathUI}/ui/x` },
-    posY: { value: uiElement.y, path: `${pathUI}/ui/y` },
-    energieCostUnsupplied: {
-      value: nodalOptimization["spread-unsupplied-energy-cost"],
-      path: `${pathOptimization}/nodal optimization/spread-unsupplied-energy-cost`,
+    name: areaName,
+    color: {
+      r: uiElement.color_r,
+      g: uiElement.color_g,
+      b: uiElement.color_b,
     },
-    energieCostSpilled: {
-      value: nodalOptimization["spread-spilled-energy-cost"],
-      path: `${pathOptimization}/nodal optimization/spread-spilled-energy-cost`,
-    },
-    nonDispatchPower: {
-      value: nodalOptimization["non-dispatchable-power"],
-      path: `${pathOptimization}/nodal optimization/non-dispatchable-power`,
-    },
-    dispatchHydroPower: {
-      value: nodalOptimization["dispatchable-hydro-power"],
-      path: `${pathOptimization}/nodal optimization/dispatchable-hydro-power`,
-    },
-    otherDispatchPower: {
-      value: nodalOptimization["other-dispatchable-power"],
-      path: `${pathOptimization}/nodal optimization/other-dispatchable-power`,
-    },
+    posX: uiElement.x,
+    posY: uiElement.y,
+    energieCostUnsupplied: nodalOptimization["spread-unsupplied-energy-cost"],
+    energieCostSpilled: nodalOptimization["spread-spilled-energy-cost"],
+    nonDispatchPower: nodalOptimization["non-dispatchable-power"],
+    dispatchHydroPower: nodalOptimization["dispatchable-hydro-power"],
+    otherDispatchPower: nodalOptimization["other-dispatchable-power"],
+    filterSynthesis: filtering["filter-synthesis"].split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
+    filterByYear: filtering["filter-year-by-year"].split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
   };
 }
 

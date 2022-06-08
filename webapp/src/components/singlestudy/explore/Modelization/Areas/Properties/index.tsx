@@ -1,32 +1,47 @@
+import * as R from "ramda";
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import usePromise from "../../../../../../hooks/usePromise";
+import usePromise, { PromiseStatus } from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import Form from "../../../../../common/Form";
 import PropertiesForm from "./PropertiesForm";
-import { getDefaultValues } from "./utils";
+import { getDefaultValues, PropertiesFields } from "./utils";
+import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
-  const {
-    data: defaultValues,
-    status,
-    isLoading,
-    error,
-  } = usePromise(() => getDefaultValues(study.id, currentArea));
-  console.log("DEFAULT VALUES: ", defaultValues);
+  const [t] = useTranslation();
+  const { data: defaultValues, status } = usePromise(
+    () => getDefaultValues(study.id, currentArea, t),
+    {},
+    [study.id, currentArea]
+  );
   return (
     <Box sx={{ width: "100%", height: "100%" }}>
-      <Form
-        disableSubmitButton
-        formOptions={{ defaultValues }}
-        onSubmit={() => console.log("Hey")}
-      >
-        {PropertiesForm}
-      </Form>
+      {R.cond([
+        [R.equals(PromiseStatus.Pending), () => <SimpleLoader />],
+        [
+          R.equals(PromiseStatus.Resolved),
+          () => (
+            <Form
+              autoSubmit
+              config={{ defaultValues: defaultValues as PropertiesFields }}
+            >
+              {(formObj) =>
+                PropertiesForm({
+                  ...formObj,
+                  areaName: currentArea,
+                  studyId: study.id,
+                })
+              }
+            </Form>
+          ),
+        ],
+      ])(status)}
     </Box>
   );
 }
