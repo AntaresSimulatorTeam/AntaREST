@@ -1,17 +1,19 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { Code } from "./styles";
-import MatrixView from "../../MatrixView";
 import { MatrixType } from "../../../../common/types";
+import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import OkDialog from "../OkDialog";
+import EditableMatrix from "../../EditableMatrix";
+import { getStudyMatrixIndex } from "../../../../services/api/matrix";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 
 interface Props {
+  studyId: string;
   data: {
     filename: string;
     content: string | MatrixTypeWithId;
@@ -23,11 +25,26 @@ interface Props {
 function DataViewerDialog(props: PropsWithChildren<Props>) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { data, onClose, isMatrix } = props;
+  const { studyId, data, onClose, isMatrix } = props;
 
-  const copyId = (matrixId: string): void => {
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    async () => {
+      const res = await getStudyMatrixIndex(studyId);
+      return res;
+    },
+    {
+      errorMessage: t("matrix.error.failedToRetrieveIndex"),
+    },
+    [studyId]
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const copyId = async (matrixId: string): Promise<void> => {
     try {
-      navigator.clipboard.writeText(matrixId);
+      await navigator.clipboard.writeText(matrixId);
       enqueueSnackbar(t("data.success.matrixIdCopied"), {
         variant: "success",
       });
@@ -35,6 +52,10 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
       enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <OkDialog
@@ -75,7 +96,12 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
     >
       {isMatrix === true ? (
         <Box width="100%" height="100%" p={2}>
-          <MatrixView matrix={data.content as MatrixType} readOnly />
+          <EditableMatrix
+            matrix={data.content as MatrixType}
+            matrixTime
+            matrixIndex={matrixIndex}
+            readOnly
+          />
         </Box>
       ) : (
         <Code>

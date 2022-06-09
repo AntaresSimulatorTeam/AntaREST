@@ -254,6 +254,7 @@ function Candidates() {
       )}
       {!!capacityViewDialog && (
         <DataViewerDialog
+          studyId={study?.id || ""}
           data={capacityViewDialog}
           onClose={() => setCapacityViewDialog(undefined)}
           isMatrix

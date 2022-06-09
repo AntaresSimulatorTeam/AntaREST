@@ -29,8 +29,9 @@ class InputSeriesMatrix(MatrixNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         nb_columns: Optional[int] = None,
+        freq: str = "hourly",
     ):
-        super().__init__(context=context, config=config, freq="hourly")
+        super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
 
     def parse(

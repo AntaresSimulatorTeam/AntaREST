@@ -15,6 +15,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import FileTable from "../../../../common/FileTable";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
+import { Title } from "../share/styles";
 
 function Files() {
   const [t] = useTranslation();
@@ -91,7 +92,7 @@ function Files() {
       {loaded ? (
         <Box width="100%" height="100%" padding={2} boxSizing="border-box">
           <FileTable
-            title={t("global.files")}
+            title={<Title>{t("global.files")}</Title>}
             content={
               constraints?.map((item) => ({ id: item, name: item })) || []
             }
@@ -107,6 +108,7 @@ function Files() {
       )}
       {!!constraintViewDialog && (
         <DataViewerDialog
+          studyId={study?.id || ""}
           data={constraintViewDialog}
           onClose={() => setConstraintViewDialog(undefined)}
         />

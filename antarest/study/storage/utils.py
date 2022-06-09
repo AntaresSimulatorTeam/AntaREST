@@ -295,7 +295,7 @@ def get_start_date(
     )
     # base case is DAILY
     steps = (
-        int((end - start_offset) / 7) * 7
+        end - start_offset + 1
         if output_id is not None
         else MATRIX_INPUT_DAYS_COUNT
     )

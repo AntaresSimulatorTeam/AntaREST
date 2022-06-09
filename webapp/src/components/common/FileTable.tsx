@@ -12,19 +12,21 @@ import {
   Tooltip,
   IconButton,
   Typography,
+  Button,
 } from "@mui/material";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import ImportForm from "./ImportForm";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import { GenericInfo } from "../../common/types";
 import DownloadLink from "./DownloadLink";
+import ImportDialog from "./dialogs/ImportDialog";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -57,6 +59,7 @@ function FileTable(props: PropType) {
   } = props;
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<string>("");
+  const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const onImport = async (file: File) => {
     try {
@@ -86,7 +89,14 @@ function FileTable(props: PropType) {
       <Divider sx={{ mt: 1, mb: 2 }} />
       {allowImport && (
         <Box display="flex" justifyContent="flex-end">
-          <ImportForm text={t("global.import")} onImport={onImport} />
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<GetAppOutlinedIcon />}
+            onClick={() => setOpenImportDialog(true)}
+          >
+            {t("global.import")}
+          </Button>
         </Box>
       )}
       <Box
@@ -120,6 +130,9 @@ function FileTable(props: PropType) {
                 <TableRow
                   key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
+                    "&> th": {
+                      padding: 1,
+                    },
                     "&> th, >td": {
                       borderBottom: "solid 1px",
                       borderColor: theme.palette.divider,
@@ -210,6 +223,13 @@ function FileTable(props: PropType) {
         >
           {t("xpansion.question.deleteFile")}
         </ConfirmationDialog>
+      )}
+      {openImportDialog && (
+        <ImportDialog
+          open={openImportDialog}
+          onClose={() => setOpenImportDialog(false)}
+          onImport={onImport}
+        />
       )}
     </Box>
   );

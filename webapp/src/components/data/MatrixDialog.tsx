@@ -4,19 +4,30 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Box, Typography, IconButton, Tooltip } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { MatrixInfoDTO, MatrixType } from "../../common/types";
-import MatrixView from "../common/MatrixView";
+import {
+  MatrixInfoDTO,
+  MatrixType,
+  StudyOutputDownloadLevelDTO,
+} from "../../common/types";
 import OkDialog from "../common/dialogs/OkDialog";
 import { getMatrix } from "../../services/api/matrix";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import NoContent from "../common/page/NoContent";
 import SimpleLoader from "../common/loaders/SimpleLoader";
+import EditableMatrix from "../common/EditableMatrix";
 
 interface PropTypes {
   matrixInfo: MatrixInfoDTO;
   open: boolean;
   onClose: () => void;
 }
+
+const MATRIX_INDEX = {
+  start_date: "2001-01-01 00:00:00",
+  steps: 8760,
+  first_week_size: 7,
+  level: StudyOutputDownloadLevelDTO.HOURLY,
+};
 
 function MatrixDialog(props: PropTypes) {
   const { matrixInfo, open, onClose } = props;
@@ -96,7 +107,12 @@ function MatrixDialog(props: PropTypes) {
       <Box sx={{ height: "60vh" }}>
         {loading && <SimpleLoader />}
         {matrix.columns.length > 0 ? (
-          <MatrixView readOnly matrix={matrix} />
+          <EditableMatrix
+            matrixTime
+            matrixIndex={MATRIX_INDEX}
+            readOnly
+            matrix={matrix}
+          />
         ) : (
           !loading && (
             <Box

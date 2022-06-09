@@ -50,7 +50,11 @@ from antarest.core.tasks.service import (
 from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
+from antarest.matrixstore.business.matrix_editor import (
+    Operation,
+    MatrixSlice,
+    MatrixEditInstructionDTO,
+)
 from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
@@ -85,6 +89,7 @@ from antarest.study.model import (
     PatchArea,
     ExportFormat,
     StudyAdditionalData,
+    StudyDownloadLevelDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -96,6 +101,9 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    OutputSeriesMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
@@ -554,13 +562,23 @@ class StudyService:
         )
 
     def get_input_matrix_startdate(
-        self, study_id: str, params: RequestParameters
+        self, study_id: str, path: Optional[str], params: RequestParameters
     ) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return get_start_date(
-            self.storage_service.get_storage(study).get_raw(study)
-        )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        output_id = None
+        level = StudyDownloadLevelDTO.HOURLY
+        if path:
+            path_components = path.strip().strip("/").split("/")
+            if len(path_components) > 2 and path_components[0] == "output":
+                output_id = path_components[1]
+            data_node = file_study.tree.get_node(path_components)
+            if isinstance(data_node, OutputSeriesMatrix) or isinstance(
+                data_node, InputSeriesMatrix
+            ):
+                level = StudyDownloadLevelDTO(data_node.freq)
+        return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}
@@ -1411,7 +1429,9 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url, data=new)
+        self._edit_study_using_command(
+            study=study, url=url.strip().strip("/"), data=new
+        )
 
         self.event_bus.push(
             Event(
@@ -2109,14 +2129,13 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        slices: List[MatrixSlice],
-        operation: Operation,
+        matrix_edit_instruction: List[MatrixEditInstructionDTO],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.matrix_manager.update_matrix(study, path, slices, operation)
+        self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
 
     def check_and_update_all_study_versions_in_database(
         self, params: RequestParameters

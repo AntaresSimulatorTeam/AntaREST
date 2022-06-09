@@ -1,13 +1,4 @@
-import { styled, Box, Button } from "@mui/material";
-
-export const Root = styled(Box)(({ theme }) => ({
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  flexGrow: 1,
-}));
+import { styled, Button } from "@mui/material";
 
 export const StyledButton = styled(Button)(({ theme }) => ({
   backgroundColor: "rgba(180, 180, 180, 0.09)",
@@ -22,3 +13,5 @@ export const StyledButton = styled(Button)(({ theme }) => ({
     color: "white !important",
   },
 }));
+
+export default {};

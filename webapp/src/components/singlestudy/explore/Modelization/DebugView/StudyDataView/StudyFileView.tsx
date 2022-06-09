@@ -4,12 +4,13 @@ import { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Button } from "@mui/material";
+import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import { getStudyData, importFile } from "../../../../../../services/api/study";
 import { Header, Root, Content } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import ImportForm from "../../../../../common/ImportForm";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
+import ImportDialog from "../../../../../common/dialogs/ImportDialog";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -20,7 +21,7 @@ interface PropTypes {
   filterOut: Array<string>;
 }
 
-function StudyDataView(props: PropTypes) {
+function StudyFileView(props: PropTypes) {
   const { study, url, filterOut, refreshView } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -29,6 +30,7 @@ function StudyDataView(props: PropTypes) {
   const [loaded, setLoaded] = useState(false);
   const [isEditable, setEditable] = useState<boolean>(true);
   const [formatedPath, setFormatedPath] = useState<string>("");
+  const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const loadFileData = async () => {
     setData(undefined);
@@ -82,7 +84,15 @@ function StudyDataView(props: PropTypes) {
         <Root>
           {isEditable && (
             <Header>
-              <ImportForm text={t("global.import")} onImport={onImport} />
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<GetAppOutlinedIcon />}
+                onClick={() => setOpenImportDialog(true)}
+                sx={{ mb: 1 }}
+              >
+                {t("global.import")}
+              </Button>
             </Header>
           )}
           <Content>
@@ -95,8 +105,15 @@ function StudyDataView(props: PropTypes) {
           <SimpleLoader />
         </Box>
       )}
+      {openImportDialog && (
+        <ImportDialog
+          open={openImportDialog}
+          onClose={() => setOpenImportDialog(false)}
+          onImport={onImport}
+        />
+      )}
     </>
   );
 }
 
-export default StudyDataView;
+export default StudyFileView;

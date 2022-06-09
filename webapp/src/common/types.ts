@@ -439,6 +439,32 @@ export interface MatrixIndex {
   level: StudyOutputDownloadLevelDTO;
 }
 
+export enum Operator {
+  ADD = "+",
+  SUB = "-",
+  MUL = "*",
+  DIV = "/",
+  ABS = "ABS",
+  EQ = "=",
+}
+
+export interface MatrixSliceDTO {
+  row_from: number;
+  row_to: number;
+  column_from: number;
+  column_to: number;
+}
+
+export interface MatrixOperationDTO {
+  operation: Operator;
+  value: number;
+}
+
+export interface MatrixEditDTO {
+  slices: MatrixSliceDTO[];
+  operation: MatrixOperationDTO;
+}
+
 export interface MatrixAggregationResult {
   index: MatrixIndex;
   data: {

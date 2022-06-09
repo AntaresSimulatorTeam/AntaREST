@@ -3,7 +3,7 @@ import { CSSProperties, ReactNode } from "react";
 import { Box } from "@mui/material";
 import StudyFileView from "./StudyFileView";
 import StudyJsonView from "./StudyJsonView";
-import StudyMatrixView from "./StudyMatrixView";
+import StudyMatrixView from "./StudyMatrixView/StudyMatrixView";
 import { StudyDataType } from "../../../../../../common/types";
 
 interface PropTypes {
@@ -45,12 +45,7 @@ function StudyDataView(props: PropTypes) {
       return {
         css: { overflow: "auto" },
         data: (
-          <StudyMatrixView
-            study={study}
-            url={data}
-            filterOut={filterOut}
-            refreshView={refreshView}
-          />
+          <StudyMatrixView study={study} url={data} filterOut={filterOut} />
         ),
       };
     }

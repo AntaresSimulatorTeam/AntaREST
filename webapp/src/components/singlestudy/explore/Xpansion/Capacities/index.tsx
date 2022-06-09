@@ -15,6 +15,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";
+import { Title } from "../share/styles";
 
 function Capacities() {
   const [t] = useTranslation();
@@ -91,7 +92,7 @@ function Capacities() {
       {loaded ? (
         <Box width="100%" height="100%" padding={2} boxSizing="border-box">
           <FileTable
-            title={t("xpansion.capacities")}
+            title={<Title>{t("xpansion.capacities")}</Title>}
             content={
               capacities?.map((item) => ({ id: item, name: item })) || []
             }
@@ -107,6 +108,7 @@ function Capacities() {
       )}
       {!!capacityViewDialog && (
         <DataViewerDialog
+          studyId={study?.id || ""}
           data={capacityViewDialog}
           onClose={() => setCapacityViewDialog(undefined)}
           isMatrix

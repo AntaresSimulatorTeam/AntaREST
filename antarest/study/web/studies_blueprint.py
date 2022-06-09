@@ -239,6 +239,7 @@ def create_study_routes(
     )
     def get_study_matrix_index(
         uuid: str,
+        path: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(uuid)
@@ -247,7 +248,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.get_input_matrix_startdate(study_id, params)
+        return study_service.get_input_matrix_startdate(study_id, path, params)
 
     @bp.get(
         "/studies/{uuid}/export",
