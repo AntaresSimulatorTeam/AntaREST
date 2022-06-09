@@ -31,17 +31,17 @@ export interface SubmitHandlerData<
   dirtyValues: Partial<UnpackNestedValue<TFieldValues>>;
 }
 
-export type AutoSubmitHandler<TFieldValues extends FieldValues = FieldValues> =
-  <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
-    value: FieldPathValue<TFieldValues, TFieldName>
-  ) => any | Promise<any>;
-
-type UseFormRegisterPlus<TFieldValues extends FieldValues> = <
+export type AutoSubmitHandler<
+  TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->(
+> = (value: FieldPathValue<TFieldValues, TFieldName>) => any | Promise<any>;
+
+export type UseFormRegisterPlus<
+  TFieldValues extends FieldValues = FieldValues
+> = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
   name: TFieldName,
   options?: RegisterOptions<TFieldValues, TFieldName> & {
-    onAutoSubmit?: AutoSubmitHandler<TFieldValues>;
+    onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
   }
 ) => UseFormRegisterReturn;
 
@@ -74,7 +74,7 @@ export interface FormProps<
   id?: string;
 }
 
-function getAutoSubmitConfig(
+function toAutoSubmitConfig(
   value: FormProps["autoSubmit"]
 ): Required<AutoSubmitConfig> {
   return {
@@ -106,9 +106,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const submitRef = useRef<HTMLButtonElement>(null);
-  const autoSubmitConfig = getAutoSubmitConfig(autoSubmit);
+  const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
   const fieldAutoSubmitListeners = useRef<
-    Record<string, AutoSubmitHandler<TFieldValues> | undefined>
+    Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const lastDataSubmitted = useRef<UnpackNestedValue<TFieldValues>>();
 
