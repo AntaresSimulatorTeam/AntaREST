@@ -24,6 +24,7 @@ import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
@@ -56,6 +57,9 @@ interface Props {
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
   height: number;
+  selectionMode?: boolean;
+  selected?: boolean;
+  toggleSelect: (sid: string) => void;
 }
 
 const TinyText = styled(Typography)(({ theme }) => ({
@@ -64,7 +68,15 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 function StudyCard(props: Props) {
-  const { id, width, height, setStudyToLaunch } = props;
+  const {
+    id,
+    width,
+    height,
+    setStudyToLaunch,
+    selectionMode = true,
+    selected = false,
+    toggleSelect,
+  } = props;
   const [t, i18n] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -169,8 +181,40 @@ function StudyCard(props: Props) {
   return (
     <Card
       variant="outlined"
-      sx={{ width, height, display: "flex", flexDirection: "column" }}
+      sx={{
+        width,
+        height,
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+      }}
+      onClick={() => {
+        if (selectionMode) {
+          toggleSelect(study.id);
+        }
+      }}
     >
+      {selectionMode && selected && (
+        <Box
+          sx={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.3)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CheckCircleIcon
+            sx={{
+              fontSize: "68px",
+              opacity: 0.7,
+            }}
+            color="primary"
+          />
+        </Box>
+      )}
       <CardContent
         sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
       >
@@ -362,7 +406,11 @@ function StudyCard(props: Props) {
             <MenuItem onClick={handleUnarchiveClick}>
               <ListItemIcon>
                 <UnarchiveOutlinedIcon
-                  sx={{ color: "action.active", width: "24px", height: "24px" }}
+                  sx={{
+                    color: "action.active",
+                    width: "24px",
+                    height: "24px",
+                  }}
                 />
               </ListItemIcon>
               <ListItemText>{t("global.unarchive")}</ListItemText>

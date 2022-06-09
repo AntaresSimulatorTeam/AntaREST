@@ -162,7 +162,7 @@
     "settings.error.groupRolesSave": "Role(s) for group '{{0}}' not saved",
     "settings.error.tokenSave": "'{{0}}' token not saved",
     "settings.error.updateMaintenance": "Maintenance mode not updated",
-    "study.runStudy": "Run study",
+    "study.runStudy": "Study launch",
     "study.otherOptions": "Other options",
     "study.xpansionMode": "Xpansion mode",
     "study.archiveOutputMode": "Archive mode",

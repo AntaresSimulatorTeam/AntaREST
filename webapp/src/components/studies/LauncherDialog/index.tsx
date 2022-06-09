@@ -3,11 +3,15 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
   Checkbox,
+  Divider,
   FormControl,
   FormControlLabel,
   FormGroup,
+  List,
+  ListItem,
   TextField,
   Typography,
   useTheme,
@@ -15,12 +19,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { usePromise } from "react-use";
+import { useMountedState } from "react-use";
 import { StudyMetadata } from "../../../common/types";
 import { LaunchOptions, launchStudy } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
-import { Root } from "./style";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
 
@@ -127,12 +130,60 @@ function LauncherModal(props: Props) {
         </>
       }
     >
-      <Root>
+      <Box
+        sx={{
+          minWidth: "100px",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          alignItems: "flex-start",
+          px: 2,
+          boxSizing: "border-box",
+          overflowY: "scroll",
+          overflowX: "hidden",
+        }}
+      >
+        <Divider
+          sx={{ width: "100%", height: "1px" }}
+          orientation="horizontal"
+        />
+        <Box
+          sx={{
+            mb: 1,
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              maxHeight: "200px",
+              overflow: "auto",
+            }}
+          >
+            {studyNames.length === 1 ? (
+              <Typography variant="caption">{studyNames[0]}</Typography>
+            ) : (
+              <List>
+                {studyNames.map((name) => (
+                  <ListItem>
+                    <Typography variant="caption">{name}</Typography>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+        </Box>
+        <Divider
+          sx={{ width: "100%", height: "1px", mb: 1 }}
+          orientation="horizontal"
+        />
         <Typography
           sx={{
-            fontSize: "1.2em",
+            fontSize: "1.1rem",
             fontWeight: "bold",
-            mb: 3,
+            mb: 2,
           }}
         >
           Options
@@ -363,7 +414,7 @@ function LauncherModal(props: Props) {
             </FormControl>
           </AccordionDetails>
         </Accordion>
-      </Root>
+      </Box>
     </BasicDialog>
   );
 }

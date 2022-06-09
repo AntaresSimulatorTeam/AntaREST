@@ -11,13 +11,24 @@ type Props = GridChildComponentProps<{
   columnWidth: number;
   rowHeight: number;
   studyIds: StudiesListProps["studyIds"];
+  selectedStudies: Array<string>;
+  toggleSelect: (sid: string) => void;
+  selectionMode: boolean;
 }>;
 
 const StudyCardCell = memo<Props>(
   (props) => {
     const { columnIndex, rowIndex, style, isScrolling, data } = props;
-    const { setStudyToLaunch, columnCount, columnWidth, rowHeight, studyIds } =
-      data;
+    const {
+      setStudyToLaunch,
+      columnCount,
+      columnWidth,
+      rowHeight,
+      studyIds,
+      selectedStudies,
+      toggleSelect,
+      selectionMode,
+    } = data;
     const width = columnWidth - 10;
     const height = rowHeight - 10;
 
@@ -38,6 +49,13 @@ const StudyCardCell = memo<Props>(
             setStudyToLaunch={setStudyToLaunch}
             width={width}
             height={height}
+            selectionMode={selectionMode}
+            selected={
+              selectedStudies.indexOf(
+                studyIds[columnIndex + rowIndex * columnCount]
+              ) !== -1
+            }
+            toggleSelect={toggleSelect}
           />
         )}
       </Box>
