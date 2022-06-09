@@ -495,8 +495,9 @@ timestamp = 1599488150
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
     study_service.delete_output(md, output_name)
     assert not (
-            study_path / "output" / (expected_output_name + ".zip")
+        study_path / "output" / (expected_output_name + ".zip")
     ).exists()
+
 
 @pytest.mark.unit_test
 def test_delete_study(tmp_path: Path) -> None:
