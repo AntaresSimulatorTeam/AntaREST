@@ -308,7 +308,7 @@ function StudiesList(props: StudiesListProps) {
       {studyToLaunch && (
         <LauncherDialog
           open
-          studyId={studyToLaunch}
+          studyIds={[studyToLaunch]}
           onClose={() => setStudyToLaunch(null)}
         />
       )}

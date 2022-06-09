@@ -15,6 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { usePromise } from "react-use";
 import { StudyMetadata } from "../../../common/types";
 import { LaunchOptions, launchStudy } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -25,35 +26,54 @@ import { getStudy } from "../../../redux/selectors";
 
 interface Props {
   open: boolean;
-  studyId: StudyMetadata["id"];
+  studyIds: Array<StudyMetadata["id"]>;
   onClose: () => void;
 }
 
 function LauncherModal(props: Props) {
-  const { studyId, open, onClose } = props;
+  const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({});
   const [solverVersion, setSolverVersion] = useState<string>();
-  const studyName = useAppSelector((state) => getStudy(state, studyId)?.name);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const isMounted = useMountedState();
+  const studyNames = useAppSelector((state) =>
+    studyIds.map((sid) => getStudy(state, sid)?.name)
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleLaunchClick = async () => {
-    launchStudy(studyId, options, solverVersion)
-      .then(() => {
-        enqueueSnackbar(t("studies.studylaunched", { studyname: studyName }), {
-          variant: "success",
+    if (studyIds.length > 0) {
+      setIsLaunching(true);
+      Promise.all(
+        studyIds.map((sid) => launchStudy(sid, options, solverVersion))
+      )
+        .then(() => {
+          enqueueSnackbar(
+            t("studies.studylaunched", {
+              studyname: studyNames.join(", "),
+            }),
+            {
+              variant: "success",
+            }
+          );
+          onClose();
+        })
+        .catch((err) => {
+          enqueueErrorSnackbar(t("studies.error.runStudy"), err);
+        })
+        .finally(() => {
+          if (isMounted()) {
+            setIsLaunching(false);
+          }
         });
-        onClose();
-      })
-      .catch((err) => {
-        enqueueErrorSnackbar(t("studies.error.runStudy"), err);
-      });
+    }
   };
 
   const handleChange = <T extends keyof LaunchOptions>(
@@ -99,6 +119,7 @@ function LauncherModal(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
+            disabled={isLaunching}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}

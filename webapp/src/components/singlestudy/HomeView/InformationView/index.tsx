@@ -118,7 +118,7 @@ function InformationView(props: Props) {
       {study && openLauncherModal && (
         <LauncherModal
           open={openLauncherModal}
-          studyId={study.id}
+          studyIds={[study.id]}
           onClose={() => setOpenLauncherModal(false)}
         />
       )}
