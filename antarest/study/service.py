@@ -1284,14 +1284,18 @@ class StudyService:
                 f"Study files were not found for study {uuid}"
             )
 
-        res = self.storage_service.get_storage(study).import_output(
+        output_id = self.storage_service.get_storage(study).import_output(
             study, output, output_name_suffix
         )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
-        return res
+
+        if output_id and isinstance(output, Path) and output.suffix == ".zip":
+            self.unarchive_output(uuid, output_id, True, params)
+
+        return output_id
 
     def _create_edit_study_command(
         self,
@@ -2172,7 +2176,7 @@ class StudyService:
             task_id = self.task_service.add_task(
                 archive_output_task,
                 task_name,
-                task_type=TaskType.EXPORT,
+                task_type=TaskType.ARCHIVE,
                 ref_id=study.id,
                 custom_event_messages=None,
                 request_params=params,
@@ -2234,7 +2238,7 @@ class StudyService:
             task_id = self.task_service.add_task(
                 unarchive_output_task,
                 task_name,
-                task_type=TaskType.EXPORT,
+                task_type=TaskType.UNARCHIVE,
                 ref_id=study.id,
                 custom_event_messages=None,
                 request_params=params,
