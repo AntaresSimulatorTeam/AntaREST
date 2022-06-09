@@ -46,6 +46,7 @@ import {
   buildModificationDate,
   convertUTCToLocalTime,
   countAllChildrens,
+  displayVersionName,
 } from "../../services/utils";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import { isCurrentStudyFavorite } from "../../redux/selectors";
@@ -444,6 +445,15 @@ function NavHeader(props: Props) {
             </TinyText>
           </Box>
           <StyledDivider />
+          <Box
+            mx={3}
+            display="flex"
+            flexDirection="row"
+            justifyContent="flex-start"
+            alignItems="center"
+          >
+            <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+          </Box>
           {parent && (
             <Box
               mx={3}
