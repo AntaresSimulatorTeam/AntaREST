@@ -19,7 +19,7 @@ function BatchModeMenu(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const clearAll = () => {
+  const handlerClose = () => {
     setOpenLaunchModal(false);
     setSelectionMode(false);
   };
@@ -52,7 +52,11 @@ function BatchModeMenu(props: Props) {
             {t("global.launch")}
           </Button>
           {openLaunchModal && (
-            <LauncherDialog open studyIds={selectedIds} onClose={clearAll} />
+            <LauncherDialog
+              open
+              studyIds={selectedIds}
+              onClose={handlerClose}
+            />
           )}
         </>
       )}

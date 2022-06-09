@@ -72,6 +72,18 @@ function StudiesList(props: StudiesListProps) {
     setFolderList(folder.split("/"));
   }, [folder]);
 
+  useEffect(() => {
+    if (!selectionMode) {
+      setSelectedStudies([]);
+    }
+  }, [selectionMode]);
+
+  useEffect(() => {
+    if (selectedStudies.length === 0) {
+      setSelectionMode(false);
+    }
+  }, [selectedStudies]);
+
   const sortOptions = useMemo<Array<StudiesSortConf & { name: string }>>(
     () => [
       {
@@ -110,20 +122,10 @@ function StudiesList(props: StudiesListProps) {
     { trailing: true }
   );
 
-  const handleSelectionModeChange = (active: boolean) => {
-    if (!active) {
-      setSelectedStudies([]);
-    }
-    setSelectionMode(active);
-  };
-
   const handleToggleSelectStudy = (sid: string) => {
     const newSelectedStudies = selectedStudies.filter((s) => s !== sid);
     if (newSelectedStudies.length !== selectedStudies.length) {
       setSelectedStudies(newSelectedStudies);
-      if (newSelectedStudies.length === 0) {
-        setSelectionMode(false);
-      }
     } else {
       setSelectedStudies(newSelectedStudies.concat([sid]));
     }
@@ -222,7 +224,7 @@ function StudiesList(props: StudiesListProps) {
           <BatchModeMenu
             selectedIds={selectedStudies}
             selectionMode={selectionMode}
-            setSelectionMode={handleSelectionModeChange}
+            setSelectionMode={setSelectionMode}
           />
           <Tooltip title={t("studies.refresh") as string} sx={{ mr: 4 }}>
             <Button

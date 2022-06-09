@@ -20,12 +20,13 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
-import { StudyMetadata } from "../../../common/types";
-import { LaunchOptions, launchStudy } from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BasicDialog from "../../common/dialogs/BasicDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../redux/selectors";
+import { shallowEqual } from "react-redux";
+import { StudyMetadata } from "../../common/types";
+import { LaunchOptions, launchStudy } from "../../services/api/study";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import BasicDialog from "../common/dialogs/BasicDialog";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudy } from "../../redux/selectors";
 
 interface Props {
   open: boolean;
@@ -33,7 +34,7 @@ interface Props {
   onClose: () => void;
 }
 
-function LauncherModal(props: Props) {
+function LauncherDialog(props: Props) {
   const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -43,8 +44,9 @@ function LauncherModal(props: Props) {
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
-  const studyNames = useAppSelector((state) =>
-    studyIds.map((sid) => getStudy(state, sid)?.name)
+  const studyNames = useAppSelector(
+    (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
+    shallowEqual
   );
 
   ////////////////////////////////////////////////////////////////
@@ -419,4 +421,4 @@ function LauncherModal(props: Props) {
   );
 }
 
-export default LauncherModal;
+export default LauncherDialog;

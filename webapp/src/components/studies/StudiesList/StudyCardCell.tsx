@@ -31,6 +31,7 @@ const StudyCardCell = memo<Props>(
     } = data;
     const width = columnWidth - 10;
     const height = rowHeight - 10;
+    const studyId = studyIds[columnIndex + rowIndex * columnCount];
 
     return (
       <Box
@@ -45,15 +46,13 @@ const StudyCardCell = memo<Props>(
           <Skeleton variant="rectangular" width={width} height={height} />
         ) : (
           <StudyCard
-            id={studyIds[columnIndex + rowIndex * columnCount]}
+            id={studyId}
             setStudyToLaunch={setStudyToLaunch}
             width={width}
             height={height}
             selectionMode={selectionMode}
             selected={
-              selectedStudies.indexOf(
-                studyIds[columnIndex + rowIndex * columnCount]
-              ) !== -1
+              selectedStudies.indexOf(studyId) !== -1
             }
             toggleSelect={toggleSelect}
           />
@@ -63,8 +62,9 @@ const StudyCardCell = memo<Props>(
   },
   (prevProps, nextProps) => {
     // Prevents re-render of visible cells on scrolling
-    const { isScrolling: prevIsScrolling, ...prevRest } = prevProps;
-    const { isScrolling: nextIsScrolling, ...nextRest } = nextProps;
+    const { isScrolling: prevIsScrolling, selectedStudies: prevSelectedStudies, ...prevRest } = prevProps;
+    const { isScrolling: nextIsScrolling, selectedStudies: nextSelectedStudies, ...nextRest } = nextProps;
+    const hasSelectionChanged = 
     return (
       !!(nextIsScrolling === prevIsScrolling || nextIsScrolling) &&
       areEqual(prevRest, nextRest)
