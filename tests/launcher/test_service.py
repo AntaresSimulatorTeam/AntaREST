@@ -44,6 +44,7 @@ from antarest.launcher.service import (
 from antarest.login.auth import Auth
 from antarest.login.model import User
 from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
+from tests.conftest import with_db_context
 
 
 @pytest.mark.unit_test
@@ -647,3 +648,55 @@ def test_manage_output(tmp_path: Path):
         job_id, RequestParameters(user=DEFAULT_ADMIN_USER)
     )
     assert not launcher_service._get_job_output_fallback_path(job_id).exists()
+
+
+def test_save_stats(tmp_path: Path) -> None:
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+
+    job_id = "job_id"
+    study_id = "study_id"
+    job_result = JobResult(
+        id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS
+    )
+
+    output_path = tmp_path / "some-output"
+    output_path.mkdir()
+
+    launcher_service._save_solver_stats(job_result, output_path)
+    launcher_service.job_result_repository.save.assert_not_called()
+
+    expected_saved_stats = """#item	duration_ms	NbOccurences
+mc_years	216328	1
+study_loading	4304	1
+survey_report	158	1
+total	244581	1
+tsgen_hydro	1683	1
+tsgen_load	2702	1
+tsgen_solar	21606	1
+tsgen_thermal	407	2
+tsgen_wind	2500	1
+    """
+    (output_path / "time_measurement.txt").write_text(expected_saved_stats)
+
+    launcher_service._save_solver_stats(job_result, output_path)
+    launcher_service.job_result_repository.save.assert_called_with(
+        JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats=expected_saved_stats,
+        )
+    )

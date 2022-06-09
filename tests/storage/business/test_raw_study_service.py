@@ -485,10 +485,18 @@ timestamp = 1599488150
     assert not (
         study_path / "output" / (expected_output_name + ".zip")
     ).exists()
+    study_service.delete_output(md, output_name)
+    assert not (study_path / "output" / expected_output_name).exists()
 
+    output_name = study_service.import_output(md, zipped_output)
+    study_service.unarchive_study_output(md, expected_output_name)
     study_service.archive_study_output(md, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
+    study_service.delete_output(md, output_name)
+    assert not (
+        study_path / "output" / (expected_output_name + ".zip")
+    ).exists()
 
 
 @pytest.mark.unit_test
