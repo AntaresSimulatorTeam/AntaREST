@@ -27,6 +27,17 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   const { enqueueSnackbar } = useSnackbar();
   const { studyId, data, onClose, isMatrix } = props;
 
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    async () => {
+      const res = await getStudyMatrixIndex(studyId);
+      return res;
+    },
+    {
+      errorMessage: t("matrix.error.failedToRetrieveIndex"),
+    },
+    [studyId]
+  );
+
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
@@ -41,17 +52,6 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
       enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
     }
   };
-
-  const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      const res = await getStudyMatrixIndex(studyId);
-      return res;
-    },
-    {
-      errorMessage: t("matrix.error.failedtoretrieveindex"),
-    },
-    [studyId]
-  );
 
   ////////////////////////////////////////////////////////////////
   // JSX

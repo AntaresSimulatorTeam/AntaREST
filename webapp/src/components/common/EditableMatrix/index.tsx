@@ -36,7 +36,7 @@ function EditableMatrix(props: PropTypes) {
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
-  // Utils
+  // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSlice = (change: CellChange[], source: string) => {
@@ -53,10 +53,6 @@ function EditableMatrix(props: PropTypes) {
       onUpdate(edit, source);
     }
   };
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "a" && e.ctrlKey) {

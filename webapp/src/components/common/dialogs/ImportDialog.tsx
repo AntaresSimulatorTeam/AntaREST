@@ -98,7 +98,7 @@ function ImportDialog(props: Props) {
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
                   <Typography sx={{ cursor: "pointer" }}>
-                    {dropzoneText || t("global.importhint")}
+                    {dropzoneText || t("global.importHint")}
                   </Typography>
                 </div>
               </Paper>

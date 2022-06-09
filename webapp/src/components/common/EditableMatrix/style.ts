@@ -1,6 +1,5 @@
 import { styled, Box, Button } from "@mui/material";
 import { HotTable } from "@handsontable/react";
-import { scrollbarStyle } from "../../../theme";
 
 export const Root = styled(Box)(({ theme }) => ({
   width: "100%",
@@ -25,12 +24,25 @@ export const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export const StyledHotTable = styled(HotTable)(() => ({
-  "&> div > div": {
-    ...scrollbarStyle,
-  },
   backgroundColor: "#222333 !important",
   color: "white",
   borderColor: "rgba(255, 255, 255, 0.12) !important",
+  "& table th": {
+    backgroundColor: "#222333 !important",
+    color: "white !important",
+    borderColor: "rgba(255, 255, 255, 0.12) !important",
+  },
+  "& thead th.ht__active_highlight": {
+    backgroundColor: "#00B2FF !important",
+  },
+  "& .handsontableInput": {
+    backgroundColor: "#333652",
+    color: "#fff",
+  },
+  "& .handsontable .htDimmed": {
+    color: "rgba(255, 255, 255, 0.75) !important",
+    backgroundColor: "#1c1e2e !important",
+  },
 }));
 
 export default {};

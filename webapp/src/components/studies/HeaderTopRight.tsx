@@ -82,7 +82,7 @@ function HeaderRight() {
         <ImportDialog
           open={openImportDialog}
           title={t("studies.importnewstudy")}
-          dropzoneText={t("studies.importhint")}
+          dropzoneText={t("studies.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}
         />

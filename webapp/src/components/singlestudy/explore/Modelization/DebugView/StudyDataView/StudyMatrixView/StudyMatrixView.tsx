@@ -45,6 +45,17 @@ function StudyMatrixView(props: PropTypes) {
   const [isEditable, setEditable] = useState(true);
   const [formatedPath, setFormatedPath] = useState("");
 
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    async () => {
+      const res = await getStudyMatrixIndex(study, formatedPath);
+      return res;
+    },
+    {
+      errorMessage: t("matrix.error.failedToRetrieveIndex"),
+    },
+    [study, formatedPath]
+  );
+
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
@@ -67,16 +78,9 @@ function StudyMatrixView(props: PropTypes) {
     }
   };
 
-  const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      const res = await getStudyMatrixIndex(study, formatedPath);
-      return res;
-    },
-    {
-      errorMessage: t("matrix.error.failedtoretrieveindex"),
-    },
-    [study, formatedPath]
-  );
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
@@ -95,10 +99,6 @@ function StudyMatrixView(props: PropTypes) {
       }
     }
   };
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
 
   const onImport = async (file: File) => {
     try {
@@ -215,7 +215,7 @@ function StudyMatrixView(props: PropTypes) {
         <ImportDialog
           open={openImportDialog}
           title={t("matrix.importnewmatrix")}
-          dropzoneText={t("matrix.message.importhint")}
+          dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={onImport}
         />
