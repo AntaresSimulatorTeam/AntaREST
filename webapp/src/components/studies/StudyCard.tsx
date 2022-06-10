@@ -52,7 +52,7 @@ import * as studyApi from "../../services/api/study";
 
 const logError = debug("antares:studieslist:error");
 
-interface Props {
+export interface StudyCardProps {
   id: StudyMetadata["id"];
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
@@ -67,7 +67,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-function StudyCard(props: Props) {
+function StudyCard(props: StudyCardProps) {
   const {
     id,
     width,

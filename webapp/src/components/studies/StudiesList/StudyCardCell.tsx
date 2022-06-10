@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
 import { GridChildComponentProps, areEqual } from "react-window";
 import { StudyMetadata } from "../../../common/types";
-import StudyCard from "../StudyCard";
+import StudyCard, { StudyCardProps } from "../StudyCard";
 import { StudiesListProps } from ".";
 
 type Props = GridChildComponentProps<{
@@ -15,6 +15,8 @@ type Props = GridChildComponentProps<{
   toggleSelect: (sid: string) => void;
   selectionMode: boolean;
 }>;
+
+const StudyCardMemo = memo<StudyCardProps>(StudyCard);
 
 const StudyCardCell = memo<Props>(
   (props) => {
@@ -51,9 +53,7 @@ const StudyCardCell = memo<Props>(
             width={width}
             height={height}
             selectionMode={selectionMode}
-            selected={
-              selectedStudies.indexOf(studyId) !== -1
-            }
+            selected={false}
             toggleSelect={toggleSelect}
           />
         )}
@@ -62,9 +62,8 @@ const StudyCardCell = memo<Props>(
   },
   (prevProps, nextProps) => {
     // Prevents re-render of visible cells on scrolling
-    const { isScrolling: prevIsScrolling, selectedStudies: prevSelectedStudies, ...prevRest } = prevProps;
-    const { isScrolling: nextIsScrolling, selectedStudies: nextSelectedStudies, ...nextRest } = nextProps;
-    const hasSelectionChanged = 
+    const { isScrolling: prevIsScrolling, ...prevRest } = prevProps;
+    const { isScrolling: nextIsScrolling, ...nextRest } = nextProps;
     return (
       !!(nextIsScrolling === prevIsScrolling || nextIsScrolling) &&
       areEqual(prevRest, nextRest)
