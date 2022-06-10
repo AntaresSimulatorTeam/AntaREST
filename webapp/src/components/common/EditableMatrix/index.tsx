@@ -98,6 +98,7 @@ function EditableMatrix(props: PropTypes) {
           if (value > agg.max) {
             newAgg.max = value;
           }
+          newAgg.total = agg.total + value;
 
           return newAgg;
         },
