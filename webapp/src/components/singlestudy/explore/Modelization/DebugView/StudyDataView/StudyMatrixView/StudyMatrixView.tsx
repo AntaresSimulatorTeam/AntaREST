@@ -46,7 +46,7 @@ function StudyMatrixView(props: PropTypes) {
   const [formatedPath, setFormatedPath] = useState("");
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => getStudyMatrixIndex(study, formatedPath),
+    () => getStudyMatrixIndex(study, formatedPath),
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
     },

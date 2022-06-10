@@ -54,7 +54,7 @@ function MatrixInput(props: PropsType) {
   );
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => getStudyMatrixIndex(study.id, url),
+    () => getStudyMatrixIndex(study.id, url),
     {
       errorMessage: t("matrix.error.failedtoretrieveindex"),
     },
