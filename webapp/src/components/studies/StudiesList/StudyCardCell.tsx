@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
 import { GridChildComponentProps, areEqual } from "react-window";
 import { StudyMetadata } from "../../../common/types";
-import StudyCard, { StudyCardProps } from "../StudyCard";
+import StudyCard from "../StudyCard";
 import { StudiesListProps } from ".";
 
 type Props = GridChildComponentProps<{
@@ -15,8 +15,6 @@ type Props = GridChildComponentProps<{
   toggleSelect: (sid: string) => void;
   selectionMode: boolean;
 }>;
-
-const StudyCardMemo = memo<StudyCardProps>(StudyCard, areEqual);
 
 const StudyCardCell = memo<Props>(
   (props) => {
@@ -47,7 +45,7 @@ const StudyCardCell = memo<Props>(
         {isScrolling ? (
           <Skeleton variant="rectangular" width={width} height={height} />
         ) : (
-          <StudyCardMemo
+          <StudyCard
             id={studyId}
             setStudyToLaunch={setStudyToLaunch}
             width={width}

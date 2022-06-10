@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
@@ -33,6 +33,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import BoltIcon from "@mui/icons-material/Bolt";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import debug from "debug";
+import { areEqual } from "react-window";
 import { StudyMetadata } from "../../common/types";
 import {
   buildModificationDate,
@@ -52,7 +53,7 @@ import * as studyApi from "../../services/api/study";
 
 const logError = debug("antares:studieslist:error");
 
-export interface StudyCardProps {
+interface Props {
   id: StudyMetadata["id"];
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
@@ -67,7 +68,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-function StudyCard(props: StudyCardProps) {
+const StudyCard = memo((props: Props) => {
   const {
     id,
     width,
@@ -539,6 +540,6 @@ function StudyCard(props: StudyCardProps) {
       )}
     </Card>
   );
-}
+}, areEqual);
 
 export default StudyCard;
