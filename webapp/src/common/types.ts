@@ -439,6 +439,12 @@ export interface MatrixIndex {
   level: StudyOutputDownloadLevelDTO;
 }
 
+export enum MatrixStats {
+  TOTAL = "total",
+  STATS = "stats",
+  NOCOL = "",
+}
+
 export enum Operator {
   ADD = "+",
   SUB = "-",

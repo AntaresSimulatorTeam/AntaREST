@@ -4,7 +4,12 @@ import HotTable, { HotColumn } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
 // eslint-disable-next-line import/no-unresolved
 import { CellChange } from "handsontable/common";
-import { MatrixIndex, MatrixEditDTO, MatrixType } from "../../../common/types";
+import {
+  MatrixIndex,
+  MatrixEditDTO,
+  MatrixType,
+  MatrixStats,
+} from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
 import { Root, StyledHotTable } from "./style";
@@ -19,6 +24,7 @@ interface PropTypes {
   toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
   columnsNames?: string[];
+  computStats?: MatrixStats;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -36,6 +42,7 @@ function EditableMatrix(props: PropTypes) {
     toggleView,
     onUpdate,
     columnsNames,
+    computStats,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
@@ -75,6 +82,31 @@ function EditableMatrix(props: PropTypes) {
     }
   };
 
+  const addStats = (computStats: string, row: Array<number>) => {
+    if (computStats === MatrixStats.TOTAL) {
+      return row.reduce((agg, value) => {
+        return agg + value;
+      }, 0);
+    }
+    if (computStats === MatrixStats.STATS) {
+      const statsInfo = row.reduce(
+        (agg, value) => {
+          const newAgg = { ...agg };
+          if (value < agg.min) {
+            newAgg.min = value;
+          }
+          if (value > agg.max) {
+            newAgg.max = value;
+          }
+
+          return newAgg;
+        },
+        { min: row[0], max: row[0], total: 0 }
+      );
+      return [statsInfo.min, statsInfo.max, statsInfo.total / row.length];
+    }
+  };
+
   useEffect(() => {
     setFormatedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
@@ -82,12 +114,23 @@ function EditableMatrix(props: PropTypes) {
         title: columnsNames?.[index] || String(col),
         readOnly,
       })),
+      ...(computStats === MatrixStats.TOTAL
+        ? [{ title: "Total", readOnly: true }]
+        : []),
+      ...(computStats === MatrixStats.STATS
+        ? [
+            { title: "Min.", readOnly: true },
+            { title: "Max.", readOnly: true },
+            { title: "Average", readOnly: true },
+          ]
+        : []),
     ]);
 
     const tmpData = data.map((row, i) => {
+      let tmpRow = row as (string | number)[];
       if (prependIndex) {
         if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
-          return [
+          tmpRow = [
             createDateFromIndex(
               i,
               matrixIndex.start_date,
@@ -96,13 +139,26 @@ function EditableMatrix(props: PropTypes) {
             ),
           ].concat(row);
         }
-        return [index[i]].concat(row);
+        tmpRow = [index[i]].concat(row);
       }
-
-      return row;
+      if (computStats) {
+        tmpRow = tmpRow.concat(
+          addStats(computStats, row) as (string | number)[]
+        );
+      }
+      return tmpRow;
     });
     setGrid(tmpData);
-  }, [columns, columnsNames, data, index, prependIndex, readOnly, matrixIndex]);
+  }, [
+    columns,
+    columnsNames,
+    data,
+    index,
+    prependIndex,
+    readOnly,
+    matrixIndex,
+    computStats,
+  ]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -124,7 +180,7 @@ function EditableMatrix(props: PropTypes) {
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
-          colWidths={[220].concat(_.fill(Array(columns.length), 100))}
+          colWidths={[220].concat(_.fill(Array(formatedColumns.length), 100))}
           manualColumnResize
         >
           {formatedColumns.map((column) => (

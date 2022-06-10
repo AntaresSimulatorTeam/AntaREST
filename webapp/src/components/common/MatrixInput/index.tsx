@@ -7,7 +7,11 @@ import { Typography, Box, ButtonGroup, Button, Divider } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-import { MatrixEditDTO, StudyMetadata } from "../../../common/types";
+import {
+  MatrixEditDTO,
+  MatrixStats,
+  StudyMetadata,
+} from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyData, importFile } from "../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
@@ -24,10 +28,11 @@ interface PropsType {
   study: StudyMetadata;
   url: string;
   columnsNames?: string[];
+  computStats: MatrixStats;
 }
 
 function MatrixInput(props: PropsType) {
-  const { study, url, columnsNames } = props;
+  const { study, url, columnsNames, computStats } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -148,6 +153,7 @@ function MatrixInput(props: PropsType) {
             readOnly={false}
             toggleView={toggleView}
             onUpdate={handleUpdate}
+            computStats={computStats}
           />
         ) : (
           !isLoading && (
