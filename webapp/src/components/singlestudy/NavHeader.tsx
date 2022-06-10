@@ -275,7 +275,6 @@ function NavHeader(props: Props) {
             <Chip
               label={study.workspace}
               variant="outlined"
-              color="secondary"
               sx={{ ml: 2, mr: 1 }}
             />
           )}

@@ -79,7 +79,7 @@ function EditableMatrix(props: PropTypes) {
     setFormatedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
       ...columns.map((col, index) => ({
-        title: columnsNames?.[index] || col,
+        title: columnsNames?.[index] || String(col),
         readOnly,
       })),
     ]);

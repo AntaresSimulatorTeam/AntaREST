@@ -10,7 +10,6 @@ import {
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
-import { scrollbarStyle } from "../../../../theme";
 
 const ROW_ITEM_SIZE = 30;
 
@@ -22,7 +21,6 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
       color: theme.palette.text.primary,
     },
   },
-  ...scrollbarStyle,
 }));
 
 interface PropsType<T> {
@@ -48,7 +46,11 @@ const Row = memo((props: ListChildComponentProps) => {
         ...style,
       }}
     >
-      <ListItemText>{element.name}</ListItemText>
+      <ListItemText
+        sx={{ "&> span": { textOverflow: "ellipsis", overflow: "hidden" } }}
+      >
+        {element.name}
+      </ListItemText>
       <ListItemIcon
         sx={{
           minWidth: 0,

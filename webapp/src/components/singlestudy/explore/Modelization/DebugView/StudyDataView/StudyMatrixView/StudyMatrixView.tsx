@@ -202,7 +202,7 @@ function StudyMatrixView(props: PropTypes) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          title={t("matrix.importnewmatrix")}
+          title={t("matrix.importNewMatrix")}
           dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}

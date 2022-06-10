@@ -170,8 +170,8 @@ function MatrixInput(props: PropsType) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          title={t("matrix.importnewmatrix")}
-          dropzoneText={t("matrix.message.importhint")}
+          title={t("matrix.importNewMatrix")}
+          dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}
         />
