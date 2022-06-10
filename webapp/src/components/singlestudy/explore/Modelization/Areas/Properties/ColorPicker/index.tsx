@@ -4,8 +4,9 @@ import {
   TextField,
   TextFieldProps,
   InputAdornment,
+  setRef,
 } from "@mui/material";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, forwardRef, useEffect, useRef, useState } from "react";
 import { ColorResult, SketchPicker } from "react-color";
 import { useTranslation } from "react-i18next";
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
@@ -16,11 +17,26 @@ interface Props {
   currentColor?: Partial<ColorResult["rgb"]>;
 }
 
-function ColorPicker(props: Props & TextFieldProps) {
-  const { currentColor, ref, ...other } = props;
+const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
+  const { currentColor, onChange, ...other } = props;
   const [color, setColor] = useState<string>(RGBToString(currentColor || {}));
   const [t] = useTranslation();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const internalRef = useRef<HTMLTextAreaElement>();
+
+  useEffect(() => {
+    if (color && internalRef.current && onChange) {
+      onChange({
+        target: internalRef.current,
+      } as ChangeEvent<HTMLTextAreaElement>);
+    }
+  }, [color, onChange]);
+
+  useEffect(() => {
+    if (currentColor) {
+      setColor(RGBToString(currentColor));
+    }
+  }, [currentColor]);
 
   return (
     <Box
@@ -37,14 +53,16 @@ function ColorPicker(props: Props & TextFieldProps) {
         label={t("global.color")}
         variant="filled"
         placeholder={color}
-        inputRef={ref}
+        inputRef={(instance) => {
+          setRef(ref, instance);
+          setRef(internalRef, instance);
+        }}
         value={color}
         InputLabelProps={
           // Allow to show placeholder when field is empty
           currentColor !== undefined ? { shrink: true } : {}
         }
         {...other}
-        disabled
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -99,6 +117,6 @@ function ColorPicker(props: Props & TextFieldProps) {
       )}
     </Box>
   );
-}
+});
 
 export default ColorPicker;

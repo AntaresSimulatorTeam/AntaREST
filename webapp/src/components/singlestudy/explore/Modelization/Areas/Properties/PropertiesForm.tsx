@@ -5,11 +5,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { AxiosError } from "axios";
 import { useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../services/api/study";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../common/Fieldset";
 import { FormObj } from "../../../../../common/Form";
 import ColorPicker from "./ColorPicker";
@@ -23,7 +25,7 @@ export default function PropertiesForm(
   }
 ) {
   const { control, register, defaultValues, studyId, areaName } = props;
-
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
     (item) => ({
@@ -32,16 +34,15 @@ export default function PropertiesForm(
     })
   );
   const path = useMemo(() => {
-    console.log("AREA NAME: ", areaName);
     return getPropertiesPath(areaName);
   }, [areaName]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAutoSubmit = async (path: string, data: any) => {
-    console.log(path);
-    console.log(data);
     try {
       await editStudy(data, studyId, path);
     } catch (error) {
-      console.log(error);
+      enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
     }
   };
 
@@ -70,12 +71,12 @@ export default function PropertiesForm(
             value={defaultValues?.name}
             disabled
           />
-         {/* { <ColorPicker
+          <ColorPicker
             currentColor={defaultValues?.color}
             {...register("color", {
               setValueAs: (value) => stringToRGB(value),
               onAutoSubmit: (value) => {
-                console.log("COLOR CALLED", value);
+                // TODO here we send the color to the path ui, but it also contains x and y which are now set to undefined here
                 handleAutoSubmit(path.color, {
                   color_r: value.r,
                   color_g: value.g,
@@ -83,7 +84,7 @@ export default function PropertiesForm(
                 });
               },
             })}
-          />} */}
+          />
           <TextField
             sx={{ mx: 1 }}
             type="number"
