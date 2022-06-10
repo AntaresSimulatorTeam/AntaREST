@@ -31,6 +31,8 @@ import MapPropsView from "./MapPropsView";
 import CreateAreaModal from "./CreateAreaModal";
 import mapbackground from "../../../../../assets/mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { setCurrentArea } from "../../../../../redux/ducks/studyDataSynthesis";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -78,6 +80,13 @@ function Map() {
   const graphRef =
     useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (selectedItem && isNode(selectedItem)) {
+      dispatch(setCurrentArea((selectedItem as NodeProperties).id));
+    }
+  }, [selectedItem]);
 
   const onClickNode = useCallback(
     (nodeId: string) => {

@@ -70,7 +70,7 @@ export default function PropertiesForm(
             value={defaultValues?.name}
             disabled
           />
-          <ColorPicker
+         {/* { <ColorPicker
             currentColor={defaultValues?.color}
             {...register("color", {
               setValueAs: (value) => stringToRGB(value),
@@ -83,7 +83,7 @@ export default function PropertiesForm(
                 });
               },
             })}
-          />
+          />} */}
           <TextField
             sx={{ mx: 1 }}
             type="number"
