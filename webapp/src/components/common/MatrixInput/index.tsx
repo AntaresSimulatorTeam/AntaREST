@@ -1,79 +1,65 @@
-import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import { Box, Typography, Divider, ButtonGroup, Button } from "@mui/material";
+import { Typography, Box, ButtonGroup, Button, Divider } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-import {
-  getStudyData,
-  importFile,
-} from "../../../../../../../services/api/study";
-import { MatrixType, MatrixEditDTO } from "../../../../../../../common/types";
-import { Header, Root, Content } from "../style";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import { StyledButton } from "./style";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import NoContent from "../../../../../../common/page/NoContent";
-import ImportDialog from "../../../../../../common/dialogs/ImportDialog";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import EditableMatrix from "../../../../../../common/EditableMatrix";
-import {
-  editMatrix,
-  getStudyMatrixIndex,
-} from "../../../../../../../services/api/matrix";
+import { MatrixEditDTO, StudyMetadata } from "../../../common/types";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { getStudyData, importFile } from "../../../services/api/study";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
+import { Root, Content, Header, StyledButton } from "./style";
+import SimpleLoader from "../loaders/SimpleLoader";
+import NoContent from "../page/NoContent";
+import EditableMatrix from "../EditableMatrix";
+import ImportDialog from "../dialogs/ImportDialog";
 
 const logErr = debug("antares:createimportform:error");
 
-interface PropTypes {
-  study: string;
+interface PropsType {
+  study: StudyMetadata;
   url: string;
-  filterOut: Array<string>;
+  columnsNames?: string[];
 }
 
-function StudyMatrixView(props: PropTypes) {
-  const { study, url, filterOut } = props;
+function MatrixInput(props: PropsType) {
+  const { study, url, columnsNames } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const [data, setData] = useState<MatrixType>();
-  const [loaded, setLoaded] = useState(false);
   const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
-  const [isEditable, setEditable] = useState(true);
-  const [formatedPath, setFormatedPath] = useState("");
 
-  const { data: matrixIndex } = usePromiseWithSnackbarError(
-    () => getStudyMatrixIndex(study, formatedPath),
-    {
-      errorMessage: t("matrix.error.failedToRetrieveIndex"),
-    },
-    [study, formatedPath]
-  );
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const loadFileData = async () => {
-    setData(undefined);
-    setLoaded(false);
-    try {
-      const res = await getStudyData(study, url);
+  const {
+    data,
+    isLoading,
+    reload: reloadMatrix,
+  } = usePromiseWithSnackbarError(
+    async () => {
+      const res = await getStudyData(study.id, url);
       if (typeof res === "string") {
         const fixed = res.replace(/NaN/g, '"NaN"');
-        setData(JSON.parse(fixed));
-      } else {
-        setData(res);
+        return JSON.parse(fixed);
       }
-    } catch (e) {
-      enqueueErrorSnackbar(t("data.error.matrix"), e as AxiosError);
-    } finally {
-      setLoaded(true);
-    }
-  };
+      return res;
+    },
+    {
+      errorMessage: t("data.error.matrix"),
+    },
+    [study, url]
+  );
+
+  const { data: matrixIndex } = usePromiseWithSnackbarError(
+    () => getStudyMatrixIndex(study.id, url),
+    {
+      errorMessage: t("matrix.error.failedtoretrieveindex"),
+    },
+    [study, url]
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -86,7 +72,7 @@ function StudyMatrixView(props: PropTypes) {
           throw new Error(t("matrix.error.tooManyUpdates"));
         }
         if (change.length > 0) {
-          await editMatrix(study, formatedPath, change);
+          await editMatrix(study.id, url, change);
           enqueueSnackbar(t("matrix.success.matrixUpdate"), {
             variant: "success",
           });
@@ -99,7 +85,7 @@ function StudyMatrixView(props: PropTypes) {
 
   const handleImport = async (file: File) => {
     try {
-      await importFile(file, study, formatedPath);
+      await importFile(file, study.id, url);
     } catch (e) {
       logErr("Failed to import file", file, e);
       enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
@@ -107,26 +93,9 @@ function StudyMatrixView(props: PropTypes) {
       enqueueSnackbar(t("variants.success.import"), {
         variant: "success",
       });
-      loadFileData();
+      reloadMatrix();
     }
   };
-
-  useEffect(() => {
-    const urlParts = url.split("/");
-    const tmpUrl = urlParts.filter((item) => item);
-    setFormatedPath(tmpUrl.join("/"));
-    if (tmpUrl.length > 0) {
-      setEditable(!filterOut.includes(tmpUrl[0]));
-    }
-    if (urlParts.length < 2) {
-      enqueueSnackbar(t("studies.error.retrieveData"), {
-        variant: "error",
-      });
-      return;
-    }
-    loadFileData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, filterOut, enqueueSnackbar, t]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -147,7 +116,7 @@ function StudyMatrixView(props: PropTypes) {
             {t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {loaded && data && data.columns?.length > 1 && (
+            {!isLoading && data?.columns?.length > 1 && (
               <ButtonGroup sx={{ mr: 2 }} variant="contained">
                 <StyledButton onClick={() => setToggleView((prev) => !prev)}>
                   {toggleView ? (
@@ -158,31 +127,30 @@ function StudyMatrixView(props: PropTypes) {
                 </StyledButton>
               </ButtonGroup>
             )}
-            {isEditable && (
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<GetAppOutlinedIcon />}
-                onClick={() => setOpenImportDialog(true)}
-              >
-                {t("global.import")}
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<GetAppOutlinedIcon />}
+              onClick={() => setOpenImportDialog(true)}
+            >
+              {t("global.import")}
+            </Button>
           </Box>
         </Header>
         <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
-        {!loaded && <SimpleLoader />}
-        {loaded && data && data.columns?.length > 1 ? (
+        {isLoading && <SimpleLoader />}
+        {!isLoading && data?.columns?.length > 1 ? (
           <EditableMatrix
             matrix={data}
             matrixTime
             matrixIndex={matrixIndex}
-            readOnly={!isEditable}
+            columnsNames={columnsNames}
+            readOnly={false}
             toggleView={toggleView}
             onUpdate={handleUpdate}
           />
         ) : (
-          loaded && (
+          !isLoading && (
             <NoContent
               title="matrix.message.matrixEmpty"
               callToAction={
@@ -203,7 +171,7 @@ function StudyMatrixView(props: PropTypes) {
         <ImportDialog
           open={openImportDialog}
           title={t("matrix.importnewmatrix")}
-          dropzoneText={t("matrix.message.importHint")}
+          dropzoneText={t("matrix.message.importhint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}
         />
@@ -212,4 +180,8 @@ function StudyMatrixView(props: PropTypes) {
   );
 }
 
-export default StudyMatrixView;
+MatrixInput.defaultProps = {
+  columnsNames: undefined,
+};
+
+export default MatrixInput;

@@ -225,6 +225,7 @@
     "study.modelization.thermal": "Thermal",
     "study.modelization.hydro": "Hydro",
     "study.modelization.wind": "Wind",
+    "study.modelization.solar": "Solar",
     "study.modelization.reserve": "Reserve",
     "study.modelization.miscGen": "Misc Gen",
     "study.message.outputExportInProgress": "Downloading study outputs...",

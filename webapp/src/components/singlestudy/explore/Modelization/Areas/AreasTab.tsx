@@ -32,6 +32,10 @@ function AreasTab() {
         path: `/studies/${study.id}/explore/modelization/area/wind`,
       },
       {
+        label: t("study.modelization.solar"),
+        path: `/studies/${study.id}/explore/modelization/area/solar`,
+      },
+      {
         label: t("study.modelization.reserve"),
         path: `/studies/${study.id}/explore/modelization/area/reserve`,
       },

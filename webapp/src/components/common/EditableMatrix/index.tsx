@@ -18,6 +18,7 @@ interface PropTypes {
   readOnly: boolean;
   toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
+  columnsNames?: string[];
 }
 
 type CellType = Array<number | string | boolean>;
@@ -27,12 +28,21 @@ type ColumnsType = { title: string; readOnly: boolean };
 registerAllModules();
 
 function EditableMatrix(props: PropTypes) {
-  const { readOnly, matrix, matrixIndex, matrixTime, toggleView, onUpdate } =
-    props;
+  const {
+    readOnly,
+    matrix,
+    matrixIndex,
+    matrixTime,
+    toggleView,
+    onUpdate,
+    columnsNames,
+  } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
+  const [formatedColumns, setFormatedColumns] = useState<Array<ColumnsType>>(
+    []
+  );
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
@@ -66,9 +76,12 @@ function EditableMatrix(props: PropTypes) {
   };
 
   useEffect(() => {
-    setColumns([
+    setFormatedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
-      ...columns.map((title) => ({ title: String(title), readOnly })),
+      ...columns.map((col, index) => ({
+        title: columnsNames?.[index] || col,
+        readOnly,
+      })),
     ]);
 
     const tmpData = data.map((row, i) => {
@@ -89,7 +102,7 @@ function EditableMatrix(props: PropTypes) {
       return row;
     });
     setGrid(tmpData);
-  }, [columns, data, index, prependIndex, readOnly, matrixIndex]);
+  }, [columns, columnsNames, data, index, prependIndex, readOnly, matrixIndex]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -124,11 +137,5 @@ function EditableMatrix(props: PropTypes) {
     </Root>
   );
 }
-
-EditableMatrix.defaultProps = {
-  toggleView: true,
-  onUpdate: undefined,
-  matrixIndex: undefined,
-};
 
 export default EditableMatrix;

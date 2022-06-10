@@ -28,10 +28,7 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   const { studyId, data, onClose, isMatrix } = props;
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      const res = await getStudyMatrixIndex(studyId);
-      return res;
-    },
+    async () => getStudyMatrixIndex(studyId),
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
     },
