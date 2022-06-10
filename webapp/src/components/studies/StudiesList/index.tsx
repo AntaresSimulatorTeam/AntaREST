@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -122,14 +122,15 @@ function StudiesList(props: StudiesListProps) {
     { trailing: true }
   );
 
-  const handleToggleSelectStudy = (sid: string) => {
-    const newSelectedStudies = selectedStudies.filter((s) => s !== sid);
-    if (newSelectedStudies.length !== selectedStudies.length) {
-      setSelectedStudies(newSelectedStudies);
-    } else {
-      setSelectedStudies(newSelectedStudies.concat([sid]));
-    }
-  };
+  const handleToggleSelectStudy = useCallback((sid: string) => {
+    setSelectedStudies((prevState) => {
+      const newSelectedStudies = prevState.filter((s) => s !== sid);
+      if (newSelectedStudies.length !== prevState.length) {
+        return newSelectedStudies;
+      }
+      return newSelectedStudies.concat([sid]);
+    });
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // Utils

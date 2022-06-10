@@ -16,7 +16,7 @@ type Props = GridChildComponentProps<{
   selectionMode: boolean;
 }>;
 
-const StudyCardMemo = memo<StudyCardProps>(StudyCard);
+const StudyCardMemo = memo<StudyCardProps>(StudyCard, areEqual);
 
 const StudyCardCell = memo<Props>(
   (props) => {
@@ -47,13 +47,13 @@ const StudyCardCell = memo<Props>(
         {isScrolling ? (
           <Skeleton variant="rectangular" width={width} height={height} />
         ) : (
-          <StudyCard
+          <StudyCardMemo
             id={studyId}
             setStudyToLaunch={setStudyToLaunch}
             width={width}
             height={height}
             selectionMode={selectionMode}
-            selected={false}
+            selected={selectedStudies.indexOf(studyId) !== -1}
             toggleSelect={toggleSelect}
           />
         )}
