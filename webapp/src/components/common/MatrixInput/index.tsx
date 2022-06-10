@@ -34,9 +34,6 @@ function MatrixInput(props: PropsType) {
   const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
   const {
     data,
     isLoading,
@@ -57,15 +54,16 @@ function MatrixInput(props: PropsType) {
   );
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      const res = await getStudyMatrixIndex(study.id, url);
-      return res;
-    },
+    async () => getStudyMatrixIndex(study.id, url),
     {
       errorMessage: t("matrix.error.failedtoretrieveindex"),
     },
     [study, url]
   );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
@@ -85,11 +83,7 @@ function MatrixInput(props: PropsType) {
     }
   };
 
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const onImport = async (file: File) => {
+  const handleImport = async (file: File) => {
     try {
       await importFile(file, study.id, url);
     } catch (e) {
@@ -122,23 +116,14 @@ function MatrixInput(props: PropsType) {
             {t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {!isLoading && data && data.columns?.length > 1 && (
+            {!isLoading && data?.columns?.length > 1 && (
               <ButtonGroup sx={{ mr: 2 }} variant="contained">
-                <StyledButton
-                  onClick={
-                    toggleView ? undefined : () => setToggleView(!toggleView)
-                  }
-                  disabled={toggleView}
-                >
-                  <TableViewIcon sx={{ color: "text.main" }} />
-                </StyledButton>
-                <StyledButton
-                  onClick={
-                    toggleView ? () => setToggleView(!toggleView) : undefined
-                  }
-                  disabled={!toggleView}
-                >
-                  <BarChartIcon sx={{ color: "text.main" }} />
+                <StyledButton onClick={() => setToggleView((prev) => !prev)}>
+                  {toggleView ? (
+                    <BarChartIcon sx={{ color: "text.main" }} />
+                  ) : (
+                    <TableViewIcon sx={{ color: "text.main" }} />
+                  )}
                 </StyledButton>
               </ButtonGroup>
             )}
@@ -154,7 +139,7 @@ function MatrixInput(props: PropsType) {
         </Header>
         <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && data && data.columns?.length > 1 ? (
+        {!isLoading && data?.columns?.length > 1 ? (
           <EditableMatrix
             matrix={data}
             matrixTime
@@ -188,7 +173,7 @@ function MatrixInput(props: PropsType) {
           title={t("matrix.importnewmatrix")}
           dropzoneText={t("matrix.message.importhint")}
           onClose={() => setOpenImportDialog(false)}
-          onImport={onImport}
+          onImport={handleImport}
         />
       )}
     </Root>

@@ -1,5 +1,4 @@
 import { styled, Box, Paper, Button } from "@mui/material";
-import { scrollbarStyle } from "../../../theme";
 
 export const Root = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -32,7 +31,6 @@ export const Content = styled(Paper)(({ theme }) => ({
   alignItems: "flex-start",
   overflow: "auto",
   position: "relative",
-  ...scrollbarStyle,
 }));
 
 export const StyledButton = styled(Button)(({ theme }) => ({

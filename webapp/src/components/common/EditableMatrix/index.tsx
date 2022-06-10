@@ -40,7 +40,9 @@ function EditableMatrix(props: PropTypes) {
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
+  const [formatedColumns, setFormatedColumns] = useState<Array<ColumnsType>>(
+    []
+  );
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
@@ -74,11 +76,12 @@ function EditableMatrix(props: PropTypes) {
   };
 
   useEffect(() => {
-    setColumns([
+    setFormatedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
-      ...(columnsNames
-        ? columnsNames.map((title) => ({ title: String(title), readOnly }))
-        : columns.map((title) => ({ title: String(title), readOnly }))),
+      ...columns.map((col, index) => ({
+        title: columnsNames?.[index] || col,
+        readOnly,
+      })),
     ]);
 
     const tmpData = data.map((row, i) => {
@@ -134,12 +137,5 @@ function EditableMatrix(props: PropTypes) {
     </Root>
   );
 }
-
-EditableMatrix.defaultProps = {
-  toggleView: true,
-  onUpdate: undefined,
-  matrixIndex: undefined,
-  columnsNames: undefined,
-};
 
 export default EditableMatrix;

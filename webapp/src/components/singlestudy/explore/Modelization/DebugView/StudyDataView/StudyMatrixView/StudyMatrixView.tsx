@@ -46,10 +46,7 @@ function StudyMatrixView(props: PropTypes) {
   const [formatedPath, setFormatedPath] = useState("");
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      const res = await getStudyMatrixIndex(study, formatedPath);
-      return res;
-    },
+    async () => getStudyMatrixIndex(study, formatedPath),
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
     },
@@ -100,7 +97,7 @@ function StudyMatrixView(props: PropTypes) {
     }
   };
 
-  const onImport = async (file: File) => {
+  const handleImport = async (file: File) => {
     try {
       await importFile(file, study, formatedPath);
     } catch (e) {
@@ -152,21 +149,12 @@ function StudyMatrixView(props: PropTypes) {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {loaded && data && data.columns?.length > 1 && (
               <ButtonGroup sx={{ mr: 2 }} variant="contained">
-                <StyledButton
-                  onClick={
-                    toggleView ? undefined : () => setToggleView(!toggleView)
-                  }
-                  disabled={toggleView}
-                >
-                  <TableViewIcon sx={{ color: "text.main" }} />
-                </StyledButton>
-                <StyledButton
-                  onClick={
-                    toggleView ? () => setToggleView(!toggleView) : undefined
-                  }
-                  disabled={!toggleView}
-                >
-                  <BarChartIcon sx={{ color: "text.main" }} />
+                <StyledButton onClick={() => setToggleView((prev) => !prev)}>
+                  {toggleView ? (
+                    <BarChartIcon sx={{ color: "text.main" }} />
+                  ) : (
+                    <TableViewIcon sx={{ color: "text.main" }} />
+                  )}
                 </StyledButton>
               </ButtonGroup>
             )}
@@ -217,7 +205,7 @@ function StudyMatrixView(props: PropTypes) {
           title={t("matrix.importnewmatrix")}
           dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
-          onImport={onImport}
+          onImport={handleImport}
         />
       )}
     </Root>
