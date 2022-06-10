@@ -53,34 +53,8 @@ function EditableMatrix(props: PropTypes) {
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Utils
   ////////////////////////////////////////////////////////////////
-
-  const handleSlice = (change: CellChange[], source: string) => {
-    const isChanged = change.map((item) => {
-      if (parseInt(item[2], 10) === parseInt(item[3], 10)) {
-        return;
-      }
-      return item;
-    });
-    if (onUpdate) {
-      const edit = slice(
-        isChanged.filter((e) => e !== undefined) as CellChange[]
-      );
-      onUpdate(edit, source);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "a" && e.ctrlKey) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if (hotTableComponent.current?.hotInstance) {
-        const hot = hotTableComponent.current.hotInstance;
-        hot.selectCell(0, 1, hot.countRows() - 1, hot.countCols() - 1);
-      }
-    }
-  };
 
   const addStats = (computStats: string, row: Array<number>) => {
     if (computStats === MatrixStats.TOTAL) {
@@ -105,6 +79,42 @@ function EditableMatrix(props: PropTypes) {
         { min: row[0], max: row[0], total: 0 }
       );
       return [statsInfo.min, statsInfo.max, statsInfo.total / row.length];
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSlice = (change: CellChange[], source: string) => {
+    const isChanged = change.map((item) => {
+      if (parseInt(item[2], 10) === parseInt(item[3], 10)) {
+        return;
+      }
+      return item;
+    });
+    if (onUpdate) {
+      const edit = slice(
+        isChanged.filter((e) => e !== undefined) as CellChange[]
+      );
+      onUpdate(edit, source);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "a" && e.ctrlKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (hotTableComponent.current?.hotInstance) {
+        const hot = hotTableComponent.current.hotInstance;
+        const cols = computStats === MatrixStats.TOTAL ? 2 : 4;
+        hot.selectCell(
+          0,
+          1,
+          hot.countRows() - 1,
+          hot.countCols() - (computStats ? cols : 1)
+        );
+      }
     }
   };
 
@@ -181,7 +191,11 @@ function EditableMatrix(props: PropTypes) {
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
-          colWidths={[220].concat(_.fill(Array(formatedColumns.length), 100))}
+          colWidths={
+            prependIndex
+              ? [220].concat(_.fill(Array(formatedColumns.length), 100))
+              : _.fill(Array(formatedColumns.length), 100)
+          }
           manualColumnResize
         >
           {formatedColumns.map((column) => (
