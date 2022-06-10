@@ -150,7 +150,7 @@ function EditableMatrix(props: PropTypes) {
             ),
           ].concat(row);
         }
-        tmpRow = [index[i]].concat(row);
+        tmpRow = tmpRow.concat([index[i]].concat(row));
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
