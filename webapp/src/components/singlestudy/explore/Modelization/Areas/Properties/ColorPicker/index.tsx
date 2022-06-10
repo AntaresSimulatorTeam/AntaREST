@@ -5,7 +5,7 @@ import {
   TextFieldProps,
   InputAdornment,
 } from "@mui/material";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { ColorResult, SketchPicker } from "react-color";
 import { useTranslation } from "react-i18next";
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
@@ -13,12 +13,12 @@ import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { RGBToString, stringToRGB } from "./utils";
 
 interface Props {
-  currentColor: ColorResult["rgb"];
+  currentColor?: Partial<ColorResult["rgb"]>;
 }
 
-export default function ColorPicker(props: Props & TextFieldProps) {
-  const { currentColor, ...other } = props;
-  const [color, setColor] = useState<string>(RGBToString(currentColor));
+function ColorPicker(props: Props & TextFieldProps) {
+  const { currentColor, ref, ...other } = props;
+  const [color, setColor] = useState<string>(RGBToString(currentColor || {}));
   const [t] = useTranslation();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
@@ -37,11 +37,12 @@ export default function ColorPicker(props: Props & TextFieldProps) {
         label={t("global.color")}
         variant="filled"
         placeholder={color}
+        inputRef={ref}
+        value={color}
         InputLabelProps={
           // Allow to show placeholder when field is empty
           currentColor !== undefined ? { shrink: true } : {}
         }
-        value={color}
         {...other}
         disabled
         InputProps={{
@@ -69,7 +70,10 @@ export default function ColorPicker(props: Props & TextFieldProps) {
         >
           <SketchPicker
             color={stringToRGB(color)}
-            onChangeComplete={(color: ColorResult) => {
+            onChangeComplete={(
+              color: ColorResult,
+              ev: ChangeEvent<HTMLInputElement>
+            ) => {
               setColor(RGBToString(color.rgb));
             }}
           />
@@ -96,3 +100,5 @@ export default function ColorPicker(props: Props & TextFieldProps) {
     </Box>
   );
 }
+
+export default ColorPicker;

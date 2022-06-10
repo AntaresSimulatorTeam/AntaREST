@@ -36,6 +36,8 @@ export default function PropertiesForm(
     return getPropertiesPath(areaName);
   }, [areaName]);
   const handleAutoSubmit = async (path: string, data: any) => {
+    console.log(path);
+    console.log(data);
     try {
       await editStudy(data, studyId, path);
     } catch (error) {
@@ -73,7 +75,7 @@ export default function PropertiesForm(
             {...register("color", {
               setValueAs: (value) => stringToRGB(value),
               onAutoSubmit: (value) => {
-                console.log("COLOR CALLED");
+                console.log("COLOR CALLED", value);
                 handleAutoSubmit(path.color, {
                   color_r: value.r,
                   color_g: value.g,
