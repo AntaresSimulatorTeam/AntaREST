@@ -508,7 +508,7 @@ function NavHeader(props: Props) {
       {study && openLauncherDialog && (
         <LauncherDialog
           open={openLauncherDialog}
-          studyId={study.id}
+          studyIds={[study.id]}
           onClose={() => setOpenLauncherDialog(false)}
         />
       )}

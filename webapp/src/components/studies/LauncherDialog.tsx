@@ -3,11 +3,15 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
   Checkbox,
+  Divider,
   FormControl,
   FormControlLabel,
   FormGroup,
+  List,
+  ListItem,
   TextField,
   Typography,
   useTheme,
@@ -15,45 +19,66 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { StudyMetadata } from "../../../common/types";
-import { LaunchOptions, launchStudy } from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BasicDialog from "../../common/dialogs/BasicDialog";
-import { Root } from "./style";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../redux/selectors";
+import { useMountedState } from "react-use";
+import { shallowEqual } from "react-redux";
+import { StudyMetadata } from "../../common/types";
+import { LaunchOptions, launchStudy } from "../../services/api/study";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import BasicDialog from "../common/dialogs/BasicDialog";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudy } from "../../redux/selectors";
 
 interface Props {
   open: boolean;
-  studyId: StudyMetadata["id"];
+  studyIds: Array<StudyMetadata["id"]>;
   onClose: () => void;
 }
 
-function LauncherModal(props: Props) {
-  const { studyId, open, onClose } = props;
+function LauncherDialog(props: Props) {
+  const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({});
   const [solverVersion, setSolverVersion] = useState<string>();
-  const studyName = useAppSelector((state) => getStudy(state, studyId)?.name);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const isMounted = useMountedState();
+  const studyNames = useAppSelector(
+    (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
+    shallowEqual
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleLaunchClick = async () => {
-    launchStudy(studyId, options, solverVersion)
-      .then(() => {
-        enqueueSnackbar(t("studies.studylaunched", { studyname: studyName }), {
-          variant: "success",
+    if (studyIds.length > 0) {
+      setIsLaunching(true);
+      Promise.all(
+        studyIds.map((sid) => launchStudy(sid, options, solverVersion))
+      )
+        .then(() => {
+          enqueueSnackbar(
+            t("studies.studylaunched", {
+              studyname: studyNames.join(", "),
+            }),
+            {
+              variant: "success",
+            }
+          );
+          onClose();
+        })
+        .catch((err) => {
+          enqueueErrorSnackbar(t("studies.error.runStudy"), err);
+        })
+        .finally(() => {
+          if (isMounted()) {
+            setIsLaunching(false);
+          }
         });
-        onClose();
-      })
-      .catch((err) => {
-        enqueueErrorSnackbar(t("studies.error.runStudy"), err);
-      });
+    }
   };
 
   const handleChange = <T extends keyof LaunchOptions>(
@@ -99,6 +124,7 @@ function LauncherModal(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
+            disabled={isLaunching}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -106,12 +132,60 @@ function LauncherModal(props: Props) {
         </>
       }
     >
-      <Root>
+      <Box
+        sx={{
+          minWidth: "100px",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          alignItems: "flex-start",
+          px: 2,
+          boxSizing: "border-box",
+          overflowY: "scroll",
+          overflowX: "hidden",
+        }}
+      >
+        <Divider
+          sx={{ width: "100%", height: "1px" }}
+          orientation="horizontal"
+        />
+        <Box
+          sx={{
+            mb: 1,
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              maxHeight: "200px",
+              overflow: "auto",
+            }}
+          >
+            {studyNames.length === 1 ? (
+              <Typography variant="caption">{studyNames[0]}</Typography>
+            ) : (
+              <List>
+                {studyNames.map((name) => (
+                  <ListItem>
+                    <Typography variant="caption">{name}</Typography>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+        </Box>
+        <Divider
+          sx={{ width: "100%", height: "1px", mb: 1 }}
+          orientation="horizontal"
+        />
         <Typography
           sx={{
-            fontSize: "1.2em",
+            fontSize: "1.1rem",
             fontWeight: "bold",
-            mb: 3,
+            mb: 2,
           }}
         >
           Options
@@ -342,9 +416,9 @@ function LauncherModal(props: Props) {
             </FormControl>
           </AccordionDetails>
         </Accordion>
-      </Root>
+      </Box>
     </BasicDialog>
   );
 }
 
-export default LauncherModal;
+export default LauncherDialog;

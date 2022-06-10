@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -44,6 +44,7 @@ import {
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
+import BatchModeMenu from "../BatchModeMenu";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -64,10 +65,24 @@ function StudiesList(props: StudiesListProps) {
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
   const sortLabelId = useRef(uuidv4()).current;
+  const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
   }, [folder]);
+
+  useEffect(() => {
+    if (!selectionMode) {
+      setSelectedStudies([]);
+    }
+  }, [selectionMode]);
+
+  useEffect(() => {
+    if (selectedStudies.length === 0) {
+      setSelectionMode(false);
+    }
+  }, [selectedStudies]);
 
   const sortOptions = useMemo<Array<StudiesSortConf & { name: string }>>(
     () => [
@@ -106,6 +121,16 @@ function StudiesList(props: StudiesListProps) {
     400,
     { trailing: true }
   );
+
+  const handleToggleSelectStudy = useCallback((sid: string) => {
+    setSelectedStudies((prevState) => {
+      const newSelectedStudies = prevState.filter((s) => s !== sid);
+      if (newSelectedStudies.length !== prevState.length) {
+        return newSelectedStudies;
+      }
+      return newSelectedStudies.concat([sid]);
+    });
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -197,6 +222,11 @@ function StudiesList(props: StudiesListProps) {
           alignItems="center"
           boxSizing="border-box"
         >
+          <BatchModeMenu
+            selectedIds={selectedStudies}
+            selectionMode={selectionMode}
+            setSelectionMode={setSelectionMode}
+          />
           <Tooltip title={t("studies.refresh") as string} sx={{ mr: 4 }}>
             <Button
               color="primary"
@@ -297,6 +327,9 @@ function StudiesList(props: StudiesListProps) {
                   columnCount,
                   columnWidth,
                   rowHeight,
+                  selectedStudies,
+                  toggleSelect: handleToggleSelectStudy,
+                  selectionMode,
                 }}
               >
                 {StudyCardCell}
@@ -308,7 +341,7 @@ function StudiesList(props: StudiesListProps) {
       {studyToLaunch && (
         <LauncherDialog
           open
-          studyId={studyToLaunch}
+          studyIds={[studyToLaunch]}
           onClose={() => setStudyToLaunch(null)}
         />
       )}
