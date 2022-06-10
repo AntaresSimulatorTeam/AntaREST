@@ -119,9 +119,12 @@ class AreaManager:
     def get_all_areas_ui_info(self, study: RawStudy) -> Dict[str, Any]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
-        return file_study.tree.get(
+        areas_ui = file_study.tree.get(
             ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
         )
+        if len(file_study.config.areas.keys()) == 1:
+            return {list(file_study.config.areas.keys())[0]: areas_ui}
+        return areas_ui
 
     def create_area(
         self, study: Study, area_creation_info: AreaCreationDTO
