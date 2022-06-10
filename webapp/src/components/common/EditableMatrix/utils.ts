@@ -71,7 +71,6 @@ const convertLevelDate = (
 export const createDateFromIndex = (
   indexDate: string | number,
   startDate: string,
-  index: (string | number)[],
   levelDate: StudyOutputDownloadLevelDTO
 ): string | number => {
   const date = moment

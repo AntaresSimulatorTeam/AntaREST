@@ -140,17 +140,11 @@ function EditableMatrix(props: PropTypes) {
     const tmpData = data.map((row, i) => {
       let tmpRow = row as (string | number)[];
       if (prependIndex) {
-        if (matrixIndex && !_.isNaN(parseInt(index[0] as string, 10))) {
+        if (matrixIndex) {
           tmpRow = [
-            createDateFromIndex(
-              i,
-              matrixIndex.start_date,
-              index,
-              matrixIndex.level
-            ),
+            createDateFromIndex(i, matrixIndex.start_date, matrixIndex.level),
           ].concat(row);
         }
-        tmpRow = tmpRow.concat([index[i]].concat(row));
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
