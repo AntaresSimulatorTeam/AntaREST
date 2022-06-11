@@ -58,11 +58,12 @@ def create_raw_study_routes(
         parameters = RequestParameters(user=current_user)
         output = study_service.get(uuid, path, depth, formatted, parameters)
 
-        try:
-            # try to decode string
-            output = output.decode("utf-8")  # type: ignore
-        except (AttributeError, UnicodeDecodeError):
-            pass
+        if isinstance(output, bytes):
+            try:
+                # try to decode string
+                output = output.decode("utf-8")  # type: ignore
+            except (AttributeError, UnicodeDecodeError):
+                pass
 
         json_response = json.dumps(
             output,
