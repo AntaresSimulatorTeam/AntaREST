@@ -23,7 +23,7 @@ import {
 } from "../../../../../services/api/studydata";
 import {
   getAreaPositions,
-  getSynthesis,
+  getStudySynthesis,
 } from "../../../../../services/api/study";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import GraphView from "./GraphView";
@@ -281,7 +281,7 @@ function Map() {
     if (study) {
       const init = async () => {
         try {
-          const data = await getSynthesis(study.id);
+          const data = await getStudySynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
             const areas = await getAreaPositions(study.id);
             const tempNodeData = Object.keys(areas).map((areaId) => {

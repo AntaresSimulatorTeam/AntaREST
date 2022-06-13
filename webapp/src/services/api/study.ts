@@ -11,7 +11,6 @@ import {
   StudyOutput,
   StudyPublicMode,
   AreasConfig,
-  StudyProperties,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
 } from "../../common/types";
@@ -53,11 +52,6 @@ export const getStudyData = async (
 
 export const getComments = async (sid: string): Promise<string> => {
   const res = await client.get(`/v1/studies/${sid}/comments`);
-  return res.data;
-};
-
-export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
-  const res = await client.get(`/v1/studies/${uuid}/synthesis`);
   return res.data;
 };
 
