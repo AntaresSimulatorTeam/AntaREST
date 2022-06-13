@@ -36,6 +36,15 @@ export type AutoSubmitHandler<
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = (value: FieldPathValue<TFieldValues, TFieldName>) => any | Promise<any>;
 
+export interface UseFormRegisterReturnPlus<
+  TFieldValues extends FieldValues = FieldValues,
+  TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+> extends UseFormRegisterReturn {
+  defaultValue?: FieldPathValue<TFieldValues, TFieldName>;
+  error?: boolean;
+  helperText?: string;
+}
+
 export type UseFormRegisterPlus<
   TFieldValues extends FieldValues = FieldValues
 > = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
@@ -43,7 +52,7 @@ export type UseFormRegisterPlus<
   options?: RegisterOptions<TFieldValues, TFieldName> & {
     onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
   }
-) => UseFormRegisterReturn;
+) => UseFormRegisterReturnPlus;
 
 export interface FormObj<
   TFieldValues extends FieldValues = FieldValues,
@@ -101,7 +110,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     ...config,
   });
   const { handleSubmit, formState, register, unregister, reset } = formObj;
-  const { isValid, isSubmitting, isDirty, dirtyFields } = formState;
+  const { isValid, isSubmitting, isDirty, dirtyFields, errors } = formState;
   const allowSubmit = isDirty && isValid && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
@@ -175,7 +184,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
       }
 
-      const wrapOptions = {
+      const newOptions = {
         ...options,
         onChange: (e: unknown) => {
           options?.onChange?.(e);
@@ -184,9 +193,34 @@ function Form<TFieldValues extends FieldValues, TContext>(
           }
         },
       };
-      return register(name, wrapOptions);
+
+      const res = register(name, newOptions) as UseFormRegisterReturnPlus<
+        TFieldValues,
+        typeof name
+      >;
+
+      const error = errors[name];
+
+      if (config?.defaultValues?.[name]) {
+        res.defaultValue = config?.defaultValues?.[name];
+      }
+
+      if (error) {
+        res.error = true;
+        if (error.message) {
+          res.helperText = error.message;
+        }
+      }
+
+      return res;
     },
-    [autoSubmitConfig.enable, register, simulateSubmit]
+    [
+      autoSubmitConfig.enable,
+      config?.defaultValues,
+      errors,
+      register,
+      simulateSubmit,
+    ]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
