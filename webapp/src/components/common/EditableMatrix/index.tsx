@@ -14,7 +14,7 @@ import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
 import { Root, StyledHotTable } from "./style";
 import "./style.css";
-import { createDateFromIndex, slice } from "./utils";
+import { computeStats, createDateFromIndex, slice } from "./utils";
 
 interface PropTypes {
   matrix: MatrixType;
@@ -53,36 +53,6 @@ function EditableMatrix(props: PropTypes) {
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const addStats = (computStats: string, row: Array<number>) => {
-    if (computStats === MatrixStats.TOTAL) {
-      return row.reduce((agg, value) => {
-        return agg + value;
-      }, 0);
-    }
-    if (computStats === MatrixStats.STATS) {
-      const statsInfo = row.reduce(
-        (agg, value) => {
-          const newAgg = { ...agg };
-          if (value < agg.min) {
-            newAgg.min = value;
-          }
-          if (value > agg.max) {
-            newAgg.max = value;
-          }
-          newAgg.total = agg.total + value;
-
-          return newAgg;
-        },
-        { min: row[0], max: row[0], total: 0 }
-      );
-      return [statsInfo.min, statsInfo.max, statsInfo.total / row.length];
-    }
-  };
-
-  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
@@ -107,12 +77,12 @@ function EditableMatrix(props: PropTypes) {
       e.stopImmediatePropagation();
       if (hotTableComponent.current?.hotInstance) {
         const hot = hotTableComponent.current.hotInstance;
-        const cols = computStats === MatrixStats.TOTAL ? 2 : 4;
+        const cols = computStats === MatrixStats.TOTAL ? 1 : 3;
         hot.selectCell(
           0,
-          1,
+          prependIndex ? 1 : 0,
           hot.countRows() - 1,
-          hot.countCols() - (computStats ? cols : 1)
+          hot.countCols() - (computStats ? cols : 1) - (prependIndex ? 1 : 0)
         );
       }
     }
@@ -148,7 +118,7 @@ function EditableMatrix(props: PropTypes) {
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
-          addStats(computStats, row) as (string | number)[]
+          computeStats(computStats, row) as (string | number)[]
         );
       }
       return tmpRow;
