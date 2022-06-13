@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateConfig(ICommand):
     target: str
-    data: Union[str, int, float, bool, JSON]
+    data: Union[str, int, float, bool, JSON, None]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
