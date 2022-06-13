@@ -94,7 +94,11 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
         </>
       }
     >
-      <Form {...formProps} onStateChange={handleFormStateChange} />
+      <Form
+        {...formProps}
+        onStateChange={handleFormStateChange}
+        hideSubmitButton
+      />
     </BasicDialog>
   );
 }
