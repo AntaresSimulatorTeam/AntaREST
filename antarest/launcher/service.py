@@ -373,13 +373,14 @@ class LauncherService:
         study_uid: Optional[str],
         params: RequestParameters,
         filter_orphans: bool = True,
+        latest: Optional[int] = None,
     ) -> List[JobResult]:
 
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
             job_results = self.job_result_repository.get_all(
-                filter_orphan=filter_orphans
+                filter_orphan=filter_orphans, latest=latest
             )
 
         return self._filter_from_user_permission(

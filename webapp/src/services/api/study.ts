@@ -303,11 +303,15 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
 
 export const getStudyJobs = async (
   sid?: string,
-  filterOrphans = true
+  filterOrphans = true,
+  latest = false
 ): Promise<LaunchJob[]> => {
-  const query = sid
+  let query = sid
     ? `?study=${sid}&filter_orphans=${filterOrphans}`
     : `?filter_orphans=${filterOrphans}`;
+  if (latest) {
+    query += "&latest=100";
+  }
   const res = await client.get(`/v1/launcher/jobs${query}`);
   const data = await res.data;
   return data.map(mapLaunchJobDTO);

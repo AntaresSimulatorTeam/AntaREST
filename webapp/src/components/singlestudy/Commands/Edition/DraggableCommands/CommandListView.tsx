@@ -9,7 +9,6 @@ import {
 import { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
 
-
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
   const {

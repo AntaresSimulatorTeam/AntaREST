@@ -21,6 +21,8 @@ from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MAX_LATEST_JOBS = 200
+
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1")
@@ -68,6 +70,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     def get_job(
         study: Optional[str] = None,
         filter_orphans: bool = True,
+        latest: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -77,7 +80,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return [
             job.to_dto()
-            for job in service.get_jobs(study, params, filter_orphans)
+            for job in service.get_jobs(study, params, filter_orphans, latest)
         ]
 
     @bp.get(
