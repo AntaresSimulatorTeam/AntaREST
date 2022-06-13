@@ -6,6 +6,7 @@ import {
   Button,
   ButtonGroup,
   Paper,
+  TextField,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
@@ -15,7 +16,6 @@ import {
   Title,
   Fields,
   SelectFields,
-  StyledTextField,
   HoverButton,
   ActiveButton,
   StyledVisibilityIcon,
@@ -125,7 +125,7 @@ function CandidateForm(props: PropType) {
         </Box>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
-          <StyledTextField
+          <TextField
             label={t("global.name")}
             variant="filled"
             value={currentCandidate?.name || ""}
@@ -149,7 +149,7 @@ function CandidateForm(props: PropType) {
         <Title>{t("global.settings")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
         <Fields>
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.annualCost")}
             variant="filled"
@@ -158,7 +158,7 @@ function CandidateForm(props: PropType) {
               handleChange("annual-cost-per-mw", parseFloat(e.target.value))
             }
           />
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.alreadyICapacity")}
             variant="filled"
@@ -208,7 +208,7 @@ function CandidateForm(props: PropType) {
           </Box>
           {toggleView && (
             <>
-              <StyledTextField
+              <TextField
                 sx={{ mr: 2 }}
                 type="number"
                 label={t("xpansion.unitSize")}
@@ -218,7 +218,7 @@ function CandidateForm(props: PropType) {
                   handleChange("unit-size", parseFloat(e.target.value))
                 }
               />
-              <StyledTextField
+              <TextField
                 type="number"
                 label={t("xpansion.maxUnits")}
                 variant="filled"
@@ -230,7 +230,7 @@ function CandidateForm(props: PropType) {
             </>
           )}
           {!toggleView && (
-            <StyledTextField
+            <TextField
               type="number"
               label={t("xpansion.maxInvestments")}
               variant="filled"

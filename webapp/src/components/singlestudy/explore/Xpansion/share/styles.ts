@@ -28,13 +28,6 @@ export const Title = styled(Typography)(({ theme }) => ({
   lineHeight: 1.334,
 }));
 
-export const StyledTextField = styled(TextField)(() => ({
-  minHeight: 0,
-  background: "rgba(255, 255, 255, 0.09)",
-  borderRadius: "4px 4px 0px 0px",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-}));
-
 export const HoverButton = styled(Button)(({ theme }) => ({
   color: theme.palette.action.active,
   borderColor: theme.palette.text.disabled,
