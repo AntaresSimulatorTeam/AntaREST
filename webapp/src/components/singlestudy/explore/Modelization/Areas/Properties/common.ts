@@ -13,6 +13,7 @@ export interface FieldsInfo {
 
 // export type Fields<T extends FieldsInfo> = Record<keyof T, string>;
 interface ResultType {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   status: PromiseStatus;
   isLoading: boolean;
