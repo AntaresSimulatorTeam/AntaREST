@@ -170,7 +170,7 @@
     "study.useXpansionVersionR": "Utiliser la version R d'Xpansion",
     "study.postProcessing": "Post processing",
     "study.timeLimit": "Limite de temps",
-    "study.timeLimitHelper": "Limite de temps (en heures)",
+    "study.timeLimitHelper": "Limite de temps en heures (max: {{max}}h)",
     "study.nbCpu": "Nombre de coeurs",
     "study.synthesis": "Synthesis",
     "study.level": "Niveau",

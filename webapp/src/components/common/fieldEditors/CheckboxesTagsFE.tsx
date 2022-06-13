@@ -47,7 +47,7 @@ function CheckboxesTagsFE<
         </li>
       )}
       renderInput={(params) => (
-        <TextField sx={{ m: 0 }} label={label} {...params} />
+        <TextField sx={{ m: 0 }} variant="filled" label={label} {...params} />
       )}
     />
   );

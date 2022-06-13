@@ -1,34 +1,57 @@
-import { PropsWithChildren } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Tooltip,
+  ButtonGroup,
+  Typography,
+} from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { Code } from "./styles";
+import TableViewIcon from "@mui/icons-material/TableView";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import { Code, StyledButton } from "./styles";
 import { MatrixType } from "../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import OkDialog from "../OkDialog";
 import EditableMatrix from "../../EditableMatrix";
 import { getStudyMatrixIndex } from "../../../../services/api/matrix";
+import SimpleLoader from "../../loaders/SimpleLoader";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 
 interface Props {
-  studyId: string;
-  data: {
-    filename: string;
-    content: string | MatrixTypeWithId;
-  };
+  studyId?: string;
+  filename: string;
+  content?: string | MatrixTypeWithId;
+  loading?: boolean;
   onClose: () => void;
   isMatrix?: boolean;
+  readOnly?: boolean;
 }
 
-function DataViewerDialog(props: PropsWithChildren<Props>) {
+function DataViewerDialog(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { studyId, data, onClose, isMatrix } = props;
+  const {
+    studyId,
+    filename,
+    content,
+    onClose,
+    isMatrix,
+    loading,
+    readOnly = true,
+  } = props;
+  const [toggleView, setToggleView] = useState(true);
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => getStudyMatrixIndex(studyId),
+    async () => {
+      if (studyId) {
+        return getStudyMatrixIndex(studyId);
+      }
+      return undefined;
+    },
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
     },
@@ -54,6 +77,23 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  const renderContent = (data: MatrixTypeWithId | string) =>
+    isMatrix ? (
+      <Box width="100%" height="100%" p={2}>
+        <EditableMatrix
+          matrix={data as MatrixType}
+          matrixTime={!!matrixIndex}
+          matrixIndex={matrixIndex}
+          readOnly={!!readOnly}
+          toggleView={toggleView}
+        />
+      </Box>
+    ) : (
+      <Code>
+        <code style={{ whiteSpace: "pre" }}>{data as string}</code>
+      </Code>
+    );
+
   return (
     <OkDialog
       open
@@ -62,14 +102,14 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography
               sx={{ fontWeight: 500, fontSize: "1.25rem" }}
-            >{`Matrix - ${data.filename}`}</Typography>
-            {(data.content as MatrixTypeWithId).id && (
+            >{`Matrix - ${filename}`}</Typography>
+            {content && (content as MatrixTypeWithId).id && (
               <IconButton
                 onClick={() =>
-                  copyId((data.content as MatrixTypeWithId).id as string)
+                  copyId((content as MatrixTypeWithId).id as string)
                 }
                 sx={{
-                  mx: 1,
+                  ml: 1,
                   color: "action.active",
                 }}
               >
@@ -78,33 +118,30 @@ function DataViewerDialog(props: PropsWithChildren<Props>) {
                 </Tooltip>
               </IconButton>
             )}
+            <ButtonGroup sx={{ ml: 1 }} variant="contained">
+              <StyledButton onClick={() => setToggleView((prev) => !prev)}>
+                {toggleView ? (
+                  <BarChartIcon sx={{ color: "text.main" }} />
+                ) : (
+                  <TableViewIcon sx={{ color: "text.main" }} />
+                )}
+              </StyledButton>
+            </ButtonGroup>
           </Box>
         ) : (
-          data.filename
+          filename
         )
       }
-      onOk={onClose}
       contentProps={{
         sx: { p: 0, height: "60vh", overflow: "hidden" },
       }}
       fullWidth
       maxWidth="lg"
       okButtonText={t("button.close")}
+      onOk={onClose}
     >
-      {isMatrix === true ? (
-        <Box width="100%" height="100%" p={2}>
-          <EditableMatrix
-            matrix={data.content as MatrixType}
-            matrixTime
-            matrixIndex={matrixIndex}
-            readOnly
-          />
-        </Box>
-      ) : (
-        <Code>
-          <code style={{ whiteSpace: "pre" }}>{data.content as string}</code>
-        </Code>
-      )}
+      {!!loading && <SimpleLoader />}
+      {!!content && renderContent(content)}
     </OkDialog>
   );
 }

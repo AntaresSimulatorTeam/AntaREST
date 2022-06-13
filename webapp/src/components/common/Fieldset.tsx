@@ -14,17 +14,20 @@ function Fieldset(props: FieldsetProps) {
     <fieldset style={{ border: "none", margin: 0, padding: 0, ...style }}>
       {title && (
         <>
-          <legend style={{ padding: 0 }}>
-            {RA.isString(title) ? (
-              <Typography variant="h5">{title}</Typography>
-            ) : (
-              title
-            )}
-          </legend>
-          <Divider />
+          {RA.isString(title) ? (
+            <Typography
+              variant="h5"
+              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
+            >
+              {title}
+            </Typography>
+          ) : (
+            title
+          )}
+          <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box sx={{ py: 2 }}>{children}</Box>
+      <Box sx={{ pt: 2 }}>{children}</Box>
     </fieldset>
   );
 }

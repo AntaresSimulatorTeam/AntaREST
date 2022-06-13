@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { StudyMetadata } from "../../../../../common/types";
 import {
   getAllConstraints,
@@ -90,18 +90,20 @@ function Files() {
   return (
     <>
       {loaded ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <FileTable
-            title={<Title>{t("global.files")}</Title>}
-            content={
-              constraints?.map((item) => ({ id: item, name: item })) || []
-            }
-            onDelete={deleteConstraint}
-            onRead={getOneConstraint}
-            uploadFile={addOneConstraint}
-            allowImport
-            allowDelete
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <FileTable
+              title={<Title>{t("global.files")}</Title>}
+              content={
+                constraints?.map((item) => ({ id: item, name: item })) || []
+              }
+              onDelete={deleteConstraint}
+              onRead={getOneConstraint}
+              uploadFile={addOneConstraint}
+              allowImport
+              allowDelete
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
@@ -109,7 +111,8 @@ function Files() {
       {!!constraintViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
-          data={constraintViewDialog}
+          filename={constraintViewDialog.filename}
+          content={constraintViewDialog.content}
           onClose={() => setConstraintViewDialog(undefined)}
         />
       )}

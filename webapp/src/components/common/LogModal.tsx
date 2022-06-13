@@ -13,7 +13,6 @@ import DownloadIcon from "@mui/icons-material/Download";
 import { exportText } from "../../services/utils/index";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
-import { scrollbarStyle } from "../../theme";
 import BasicDialog from "./dialogs/BasicDialog";
 import {
   addWsMessageListener,
@@ -183,7 +182,6 @@ function LogModal(props: Props) {
           flex={1}
           ref={logRef}
           onScroll={onScroll}
-          sx={scrollbarStyle}
         >
           {loading ? (
             <SimpleLoader />

@@ -170,7 +170,7 @@
     "study.useXpansionVersionR": "Use the R legacy Xpansion mode",
     "study.postProcessing": "Post processing",
     "study.timeLimit": "Time limit",
-    "study.timeLimitHelper": "Time limit (in hours)",
+    "study.timeLimitHelper": "Time limit in hours (max: {{max}}h)",
     "study.nbCpu": "Number of core",
     "study.synthesis": "Synthesis",
     "study.level": "Level",

@@ -81,13 +81,14 @@ function JobsListing() {
   const studies = useAppSelector(getStudies);
   const dispatch = useAppDispatch();
 
-  const init = async () => {
+  const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
       if (studies.length === 0) {
         await dispatch(fetchStudies()).unwrap();
       }
-      const allJobs = await getStudyJobs(undefined, false);
+      const allJobs = await getStudyJobs(undefined, false, fetchOnlyLatest);
+      console.log(allJobs.length);
       setJobs(allJobs);
       const dlList = await getDownloadsList();
       setDownloads(dlList);
@@ -482,7 +483,9 @@ function JobsListing() {
         position="relative"
       >
         {!loaded && <SimpleLoader />}
-        {loaded && <JobTableView content={content || []} refresh={init} />}
+        {loaded && (
+          <JobTableView content={content || []} refresh={() => init(false)} />
+        )}
         {openConfirmationDialog && (
           <ConfirmationDialog
             title={t("dialog.title.confirmation")}

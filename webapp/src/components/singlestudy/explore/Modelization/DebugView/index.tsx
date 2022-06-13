@@ -9,7 +9,6 @@ import StudyTreeView from "./StudyTreeView";
 import StudyDataView from "./StudyDataView";
 import { StudyDataType, StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { scrollbarStyle } from "../../../../../theme";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 
 const logError = debug("antares:studyview:error");
@@ -63,12 +62,7 @@ function DebugView() {
     >
       {study && studyData && (
         <>
-          <Box
-            height="100%"
-            flex="0 0 30%"
-            overflow="auto"
-            sx={{ ...scrollbarStyle }}
-          >
+          <Box height="100%" flex="0 0 30%" overflow="auto">
             <Box p={1}>
               {studyData && (
                 <StudyTreeView

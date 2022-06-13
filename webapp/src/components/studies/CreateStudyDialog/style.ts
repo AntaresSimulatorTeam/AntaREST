@@ -1,5 +1,4 @@
 import { Box, styled } from "@mui/material";
-import { scrollbarStyle } from "../../../theme";
 
 /*
 Same style as Properties Dialog
@@ -17,7 +16,6 @@ export const Root = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
   overflowX: "hidden",
   overflowY: "auto",
-  ...scrollbarStyle,
 }));
 
 export const InputElement = styled(Box)(({ theme }) => ({

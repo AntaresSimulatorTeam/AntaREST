@@ -1,4 +1,4 @@
-import { Box, Typography, TextField, Button, styled } from "@mui/material";
+import { Box, Typography, Button, styled } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -26,13 +26,6 @@ export const Title = styled(Typography)(({ theme }) => ({
   fontSize: "1.25rem",
   fontWeight: 400,
   lineHeight: 1.334,
-}));
-
-export const StyledTextField = styled(TextField)(() => ({
-  minHeight: 0,
-  background: "rgba(255, 255, 255, 0.09)",
-  borderRadius: "4px 4px 0px 0px",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
 }));
 
 export const HoverButton = styled(Button)(({ theme }) => ({

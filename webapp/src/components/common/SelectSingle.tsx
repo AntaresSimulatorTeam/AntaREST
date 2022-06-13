@@ -48,25 +48,8 @@ function SelectSingle(props: Props) {
   };
 
   return (
-    <FormControl
-      variant={variant}
-      sx={
-        variant === "filled"
-          ? {
-              ...sx,
-              ".Mui-focused": { backgroundColor: "rgba(255, 255, 255, 0.09)" },
-              ".MuiInputLabel-root": { backgroundColor: "unset" },
-            }
-          : sx
-      }
-      required={required}
-    >
-      <InputLabel
-        id={`single-checkbox-label-${name}`}
-        sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-      >
-        {label}
-      </InputLabel>
+    <FormControl variant={variant} sx={sx} required={required}>
+      <InputLabel id={`single-checkbox-label-${name}`}>{label}</InputLabel>
       <Select
         labelId={`single-checkbox-label-${name}`}
         id={`single-checkbox-${name}`}
@@ -76,23 +59,6 @@ function SelectSingle(props: Props) {
           handleChange
             ? (e) => handleChange(name, e.target.value as string)
             : basicHandleChange
-        }
-        sx={
-          variant === "filled"
-            ? {
-                background: "rgba(255, 255, 255, 0.09)",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-                ".MuiSelect-icon": {
-                  backgroundColor: "#222333",
-                },
-                "&:focus": {
-                  backgroundColor: "rgba(255, 255, 255, 0.09) !important",
-                },
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.09)",
-                },
-              }
-            : {}
         }
       >
         {optional && (

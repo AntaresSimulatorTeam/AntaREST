@@ -1,20 +1,10 @@
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { Box, Typography, IconButton, Tooltip } from "@mui/material";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  MatrixInfoDTO,
-  MatrixType,
-  StudyOutputDownloadLevelDTO,
-} from "../../common/types";
-import OkDialog from "../common/dialogs/OkDialog";
+import { MatrixInfoDTO, MatrixType } from "../../common/types";
 import { getMatrix } from "../../services/api/matrix";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import NoContent from "../common/page/NoContent";
-import SimpleLoader from "../common/loaders/SimpleLoader";
-import EditableMatrix from "../common/EditableMatrix";
+import DataViewerDialog from "../common/dialogs/DataViewerDialog";
 
 interface PropTypes {
   matrixInfo: MatrixInfoDTO;
@@ -22,35 +12,16 @@ interface PropTypes {
   onClose: () => void;
 }
 
-const MATRIX_INDEX = {
-  start_date: "2001-01-01 00:00:00",
-  steps: 8760,
-  first_week_size: 7,
-  level: StudyOutputDownloadLevelDTO.HOURLY,
-};
-
 function MatrixDialog(props: PropTypes) {
   const { matrixInfo, open, onClose } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const [matrix, setCurrentMatrix] = useState<MatrixType>({
     index: [],
     columns: [],
     data: [],
   });
-
-  const copyId = (matrixId: string): void => {
-    try {
-      navigator.clipboard.writeText(matrixId);
-      enqueueSnackbar(t("data.success.matrixIdCopied"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
-    }
-  };
 
   useEffect(() => {
     const init = async () => {
@@ -78,56 +49,16 @@ function MatrixDialog(props: PropTypes) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enqueueErrorSnackbar, matrixInfo, t]);
 
-  return (
-    <OkDialog
-      open={open}
-      title={
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography
-            sx={{ fontWeight: 500, fontSize: "1.25rem" }}
-          >{`Matrix - ${matrixInfo.name}`}</Typography>
-          <IconButton
-            onClick={() => copyId(matrixInfo.id)}
-            sx={{
-              mx: 1,
-              color: "action.active",
-            }}
-          >
-            <Tooltip title={t("global.copyId") as string}>
-              <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
-            </Tooltip>
-          </IconButton>
-        </Box>
-      }
-      onOk={onClose}
-      okButtonText={t("button.close")}
-      fullWidth
-      maxWidth="lg"
-    >
-      <Box sx={{ height: "60vh" }}>
-        {loading && <SimpleLoader />}
-        {matrix.columns.length > 0 ? (
-          <EditableMatrix
-            matrixTime
-            matrixIndex={MATRIX_INDEX}
-            readOnly
-            matrix={matrix}
-          />
-        ) : (
-          !loading && (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                pt: "3%",
-              }}
-            >
-              <NoContent title="matrix.matrixEmpty" />
-            </Box>
-          )
-        )}
-      </Box>
-    </OkDialog>
+  return open ? (
+    <DataViewerDialog
+      filename={matrixInfo.name}
+      onClose={onClose}
+      loading={loading}
+      content={{ ...matrix, id: matrixInfo.id }}
+      isMatrix
+    />
+  ) : (
+    <div />
   );
 }
 

@@ -30,7 +30,7 @@ function formatOptions(options: SelectFEProps["options"]): OptionsObj {
 }
 
 const SelectFE = forwardRef((props: SelectFEProps, ref) => {
-  const { options, helperText, emptyValue, ...selectProps } = props;
+  const { options, helperText, emptyValue, variant, ...selectProps } = props;
   const { label } = selectProps;
   const labelId = useRef(uuidv4()).current;
 
@@ -41,9 +41,14 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   );
 
   return (
-    <FormControl>
+    <FormControl variant={variant}>
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} labelId={labelId} inputRef={ref}>
+      <Select
+        variant={variant}
+        {...selectProps}
+        labelId={labelId}
+        inputRef={ref}
+      >
         {emptyValue && (
           <MenuItem value="">
             <em>None</em>

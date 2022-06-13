@@ -64,6 +64,7 @@ export default function PropertiesForm(
         variant="filled"
         options={filterOptions}
         sx={{ minWidth: "200px" }}
+        label={t(`study.modelization.nodeProperties.${filterName}`)}
       />
     </Box>
   );
@@ -91,7 +92,7 @@ export default function PropertiesForm(
             }}
           >
             <TextField
-              sx={{ mx: 1 }}
+              sx={{ mr: 1 }}
               label={t("study.modelization.map.areaName")}
               variant="filled"
               value={defaultValues?.name}
@@ -131,7 +132,6 @@ export default function PropertiesForm(
               })}
             />
             <TextField
-              sx={{ mx: 1 }}
               type="number"
               label={t("study.modelization.posY")}
               variant="filled"
@@ -254,13 +254,7 @@ export default function PropertiesForm(
               flexDirection: "column",
             }}
           >
-            <Typography>
-              {t("study.modelization.nodeProperties.filterSynthesis")}
-            </Typography>
             {renderFilter("filterSynthesis")}
-            <Typography>
-              {t("study.modelization.nodeProperties.filterByYear")}
-            </Typography>
             {renderFilter("filterByYear")}
           </Box>
         </Fieldset>

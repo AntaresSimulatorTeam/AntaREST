@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../common/types";
 import { XpansionSettings } from "../types";
@@ -118,13 +118,15 @@ function Settings() {
   return (
     <>
       {loaded && settings ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <SettingsForm
-            settings={settings}
-            constraints={constraints || []}
-            updateSettings={updateSettings}
-            onRead={getOneConstraint}
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <SettingsForm
+              settings={settings}
+              constraints={constraints || []}
+              updateSettings={updateSettings}
+              onRead={getOneConstraint}
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
@@ -132,7 +134,8 @@ function Settings() {
       {!!constraintViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
-          data={constraintViewDialog}
+          filename={constraintViewDialog.filename}
+          content={constraintViewDialog.content}
           onClose={() => setConstraintViewDialog(undefined)}
         />
       )}

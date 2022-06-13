@@ -1,3 +1,4 @@
+import datetime
 import logging
 from typing import Optional, List
 
@@ -30,11 +31,16 @@ class JobResultRepository:
         job: JobResult = db.session.query(JobResult).get(id)
         return job
 
-    def get_all(self, filter_orphan: bool = False) -> List[JobResult]:
+    def get_all(
+        self, filter_orphan: bool = False, latest: Optional[int] = None
+    ) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
         query = db.session.query(JobResult)
         if filter_orphan:
             query = query.join(Study, JobResult.study_id == Study.id)
+        query = query.order_by(JobResult.creation_date.desc())
+        if latest:
+            query = query.limit(latest)
         job_results: List[JobResult] = query.all()
         return job_results
 

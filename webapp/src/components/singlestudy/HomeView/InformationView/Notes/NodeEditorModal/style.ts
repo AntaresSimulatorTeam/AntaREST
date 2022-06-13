@@ -1,5 +1,4 @@
 import { Box, styled, Typography } from "@mui/material";
-import { scrollbarStyle } from "../../../../../../theme";
 
 export const Root = styled(Box)(({ theme }) => ({
   width: "100%",
@@ -12,7 +11,6 @@ export const Root = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
   overflowX: "hidden",
   overflowY: "auto",
-  ...scrollbarStyle,
 }));
 
 export const Header = styled(Box)(({ theme }) => ({
@@ -31,7 +29,6 @@ export const EditorContainer = styled(Box)(({ theme }) => ({
   width: "100%",
   boxSizing: "border-box",
   overflow: "auto",
-  ...scrollbarStyle,
 }));
 
 export const EditorButton = styled(Typography)(({ theme }) => ({

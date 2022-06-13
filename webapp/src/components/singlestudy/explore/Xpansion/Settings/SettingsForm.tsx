@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Divider, Typography, Button } from "@mui/material";
+import { Box, Divider, Typography, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import { XpansionSettings } from "../types";
@@ -7,7 +7,6 @@ import {
   Fields,
   SelectFields,
   Title,
-  StyledTextField,
   StyledVisibilityIcon,
 } from "../share/styles";
 import SelectSingle from "../../../../common/SelectSingle";
@@ -106,7 +105,7 @@ function SettingsForm(props: PropType) {
               }}
             />
           </SelectFields>
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.optimalyGap")}
             variant="filled"
@@ -116,7 +115,7 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
-          <StyledTextField
+          <TextField
             label={t("xpansion.maxIteration")}
             variant="filled"
             value={currentSettings.max_iteration || ""}
@@ -125,7 +124,7 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
@@ -150,14 +149,14 @@ function SettingsForm(props: PropType) {
               optional
             />
           </SelectFields>
-          <StyledTextField
+          <TextField
             label={t("xpansion.amplSolver")}
             variant="filled"
             value={currentSettings["ampl.solver"] || ""}
             onChange={(e) => handleChange("ampl.solver", e.target.value)}
             sx={{ mb: 1 }}
           />
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.amplPresolve")}
             variant="filled"
@@ -167,7 +166,7 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.amplSolverBoundsFrequency")}
             variant="filled"
@@ -180,7 +179,7 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
-          <StyledTextField
+          <TextField
             type="number"
             label={t("xpansion.relativeGap")}
             variant="filled"

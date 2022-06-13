@@ -75,12 +75,14 @@ function Filter(props: PropTypes) {
       <TextField
         label={t("study.filterIn")}
         value={filterInValue}
+        variant="filled"
         onChange={(event) => setFilterInValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
       <TextField
         label={t("study.filterOut")}
         value={filterOutValue}
+        variant="filled"
         onChange={(event) => setFilterOutValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
