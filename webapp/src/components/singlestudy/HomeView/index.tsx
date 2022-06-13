@@ -6,7 +6,6 @@ import { StudyMetadata, VariantTree } from "../../../common/types";
 import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
 import InformationView from "./InformationView";
-import { scrollbarStyle } from "../../../theme";
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -53,7 +52,7 @@ function HomeView(props: Props) {
         alignItems="flex-start"
         boxSizing="border-box"
         overflow="hidden"
-        sx={{ overflowX: "auto", ...scrollbarStyle }}
+        sx={{ overflowX: "auto" }}
       >
         <Box
           flex={1}

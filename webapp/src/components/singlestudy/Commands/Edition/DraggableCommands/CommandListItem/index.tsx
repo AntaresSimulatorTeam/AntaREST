@@ -28,7 +28,6 @@ import {
   JsonContainer,
   StyledDeleteIcon,
 } from "./style";
-import { scrollbarStyle } from "../../../../../../theme";
 
 export const Item = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
@@ -202,7 +201,7 @@ function CommandListItem({
                   />
                 )}
               </Header>
-              <JsonContainer sx={{ ...scrollbarStyle }}>
+              <JsonContainer>
                 <ReactJson
                   src={jsonData}
                   onEdit={!generationStatus ? updateJson : undefined}

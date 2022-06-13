@@ -12,7 +12,6 @@ import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
 import { JobStatus, LaunchJob } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
-import { scrollbarStyle } from "../../../../../theme";
 import { killStudy } from "../../../../../services/api/study";
 import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
@@ -92,7 +91,7 @@ export default function VerticalLinearStepper(props: Props) {
   };
 
   return (
-    <JobRoot jobLength={jobs.length} sx={{ ...scrollbarStyle }}>
+    <JobRoot jobLength={jobs.length}>
       <Stepper
         activeStep={-1}
         orientation="vertical"

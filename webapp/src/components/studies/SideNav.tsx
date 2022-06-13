@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from "../../theme";
+import { STUDIES_SIDE_NAV_WIDTH } from "../../theme";
 import StudyTree from "./StudyTree";
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import { getFavoriteStudies } from "../../redux/selectors";
@@ -21,7 +21,7 @@ function SideNav() {
       alignItems="flex-start"
       boxSizing="border-box"
       p={2}
-      sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+      sx={{ overflowX: "hidden", overflowY: "auto" }}
     >
       <Typography sx={{ color: "grey.400" }}>
         {t("studies.favorites")}

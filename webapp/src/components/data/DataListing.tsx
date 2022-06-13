@@ -4,7 +4,6 @@ import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import { scrollbarStyle } from "../../theme";
 import { MatrixDataSetDTO } from "../../common/types";
 
 const ROW_ITEM_SIZE = 45;
@@ -21,7 +20,6 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
       },
     },
   },
-  ...scrollbarStyle,
 }));
 
 interface PropsType {

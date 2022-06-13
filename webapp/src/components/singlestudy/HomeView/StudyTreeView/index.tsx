@@ -4,7 +4,6 @@ import * as React from "react";
 import { Box, styled } from "@mui/material";
 import { StudyMetadata, VariantTree } from "../../../../common/types";
 import { StudyTree, getTreeNodes } from "./utils";
-import { scrollbarStyle } from "../../../../theme";
 import {
   CIRCLE_RADIUS,
   colors,
@@ -227,7 +226,6 @@ export default function CustomizedTreeView(props: Props) {
         width: "100%",
         flexGrow: 1,
         overflowY: "auto",
-        ...scrollbarStyle,
       }}
     >
       <Box

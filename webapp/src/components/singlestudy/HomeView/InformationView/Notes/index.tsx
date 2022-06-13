@@ -13,7 +13,6 @@ import {
 } from "../../../../../services/api/study";
 import { convertXMLToDraftJS } from "./utils";
 import { StudyMetadata } from "../../../../../common/types";
-import { scrollbarStyle } from "../../../../../theme";
 import NoteEditorModal from "./NodeEditorModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
@@ -200,7 +199,7 @@ export default function Notes(props: Props) {
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
           <Typography color="text.secondary">{t("study.notes")}</Typography>
         </NoteHeader>
-        <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
+        <EditorContainer sx={{ overflowY: "auto" }}>
           {!loaded && <SimpleLoader />}
           {loaded && (
             <Editor

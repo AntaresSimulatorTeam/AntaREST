@@ -6,14 +6,9 @@ import {
   Draggable,
   OnDragEndResponder,
 } from "react-beautiful-dnd";
-import { styled } from "@mui/material";
 import { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
-import { scrollbarStyle } from "../../../../../theme";
 
-const StyledList = styled(FixedSizeList)(({ theme }) => ({
-  ...scrollbarStyle,
-}));
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
@@ -117,7 +112,7 @@ function CommandListView({
         )}
       >
         {(provided) => (
-          <StyledList
+          <FixedSizeList
             height={500}
             itemCount={items.length}
             itemSize={68}
@@ -142,7 +137,7 @@ function CommandListView({
             }}
           >
             {Row}
-          </StyledList>
+          </FixedSizeList>
         )}
       </Droppable>
     </DragDropContext>

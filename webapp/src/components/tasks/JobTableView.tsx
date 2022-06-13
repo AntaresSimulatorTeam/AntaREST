@@ -25,7 +25,6 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
 import { TaskView, TaskType } from "../../common/types";
-import { scrollbarStyle } from "../../theme";
 
 interface PropType {
   content: Array<TaskView>;
@@ -124,7 +123,7 @@ function JobTableView(props: PropType) {
           </Select>
         </FormControl>
       </Box>
-      <TableContainer sx={scrollbarStyle} component={Paper}>
+      <TableContainer component={Paper}>
         <Table sx={{ width: "100%", height: "90%" }} aria-label="simple table">
           <TableHead>
             <TableRow
