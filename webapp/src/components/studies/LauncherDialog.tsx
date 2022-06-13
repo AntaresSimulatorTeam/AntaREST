@@ -28,6 +28,8 @@ import BasicDialog from "../common/dialogs/BasicDialog";
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import { getStudy } from "../../redux/selectors";
 
+const LAUNCH_DURATION_MAX_HOURS = 240;
+
 interface Props {
   open: boolean;
   studyIds: Array<StudyMetadata["id"]>;
@@ -199,26 +201,11 @@ function LauncherDialog(props: Props) {
             id="launcher-option-output-suffix"
             label={t("global.name")}
             type="text"
+            variant="filled"
             value={options.output_suffix}
             onChange={(e) =>
               handleChange("output_suffix", e.target.value.trim())
             }
-            InputProps={{
-              sx: {
-                ".MuiOutlinedInput-root": {
-                  "&.MuiOutlinedInput-notchedOutline": {
-                    borderColor: `${theme.palette.primary.main} !important`,
-                  },
-                },
-                ".Mui-focused": {
-                  // borderColor: `${theme.palette.primary.main} !important`
-                },
-                ".MuiOutlinedInput-notchedOutline": {
-                  borderWidth: "1px",
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                },
-              },
-            }}
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -232,7 +219,7 @@ function LauncherDialog(props: Props) {
         </FormControl>
         <FormControl
           sx={{
-            mt: 1,
+            mt: 2,
             width: "100%",
           }}
         >
@@ -240,6 +227,7 @@ function LauncherDialog(props: Props) {
             id="launcher-option-time-limit"
             label={t("study.timeLimit")}
             type="number"
+            variant="filled"
             value={
               (options.time_limit === undefined ? 172800 : options.time_limit) /
               3600
@@ -247,22 +235,6 @@ function LauncherDialog(props: Props) {
             onChange={(e) =>
               handleChange("time_limit", timeLimitParse(e.target.value))
             }
-            InputProps={{
-              sx: {
-                ".MuiOutlinedInput-root": {
-                  "&.MuiOutlinedInput-notchedOutline": {
-                    borderColor: `${theme.palette.primary.main} !important`,
-                  },
-                },
-                ".Mui-focused": {
-                  // borderColor: `${theme.palette.primary.main} !important`
-                },
-                ".MuiOutlinedInput-notchedOutline": {
-                  borderWidth: "1px",
-                  borderColor: `${theme.palette.text.secondary} !important`,
-                },
-              },
-            }}
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -272,7 +244,9 @@ function LauncherDialog(props: Props) {
                 ".Mui-focused": {},
               },
             }}
-            helperText={t("study.timeLimitHelper")}
+            helperText={t("study.timeLimitHelper", {
+              max: LAUNCH_DURATION_MAX_HOURS,
+            })}
           />
         </FormControl>
         <FormGroup
@@ -345,26 +319,11 @@ function LauncherDialog(props: Props) {
                 id="launcher-option-other-options"
                 label={t("study.otherOptions")}
                 type="text"
+                variant="filled"
                 value={options.other_options}
                 onChange={(e) =>
                   handleChange("other_options", e.target.value.trim())
                 }
-                InputProps={{
-                  sx: {
-                    ".MuiOutlinedInput-root": {
-                      "&.MuiOutlinedInput-notchedOutline": {
-                        borderColor: `${theme.palette.primary.main} !important`,
-                      },
-                    },
-                    ".Mui-focused": {
-                      // borderColor: `${theme.palette.primary.main} !important`
-                    },
-                    ".MuiOutlinedInput-notchedOutline": {
-                      borderWidth: "1px",
-                      borderColor: `${theme.palette.text.secondary} !important`,
-                    },
-                  },
-                }}
                 InputLabelProps={{
                   shrink: true,
                   sx: {
@@ -379,30 +338,16 @@ function LauncherDialog(props: Props) {
             <FormControl
               sx={{
                 width: "100%",
+                mt: 2,
               }}
             >
               <TextField
                 id="launcher-version"
                 label={t("global.version")}
                 type="text"
+                variant="filled"
                 value={solverVersion}
                 onChange={(e) => setSolverVersion(e.target.value.trim())}
-                InputProps={{
-                  sx: {
-                    ".MuiOutlinedInput-root": {
-                      "&.MuiOutlinedInput-notchedOutline": {
-                        borderColor: `${theme.palette.primary.main} !important`,
-                      },
-                    },
-                    ".Mui-focused": {
-                      // borderColor: `${theme.palette.primary.main} !important`
-                    },
-                    ".MuiOutlinedInput-notchedOutline": {
-                      borderWidth: "1px",
-                      borderColor: `${theme.palette.text.secondary} !important`,
-                    },
-                  },
-                }}
                 InputLabelProps={{
                   shrink: true,
                   sx: {

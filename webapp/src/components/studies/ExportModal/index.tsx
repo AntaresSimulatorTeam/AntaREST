@@ -162,7 +162,6 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       <Box
         sx={{
           p: 2,
-          overflow: "hidden",
         }}
       >
         <SelectSingle

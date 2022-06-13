@@ -15,7 +15,6 @@ import Filter from "./Filter";
 import TagSelect from "./TagSelect";
 import SelectSingle from "../../../common/SelectSingle";
 import SelectMulti from "../../../common/SelectMulti";
-import { scrollbarStyle } from "../../../../theme";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -24,10 +23,7 @@ const Root = styled(Box)(({ theme }) => ({
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "flex-start",
-  overflowX: "hidden",
-  overflowY: "auto",
   padding: theme.spacing(1, 0),
-  ...scrollbarStyle,
 }));
 
 interface PropTypes {

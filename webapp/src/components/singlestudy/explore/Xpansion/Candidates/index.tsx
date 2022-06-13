@@ -227,7 +227,7 @@ function Candidates() {
         }
         right={
           <>
-            <Box width="100%" height="100%" padding={2} boxSizing="border-box">
+            <Box width="100%" height="100%" boxSizing="border-box">
               {renderView()}
             </Box>
             <Backdrop

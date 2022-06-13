@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, Divider, Typography, Button, ButtonGroup } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Typography,
+  Button,
+  ButtonGroup,
+  Paper,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -77,7 +84,7 @@ function CandidateForm(props: PropType) {
   }, [candidate]);
 
   return (
-    <Box>
+    <Paper sx={{ p: 2 }}>
       <Box>
         <Box
           display="flex"
@@ -311,7 +318,7 @@ function CandidateForm(props: PropType) {
           {t("xpansion.question.deleteCandidate")}
         </ConfirmationDialog>
       )}
-    </Box>
+    </Paper>
   );
 }
 

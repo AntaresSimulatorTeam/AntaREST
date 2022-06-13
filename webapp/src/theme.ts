@@ -109,6 +109,33 @@ const theme = createTheme({
               },
           },
         },
+        {
+          props: { variant: "filled" },
+          style: {
+            ".MuiFilledInput-root": {
+              background: "rgba(255, 255, 255, 0.09)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+            },
+            borderRadius: "4px 4px 0px 0px",
+            minHeight: 0,
+          },
+        },
+      ],
+    },
+    MuiSelect: {
+      variants: [
+        {
+          props: { variant: "filled" },
+          style: {
+            background: "rgba(255, 255, 255, 0.09)",
+            borderRadius: "4px 4px 0px 0px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
+            paddingRight: 6,
+            ".MuiSelect-icon": {
+              backgroundColor: "#222333",
+            },
+          },
+        },
       ],
     },
     MuiFormControl: {

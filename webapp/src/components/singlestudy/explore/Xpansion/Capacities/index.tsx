@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { MatrixType, StudyMetadata } from "../../../../../common/types";
 import {
   getAllCapacities,
@@ -90,18 +90,20 @@ function Capacities() {
   return (
     <>
       {loaded ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <FileTable
-            title={<Title>{t("xpansion.capacities")}</Title>}
-            content={
-              capacities?.map((item) => ({ id: item, name: item })) || []
-            }
-            onDelete={deleteCapa}
-            onRead={getOneCapa}
-            uploadFile={addOneCapa}
-            allowImport
-            allowDelete
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <FileTable
+              title={<Title>{t("xpansion.capacities")}</Title>}
+              content={
+                capacities?.map((item) => ({ id: item, name: item })) || []
+              }
+              onDelete={deleteCapa}
+              onRead={getOneCapa}
+              uploadFile={addOneCapa}
+              allowImport
+              allowDelete
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
