@@ -41,7 +41,7 @@ export default function PropertiesForm(
   };
 
   const renderFilter = (filterName: string) => (
-    <Box sx={{ mt: 2 }}>
+    <Box sx={{ mb: 2 }}>
       <SelectFE
         multiple
         {...register(filterName, {
@@ -63,7 +63,6 @@ export default function PropertiesForm(
         defaultValue={(defaultValues || {})[filterName] || []}
         variant="filled"
         options={filterOptions}
-        label={t(`study.modelization.nodeProperties.${filterName}`)}
         sx={{ minWidth: "200px" }}
       />
     </Box>
@@ -255,7 +254,13 @@ export default function PropertiesForm(
               flexDirection: "column",
             }}
           >
+            <Typography>
+              {t("study.modelization.nodeProperties.filterSynthesis")}
+            </Typography>
             {renderFilter("filterSynthesis")}
+            <Typography>
+              {t("study.modelization.nodeProperties.filterByYear")}
+            </Typography>
             {renderFilter("filterByYear")}
           </Box>
         </Fieldset>
