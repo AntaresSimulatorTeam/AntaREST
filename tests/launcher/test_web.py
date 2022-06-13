@@ -110,8 +110,13 @@ def test_jobs() -> None:
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
         [
-            call(str(study_id), RequestParameters(DEFAULT_ADMIN_USER), True),
-            call(None, RequestParameters(DEFAULT_ADMIN_USER), True),
+            call(
+                str(study_id),
+                RequestParameters(DEFAULT_ADMIN_USER),
+                True,
+                None,
+            ),
+            call(None, RequestParameters(DEFAULT_ADMIN_USER), True, None),
         ]
     )
 
