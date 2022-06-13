@@ -38,6 +38,7 @@ import MiscGen from "./components/singlestudy/explore/Modelization/Areas/MiscGen
 import Reserve from "./components/singlestudy/explore/Modelization/Areas/Reserve";
 import Wind from "./components/singlestudy/explore/Modelization/Areas/Wind";
 import Solar from "./components/singlestudy/explore/Modelization/Areas/Solar";
+import Renewables from "./components/singlestudy/explore/Modelization/Areas/Renewables";
 
 function App() {
   return (
@@ -66,7 +67,8 @@ function App() {
                             <Route path="hydro" element={<Hydro />} />
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
-                            <Route path="reserve" element={<Reserve />} />
+                            <Route path="renewables" element={<Renewables />} />
+                            <Route path="reserves" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />
                             <Route index element={<Properties />} />
                             <Route path="*" element={<Properties />} />

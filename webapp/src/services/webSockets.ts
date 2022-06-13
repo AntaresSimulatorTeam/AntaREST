@@ -40,6 +40,8 @@ export enum WsChannel {
   StudyGeneration = "GENERATION_TASK/",
 }
 
+let globalListenerAdded = false;
+
 export function initWebSocket(
   dispatch: AppDispatch,
   user?: UserInfo
@@ -55,11 +57,14 @@ export function initWebSocket(
     `${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`
   );
 
-  messageListeners.push(
-    makeStudyListener(dispatch),
-    makeMaintenanceListener(dispatch),
-    makeStudyDataListener(dispatch)
-  );
+  if (!globalListenerAdded) {
+    messageListeners.push(
+      makeStudyListener(dispatch),
+      makeMaintenanceListener(dispatch),
+      makeStudyDataListener(dispatch)
+    );
+    globalListenerAdded = true;
+  }
 
   webSocket.onmessage = (event: MessageEvent): void => {
     const message = JSON.parse(event.data) as WSMessage;
@@ -167,6 +172,7 @@ export function closeWebSocket(clean = true): void {
   if (clean) {
     messageListeners = [];
     channelSubscriptions = [];
+    globalListenerAdded = false;
   }
 }
 

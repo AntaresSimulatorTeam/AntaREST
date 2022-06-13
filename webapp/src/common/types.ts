@@ -513,21 +513,6 @@ export interface AreasNameSynthesis {
   [index: string]: AreasSynthesis;
 }
 
-export interface StudyProperties {
-  archiveInputSeries: Array<string>;
-  areas: AreasNameSynthesis;
-  bindings: Array<string>;
-  enrModelling: string;
-  outputPath: string;
-  outputs: string;
-  path: string;
-  sets: string;
-  storeNewSet: boolean;
-  studyId: string;
-  studyPath: string;
-  version: number;
-}
-
 export interface LinkProperties {
   source: string;
   target: string;

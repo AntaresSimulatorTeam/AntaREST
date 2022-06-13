@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Union, Dict
 
 from fastapi import HTTPException
 
-from antarest.core.model import JSON
+from antarest.core.model import JSON, SUB_JSON
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -28,9 +28,7 @@ class ChildNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class FolderNode(
-    INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON], ABC
-):
+class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     """
     Hub node which forward request deeper in tree according to url. Or expand request according to depth.
     Its children is set node by node following antares tree structure.
@@ -53,9 +51,7 @@ class FolderNode(
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> Union[
-        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
-    ]:
+    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         children = self.build()
         names, sub_url = self.extract_child(children, url)
 
@@ -87,9 +83,7 @@ class FolderNode(
 
     def _expand_get(
         self, depth: int = -1, formatted: bool = True, get_node: bool = False
-    ) -> Union[
-        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
-    ]:
+    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if get_node:
             return self
 
@@ -110,9 +104,7 @@ class FolderNode(
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> Union[
-        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
-    ]:
+    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if url and url != [""]:
             return self._forward_get(url, depth, formatted, get_node)
         else:
@@ -134,14 +126,14 @@ class FolderNode(
     def get_node(
         self,
         url: Optional[List[str]] = None,
-    ) -> INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]:
+    ) -> INode[JSON, SUB_JSON, JSON]:
         output = self._get(url=url, get_node=True)
         assert isinstance(output, INode)
         return output
 
     def save(
         self,
-        data: Union[str, int, bool, float, bytes, JSON],
+        data: SUB_JSON,
         url: Optional[List[str]] = None,
     ) -> None:
         children = self.build()

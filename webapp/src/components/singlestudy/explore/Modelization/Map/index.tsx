@@ -23,7 +23,7 @@ import {
 } from "../../../../../services/api/studydata";
 import {
   getAreaPositions,
-  getSynthesis,
+  getStudySynthesis,
 } from "../../../../../services/api/study";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import GraphView from "./GraphView";
@@ -31,6 +31,8 @@ import MapPropsView from "./MapPropsView";
 import CreateAreaModal from "./CreateAreaModal";
 import mapbackground from "../../../../../assets/mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { setCurrentArea } from "../../../../../redux/ducks/studyDataSynthesis";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -78,6 +80,13 @@ function Map() {
   const graphRef =
     useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (selectedItem && isNode(selectedItem)) {
+      dispatch(setCurrentArea((selectedItem as NodeProperties).id));
+    }
+  }, [selectedItem]);
 
   const onClickNode = useCallback(
     (nodeId: string) => {
@@ -272,7 +281,7 @@ function Map() {
     if (study) {
       const init = async () => {
         try {
-          const data = await getSynthesis(study.id);
+          const data = await getStudySynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
             const areas = await getAreaPositions(study.id);
             const tempNodeData = Object.keys(areas).map((areaId) => {

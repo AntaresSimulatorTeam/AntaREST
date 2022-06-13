@@ -1317,9 +1317,7 @@ class StudyService:
 
     def _create_edit_study_command(
         self,
-        tree_node: INode[
-            JSON, Union[str, int, bool, float, bytes, JSON], JSON
-        ],
+        tree_node: INode[JSON, SUB_JSON, JSON],
         url: str,
         data: SUB_JSON,
     ) -> ICommand:

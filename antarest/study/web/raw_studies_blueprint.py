@@ -82,22 +82,16 @@ def create_raw_study_routes(
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        data: SUB_JSON = Body(...),
+        data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Editing data at {path} for study {uuid}",
             extra={"user": current_user.id},
         )
-        new = data
-        if not new:
-            raise HTTPException(
-                status_code=400, detail="empty body not authorized"
-            )
-
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, new, params)
+        study_service.edit_study(uuid, path, data, params)
         return ""
 
     @bp.put(

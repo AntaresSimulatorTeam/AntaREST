@@ -6,11 +6,17 @@ import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
 import TabWrapper from "../../TabWrapper";
 
-function AreasTab() {
+interface Props {
+  renewablesClustering: boolean;
+}
+
+function AreasTab(props: Props) {
+  const { renewablesClustering } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
-  const tabList = useMemo(
-    () => [
+
+  const tabList = useMemo(() => {
+    const baseTabs = [
       {
         label: t("study.modelization.properties"),
         path: `/studies/${study.id}/explore/modelization/area/properties`,
@@ -36,16 +42,22 @@ function AreasTab() {
         path: `/studies/${study.id}/explore/modelization/area/solar`,
       },
       {
-        label: t("study.modelization.reserve"),
-        path: `/studies/${study.id}/explore/modelization/area/reserve`,
+        label: t("study.modelization.reserves"),
+        path: `/studies/${study.id}/explore/modelization/area/reserves`,
       },
       {
         label: t("study.modelization.miscGen"),
         path: `/studies/${study.id}/explore/modelization/area/miscGen`,
       },
-    ],
-    [study]
-  );
+    ];
+    if (renewablesClustering) {
+      baseTabs.splice(4, 2, {
+        label: t("study.modelization.renewables"),
+        path: `/studies/${study.id}/explore/modelization/area/renewables`,
+      });
+    }
+    return baseTabs;
+  }, [study, renewablesClustering]);
 
   return (
     <Paper

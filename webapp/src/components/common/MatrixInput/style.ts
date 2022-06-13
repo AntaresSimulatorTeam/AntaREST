@@ -1,4 +1,4 @@
-import { styled, Box, Paper, Button } from "@mui/material";
+import { styled, Box, Button } from "@mui/material";
 
 export const Root = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -17,11 +17,11 @@ export const Header = styled(Box)(({ theme }) => ({
   flexFlow: "row nowrap",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: theme.spacing(0, 2),
+  padding: theme.spacing(0, 1),
 }));
 
-export const Content = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
+export const Content = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
   boxSizing: "border-box",
   flex: 1,
   width: "100%",

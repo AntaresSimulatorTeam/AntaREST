@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from "axios";
-import { trimCharsStart } from "ramda-adjunct";
+import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -11,7 +11,6 @@ import {
   StudyOutput,
   StudyPublicMode,
   AreasConfig,
-  StudyProperties,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
 } from "../../common/types";
@@ -53,11 +52,6 @@ export const getStudyData = async (
 
 export const getComments = async (sid: string): Promise<string> => {
   const res = await client.get(`/v1/studies/${sid}/comments`);
-  return res.data;
-};
-
-export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
-  const res = await client.get(`/v1/studies/${uuid}/synthesis`);
   return res.data;
 };
 
@@ -125,9 +119,13 @@ export const editStudy = async (
   path = "",
   depth = 1
 ): Promise<void> => {
+  let formattedData: unknown = data;
+  if (isBoolean(data)) {
+    formattedData = JSON.stringify(data);
+  }
   const res = await client.post(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
-    data
+    formattedData
   );
   return res.data;
 };
