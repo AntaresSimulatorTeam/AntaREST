@@ -1,8 +1,8 @@
 import UnderConstruction from "../../../../../common/page/UnderConstruction";
-import previewImage from "../Thermal/preview.png";
+import previewImage from "./preview.png";
 
-function Hydro() {
+function Renewables() {
   return <UnderConstruction previewImage={previewImage} />;
 }
 
-export default Hydro;
+export default Renewables;
