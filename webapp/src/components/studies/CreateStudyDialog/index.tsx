@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { usePromise } from "react-use";
 import * as R from "ramda";
 import SingleSelect from "../../common/SelectSingle";
 import MultiSelect from "../../common/SelectMulti";
-import FilledTextInput from "../../common/FilledTextInput";
 import { GenericInfo, GroupDTO, StudyPublicMode } from "../../../common/types";
 import TextSeparator from "../../common/TextSeparator";
 import { getGroups } from "../../../services/api/user";
@@ -133,10 +132,11 @@ function CreateStudyModal(props: Props) {
     >
       <Root>
         <InputElement>
-          <FilledTextInput
+          <TextField
+            variant="filled"
             label={t("studies.studyName")}
             value={studyName}
-            onChange={setStudyName}
+            onChange={(ev) => setStudyName(ev.target.value)}
             sx={{ flexGrow: 1, mr: 2 }}
             required
           />

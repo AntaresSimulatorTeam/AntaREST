@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { isEqual } from "lodash";
 import debug from "debug";
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import SingleSelect from "../../common/SelectSingle";
 import MultiSelect from "../../common/SelectMulti";
-import FilledTextInput from "../../common/FilledTextInput";
 import {
   GenericInfo,
   GroupDTO,
@@ -200,10 +199,11 @@ function PropertiesModal(props: Props) {
     >
       <Root>
         <InputElement>
-          <FilledTextInput
+          <TextField
+            variant="filled"
             label={t("studies.studyName")}
             value={studyName}
-            onChange={setStudyName}
+            onChange={(ev) => setStudyName(ev.target.value)}
             sx={{ flexGrow: 1 }}
             required
           />

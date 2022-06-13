@@ -1,5 +1,11 @@
 import { ReactNode, useState } from "react";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { login } from "../../redux/ducks/auth";
@@ -7,7 +13,6 @@ import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
 import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLoadingError";
 import AppLoader from "../../components/common/loaders/AppLoader";
-import FilledTextInput from "../../components/common/FilledTextInput";
 import { needAuth } from "../../services/api/auth";
 import { getAuthUser } from "../../redux/selectors";
 import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError";
@@ -151,13 +156,17 @@ function LoginWrapper(props: Props) {
               style={{ marginTop: "16px" }}
               onSubmit={handleSubmit(handleLoginSubmit)}
             >
-              <FilledTextInput
-                label="NNI *"
+              <TextField
+                label="NNI"
+                variant="filled"
                 fullWidth
                 inputProps={{ ...register("username", { required: true }) }}
                 sx={{ my: 3 }}
+                required
               />
-              <FilledTextInput
+              <TextField
+                variant="filled"
+                required
                 type="password"
                 label={t("global.password")}
                 fullWidth

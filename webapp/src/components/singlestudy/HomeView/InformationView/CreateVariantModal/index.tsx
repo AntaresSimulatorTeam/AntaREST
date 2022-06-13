@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router";
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import FilledTextInput from "../../../../common/FilledTextInput";
 import SingleSelect from "../../../../common/SelectSingle";
 import { GenericInfo, VariantTree } from "../../../../../common/types";
 import { createVariant } from "../../../../../services/api/variant";
@@ -79,11 +78,12 @@ function CreateVariantModal(props: Props) {
     >
       <Root>
         <InputContainer>
-          <FilledTextInput
+          <TextField
             label={t("variants.newVariant")}
             value={studyName}
-            onChange={setStudyName}
+            onChange={(ev) => setStudyName(ev.target.value)}
             sx={{ flexGrow: 1 }}
+            variant="filled"
             required
           />
         </InputContainer>
