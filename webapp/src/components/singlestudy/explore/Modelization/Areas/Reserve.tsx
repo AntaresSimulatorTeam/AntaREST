@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../redux/selectors";
-import { StudyMetadata } from "../../../../../common/types";
+import { MatrixStats, StudyMetadata } from "../../../../../common/types";
 import MatrixInput from "../../../../common/MatrixInput";
 
 function Reserve() {
@@ -14,7 +14,14 @@ function Reserve() {
     "Day Ahead",
   ];
 
-  return <MatrixInput study={study} url={url} columnsNames={colmunsNames} />;
+  return (
+    <MatrixInput
+      study={study}
+      url={url}
+      columnsNames={colmunsNames}
+      computStats={MatrixStats.TOTAL}
+    />
+  );
 }
 
 export default Reserve;

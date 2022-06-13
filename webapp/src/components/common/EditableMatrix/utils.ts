@@ -4,6 +4,7 @@ import moment, { DurationInputArg2 } from "moment";
 import { CellChange } from "handsontable/common";
 import {
   MatrixEditDTO,
+  MatrixStats,
   Operator,
   StudyOutputDownloadLevelDTO,
 } from "../../../common/types";
@@ -71,7 +72,6 @@ const convertLevelDate = (
 export const createDateFromIndex = (
   indexDate: string | number,
   startDate: string,
-  index: (string | number)[],
   levelDate: StudyOutputDownloadLevelDTO
 ): string | number => {
   const date = moment
@@ -95,6 +95,38 @@ export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
       operation: { operation: Operator.EQ, value: parseInt(cell[3], 10) },
     };
   });
+};
+
+export const computeStats = (
+  statsType: string,
+  row: Array<number>
+): Array<number> => {
+  if (statsType === MatrixStats.TOTAL) {
+    return [
+      row.reduce((agg, value) => {
+        return agg + value;
+      }, 0),
+    ];
+  }
+  if (statsType === MatrixStats.STATS) {
+    const statsInfo = row.reduce(
+      (agg, value) => {
+        const newAgg = { ...agg };
+        if (value < agg.min) {
+          newAgg.min = value;
+        }
+        if (value > agg.max) {
+          newAgg.max = value;
+        }
+        newAgg.total = agg.total + value;
+
+        return newAgg;
+      },
+      { min: row[0], max: row[0], total: 0 }
+    );
+    return [statsInfo.min, statsInfo.max, statsInfo.total / row.length];
+  }
+  return [];
 };
 
 export default {};

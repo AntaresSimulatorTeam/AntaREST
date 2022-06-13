@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../redux/selectors";
-import { StudyMetadata } from "../../../../../common/types";
+import { MatrixStats, StudyMetadata } from "../../../../../common/types";
 import MatrixInput from "../../../../common/MatrixInput";
 
 function Wind() {
@@ -9,7 +9,9 @@ function Wind() {
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/wind/series/wind_${currentArea}`;
 
-  return <MatrixInput study={study} url={url} />;
+  return (
+    <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
+  );
 }
 
 export default Wind;
