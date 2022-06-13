@@ -109,7 +109,8 @@ function Capacities() {
       {!!capacityViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
-          data={capacityViewDialog}
+          filename={capacityViewDialog.filename}
+          content={capacityViewDialog.content}
           onClose={() => setCapacityViewDialog(undefined)}
           isMatrix
         />

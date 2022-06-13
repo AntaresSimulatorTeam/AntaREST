@@ -109,7 +109,8 @@ function Files() {
       {!!constraintViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
-          data={constraintViewDialog}
+          filename={constraintViewDialog.filename}
+          content={constraintViewDialog.content}
           onClose={() => setConstraintViewDialog(undefined)}
         />
       )}
