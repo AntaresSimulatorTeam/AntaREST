@@ -1,7 +1,7 @@
 import { FieldValues } from "react-hook-form";
 import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../services/api/study";
-import { RGBToString } from "./ColorPicker/utils";
+import { RGBToString } from "../../../../../common/fieldEditors/ColorPickerFE/utils";
 
 export interface PropertiesType {
   ui: {

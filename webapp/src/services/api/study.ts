@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from "axios";
-import { trimCharsStart } from "ramda-adjunct";
+import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -119,9 +119,13 @@ export const editStudy = async (
   path = "",
   depth = 1
 ): Promise<void> => {
+  let formattedData: unknown = data;
+  if (isBoolean(data)) {
+    formattedData = JSON.stringify(data);
+  }
   const res = await client.post(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
-    data
+    formattedData
   );
   return res.data;
 };

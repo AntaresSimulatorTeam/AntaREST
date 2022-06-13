@@ -1,22 +1,16 @@
-import {
-  Box,
-  FormControlLabel,
-  Switch,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, TextField, Typography } from "@mui/material";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
-import { Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../services/api/study";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../common/Fieldset";
 import { FormObj } from "../../../../../common/Form";
-import ColorPicker from "./ColorPicker";
-import { stringToRGB } from "./ColorPicker/utils";
+import ColorPicker from "../../../../../common/fieldEditors/ColorPickerFE";
+import { stringToRGB } from "../../../../../common/fieldEditors/ColorPickerFE/utils";
 import { getPropertiesPath, PropertiesFields } from "./utils";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 export default function PropertiesForm(
   props: FormObj<PropertiesFields, unknown> & {
@@ -24,7 +18,7 @@ export default function PropertiesForm(
     areaName: string;
   }
 ) {
-  const { control, register, watch, defaultValues, studyId, areaName } = props;
+  const { register, watch, defaultValues, studyId, areaName } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
@@ -47,29 +41,32 @@ export default function PropertiesForm(
   };
 
   const renderFilter = (filterName: string) => (
-    <SelectFE
-      sx={{ mr: 1 }}
-      multiple
-      {...register(filterName, {
-        onAutoSubmit: (value) => {
+    <Box sx={{ mt: 2 }}>
+      <SelectFE
+        multiple
+        {...register(filterName, {
+          onAutoSubmit: (value) => {
+            const selection = value
+              ? (value as Array<string>).filter((val) => val !== "")
+              : [];
+            handleAutoSubmit(path[filterName], selection.join(", "));
+          },
+        })}
+        renderValue={(value: unknown) => {
           const selection = value
             ? (value as Array<string>).filter((val) => val !== "")
             : [];
-          handleAutoSubmit(path[filterName], selection.join(", "));
-        },
-      })}
-      renderValue={(value: unknown) => {
-        const selection = value
-          ? (value as Array<string>).filter((val) => val !== "")
-          : [];
-        return selection.length > 0
-          ? selection.map((elm) => t(`study.${elm}`)).join(", ")
-          : t("global.none");
-      }}
-      defaultValue={(defaultValues || {})[filterName] || []}
-      variant="filled"
-      options={filterOptions}
-    />
+          return selection.length > 0
+            ? selection.map((elm) => t(`study.${elm}`)).join(", ")
+            : t("global.none");
+        }}
+        defaultValue={(defaultValues || {})[filterName] || []}
+        variant="filled"
+        options={filterOptions}
+        label={t(`study.modelization.nodeProperties.${filterName}`)}
+        sx={{ minWidth: "200px" }}
+      />
+    </Box>
   );
 
   return (
@@ -150,7 +147,7 @@ export default function PropertiesForm(
           </Box>
         </Fieldset>
         <Fieldset
-          title={t("study.modelization.nodalOptimization")}
+          title={t("study.modelization.nodeProperties.nodalOptimization")}
           style={{ padding: "16px" }}
         >
           <Box
@@ -160,7 +157,7 @@ export default function PropertiesForm(
             }}
           >
             <Typography>{`${t(
-              "study.modelization.energyCost"
+              "study.modelization.nodeProperties.energyCost"
             )} (€/Wh)`}</Typography>
             <Box
               sx={{
@@ -170,8 +167,9 @@ export default function PropertiesForm(
               }}
             >
               <TextField
-                label={t("study.modelization.unsupplied")}
+                label={t("study.modelization.nodeProperties.unsupplied")}
                 variant="filled"
+                type="number"
                 placeholder={defaultValues?.energieCostUnsupplied?.toString()}
                 InputLabelProps={
                   defaultValues?.energieCostUnsupplied !== undefined
@@ -185,8 +183,9 @@ export default function PropertiesForm(
               />
               <TextField
                 sx={{ mx: 1 }}
-                label={t("study.modelization.splilled")}
+                label={t("study.modelization.nodeProperties.splilled")}
                 variant="filled"
+                type="number"
                 placeholder={defaultValues?.energieCostSpilled?.toString()}
                 InputLabelProps={
                   defaultValues?.energieCostSpilled !== undefined
@@ -208,7 +207,7 @@ export default function PropertiesForm(
             }}
           >
             <Typography>
-              {t("study.modelization.lastResortShedding")}
+              {t("study.modelization.nodeProperties.lastResortShedding")}
             </Typography>
             <Box
               sx={{
@@ -217,53 +216,43 @@ export default function PropertiesForm(
                 mt: 1,
               }}
             >
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="nonDispatchPower"
-                    defaultValue={defaultValues?.nonDispatchPower}
-                    render={({ field: { value, ref, ...rest } }) => (
-                      <Switch checked={value} inputRef={ref} {...rest} />
-                    )}
-                  />
-                }
-                label={t("study.modelization.nonDispatchPower")}
+              <SwitchFE
+                label={t("study.modelization.nodeProperties.nonDispatchPower")}
+                {...register("nonDispatchPower", {
+                  onAutoSubmit: (value) =>
+                    handleAutoSubmit(path.nonDispatchPower, value),
+                })}
               />
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="dispatchHydroPower"
-                    defaultValue={defaultValues?.dispatchHydroPower}
-                    render={({ field: { value, ref, ...rest } }) => (
-                      <Switch checked={value} inputRef={ref} {...rest} />
-                    )}
-                  />
-                }
-                label={t("study.modelization.dispatchHydroPower")}
+              <SwitchFE
+                label={t(
+                  "study.modelization.nodeProperties.dispatchHydroPower"
+                )}
+                {...register("dispatchHydroPower", {
+                  onAutoSubmit: (value) =>
+                    handleAutoSubmit(path.dispatchHydroPower, value),
+                })}
               />
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="otherDispatchPower"
-                    defaultValue={defaultValues?.otherDispatchPower}
-                    render={({ field: { value, ref, ...rest } }) => (
-                      <Switch checked={value} inputRef={ref} {...rest} />
-                    )}
-                  />
-                }
-                label={t("study.modelization.otherDispatchPower")}
+              <SwitchFE
+                label={t(
+                  "study.modelization.nodeProperties.otherDispatchPower"
+                )}
+                {...register("otherDispatchPower", {
+                  onAutoSubmit: (value) =>
+                    handleAutoSubmit(path.otherDispatchPower, value),
+                })}
               />
             </Box>
           </Box>
         </Fieldset>
-        <Fieldset title={t("global.filter")} style={{ padding: "16px" }}>
+        <Fieldset
+          title={t("study.modelization.nodeProperties.outputFilter")}
+          style={{ padding: "16px" }}
+        >
           <Box
             sx={{
               width: "100%",
               display: "flex",
+              flexDirection: "column",
             }}
           >
             {renderFilter("filterSynthesis")}

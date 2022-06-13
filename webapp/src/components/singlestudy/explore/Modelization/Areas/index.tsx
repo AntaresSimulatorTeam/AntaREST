@@ -17,24 +17,28 @@ import { setCurrentArea } from "../../../../../redux/ducks/studyDataSynthesis";
 function Areas() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const {
-    value: areas,
+    value: studyData,
     error,
     isLoading,
   } = useStudyData({
     studyId: study.id,
-    selector: (state) => state.areas,
+    selector: (state) => ({
+      areas: state.areas,
+      renewablesClustering: state.enr_modelling,
+    }),
   });
   const currentArea = useAppSelector(getCurrentAreaId);
   const dispatch = useAppDispatch();
-  const selectedArea = areas && currentArea ? areas[currentArea] : undefined;
+  const selectedArea =
+    studyData?.areas && currentArea ? studyData?.areas[currentArea] : undefined;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleAreaClick = (areaName: string): void => {
-    if (areas === undefined) return;
-    const elm = areas[areaName.toLowerCase()];
+    if (studyData?.areas === undefined) return;
+    const elm = studyData?.areas[areaName.toLowerCase()];
     if (elm) {
       dispatch(setCurrentArea(areaName.toLowerCase()));
     }
@@ -48,7 +52,7 @@ function Areas() {
     <SplitLayoutView
       left={
         <Box width="100%" height="100%">
-          {areas !== undefined && !isLoading && (
+          {studyData?.areas !== undefined && !isLoading && (
             <AreaPropsView
               studyId={study.id}
               onClick={handleAreaClick}
@@ -71,7 +75,14 @@ function Areas() {
             // Area list
             [
               () => selectedArea !== undefined,
-              () => (<AreasTab />) as ReactNode,
+              () =>
+                (
+                  <AreasTab
+                    renewablesClustering={
+                      studyData?.renewablesClustering !== "aggregated"
+                    }
+                  />
+                ) as ReactNode,
             ],
             // No Areas
             [R.T, () => (<NoContent title="No areas" />) as ReactNode],

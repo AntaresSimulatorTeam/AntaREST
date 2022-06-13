@@ -94,14 +94,17 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
         json = self.reader.read(self.path) if self.path.exists() else {}
+        formatted_data = data
+        if isinstance(data, str):
+            formatted_data = IniReader.parse_value(data)
         if len(url) == 2:
             if url[0] not in json:
                 json[url[0]] = {}
-            json[url[0]][url[1]] = data
+            json[url[0]][url[1]] = formatted_data
         elif len(url) == 1:
-            json[url[0]] = data
+            json[url[0]] = formatted_data
         else:
-            json = cast(JSON, data)
+            json = cast(JSON, formatted_data)
         self.writer.write(json, self.path)
 
     def delete(self, url: Optional[List[str]] = None) -> None:
