@@ -367,10 +367,10 @@ class MatrixAggregationResult(BaseModel):
     warnings: List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO(
+        return MatrixAggregationResultDTO.construct(
             index=self.index,
             data=[
-                TimeSeriesData(
+                TimeSeriesData.construct(
                     type=key_type,
                     name=key_name,
                     data=self.data[(key_type, key_name)],
