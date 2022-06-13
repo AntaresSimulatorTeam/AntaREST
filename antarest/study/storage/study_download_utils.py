@@ -95,7 +95,7 @@ class StudyDownloader:
                         matrix.data[target][year_str] = []
 
                     matrix.data[target][year_str].append(
-                        TimeSerie(
+                        TimeSerie.construct(
                             name=column_name,
                             unit=column[1] if len(column) > 1 else "",
                             data=[row[index] for row in rows],

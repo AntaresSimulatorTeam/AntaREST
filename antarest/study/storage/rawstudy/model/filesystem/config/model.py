@@ -281,7 +281,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     def from_build_config(
         config: FileStudyTreeConfig,
     ) -> "FileStudyTreeConfigDTO":
-        return FileStudyTreeConfigDTO(
+        return FileStudyTreeConfigDTO.construct(
             study_path=config.study_path,
             path=config.path,
             study_id=config.study_id,
