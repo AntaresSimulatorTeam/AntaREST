@@ -61,7 +61,7 @@ def create_raw_study_routes(
         if isinstance(output, bytes):
             try:
                 # try to decode string
-                output = output.decode("utf-8")  # type: ignore
+                output = output.decode("utf-8")
             except (AttributeError, UnicodeDecodeError):
                 pass
 
