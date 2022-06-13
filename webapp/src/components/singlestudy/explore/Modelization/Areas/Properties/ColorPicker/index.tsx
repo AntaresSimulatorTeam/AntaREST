@@ -14,12 +14,12 @@ import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { RGBToString, stringToRGB } from "./utils";
 
 interface Props {
-  currentColor?: Partial<ColorResult["rgb"]>;
+  currentColor?: string;
 }
 
 const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
   const { currentColor, onChange, ...other } = props;
-  const [color, setColor] = useState<string>(RGBToString(currentColor || {}));
+  const [color, setColor] = useState<string>(currentColor || "");
   const [t] = useTranslation();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const internalRef = useRef<HTMLTextAreaElement>();
@@ -34,7 +34,7 @@ const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
 
   useEffect(() => {
     if (currentColor) {
-      setColor(RGBToString(currentColor));
+      setColor(currentColor);
     }
   }, [currentColor]);
 

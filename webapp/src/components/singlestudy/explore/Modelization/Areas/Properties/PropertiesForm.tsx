@@ -66,22 +66,27 @@ export default function PropertiesForm(
         >
           <TextField
             sx={{ mx: 1 }}
-            // label={t("study.modelization.map.areaName")}
+            label={t("study.modelization.map.areaName")}
             variant="filled"
             value={defaultValues?.name}
+            InputLabelProps={
+              defaultValues?.name !== undefined ? { shrink: true } : {}
+            }
             disabled
           />
           <ColorPicker
             currentColor={defaultValues?.color}
             {...register("color", {
-              setValueAs: (value) => stringToRGB(value),
               onAutoSubmit: (value) => {
+                const color = stringToRGB(value);
                 // TODO here we send the color to the path ui, but it also contains x and y which are now set to undefined here
-                handleAutoSubmit(path.color, {
-                  color_r: value.r,
-                  color_g: value.g,
-                  color_b: value.b,
-                });
+                if (color) {
+                  handleAutoSubmit(path.color, {
+                    color_r: color.r,
+                    color_g: color.g,
+                    color_b: color.b,
+                  });
+                }
               },
             })}
           />

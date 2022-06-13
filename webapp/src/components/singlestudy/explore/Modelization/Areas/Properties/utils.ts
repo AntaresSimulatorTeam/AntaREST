@@ -1,6 +1,7 @@
 import { FieldValues } from "react-hook-form";
 import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../services/api/study";
+import { RGBToString } from "./ColorPicker/utils";
 
 export interface PropertiesType {
   ui: {
@@ -31,7 +32,7 @@ type FilteringType = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 
 export interface PropertiesFields extends FieldValues {
   name: string;
-  color: { r: number; g: number; b: number };
+  color: string;
   posX: number;
   posY: number;
   energieCostUnsupplied: number;
@@ -83,11 +84,11 @@ export async function getDefaultValues(
   // Return element
   return {
     name: areaName,
-    color: {
+    color: RGBToString({
       r: uiElement.color_r,
       g: uiElement.color_g,
       b: uiElement.color_b,
-    },
+    }),
     posX: uiElement.x,
     posY: uiElement.y,
     energieCostUnsupplied: nodalOptimization["spread-unsupplied-energy-cost"],

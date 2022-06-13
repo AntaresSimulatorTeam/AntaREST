@@ -20,6 +20,7 @@ function Properties() {
     {},
     [study.id, currentArea]
   );
+
   return (
     <Box sx={{ width: "100%", height: "100%" }}>
       {R.cond([
