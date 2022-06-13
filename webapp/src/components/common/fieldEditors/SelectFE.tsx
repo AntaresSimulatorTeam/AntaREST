@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
 import { startCase } from "lodash";
 
-type OptionsObj = Array<{ name: string; value: string }>;
+type OptionsObj = Array<{ label: string; value: string }>;
 
 interface SelectFEProps extends Omit<SelectProps, "labelId"> {
   options: string[] | OptionsObj;
@@ -24,7 +24,7 @@ function formatOptions(options: SelectFEProps["options"]): OptionsObj {
     return options as OptionsObj;
   }
   return (options as string[]).map((opt) => ({
-    name: startCase(opt),
+    label: startCase(opt),
     value: opt,
   }));
 }
@@ -43,15 +43,15 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   return (
     <FormControl>
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} labelId={labelId} ref={ref}>
+      <Select {...selectProps} labelId={labelId} inputRef={ref}>
         {emptyValue && (
           <MenuItem value="">
             <em>None</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ value, name }) => (
+        {optionsFormatted.map(({ value, label }) => (
           <MenuItem key={value} value={value}>
-            {name}
+            {label}
           </MenuItem>
         ))}
       </Select>
