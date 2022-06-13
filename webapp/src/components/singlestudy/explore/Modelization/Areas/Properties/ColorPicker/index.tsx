@@ -25,10 +25,12 @@ const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
   const internalRef = useRef<HTMLTextAreaElement>();
 
   useEffect(() => {
-    if (color && internalRef.current && onChange) {
-      onChange({
-        target: internalRef.current,
-      } as ChangeEvent<HTMLTextAreaElement>);
+    if (color && internalRef.current) {
+      if (onChange) {
+        onChange({
+          target: internalRef.current,
+        } as ChangeEvent<HTMLTextAreaElement>);
+      }
     }
   }, [color, onChange]);
 
