@@ -281,6 +281,7 @@
     "studies.success.import": "Study import was successful ({{uploadFile}})",
     "studies.success.createStudy": "Study {{studyname}} created successfully",
     "studies.studylaunched": "{{studyname}} launched !",
+    "studies.copySuffix": "Copy",
     "studies.folder": "Folder",
     "studies.scanFolder": "Scan folder",
     "studies.moveStudy": "Move",

@@ -27,7 +27,11 @@ function InformationView(props: Props) {
 
   const importStudy = async (study: StudyMetadata) => {
     try {
-      await copyStudy(study.id, `${study.name} (${t("study.copyId")})`, false);
+      await copyStudy(
+        study.id,
+        `${study.name} (${t("studies.copySuffix")})`,
+        false
+      );
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
     }
