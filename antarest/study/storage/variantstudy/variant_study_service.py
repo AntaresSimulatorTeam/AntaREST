@@ -1,6 +1,7 @@
 import json
 import logging
 import shutil
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -730,10 +731,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study.snapshot = None
         self.repository.save(variant_study, update_modification_date=False)
 
+        unmanaged_user_config: Optional[Path] = None
         if dest_path.is_dir():
             # Remove snapshot directory if it exists and last snapshot is out of sync
             if last_executed_command_index is None:
                 logger.info("Removing previous snapshot data")
+                if (dest_path / "user").exists():
+                    logger.info("Keeping previous unmanaged user config")
+                    tmp_dir = tempfile.TemporaryDirectory(
+                        dir=self.config.storage.tmp_dir
+                    )
+                    shutil.copytree(
+                        dest_path / "user", tmp_dir.name, dirs_exist_ok=True
+                    )
+                    unmanaged_user_config = Path(tmp_dir.name)
                 shutil.rmtree(dest_path)
             else:
                 logger.info("Using previous snapshot data")
@@ -776,6 +787,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             notifier=notifier,
             from_command_index=command_start_index,
         )
+
+        if unmanaged_user_config:
+            logger.info("Restoring previous unamanaged user config")
+            if dest_path.exists():
+                if (dest_path / "user").exists():
+                    logger.warning(
+                        "Existing unamanaged user config. It will be overwritten."
+                    )
+                    shutil.rmtree((dest_path / "user"))
+                shutil.copytree(unmanaged_user_config, dest_path / "user")
+            else:
+                logger.warning("Destination snapshot doesn't exist !")
+            shutil.rmtree(unmanaged_user_config, ignore_errors=True)
+
         if results.success:
             last_command_index = len(variant_study.commands) - 1
             variant_study.snapshot = VariantStudySnapshot(
