@@ -281,12 +281,13 @@
     "studies.success.import": "Study import was successful ({{uploadFile}})",
     "studies.success.createStudy": "L'étude {{studyname}} a été créée avec succès",
     "studies.studylaunched": "{{studyname}} lancé(s) !",
+    "studies.copySuffix": "Copie",
     "studies.folder": "Dossier",
     "studies.scanFolder": "Scanner le dossier",
     "studies.moveStudy": "Déplacer",
     "studies.movefolderplaceholder": "Chemin séparé par des '/'",
     "studies.importcopy": "Copier en base",
-    "studies.importnewstudy": "Import d'une nouvelle étude",
+    "studies.importNewStudy": "Import d'une nouvelle étude",
     "studies.importHint": "Cliquer ou glisser une étude zippée ici",
     "studies.studycopying": "Étude en cours de copie...",
     "studies.studyarchiving": "Étude en cours d'archivage...",
@@ -396,5 +397,6 @@
     "data.success.matrixCreation": "Matrice créée avec succès",
     "data.success.matrixDelete": "Matrice supprimée avec succès",
     "data.question.deleteMatrix": "Êtes-vous sûr de vouloir supprimer cette matrice ?",
+    "data.question.deleteDataset": "Êtes-vous sûr de vouloir supprimer ce dataset ?",
     "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices"   
 }

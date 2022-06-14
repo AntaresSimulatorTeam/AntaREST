@@ -270,7 +270,7 @@ function Data() {
           onCancel={() => setOpenConfirmationModal(false)}
           alert="warning"
         >
-          {t("data.question.deleteMatrix")}
+          {t("data.question.deleteDataset")}
         </ConfirmationDialog>
       )}
     </RootPage>
