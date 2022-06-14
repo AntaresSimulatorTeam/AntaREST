@@ -223,7 +223,7 @@ function StudiesList(props: StudiesListProps) {
           <Typography mx={2} sx={{ color: "white" }}>
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
-          <Tooltip title="display only inside">
+          <Tooltip title={t("studies.filters.strictfolder")}>
             <IconButton onClick={toggleStrictFolder}>
               <FolderOffIcon
                 color={strictFolderFilter ? "secondary" : "disabled"}
