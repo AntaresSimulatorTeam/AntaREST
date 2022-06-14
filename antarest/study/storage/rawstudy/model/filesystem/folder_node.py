@@ -32,7 +32,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     """
     Hub node which forward request deeper in tree according to url. Or expand request according to depth.
     Its children is set node by node following antares tree structure.
-    Strucuture is implemented in antarest.study.repository.filesystem.root
+    Structure is implemented in antarest.study.repository.filesystem.root
     """
 
     def __init__(
