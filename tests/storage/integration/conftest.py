@@ -81,6 +81,9 @@ def storage_service(
     )
     repo.get_all.return_value = [md]
 
+    variant_repo = Mock()
+    variant_repo.get_children.return_value = []
+
     config = Config(
         resources_path=path_resources,
         security=SecurityConfig(disabled=True),
@@ -108,6 +111,7 @@ def storage_service(
         matrix_service=matrix_service,
         config=config,
         metadata_repository=repo,
+        variant_repository=variant_repo,
     )
 
     return storage_service

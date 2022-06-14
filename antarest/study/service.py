@@ -1390,9 +1390,7 @@ class StudyService:
             self._create_edit_study_command(
                 tree_node=lastsave_node, url=lastsave_url, data=int(time())
             ).apply(file_study)
-            remove_from_cache(
-                self.storage_service.variant_study_service.cache, study.id
-            )
+            self.storage_service.variant_study_service.invalidate_cache(study)
 
         elif isinstance(study_service, VariantStudyService):
             study_service.append_command(

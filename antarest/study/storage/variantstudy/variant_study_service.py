@@ -213,7 +213,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             index=index,
         )
         study.commands.append(command_block)
-        self._invalidate_cache(study)
+        self.invalidate_cache(study)
         return new_id
 
     def append_commands(
@@ -244,7 +244,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 for i, command in enumerate(commands)
             ]
         )
-        self._invalidate_cache(study)
+        self.invalidate_cache(study)
         return str(study.id)
 
     def replace_commands(
@@ -275,7 +275,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 for i, command in enumerate(commands)
             ]
         )
-        self._invalidate_cache(study, invalidate_self_snapshot=True)
+        self.invalidate_cache(study, invalidate_self_snapshot=True)
         return str(study.id)
 
     def move_command(
@@ -304,7 +304,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
-            self._invalidate_cache(study, invalidate_self_snapshot=True)
+            self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def remove_command(
         self, study_id: str, command_id: str, params: RequestParameters
@@ -325,7 +325,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
-            self._invalidate_cache(study, invalidate_self_snapshot=True)
+            self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def remove_all_commands(
         self, study_id: str, params: RequestParameters
@@ -341,7 +341,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
 
         study.commands = []
-        self._invalidate_cache(study, invalidate_self_snapshot=True)
+        self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def update_command(
         self,
@@ -367,7 +367,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = command.action
             study.commands[index].args = json.dumps(command.args)
-            self._invalidate_cache(study, invalidate_self_snapshot=True)
+            self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def _get_variant_study(
         self,
@@ -393,19 +393,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
-    def _invalidate_cache(
+    def invalidate_cache(
         self,
-        variant_study: VariantStudy,
+        variant_study: Study,
         invalidate_self_snapshot: bool = False,
     ) -> None:
         remove_from_cache(self.cache, variant_study.id)
-        if variant_study.snapshot and invalidate_self_snapshot:
+        if (
+            isinstance(variant_study, VariantStudy)
+            and variant_study.snapshot
+            and invalidate_self_snapshot
+        ):
             variant_study.snapshot.last_executed_command = None
         self.repository.save(
             metadata=variant_study, update_modification_date=True
         )
         for child in self.repository.get_children(parent_id=variant_study.id):
-            self._invalidate_cache(child, invalidate_self_snapshot=True)
+            self.invalidate_cache(child, invalidate_self_snapshot=True)
 
     def has_children(self, study: VariantStudy) -> bool:
         return len(self.repository.get_children(parent_id=study.id)) > 0
