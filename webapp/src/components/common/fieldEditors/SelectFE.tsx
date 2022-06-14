@@ -10,27 +10,37 @@ import { forwardRef, useMemo, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
 import { startCase } from "lodash";
+import { O } from "ts-toolbelt";
 
-type OptionsObj = Array<{ label: string; value: string }>;
+type OptionObj<T extends O.Object = O.Object> = {
+  label: string;
+  value: string | number;
+} & T;
 
-interface SelectFEProps extends Omit<SelectProps, "labelId"> {
-  options: string[] | OptionsObj;
+export interface SelectFEProps
+  extends Omit<SelectProps, "labelId" | "inputRef"> {
+  options: Array<string | OptionObj>;
   helperText?: React.ReactNode;
   emptyValue?: boolean;
 }
 
-function formatOptions(options: SelectFEProps["options"]): OptionsObj {
-  if (options.length === 0 || RA.isPlainObj(options[0])) {
-    return options as OptionsObj;
-  }
-  return (options as string[]).map((opt) => ({
-    label: startCase(opt),
-    value: opt,
+function formatOptions(
+  options: SelectFEProps["options"]
+): Array<OptionObj<{ id: string }>> {
+  return options.map((opt) => ({
+    ...(RA.isPlainObj(opt) ? opt : { label: startCase(opt), value: opt }),
+    id: uuidv4(),
   }));
 }
 
 const SelectFE = forwardRef((props: SelectFEProps, ref) => {
-  const { options, helperText, emptyValue, variant, ...selectProps } = props;
+  const {
+    options,
+    helperText,
+    emptyValue,
+    variant = "filled",
+    ...selectProps
+  } = props;
   const { label } = selectProps;
   const labelId = useRef(uuidv4()).current;
 
@@ -44,18 +54,19 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
     <FormControl variant={variant}>
       <InputLabel id={labelId}>{label}</InputLabel>
       <Select
-        variant={variant}
         {...selectProps}
+        variant={variant}
         labelId={labelId}
         inputRef={ref}
       >
         {emptyValue && (
           <MenuItem value="">
+            {/* TODO i18n */}
             <em>None</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ value, label }) => (
-          <MenuItem key={value} value={value}>
+        {optionsFormatted.map(({ id, value, label }) => (
+          <MenuItem key={id} value={value}>
             {label}
           </MenuItem>
         ))}
