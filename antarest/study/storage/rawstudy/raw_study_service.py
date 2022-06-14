@@ -107,7 +107,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 if not metadata.additional_data:
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = (
-                    metadata.additional_data.patch or Patch()
+                    metadata.additional_data.patch or Patch().json()
                 )
                 metadata.additional_data.horizon = (
                     metadata.additional_data.horizon
