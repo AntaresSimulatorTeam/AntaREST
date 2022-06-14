@@ -11,6 +11,7 @@ import {
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
+import { selectLinks } from "../selectors";
 import { AppAsyncThunkConfig } from "../store";
 import { makeActionName } from "../utils";
 
@@ -21,10 +22,12 @@ export const studyDataAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
 export interface StudyDataState
   extends ReturnType<typeof studyDataAdapter.getInitialState> {
   currentArea: string;
+  currentLink: string;
 }
 
 const initialState = studyDataAdapter.getInitialState({
   currentArea: "",
+  currentLink: "",
 }) as StudyDataState;
 
 const n = makeActionName("studyDataSynthesis");
@@ -36,6 +39,10 @@ const n = makeActionName("studyDataSynthesis");
 export const setCurrentArea = createAction<
   NonNullable<StudyDataState["currentArea"]>
 >(n("SET_CURRENT_AREA"));
+
+export const setCurrentLink = createAction<
+  NonNullable<StudyDataState["currentLink"]>
+>(n("SET_CURRENT_LINK"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -49,9 +56,18 @@ export const createStudyData = createAsyncThunk<
   n("CREATE_STUDY_DATA"),
   async (studyId, { dispatch, getState, rejectWithValue }) => {
     try {
+      // Fetch study synthesis data
       const studyData = await api.getStudySynthesis(studyId);
+
+      // Set current area
       const areas = Object.keys(studyData.areas);
       if (areas.length > 0) dispatch(setCurrentArea(areas[0].toLowerCase()));
+
+      // Set current link
+      const links = selectLinks(studyData);
+      const linkList = links ? Object.values(links) : [];
+      if (linkList.length > 0) dispatch(setCurrentLink(linkList[0].name));
+
       return studyData;
     } catch (err) {
       return rejectWithValue(err);
@@ -91,5 +107,8 @@ export default createReducer(initialState, (builder) => {
     .addCase(deleteStudyData.fulfilled, studyDataAdapter.removeOne)
     .addCase(setCurrentArea, (draftState, action) => {
       draftState.currentArea = action.payload;
+    })
+    .addCase(setCurrentLink, (draftState, action) => {
+      draftState.currentLink = action.payload;
     });
 });

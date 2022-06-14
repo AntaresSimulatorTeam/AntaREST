@@ -1,6 +1,8 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import {
+  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
+  LinkListElement,
   StudyMetadata,
   UserDetailsDTO,
 } from "../common/types";
@@ -184,9 +186,57 @@ export const getCurrentAreaId = (
   return getStudyDataState(state).currentArea;
 };
 
+export const getCurrentLinkId = (
+  state: AppState
+): StudyDataState["currentLink"] => {
+  return getStudyDataState(state).currentLink;
+};
+
 export const getStudyAreas = createSelector(getStudyData, (studyData) =>
   studyData ? Object.values(studyData.areas) : []
 );
+
+export const selectLinks = (
+  studyData: FileStudyTreeConfigDTO | undefined
+): LinkListElement | undefined => {
+  if (studyData) {
+    const links: LinkListElement = {};
+    Object.values(studyData.areas).forEach((elm1) => {
+      Object.keys(elm1.links).forEach((elm2) => {
+        const tmpAreaName = studyData.areas[elm2].name;
+        const area1 =
+          elm1.name.localeCompare(tmpAreaName) < 0 ? elm1.name : tmpAreaName;
+        const area2 = elm1.name === area1 ? tmpAreaName : elm1.name;
+        /* const link = links.find(
+          (item: LinkCreationInfo) =>
+            item.area1 === area1 && item.area2 === area2
+        );
+        if (link === undefined)
+          links.push({
+            area1,
+            area2,
+          });*/
+        const name = `${area1} / ${area2}`;
+        if (!(name in links))
+          links[name] = {
+            name,
+            area1,
+            area2,
+          };
+      });
+    });
+    return links;
+  }
+  return undefined;
+};
+
+export const getStudyLinks = createSelector(getStudyData, (data) => {
+  if (data) {
+    const tmp = selectLinks(data);
+    if (tmp) return Object.values(tmp) || [];
+  }
+  return [];
+});
 
 ////////////////////////////////////////////////////////////////
 // UI

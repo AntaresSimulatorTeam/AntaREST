@@ -1,5 +1,6 @@
 import {
   FormControl,
+  FormControlProps,
   FormHelperText,
   InputLabel,
   MenuItem,
@@ -22,6 +23,7 @@ export interface SelectFEProps
   options: Array<string | OptionObj>;
   helperText?: React.ReactNode;
   emptyValue?: boolean;
+  formControlProps?: FormControlProps;
 }
 
 function formatOptions(
@@ -39,6 +41,7 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
     helperText,
     emptyValue,
     variant = "filled",
+    formControlProps,
     ...selectProps
   } = props;
   const { label } = selectProps;
@@ -51,7 +54,7 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   );
 
   return (
-    <FormControl variant={variant}>
+    <FormControl variant={variant} {...formControlProps}>
       <InputLabel id={labelId}>{label}</InputLabel>
       <Select
         {...selectProps}

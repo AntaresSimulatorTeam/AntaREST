@@ -405,6 +405,12 @@ export interface FileStudyTreeConfigDTO {
   archive_input_series: Array<string>;
   enr_modelling: string;
 }
+export interface LinkElement {
+  name: string;
+  area1: string;
+  area2: string;
+}
+export type LinkListElement = { [elm: string]: LinkElement };
 
 export enum StudyOutputDownloadType {
   LINKS = "LINKS",
