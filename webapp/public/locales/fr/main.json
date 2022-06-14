@@ -283,6 +283,7 @@
     "studies.studylaunched": "{{studyname}} lancé(s) !",
     "studies.copySuffix": "Copie",
     "studies.folder": "Dossier",
+    "studies.filters.strictfolder": "Afficher uniquement les descendants directs",
     "studies.scanFolder": "Scanner le dossier",
     "studies.moveStudy": "Déplacer",
     "studies.movefolderplaceholder": "Chemin séparé par des '/'",
