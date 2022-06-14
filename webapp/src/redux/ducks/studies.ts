@@ -25,6 +25,7 @@ const studiesAdapter = createEntityAdapter<StudyMetadata>();
 export interface StudyFilters {
   inputValue: string;
   folder: string;
+  strictFolder: boolean;
   managed: boolean;
   archived: boolean;
   versions: string[];
@@ -72,6 +73,7 @@ const initialState = studiesAdapter.getInitialState({
   filters: {
     inputValue: "",
     folder: "root",
+    strictFolder: false,
     managed: false,
     archived: false,
     versions: [],

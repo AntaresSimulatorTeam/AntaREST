@@ -12,6 +12,7 @@ import {
   Tooltip,
   FormControl,
   InputLabel,
+  IconButton,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -19,6 +20,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import FolderOffIcon from "@mui/icons-material/FolderOff";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
@@ -62,6 +64,9 @@ function StudiesList(props: StudiesListProps) {
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const sortConf = useAppSelector(getStudiesSortConf);
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
+  const strictFolderFilter = useAppSelector(
+    (state) => getStudyFilters(state).strictFolder
+  );
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
   const sortLabelId = useRef(uuidv4()).current;
@@ -140,6 +145,10 @@ function StudiesList(props: StudiesListProps) {
     dispatch(updateStudyFilters({ folder: value }));
   };
 
+  const toggleStrictFolder = useCallback(() => {
+    dispatch(updateStudyFilters({ strictFolder: !strictFolderFilter }));
+  }, [dispatch, strictFolderFilter]);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -214,6 +223,13 @@ function StudiesList(props: StudiesListProps) {
           <Typography mx={2} sx={{ color: "white" }}>
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
+          <Tooltip title="display only inside">
+            <IconButton onClick={toggleStrictFolder}>
+              <FolderOffIcon
+                color={strictFolderFilter ? "secondary" : "disabled"}
+              />
+            </IconButton>
+          </Tooltip>
         </Box>
         <Box
           display="flex"

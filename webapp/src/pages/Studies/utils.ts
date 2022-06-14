@@ -30,13 +30,20 @@ export function sortStudies(
 // Predicates
 ////////////////////////////////////////////////////////////////
 
-const folderPredicate = R.curry((folder: string, study: StudyMetadata) => {
-  let studyNodeId = `root/${study.workspace}`;
-  if (study.folder) {
-    studyNodeId += `/${study.folder}`;
+const folderPredicate = R.curry(
+  (folder: string, strict: boolean, study: StudyMetadata) => {
+    let studyNodeId = `root/${study.workspace}`;
+    if (study.folder) {
+      const folderPathComponents = study.folder.split("/");
+      folderPathComponents.pop();
+      const folderPath = folderPathComponents.join("/");
+      if (folderPath) {
+        studyNodeId += `/${folderPath}`;
+      }
+    }
+    return strict ? studyNodeId === folder : studyNodeId.startsWith(folder);
   }
-  return studyNodeId.startsWith(folder);
-});
+);
 
 const inputValuePredicate = R.curry(
   (inputValue: StudyFilters["inputValue"], study: StudyMetadata) => {
@@ -105,7 +112,7 @@ export function filterStudies(
   studies: StudyMetadata[]
 ): StudyMetadata[] {
   const predicates = [
-    folderPredicate(filters.folder),
+    folderPredicate(filters.folder, filters.strictFolder),
     inputValuePredicate(filters.inputValue),
     tagsPredicate(filters.tags),
     versionsPredicate(filters.versions),
