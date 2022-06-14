@@ -396,5 +396,6 @@
     "data.success.matrixCreation": "Matrix successfully created",
     "data.success.matrixDelete": "Matrix successfully deleted",
     "data.question.deleteMatrix": "Are you sure you want to delete this matrix ?",
+    "data.question.deleteDataset": "Are you sure you want to delete this dataset ?",
     "data.message.uploadHelp": "The file must be a single matrix file or a zip containing a list of matrix files"
     }

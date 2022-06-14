@@ -396,5 +396,6 @@
     "data.success.matrixCreation": "Matrice créée avec succès",
     "data.success.matrixDelete": "Matrice supprimée avec succès",
     "data.question.deleteMatrix": "Êtes-vous sûr de vouloir supprimer cette matrice ?",
+    "data.question.deleteDataset": "Êtes-vous sûr de vouloir supprimer ce dataset ?",
     "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices"   
 }
