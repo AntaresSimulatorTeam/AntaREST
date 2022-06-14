@@ -286,7 +286,7 @@
     "studies.moveStudy": "Déplacer",
     "studies.movefolderplaceholder": "Chemin séparé par des '/'",
     "studies.importcopy": "Copier en base",
-    "studies.importnewstudy": "Import d'une nouvelle étude",
+    "studies.importNewStudy": "Import d'une nouvelle étude",
     "studies.importHint": "Cliquer ou glisser une étude zippée ici",
     "studies.studycopying": "Étude en cours de copie...",
     "studies.studyarchiving": "Étude en cours d'archivage...",

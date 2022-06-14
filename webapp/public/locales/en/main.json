@@ -286,7 +286,7 @@
     "studies.moveStudy": "Move",
     "studies.movefolderplaceholder": "Path separated by '/'",
     "studies.importcopy": "Copy to database",
-    "studies.importnewstudy": "Import a new study",
+    "studies.importNewStudy": "Import a new study",
     "studies.importHint": "Click or drag'n'drop a zipped study here",
     "studies.studycopying": "Copying study...",
     "studies.studyarchiving": "Archiving study...",
