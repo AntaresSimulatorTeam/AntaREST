@@ -399,5 +399,8 @@
     "data.success.matrixDelete": "Matrice supprimée avec succès",
     "data.question.deleteMatrix": "Êtes-vous sûr de vouloir supprimer cette matrice ?",
     "data.question.deleteDataset": "Êtes-vous sûr de vouloir supprimer ce dataset ?",
-    "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices"   
+    "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices",
+    "results.error.jobs": "Erreur lors de la récupération des tâches de lancement",
+    "results.error.outputs": "Erreur lors de la récupération des sorties de l'étude",
+    "results.noOutputs": "Aucune sorties"
 }

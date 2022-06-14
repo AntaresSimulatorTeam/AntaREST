@@ -196,34 +196,42 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
-                file_metadata = FileStudyHelpers.get_config(
-                    study_data, output_data.get_file()
-                )
-                settings = StudySimSettingsDTO(
-                    general=file_metadata["general"],
-                    input=file_metadata["input"],
-                    output=file_metadata["output"],
-                    optimization=file_metadata["optimization"],
-                    otherPreferences=file_metadata["other preferences"],
-                    advancedParameters=file_metadata["advanced parameters"],
-                    seedsMersenneTwister=file_metadata[
-                        "seeds - Mersenne Twister"
-                    ],
-                    playlist=ConfigPathBuilder.get_playlist(file_metadata),
-                )
-
-                results.append(
-                    StudySimResultDTO(
-                        name=output_data.get_file(),
-                        type=output_data.mode,
-                        settings=settings,
-                        completionDate="",
-                        referenceStatus=(reference == output),
-                        synchronized=False,
-                        status="",
-                        archived=output_data.archived,
+                try:
+                    file_metadata = FileStudyHelpers.get_config(
+                        study_data, output_data.get_file()
                     )
-                )
+                    settings = StudySimSettingsDTO(
+                        general=file_metadata["general"],
+                        input=file_metadata["input"],
+                        output=file_metadata["output"],
+                        optimization=file_metadata["optimization"],
+                        otherPreferences=file_metadata["other preferences"],
+                        advancedParameters=file_metadata[
+                            "advanced parameters"
+                        ],
+                        seedsMersenneTwister=file_metadata[
+                            "seeds - Mersenne Twister"
+                        ],
+                        playlist=ConfigPathBuilder.get_playlist(file_metadata),
+                    )
+
+                    results.append(
+                        StudySimResultDTO(
+                            name=output_data.get_file(),
+                            type=output_data.mode,
+                            settings=settings,
+                            completionDate="",
+                            referenceStatus=(reference == output),
+                            synchronized=False,
+                            status="",
+                            archived=output_data.archived,
+                        )
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to retrieve info about output {output} in study {study.name} ({study.id}",
+                        exc_info=e,
+                    )
         return results
 
     def import_output(
