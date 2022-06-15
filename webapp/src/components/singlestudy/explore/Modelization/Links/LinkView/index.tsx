@@ -18,7 +18,7 @@ function LinkView(props: Props) {
   const { data: defaultValues, status } = usePromise(
     () => getDefaultValues(study.id, link.area1, link.area2),
     {},
-    [study.id, link]
+    [study.id, link.area1, link.area2]
   );
 
   return (
