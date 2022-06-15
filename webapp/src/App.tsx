@@ -39,6 +39,7 @@ import Reserve from "./components/singlestudy/explore/Modelization/Areas/Reserve
 import Wind from "./components/singlestudy/explore/Modelization/Areas/Wind";
 import Solar from "./components/singlestudy/explore/Modelization/Areas/Solar";
 import Renewables from "./components/singlestudy/explore/Modelization/Areas/Renewables";
+import ResultDetails from "./components/singlestudy/explore/Results/ResultDetails";
 
 function App() {
   return (
@@ -97,7 +98,10 @@ function App() {
                           <Route index element={<Candidates />} />
                           <Route path="*" element={<Candidates />} />
                         </Route>
-                        <Route path="results" element={<Results />} />
+                        <Route path="results">
+                          <Route path=":outputId" element={<ResultDetails />} />
+                          <Route index element={<Results />} />
+                        </Route>
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />
                         </Route>
