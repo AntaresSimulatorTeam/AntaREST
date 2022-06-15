@@ -83,7 +83,7 @@ export default function PropertiesForm(
           flexDirection: "column",
         }}
       >
-        <Fieldset title={t("global.general")} style={{ padding: "16px" }}>
+        <Fieldset legend={t("global.general")} style={{ padding: "16px" }}>
           <Box
             sx={{
               width: "100%",
@@ -146,7 +146,7 @@ export default function PropertiesForm(
           </Box>
         </Fieldset>
         <Fieldset
-          title={t("study.modelization.nodeProperties.nodalOptimization")}
+          legend={t("study.modelization.nodeProperties.nodalOptimization")}
           style={{ padding: "16px" }}
         >
           <Box
@@ -244,7 +244,7 @@ export default function PropertiesForm(
           </Box>
         </Fieldset>
         <Fieldset
-          title={t("study.modelization.nodeProperties.outputFilter")}
+          legend={t("study.modelization.nodeProperties.outputFilter")}
           style={{ padding: "16px" }}
         >
           <Box

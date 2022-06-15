@@ -10,19 +10,22 @@ import {
   RegisterOptions,
   UnpackNestedValue,
   useForm,
+  useFormContext as useFormContextOriginal,
   UseFormProps,
   UseFormRegisterReturn,
   UseFormReturn,
+  UseFormSetValue,
   UseFormUnregister,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { Button } from "@mui/material";
 import { useUpdateEffect } from "react-use";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import BackdropLoading from "./loaders/BackdropLoading";
-import useDebounce from "../../hooks/useDebounce";
+import * as R from "ramda";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import BackdropLoading from "../loaders/BackdropLoading";
+import useDebounce from "../../../hooks/useDebounce";
+import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues
@@ -59,10 +62,10 @@ export interface FormObj<
   TContext = any
 > extends UseFormReturn<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
-  defaultValues: UseFormProps<TFieldValues, TContext>["defaultValues"];
+  defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
 }
 
-type AutoSubmitConfig = { enable: boolean; wait?: number };
+export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -83,13 +86,16 @@ export interface FormProps<
   id?: string;
 }
 
-function toAutoSubmitConfig(
-  value: FormProps["autoSubmit"]
-): Required<AutoSubmitConfig> {
-  return {
-    wait: 1000,
-    ...(RA.isPlainObj(value) ? value : { enable: !!value }),
-  };
+interface UseFormReturnPlus<TFieldValues extends FieldValues, TContext = any>
+  extends UseFormReturn<TFieldValues, TContext> {
+  register: UseFormRegisterPlus<TFieldValues>;
+  defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
+}
+
+export function useFormContext<
+  TFieldValues extends FieldValues
+>(): UseFormReturnPlus<TFieldValues> {
+  return useFormContextOriginal();
 }
 
 function Form<TFieldValues extends FieldValues, TContext>(
@@ -109,7 +115,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     mode: "onChange",
     ...config,
   });
-  const { handleSubmit, formState, register, unregister, reset } = formObj;
+  const { handleSubmit, formState, register, unregister, reset, setValue } =
+    formObj;
   const { isValid, isSubmitting, isDirty, dirtyFields, errors } = formState;
   const allowSubmit = isDirty && isValid && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -144,19 +151,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
     handleSubmit((data, e) => {
       lastDataSubmitted.current = data;
 
-      const dirtyValues = R.pickBy(
-        (_, key) => !!dirtyFields[key as string],
-        data
-      ) as Partial<typeof data>;
+      const dirtyValues = getDirtyValues(dirtyFields, data) as Partial<
+        typeof data
+      >;
 
       const res = [];
 
       if (autoSubmitConfig.enable) {
+        const listeners = fieldAutoSubmitListeners.current;
         res.push(
-          ...Object.keys(dirtyValues).map((fieldName) => {
-            const listener = fieldAutoSubmitListeners.current[fieldName];
-            return listener?.(data[fieldName]);
-          })
+          ...Object.keys(listeners)
+            .filter((key) => R.hasPath(stringToPath(key), dirtyValues))
+            .map((key) => {
+              const listener = fieldAutoSubmitListeners.current[key];
+              return listener?.(R.path(stringToPath(key), data));
+            })
         );
       }
 
@@ -201,7 +210,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       const error = errors[name];
 
-      if (config?.defaultValues?.[name]) {
+      if (RA.isNotNil(config?.defaultValues?.[name])) {
         res.defaultValue = config?.defaultValues?.[name];
       }
 
@@ -236,6 +245,22 @@ function Form<TFieldValues extends FieldValues, TContext>(
     [unregister]
   );
 
+  const setValueWrapper = useCallback<UseFormSetValue<TFieldValues>>(
+    (name, value, options) => {
+      const newOptions: typeof options = {
+        shouldDirty: autoSubmitConfig.enable, // Option false by default
+        ...options,
+      };
+
+      if (autoSubmitConfig.enable && newOptions.shouldDirty) {
+        simulateSubmit();
+      }
+
+      setValue(name, value, newOptions);
+    },
+    [autoSubmitConfig.enable, setValue, simulateSubmit]
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -245,10 +270,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
     defaultValues: config?.defaultValues,
     register: registerWrapper,
     unregister: unregisterWrapper,
+    setValue: setValueWrapper,
   };
 
   return (
-    <BackdropLoading open={isSubmitting}>
+    <BackdropLoading open={isSubmitting && !autoSubmitConfig.enable}>
       <form id={id} onSubmit={handleFormSubmit}>
         {RA.isFunction(children) ? (
           children(sharedProps)

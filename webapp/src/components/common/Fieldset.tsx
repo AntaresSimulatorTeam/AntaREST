@@ -1,34 +1,41 @@
-import { Box, Divider, Typography } from "@mui/material";
+import { Box, BoxProps, Divider, Typography } from "@mui/material";
 import * as RA from "ramda-adjunct";
+import { mergeSxProp } from "../../utils/muiUtils";
 
-interface FieldsetProps {
-  title?: string | React.ReactNode;
+interface FieldsetProps extends Omit<BoxProps, "component"> {
+  legend?: string | React.ReactNode;
   children: React.ReactNode;
-  style?: React.CSSProperties;
+  contentProps?: BoxProps;
 }
 
 function Fieldset(props: FieldsetProps) {
-  const { title, children, style } = props;
+  const { legend, children, sx, contentProps, ...rest } = props;
 
   return (
-    <fieldset style={{ border: "none", margin: 0, padding: 0, ...style }}>
-      {title && (
+    <Box
+      {...rest}
+      component="fieldset"
+      sx={mergeSxProp({ border: "none", m: 0 }, sx)}
+    >
+      {legend && (
         <>
-          {RA.isString(title) ? (
+          {RA.isString(legend) ? (
             <Typography
               variant="h5"
               sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
             >
-              {title}
+              {legend}
             </Typography>
           ) : (
-            title
+            legend
           )}
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box sx={{ pt: 2 }}>{children}</Box>
-    </fieldset>
+      <Box {...contentProps} sx={mergeSxProp({ pt: 2 }, contentProps?.sx)}>
+        {children}
+      </Box>
+    </Box>
   );
 }
 

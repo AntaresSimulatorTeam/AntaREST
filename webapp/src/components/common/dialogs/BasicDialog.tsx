@@ -13,6 +13,7 @@ import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
+import { mergeSxProp } from "../../../utils/muiUtils";
 
 /**
  * Types
@@ -71,7 +72,6 @@ function BasicDialog(props: BasicDialogProps) {
     ...dialogProps
   } = props;
   const TitleIcon = titleIcon as SvgIconComponent;
-  const contentSx = contentProps?.sx || {};
 
   return (
     <Dialog {...dialogProps}>
@@ -92,10 +92,10 @@ function BasicDialog(props: BasicDialogProps) {
       )}
       <DialogContent
         {...contentProps}
-        sx={[
+        sx={mergeSxProp(
           { display: "flex", flexDirection: "column" },
-          ...(Array.isArray(contentSx) ? contentSx : [contentSx]),
-        ]}
+          contentProps?.sx
+        )}
       >
         {RA.isString(children) ? (
           <DialogContentText>{children}</DialogContentText>
