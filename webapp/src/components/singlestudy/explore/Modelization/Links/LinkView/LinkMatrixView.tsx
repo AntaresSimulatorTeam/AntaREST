@@ -26,12 +26,12 @@ function LinkMatrixView(props: Props) {
   const [value, setValue] = React.useState(0);
 
   const columnsNames = [
-    t("study.modelization.links.matrix.columns.transCapaDirect"),
-    t("study.modelization.links.matrix.columns.transCapaIndirect"),
     t("study.modelization.links.matrix.columns.hurdleCostsDirect"),
     t("study.modelization.links.matrix.columns.hurdleCostsIndirect"),
     t("study.modelization.links.matrix.columns.inpedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
+    t("study.modelization.links.matrix.columns.pShiftMin"),
+    t("study.modelization.links.matrix.columns.pShiftMax"),
   ];
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -72,6 +72,9 @@ function LinkMatrixView(props: Props) {
           <>
             <MatrixInput
               study={study}
+              title={t(
+                "study.modelization.links.matrix.columns.transCapaDirect"
+              )}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
               columnsNames={columnsNames}
               computStats={MatrixStats.NOCOL}
@@ -79,6 +82,9 @@ function LinkMatrixView(props: Props) {
             <Divider sx={{ width: "1px", bgcolor: "divider" }} />
             <MatrixInput
               study={study}
+              title={t(
+                "study.modelization.links.matrix.columns.transCapaIndirect"
+              )}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
               columnsNames={columnsNames}
               computStats={MatrixStats.NOCOL}

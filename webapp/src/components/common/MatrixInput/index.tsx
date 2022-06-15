@@ -28,11 +28,12 @@ interface PropsType {
   study: StudyMetadata;
   url: string;
   columnsNames?: string[];
+  title?: string;
   computStats: MatrixStats;
 }
 
 function MatrixInput(props: PropsType) {
-  const { study, url, columnsNames, computStats } = props;
+  const { study, url, columnsNames, title, computStats } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -118,7 +119,7 @@ function MatrixInput(props: PropsType) {
               lineHeight: 1.334,
             }}
           >
-            {t("xpansion.timeSeries")}
+            {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {!isLoading && data?.columns?.length > 1 && (
@@ -188,6 +189,7 @@ function MatrixInput(props: PropsType) {
 
 MatrixInput.defaultProps = {
   columnsNames: undefined,
+  title: undefined,
 };
 
 export default MatrixInput;

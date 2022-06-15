@@ -59,6 +59,17 @@ export default function LinkForm(
     })
   );
 
+  const columnsNames = [
+    t("study.modelization.links.matrix.columns.transCapaDirect"),
+    t("study.modelization.links.matrix.columns.transCapaIndirect"),
+    t("study.modelization.links.matrix.columns.hurdleCostsDirect"),
+    t("study.modelization.links.matrix.columns.hurdleCostsIndirect"),
+    t("study.modelization.links.matrix.columns.inpedances"),
+    t("study.modelization.links.matrix.columns.loopFlow"),
+    t("study.modelization.links.matrix.columns.pShiftMin"),
+    t("study.modelization.links.matrix.columns.pShiftMax"),
+  ];
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAutoSubmit = async (path: string, data: any) => {
     try {
@@ -285,6 +296,7 @@ export default function LinkForm(
             <MatrixInput
               study={study}
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}`}
+              columnsNames={columnsNames}
               computStats={MatrixStats.NOCOL}
             />
           )}
@@ -293,8 +305,3 @@ export default function LinkForm(
     </Box>
   );
 }
-
-/*
-  "study.modelization.links.type": "Type",
-  "study.modelization.links.transmissionCapa": "Transmission capacities",
-*/
