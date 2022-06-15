@@ -81,7 +81,7 @@ def test_get():
     content = Mock()
     content.get.return_value = MatrixContent(
         data=[[1, 2]],
-        index=["1"],
+        index=[1],
         columns=["a", "b"],
     )
 
@@ -96,14 +96,13 @@ def test_get():
     repo_meta = Mock()
 
     # Expected
-    exp = MatrixDTO(
+    exp = MatrixDTO.construct(
         id="my-id",
         created_at=42,
-        updated_at=101,
         width=2,
         height=1,
-        data=[[1, 2]],
-        index=["1"],
+        data=[[1.0, 2.0]],
+        index=[1],
         columns=["a", "b"],
     )
 

@@ -1,158 +1,76 @@
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import {
-  Autocomplete,
   Button,
   Checkbox,
   Drawer,
   FormControlLabel,
+  List,
   ListItem,
-  TextField,
   Typography,
-  useTheme,
 } from "@mui/material";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import { useEffect, useRef } from "react";
 import { STUDIES_FILTER_WIDTH } from "../../theme";
-import SelectMulti from "../common/SelectMulti";
-import { GenericInfo, GroupDTO, UserDTO } from "../../common/types";
-import { convertVersions } from "../../services/utils";
-import TagTextInput from "../common/TagTextInput";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import {
+  getGroups,
+  getStudyFilters,
+  getStudyVersions,
+  getUsers,
+} from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import { StudyFilters, updateStudyFilters } from "../../redux/ducks/studies";
+import CheckboxesTagsFE from "../common/fieldEditors/CheckboxesTagsFE";
+import { displayVersionName } from "../../services/utils";
 
 interface Props {
   open: boolean;
-  managedFilter: boolean;
-  archivedFilter: boolean;
-  versionList: Array<GenericInfo>;
-  versions: Array<GenericInfo>;
-  tagList: Array<string>;
-  tags: Array<string>;
-  userList: Array<UserDTO>;
-  users: Array<UserDTO>;
-  groupList: Array<GroupDTO>;
-  groups: Array<GroupDTO>;
-  onFilterActionClick: (
-    managed: boolean,
-    archived: boolean,
-    versions: Array<GenericInfo> | undefined,
-    users: Array<UserDTO> | undefined,
-    groups: Array<GroupDTO> | undefined,
-    tags: Array<string> | undefined
-  ) => void;
   onClose: () => void;
 }
 
 function FilterDrawer(props: Props) {
-  const theme = useTheme();
+  const { open, onClose } = props;
   const [t] = useTranslation();
-  const {
-    open,
-    managedFilter,
-    archivedFilter,
-    tagList,
-    tags,
-    versionList,
-    versions,
-    userList,
-    users,
-    groupList,
-    groups,
-    onFilterActionClick,
-    onClose,
-  } = props;
-
-  const [currentUsers, setCurrentUsers] = useState<Array<UserDTO> | undefined>(
-    users
-  );
-  const [currentGroups, setCurrentGroups] = useState<
-    Array<GroupDTO> | undefined
-  >(groups);
-  const [currentVersions, setCurrentVersions] = useState<
-    Array<GenericInfo> | undefined
-  >(versions);
-  const [currentTags, setCurrentTags] = useState<Array<string> | undefined>(
-    tags
-  );
-  const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
-  const [currentArchived, setCurrentArchived] =
-    useState<boolean>(archivedFilter);
+  const filters = useAppSelector(getStudyFilters);
+  const versions = useAppSelector(getStudyVersions);
+  const users = useAppSelector(getUsers);
+  const groups = useAppSelector(getGroups);
+  const dispatch = useAppDispatch();
+  const filterNewValuesRef = useRef<Partial<StudyFilters>>({});
 
   useEffect(() => {
-    setCurrentUsers(users);
-  }, [users]);
-  useEffect(() => {
-    setCurrentGroups(groups);
-  }, [groups]);
-  useEffect(() => {
-    setCurrentVersions(versions);
-  }, [versions]);
-  useEffect(() => {
-    setCurrentTags(tags);
-  }, [tags]);
-  useEffect(() => {
-    setCurrentManaged(managedFilter);
-  }, [managedFilter]);
-  useEffect(() => {
-    setCurrentArchived(archivedFilter);
-  }, [archivedFilter]);
+    filterNewValuesRef.current = {};
+  }, [open]);
 
-  const setVersions = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentVersions(undefined);
-      return;
-    }
-    setCurrentVersions(convertVersions(data || []));
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleFilter = () => {
+    dispatch(updateStudyFilters(filterNewValuesRef.current));
+    onClose();
   };
 
-  const setUsers = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentUsers(undefined);
-      return;
-    }
-    setCurrentUsers(
-      data.map((elm) => {
-        const index = userList.findIndex((item) => item.id.toString() === elm);
-        return { id: userList[index].id, name: userList[index].name };
+  const handleReset = () => {
+    dispatch(
+      updateStudyFilters({
+        managed: false,
+        archived: false,
+        versions: [],
+        users: [],
+        groups: [],
+        tags: [],
       })
     );
+
+    onClose();
   };
 
-  const setGroups = (data: Array<string>): void => {
-    if (data.length === 0) {
-      setCurrentGroups(undefined);
-      return;
-    }
-    setCurrentGroups(
-      data.map((elm) => {
-        const index = groupList.findIndex((item) => item.id === elm);
-        return { id: groupList[index].id, name: groupList[index].name };
-      })
-    );
-  };
-
-  const onFilterClick = (): void => {
-    onFilterActionClick(
-      currentManaged,
-      currentArchived,
-      currentVersions,
-      currentUsers,
-      currentGroups,
-      currentTags
-    );
-  };
-
-  const onResetFilterClick = (): void => {
-    setCurrentVersions(undefined);
-    setCurrentUsers(undefined);
-    setCurrentGroups(undefined);
-    setCurrentTags(undefined);
-    setCurrentManaged(false);
-    setCurrentArchived(false);
-  };
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Drawer
@@ -183,109 +101,85 @@ function FilterDrawer(props: Props) {
           boxSizing="border-box"
           color="white"
         >
-          <Typography
-            sx={{ color: "grey.500", fontSize: "0.9em", mb: theme.spacing(2) }}
-          >
-            {t("main:filter").toUpperCase()}
+          <Typography sx={{ color: "grey.500", fontSize: "0.9em", mb: 2 }}>
+            {t("global.filter").toUpperCase()}
           </Typography>
           <FormControlLabel
             control={
               <Checkbox
-                checked={currentManaged}
-                onChange={() => setCurrentManaged(!currentManaged)}
                 sx={{ color: "white" }}
+                name="managed"
+                defaultChecked={filters.managed}
+                onChange={(_, checked) => {
+                  filterNewValuesRef.current.managed = checked;
+                }}
               />
             }
-            label={t("studymanager:managedStudiesFilter") as string}
+            label={t("studies.managedStudiesFilter") as string}
           />
           <FormControlLabel
             control={
               <Checkbox
-                checked={currentArchived}
-                onChange={() => setCurrentArchived(!currentArchived)}
                 sx={{ color: "white" }}
+                name="archived"
+                defaultChecked={filters.archived}
+                onChange={(_, checked) => {
+                  filterNewValuesRef.current.archived = checked;
+                }}
               />
             }
-            label={t("studymanager:archivedStudiesFilter") as string}
+            label={t("studies.archivedStudiesFilter") as string}
           />
         </Box>
       </Toolbar>
-      <Divider
-        style={{ height: "1px", backgroundColor: theme.palette.grey[800] }}
-      />
+      <Divider style={{ height: "1px", backgroundColor: "grey.800" }} />
       <List>
         <ListItem>
-          <SelectMulti
-            name={t("studymanager:versionsLabel")}
-            list={versionList}
-            data={
-              currentVersions !== undefined
-                ? currentVersions.map((elm) => elm.id as string)
-                : []
-            }
-            setValue={setVersions}
+          <CheckboxesTagsFE
+            label={t("global.versions")}
+            options={versions}
+            getOptionLabel={displayVersionName}
+            defaultValue={filters.versions}
+            onChange={(_, value) => {
+              filterNewValuesRef.current.versions = value;
+            }}
           />
         </ListItem>
         <ListItem>
-          <Autocomplete
-            multiple
-            id="study-filter-users"
-            options={userList || []}
-            value={currentUsers || []}
-            getOptionLabel={(option: UserDTO) => option.name}
-            sx={{ width: 200, m: 1 }}
-            renderOption={(props, option, { selected }) => (
-              <li {...props}>
-                <Checkbox
-                  icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
-                  checkedIcon={<CheckBoxIcon fontSize="small" />}
-                  style={{ marginRight: 8 }}
-                  checked={selected}
-                />
-                {option.name}
-              </li>
+          <CheckboxesTagsFE
+            label={t("global.users")}
+            options={users}
+            getOptionLabel={(option) => option.name}
+            defaultValue={users.filter((user) =>
+              filters.users.includes(user.id)
             )}
-            onChange={(event, value) =>
-              setUsers(value.map((el) => el.id.toString()))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="filled"
-                sx={{
-                  background: "rgba(255, 255, 255, 0.09)",
-                  borderRadius: "4px 4px 0px 0px",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-                  ".MuiIconButton-root": {
-                    backgroundColor: "#222333",
-                    padding: 0,
-                    marginTop: "2px",
-                  },
-                }}
-                label={t("studymanager:usersLabel")}
-              />
+            onChange={(event, value) => {
+              filterNewValuesRef.current.users = value.map((val) => val.id);
+            }}
+          />
+        </ListItem>
+        <ListItem>
+          <CheckboxesTagsFE
+            label={t("global.groups")}
+            options={groups}
+            getOptionLabel={(option) => option.name}
+            defaultValue={groups.filter((group) =>
+              filters.groups.includes(group.id)
             )}
+            onChange={(_, value) => {
+              filterNewValuesRef.current.groups = value.map((val) => val.id);
+            }}
           />
         </ListItem>
         <ListItem>
-          <SelectMulti
-            name={t("studymanager:groupsLabel")}
-            list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))}
-            data={
-              currentGroups !== undefined
-                ? currentGroups.map((elm) => elm.id)
-                : []
-            }
-            setValue={setGroups}
-          />
-        </ListItem>
-        <ListItem>
-          <TagTextInput
-            label={t("studymanager:tagsLabel")}
-            sx={{ m: 1, width: "200px" }}
-            value={currentTags || []}
-            onChange={setCurrentTags}
-            tagList={tagList}
+          <CheckboxesTagsFE
+            label={t("global.tags")}
+            options={[]}
+            defaultValue={filters.tags}
+            onChange={(_, value) => {
+              filterNewValuesRef.current.tags = value;
+            }}
+            freeSolo
           />
         </ListItem>
       </List>
@@ -310,16 +204,11 @@ function FilterDrawer(props: Props) {
           boxSizing="border-box"
           p={1}
         >
-          <Button variant="text" color="primary" onClick={onResetFilterClick}>
-            {t("main:reset")}
+          <Button variant="outlined" onClick={handleReset}>
+            {t("global.reset")}
           </Button>
-          <Button
-            sx={{ mx: 2 }}
-            color="success"
-            variant="contained"
-            onClick={onFilterClick}
-          >
-            {t("main:filter")}
+          <Button sx={{ mx: 2 }} variant="contained" onClick={handleFilter}>
+            {t("global.filter")}
           </Button>
         </Box>
       </Box>

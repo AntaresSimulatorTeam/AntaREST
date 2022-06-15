@@ -9,7 +9,7 @@ from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON
+from antarest.core.model import JSON, SUB_JSON
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -58,11 +58,12 @@ def create_raw_study_routes(
         parameters = RequestParameters(user=current_user)
         output = study_service.get(uuid, path, depth, formatted, parameters)
 
-        try:
-            # try to decode string
-            output = output.decode("utf-8")  # type: ignore
-        except (AttributeError, UnicodeDecodeError):
-            pass
+        if isinstance(output, bytes):
+            try:
+                # try to decode string
+                output = output.decode("utf-8")
+            except (AttributeError, UnicodeDecodeError):
+                pass
 
         json_response = json.dumps(
             output,
@@ -82,22 +83,16 @@ def create_raw_study_routes(
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        data: JSON = Body(...),
+        data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Editing data at {path} for study {uuid}",
             extra={"user": current_user.id},
         )
-        new = data
-        if not new:
-            raise HTTPException(
-                status_code=400, detail="empty body not authorized"
-            )
-
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, new, params)
+        study_service.edit_study(uuid, path, data, params)
         return ""
 
     @bp.put(

@@ -3,8 +3,8 @@ import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
 import debug from "debug";
-import { connect, ConnectedProps } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper } from "react-use";
 import {
   StudyMetadata,
   StudySummary,
@@ -20,52 +20,43 @@ import {
 } from "../../services/api/variant";
 import TabWrapper from "../../components/singlestudy/explore/TabWrapper";
 import HomeView from "../../components/singlestudy/HomeView";
-import { viewStudy } from "../../store/study";
+import { setCurrentStudy } from "../../redux/ducks/studies";
 import { findNodeInTree } from "../../services/utils";
 import CommandDrawer from "../../components/singlestudy/Commands";
-import { addListener, removeListener } from "../../store/websockets";
+import { addWsMessageListener } from "../../services/webSockets";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import SimpleLoader from "../../components/common/loaders/SimpleLoader";
 
 const logError = debug("antares:singlestudy:error");
 
-const mapState = () => ({});
-
-const mapDispatch = {
-  setCurrentStudy: viewStudy,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+interface Props {
   isExplorer?: boolean;
 }
-type Props = PropsFromRedux & OwnProps;
 
 function SingleStudy(props: Props) {
-  const { studyId } = useParams();
-  const { setCurrentStudy, addWsListener, removeWsListener } = props;
-  const [t] = useTranslation();
   const { isExplorer } = props;
-
+  const { studyId } = useParams(); // TO DO
+  const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [parent, setParent] = useState<StudyMetadata>();
   const [tree, setTree] = useState<VariantTree>();
-  const [openCommands, setOpenCommands] = useState<boolean>(false);
+  const [openCommands, setOpenCommands] = useState(false);
+  const dispatch = useAppDispatch();
+  const mounted = usePromiseWrapper();
 
   const tabList = useMemo(
     () => [
       {
-        label: t("singlestudy:modelization"),
+        label: t("study.modelization"),
         path: `/studies/${studyId}/explore/modelization`,
       },
       {
-        label: t("singlestudy:configuration"),
+        label: t("study.configuration"),
         path: `/studies/${studyId}/explore/configuration`,
       },
       { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
       {
-        label: t("singlestudy:results"),
+        label: t("study.results"),
         path: `/studies/${studyId}/explore/results`,
       },
     ],
@@ -75,12 +66,12 @@ function SingleStudy(props: Props) {
   const updateStudyData = useCallback(async () => {
     if (!studyId) return;
     try {
-      const tmpStudy = await getStudyMetadata(studyId);
+      const tmpStudy = await mounted(getStudyMetadata(studyId));
       if (tmpStudy) {
-        const tmpParents = await getVariantParents(tmpStudy.id);
+        const tmpParents = await mounted(getVariantParents(tmpStudy.id));
         let root: StudyMetadata = tmpStudy;
         if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
-        const tmpTree = await getVariantChildren(root.id);
+        const tmpTree = await mounted(getVariantChildren(root.id));
         setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
         setStudy(tmpStudy);
         setTree(tmpTree);
@@ -110,7 +101,7 @@ function SingleStudy(props: Props) {
   useEffect(() => {
     const init = async () => {
       if (studyId) {
-        setCurrentStudy(studyId);
+        dispatch(setCurrentStudy(studyId));
         updateStudyData();
       }
     };
@@ -118,9 +109,10 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   useEffect(() => {
-    addWsListener(listener);
-    return () => removeWsListener(listener);
-  }, [listener, addWsListener, removeWsListener]);
+    return addWsMessageListener(listener);
+  }, [listener]);
+
+  if (study === undefined) return <SimpleLoader />;
 
   return (
     <Box
@@ -176,4 +168,4 @@ SingleStudy.defaultProps = {
   isExplorer: undefined,
 };
 
-export default connector(SingleStudy);
+export default SingleStudy;

@@ -20,7 +20,7 @@ package-lock.json
 .env.production.local
 
 # workspace
-workspace.code-workspace
+*.code-workspace
 
 npm-debug.log*
 yarn-debug.log*

@@ -7,49 +7,31 @@ import {
   KeyboardEvent,
   CSSProperties,
 } from "react";
-import { Box, Button, Paper, Typography, Modal, Backdrop } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
-import { connect, ConnectedProps } from "react-redux";
 import { exportText } from "../../services/utils/index";
-import { addListener, removeListener } from "../../store/websockets";
 import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
-import { scrollbarStyle } from "../../theme";
+import BasicDialog from "./dialogs/BasicDialog";
+import {
+  addWsMessageListener,
+  sendWsSubscribeMessage,
+  WsChannel,
+} from "../../services/webSockets";
 
-interface OwnTypes {
+interface Props {
   isOpen: boolean;
   jobId?: string;
   followLogs?: boolean;
   content?: string;
-  close: () => void;
+  close: VoidFunction;
   style?: CSSProperties;
   loading?: boolean;
 }
 
-const mapState = () => ({});
-
-const mapDispatch = {
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps & OwnTypes;
-
-function LogModal(props: PropTypes) {
-  const {
-    style,
-    jobId,
-    followLogs,
-    loading,
-    isOpen,
-    content,
-    close,
-    addWsListener,
-    removeWsListener,
-  } = props;
+function LogModal(props: Props) {
+  const { style, jobId, followLogs, loading, isOpen, content, close } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
@@ -57,9 +39,9 @@ function LogModal(props: PropTypes) {
   const [t] = useTranslation();
 
   const updateLog = useCallback(
-    (ev: WSMessage) => {
+    (ev: WSMessage<WSLogMessage>) => {
       if (ev.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
-        const logEvent = ev.payload as WSLogMessage;
+        const logEvent = ev.payload;
         if (logEvent.job_id === jobId) {
           setLogDetail((logDetail || "") + logEvent.log);
         }
@@ -118,47 +100,24 @@ function LogModal(props: PropTypes) {
 
   useEffect(() => {
     if (followLogs) {
-      addWsListener(updateLog);
-      return () => removeWsListener(updateLog);
+      if (jobId) {
+        const removeSubscription = sendWsSubscribeMessage(
+          WsChannel.JobLogs + jobId
+        );
+        const removeMessageListener = addWsMessageListener(updateLog);
+        return () => {
+          removeSubscription();
+          removeMessageListener();
+        };
+      }
     }
-    return () => {
-      /* noop */
-    };
-  }, [updateLog, followLogs, addWsListener, removeWsListener]);
+  }, [followLogs, jobId, updateLog]);
 
   return (
-    <Modal
-      aria-labelledby="transition-modal-title"
-      aria-describedby="transition-modal-description"
+    <BasicDialog
       open={isOpen}
-      closeAfterTransition
-      BackdropComponent={Backdrop}
-      BackdropProps={{
-        timeout: 500,
-      }}
-      sx={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        boxSizing: "border-box",
-        overflowY: "auto",
-      }}
-    >
-      <Paper
-        onKeyDown={handleGlobalKeyDown}
-        sx={{
-          width: "80%",
-          height: "80%",
-          display: "flex",
-          flexFlow: "column nowrap",
-          alignItems: "center",
-          zIndex: 1,
-          ...style,
-        }}
-      >
+      onClose={close}
+      title={
         <Box
           width="100%"
           height="64px"
@@ -178,7 +137,7 @@ function LogModal(props: PropTypes) {
               boxSizing: "border-box",
             }}
           >
-            {t("singlestudy:taskLog")}
+            {t("global.logs")}
           </Typography>
           <DownloadIcon
             sx={{
@@ -192,6 +151,30 @@ function LogModal(props: PropTypes) {
             onClick={onDownload}
           />
         </Box>
+      }
+      contentProps={{
+        sx: { p: 0, height: "60vh", overflow: "hidden" },
+      }}
+      fullWidth
+      maxWidth="lg"
+      actions={
+        <Button variant="text" color="primary" onClick={close}>
+          {t("button.close")}
+        </Button>
+      }
+    >
+      <Box
+        onKeyDown={handleGlobalKeyDown}
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexFlow: "column nowrap",
+          alignItems: "center",
+          zIndex: 1,
+          ...style,
+        }}
+      >
         <Box
           width="100%"
           overflow="auto"
@@ -199,7 +182,6 @@ function LogModal(props: PropTypes) {
           flex={1}
           ref={logRef}
           onScroll={onScroll}
-          sx={scrollbarStyle}
         >
           {loading ? (
             <SimpleLoader />
@@ -209,21 +191,8 @@ function LogModal(props: PropTypes) {
             </Box>
           )}
         </Box>
-        <Box
-          height="60px"
-          width="100%"
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          overflow="hidden"
-          position="relative"
-        >
-          <Button variant="contained" sx={{ m: 2 }} onClick={close}>
-            {t("main:closeButton")}
-          </Button>
-        </Box>
-      </Paper>
-    </Modal>
+      </Box>
+    </BasicDialog>
   );
 }
 
@@ -235,4 +204,4 @@ LogModal.defaultProps = {
   style: {},
 };
 
-export default connector(LogModal);
+export default LogModal;

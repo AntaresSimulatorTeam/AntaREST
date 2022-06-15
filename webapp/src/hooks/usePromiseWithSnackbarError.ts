@@ -16,15 +16,11 @@ function usePromiseWithSnackbarError<T>(
 
   const { errorMessage } = params;
 
-  useEffect(
-    () => {
-      if (res.error) {
-        enqueueErrorSnackbar(errorMessage, res.error);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [res.error]
-  );
+  useEffect(() => {
+    if (res.isRejected) {
+      enqueueErrorSnackbar(errorMessage, res.error || "");
+    }
+  }, [enqueueErrorSnackbar, errorMessage, res.error, res.isRejected]);
 
   return res;
 }

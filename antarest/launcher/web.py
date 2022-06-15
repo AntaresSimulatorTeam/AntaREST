@@ -7,20 +7,21 @@ from fastapi import APIRouter, Depends
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     LogType,
     JobCreationDTO,
-    JobResult,
     JobResultDTO,
     LauncherEnginesDTO,
+    LauncherParametersDTO,
 )
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_MAX_LATEST_JOBS = 200
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -36,22 +37,27 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def run(
         study_id: str,
-        engine: Optional[str] = None,
-        engine_parameters: Optional[JSON] = None,
+        launcher: Optional[str] = None,
+        launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
+        version: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Launching study {study_id} with options {engine_parameters}",
+            f"Launching study {study_id} with options {launcher_parameters}",
             extra={"user": current_user.id},
         )
-        selected_engine = (
-            engine if engine is not None else config.launcher.default
+        selected_launcher = (
+            launcher if launcher is not None else config.launcher.default
         )
 
         params = RequestParameters(user=current_user)
         return JobCreationDTO(
             job_id=service.run_study(
-                study_id, selected_engine, engine_parameters, params
+                study_id,
+                selected_launcher,
+                launcher_parameters,
+                params,
+                version,
             )
         )
 
@@ -64,6 +70,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     def get_job(
         study: Optional[str] = None,
         filter_orphans: bool = True,
+        latest: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -73,7 +80,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return [
             job.to_dto()
-            for job in service.get_jobs(study, params, filter_orphans)
+            for job in service.get_jobs(study, params, filter_orphans, latest)
         ]
 
     @bp.get(

@@ -1,4 +1,3 @@
-/* eslint-disable quote-props */
 import { useState, forwardRef, useCallback } from "react";
 import * as React from "react";
 import { useSnackbar, SnackbarContent } from "notistack";
@@ -100,7 +99,11 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
                 [
                   axios.isAxiosError,
                   () => {
-                    const err = details as AxiosError;
+                    const err = details as AxiosError<{
+                      exception?: string;
+                      description?: string;
+                    }>;
+                    const res = err.response;
                     return (
                       <Grid
                         container
@@ -109,18 +112,16 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
                       >
                         <Grid item xs={6}>
                           <Label>Status :</Label>
-                          <Typography>{err.response?.status}</Typography>
+                          <Typography>{res?.status}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                           <Label>Exception : </Label>
-                          <Typography>
-                            {err.response?.data.exception}
-                          </Typography>
+                          <Typography>{res?.data.exception}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                           <Label>Description : </Label>
                           <Typography sx={{ whiteSpace: "pre-wrap" }}>
-                            {err.response?.data.description}
+                            {res?.data.description}
                           </Typography>
                         </Grid>
                       </Grid>

@@ -63,7 +63,7 @@ function Filter(props: PropTypes) {
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
       <SelectMulti
-        name={t("singlestudy:filter")}
+        name={t("global.filter")}
         list={areasOrDistrictsList.map((elm) => ({ id: elm, name: elm }))}
         data={filterValue}
         setValue={(elm: Array<string> | string) =>
@@ -73,14 +73,16 @@ function Filter(props: PropTypes) {
         required
       />
       <TextField
-        label={t("singlestudy:filterIn")}
+        label={t("study.filterIn")}
         value={filterInValue}
+        variant="filled"
         onChange={(event) => setFilterInValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
       <TextField
-        label={t("singlestudy:filterOut")}
+        label={t("study.filterOut")}
         value={filterOutValue}
+        variant="filled"
         onChange={(event) => setFilterOutValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
@@ -88,17 +90,17 @@ function Filter(props: PropTypes) {
   ) : (
     <Root>
       <MultipleLinkElement
-        label={t("singlestudy:filter")}
+        label={t("global.filter")}
         areas={Object.keys(areas)}
         values={filterValue}
         onChange={setFilterValue}
       />
       <SingleLinkElement
-        label={t("singlestudy:filterIn")}
+        label={t("study.filterIn")}
         onChange={setFilterInValue}
       />
       <SingleLinkElement
-        label={t("singlestudy:filterOut")}
+        label={t("study.filterOut")}
         onChange={setFilterOutValue}
       />
     </Root>

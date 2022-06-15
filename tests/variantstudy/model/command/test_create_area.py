@@ -1,19 +1,14 @@
 import configparser
 
-from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    CreateBindingConstraint,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
@@ -356,7 +351,7 @@ def test_match(command_context: CommandContext):
 
 def test_revert(command_context: CommandContext):
     base = CreateArea(area_name="foo", command_context=command_context)
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveArea(id="foo", command_context=command_context)
     ]
 

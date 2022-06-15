@@ -7,6 +7,12 @@ import { APIVersion, getVersion } from "./api/misc";
 
 const info = debug("antares:config:info");
 const warn = debug("antares:config:warn");
+const isDevEnv = process.env.NODE_ENV === "development";
+
+if (isDevEnv) {
+  // To display logs created with "debug" lib
+  localStorage.setItem("debug", "antares:*");
+}
 
 moment.locale("fr", {
   months:
@@ -80,16 +86,14 @@ export interface Config {
   wsUrl: string;
   wsEndpoint: string;
   hidden: boolean;
-  downloadHostUrl?: string;
   version: APIVersion;
   maintenanceMode: boolean;
+  downloadHostUrl?: string;
 }
 
-let config: Config = {
-  baseUrl: "",
+let config = {
   applicationHome: "",
   restEndpoint: "",
-  wsUrl: "",
   wsEndpoint: "/ws",
   hidden: false,
   version: {
@@ -97,23 +101,21 @@ let config: Config = {
     gitcommit: "unknown",
   },
   maintenanceMode: false,
-};
+  ...(isDevEnv
+    ? {
+        baseUrl: "http://localhost:3000",
+        wsUrl: "ws://localhost:8080",
+        downloadHostUrl: "http://localhost:8080",
+      }
+    : {
+        baseUrl: window.location.origin,
+        wsUrl: `ws${window.location.protocol === "https:" ? "s" : ""}://${
+          window.location.host
+        }`,
+      }),
+} as Config;
 
-if (process.env.NODE_ENV === "development") {
-  config.applicationHome = "";
-  config.baseUrl = "http://localhost:3000";
-  config.wsUrl = "ws://localhost:8080";
-  config.downloadHostUrl = "http://localhost:8080";
-  localStorage.setItem("debug", "antares:*");
-} else {
-  config.baseUrl = `${window.location.origin}`;
-  config.wsUrl = `ws${window.location.protocol === "https:" ? "s" : ""}://${
-    window.location.host
-  }`;
-  //  config.hidden = true;
-}
-
-export const getConfig = (): Config => config;
+export const getConfig = (): Readonly<Config> => config;
 
 export const initConfig = async (
   callback: (appConfig: Config) => void

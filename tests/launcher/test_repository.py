@@ -1,3 +1,4 @@
+import datetime
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -38,6 +39,7 @@ def test_job_result() -> None:
             id=str(uuid4()),
             study_id=study_id,
             job_status=JobStatus.FAILED,
+            creation_date=datetime.datetime.utcfromtimestamp(1655136710),
             msg="You failed !!",
             exit_code=1,
         )
@@ -45,6 +47,7 @@ def test_job_result() -> None:
             id=str(uuid4()),
             study_id=study_id,
             job_status=JobStatus.FAILED,
+            creation_date=datetime.datetime.utcfromtimestamp(1655136740),
             msg="You failed !!",
             exit_code=1,
         )
@@ -52,6 +55,7 @@ def test_job_result() -> None:
             id=str(uuid4()),
             study_id="other_study",
             job_status=JobStatus.FAILED,
+            creation_date=datetime.datetime.utcfromtimestamp(1655136729),
             msg="You failed !!",
             exit_code=1,
         )
@@ -69,9 +73,16 @@ def test_job_result() -> None:
 
         all = repo.get_all()
         assert len(all) == 4
+        assert all[0] == a
+        assert all[1] == b2
+        assert all[2] == b3
+        assert all[3] == b
 
         all = repo.get_all(filter_orphan=True)
         assert len(all) == 3
+
+        all = repo.get_all(latest=2)
+        assert len(all) == 2
 
         repo.delete(a.id)
         assert repo.get(a.id) is None

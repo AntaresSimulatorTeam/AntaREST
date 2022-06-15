@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.repository import (
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
+    SNAPSHOT_RELATIVE_PATH,
 )
 
 SADMIN = RequestParameters(
@@ -191,6 +192,8 @@ def test_smart_generation(tmp_path: Path) -> None:
         denormalize: bool = True,
     ) -> None:
         dest.mkdir(parents=True)
+        (dest / "user").mkdir()
+        (dest / "user" / "some_unmanaged_config").touch()
 
     service.raw_study_service.export_study_flat.side_effect = export_flat
 
@@ -208,6 +211,15 @@ def test_smart_generation(tmp_path: Path) -> None:
         variant_id = service.create_variant_study(
             origin_id, "my variant", SADMIN
         )
+        unmanaged_user_config_path = (
+            tmp_path
+            / variant_id
+            / SNAPSHOT_RELATIVE_PATH
+            / "user"
+            / "some_unmanaged_config"
+        )
+        assert not unmanaged_user_config_path.exists()
+
         service.append_command(
             variant_id,
             CommandDTO(action="some action", args={"some-args": "value"}),
@@ -255,7 +267,11 @@ def test_smart_generation(tmp_path: Path) -> None:
             ],
             SADMIN,
         )
+
+        assert unmanaged_user_config_path.exists()
+        unmanaged_user_config_path.write_text("hello")
         service._generate(variant_id, SADMIN, False)
         service.generator.generate.assert_called_with(
             [ANY, ANY], ANY, ANY, notifier=ANY
         )
+        assert unmanaged_user_config_path.read_text() == "hello"

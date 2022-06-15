@@ -99,7 +99,7 @@ function Users() {
     isLoading,
     reload: reloadFetchUsers,
   } = usePromiseWithSnackbarError(() => getUsers({ details: true }), {
-    errorMessage: t("settings:usersError"),
+    errorMessage: t("settings.error.usersError"),
   });
 
   useUpdateEffect(() => {
@@ -149,12 +149,12 @@ function Users() {
     mounted(deleteUser(user.id))
       .then(() => {
         dispatch({ type: UserActionKind.DELETE, payload: user.id });
-        enqueueSnackbar(t("settings:onUserDeleteSuccess", [user.name]), {
+        enqueueSnackbar(t("settings.success.userDelete", [user.name]), {
           variant: "success",
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("settings:onUserDeleteError", [user.name]), err);
+        enqueueErrorSnackbar(t("settings.error.userDelete", [user.name]), err);
       })
       .finally(() => {
         setUsersInLoading((prev) => prev.filter((u) => u !== user));
@@ -232,7 +232,7 @@ function Users() {
             R.T,
             () => (
               <Typography sx={{ m: 2 }} align="center">
-                {t("settings:noUser")}
+                {t("settings.noUser")}
               </Typography>
             ),
           ],
@@ -246,7 +246,7 @@ function Users() {
           alert="warning"
           open
         >
-          {t("settings:deleteUserConfirmation", [userToDelete.name])}
+          {t("settings.question.deleteUser", [userToDelete.name])}
         </ConfirmationDialog>
       )}
       {userToEdit && (

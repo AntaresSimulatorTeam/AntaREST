@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import shutil
-import time
 from datetime import datetime, timedelta
 from functools import reduce
 from http import HTTPStatus
@@ -23,6 +22,10 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.model import (
+    StudyPermissionType,
+    JSON,
+)
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -30,7 +33,7 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, concat_files
+from antarest.core.utils.utils import concat_files, zip_dir, StopWatch
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -43,15 +46,10 @@ from antarest.launcher.model import (
     LogType,
     JobLog,
     JobLogType,
+    LauncherParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
-from antarest.study.model import ExportFormat
 from antarest.study.service import StudyService
-from antarest.core.model import (
-    StudyPermissionType,
-    PermissionInfo,
-    JSON,
-)
 from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
@@ -76,6 +74,7 @@ class LauncherServiceNotAvailableException(HTTPException):
 
 
 ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
+LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 
 
 class LauncherService:
@@ -126,12 +125,12 @@ class LauncherService:
         job_id: str,
         study_id: str,
         study_exported_path: Path,
-        launcher_opts: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
             if (
-                launcher_opts is not None
-                and launcher_opts.get(ext, None) is not None
+                launcher_params is not None
+                and launcher_params.__getattribute__(ext) is not None
             ):
                 logger.info(
                     f"Applying extension {ext} after_export_flat_hook on job {job_id}"
@@ -140,7 +139,7 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_exported_path,
-                    launcher_opts.get(ext),
+                    launcher_params.__getattribute__(ext),
                 )
 
     def _before_import_hooks(
@@ -148,12 +147,12 @@ class LauncherService:
         job_id: str,
         study_id: str,
         study_output_path: Path,
-        launcher_opts: Optional[JSON],
+        launcher_opts: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
             if (
                 launcher_opts is not None
-                and launcher_opts.get(ext, None) is not None
+                and getattr(launcher_opts, ext, None) is not None
             ):
                 logger.info(
                     f"Applying extension {ext} before_import_hook on job {job_id}"
@@ -162,7 +161,7 @@ class LauncherService:
                     job_id,
                     study_id,
                     study_output_path,
-                    launcher_opts.get(ext),
+                    getattr(launcher_opts, ext),
                 )
 
     def update(
@@ -230,8 +229,9 @@ class LauncherService:
         self,
         study_uuid: str,
         launcher: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
+        study_version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(
@@ -240,7 +240,7 @@ class LauncherService:
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
         )
-        study_version = study_info.version
+        solver_version = study_version or study_info.version
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -253,7 +253,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=json.dumps(launcher_parameters)
+            launcher_params=launcher_parameters.json()
             if launcher_parameters
             else None,
         )
@@ -262,7 +262,7 @@ class LauncherService:
         self.launchers[launcher].run_study(
             study_uuid,
             job_uuid,
-            str(study_version),
+            str(solver_version),
             launcher_parameters,
             params,
         )
@@ -373,13 +373,14 @@ class LauncherService:
         study_uid: Optional[str],
         params: RequestParameters,
         filter_orphans: bool = True,
+        latest: Optional[int] = None,
     ) -> List[JobResult]:
 
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
             job_results = self.job_result_repository.get_all(
-                filter_orphan=filter_orphans
+                filter_orphan=filter_orphans, latest=latest
             )
 
         return self._filter_from_user_permission(
@@ -401,8 +402,13 @@ class LauncherService:
         self, job_id: str, log_type: LogType, params: RequestParameters
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
+
         if job_result:
-            if job_result.output_id:
+            # TODO: remove this part of code when study tree zipfile support is implemented
+            launcher_parameters = LauncherParametersDTO.parse_raw(
+                job_result.launcher_params or "{}"
+            )
+            if job_result.output_id and not launcher_parameters.archive_output:
                 if log_type == LogType.STDOUT:
                     launcher_logs = cast(
                         bytes,
@@ -460,7 +466,7 @@ class LauncherService:
         job_id: str,
         study_id: str,
         target_path: Path,
-        launcher_params: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
     ) -> None:
         with db():
             self.append_log(
@@ -484,32 +490,50 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        additional_logs: Dict[str, List[Path]],
+        output_suffix_name: Optional[str] = None,
     ) -> Optional[str]:
+        # Temporary import the output in a tmp space if the study can not be found
         logger.info(
             f"Trying to import output in fallback tmp space for job {job_id}"
         )
         output_name: Optional[str] = None
         job_output_path = self._get_job_output_fallback_path(job_id)
+
         try:
             os.mkdir(job_output_path)
-            imported_output = job_output_path / "imported"
-            shutil.copytree(output_path, imported_output)
-            fix_study_root(imported_output)
-            output_name = extract_output_name(imported_output)
-            imported_output.rename(Path(job_output_path, output_name))
-            if additional_logs:
-                for log_name, log_paths in additional_logs.items():
-                    concat_files(
-                        log_paths,
-                        Path(job_output_path, output_name) / log_name,
-                    )
+            if output_path.suffix != ".zip":
+                imported_output_path = job_output_path / "imported"
+                shutil.copytree(output_path, imported_output_path)
+                output_name = extract_output_name(
+                    imported_output_path, output_suffix_name
+                )
+                imported_output_path.rename(Path(job_output_path, output_name))
+            else:
+                shutil.copy(
+                    output_path, job_output_path / f"{output_name}.zip"
+                )
+
         except Exception as e:
             logger.error(
                 "Failed to import output in fallback mode", exc_info=e
             )
             shutil.rmtree(job_output_path, ignore_errors=True)
         return output_name
+
+    def _save_solver_stats(
+        self, job_result: JobResult, output_path: Path
+    ) -> None:
+        try:
+            measurement_file = output_path / "time_measurement.txt"
+            if measurement_file.exists():
+                job_result.solver_stats = measurement_file.read_text(
+                    encoding="utf-8"
+                )
+                self.job_result_repository.save(job_result)
+        except Exception as e:
+            logger.error(
+                "Failed to save solver performance measurements", exc_info=e
+            )
 
     def _import_output(
         self,
@@ -521,25 +545,70 @@ class LauncherService:
         with db():
             job_result = self.job_result_repository.get(job_id)
             if job_result:
+
+                job_launch_params = LauncherParametersDTO.parse_raw(
+                    job_result.launcher_params or "{}"
+                )
                 output_true_path = find_single_output_path(output_path)
                 self._before_import_hooks(
                     job_id,
                     job_result.study_id,
                     output_true_path,
-                    json.loads(job_result.launcher_params)
-                    if job_result.launcher_params
-                    else None,
+                    job_launch_params,
                 )
+                self._save_solver_stats(job_result, output_path)
+
+                if additional_logs:
+                    for log_name, log_paths in additional_logs.items():
+                        concat_files(
+                            log_paths,
+                            output_path / log_name,
+                        )
+
+                zip_path: Optional[Path] = None
+                stopwatch = StopWatch()
+                if LauncherParametersDTO.parse_raw(
+                    job_result.launcher_params or "{}"
+                ).archive_output:
+                    logger.info("Re zipping output for transfer")
+                    zip_path = (
+                        output_true_path.parent
+                        / f"{output_true_path.name}.zip"
+                    )
+                    zip_dir(output_true_path, zip_path=zip_path)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Zipped output for job {job_id} in {x}s"
+                        )
+                    )
+
+                final_output_path = zip_path or output_true_path
                 try:
                     return self.study_service.import_output(
                         job_result.study_id,
-                        output_true_path,
+                        final_output_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
-                        additional_logs,
+                        cast(
+                            Optional[str],
+                            getattr(
+                                job_launch_params,
+                                LAUNCHER_PARAM_NAME_SUFFIX,
+                                None,
+                            ),
+                        ),
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
-                        job_id, output_true_path, additional_logs
+                        job_id,
+                        final_output_path,
+                        cast(
+                            Optional[str],
+                            getattr(
+                                job_launch_params,
+                                LAUNCHER_PARAM_NAME_SUFFIX,
+                                None,
+                            ),
+                        ),
                     )
         raise JobNotFound()
 
@@ -560,6 +629,7 @@ class LauncherService:
 
             def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
+                    #
                     shutil.make_archive(
                         base_name=os.path.splitext(export_path)[0],
                         format="zip",
@@ -603,15 +673,15 @@ class LauncherService:
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
-        output_dict = {}
+        version_dict = {}
         if self.config.launcher.local:
-            output_dict["local"] = list(
+            version_dict["local"] = list(
                 self.config.launcher.local.binaries.keys()
             )
 
         if self.config.launcher.slurm:
-            output_dict[
+            version_dict[
                 "slurm"
             ] = self.config.launcher.slurm.antares_versions_on_remote_server
 
-        return output_dict
+        return version_dict

@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from "axios";
+import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -10,7 +11,6 @@ import {
   StudyOutput,
   StudyPublicMode,
   AreasConfig,
-  StudyProperties,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
 } from "../../common/types";
@@ -38,12 +38,12 @@ export const getStudyVersions = async (): Promise<Array<string>> => {
   return res.data;
 };
 
-export const getStudyData = async (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getStudyData = async <T = any>(
   sid: string,
   path = "",
   depth = 1
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> => {
+): Promise<T> => {
   const res = await client.get(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`
   );
@@ -52,11 +52,6 @@ export const getStudyData = async (
 
 export const getComments = async (sid: string): Promise<string> => {
   const res = await client.get(`/v1/studies/${sid}/comments`);
-  return res.data;
-};
-
-export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
-  const res = await client.get(`/v1/studies/${uuid}/synthesis`);
   return res.data;
 };
 
@@ -95,7 +90,6 @@ export const downloadOutput = async (
     headers: {
       Accept: "application/zip",
       responseType: "blob",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post(
@@ -120,14 +114,18 @@ export const createStudy = async (
 };
 
 export const editStudy = async (
-  data: object,
+  data: object | string | boolean | number,
   sid: string,
   path = "",
   depth = 1
 ): Promise<void> => {
+  let formattedData: unknown = data;
+  if (isBoolean(data)) {
+    formattedData = JSON.stringify(data);
+  }
   const res = await client.post(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
-    data
+    formattedData
   );
   return res.data;
 };
@@ -143,6 +141,13 @@ export const copyStudy = async (
     )}&with_outputs=${withOutputs}`
   );
   return res.data;
+};
+
+export const moveStudy = async (sid: string, folder: string): Promise<void> => {
+  const folderWithId = trimCharsStart("/", `${folder.trim()}/${sid}`);
+  await client.put(
+    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`
+  );
 };
 
 export const archiveStudy = async (sid: string): Promise<void> => {
@@ -194,7 +199,7 @@ export const exportOuput = async (
 export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void
-): Promise<string> => {
+): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
@@ -210,7 +215,6 @@ export const importStudy = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
@@ -238,7 +242,6 @@ export const importFile = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.put(
@@ -261,13 +264,24 @@ export interface LaunchOptions {
   post_processing?: boolean;
   // eslint-disable-next-line camelcase
   adequacy_patch?: object;
+  // eslint-disable-next-line camelcase
+  output_suffix?: string;
+  // eslint-disable-next-line camelcase
+  archive_output?: boolean;
+  // eslint-disable-next-line camelcase
+  other_options?: string;
 }
 
 export const launchStudy = async (
   sid: string,
-  options: LaunchOptions = {}
+  options: LaunchOptions = {},
+  version: string | undefined = undefined
 ): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`, options);
+  const versionArg = version ? `?version=${version}` : "";
+  const res = await client.post(
+    `/v1/launcher/run/${sid}${versionArg}`,
+    options
+  );
   return res.data;
 };
 
@@ -289,11 +303,15 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
 
 export const getStudyJobs = async (
   sid?: string,
-  filterOrphans = true
+  filterOrphans = true,
+  latest = false
 ): Promise<LaunchJob[]> => {
-  const query = sid
+  let query = sid
     ? `?study=${sid}&filter_orphans=${filterOrphans}`
     : `?filter_orphans=${filterOrphans}`;
+  if (latest) {
+    query += "&latest=100";
+  }
   const res = await client.get(`/v1/launcher/jobs${query}`);
   const data = await res.data;
   return data.map(mapLaunchJobDTO);

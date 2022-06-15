@@ -66,12 +66,7 @@ function SelectMulti(props: Props) {
 
   return (
     <FormControl sx={sx} required={required}>
-      <InputLabel
-        id={`multiple-checkbox-label-${name}`}
-        sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-      >
-        {name}
-      </InputLabel>
+      <InputLabel id={`multiple-checkbox-label-${name}`}>{name}</InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
         id={`multiple-checkbox-${name}`}
@@ -81,15 +76,6 @@ function SelectMulti(props: Props) {
         placeholder={placeholder}
         onChange={handleChange}
         renderValue={tagsMode === true ? chipRender : checkboxRender}
-        sx={{
-          minHeight: 0,
-          background: "rgba(255, 255, 255, 0.09)",
-          borderRadius: "4px 4px 0px 0px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-          ".MuiSelect-icon": {
-            backgroundColor: "#222333",
-          },
-        }}
       >
         {list.map(({ id, name }) => (
           <MenuItem key={id} value={id}>

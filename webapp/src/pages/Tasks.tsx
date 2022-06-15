@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { AxiosError } from "axios";
-import { connect, ConnectedProps } from "react-redux";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -27,19 +26,16 @@ import SimpleLoader from "../components/common/loaders/SimpleLoader";
 import DownloadLink from "../components/common/DownloadLink";
 import LogModal from "../components/common/LogModal";
 import {
-  addListener,
-  removeListener,
-  subscribe,
-  unsubscribe,
+  addWsMessageListener,
+  sendWsSubscribeMessage,
   WsChannel,
-} from "../store/websockets";
+} from "../services/webSockets";
 import JobTableView from "../components/tasks/JobTableView";
 import { convertUTCToLocalTime } from "../services/utils/index";
 import {
   downloadJobOutput,
   killStudy,
   getStudyJobs,
-  getStudies,
 } from "../services/api/study";
 import {
   convertFileDownloadDTO,
@@ -48,7 +44,7 @@ import {
   FileDownloadDTO,
   getDownloadsList,
 } from "../services/api/downloads";
-import { initStudies } from "../store/study";
+import { fetchStudies } from "../redux/ducks/studies";
 import {
   LaunchJob,
   TaskDTO,
@@ -58,39 +54,17 @@ import {
   TaskType,
   TaskStatus,
 } from "../common/types";
-import BasicModal from "../components/common/BasicModal";
 import { getAllMiscRunningTasks, getTask } from "../services/api/tasks";
-import { AppState } from "../store/reducers";
 import LaunchJobLogView from "../components/tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
+import { getStudies } from "../redux/selectors";
+import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
+import useAppSelector from "../redux/hooks/useAppSelector";
+import useAppDispatch from "../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:studymanagement:error");
 
-const mapState = (state: AppState) => ({
-  studies: state.study.studies,
-});
-
-const mapDispatch = {
-  loadStudies: initStudies,
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-  subscribeChannel: subscribe,
-  unsubscribeChannel: unsubscribe,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
-
-function JobsListing(props: PropTypes) {
-  const {
-    studies,
-    loadStudies,
-    addWsListener,
-    removeWsListener,
-    subscribeChannel,
-    unsubscribeChannel,
-  } = props;
+function JobsListing() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
@@ -98,21 +72,22 @@ function JobsListing(props: PropTypes) {
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
   const [loaded, setLoaded] = useState(false);
-  const [openConfirmationModal, setOpenConfirmationModal] = useState<
+  const [openConfirmationDialog, setOpenConfirmationDialog] = useState<
     string | undefined
   >();
   const [messageModalOpen, setMessageModalOpen] = useState<
     string | undefined
   >();
+  const studies = useAppSelector(getStudies);
+  const dispatch = useAppDispatch();
 
-  const init = async () => {
+  const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
       if (studies.length === 0) {
-        const allStudies = await getStudies();
-        loadStudies(allStudies);
+        await dispatch(fetchStudies()).unwrap();
       }
-      const allJobs = await getStudyJobs(undefined, false);
+      const allJobs = await getStudyJobs(undefined, false, fetchOnlyLatest);
       setJobs(allJobs);
       const dlList = await getDownloadsList();
       setDownloads(dlList);
@@ -127,7 +102,10 @@ function JobsListing(props: PropTypes) {
       );
     } catch (e) {
       logError("woops", e);
-      enqueueErrorSnackbar(t("jobs:failedtoretrievejobs"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("global.error.failedtoretrievejobs"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -154,10 +132,7 @@ function JobsListing(props: PropTypes) {
       try {
         await downloadJobOutput(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("singlestudy:failedToExportOutput"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
       }
     },
     2000,
@@ -169,9 +144,9 @@ function JobsListing(props: PropTypes) {
       try {
         await killStudy(jobId);
       } catch (e) {
-        enqueueErrorSnackbar(t("singlestudy:failtokilltask"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.failtokilltask"), e as AxiosError);
       }
-      setOpenConfirmationModal(undefined);
+      setOpenConfirmationDialog(undefined);
     })();
   };
 
@@ -232,27 +207,16 @@ function JobsListing(props: PropTypes) {
         );
       }
     };
-    addWsListener(listener);
-    return () => {
-      removeWsListener(listener);
-    };
-  }, [addWsListener, removeWsListener, downloads, tasks, setTasks]);
+
+    return addWsMessageListener(listener);
+  }, [downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
-      tasks.forEach((task) => {
-        subscribeChannel(WsChannel.TASK + task.id);
-      });
-      return () => {
-        tasks.forEach((task) => {
-          unsubscribeChannel(WsChannel.TASK + task.id);
-        });
-      };
+      const channels = tasks.map((task) => WsChannel.Task + task.id);
+      return sendWsSubscribeMessage(channels);
     }
-    return () => {
-      /* noop */
-    };
-  }, [tasks, subscribeChannel, unsubscribeChannel]);
+  }, [tasks]);
 
   useEffect(() => {
     init();
@@ -271,7 +235,7 @@ function JobsListing(props: PropTypes) {
             >
               <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
                 {studies.find((s) => s.id === job.studyId)?.name ||
-                  `${t("main:unknown")} (${job.id})`}
+                  `${t("global.unknown")} (${job.id})`}
               </Typography>
             </Link>
           </Box>
@@ -317,7 +281,7 @@ function JobsListing(props: PropTypes) {
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             <Box display="flex" alignItems="center" justifyContent="flex-end">
               {job.status === "running" ? (
-                <Tooltip title={t("singlestudy:killStudy") as string}>
+                <Tooltip title={t("study.killStudy") as string}>
                   <BlockIcon
                     sx={{
                       mb: "4px",
@@ -325,7 +289,7 @@ function JobsListing(props: PropTypes) {
                       color: "error.light",
                       "&:hover": { color: "error.dark" },
                     }}
-                    onClick={() => setOpenConfirmationModal(job.id)}
+                    onClick={() => setOpenConfirmationDialog(job.id)}
                   />
                 </Tooltip>
               ) : (
@@ -334,7 +298,7 @@ function JobsListing(props: PropTypes) {
             </Box>
             <Box>
               {job.status === "success" ? (
-                <Tooltip title={t("jobs:download") as string}>
+                <Tooltip title={t("global.download") as string}>
                   <DownloadIcon
                     sx={{
                       fontSize: 22,
@@ -370,13 +334,13 @@ function JobsListing(props: PropTypes) {
         ),
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
-            {`(${t("downloads:expirationDate")} : ${convertUTCToLocalTime(
+            {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
               download.expirationDate
             )})`}
           </Box>
         ),
         action: download.failed ? (
-          <Tooltip title={t("singlestudy:failedToExportOutput") as string}>
+          <Tooltip title={t("study.error.exportOutput") as string}>
             <InfoIcon
               sx={{
                 width: "18px",
@@ -393,20 +357,21 @@ function JobsListing(props: PropTypes) {
         ) : (
           <Box>
             {download.ready ? (
-              <DownloadLink url={getDownloadUrl(download.id)}>
-                <Tooltip title={t("jobs:download") as string}>
-                  <DownloadIcon
-                    sx={{
-                      fontSize: 22,
-                      color: "action.active",
-                      cursor: "pointer",
-                      "&:hover": { color: "action.hover" },
-                    }}
-                  />
-                </Tooltip>
+              <DownloadLink
+                title={t("global.download") as string}
+                url={getDownloadUrl(download.id)}
+              >
+                <DownloadIcon
+                  sx={{
+                    fontSize: 22,
+                    color: "action.active",
+                    cursor: "pointer",
+                    "&:hover": { color: "action.hover" },
+                  }}
+                />
               </DownloadLink>
             ) : (
-              <Tooltip title={t("jobs:loading") as string}>
+              <Tooltip title={t("global.loading") as string}>
                 <CircularProgress
                   color="primary"
                   style={{ width: "18px", height: "18px" }}
@@ -473,7 +438,7 @@ function JobsListing(props: PropTypes) {
         action: (
           <Box>
             {!task.completion_date_utc && (
-              <Tooltip title={t("jobs:loading") as string}>
+              <Tooltip title={t("global.loading") as string}>
                 <CircularProgress
                   color="primary"
                   style={{ width: "18px", height: "18px" }}
@@ -481,7 +446,7 @@ function JobsListing(props: PropTypes) {
               </Tooltip>
             )}
             {task.result && !task.result.success && (
-              <Tooltip title={t("variants:taskFailed") as string}>
+              <Tooltip title={t("variants.error.taskFailed") as string}>
                 <InfoIcon
                   sx={{
                     width: "18px",
@@ -508,7 +473,7 @@ function JobsListing(props: PropTypes) {
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
 
   return (
-    <RootPage title={t("main:tasks")} titleIcon={AssignmentIcon}>
+    <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
       <Box
         flexGrow={1}
         overflow="hidden"
@@ -517,27 +482,19 @@ function JobsListing(props: PropTypes) {
         position="relative"
       >
         {!loaded && <SimpleLoader />}
-        {loaded && <JobTableView content={content || []} refresh={init} />}
-        {openConfirmationModal && (
-          <BasicModal
-            open={!!openConfirmationModal}
-            title={t("main:confirmationModalTitle")}
-            closeButtonLabel={t("main:noButton")}
-            actionButtonLabel={t("main:yesButton")}
-            onActionButtonClick={() => killTask(openConfirmationModal)}
-            onClose={() => setOpenConfirmationModal(undefined)}
-            rootStyle={{
-              maxWidth: "800px",
-              maxHeight: "800px",
-              display: "flex",
-              flexFlow: "column nowrap",
-              alignItems: "center",
-            }}
+        {loaded && (
+          <JobTableView content={content || []} refresh={() => init(false)} />
+        )}
+        {openConfirmationDialog && (
+          <ConfirmationDialog
+            title={t("dialog.title.confirmation")}
+            onCancel={() => setOpenConfirmationDialog(undefined)}
+            onConfirm={() => killTask(openConfirmationDialog)}
+            alert="warning"
+            open={!!openConfirmationDialog}
           >
-            <Typography sx={{ p: 3 }}>
-              {t("singlestudy:confirmKill")}
-            </Typography>
-          </BasicModal>
+            <Typography sx={{ p: 3 }}>{t("study.question.killJob")}</Typography>
+          </ConfirmationDialog>
         )}
         <LogModal
           isOpen={!!messageModalOpen}
@@ -549,4 +506,4 @@ function JobsListing(props: PropTypes) {
   );
 }
 
-export default connector(JobsListing);
+export default JobsListing;

@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -8,8 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -27,6 +27,9 @@ from antarest.study.storage.variantstudy.model.command.remove_district import (
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command.update_district import (
+    UpdateDistrict,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -102,6 +105,23 @@ def test_manage_district(
     set_config = sets_config.get("one substracted zone")
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
+
+    update_district2_command: ICommand = UpdateDistrict(
+        id="one substracted zone",
+        metadata={},
+        base_filter=DistrictBaseFilter.remove_all,
+        filter_items=[area2_id],
+        command_context=command_context,
+    )
+    output_ud2 = update_district2_command.apply(study_data=empty_study)
+    assert output_ud2.status
+
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
+        empty_study.config.study_path / "input/areas/sets.ini"
+    )
+    set_config = sets_config.get("one substracted zone")
+    assert set_config["+"] == [area2_id]
+    assert set_config["apply-filter"] == "remove-all"
 
     create_district3_command: ICommand = CreateDistrict(
         name="Empty district without output",
@@ -180,7 +200,7 @@ def test_match(command_context: CommandContext):
 
 
 @patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_district",
+    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_district",
 )
 def test_revert(mock_extract_district, command_context: CommandContext):
     base = CreateDistrict(
@@ -189,32 +209,8 @@ def test_revert(mock_extract_district, command_context: CommandContext):
         filter_items=["a", "b"],
         command_context=command_context,
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveDistrict(id="foo", command_context=command_context)
-    ]
-
-    base = RemoveDistrict(id="id", command_context=command_context)
-    study = FileStudy(config=Mock(), tree=Mock())
-    mock_extract_district.side_effect = ChildNotFoundError("")
-    base.revert([], study)
-    mock_extract_district.assert_called_with(study, "id")
-    assert base.revert(
-        [
-            CreateDistrict(
-                name="id",
-                base_filter=DistrictBaseFilter.add_all,
-                filter_items=["a", "b"],
-                command_context=command_context,
-            )
-        ],
-        None,
-    ) == [
-        CreateDistrict(
-            name="id",
-            base_filter=DistrictBaseFilter.add_all,
-            filter_items=["a", "b"],
-            command_context=command_context,
-        )
     ]
 
 

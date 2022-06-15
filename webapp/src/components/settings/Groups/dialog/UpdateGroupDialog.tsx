@@ -11,14 +11,10 @@ import {
   getRolesForGroup,
   updateGroup,
 } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
-
-/**
- * Types
- */
+import { SubmitHandlerData } from "../../../common/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -33,10 +29,6 @@ interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
   editGroup: (user: GroupEdit) => void;
   reloadFetchGroups: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function UpdateGroupDialog(props: Props) {
   const {
@@ -71,11 +63,11 @@ function UpdateGroupDialog(props: Props) {
 
   const handleSubmit = async (data: SubmitHandlerData) => {
     const { name, permissions }: GroupFormDialogProps["defaultValues"] =
-      data.modifiedValues;
+      data.dirtyValues;
     const groupName = name || group.name;
 
     const notifySuccess = R.once(() =>
-      enqueueSnackbar(t("settings:onGroupUpdate", [groupName]), {
+      enqueueSnackbar(t("settings.success.groupUpdate", [groupName]), {
         variant: "success",
       })
     );
@@ -87,7 +79,7 @@ function UpdateGroupDialog(props: Props) {
         notifySuccess();
       } catch (e) {
         enqueueErrorSnackbar(
-          t("settings:onGroupSaveError", [groupName]),
+          t("settings.error.groupSave", [groupName]),
           e as Error
         );
         throw e;
@@ -147,7 +139,7 @@ function UpdateGroupDialog(props: Props) {
         reloadFetchUsers();
 
         enqueueErrorSnackbar(
-          t("settings:onGroupRolesSaveError", [groupName]),
+          t("settings.error.groupRolesSave", [groupName]),
           e as Error
         );
       }
@@ -162,7 +154,7 @@ function UpdateGroupDialog(props: Props) {
 
   return (
     <GroupFormDialog
-      title={t("settings:updateGroup")}
+      title={t("settings.updateGroup")}
       titleIcon={EditIcon}
       defaultValues={defaultValues}
       onSubmit={handleSubmit}

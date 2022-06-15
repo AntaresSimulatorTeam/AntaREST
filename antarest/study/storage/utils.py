@@ -1,7 +1,8 @@
+import calendar
 import logging
 import os
 import shutil
-import calendar
+import tempfile
 from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
@@ -20,7 +21,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -30,6 +31,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -81,10 +83,14 @@ def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
 
 def fix_study_root(study_path: Path) -> None:
     """
-    Fix possibly the wrong study root on zipped archive (when the study root is nested)
+    Fix possibly the wrong study root in zipped archive (when the study root is nested)
 
     @param study_path the study initial root path
     """
+    # TODO: what if it is a zipped output ?
+    if study_path.suffix == ".zip":
+        return None
+
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory")
 
@@ -117,22 +123,51 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
-def extract_output_name(path_output: Path) -> str:
+def extract_output_name(
+    path_output: Path, new_suffix_name: Optional[str] = None
+) -> str:
     ini_reader = IniReader()
-    info_antares_output = ini_reader.read(path_output / "info.antares-output")[
-        "general"
-    ]
+    is_output_archived = path_output.suffix == ".zip"
+    if is_output_archived:
+        temp_dir = tempfile.TemporaryDirectory()
+        s = StopWatch()
+        with ZipFile(path_output, "r") as zip_obj:
+            zip_obj.extract("info.antares-output", temp_dir.name)
+            info_antares_output = ini_reader.read(
+                Path(temp_dir.name) / "info.antares-output"
+            )
+        s.log_elapsed(
+            lambda x: logger.info(f"info.antares_output has been read in {x}s")
+        )
+        temp_dir.cleanup()
 
-    date = datetime.fromtimestamp(
-        int(info_antares_output["timestamp"])
-    ).strftime("%Y%m%d-%H%M")
+    else:
+        info_antares_output = ini_reader.read(
+            path_output / "info.antares-output"
+        )
 
-    mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-    name = (
-        f"-{info_antares_output['name']}"
-        if info_antares_output["name"]
-        else ""
+    general_info = info_antares_output["general"]
+
+    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime(
+        "%Y%m%d-%H%M"
     )
+
+    mode = "eco" if general_info["mode"] == "Economy" else "adq"
+    suffix_name = general_info["name"] if general_info["name"] else ""
+    if new_suffix_name:
+        suffix_name = new_suffix_name
+        general_info["name"] = suffix_name
+        if not is_output_archived:
+            ini_writer = IniWriter()
+            ini_writer.write(
+                info_antares_output, path_output / "info.antares-output"
+            )
+        else:
+            logger.warning(
+                "Could not rewrite the new name inside the output: the output is archived"
+            )
+
+    name = f"-{suffix_name}" if suffix_name else ""
     return f"{date}{mode}{name}"
 
 
@@ -260,7 +295,7 @@ def get_start_date(
     )
     # base case is DAILY
     steps = (
-        int((end - start_offset) / 7) * 7
+        end - start_offset + 1
         if output_id is not None
         else MATRIX_INPUT_DAYS_COUNT
     )
@@ -287,7 +322,7 @@ def get_start_date(
         first_week_offset += 1
     first_week_size = first_week_offset if first_week_offset != 0 else 7
 
-    return MatrixIndex(
+    return MatrixIndex.construct(
         start_date=str(start_date),
         steps=steps,
         first_week_size=first_week_size,

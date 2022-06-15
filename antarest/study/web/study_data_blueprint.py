@@ -10,7 +10,11 @@ from antarest.core.requests import (
 )
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.business.matrix_editor import MatrixSlice, Operation
+from antarest.matrixstore.business.matrix_editor import (
+    MatrixSlice,
+    Operation,
+    MatrixEditInstructionDTO,
+)
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
@@ -208,12 +212,13 @@ def create_study_data_routes(
     def edit_matrix(
         uuid: str,
         path: str,
-        slices: List[MatrixSlice] = Body(...),
-        operation: Operation = Body(...),
+        matrix_edit_instructions: List[MatrixEditInstructionDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        study_service.update_matrix(uuid, path, slices, operation, params)
+        study_service.update_matrix(
+            uuid, path, matrix_edit_instructions, params
+        )
 
     @bp.post(
         "/studies/_update_version",

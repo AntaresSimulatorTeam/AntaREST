@@ -1,113 +1,100 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { PropsWithChildren, useState, useEffect } from "react";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { ConnectedProps, connect } from "react-redux";
-import { useForm } from "react-hook-form";
-import debug from "debug";
-import { AppState } from "../../store/reducers";
-import { loginUser, logoutAction } from "../../store/auth";
+import { ReactNode, useState } from "react";
 import {
-  login as loginRequest,
-  needAuth,
-  refresh,
-} from "../../services/api/auth";
+  Box,
+  Button,
+  CircularProgress,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { login } from "../../redux/ducks/auth";
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
 import GlobalPageLoadingError from "../../components/common/loaders/GlobalPageLoadingError";
 import AppLoader from "../../components/common/loaders/AppLoader";
-import { updateRefreshInterceptor } from "../../services/api/client";
-import { UserInfo } from "../../common/types";
-import { reconnectWebsocket } from "../../store/websockets";
-import FilledTextInput from "../../components/common/FilledTextInput";
-
-const logError = debug("antares:loginwrapper:error");
-
-type FormStatus = "loading" | "default" | "success";
+import { needAuth } from "../../services/api/auth";
+import { getAuthUser } from "../../redux/selectors";
+import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import storage, { StorageKey } from "../../services/utils/localStorage";
 
 interface Inputs {
   username: string;
   password: string;
 }
 
-const mapState = (state: AppState) => ({
-  user: state.auth.user,
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  login: loginUser,
-  logout: logoutAction,
-  reconnectWs: reconnectWebsocket,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-type PropTypes = PropsFromRedux;
-
-function LoginWrapper(props: PropsWithChildren<PropTypes>) {
-  const { register, handleSubmit, reset } = useForm<Inputs>();
-  const [status, setStatus] = useState<FormStatus>("default");
-  const [authRequired, setAuthRequired] = useState<boolean>();
-  const [connexionError, setConnexionError] = useState(false);
-  const [loginError, setLoginError] = useState<string>();
-  const [t] = useTranslation();
+function LoginWrapper(props: Props) {
   const { children } = props;
-  const { user, login, logout, reconnectWs } = props;
+  const { register, handleSubmit, reset, formState } = useForm<Inputs>();
+  const [loginError, setLoginError] = useState("");
+  const { t } = useTranslation();
+  const user = useAppSelector(getAuthUser);
+  const dispatch = useAppDispatch();
 
-  const onSubmit = async (data: Inputs) => {
-    setStatus("loading");
+  const {
+    data: canDisplayApp,
+    isLoading,
+    isRejected,
+  } = usePromiseWithSnackbarError(
+    async () => {
+      if (user) {
+        return true;
+      }
+      if (!(await needAuth())) {
+        await dispatch(login());
+        return true;
+      }
+      const userFromStorage = storage.getItem(StorageKey.AuthUser);
+      if (userFromStorage) {
+        await dispatch(login(userFromStorage));
+        return true;
+      }
+      return false;
+    },
+    {
+      errorMessage: t("login.error"),
+      resetDataOnReload: false,
+    },
+    [user]
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleLoginSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoginError("");
     setTimeout(async () => {
       try {
-        const res = await loginRequest(data.username, data.password);
-        setStatus("success");
-        login(res);
+        await dispatch(login(data)).unwrap();
       } catch (e) {
-        setStatus("default");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setLoginError((e as any).data?.message || t("main:loginError"));
+        setLoginError((e as any).data?.message || t("login.error"));
       } finally {
         reset({ username: data.username });
       }
     }, 500);
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        if (user) {
-          updateRefreshInterceptor(async (): Promise<UserInfo | undefined> => {
-            try {
-              return refresh(user, login, logout);
-            } catch (e) {
-              logError("Failed to refresh token");
-            }
-            return undefined;
-          });
-        }
-        const res = await needAuth();
-        setAuthRequired(res);
-      } catch (e) {
-        setConnexionError(true);
-      }
-    })();
-  }, [user]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
-  useEffect(() => {
-    if (authRequired !== undefined && !authRequired) {
-      reconnectWs();
-    }
-  }, [authRequired]);
-
-  if (authRequired === undefined) {
+  if (isLoading) {
     return <AppLoader />;
   }
 
-  if (connexionError) {
+  if (isRejected) {
     return <GlobalPageLoadingError />;
   }
 
-  if (user || !authRequired) {
+  if (canDisplayApp) {
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return <>{children}</>;
   }
@@ -167,19 +154,26 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
           <Box width="70%" my={2}>
             <form
               style={{ marginTop: "16px" }}
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(handleLoginSubmit)}
             >
-              <FilledTextInput
-                label="NNI *"
+              <TextField
+                label="NNI"
+                variant="filled"
                 fullWidth
                 inputProps={{ ...register("username", { required: true }) }}
                 sx={{ my: 3 }}
+                required
               />
-              <FilledTextInput
+              <TextField
+                variant="filled"
+                required
                 type="password"
-                label={t("main:password")}
+                label={t("global.password")}
                 fullWidth
-                inputProps={{ ...register("password", { required: true }) }}
+                inputProps={{
+                  autoComplete: "current-password",
+                  ...register("password", { required: true }),
+                }}
               />
               {loginError && (
                 <Box
@@ -193,15 +187,15 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
               )}
               <Box display="flex" justifyContent="center" mt={6}>
                 <Button
-                  disabled={status === "loading"}
+                  disabled={formState.isSubmitting}
                   type="submit"
                   variant="contained"
                   color="primary"
                 >
-                  {status === "loading" && (
+                  {formState.isSubmitting && (
                     <CircularProgress size="1em" sx={{ mr: "1em" }} />
                   )}
-                  {t("main:connexion")}
+                  {t("global.connexion")}
                 </Button>
               </Box>
             </form>
@@ -212,4 +206,4 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
   );
 }
 
-export default connector(LoginWrapper);
+export default LoginWrapper;

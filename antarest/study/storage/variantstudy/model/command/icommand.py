@@ -20,7 +20,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 if TYPE_CHECKING:  # False at runtime, for mypy
-    from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+    from antarest.study.storage.variantstudy.business.command_extractor import (
         CommandExtractor,
     )
 
@@ -81,21 +81,6 @@ class ICommand(ABC, BaseModel):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        """
-        Returns the reverse command using history
-
-        Args:
-            history: list of previous commands
-            base: base tree study
-
-        Returns: a new command that reverts this one
-        """
-        raise NotImplementedError()
-
     def create_diff(self, other: "ICommand") -> List["ICommand"]:
         assert_this(self.match(other))
         return self._create_diff(other)
@@ -108,8 +93,8 @@ class ICommand(ABC, BaseModel):
     def get_inner_matrices(self) -> List[str]:
         raise NotImplementedError()
 
-    def _get_command_extractor(self) -> "CommandExtractor":
-        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+    def get_command_extractor(self) -> "CommandExtractor":
+        from antarest.study.storage.variantstudy.business.command_extractor import (
             CommandExtractor,
         )
 

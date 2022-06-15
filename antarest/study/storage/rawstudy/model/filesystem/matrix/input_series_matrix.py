@@ -5,6 +5,7 @@ import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -29,14 +30,16 @@ class InputSeriesMatrix(MatrixNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         nb_columns: Optional[int] = None,
+        freq: str = "hourly",
     ):
-        super().__init__(context=context, config=config, freq="hourly")
+        super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
 
     def parse(
         self,
     ) -> JSON:
         try:
+            stopwatch = StopWatch()
             matrix: pd.DataFrame = pd.read_csv(
                 self.config.path,
                 sep="\t",
@@ -44,8 +47,14 @@ class InputSeriesMatrix(MatrixNode):
                 header=None,
                 float_precision="legacy",
             )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Matrix parsed in {x}s")
+            )
             matrix.dropna(how="any", axis=1, inplace=True)
             data: JSON = matrix.to_dict(orient="split")
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Matrix to dict in {x}s")
+            )
 
             return data
         except EmptyDataError:

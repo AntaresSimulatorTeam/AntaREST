@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
@@ -22,7 +22,9 @@ import { indigo } from "@mui/material/colors";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
@@ -30,28 +32,35 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import BoltIcon from "@mui/icons-material/Bolt";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
-import { GenericInfo, StudyMetadata } from "../../common/types";
+import debug from "debug";
+import { areEqual } from "react-window";
+import { StudyMetadata } from "../../common/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   displayVersionName,
 } from "../../services/utils";
-import { scrollbarStyle } from "../../theme";
-import DeleteStudyModal from "./DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
 import StarToggle from "../common/StarToggle";
+import MoveStudyDialog from "./MoveStudyDialog";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getStudy, isStudyFavorite } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import { deleteStudy, toggleFavorite } from "../../redux/ducks/studies";
+import * as studyApi from "../../services/api/study";
+
+const logError = debug("antares:studieslist:error");
 
 interface Props {
-  study: StudyMetadata;
+  id: StudyMetadata["id"];
+  setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
-  favorite: boolean;
-  onFavoriteClick: (value: GenericInfo) => void;
-  onLaunchClick: () => void;
-  onImportStudy: (study: StudyMetadata, withOutputs: boolean) => void;
-  onArchiveClick: (study: StudyMetadata) => void;
-  onUnarchiveClick: (study: StudyMetadata) => void;
-  onDeleteClick: (study: StudyMetadata) => void;
+  height: number;
+  selectionMode?: boolean;
+  selected?: boolean;
+  toggleSelect: (sid: string) => void;
 }
 
 const TinyText = styled(Typography)(({ theme }) => ({
@@ -59,88 +68,178 @@ const TinyText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-export default function StudyCard(props: Props) {
+const StudyCard = memo((props: Props) => {
   const {
-    study,
+    id,
     width,
-    favorite,
-    onFavoriteClick,
-    onLaunchClick,
-    onImportStudy,
-    onUnarchiveClick,
-    onArchiveClick,
-    onDeleteClick,
+    height,
+    setStudyToLaunch,
+    selectionMode = true,
+    selected = false,
+    toggleSelect,
   } = props;
   const [t, i18n] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
-  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
+  const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
   const [openExportModal, setOpenExportModal] = useState<boolean>(false);
+  const [openMoveDialog, setOpenMoveDialog] = useState<boolean>(false);
+  const study = useAppSelector((state) => getStudy(state, id));
+  const isFavorite = useAppSelector((state) => isStudyFavorite(state, id));
+  const dispatch = useAppDispatch();
 
-  const handleFavoriteClick = () => {
-    onFavoriteClick({ id: study.id, name: study.name });
-  };
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
     setOpenMenu(event.currentTarget.id);
   };
 
-  const handleClose = () => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
     setOpenMenu("");
   };
 
-  const copyId = (): void => {
-    try {
-      navigator.clipboard.writeText(study.id);
-      enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("singlestudy:onStudyIdCopyError"),
-        e as AxiosError
-      );
-    }
+  const handleLaunchClick = () => {
+    setStudyToLaunch(id);
+    handleMenuClose();
   };
 
-  const onDeleteStudy = () => {
-    onDeleteClick(study);
-    setOpenDeleteModal(false);
+  const handleFavoriteToggle = () => {
+    dispatch(toggleFavorite(id));
   };
+
+  const handleDelete = () => {
+    dispatch(deleteStudy(id))
+      .unwrap()
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
+        logError("Failed to delete study", study, err);
+      });
+
+    setOpenConfirmDeleteDialog(false);
+  };
+
+  const handleUnarchiveClick = () => {
+    studyApi.unarchiveStudy(id).catch((err) => {
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: study?.name }),
+        err
+      );
+      logError("Failed to unarchive study", study, err);
+    });
+  };
+
+  const handleArchiveClick = () => {
+    studyApi.archiveStudy(id).catch((err) => {
+      enqueueErrorSnackbar(
+        t("studies.error.archive", { studyname: study?.name }),
+        err
+      );
+      logError("Failed to archive study", study, err);
+    });
+
+    handleMenuClose();
+  };
+
+  const handleCopyId = () => {
+    navigator.clipboard
+      .writeText(id)
+      .then(() => {
+        enqueueSnackbar(t("study.success.studyIdCopy"), {
+          variant: "success",
+        });
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("study.error.studyIdCopy"), err);
+        logError("Failed to copy id", study, err);
+      });
+  };
+
+  const handleCopyClick = () => {
+    studyApi
+      .copyStudy(id, `${study?.name} (${t("study.copyId")})`, false)
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.copyStudy"), err);
+        logError("Failed to copy study", study, err);
+      });
+
+    handleMenuClose();
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  if (!study) {
+    return null;
+  }
 
   return (
     <Card
       variant="outlined"
       sx={{
-        width: width - 10,
-        height: 250,
-        marginLeft: "10px",
-        marginTop: "5px",
-        marginBottom: "5px",
-        flex: "none",
+        width,
+        height,
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+      }}
+      onClick={() => {
+        if (selectionMode) {
+          toggleSelect(study.id);
+        }
       }}
     >
-      <CardContent>
+      {selectionMode && selected && (
+        <Box
+          sx={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.3)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CheckCircleIcon
+            sx={{
+              fontSize: "68px",
+              opacity: 0.7,
+            }}
+            color="primary"
+          />
+        </Box>
+      )}
+      <CardContent
+        sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+      >
         <Box
           width="100%"
-          height="40px"
+          height="36px"
           display="flex"
           flexDirection="row"
           justifyContent="flex-start"
-          p={0.5}
+          sx={{ px: 0.5, paddingTop: 0.5 }}
         >
           <Tooltip title={study.name}>
             <Typography
               noWrap
-              variant="h5"
+              variant="h6"
               component="div"
               color="white"
               boxSizing="border-box"
-              sx={{ width: "81%" }}
+              sx={{
+                width: "calc(100% - 64px)",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+              }}
             >
               {study.name}
             </Typography>
@@ -153,12 +252,12 @@ export default function StudyCard(props: Props) {
             sx={{ flexFlow: "row nowrap" }}
           >
             <StarToggle
-              isActive={favorite}
-              activeTitle={t("studymanager:removeFavorite") as string}
-              unactiveTitle={t("studymanager:bookmark") as string}
-              onToggle={handleFavoriteClick}
+              isActive={isFavorite}
+              activeTitle={t("studies.removeFavorite") as string}
+              unactiveTitle={t("studies.bookmark") as string}
+              onToggle={handleFavoriteToggle}
             />
-            <Tooltip title={t("studymanager:copyID") as string}>
+            <Tooltip title={t("study.copyId") as string}>
               <ContentCopyIcon
                 sx={{
                   cursor: "pointer",
@@ -168,11 +267,23 @@ export default function StudyCard(props: Props) {
                   color: "text.secondary",
                   "&:hover": { color: "primary.main" },
                 }}
-                onClick={() => copyId()}
+                onClick={handleCopyId}
               />
             </Tooltip>
           </Box>
         </Box>
+        <Tooltip title={study.folder || ""}>
+          <Typography
+            noWrap
+            variant="caption"
+            component="div"
+            color="white"
+            boxSizing="border-box"
+            sx={{ px: 0.5, paddingBottom: 0.5 }}
+          >
+            {study.folder}
+          </Typography>
+        </Tooltip>
         <Box
           width="100%"
           height="25px"
@@ -226,13 +337,16 @@ export default function StudyCard(props: Props) {
         <Box
           my={1}
           width="100%"
-          height="70px"
+          height="38px"
           display="flex"
           flexDirection="row"
           flexWrap="wrap"
           justifyContent="flex-start"
           alignItems="center"
-          sx={{ overflowX: "hidden", overflowY: "auto", ...scrollbarStyle }}
+          sx={{
+            overflowX: "hidden",
+            overflowY: "auto",
+          }}
         >
           <Chip
             label={study.workspace}
@@ -256,12 +370,8 @@ export default function StudyCard(props: Props) {
       </CardContent>
       <CardActions>
         {study.archived ? (
-          <Button
-            size="small"
-            color="primary"
-            onClick={() => onUnarchiveClick(study)}
-          >
-            {t("studymanager:unarchive")}
+          <Button size="small" color="primary" onClick={handleUnarchiveClick}>
+            {t("global.unarchive")}
           </Button>
         ) : (
           <NavLink
@@ -269,11 +379,11 @@ export default function StudyCard(props: Props) {
             style={{ textDecoration: "none" }}
           >
             <Button size="small" color="primary">
-              {t("studymanager:exploreButton")}
+              {t("button.explore")}
             </Button>
           </NavLink>
         )}
-        <Tooltip title={t("singlestudy:more") as string}>
+        <Tooltip title={t("studies.moreActions") as string}>
           <Button
             size="small"
             aria-controls="menu-elements"
@@ -281,7 +391,7 @@ export default function StudyCard(props: Props) {
             id="menu"
             color="primary"
             sx={{ width: "auto", minWidth: 0, p: 0 }}
-            onClick={handleClick}
+            onClick={handleMenuOpen}
           >
             <MoreVertIcon />
           </Button>
@@ -291,30 +401,24 @@ export default function StudyCard(props: Props) {
           anchorEl={anchorEl}
           keepMounted
           open={openMenu === "menu"}
-          onClose={handleClose}
+          onClose={handleMenuClose}
         >
           {study.archived ? (
-            <MenuItem
-              onClick={() => {
-                onUnarchiveClick(study);
-                handleClose();
-              }}
-            >
+            <MenuItem onClick={handleUnarchiveClick}>
               <ListItemIcon>
                 <UnarchiveOutlinedIcon
-                  sx={{ color: "action.active", width: "24px", height: "24px" }}
+                  sx={{
+                    color: "action.active",
+                    width: "24px",
+                    height: "24px",
+                  }}
                 />
               </ListItemIcon>
-              <ListItemText>{t("studymanager:unarchive")}</ListItemText>
+              <ListItemText>{t("global.unarchive")}</ListItemText>
             </MenuItem>
           ) : (
             <div>
-              <MenuItem
-                onClick={() => {
-                  onLaunchClick();
-                  handleClose();
-                }}
-              >
+              <MenuItem onClick={handleLaunchClick}>
                 <ListItemIcon>
                   <BoltIcon
                     sx={{
@@ -324,14 +428,9 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("main:launch")}</ListItemText>
+                <ListItemText>{t("global.launch")}</ListItemText>
               </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  onImportStudy(study, false);
-                  handleClose();
-                }}
-              >
+              <MenuItem onClick={handleCopyClick}>
                 <ListItemIcon>
                   <FileCopyOutlinedIcon
                     sx={{
@@ -341,12 +440,31 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:copy")}</ListItemText>
+                <ListItemText>{t("study.copyId")}</ListItemText>
               </MenuItem>
+              {study.managed && (
+                <MenuItem
+                  onClick={() => {
+                    setOpenMoveDialog(true);
+                    handleMenuClose();
+                  }}
+                >
+                  <ListItemIcon>
+                    <DriveFileMoveIcon
+                      sx={{
+                        color: "action.active",
+                        width: "24px",
+                        height: "24px",
+                      }}
+                    />
+                  </ListItemIcon>
+                  <ListItemText>{t("studies.moveStudy")}</ListItemText>
+                </MenuItem>
+              )}
               <MenuItem
                 onClick={() => {
                   setOpenExportModal(true);
-                  handleClose();
+                  handleMenuClose();
                 }}
               >
                 <ListItemIcon>
@@ -358,15 +476,10 @@ export default function StudyCard(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:export")}</ListItemText>
+                <ListItemText>{t("global.export")}</ListItemText>
               </MenuItem>
               {study.managed && (
-                <MenuItem
-                  onClick={() => {
-                    onArchiveClick(study);
-                    handleClose();
-                  }}
-                >
+                <MenuItem onClick={handleArchiveClick}>
                   <ListItemIcon>
                     <ArchiveOutlinedIcon
                       sx={{
@@ -376,7 +489,7 @@ export default function StudyCard(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:archive")}</ListItemText>
+                  <ListItemText>{t("global.archive")}</ListItemText>
                 </MenuItem>
               )}
             </div>
@@ -384,8 +497,8 @@ export default function StudyCard(props: Props) {
           {study.managed && (
             <MenuItem
               onClick={() => {
-                setOpenDeleteModal(true);
-                handleClose();
+                setOpenConfirmDeleteDialog(true);
+                handleMenuClose();
               }}
             >
               <ListItemIcon>
@@ -394,18 +507,22 @@ export default function StudyCard(props: Props) {
                 />
               </ListItemIcon>
               <ListItemText sx={{ color: "error.light" }}>
-                {t("studymanager:delete")}
+                {t("global.delete")}
               </ListItemText>
             </MenuItem>
           )}
         </Menu>
       </CardActions>
-      {openDeleteModal && (
-        <DeleteStudyModal
-          open={openDeleteModal}
-          onClose={() => setOpenDeleteModal(false)}
-          onYesClick={onDeleteStudy}
-        />
+      {openConfirmDeleteDialog && (
+        <ConfirmationDialog
+          title={t("dialog.title.confirmation")}
+          onCancel={() => setOpenConfirmDeleteDialog(false)}
+          onConfirm={handleDelete}
+          alert="warning"
+          open
+        >
+          {t("studies.question.delete")}
+        </ConfirmationDialog>
       )}
       {openExportModal && (
         <ExportModal
@@ -414,6 +531,15 @@ export default function StudyCard(props: Props) {
           study={study}
         />
       )}
+      {openMoveDialog && (
+        <MoveStudyDialog
+          open={openMoveDialog}
+          onClose={() => setOpenMoveDialog(false)}
+          study={study}
+        />
+      )}
     </Card>
   );
-}
+}, areEqual);
+
+export default StudyCard;

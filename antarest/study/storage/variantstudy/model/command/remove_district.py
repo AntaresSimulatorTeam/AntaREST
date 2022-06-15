@@ -1,8 +1,6 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -53,30 +51,6 @@ class RemoveDistrict(ICommand):
         if not isinstance(other, RemoveDistrict):
             return False
         return self.id == other.id
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_district import (
-            CreateDistrict,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateDistrict)
-                and transform_name_to_id(command.name) == self.id
-            ):
-                return [command]
-        try:
-            return self._get_command_extractor().extract_district(
-                base, self.id
-            )
-        except Exception as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_district {self.id}",
-                exc_info=e,
-            )
-            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

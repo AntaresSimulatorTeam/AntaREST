@@ -169,6 +169,23 @@ def create_study_routes(
 
         return task_id
 
+    @bp.put(
+        "/studies/{uuid}/move",
+        tags=[APITag.study_management],
+        summary="Move study",
+    )
+    def move_study(
+        uuid: str,
+        folder_dest: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Moving study {uuid} into folder '{folder_dest}'",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study_service.move_study(uuid, folder_dest, params)
+
     @bp.post(
         "/studies",
         status_code=HTTPStatus.CREATED,
@@ -222,6 +239,7 @@ def create_study_routes(
     )
     def get_study_matrix_index(
         uuid: str,
+        path: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(uuid)
@@ -230,7 +248,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.get_input_matrix_startdate(study_id, params)
+        return study_service.get_input_matrix_startdate(study_id, path, params)
 
     @bp.get(
         "/studies/{uuid}/export",
@@ -428,6 +446,28 @@ def create_study_routes(
         return study_metadata
 
     @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/variables",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data variables",
+    )
+    def output_variables_information(
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Fetching whole output of the simulation {output_id} for study {study_id}"
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.output_variables_information(
+            study_uuid=study_id,
+            output_uuid=output_id,
+            params=params,
+        )
+
+    @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
         tags=[APITag.study_outputs],
         summary="Get outputs data",
@@ -481,6 +521,60 @@ def create_study_routes(
             filetype,
             params,
             tmp_export_file,
+        )
+        return content
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/_archive",
+        tags=[APITag.study_outputs],
+        summary="Archive output",
+    )
+    def archive_output(
+        study_id: str,
+        output_id: str,
+        use_task: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Archiving of the output {output_id} of the study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+
+        content = study_service.archive_output(
+            study_id,
+            output_id,
+            use_task,
+            params,
+        )
+        return content
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/_unarchive",
+        tags=[APITag.study_outputs],
+        summary="Unarchive output",
+    )
+    def unarchive_output(
+        study_id: str,
+        output_id: str,
+        use_task: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Unarchiving of the output {output_id} of the study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+
+        content = study_service.unarchive_output(
+            study_id,
+            output_id,
+            use_task,
+            params,
         )
         return content
 

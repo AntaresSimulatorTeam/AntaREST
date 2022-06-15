@@ -14,7 +14,6 @@ from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     WORKSPACE_LOCK_FILE_NAME,
@@ -22,8 +21,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     MAX_TIME_LIMIT,
     MIN_TIME_LIMIT,
 )
-from antarest.launcher.model import JobStatus, JobResult
-from antarest.study.model import StudyMetadataDTO, RawStudy
+from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from antarest.tools.admin_lib import clean_locks_from_config
 
 
@@ -176,49 +174,51 @@ def test_extra_parameters(launcher_config: Config):
         callbacks=Mock(),
         event_bus=Mock(),
     )
-    launcher_params = slurm_launcher._check_and_apply_launcher_params({})
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        LauncherParametersDTO()
+    )
     assert launcher_params.n_cpu == 1
     assert launcher_params.time_limit == 0
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"nb_cpu": 12}
+        LauncherParametersDTO(nb_cpu=12)
     )
     assert launcher_params.n_cpu == 12
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"nb_cpu": 48}
+        LauncherParametersDTO(nb_cpu=48)
     )
     assert launcher_params.n_cpu == 1
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 10}
+        LauncherParametersDTO(time_limit=10)
     )
     assert launcher_params.time_limit == MIN_TIME_LIMIT
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 999999999}
+        LauncherParametersDTO(time_limit=999999999)
     )
     assert launcher_params.time_limit == MAX_TIME_LIMIT - 3600
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"time_limit": 99999}
+        LauncherParametersDTO(time_limit=99999)
     )
     assert launcher_params.time_limit == 99999
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"xpansion": True}
+        LauncherParametersDTO(xpansion=True)
     )
     assert launcher_params.xpansion_mode
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"post_processing": True}
+        LauncherParametersDTO(post_processing=True)
     )
     assert launcher_params.post_processing
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"adequacy_patch": {}}
+        LauncherParametersDTO(adequacy_patch={})
     )
     assert launcher_params.post_processing
 
@@ -249,16 +249,31 @@ def test_run_study(
     study_uuid = "study_uuid"
     params = Mock()
     argument = Mock()
-    argument.studies_in = "studies_in"
+    argument.studies_in = (
+        launcher_config.launcher.slurm.local_workspace / "studies_in"
+    )
     slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
-    slurm_launcher._run_study(
-        study_uuid, str(uuid.uuid4()), None, str(version)
+    job_id = str(uuid.uuid4())
+    study_dir = argument.studies_in / job_id
+    study_dir.mkdir(parents=True)
+    (study_dir / "study.antares").write_text(
+        """[antares]
+version=1
+    """
     )
 
+    slurm_launcher._run_study(study_uuid, job_id, None, str(version))
+
+    assert (
+        version
+        not in launcher_config.launcher.slurm.antares_versions_on_remote_server
+        or f"solver_version = {version}"
+        in (study_dir / "study.antares").read_text(encoding="utf-8")
+    )
     #    slurm_launcher._clean_local_workspace.assert_called_once()
     slurm_launcher.callbacks.export_study.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
@@ -455,6 +470,7 @@ def test_kill_job(
         wait_mode=False,
         wait_time=0,
         xpansion_mode=None,
+        other_options=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),

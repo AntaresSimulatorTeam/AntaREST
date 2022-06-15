@@ -1,14 +1,12 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -29,14 +27,108 @@ class RemoveArea(ICommand):
             command_name=CommandName.REMOVE_AREA, version=1, **data
         )
 
+    def _remove_area_from_links_in_config(
+        self, study_data_config: FileStudyTreeConfig
+    ) -> None:
+        link_to_remove = []
+        for area_name, area in study_data_config.areas.items():
+            for link in area.links.keys():
+                if link == self.id:
+                    link_to_remove.append((area_name, link))
+        for area_name, link in link_to_remove:
+            del study_data_config.areas[area_name].links[link]
+
+    def _remove_area_from_sets_in_config(
+        self, study_data_config: FileStudyTreeConfig
+    ) -> None:
+        for id, set in study_data_config.sets.items():
+            if set.areas and self.id in set.areas:
+                try:
+                    set.areas.remove(self.id)
+                    study_data_config.sets[id] = set
+                except ValueError:
+                    pass
+
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        del study_data.areas[self.id]
+        del study_data_config.areas[self.id]
+
+        self._remove_area_from_links_in_config(study_data_config)
+        self._remove_area_from_sets_in_config(study_data_config)
+
+        remove_area_cluster_from_binding_constraints(
+            study_data_config, self.id
+        )
+
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
             dict(),
         )
+
+    def _remove_area_from_links(self, study_data: FileStudy) -> None:
+        for area_name, area in study_data.config.areas.items():
+            for link in area.links.keys():
+                if link == self.id:
+                    study_data.tree.delete(
+                        ["input", "links", area_name, self.id]
+                    )
+                    study_data.tree.delete(
+                        ["input", "links", area_name, "properties", self.id]
+                    )
+
+    def _remove_area_from_binding_constraints(
+        self, study_data: FileStudy
+    ) -> None:
+        binding_constraints = study_data.tree.get(
+            ["input", "bindingconstraints", "bindingconstraints"]
+        )
+
+        id_to_remove = set()
+
+        for id, bc in binding_constraints.items():
+            for key in bc.keys():
+                if self.id in key:
+                    id_to_remove.add(id)
+
+        for id in id_to_remove:
+            study_data.tree.delete(
+                [
+                    "input",
+                    "bindingconstraints",
+                    binding_constraints[id]["id"],
+                ]
+            )
+            del binding_constraints[id]
+
+        study_data.tree.save(
+            binding_constraints,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )
+
+    def _remove_area_from_districts(self, study_data: FileStudy) -> None:
+        districts = study_data.tree.get(["input", "areas", "sets"])
+        for id, district in districts.items():
+            if district.get("+", None):
+                try:
+                    district["+"].remove(self.id)
+                except ValueError:
+                    pass
+            elif district.get("-", None):
+                try:
+                    district["-"].remove(self.id)
+                except ValueError:
+                    pass
+
+            districts[id] = district
+
+        study_data.tree.save(districts, ["input", "areas", "sets"])
+
+    def _remove_area_from_cluster(self, study_data: FileStudy) -> None:
+        study_data.tree.delete(["input", "thermal", "prepro", self.id])
+
+    def _remove_area_from_time_series(self, study_data: FileStudy) -> None:
+        study_data.tree.delete(["input", "thermal", "series", self.id])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
 
@@ -144,16 +236,13 @@ class RemoveArea(ICommand):
                 ]
             )
 
+        self._remove_area_from_links(study_data)
+        self._remove_area_from_binding_constraints(study_data)
+        self._remove_area_from_districts(study_data)
+        self._remove_area_from_cluster(study_data)
+        self._remove_area_from_time_series(study_data)
+
         output, _ = self._apply_config(study_data.config)
-        for area_name, area in study_data.config.areas.items():
-            for link in area.links.keys():
-                if link == self.id:
-                    study_data.tree.delete(
-                        ["input", "links", area_name, self.id]
-                    )
-                    study_data.tree.delete(
-                        ["input", "links", area_name, "properties", self.id]
-                    )
 
         new_area_data: JSON = {
             "input": {
@@ -166,8 +255,6 @@ class RemoveArea(ICommand):
         }
         study_data.tree.save(new_area_data)
 
-        # todo remove bindinconstraint using this area ?
-        # todo remove area from districts
         return output
 
     def to_dto(self) -> CommandDTO:
@@ -187,35 +274,6 @@ class RemoveArea(ICommand):
         if not isinstance(other, RemoveArea):
             return False
         return self.id == other.id
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_area import (
-            CreateArea,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateArea)
-                and transform_name_to_id(command.area_name) == self.id
-            ):
-                # todo revert binding constraints that has the area in constraint and also search in base for one
-                return [command]
-
-        try:
-            (
-                area_commands,
-                links_commands,
-            ) = self._get_command_extractor().extract_area(base, self.id)
-            # todo revert binding constraints that has the area in constraint
-            return area_commands + links_commands
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_area {self.id}",
-                exc_info=e,
-            )
-            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

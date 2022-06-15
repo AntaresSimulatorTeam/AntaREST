@@ -1,66 +1,76 @@
 import { DependencyList, useCallback, useEffect, useState } from "react";
+import { usePromise as usePromiseWrapper } from "react-use";
+
+export enum PromiseStatus {
+  Idle = "idle",
+  Pending = "pending",
+  Resolved = "resolved",
+  Rejected = "rejected",
+}
 
 export interface UsePromiseResponse<T> {
   data: T | undefined;
+  status: PromiseStatus;
   isLoading: boolean;
+  isResolved: boolean;
+  isRejected: boolean;
   error: Error | string | undefined;
   reload: () => void;
 }
 
 export interface UsePromiseParams {
   resetDataOnReload?: boolean;
+  resetErrorOnReload?: boolean;
 }
 
 function usePromise<T>(
   fn: () => Promise<T>,
-  params?: UsePromiseParams,
+  params: UsePromiseParams = {},
   deps: DependencyList = []
 ): UsePromiseResponse<T> {
   const [data, setData] = useState<T>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState(PromiseStatus.Idle);
   const [error, setError] = useState<Error | string | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
-
-  const resetDataOnReload = params?.resetDataOnReload ?? false;
+  const mounted = usePromiseWrapper();
+  const { resetDataOnReload, resetErrorOnReload } = params;
 
   useEffect(
     () => {
-      let isMounted = true;
-
-      setIsLoading(true);
+      setStatus(PromiseStatus.Pending);
       // Reset
       if (resetDataOnReload) {
         setData(undefined);
       }
-      setError(undefined);
+      if (resetErrorOnReload) {
+        setError(undefined);
+      }
 
-      fn()
+      mounted(fn())
         .then((res) => {
-          if (isMounted) {
-            setData(res);
-          }
+          setData(res);
+          setStatus(PromiseStatus.Resolved);
         })
         .catch((err) => {
-          if (isMounted) {
-            setError(err);
-          }
-        })
-        .finally(() => {
-          if (isMounted) {
-            setIsLoading(false);
-          }
+          setError(err);
+          setStatus(PromiseStatus.Rejected);
         });
-
-      return () => {
-        isMounted = false;
-      };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [reloadCount, ...deps]
   );
 
-  return { data, isLoading, error, reload };
+  return {
+    data,
+    status,
+    isLoading:
+      status === PromiseStatus.Idle || status === PromiseStatus.Pending,
+    isResolved: status === PromiseStatus.Resolved,
+    isRejected: status === PromiseStatus.Rejected,
+    error,
+    reload,
+  };
 }
 
 export default usePromise;

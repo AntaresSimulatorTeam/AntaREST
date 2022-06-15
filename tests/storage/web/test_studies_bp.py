@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock, call, ANY
+from unittest.mock import Mock, call
 
 import pytest
 from fastapi import FastAPI
@@ -34,7 +34,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
     StudyDownloadDTO,
-    MatrixAggregationResult,
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
@@ -467,27 +466,27 @@ def test_edit_study() -> None:
     )
 
 
-@pytest.mark.unit_test
-def test_edit_study_fail() -> None:
-    mock_storage_service = Mock()
-
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
-
-    assert res.status_code == 400
-
-    mock_storage_service.edit_study.assert_not_called()
+# @pytest.mark.unit_test
+# def test_edit_study_fail() -> None:
+#     mock_storage_service = Mock()
+#
+#     app = FastAPI(title=__name__)
+#     build_study_service(
+#         app,
+#         cache=Mock(),
+#         task_service=Mock(),
+#         file_transfer_manager=Mock(),
+#         study_service=mock_storage_service,
+#         config=CONFIG,
+#         user_service=Mock(),
+#         matrix_service=Mock(spec=MatrixService),
+#     )
+#     client = TestClient(app, raise_server_exceptions=False)
+#     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
+#
+#     assert res.status_code == 400
+#
+#     mock_storage_service.edit_study.assert_not_called()
 
 
 @pytest.mark.unit_test
@@ -656,6 +655,7 @@ def test_sim_result() -> None:
             referenceStatus=True,
             synchronized=False,
             status="",
+            archived=False,
         )
     ]
     mock_service.get_study_sim_result.return_value = result_data

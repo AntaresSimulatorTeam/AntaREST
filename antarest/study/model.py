@@ -98,6 +98,7 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     path = Column(String())
+    folder = Column(String, nullable=True)
     parent_id = Column(
         String(36), ForeignKey("study.id", name="fk_study_study_id")
     )
@@ -152,7 +153,6 @@ class RawStudy(Study):
     )
     content_status = Column(Enum(StudyContentStatus))
     workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    folder = Column(String, nullable=True)
     missing = Column(DateTime, nullable=True)
 
     __mapper_args__ = {
@@ -272,6 +272,7 @@ class StudySimResultDTO(BaseModel):
     referenceStatus: bool
     synchronized: bool
     status: str
+    archived: bool
 
 
 class StudyDownloadType(str, enum.Enum):
@@ -366,10 +367,10 @@ class MatrixAggregationResult(BaseModel):
     warnings: List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO(
+        return MatrixAggregationResultDTO.construct(
             index=self.index,
             data=[
-                TimeSeriesData(
+                TimeSeriesData.construct(
                     type=key_type,
                     name=key_name,
                     data=self.data[(key_type, key_name)],

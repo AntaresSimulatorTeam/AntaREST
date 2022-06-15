@@ -50,7 +50,11 @@ from antarest.core.tasks.service import (
 from antarest.core.utils.utils import concat_files, StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.matrixstore.business.matrix_editor import Operation, MatrixSlice
+from antarest.matrixstore.business.matrix_editor import (
+    Operation,
+    MatrixSlice,
+    MatrixEditInstructionDTO,
+)
 from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
@@ -85,6 +89,7 @@ from antarest.study.model import (
     PatchArea,
     ExportFormat,
     StudyAdditionalData,
+    StudyDownloadLevelDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -97,6 +102,9 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    OutputSeriesMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
@@ -104,7 +112,10 @@ from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.storage.study_download_utils import (
+    StudyDownloader,
+    get_output_variables_information,
+)
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
@@ -460,7 +471,7 @@ class StudyService:
 
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -551,13 +562,23 @@ class StudyService:
         )
 
     def get_input_matrix_startdate(
-        self, study_id: str, params: RequestParameters
+        self, study_id: str, path: Optional[str], params: RequestParameters
     ) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return get_start_date(
-            self.storage_service.get_storage(study).get_raw(study)
-        )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        output_id = None
+        level = StudyDownloadLevelDTO.HOURLY
+        if path:
+            path_components = path.strip().strip("/").split("/")
+            if len(path_components) > 2 and path_components[0] == "output":
+                output_id = path_components[1]
+            data_node = file_study.tree.get_node(path_components)
+            if isinstance(data_node, OutputSeriesMatrix) or isinstance(
+                data_node, InputSeriesMatrix
+            ):
+                level = StudyDownloadLevelDTO(data_node.freq)
+        return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}
@@ -688,6 +709,7 @@ class StudyService:
                     # TODO re enable this on an async worker
                     # study.content_status = self._analyse_study(study)
 
+                    self.repository.save(study)
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_CREATED,
@@ -695,7 +717,6 @@ class StudyService:
                             permissions=create_permission_from_study(study),
                         )
                     )
-                    self.repository.save(study)
                 except Exception as e:
                     logger.error(
                         f"Failed to add study {folder.path}", exc_info=e
@@ -771,6 +792,23 @@ class StudyService:
 
         return task_or_study_id
 
+    def move_study(
+        self, study_id: str, new_folder: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        if not is_managed(study):
+            raise NotAManagedStudyException(study_id)
+        study.folder = new_folder
+        self.repository.save(study, update_modification_date=False)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+
     def export_study(
         self,
         uuid: str,
@@ -822,6 +860,26 @@ class StudyService:
 
         return FileDownloadTaskDTO(
             file=export_file_download.to_dto(), task=task_id
+        )
+
+    def output_variables_information(
+        self,
+        study_uuid: str,
+        output_uuid: str,
+        params: RequestParameters,
+    ) -> Dict[str, List[str]]:
+        """
+        Returns information about output variables using thematic and geographic trimming information
+        Args:
+            study_uuid: study id
+            output_uuid: output id
+            params: request parameters
+        """
+        study = self.get_study(study_uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return get_output_variables_information(
+            self.storage_service.get_storage(study).get_raw(study), output_uuid
         )
 
     def export_output(
@@ -970,7 +1028,7 @@ class StudyService:
         )
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -1012,9 +1070,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         logger.info(
-            "study %s output download ask by %s",
-            study_id,
-            params.get_user_id(),
+            f"Study {study_id} output download asked by {params.get_user_id()}",
         )
 
         if use_task:
@@ -1225,7 +1281,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[Dict[str, List[Path]]] = None,
+        output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1233,7 +1289,7 @@ class StudyService:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
             params: request parameters
-            additional_logs: path to the simulation log
+            output_name_suffix: optional suffix name for the output
 
         Returns: output simulation json formatted
 
@@ -1246,25 +1302,22 @@ class StudyService:
                 f"Study files were not found for study {uuid}"
             )
 
-        res = self.storage_service.get_storage(study).import_output(
-            study, output
+        output_id = self.storage_service.get_storage(study).import_output(
+            study, output, output_name_suffix
         )
-        if res is not None and additional_logs:
-            for log_name, log_paths in additional_logs.items():
-                concat_files(
-                    log_paths, Path(study.path) / "output" / res / log_name
-                )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
-        return res
+
+        if output_id and isinstance(output, Path) and output.suffix == ".zip":
+            self.unarchive_output(uuid, output_id, True, params)
+
+        return output_id
 
     def _create_edit_study_command(
         self,
-        tree_node: INode[
-            JSON, Union[str, int, bool, float, bytes, JSON], JSON
-        ],
+        tree_node: INode[JSON, SUB_JSON, JSON],
         url: str,
         data: SUB_JSON,
     ) -> ICommand:
@@ -1337,9 +1390,7 @@ class StudyService:
             self._create_edit_study_command(
                 tree_node=lastsave_node, url=lastsave_url, data=int(time())
             ).apply(file_study)
-            remove_from_cache(
-                self.storage_service.variant_study_service.cache, study.id
-            )
+            self.storage_service.variant_study_service.invalidate_cache(study)
 
         elif isinstance(study_service, VariantStudyService):
             study_service.append_command(
@@ -1355,7 +1406,7 @@ class StudyService:
         self,
         uuid: str,
         url: str,
-        new: Union[str, bytes, JSON],
+        new: SUB_JSON,
         params: RequestParameters,
     ) -> JSON:
         """
@@ -1374,11 +1425,13 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url, data=new)
+        self._edit_study_using_command(
+            study=study, url=url.strip().strip("/"), data=new
+        )
 
         self.event_bus.push(
             Event(
-                type=EventType.STUDY_EDITED,
+                type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
@@ -1578,7 +1631,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.create_area(study, area_creation_dto)
+        new_area = self.areas.create_area(study, area_creation_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return new_area
 
     def create_link(
         self,
@@ -1589,7 +1650,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.links.create_link(study, link_creation_dto)
+        new_link = self.links.create_link(study, link_creation_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return new_link
 
     def update_area(
         self,
@@ -1601,7 +1670,17 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.areas.update_area_metadata(
+            study, area_id, area_patch_dto
+        )
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return updated_area
 
     def update_area_ui(
         self,
@@ -1635,7 +1714,14 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.delete_area(study, area_id)
+        self.areas.delete_area(study, area_id)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
 
     def delete_link(
         self,
@@ -1647,7 +1733,14 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.links.delete_link(study, area_from, area_to)
+        self.links.delete_link(study, area_from, area_to)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
 
     def archive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
@@ -2032,14 +2125,13 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        slices: List[MatrixSlice],
-        operation: Operation,
+        matrix_edit_instruction: List[MatrixEditInstructionDTO],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.matrix_manager.update_matrix(study, path, slices, operation)
+        self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
 
     def check_and_update_all_study_versions_in_database(
         self, params: RequestParameters
@@ -2052,3 +2144,119 @@ class StudyService:
             if isinstance(study, RawStudy) and not is_managed(study):
                 storage = self.storage_service.raw_study_service
                 storage.check_and_update_study_version_in_database(study)
+
+    def archive_output(
+        self,
+        study_id: str,
+        output_id: str,
+        use_task: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        if not use_task:
+            self.storage_service.get_storage(study).archive_study_output(
+                study, output_id
+            )
+            return None
+        else:
+            task_name = f"Archive output {study_id}/{output_id}"
+
+            def archive_output_task(
+                notifier: TaskUpdateNotifier,
+            ) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    self.storage_service.get_storage(
+                        study
+                    ).archive_study_output(study, output_id)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Output {output_id} of study {study_id} archived in {x}s"
+                        )
+                    )
+                    return TaskResult(
+                        success=True,
+                        message=f"Study output {study_id}/{output_id} successfully archived",
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not archive the output {study_id}/{output_id}",
+                        exc_info=e,
+                    )
+                    raise e
+
+            task_id = self.task_service.add_task(
+                archive_output_task,
+                task_name,
+                task_type=TaskType.ARCHIVE,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return task_id
+
+    def unarchive_output(
+        self,
+        study_id: str,
+        output_id: str,
+        use_task: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+
+        if not use_task:
+            stopwatch = StopWatch()
+            self.storage_service.get_storage(study).unarchive_study_output(
+                study, output_id
+            )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Output {output_id} of study {study_id} unarchived in {x}s"
+                )
+            )
+            return None
+
+        else:
+            task_name = f"Unarchive output {study_id}/{output_id}"
+
+            def unarchive_output_task(
+                notifier: TaskUpdateNotifier,
+            ) -> TaskResult:
+                try:
+                    study = self.get_study(study_id)
+                    stopwatch = StopWatch()
+                    self.storage_service.get_storage(
+                        study
+                    ).unarchive_study_output(study, output_id)
+                    stopwatch.log_elapsed(
+                        lambda x: logger.info(
+                            f"Output {output_id} of study {study_id} unarchived in {x}s"
+                        )
+                    )
+                    return TaskResult(
+                        success=True,
+                        message=f"Study output {study_id}/{output_id} successfully unarchived",
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not unarchive the output {study_id}/{output_id}",
+                        exc_info=e,
+                    )
+                    raise e
+
+            task_id = self.task_service.add_task(
+                unarchive_output_task,
+                task_name,
+                task_type=TaskType.UNARCHIVE,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return task_id

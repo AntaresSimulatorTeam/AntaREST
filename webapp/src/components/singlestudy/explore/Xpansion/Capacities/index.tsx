@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { MatrixType, StudyMetadata } from "../../../../../common/types";
 import {
   getAllCapacities,
@@ -12,17 +12,17 @@ import {
   addCapacity,
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import MatrixView from "../../../../common/MatrixView";
-import BasicModal from "../../../../common/BasicModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import XpansionTable from "../XpansionTable";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
+import FileTable from "../../../../common/FileTable";
+import { Title } from "../share/styles";
 
 function Capacities() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [capacities, setCapacities] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [capacityViewModal, setCapacityViewModal] = useState<{
+  const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
     content: MatrixType;
   }>();
@@ -35,7 +35,10 @@ function Capacities() {
         setCapacities(tempCapa);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -48,7 +51,7 @@ function Capacities() {
           await addCapacity(study.id, file);
         }
       } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:addFileError"), e as AxiosError);
+        enqueueErrorSnackbar(t("xpansion.error.addFile"), e as AxiosError);
       } finally {
         init();
       }
@@ -59,10 +62,10 @@ function Capacities() {
     try {
       if (study) {
         const content = await getCapacity(study.id, filename);
-        setCapacityViewModal({ filename, content });
+        setCapacityViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 
@@ -75,7 +78,7 @@ function Capacities() {
           setCapacities(tempCapa);
         }
       } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:deleteFileError"), e as AxiosError);
+        enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
       }
     }
   };
@@ -87,43 +90,32 @@ function Capacities() {
   return (
     <>
       {loaded ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <XpansionTable
-            title={t("xpansion:capacities")}
-            content={capacities || []}
-            onDelete={deleteCapa}
-            onRead={getOneCapa}
-            uploadFile={addOneCapa}
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <FileTable
+              title={<Title>{t("xpansion.capacities")}</Title>}
+              content={
+                capacities?.map((item) => ({ id: item, name: item })) || []
+              }
+              onDelete={deleteCapa}
+              onRead={getOneCapa}
+              uploadFile={addOneCapa}
+              allowImport
+              allowDelete
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
       )}
-      {!!capacityViewModal && (
-        <BasicModal
-          open={!!capacityViewModal}
-          title={capacityViewModal.filename}
-          onClose={() => setCapacityViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="600px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            overflow="auto"
-            padding="8px"
-          >
-            <MatrixView matrix={capacityViewModal.content} readOnly />
-          </Box>
-        </BasicModal>
+      {!!capacityViewDialog && (
+        <DataViewerDialog
+          studyId={study?.id || ""}
+          filename={capacityViewDialog.filename}
+          content={capacityViewDialog.content}
+          onClose={() => setCapacityViewDialog(undefined)}
+          isMatrix
+        />
       )}
     </>
   );

@@ -23,30 +23,20 @@ import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import { useSelector } from "react-redux";
 import {
   RESERVED_GROUP_NAMES,
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
 } from "../../../utils";
-import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RoleType, UserDTO } from "../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../services/utils";
 import usePromise from "../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../services/api/user";
-import { getAuthUser } from "../../../../../store/selectors";
+import { getAuthUser } from "../../../../../redux/selectors";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { FormObj } from "../../../../common/Form";
 
-/**
- * Types
- */
-
-type Props = FormObj;
-
-/**
- * Component
- */
-
-function GroupForm(props: Props) {
+function GroupForm(props: FormObj) {
   const {
     control,
     register,
@@ -63,7 +53,7 @@ function GroupForm(props: Props) {
   const [selectedUser, setSelectedUser] = useState<UserDTO>();
   const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
+  const authUser = useAppSelector(getAuthUser);
   const allowToAddPermission =
     selectedUser &&
     !getValues("permissions").some(
@@ -102,7 +92,7 @@ function GroupForm(props: Props) {
       <TextField
         sx={{ mx: 0 }}
         autoFocus
-        label={t("main:name")}
+        label={t("global.name")}
         error={!!errors.name}
         helperText={errors.name?.message}
         placeholder={defaultValues?.name}
@@ -112,10 +102,10 @@ function GroupForm(props: Props) {
         }
         fullWidth
         {...register("name", {
-          required: t("main:form.field.required") as string,
+          required: t("form.field.required") as string,
           validate: (value) => {
             if (RESERVED_GROUP_NAMES.includes(value)) {
-              return t("main:form.field.notAllowedValue") as string;
+              return t("form.field.notAllowedValue") as string;
             }
           },
         })}
@@ -129,7 +119,7 @@ function GroupForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("settings:permissionsLabel")}</Typography>
+        <Typography>{t("global.permissions")}</Typography>
         {isUsersLoading && (
           <Box
             sx={{
@@ -146,10 +136,10 @@ function GroupForm(props: Props) {
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                <InputLabel id={userLabelId}>{t("settings:user")}</InputLabel>
+                <InputLabel id={userLabelId}>{t("global.user")}</InputLabel>
                 <Select
                   labelId={userLabelId}
-                  label={t("settings:user")}
+                  label={t("global.user")}
                   defaultValue=""
                   onChange={handleUserChange}
                 >
@@ -168,7 +158,7 @@ function GroupForm(props: Props) {
                   append({ user: selectedUser, type: RoleType.READER });
                 }}
               >
-                {t("settings:addButton")}
+                {t("button.add")}
               </Button>
             </Box>
             <List>

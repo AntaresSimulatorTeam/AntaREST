@@ -138,6 +138,15 @@ def test_main(app: FastAPI):
     res_output = res.json()
     assert len(res_output) == 4
 
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 417
+    assert res.json()["description"] == "Not a year by year simulation"
+
     # Set new comments
     res = client.put(
         f"/v1/studies/{study_id}/comments",
@@ -183,6 +192,23 @@ def test_main(app: FastAPI):
         ).dict()
     )
 
+    res = client.get(
+        f"/v1/studies/{study_id}/matrixindex?path=output/20201014-1427eco/economy/mc-all/areas/es/details-daily",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert (
+        res.json()
+        == MatrixIndex(
+            first_week_size=7,
+            start_date="2001-01-01 00:00:00",
+            steps=7,
+            level=StudyDownloadLevelDTO.DAILY,
+        ).dict()
+    )
+
     # study creation
     created = client.post(
         "/v1/studies?name=foo",
@@ -206,6 +232,13 @@ def test_main(app: FastAPI):
         },
     )
 
+    client.put(
+        f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+
     res = client.get(
         "/v1/studies",
         headers={
@@ -213,6 +246,12 @@ def test_main(app: FastAPI):
         },
     )
     assert len(res.json()) == 3
+    assert (
+        filter(
+            lambda s: s["id"] == copied.json(), res.json().values()
+        ).__next__()["folder"]
+        == "foo/bar"
+    )
 
     res = client.post(
         "/v1/studies/_initialize_additional_data_in_db",
@@ -477,7 +516,7 @@ def test_area_management(app: FastAPI):
         }
     ]
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
@@ -624,12 +663,13 @@ def test_area_management(app: FastAPI):
         },
     }
 
-    client.delete(
+    result = client.delete(
         f"/v1/studies/{study_id}/areas/area%201",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
+    assert result.status_code == 200
     res_areas = client.get(
         f"/v1/studies/{study_id}/areas",
         headers={
@@ -1118,13 +1158,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "column_from": 0}],
-            "operation": {
-                "operation": "+",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "column_from": 0}],
+                "operation": {
+                    "operation": "+",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1139,13 +1181,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
-            "operation": {
-                "operation": "=",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
+                "operation": {
+                    "operation": "=",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1160,13 +1204,15 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
-            "operation": {
-                "operation": "=",
-                "value": 1,
-            },
-        },
+        json=[
+            {
+                "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
+                "operation": {
+                    "operation": "=",
+                    "value": 1,
+                },
+            }
+        ],
     )
     assert res.status_code == 200
 
@@ -1181,21 +1227,28 @@ def test_edit_matrix(app: FastAPI):
     res = client.put(
         f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
         headers=headers,
-        json={
-            "slices": [
-                {"row_from": 2, "row_to": 4, "column_from": 2, "column_to": 4},
-                {
-                    "row_from": 9,
-                    "row_to": 15,
-                    "column_from": 1,
-                    "column_to": 3,
+        json=[
+            {
+                "slices": [
+                    {
+                        "row_from": 2,
+                        "row_to": 4,
+                        "column_from": 2,
+                        "column_to": 4,
+                    },
+                    {
+                        "row_from": 9,
+                        "row_to": 15,
+                        "column_from": 1,
+                        "column_to": 3,
+                    },
+                ],
+                "operation": {
+                    "operation": "=",
+                    "value": 42,
                 },
-            ],
-            "operation": {
-                "operation": "=",
-                "value": 42,
-            },
-        },
+            }
+        ],
     )
     assert res.status_code == 200
 

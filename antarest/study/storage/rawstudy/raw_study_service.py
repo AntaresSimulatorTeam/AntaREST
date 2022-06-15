@@ -107,7 +107,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 if not metadata.additional_data:
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = (
-                    metadata.additional_data.patch or Patch()
+                    metadata.additional_data.patch or Patch().json()
                 )
                 metadata.additional_data.horizon = (
                     metadata.additional_data.horizon
@@ -268,7 +268,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
-        shutil.rmtree(output_path, ignore_errors=True)
+        if output_path.exists() and output_path.is_dir():
+            shutil.rmtree(output_path, ignore_errors=True)
+        else:
+            output_path = output_path.parent / f"{output_name}.zip"
+            output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
     def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:

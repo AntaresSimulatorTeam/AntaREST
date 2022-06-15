@@ -1,57 +1,39 @@
-import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 import debug from "debug";
 import Cookies from "js-cookie";
+import * as R from "ramda";
 import { Config } from "../config";
-import { UserInfo } from "../../common/types";
+import store from "../../redux/store";
+import { logout, refresh } from "../../redux/ducks/auth";
 
 const logError = debug("antares:client:error");
 const logInfo = debug("antares:client:info");
 
-const client = axios.create();
-
-export const setLogoutInterceptor = (
-  logoutCallback: () => void,
-  clearStudies: () => void
-): void => {
-  client.interceptors.response.use(
-    async (c): Promise<AxiosResponse> => c,
-    async (e) => {
-      logError("api error", e.response);
-      if (e.response) {
-        const { status } = e.response;
-        if (e && status === 401) {
-          client.defaults.headers.common.Authorization = "";
-          clearStudies();
-          logoutCallback();
-        }
-      }
-      return Promise.reject(e);
-    }
-  );
-};
-
 let axiosInterceptor: number;
 
-export const initAxiosClient = (config: Config): void => {
+function makeHeaderAuthorization(token: string): string {
+  return `Bearer ${token}`;
+}
+
+const client = axios.create();
+
+export function initAxiosClient(config: Config): void {
   client.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
-};
+}
 
-export const setAuth = (token: string | undefined): void => {
-  if (token) {
-    client.defaults.headers.common.Authorization = `Bearer ${token}`;
-    Cookies.set("access_token_cookie", token);
-  } else {
-    delete client.defaults.headers.common.Authorization;
-    if (axiosInterceptor !== undefined) {
-      client.interceptors.request.eject(axiosInterceptor);
+export function initAxiosInterceptors(): void {
+  // Intercept requests and responses before they are handled by then or catch
+
+  client.interceptors.response.use(R.identity, (err) => {
+    logError("API error", err);
+    if (axios.isAxiosError(err)) {
+      if (err.response?.status === 401) {
+        store.dispatch(logout()); // `setAuth()` is called inside
+      }
     }
-    Cookies.remove("access_token_cookie");
-  }
-};
+    return Promise.reject(err);
+  });
 
-export const updateRefreshInterceptor = (
-  refreshToken: () => Promise<UserInfo | undefined>
-): void => {
   logInfo("Updating refresh interceptor");
   if (axiosInterceptor !== undefined) {
     client.interceptors.request.eject(axiosInterceptor);
@@ -60,10 +42,14 @@ export const updateRefreshInterceptor = (
   axiosInterceptor = client.interceptors.request.use(
     async (config): Promise<AxiosRequestConfig> => {
       try {
-        const user = await refreshToken();
-        if (user && config && config.headers) {
-          // eslint-disable-next-line no-param-reassign
-          config.headers.Authorization = `Bearer ${user.accessToken}`;
+        if (config?.headers) {
+          const authUser = await store.dispatch(refresh()).unwrap();
+          if (authUser) {
+            // eslint-disable-next-line no-param-reassign
+            config.headers.Authorization = makeHeaderAuthorization(
+              authUser.accessToken
+            );
+          }
         }
       } catch (e) {
         logError("Failed to refresh token", e);
@@ -71,6 +57,20 @@ export const updateRefreshInterceptor = (
       return config;
     }
   );
-};
+}
+
+export function setAuth(token: string | null): void {
+  if (token) {
+    client.defaults.headers.common.Authorization =
+      makeHeaderAuthorization(token);
+    Cookies.set("access_token_cookie", token);
+  } else {
+    delete client.defaults.headers.common.Authorization;
+    if (axiosInterceptor !== undefined) {
+      client.interceptors.request.eject(axiosInterceptor);
+    }
+    Cookies.remove("access_token_cookie");
+  }
+}
 
 export default client;

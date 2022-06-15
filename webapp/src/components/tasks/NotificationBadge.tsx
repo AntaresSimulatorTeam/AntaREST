@@ -1,97 +1,82 @@
-import { PropsWithChildren, useCallback, useEffect, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import debug from "debug";
-import { connect, ConnectedProps } from "react-redux";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { addListener, removeListener } from "../../store/websockets";
 import { TaskEventPayload, WSEvent, WSMessage } from "../../common/types";
 import { getTask } from "../../services/api/tasks";
+import { addWsMessageListener } from "../../services/webSockets";
 import {
-  addTasksNotification,
-  clearTasksNotification,
-} from "../../store/global";
-import { AppState } from "../../store/reducers";
+  incrementTaskNotifications,
+  resetTaskNotifications,
+} from "../../redux/ducks/ui";
+import { getTaskNotificationsCount } from "../../redux/selectors";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../redux/hooks/useAppSelector";
 
 const logError = debug("antares:downloadbadge:error");
 
-const mapState = (state: AppState) => ({
-  notificationCount: state.global.tasksNotificationCount,
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  addWsListener: addListener,
-  removeWsListener: removeListener,
-  addTasksNotification,
-  clearTasksNotification,
-};
-
-const connector = connect(mapState, mapDispatch);
-type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = PropsWithChildren<ReduxProps>;
-
-function NotificationBadge(props: PropTypes) {
-  const {
-    addWsListener,
-    removeWsListener,
-    children,
-    notificationCount,
-    addTasksNotification,
-    clearTasksNotification,
-  } = props;
+function NotificationBadge(props: Props) {
+  const { children } = props;
   const [t] = useTranslation();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const ref = useRef<HTMLDivElement>(null);
+  const notificationCount = useAppSelector(getTaskNotificationsCount);
+  const dispatch = useAppDispatch();
 
   const newNotification = useCallback(
     (message: string, variantType?: VariantType) => {
       if (location.pathname !== "/tasks") {
-        addTasksNotification();
+        dispatch(incrementTaskNotifications());
       }
       enqueueSnackbar(t(message), { variant: variantType || "info" });
     },
-    [addTasksNotification, enqueueSnackbar, location.pathname, t]
+    [dispatch, enqueueSnackbar, location.pathname, t]
   );
 
   useEffect(() => {
     const listener = async (ev: WSMessage) => {
       if (ev.type === WSEvent.DOWNLOAD_CREATED) {
-        newNotification("downloads:newDownload");
+        newNotification("downloads.newDownload");
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
-        newNotification("downloads:downloadReady");
+        newNotification("downloads.downloadReady");
       } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
-        newNotification("singlestudy:failedToExportOutput", "error");
+        newNotification("study.error.exportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
         const taskId = (ev.payload as TaskEventPayload).id;
         try {
           const task = await getTask(taskId);
           if (task.type === "COPY") {
-            newNotification("studymanager:studycopying");
+            newNotification("studies.studycopying");
           } else if (task.type === "ARCHIVE") {
-            newNotification("studymanager:studyarchiving");
+            newNotification("studies.studyarchiving");
           } else if (task.type === "UNARCHIVE") {
-            newNotification("studymanager:studyunarchiving");
+            newNotification("studies.studyunarchiving");
           } else if (task.type === "SCAN") {
-            newNotification("studymanager:scanFolderSuccess");
+            newNotification("studies.success.scanFolder");
           }
         } catch (error) {
           logError(error);
         }
       }
     };
-    addWsListener(listener);
-    return () => removeWsListener(listener);
-  }, [addWsListener, removeWsListener, newNotification]);
+
+    return addWsMessageListener(listener);
+  }, [newNotification]);
 
   useEffect(() => {
     if (location.pathname === "/tasks") {
-      clearTasksNotification();
+      dispatch(resetTaskNotifications());
     }
-  }, [location, clearTasksNotification]);
+  }, [dispatch, location.pathname]);
 
   return (
     <Box position="relative">
@@ -123,4 +108,4 @@ function NotificationBadge(props: PropTypes) {
   );
 }
 
-export default connector(NotificationBadge);
+export default NotificationBadge;

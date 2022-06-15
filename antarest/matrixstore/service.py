@@ -88,7 +88,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         if data:
             assert data.columns is not None
             assert data.index is not None
-            return MatrixDTO(
+            return MatrixDTO.construct(
                 id=id,
                 width=len(data.columns),
                 height=len(data.index),
@@ -127,7 +127,7 @@ class MatrixService(ISimpleMatrixService):
 
     @staticmethod
     def _to_dto(matrix: Matrix, content: MatrixContent) -> MatrixDTO:
-        return MatrixDTO(
+        return MatrixDTO.construct(
             id=matrix.id,
             width=matrix.width,
             height=matrix.height,

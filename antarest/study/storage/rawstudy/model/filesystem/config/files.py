@@ -1,7 +1,9 @@
 import logging
 import re
+import tempfile
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, cast
+from zipfile import ZipFile
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader import (
@@ -13,9 +15,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Simulation,
     Link,
-    Set,
+    DistrictSet,
     transform_name_to_id,
     Cluster,
+    BindingConstraintDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
@@ -92,19 +95,40 @@ class ConfigPathBuilder:
         return store_new_set, archive_input_series, enr_modelling
 
     @staticmethod
-    def _parse_bindings(root: Path) -> List[str]:
+    def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
         bindings = IniReader().read(
             root / "input/bindingconstraints/bindingconstraints.ini"
         )
-        return [bind["id"] for bind in bindings.values()]
+        output_list = []
+        for id, bind in bindings.items():
+            area_set = set()
+            cluster_set = (
+                set()
+            )  # contains a list of strings in the following format: "area.cluster"
+            for key in bind.keys():
+                if "%" in key:
+                    areas = key.split("%")
+                    area_set.add(areas[0])
+                    area_set.add(areas[1])
+                elif "." in key:
+                    cluster_set.add(key)
+                    area_set.add(key.split(".")[0])
+
+            output_list.append(
+                BindingConstraintDTO(
+                    id=bind["id"], areas=area_set, clusters=cluster_set
+                )
+            )
+
+        return output_list
 
     @staticmethod
-    def _parse_sets(root: Path) -> Dict[str, Set]:
+    def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
         json = MultipleSameKeysIniReader(["+", "-"]).read(
             root / "input/areas/sets.ini"
         )
         return {
-            name.lower(): Set(
+            name.lower(): DistrictSet(
                 areas=item.get(
                     "-"
                     if item.get("apply-filter", "remove-all") == "add-all"
@@ -134,9 +158,9 @@ class ConfigPathBuilder:
 
         files = sorted(output_path.iterdir())
         sims = {
-            f.name: ConfigPathBuilder.parse_simulation(f)
+            f.stem: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
-            if (f / "about-the-study").exists()
+            if (f / "about-the-study").exists() or f.suffix == ".zip"
         }
         return {k: v for k, v in sims.items() if v}
 
@@ -144,7 +168,7 @@ class ConfigPathBuilder:
     def parse_simulation(path: Path) -> Optional["Simulation"]:
         modes = {"eco": "economy", "adq": "adequacy"}
         regex: Any = re.search(
-            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
+            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.stem
         )
         try:
             (
@@ -162,6 +186,7 @@ class ConfigPathBuilder:
                 synthesis=synthesis,
                 error=not (path / "checkIntegrity.txt").exists(),
                 playlist=playlist,
+                archived=path.suffix == ".zip",
             )
         except Exception as e:
             logger.warning(
@@ -192,9 +217,25 @@ class ConfigPathBuilder:
     def _parse_outputs_parameters(
         path: Path,
     ) -> Tuple[int, bool, bool, Optional[List[int]]]:
+        parameters_path_inside_output = "about-the-study/parameters.ini"
+        full_path_parameters = path / parameters_path_inside_output
+        tmp_dir = None
+
+        if path.suffix == ".zip":
+            tmp_dir = tempfile.TemporaryDirectory()
+            with ZipFile(path, "r") as zip_obj:
+                zip_obj.extract(parameters_path_inside_output, tmp_dir.name)
+                full_path_parameters = (
+                    Path(tmp_dir.name) / parameters_path_inside_output
+                )
+
         par: JSON = MultipleSameKeysIniReader(DUPLICATE_KEYS).read(
-            path / "about-the-study/parameters.ini"
+            full_path_parameters
         )
+
+        if tmp_dir:
+            tmp_dir.cleanup()
+
         return (
             par["general"]["nbyears"],
             par["general"]["year-by-year"],

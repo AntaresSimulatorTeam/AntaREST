@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { areEqual, FixedSizeList, ListChildComponentProps } from "react-window";
 import { LinkProperties, NodeProperties } from "../../../../../common/types";
-import { scrollbarStyle } from "../../../../../theme";
 
 const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 40;
@@ -16,7 +15,6 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
       textDecoration: "underline",
     },
   },
-  ...scrollbarStyle,
 }));
 
 interface PropsType {
@@ -73,7 +71,7 @@ function LinksView(props: PropsType) {
             fontWeight: "bold",
           }}
         >
-          {t("singlestudy:links")}
+          {t("study.links")}
         </Typography>
       )}
       <AutoSizer>

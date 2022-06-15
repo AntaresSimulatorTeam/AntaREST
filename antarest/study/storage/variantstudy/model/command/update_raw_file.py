@@ -66,22 +66,6 @@ class UpdateRawFile(ICommand):
             return simple_match
         return simple_match and self.b64Data == other.b64Data
 
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        for command in reversed(history):
-            if (
-                isinstance(command, UpdateRawFile)
-                and command.target == self.target
-            ):
-                return [command]
-
-        return [
-            self._get_command_extractor().generate_update_rawfile(
-                base.tree, self.target.split("/")
-            )
-        ]
-
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
 

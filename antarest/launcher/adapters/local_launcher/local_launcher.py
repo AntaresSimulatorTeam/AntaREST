@@ -11,7 +11,6 @@ from uuid import UUID
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
@@ -19,7 +18,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class LocalLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         version: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
         if self.config.launcher.local is None:
@@ -86,19 +85,22 @@ class LocalLauncher(AbstractLauncher):
         )
         job.start()
 
+    def _get_job_final_output_path(self, job_id: str) -> Path:
+        return self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
+
     def _compute(
         self,
         antares_solver_path: Path,
         study_uuid: str,
         uuid: UUID,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
     ) -> None:
         end = False
 
         def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
                 with open(
-                    self.config.storage.tmp_dir / f"antares_solver-{uuid}.log",
+                    self._get_job_final_output_path(str(uuid)),
                     "w",
                 ) as log_file:
                     log_file.write(self.logs[str(uuid)])
@@ -150,14 +152,10 @@ class LocalLauncher(AbstractLauncher):
                 time.sleep(1)
 
             if launcher_parameters is not None:
-                post_processing = launcher_parameters.get(
-                    "post_processing", False
-                )
                 if (
-                    isinstance(post_processing, bool) and post_processing
-                ) or launcher_parameters.get(
-                    "adequacy_patch", None
-                ) is not None:
+                    launcher_parameters.post_processing
+                    or launcher_parameters.adequacy_patch is not None
+                ):
                     subprocess.run(
                         ["Rscript", "post-processing.R"], cwd=export_path
                     )
@@ -209,6 +207,8 @@ class LocalLauncher(AbstractLauncher):
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs:
             return self.logs[job_id]
+        elif self._get_job_final_output_path(job_id).exists():
+            return self._get_job_final_output_path(job_id).read_text()
         return None
 
     def kill_job(self, job_id: str) -> None:

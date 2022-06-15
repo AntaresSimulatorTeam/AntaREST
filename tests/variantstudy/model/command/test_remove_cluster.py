@@ -1,16 +1,18 @@
-from unittest.mock import Mock, patch
-
 from checksumdir import dirhash
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
+from antarest.study.storage.variantstudy.model.command.common import (
+    BindingConstraintOperator,
+    TimeStep,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
+)
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    CreateBindingConstraint,
 )
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
@@ -45,6 +47,7 @@ class TestRemoveCluster:
             }
         ).apply(empty_study)
 
+        ################################################################################################
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
 
         CreateCluster(
@@ -61,6 +64,19 @@ class TestRemoveCluster:
             prepro=[[0]],
             modulation=[[0]],
         ).apply(empty_study)
+
+        bind1_cmd = CreateBindingConstraint(
+            name="BD 1",
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.LESS,
+            coeffs={
+                f"{area_id}.{cluster_id}": [800, 30],
+            },
+            comments="Hello",
+            command_context=command_context,
+        )
+        output = bind1_cmd.apply(study_data=empty_study)
+        assert output.status
 
         output = RemoveCluster(
             area_id=area_id,
@@ -105,41 +121,6 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_cluster%bar%foo"
     assert base.get_inner_matrices() == []
-
-
-@patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_cluster",
-)
-def test_revert(mock_extract_cluster, command_context: CommandContext):
-    base = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
-    assert base.revert(
-        [
-            CreateCluster(
-                area_id="foo",
-                cluster_name="bar",
-                parameters={},
-                prepro=[[0]],
-                modulation=[[0]],
-                command_context=command_context,
-            )
-        ],
-        None,
-    ) == [
-        CreateCluster(
-            area_id="foo",
-            cluster_name="bar",
-            parameters={},
-            prepro=[[0]],
-            modulation=[[0]],
-            command_context=command_context,
-        )
-    ]
-    study = FileStudy(config=Mock(), tree=Mock())
-    mock_extract_cluster.side_effect = ChildNotFoundError("")
-    base.revert([], study)
-    mock_extract_cluster.assert_called_with(study, "foo", "bar")
 
 
 def test_create_diff(command_context: CommandContext):

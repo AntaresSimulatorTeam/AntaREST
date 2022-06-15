@@ -1,5 +1,3 @@
-from unittest.mock import Mock, patch
-
 from checksumdir import dirhash
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -7,9 +5,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -102,39 +97,6 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_renewables_cluster%bar%foo"
     assert base.get_inner_matrices() == []
-
-
-@patch(
-    "antarest.study.storage.variantstudy.model.command.utils_extractor.CommandExtractor.extract_renewables_cluster",
-)
-def test_revert(
-    mock_extract_renewables_cluster, command_context: CommandContext
-):
-    base = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
-    assert base.revert(
-        [
-            CreateRenewablesCluster(
-                area_id="foo",
-                cluster_name="bar",
-                parameters={},
-                command_context=command_context,
-            )
-        ],
-        None,
-    ) == [
-        CreateRenewablesCluster(
-            area_id="foo",
-            cluster_name="bar",
-            parameters={},
-            command_context=command_context,
-        )
-    ]
-    study = FileStudy(config=Mock(), tree=Mock())
-    mock_extract_renewables_cluster.side_effect = ChildNotFoundError("")
-    base.revert([], study)
-    mock_extract_renewables_cluster.assert_called_with(study, "foo", "bar")
 
 
 def test_create_diff(command_context: CommandContext):

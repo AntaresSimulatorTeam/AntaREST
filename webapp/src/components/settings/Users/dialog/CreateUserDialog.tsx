@@ -11,12 +11,8 @@ import {
 } from "../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
+import { SubmitHandlerData } from "../../../common/Form";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
-
-/**
- * Types
- */
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -25,10 +21,6 @@ interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
   reloadFetchUsers: VoidFunction;
   closeDialog: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function CreateUserDialog(props: Props) {
   const { addUser, reloadFetchUsers, closeDialog, ...dialogProps } = props;
@@ -47,12 +39,12 @@ function CreateUserDialog(props: Props) {
 
     try {
       newUser = await mounted(createUser(username, password));
-      enqueueSnackbar(t("settings:onUserCreation", [newUser.name]), {
+      enqueueSnackbar(t("settings.success.userCreation", [newUser.name]), {
         variant: "success",
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("settings:onUserSaveError", [username]),
+        t("settings.error.userSave", [username]),
         e as Error
       );
       throw e;
@@ -87,7 +79,7 @@ function CreateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings:onUserRolesSaveError", [newUser.name]),
+        t("settings.error.userRolesSave", [newUser.name]),
         e as Error
       );
     }
@@ -101,7 +93,7 @@ function CreateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
-      title={t("settings:createUser")}
+      title={t("settings.createUser")}
       titleIcon={PersonAddIcon}
       onSubmit={handleSubmit}
       onCancel={closeDialog}

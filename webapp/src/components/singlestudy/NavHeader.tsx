@@ -33,31 +33,29 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import { connect, ConnectedProps, useSelector } from "react-redux";
-import { GenericInfo, StudyMetadata, VariantTree } from "../../common/types";
+import { indigo } from "@mui/material/colors";
+import { StudyMetadata, VariantTree } from "../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import {
-  deleteStudy as callDeleteStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../services/api/study";
-import { AppState } from "../../store/reducers";
-import {
-  removeStudies,
-  toggleFavorite as dispatchToggleFavorite,
-} from "../../store/study";
-import LauncherModal from "../studies/LauncherModal";
-import PropertiesModal from "./PropertiesModal";
+import { deleteStudy, toggleFavorite } from "../../redux/ducks/studies";
+import LauncherDialog from "../studies/LauncherDialog";
+import PropertiesDialog from "./PropertiesDialog";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   countAllChildrens,
+  displayVersionName,
 } from "../../services/utils";
-import DeleteStudyModal from "../studies/DeleteStudyModal";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
-import ExportModal from "../studies/ExportModal";
-import { isCurrentStudyFavorite } from "../../store/selectors";
+import { isCurrentStudyFavorite } from "../../redux/selectors";
+import ExportDialog from "../studies/ExportModal";
 import StarToggle from "../common/StarToggle";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -78,66 +76,48 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.divider,
 }));
 
-const mapState = (state: AppState) => ({});
-
-const mapDispatch = {
-  removeStudy: (sid: string) => removeStudies([sid]),
-  toggleFavorite: dispatchToggleFavorite,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-interface OwnProps {
+interface Props {
   study: StudyMetadata | undefined;
   parent: StudyMetadata | undefined;
   childrenTree: VariantTree | undefined;
   isExplorer?: boolean;
-  openCommands?: () => void;
+  openCommands?: VoidFunction;
 }
-type PropTypes = PropsFromRedux & OwnProps;
 
-function NavHeader(props: PropTypes) {
-  const {
-    study,
-    parent,
-    childrenTree,
-    isExplorer,
-    removeStudy,
-    openCommands,
-    toggleFavorite,
-  } = props;
+function NavHeader(props: Props) {
+  const { study, parent, childrenTree, isExplorer, openCommands } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>("");
-  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
-  const [openPropertiesModal, setOpenPropertiesModal] =
+  const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
+  const [openPropertiesDialog, setOpenPropertiesDialog] =
     useState<boolean>(false);
-  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
-  const [openExportModal, setOpenExportModal] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const isStudyFavorite = useSelector(isCurrentStudyFavorite);
+  const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
+  const dispatch = useAppDispatch();
 
-  const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("singlestudy:nonePublicModeText") },
-    { id: "READ", name: t("singlestudy:readPublicModeText") },
-    { id: "EXECUTE", name: t("singlestudy:executePublicModeText") },
-    { id: "EDIT", name: t("singlestudy:editPublicModeText") },
-    { id: "FULL", name: t("singlestudy:fullPublicModeText") },
-  ];
-
-  const getPublicModeLabel = useMemo(
-    (): string => {
-      const publicModeLabel = publicModeList.find(
-        (elm) => elm.id === study?.publicMode
-      );
-      if (publicModeLabel) return publicModeLabel.name;
-      return "";
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [study]
+  const publicModeList = useMemo(
+    () => [
+      { id: "NONE", name: t("study.nonePublicModeText") },
+      { id: "READ", name: t("study.readPublicModeText") },
+      { id: "EXECUTE", name: t("study.executePublicModeText") },
+      { id: "EDIT", name: t("study.editPublicModeText") },
+      { id: "FULL", name: t("study.fullPublicModeText") },
+    ],
+    [t]
   );
+
+  const getPublicModeLabel = useMemo((): string => {
+    const publicModeLabel = publicModeList.find(
+      (elm) => elm.id === study?.publicMode
+    );
+    if (publicModeLabel) return publicModeLabel.name;
+    return "";
+  }, [publicModeList, study?.publicMode]);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -156,7 +136,7 @@ function NavHeader(props: PropTypes) {
   };
 
   const onLaunchClick = (): void => {
-    setOpenLauncherModal(true);
+    setOpenLauncherDialog(true);
   };
 
   const archiveStudy = async (study: StudyMetadata) => {
@@ -164,7 +144,7 @@ function NavHeader(props: PropTypes) {
       await callArchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:archivefailure", { studyname: study.name }),
+        t("studies.error.archive", { studyname: study.name }),
         e as AxiosError
       );
     }
@@ -175,29 +155,25 @@ function NavHeader(props: PropTypes) {
       await callUnarchiveStudy(study.id);
     } catch (e) {
       enqueueErrorSnackbar(
-        t("studymanager:unarchivefailure", { studyname: study.name }),
+        t("studies.error.unarchive", { studyname: study.name }),
         e as AxiosError
       );
-    }
-  };
-
-  const deleteStudy = async (study: StudyMetadata) => {
-    // eslint-disable-next-line no-alert
-    try {
-      await callDeleteStudy(study.id);
-      removeStudy(study.id);
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studymanager:failtodeletestudy"),
-        e as AxiosError
-      );
-      logError("Failed to delete study", study, e);
     }
   };
 
   const onDeleteStudy = () => {
-    if (study) deleteStudy(study);
-    setOpenDeleteModal(false);
+    if (study) {
+      dispatch(deleteStudy(study.id))
+        .unwrap()
+        .catch((err) => {
+          enqueueErrorSnackbar(
+            t("studies.error.deleteStudy"),
+            err as AxiosError
+          );
+          logError("Failed to delete study", study, err);
+        });
+    }
+    setOpenDeleteDialog(false);
     navigate("/studies");
   };
 
@@ -205,14 +181,11 @@ function NavHeader(props: PropTypes) {
     if (study) {
       try {
         await navigator.clipboard.writeText(study.id);
-        enqueueSnackbar(t("singlestudy:onStudyIdCopySuccess"), {
+        enqueueSnackbar(t("study.success.studyIdCopy"), {
           variant: "success",
         });
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("singlestudy:onStudyIdCopyError"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("study.error.studyIdCopy"), e as AxiosError);
       }
     }
   };
@@ -243,7 +216,7 @@ function NavHeader(props: PropTypes) {
           sx={{ cursor: "pointer" }}
         />
         <Button variant="text" color="secondary" onClick={onBackClick}>
-          {isExplorer === true && study ? study.name : t("main:studies")}
+          {isExplorer === true && study ? study.name : t("global.studies")}
         </Button>
       </Box>
       <Box
@@ -269,15 +242,15 @@ function NavHeader(props: PropTypes) {
           </Tooltip>
           <StarToggle
             isActive={isStudyFavorite}
-            activeTitle={t("studymanager:removeFavorite") as string}
-            unactiveTitle={t("studymanager:bookmark") as string}
+            activeTitle={t("studies.removeFavorite") as string}
+            unactiveTitle={t("studies.bookmark") as string}
             onToggle={() => {
               if (study) {
-                toggleFavorite({ id: study.id, name: study.name });
+                dispatch(toggleFavorite(study.id));
               }
             }}
           />
-          <Tooltip title={t("studymanager:copyID") as string}>
+          <Tooltip title={t("study.copyId") as string}>
             <ContentCopyIcon
               sx={{
                 cursor: "pointer",
@@ -292,12 +265,29 @@ function NavHeader(props: PropTypes) {
           </Tooltip>
           {study?.managed && (
             <Chip
-              label={t("singlestudy:managedStudy")}
+              label={t("study.managedStudy")}
               variant="outlined"
               color="secondary"
-              sx={{ mx: 2 }}
+              sx={{ ml: 2, mr: 1 }}
             />
           )}
+          {!study?.managed && study?.workspace && (
+            <Chip
+              label={study.workspace}
+              variant="outlined"
+              sx={{ ml: 2, mr: 1 }}
+            />
+          )}
+
+          {study?.tags &&
+            study.tags.map((elm) => (
+              <Chip
+                key={elm}
+                label={elm}
+                variant="filled"
+                sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+              />
+            ))}
         </Box>
         <Box
           display="flex"
@@ -313,7 +303,7 @@ function NavHeader(props: PropTypes) {
               color="primary"
               onClick={() => onLaunchClick()}
             >
-              {t("main:launch")}
+              {t("global.launch")}
             </Button>
           )}
           {study && study.type === "variantstudy" && (
@@ -362,13 +352,13 @@ function NavHeader(props: PropTypes) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("studymanager:unarchive")}</ListItemText>
+                <ListItemText>{t("global.unarchive")}</ListItemText>
               </MenuItem>
             ) : (
               <div>
                 <MenuItem
                   onClick={() => {
-                    setOpenPropertiesModal(true);
+                    setOpenPropertiesDialog(true);
                     handleClose();
                   }}
                 >
@@ -381,11 +371,11 @@ function NavHeader(props: PropTypes) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("singlestudy:properties")}</ListItemText>
+                  <ListItemText>{t("study.properties")}</ListItemText>
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    setOpenExportModal(true);
+                    setOpenExportDialog(true);
                     handleClose();
                   }}
                 >
@@ -398,7 +388,7 @@ function NavHeader(props: PropTypes) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("studymanager:export")}</ListItemText>
+                  <ListItemText>{t("global.export")}</ListItemText>
                 </MenuItem>
                 {study?.managed && (
                   <MenuItem
@@ -416,7 +406,7 @@ function NavHeader(props: PropTypes) {
                         }}
                       />
                     </ListItemIcon>
-                    <ListItemText>{t("studymanager:archive")}</ListItemText>
+                    <ListItemText>{t("global.archive")}</ListItemText>
                   </MenuItem>
                 )}
               </div>
@@ -424,7 +414,7 @@ function NavHeader(props: PropTypes) {
             {study?.managed && (
               <MenuItem
                 onClick={() => {
-                  setOpenDeleteModal(true);
+                  setOpenDeleteDialog(true);
                   handleClose();
                 }}
               >
@@ -434,7 +424,7 @@ function NavHeader(props: PropTypes) {
                   />
                 </ListItemIcon>
                 <ListItemText sx={{ color: "error.light" }}>
-                  {t("studymanager:delete")}
+                  {t("global.delete")}
                 </ListItemText>
               </MenuItem>
             )}
@@ -473,6 +463,15 @@ function NavHeader(props: PropTypes) {
             </TinyText>
           </Box>
           <StyledDivider />
+          <Box
+            mx={3}
+            display="flex"
+            flexDirection="row"
+            justifyContent="flex-start"
+            alignItems="center"
+          >
+            <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+          </Box>
           {parent && (
             <Box
               mx={3}
@@ -524,31 +523,35 @@ function NavHeader(props: PropTypes) {
           </Box>
         </Box>
       )}
-      {openLauncherModal && (
-        <LauncherModal
-          open={openLauncherModal}
-          study={study}
-          onClose={() => setOpenLauncherModal(false)}
+      {study && openLauncherDialog && (
+        <LauncherDialog
+          open={openLauncherDialog}
+          studyIds={[study.id]}
+          onClose={() => setOpenLauncherDialog(false)}
         />
       )}
-      {openPropertiesModal && study && (
-        <PropertiesModal
-          open={openPropertiesModal}
-          onClose={() => setOpenPropertiesModal(false)}
+      {openPropertiesDialog && study && (
+        <PropertiesDialog
+          open={openPropertiesDialog}
+          onClose={() => setOpenPropertiesDialog(false)}
           study={study as StudyMetadata}
         />
       )}
-      {openDeleteModal && (
-        <DeleteStudyModal
-          open={openDeleteModal}
-          onClose={() => setOpenDeleteModal(false)}
-          onYesClick={onDeleteStudy}
-        />
+      {openDeleteDialog && (
+        <ConfirmationDialog
+          title={t("dialog.title.confirmation")}
+          onCancel={() => setOpenDeleteDialog(false)}
+          onConfirm={onDeleteStudy}
+          alert="warning"
+          open
+        >
+          {t("studies.question.delete")}
+        </ConfirmationDialog>
       )}
-      {study && openExportModal && (
-        <ExportModal
-          open={openExportModal}
-          onClose={() => setOpenExportModal(false)}
+      {study && openExportDialog && (
+        <ExportDialog
+          open={openExportDialog}
+          onClose={() => setOpenExportDialog(false)}
           study={study}
         />
       )}
@@ -561,4 +564,4 @@ NavHeader.defaultProps = {
   openCommands: undefined,
 };
 
-export default connector(NavHeader);
+export default NavHeader;

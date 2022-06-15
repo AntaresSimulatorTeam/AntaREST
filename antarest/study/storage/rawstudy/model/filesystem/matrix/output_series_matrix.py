@@ -46,6 +46,7 @@ class OutputSeriesMatrix(
         super().__init__(context=context, config=config)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
+        self.freq = freq
 
     def get_lazy_content(
         self,

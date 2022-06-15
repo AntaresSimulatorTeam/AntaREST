@@ -8,8 +8,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Link,
     Simulation,
-    Set,
+    DistrictSet,
     Cluster,
+    BindingConstraintDTO,
 )
 
 
@@ -70,10 +71,14 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         version=-1,
-        bindings=["bindA", "bindB"],
+        bindings=[
+            BindingConstraintDTO(id="bindA", areas=[], clusters=[]),
+            BindingConstraintDTO(id="bindB", areas=[], clusters=[]),
+        ],
         study_id="id",
         output_path=study_path / "output",
     )
+
     assert ConfigPathBuilder.build(study_path, "id") == config
 
 
@@ -133,7 +138,7 @@ output = true
     (study_path / "input/areas/sets.ini").write_text(content)
 
     assert ConfigPathBuilder._parse_sets(study_path) == {
-        "hello": Set(areas=["a", "b"], output=True, inverted_set=False)
+        "hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)
     }
 
 

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../common/types";
 import { XpansionSettings } from "../types";
@@ -15,9 +15,9 @@ import {
 } from "../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import BasicModal from "../../../../common/BasicModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../services/utils/index";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 
 function Settings() {
   const [t] = useTranslation();
@@ -25,7 +25,7 @@ function Settings() {
   const [settings, setSettings] = useState<XpansionSettings>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [constraintViewModal, setConstraintViewModal] = useState<{
+  const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
   }>();
@@ -39,7 +39,10 @@ function Settings() {
         setSettings(tempSettings);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     }
   }, [study?.id, t]);
 
@@ -50,7 +53,10 @@ function Settings() {
         setConstraints(tempConstraints);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     }
   }, [study?.id, t]);
 
@@ -61,7 +67,10 @@ function Settings() {
         initFiles();
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -82,10 +91,10 @@ function Settings() {
         );
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:updateSettingsError"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
       initSettings();
-      enqueueSnackbar(t("studymanager:savedatasuccess"), {
+      enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
     }
@@ -95,10 +104,10 @@ function Settings() {
     try {
       if (study) {
         const content = await getConstraint(study.id, filename);
-        setConstraintViewModal({ filename, content });
+        setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 
@@ -109,43 +118,26 @@ function Settings() {
   return (
     <>
       {loaded && settings ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <SettingsForm
-            settings={settings}
-            constraints={constraints || []}
-            updateSettings={updateSettings}
-            onRead={getOneConstraint}
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <SettingsForm
+              settings={settings}
+              constraints={constraints || []}
+              updateSettings={updateSettings}
+              onRead={getOneConstraint}
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
       )}
-      {!!constraintViewModal && (
-        <BasicModal
-          open={!!constraintViewModal}
-          title={constraintViewModal.filename}
-          onClose={() => setConstraintViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="500px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            padding="8px"
-          >
-            <code style={{ whiteSpace: "pre" }}>
-              {constraintViewModal.content}
-            </code>
-          </Box>
-        </BasicModal>
+      {!!constraintViewDialog && (
+        <DataViewerDialog
+          studyId={study?.id || ""}
+          filename={constraintViewDialog.filename}
+          content={constraintViewDialog.content}
+          onClose={() => setConstraintViewDialog(undefined)}
+        />
       )}
     </>
   );

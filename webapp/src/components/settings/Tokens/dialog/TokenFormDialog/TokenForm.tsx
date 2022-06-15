@@ -18,33 +18,24 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import { useSelector } from "react-redux";
 import { TokenFormDialogProps } from ".";
 import { GroupDTO, RoleType } from "../../../../../common/types";
 import usePromise from "../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../services/utils";
-import { FormObj } from "../../../../common/dialogs/FormDialog";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { getAuthUser, isAuthUserAdmin } from "../../../../../store/selectors";
+import { getAuthUser, isAuthUserAdmin } from "../../../../../redux/selectors";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 
-/**
- * Types
- */
-
-interface Props extends Omit<FormObj, "defaultValues"> {
+interface Props extends UseFormReturn {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];
   readOnly?: boolean;
 }
-
-/**
- * Component
- */
 
 function TokenForm(props: Props) {
   const {
@@ -64,8 +55,8 @@ function TokenForm(props: Props) {
   const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
-  const isUserAdmin = useSelector(isAuthUserAdmin);
+  const authUser = useAppSelector(getAuthUser);
+  const isUserAdmin = useAppSelector(isAuthUserAdmin);
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
@@ -117,13 +108,13 @@ function TokenForm(props: Props) {
         <TextField
           sx={{ mx: 0 }}
           autoFocus
-          label={t("main:name")}
+          label={t("global.name")}
           error={!!errors.name}
           helperText={errors.name?.message}
           required
           fullWidth
           {...register("name", {
-            required: t("main:form.field.required") as string,
+            required: t("form.field.required") as string,
           })}
         />
       )}
@@ -136,7 +127,7 @@ function TokenForm(props: Props) {
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Typography>{t("settings:permissionsLabel")}</Typography>
+        <Typography>{t("global.permissions")}</Typography>
         {isGroupsLoading && (
           <Box
             sx={{
@@ -154,12 +145,10 @@ function TokenForm(props: Props) {
             {!readOnly && (
               <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
                 <FormControl sx={{ mr: 2, flex: 1 }} size="small">
-                  <InputLabel id={groupLabelId}>
-                    {t("settings:group")}
-                  </InputLabel>
+                  <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
                   <Select
                     labelId={groupLabelId}
-                    label={t("settings:group")}
+                    label={t("global.group")}
                     defaultValue=""
                     onChange={handleGroupChange}
                   >
@@ -178,7 +167,7 @@ function TokenForm(props: Props) {
                     append({ group: selectedGroup, type: RoleType.READER });
                   }}
                 >
-                  {t("settings:addButton")}
+                  {t("button.add")}
                 </Button>
               </Box>
             )}

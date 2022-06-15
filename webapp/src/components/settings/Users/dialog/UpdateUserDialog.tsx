@@ -5,14 +5,10 @@ import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import { GroupDTO, RoleType, UserDetailsDTO } from "../../../../common/types";
 import { createRole, deleteUserRoles } from "../../../../services/api/user";
-import { SubmitHandlerData } from "../../../common/dialogs/FormDialog";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-
-/**
- * Types
- */
+import { SubmitHandlerData } from "../../../common/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -27,10 +23,6 @@ interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
   editUser: (user: UserEdit) => void;
   reloadFetchUsers: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function UpdateUserDialog(props: Props) {
   const { user, closeDialog, editUser, reloadFetchUsers, ...dialogProps } =
@@ -85,7 +77,7 @@ function UpdateUserDialog(props: Props) {
 
       editUser({ id: user.id, roles });
 
-      enqueueSnackbar(t("settings:onUserUpdate", [user.name]), {
+      enqueueSnackbar(t("settings.success.userUpdate", [user.name]), {
         variant: "success",
       });
     } catch (e) {
@@ -93,7 +85,7 @@ function UpdateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings:onUserRolesSaveError", [user.name]),
+        t("settings.error.userRolesSave", [user.name]),
         e as Error
       );
     }
@@ -107,8 +99,8 @@ function UpdateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
-      title={t("settings:updateUser")}
-      subtitle={t("settings:currentUser", [user.name])}
+      title={t("settings.updateUser")}
+      subtitle={t("settings.currentUser", [user.name])}
       titleIcon={EditIcon}
       defaultValues={defaultValues}
       onSubmit={handleSubmit}

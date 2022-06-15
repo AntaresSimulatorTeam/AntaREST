@@ -13,8 +13,7 @@ import {
 } from "../../../../../services/api/study";
 import { convertXMLToDraftJS } from "./utils";
 import { StudyMetadata } from "../../../../../common/types";
-import { scrollbarStyle } from "../../../../../theme";
-import NoteEditorModal from "./NoteEditorModal";
+import NoteEditorModal from "./NodeEditorModal";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
@@ -25,6 +24,7 @@ const Root = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   justifyContent: "flex-start",
   alignItems: "center",
+  overflow: "hidden",
 }));
 
 const Note = styled(Box)(({ theme }) => ({
@@ -57,7 +57,7 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   height: 0,
   flex: 1,
   padding: theme.spacing(0),
-  overflow: "hidden",
+  overflow: "auto",
 }));
 
 const FigureInfoContainer = styled(Box)(({ theme }) => ({
@@ -132,11 +132,13 @@ export default function Notes(props: Props) {
           EditorState.createWithContent(convertXMLToDraftJS(newContent))
         );
         setContent(newContent);
-        enqueueSnackbar(t("singlestudy:commentsSaved"), { variant: "success" });
+        enqueueSnackbar(t("study.success.commentsSaved"), {
+          variant: "success",
+        });
         setEditionMode(false);
       } catch (e) {
         enqueueErrorSnackbar(
-          t("singlestudy:commentsNotSaved"),
+          t("study.error.commentsNotSaved"),
           e as AxiosError
         );
       }
@@ -155,7 +157,7 @@ export default function Notes(props: Props) {
         } catch (e) {
           setEditorState(
             EditorState.createWithContent(
-              ContentState.createFromText(t("singlestudy:fetchCommentsError"))
+              ContentState.createFromText(t("study.error.fetchComments"))
             )
           );
         } finally {
@@ -185,7 +187,7 @@ export default function Notes(props: Props) {
           setNbAreas(areas.length);
           setNbLinks(links);
         } catch (e) {
-          enqueueErrorSnackbar(t("singlestudy:getAreasInfo"), e as AxiosError);
+          enqueueErrorSnackbar(t("study.error.getAreasInfo"), e as AxiosError);
         }
       }
     })();
@@ -195,11 +197,9 @@ export default function Notes(props: Props) {
       <Note>
         <NoteHeader>
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-          <Typography color="text.secondary">
-            {t("singlestudy:notes")}
-          </Typography>
+          <Typography color="text.secondary">{t("study.notes")}</Typography>
         </NoteHeader>
-        <EditorContainer sx={{ overflowY: "auto", ...scrollbarStyle }}>
+        <EditorContainer sx={{ overflowY: "auto" }}>
           {!loaded && <SimpleLoader />}
           {loaded && (
             <Editor
@@ -216,14 +216,14 @@ export default function Notes(props: Props) {
             color="secondary"
             onClick={() => setEditionMode(true)}
           >
-            {t("main:edit")}
+            {t("global.edit")}
           </Button>
         </NoteFooter>
       </Note>
       <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
       <FigureInfoContainer>
-        <Figure title={t("singlestudy:area")} data={nbAreas} />
-        <Figure title={t("singlestudy:link")} data={nbLinks} />
+        <Figure title={t("study.areas")} data={nbAreas} />
+        <Figure title={t("study.links")} data={nbLinks} />
       </FigureInfoContainer>
       {editionMode && (
         <NoteEditorModal

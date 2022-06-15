@@ -15,6 +15,11 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
+from antarest.study.storage.variantstudy.business.utils import (
+    validate_matrix,
+    strip_matrix_protocol,
+    AliasDecoder,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -22,11 +27,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-    AliasDecoder,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -107,27 +107,6 @@ class ReplaceMatrix(ICommand):
         if not equal:
             return simple_match
         return simple_match and self.matrix == other.matrix
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        for command in reversed(history):
-            if (
-                isinstance(command, ReplaceMatrix)
-                and command.target == self.target
-            ):
-                return [command]
-
-        try:
-            return [
-                self._get_command_extractor().generate_replace_matrix(
-                    base.tree, self.target.split("/")
-                )
-            ]
-        except ChildNotFoundError:
-            return (
-                []
-            )  # if the matrix does not exist, there is nothing to revert
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

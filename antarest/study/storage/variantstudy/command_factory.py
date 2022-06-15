@@ -59,6 +59,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from antarest.study.storage.variantstudy.model.command.update_district import (
+    UpdateDistrict,
+)
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
@@ -185,6 +188,11 @@ class CommandFactory:
             )
         elif action == CommandName.UPDATE_FILE.value:
             return UpdateRawFile(
+                **args,
+                command_context=self.command_context,
+            )
+        elif action == CommandName.UPDATE_DISTRICT.value:
+            return UpdateDistrict(
                 **args,
                 command_context=self.command_context,
             )

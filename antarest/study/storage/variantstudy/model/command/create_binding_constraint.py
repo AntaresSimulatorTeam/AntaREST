@@ -9,6 +9,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils import (
+    validate_matrix,
+    strip_matrix_protocol,
+)
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    apply_binding_constraint,
+    parse_bindings_coeffs_and_save_into_config,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,13 +26,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.model.command.utils_binding_constraint import (
-    apply_binding_constraint,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -58,11 +59,12 @@ class CreateBindingConstraint(ICommand):
             return validate_matrix(v, values)
 
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
-        if bd_id not in study_data.bindings:
-            study_data.bindings.append(bd_id)
+        parse_bindings_coeffs_and_save_into_config(
+            bd_id, study_data_config, self.coeffs
+        )
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -120,20 +122,6 @@ class CreateBindingConstraint(ICommand):
             and self.values == other.values
             and self.comments == other.comments
         )
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import (
-            RemoveBindingConstraint,
-        )
-
-        bind_id = transform_name_to_id(self.name)
-        return [
-            RemoveBindingConstraint(
-                id=bind_id, command_context=self.command_context
-            )
-        ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateBindingConstraint, other)

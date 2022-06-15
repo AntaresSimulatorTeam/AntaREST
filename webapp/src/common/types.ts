@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-import { Moment } from "moment";
 import { ReactNode } from "react";
 
 export type IdType = number | string;
@@ -7,21 +5,6 @@ export type IdType = number | string;
 export interface IdentityDTO<T extends IdType = string> {
   id: T;
   name: string;
-}
-
-export enum SortElement {
-  DATE = "DATE",
-  NAME = "NAME",
-}
-
-export enum SortStatus {
-  INCREASE = "INCREASE",
-  DECREASE = "DECREASE",
-}
-
-export interface SortItem {
-  element: SortElement;
-  status: SortStatus;
 }
 
 export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
@@ -37,6 +20,10 @@ export interface StudySummary {
   id: string;
   name: string;
   workspace: string;
+}
+
+export interface SynthesisSummary {
+  study_id: string;
 }
 
 export interface StudyMetadataOwner {
@@ -188,15 +175,22 @@ export interface JWTGroup {
 }
 
 export interface UserInfo {
-  user: string; // TODO: contains user id instead of user name
+  user: string;
   groups: Array<JWTGroup>;
   id: number;
   impersonator: number;
   type: string;
   accessToken: string;
   refreshToken: string;
-  expirationDate?: Moment;
+  expirationDate?: number;
 }
+
+export interface RefreshDTO {
+  access_token: string;
+  refresh_token: string;
+  user: number;
+}
+
 export interface BotDTO extends IdentityDTO<number> {
   owner: number;
   is_author: boolean;
@@ -268,6 +262,7 @@ export enum WSEvent {
   STUDY_CREATED = "STUDY_CREATED",
   STUDY_DELETED = "STUDY_DELETED",
   STUDY_EDITED = "STUDY_EDITED",
+  STUDY_DATA_EDITED = "STUDY_DATA_EDITED",
   STUDY_JOB_STARTED = "STUDY_JOB_STARTED",
   STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE",
   STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED",
@@ -285,21 +280,10 @@ export enum WSEvent {
   MAINTENANCE_MODE = "MAINTENANCE_MODE",
 }
 
-export enum DefaultFilterKey {
-  USERS = "v2.studylisting.filter.user",
-  GROUPS = "v2.studylisting.filter.group",
-  VERSIONS = "v2.studylisting.filter.version",
-  MANAGED = "v2.studylisting.filter.managed",
-  SORTING = "v2.studylisting.filter.sorting",
-  FOLDER = "v2.studylisting.filter.folder",
-  FAVORITE_STUDIES = "v2.studylisting.favorite",
-  TAGS = "v2.studylisting.filter.tag",
-  ARCHIVED = "v2.studylisting.filter.archived",
-}
-
-export interface WSMessage {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface WSMessage<T = any> {
   type: string;
-  payload: unknown;
+  payload: T;
 }
 
 export interface WSLogMessage {
@@ -421,6 +405,13 @@ export interface FileStudyTreeConfigDTO {
   archive_input_series: Array<string>;
   enr_modelling: string;
 }
+export interface LinkElement {
+  label: string;
+  name: string;
+  area1: string;
+  area2: string;
+}
+export type LinkListElement = { [elm: string]: LinkElement };
 
 export enum StudyOutputDownloadType {
   LINKS = "LINKS",
@@ -453,6 +444,38 @@ export interface MatrixIndex {
   steps: number;
   first_week_size: number;
   level: StudyOutputDownloadLevelDTO;
+}
+
+export enum MatrixStats {
+  TOTAL = "total",
+  STATS = "stats",
+  NOCOL = "",
+}
+
+export enum Operator {
+  ADD = "+",
+  SUB = "-",
+  MUL = "*",
+  DIV = "/",
+  ABS = "ABS",
+  EQ = "=",
+}
+
+export interface MatrixSliceDTO {
+  row_from: number;
+  row_to: number;
+  column_from: number;
+  column_to: number;
+}
+
+export interface MatrixOperationDTO {
+  operation: Operator;
+  value: number;
+}
+
+export interface MatrixEditDTO {
+  slices: MatrixSliceDTO[];
+  operation: MatrixOperationDTO;
 }
 
 export interface MatrixAggregationResult {
@@ -495,21 +518,6 @@ export interface AreasSynthesis {
 
 export interface AreasNameSynthesis {
   [index: string]: AreasSynthesis;
-}
-
-export interface StudyProperties {
-  archiveInputSeries: Array<string>;
-  areas: AreasNameSynthesis;
-  bindings: Array<string>;
-  enrModelling: string;
-  outputPath: string;
-  outputs: string;
-  path: string;
-  sets: string;
-  storeNewSet: boolean;
-  studyId: string;
-  studyPath: string;
-  version: number;
 }
 
 export interface LinkProperties {

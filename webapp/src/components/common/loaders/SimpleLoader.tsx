@@ -44,7 +44,7 @@ function SimpleLoader(props: PropTypes) {
               value={progress}
             />
           )}
-          {message && <Box mt={t}>{t(message)}</Box>}
+          {message && <Box mt={2}>{t(message)}</Box>}
         </Box>
       </Box>
       <Box

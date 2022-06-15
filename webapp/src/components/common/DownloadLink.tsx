@@ -1,49 +1,42 @@
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-import { ReactNode } from "react";
-import { connect, ConnectedProps } from "react-redux";
-import { loginUser, logoutAction } from "../../store/auth";
-import { refresh } from "../../services/api/auth";
-import { AppState } from "../../store/reducers";
+import { IconButton, Tooltip } from "@mui/material";
+import { ReactElement } from "react";
+import { refresh } from "../../redux/ducks/auth";
+import useAppDispatch from "../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { getAuthUser } from "../../redux/selectors";
 
-const mapState = (state: AppState) => ({
-  user: state.auth.user,
-});
-
-const mapDispatch = {
-  login: loginUser,
-  logout: logoutAction,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-
-interface OwnProps {
+interface Props {
   url: string;
-  children?: ReactNode;
+  title: string;
+  children: ReactElement;
 }
-type PropTypes = PropsFromRedux & OwnProps;
 
-function DownloadLink(props: PropTypes) {
-  const { user, login, logout, children, url } = props;
+function DownloadLink(props: Props) {
+  const { children, url, title } = props;
+  const user = useAppSelector(getAuthUser);
+  const dispatch = useAppDispatch();
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleClick = async () => {
     if (user) {
-      await refresh(user, login, logout);
+      await dispatch(refresh()).unwrap();
     }
     // eslint-disable-next-line no-restricted-globals
     location.href = url;
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <span style={{ cursor: "pointer" }} onClick={handleClick}>
-      {children}
-    </span>
+    <IconButton style={{ cursor: "pointer" }} onClick={handleClick}>
+      <Tooltip title={title}>{children}</Tooltip>
+    </IconButton>
   );
 }
 
-DownloadLink.defaultProps = {
-  children: null,
-};
-
-export default connector(DownloadLink);
+export default DownloadLink;

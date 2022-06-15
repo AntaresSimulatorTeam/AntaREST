@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { StudyMetadata } from "../../../../../common/types";
 import {
   getAllConstraints,
@@ -12,16 +12,17 @@ import {
   addConstraints,
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import BasicModal from "../../../../common/BasicModal";
-import XpansionTable from "../XpansionTable";
+import FileTable from "../../../../common/FileTable";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
+import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
+import { Title } from "../share/styles";
 
 function Files() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [loaded, setLoaded] = useState<boolean>(false);
-  const [constraintViewModal, setConstraintViewModal] = useState<{
+  const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
   }>();
@@ -34,7 +35,10 @@ function Files() {
         setConstraints(tempConstraints);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:xpansionError"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("xpansion.error.loadConfiguration"),
+        e as AxiosError
+      );
     } finally {
       setLoaded(true);
     }
@@ -47,7 +51,7 @@ function Files() {
           await addConstraints(study.id, file);
         }
       } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:addFileError"), e as AxiosError);
+        enqueueErrorSnackbar(t("xpansion.error.addFile"), e as AxiosError);
       } finally {
         init();
       }
@@ -58,10 +62,10 @@ function Files() {
     try {
       if (study) {
         const content = await getConstraint(study.id, filename);
-        setConstraintViewModal({ filename, content });
+        setConstraintViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("xpansion:getFileError"), e as AxiosError);
+      enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
   };
 
@@ -74,7 +78,7 @@ function Files() {
           setConstraints(tempConstraints);
         }
       } catch (e) {
-        enqueueErrorSnackbar(t("xpansion:deleteFileError"), e as AxiosError);
+        enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
       }
     }
   };
@@ -86,44 +90,31 @@ function Files() {
   return (
     <>
       {loaded ? (
-        <Box width="100%" height="100%" padding={2} boxSizing="border-box">
-          <XpansionTable
-            title={t("main:files")}
-            content={constraints || []}
-            onDelete={deleteConstraint}
-            onRead={getOneConstraint}
-            uploadFile={addOneConstraint}
-          />
+        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+            <FileTable
+              title={<Title>{t("global.files")}</Title>}
+              content={
+                constraints?.map((item) => ({ id: item, name: item })) || []
+              }
+              onDelete={deleteConstraint}
+              onRead={getOneConstraint}
+              uploadFile={addOneConstraint}
+              allowImport
+              allowDelete
+            />
+          </Paper>
         </Box>
       ) : (
         <SimpleLoader />
       )}
-      {!!constraintViewModal && (
-        <BasicModal
-          open={!!constraintViewModal}
-          title={constraintViewModal.filename}
-          onClose={() => setConstraintViewModal(undefined)}
-          rootStyle={{
-            maxWidth: "80%",
-            maxHeight: "70%",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            width="900px"
-            height="500px"
-            display="flex"
-            flexDirection="column"
-            alignItems="flex-start"
-            padding="8px"
-          >
-            <code style={{ whiteSpace: "pre" }}>
-              {constraintViewModal.content}
-            </code>
-          </Box>
-        </BasicModal>
+      {!!constraintViewDialog && (
+        <DataViewerDialog
+          studyId={study?.id || ""}
+          filename={constraintViewDialog.filename}
+          content={constraintViewDialog.content}
+          onClose={() => setConstraintViewDialog(undefined)}
+        />
       )}
     </>
   );

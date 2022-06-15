@@ -38,7 +38,9 @@ function CommandImportButton(props: PropTypes) {
           onImport(json);
         }
       } catch (error) {
-        enqueueSnackbar(t("variants:jsonParsingError"), { variant: "error" });
+        enqueueSnackbar(t("variants.error.jsonParsing"), {
+          variant: "error",
+        });
       }
     };
     if (e.target && e.target.files) reader.readAsText(e.target.files[0]);

@@ -40,14 +40,14 @@ function Maintenance() {
   const {
     data: initialValues,
     isLoading,
-    error,
+    isRejected,
     reload: reloadFetchMaintenance,
   } = usePromiseWithSnackbarError(
     async () => ({
       mode: await getMaintenanceMode(),
       message: await getMessageInfo(),
     }),
-    { errorMessage: t("settings:maintenanceError") }
+    { errorMessage: t("maintenance.error.maintenanceError") }
   );
 
   useUpdateEffect(() => {
@@ -75,11 +75,11 @@ function Maintenance() {
         await updateMessageInfo(data.message);
       }
 
-      enqueueSnackbar(t("settings:onUpdateMaintenance"), {
+      enqueueSnackbar(t("settings.updateMaintenance"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings:onUpdateMaintenanceError"), e as Error);
+      enqueueErrorSnackbar(t("settings.error.updateMaintenance"), e as Error);
     } finally {
       reloadFetchMaintenance();
     }
@@ -89,10 +89,10 @@ function Maintenance() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (error) {
+  if (isRejected) {
     return (
       <Typography sx={{ m: 2 }} align="center">
-        {t("settings:maintenanceError")}
+        {t("maintenance.error.maintenanceError")}
       </Typography>
     );
   }
@@ -115,12 +115,12 @@ function Maintenance() {
                 )}
               />
             }
-            label={t("settings:maintenanceMode")}
+            label={t("settings.maintenanceMode")}
             labelPlacement="start"
           />
         </Box>
         <TextField
-          label={t("settings:messageMode")}
+          label={t("global.message")}
           InputLabelProps={{ shrink: true }}
           minRows={6}
           multiline
@@ -130,7 +130,7 @@ function Maintenance() {
           disabled={!isDirty}
           onClick={() => setShowConfirmationModal(true)}
         >
-          {t("main:save")}
+          {t("global.save")}
         </Button>
         <Backdrop
           open={isLoading || isSubmitting}
@@ -149,7 +149,7 @@ function Maintenance() {
           alert="warning"
           open
         >
-          {t("settings:updateMaintenanceConfirmation")}
+          {t("settings.question.updateMaintenance")}
         </ConfirmationDialog>
       )}
     </>

@@ -22,16 +22,9 @@ def execute_or_add_commands(
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
-                for i in range(0, len(executed_commands)):
-                    executed_command = executed_commands[i]
-                    revert_command_list = executed_command.revert(
-                        history=executed_commands[i + 1 :], base=file_study
-                    )
-                    for revert_command in revert_command_list:
-                        revert_command.apply(file_study)
                 raise CommandApplicationError(result.message)
             executed_commands.append(command)
-        remove_from_cache(storage_service.raw_study_service.cache, study.id)
+        storage_service.variant_study_service.invalidate_cache(study)
     else:
         storage_service.variant_study_service.append_commands(
             study.id,

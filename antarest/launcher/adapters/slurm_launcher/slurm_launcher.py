@@ -25,7 +25,6 @@ from antarest.core.interfaces.eventbus import (
     Event,
     EventType,
 )
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import (
@@ -34,7 +33,9 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
+from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -148,6 +149,7 @@ class SlurmLauncher(AbstractLauncher):
             time.sleep(2)
 
     def start(self) -> None:
+        logger.info("Starting slurm_launcher loop")
         self.check_state = True
         self.thread = threading.Thread(target=self._loop, daemon=True)
         self.thread.start()
@@ -155,6 +157,7 @@ class SlurmLauncher(AbstractLauncher):
     def stop(self) -> None:
         self.check_state = False
         self.thread = None
+        logger.info("slurm_launcher loop stopped")
 
     def _init_launcher_arguments(
         self, local_workspace: Optional[Path] = None
@@ -195,6 +198,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.xpansion_mode = None
         arguments.version = False
         arguments.post_processing = False
+        arguments.other_options = None
         return arguments
 
     def _init_launcher_parameters(
@@ -323,6 +327,12 @@ class SlurmLauncher(AbstractLauncher):
                                 study.xpansion_mode,
                                 study.job_log_dir,
                             )
+                    except Exception as e:
+                        self.callbacks.append_after_log(
+                            study.name,
+                            f"Unexpected error when importing study output : {str(e)}",
+                        )
+                        raise e
                     finally:
                         self.callbacks.update_status(
                             study.name,
@@ -414,11 +424,21 @@ class SlurmLauncher(AbstractLauncher):
                 ):
                     self._delete_workspace_file(finished_zip)
 
+    @staticmethod
+    def _override_solver_version(study_path: Path, version: str) -> None:
+        study_info_path = study_path / "study.antares"
+        study_info = IniReader().read(study_info_path)
+        if "antares" in study_info:
+            study_info["antares"]["solver_version"] = version
+            IniWriter().write(study_info, study_info_path)
+        else:
+            logger.warning("Failed to find antares study info")
+
     def _run_study(
         self,
         study_uuid: str,
         launch_uuid: str,
-        launcher_params: Optional[JSON],
+        launcher_params: LauncherParametersDTO,
         version: str,
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
@@ -431,6 +451,7 @@ class SlurmLauncher(AbstractLauncher):
                 )
 
                 self._assert_study_version_is_supported(version)
+                SlurmLauncher._override_solver_version(study_path, version)
 
                 launcher_args = self._check_and_apply_launcher_params(
                     launcher_params
@@ -466,17 +487,19 @@ class SlurmLauncher(AbstractLauncher):
         self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
-        self, launcher_params: Optional[JSON]
+        self, launcher_params: LauncherParametersDTO
     ) -> argparse.Namespace:
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
-            if launcher_params.get("xpansion", False):
-                launcher_args.xpansion_mode = (
-                    "r"
-                    if launcher_params.get("xpansion_r_version", False)
-                    else "cpp"
+            if launcher_params.other_options:
+                launcher_args.other_options = re.sub(
+                    "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
                 )
-            time_limit = launcher_params.get("time_limit", None)
+            if launcher_params.xpansion:
+                launcher_args.xpansion_mode = (
+                    "r" if launcher_params.xpansion_r_version else "cpp"
+                )
+            time_limit = launcher_params.time_limit
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
@@ -490,10 +513,10 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
                 else:
                     launcher_args.time_limit = time_limit
-            post_processing = launcher_params.get("post_processing", False)
+            post_processing = launcher_params.post_processing
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing
-            nb_cpu = launcher_params.get("nb_cpu", None)
+            nb_cpu = launcher_params.nb_cpu
             if nb_cpu and isinstance(nb_cpu, int):
                 if 0 < nb_cpu <= MAX_NB_CPU:
                     launcher_args.n_cpu = nb_cpu
@@ -502,7 +525,7 @@ class SlurmLauncher(AbstractLauncher):
                         f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
                     )
             if (
-                launcher_params.get("adequacy_patch", None) is not None
+                launcher_params.adequacy_patch is not None
             ):  # the adequacy patch can be an empty object
                 launcher_args.post_processing = True
             return launcher_args
@@ -513,7 +536,7 @@ class SlurmLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         version: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
 

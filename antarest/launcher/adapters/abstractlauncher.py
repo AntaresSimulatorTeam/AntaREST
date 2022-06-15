@@ -9,9 +9,8 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
     IEventBus,
 )
-from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
 
 
 class LauncherInitException(Exception):
@@ -24,7 +23,7 @@ class LauncherCallbacks(NamedTuple):
         [str, JobStatus, Optional[str], Optional[str]], None
     ]
     # args: job_id, study_id, study_export_path, launcher_params
-    export_study: Callable[[str, str, Path, Optional[JSON]], None]
+    export_study: Callable[[str, str, Path, LauncherParametersDTO], None]
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
     # args: job_id, output_path, additional_logs
@@ -48,7 +47,7 @@ class AbstractLauncher(ABC):
         study_uuid: str,
         job_id: str,
         version: str,
-        launcher_parameters: Optional[JSON],
+        launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
         raise NotImplementedError()

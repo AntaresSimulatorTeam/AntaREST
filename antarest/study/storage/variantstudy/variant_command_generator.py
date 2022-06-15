@@ -157,4 +157,7 @@ class VariantCommandGenerator:
             metadata,
             notifier,
         )
+        # because the config has the parent id there
+        if metadata:
+            config.study_id = metadata.id
         return results, config

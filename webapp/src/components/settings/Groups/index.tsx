@@ -20,7 +20,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 import { GroupDetailsDTO } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { deleteGroup, getGroups } from "../../../services/api/user";
@@ -30,7 +29,8 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
-import { getAuthUser } from "../../../store/selectors";
+import { getAuthUser } from "../../../redux/selectors";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
 
 /**
  * Types
@@ -101,14 +101,14 @@ function Groups() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
   const { t } = useTranslation();
-  const authUser = useSelector(getAuthUser);
+  const authUser = useAppSelector(getAuthUser);
 
   const {
     data: initialGroups,
     isLoading,
     reload: reloadFetchGroups,
   } = usePromiseWithSnackbarError(() => getGroups({ details: true }), {
-    errorMessage: t("settings:groupsError"),
+    errorMessage: t("settings.error.groupsError"),
   });
 
   useUpdateEffect(() => {
@@ -164,13 +164,13 @@ function Groups() {
     mounted(deleteGroup(group.id))
       .then(() => {
         dispatch({ type: GroupActionKind.DELETE, payload: group.id });
-        enqueueSnackbar(t("settings:onGroupDeleteSuccess", [group.name]), {
+        enqueueSnackbar(t("settings.success.groupDelete", [group.name]), {
           variant: "success",
         });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings:onGroupDeleteError", [group.name]),
+          t("settings.error.groupDelete", [group.name]),
           err
         );
       })
@@ -250,7 +250,7 @@ function Groups() {
             R.T,
             () => (
               <Typography sx={{ m: 2 }} align="center">
-                {t("settings:noGroup")}
+                {t("settings.noGroup")}
               </Typography>
             ),
           ],
@@ -264,7 +264,7 @@ function Groups() {
           alert="warning"
           open
         >
-          {t("settings:deleteGroupConfirmation", [groupToDelete.name])}
+          {t("settings.question.deleteGroup", [groupToDelete.name])}
         </ConfirmationDialog>
       )}
       {groupToEdit && (

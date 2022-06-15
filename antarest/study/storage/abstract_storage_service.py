@@ -4,16 +4,20 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO, cast
+from typing import List, Union, Optional, IO
 from uuid import uuid4
-
-from pydantic import ValidationError
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.utils import extract_zip, StopWatch, assert_this
+from antarest.core.utils.utils import (
+    extract_zip,
+    StopWatch,
+    assert_this,
+    zip_dir,
+    unzip,
+)
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -192,80 +196,104 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
-                file_metadata = FileStudyHelpers.get_config(
-                    study_data, output_data.get_file()
-                )
-                settings = StudySimSettingsDTO(
-                    general=file_metadata["general"],
-                    input=file_metadata["input"],
-                    output=file_metadata["output"],
-                    optimization=file_metadata["optimization"],
-                    otherPreferences=file_metadata["other preferences"],
-                    advancedParameters=file_metadata["advanced parameters"],
-                    seedsMersenneTwister=file_metadata[
-                        "seeds - Mersenne Twister"
-                    ],
-                    playlist=ConfigPathBuilder.get_playlist(file_metadata),
-                )
-
-                results.append(
-                    StudySimResultDTO(
-                        name=output_data.get_file(),
-                        type=output_data.mode,
-                        settings=settings,
-                        completionDate="",
-                        referenceStatus=(reference == output),
-                        synchronized=False,
-                        status="",
+                try:
+                    file_metadata = FileStudyHelpers.get_config(
+                        study_data, output_data.get_file()
                     )
-                )
+                    settings = StudySimSettingsDTO(
+                        general=file_metadata["general"],
+                        input=file_metadata["input"],
+                        output=file_metadata["output"],
+                        optimization=file_metadata["optimization"],
+                        otherPreferences=file_metadata["other preferences"],
+                        advancedParameters=file_metadata[
+                            "advanced parameters"
+                        ],
+                        seedsMersenneTwister=file_metadata[
+                            "seeds - Mersenne Twister"
+                        ],
+                        playlist=ConfigPathBuilder.get_playlist(file_metadata),
+                    )
+
+                    results.append(
+                        StudySimResultDTO(
+                            name=output_data.get_file(),
+                            type=output_data.mode,
+                            settings=settings,
+                            completionDate="",
+                            referenceStatus=(reference == output),
+                            synchronized=False,
+                            status="",
+                            archived=output_data.archived,
+                        )
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to retrieve info about output {output} in study {study.name} ({study.id}",
+                        exc_info=e,
+                    )
         return results
 
     def import_output(
         self,
         metadata: T,
         output: Union[IO[bytes], Path],
+        output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Import additional output on a existing study
+        Import additional output in an existing study
         Args:
             metadata: study
             output: new output (path or zipped data)
+            output_name: optional suffix name to append to output name
 
         Returns: output id
         """
         path_output = (
             Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         )
-        os.makedirs(path_output)
-        output_name: Optional[str] = None
+        path_output.mkdir(parents=True)
+        output_full_name: Optional[str] = None
+        is_zipped = False
         try:
             if isinstance(output, Path):
-                if output != path_output:
+                if output != path_output and output.suffix != ".zip":
                     shutil.copytree(output, path_output / "imported")
+                elif output.suffix == ".zip":
+                    is_zipped = True
+                    path_output.rmdir()
+                    path_output = Path(str(path_output) + ".zip")
+                    shutil.copyfile(output, path_output)
             else:
                 extract_zip(output, path_output)
 
             fix_study_root(path_output)
-            output_name = extract_output_name(path_output)
+            output_full_name = extract_output_name(path_output, output_name)
+            extension = ".zip" if is_zipped else ""
             path_output = path_output.rename(
-                Path(path_output.parent, output_name)
+                Path(path_output.parent, output_full_name + extension)
             )
 
-            data = self.get(
-                metadata, f"output/{output_name}", -1, use_cache=False
-            )
+            if not is_zipped:
+                data = self.get(
+                    metadata, f"output/{output_full_name}", -1, use_cache=False
+                )
 
-            if data is None:
-                self.delete_output(metadata, "imported_output")
-                raise BadOutputError("The output provided is not conform.")
+                if data is None:
+                    self.delete_output(metadata, "imported_output")
+                    raise BadOutputError("The output provided is not conform.")
+            else:
+                # TODO: remove this part of code when study tree zipfile support is implemented
+                logger.warning(
+                    "The imported output is zipped: no check is done"
+                )
 
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
-            output_name = None
+            output_full_name = None
 
-        return output_name
+        return output_full_name
 
     def export_study(
         self, metadata: T, target: Path, outputs: bool = True
@@ -300,33 +328,37 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         return target.parent / filename
 
-    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:
             metadata: study
             output_id: output id
             target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
         """
         logger.info(f"Exporting output {output_id} from study {metadata.id}")
 
         path_output = Path(metadata.path) / "output" / output_id
-        if not path_output.exists():
+        path_output_zip = Path(metadata.path) / "output" / f"{output_id}.zip"
+
+        if path_output_zip.exists():
+            shutil.copyfile(path_output_zip, target)
+            return None
+
+        if not path_output.exists() and not path_output_zip.exists():
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
-        filename = shutil.make_archive(
-            base_name=os.path.splitext(target)[0],
-            format="zip",
-            root_dir=path_output,
-        )
+        if not path_output_zip.exists():
+            shutil.make_archive(
+                base_name=os.path.splitext(target)[0],
+                format="zip",
+                root_dir=path_output,
+            )
         stopwatch.log_elapsed(
             lambda x: logger.info(
                 f"Output {output_id} from study {metadata.path} exported in {x}s"
             )
         )
-        return target.parent / filename
 
     def _read_additional_data_from_files(
         self, file_study: FileStudy
@@ -343,3 +375,35 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             horizon=horizon, author=author, patch=patch.json()
         )
         return study_additional_data
+
+    def archive_study_output(self, study: T, output_id: str) -> bool:
+        try:
+            zip_dir(
+                Path(study.path) / "output" / output_id,
+                Path(study.path) / "output" / f"{output_id}.zip",
+                remove_source_dir=True,
+            )
+            remove_from_cache(self.cache, study.id)
+            return True
+        except Exception as e:
+            logger.warning(
+                f"Failed to archive study {study.name} output {output_id}",
+                exc_info=e,
+            )
+            return False
+
+    def unarchive_study_output(self, study: T, output_id: str) -> bool:
+        try:
+            unzip(
+                Path(study.path) / "output" / output_id,
+                Path(study.path) / "output" / f"{output_id}.zip",
+                remove_source_zip=True,
+            )
+            remove_from_cache(self.cache, study.id)
+            return True
+        except Exception as e:
+            logger.warning(
+                f"Failed to unarchive study {study.name} output {output_id}",
+                exc_info=e,
+            )
+            return False

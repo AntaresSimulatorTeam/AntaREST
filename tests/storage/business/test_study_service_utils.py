@@ -9,7 +9,6 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.model import (
-    MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadLevelDTO,
     ExportFormat,
@@ -97,7 +96,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
-                steps=50,
+                steps=51,
                 first_week_size=7,
                 level=StudyDownloadLevelDTO.WEEKLY,
             ),
@@ -114,7 +113,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2001, 1, 1)),
-                steps=50,
+                steps=51,
                 first_week_size=7,
                 level=StudyDownloadLevelDTO.WEEKLY,
             ),
@@ -131,7 +130,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2002, 7, 5)),
-                steps=47,
+                steps=48,
                 first_week_size=5,
                 level=StudyDownloadLevelDTO.WEEKLY,
             ),
@@ -182,7 +181,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2010, 3, 5)),
-                steps=2184,
+                steps=2304,
                 first_week_size=3,
                 level=StudyDownloadLevelDTO.HOURLY,
             ),
@@ -216,7 +215,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2009, 3, 3)),
-                steps=91,
+                steps=98,
                 first_week_size=3,
                 level=StudyDownloadLevelDTO.DAILY,
             ),
@@ -226,6 +225,12 @@ def test_output_downloads_export(tmp_path: Path):
 def test_create_matrix_index(
     config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
 ):
+    config_mock = Mock()
+    config_mock.archived = False
+    output_id = "some output"
+
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
-    assert get_start_date(file_study, "some output", level) == expected
+    file_study.config.outputs = {output_id: config_mock}
+
+    assert get_start_date(file_study, output_id, level) == expected

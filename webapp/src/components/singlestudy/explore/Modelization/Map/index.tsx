@@ -23,7 +23,7 @@ import {
 } from "../../../../../services/api/studydata";
 import {
   getAreaPositions,
-  getSynthesis,
+  getStudySynthesis,
 } from "../../../../../services/api/study";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import GraphView from "./GraphView";
@@ -31,6 +31,8 @@ import MapPropsView from "./MapPropsView";
 import CreateAreaModal from "./CreateAreaModal";
 import mapbackground from "../../../../../assets/mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { setCurrentArea } from "../../../../../redux/ducks/studyDataSynthesis";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -78,6 +80,13 @@ function Map() {
   const graphRef =
     useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (selectedItem && isNode(selectedItem)) {
+      dispatch(setCurrentArea((selectedItem as NodeProperties).id));
+    }
+  }, [selectedItem]);
 
   const onClickNode = useCallback(
     (nodeId: string) => {
@@ -139,7 +148,7 @@ function Map() {
         ]);
       }
     } catch (e) {
-      enqueueErrorSnackbar(t("singlestudy:createAreaError"), e as AxiosError);
+      enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
     }
   };
 
@@ -179,7 +188,7 @@ function Map() {
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(t("singlestudy:updateUIError"), e as AxiosError);
+        enqueueErrorSnackbar(t("study.error.updateUI"), e as AxiosError);
       }
     }
   };
@@ -210,7 +219,7 @@ function Map() {
           } catch (e) {
             setLinkData([...linkData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -228,7 +237,7 @@ function Map() {
             setLinkData([...linkData]);
             setNodeData([...nodeData]);
             enqueueErrorSnackbar(
-              t("singlestudy:deleteAreaOrLink"),
+              t("study.error.deleteAreaOrLink"),
               e as AxiosError
             );
           }
@@ -260,10 +269,7 @@ function Map() {
                 (o) => o.source !== firstNode || o.target !== secondNode
               )
             );
-            enqueueErrorSnackbar(
-              t("singlestudy:createLinkError"),
-              e as AxiosError
-            );
+            enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
           }
         }
       };
@@ -275,22 +281,24 @@ function Map() {
     if (study) {
       const init = async () => {
         try {
-          const data = await getSynthesis(study.id);
+          const data = await getStudySynthesis(study.id);
           if (Object.keys(data.areas).length >= 1) {
             const areas = await getAreaPositions(study.id);
-            const tempNodeData = Object.keys(areas).map((areaId) => ({
-              id: areaId,
-              name: data.areas[areaId].name,
-              x: areas[areaId].ui.x,
-              y: areas[areaId].ui.y,
-              color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-              rgbColor: [
-                areas[areaId].ui.color_r,
-                areas[areaId].ui.color_g,
-                areas[areaId].ui.color_b,
-              ],
-              size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-            }));
+            const tempNodeData = Object.keys(areas).map((areaId) => {
+              return {
+                id: areaId,
+                name: data.areas[areaId].name,
+                x: areas[areaId].ui.x,
+                y: areas[areaId].ui.y,
+                color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+                rgbColor: [
+                  areas[areaId].ui.color_r,
+                  areas[areaId].ui.color_g,
+                  areas[areaId].ui.color_b,
+                ],
+                size: { width: calculateSize(areaId), height: NODE_HEIGHT },
+              };
+            });
             setNodeData(tempNodeData);
             setLinkData(
               Object.keys(data.areas).reduce(
@@ -308,10 +316,7 @@ function Map() {
             );
           }
         } catch (e) {
-          enqueueErrorSnackbar(
-            t("studymanager:failtoloadstudy"),
-            e as AxiosError
-          );
+          enqueueErrorSnackbar(t("studies.error.loadStudy"), e as AxiosError);
         } finally {
           setLoaded(true);
         }
@@ -413,10 +418,10 @@ function Map() {
               top="10px"
             >
               <Typography>
-                {`${nodeData.length} ${t("singlestudy:areas")}`}
+                {`${nodeData.length} ${t("study.areas")}`}
               </Typography>
               <Typography>
-                {`${linkData.length} ${t("singlestudy:links")}`}
+                {`${linkData.length} ${t("study.links")}`}
               </Typography>
             </Box>
           </Box>

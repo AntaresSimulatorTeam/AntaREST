@@ -9,14 +9,14 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from antarest.study.storage.variantstudy.business.utils import (
+    remove_none_args,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.utils import (
-    remove_none_args,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -266,6 +266,14 @@ class TestCommandFactory:
                     "target": "settings/resources/study",
                     "b64Data": "",
                 },
+            ),
+            CommandDTO(
+                action=CommandName.UPDATE_DISTRICT.value,
+                args={"id": "id", "filter_items": ["a"]},
+            ),
+            CommandDTO(
+                action=CommandName.UPDATE_DISTRICT.value,
+                args=[{"id": "id", "base_filter": "add-all"}],
             ),
         ],
     )

@@ -144,22 +144,6 @@ class CreateRenewablesCluster(ICommand):
             return simple_match
         return simple_match and self.parameters == other.parameters
 
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
-            RemoveRenewablesCluster,
-        )
-
-        cluster_id = transform_name_to_id(self.cluster_name)
-        return [
-            RemoveRenewablesCluster(
-                area_id=self.area_id,
-                cluster_id=cluster_id,
-                command_context=self.command_context,
-            )
-        ]
-
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateRenewablesCluster, other)
         from antarest.study.storage.variantstudy.model.command.update_config import (

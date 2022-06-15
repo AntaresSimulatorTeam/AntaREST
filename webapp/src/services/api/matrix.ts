@@ -5,6 +5,8 @@ import {
   MatrixDataSetDTO,
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
+  MatrixIndex,
+  MatrixEditDTO,
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
@@ -57,7 +59,6 @@ export const createMatrixByImportation = async (
     ...options,
     headers: {
       "content-type": "multipart/form-data",
-      "Access-Control-Allow-Origin": "*",
     },
   };
   const res = await client.post(
@@ -90,4 +91,23 @@ export const deleteDataSet = async (id: string): Promise<void> => {
   return res.data;
 };
 
-export default {};
+export const editMatrix = async (
+  sid: string,
+  path: string,
+  matrixEdit: MatrixEditDTO[]
+): Promise<void> => {
+  const res = await client.put(
+    `/v1/studies/${sid}/matrix?path=${path}`,
+    matrixEdit
+  );
+  return res.data;
+};
+
+export const getStudyMatrixIndex = async (
+  sid: string,
+  path?: string
+): Promise<MatrixIndex> => {
+  const query = path ? `?path=${encodeURIComponent(path)}` : "";
+  const res = await client.get(`/v1/studies/${sid}/matrixindex${query}`);
+  return res.data;
+};

@@ -1,13 +1,11 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
+    remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -37,9 +35,9 @@ class RemoveCluster(ICommand):
         ]
 
     def _apply_config(
-        self, study_data: FileStudyTreeConfig
+        self, study_data_config: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area_id not in study_data.areas:
+        if self.area_id not in study_data_config.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -52,7 +50,9 @@ class RemoveCluster(ICommand):
             len(
                 [
                     cluster
-                    for cluster in study_data.areas[self.area_id].thermals
+                    for cluster in study_data_config.areas[
+                        self.area_id
+                    ].thermals
                     if cluster.id == self.cluster_id
                 ]
             )
@@ -65,8 +65,10 @@ class RemoveCluster(ICommand):
                 ),
                 dict(),
             )
-        self._remove_cluster(study_data)
-        # todo remove binding constraint using this cluster ?
+        self._remove_cluster(study_data_config)
+        remove_area_cluster_from_binding_constraints(
+            study_data_config, self.area_id, self.cluster_id
+        )
 
         return (
             CommandOutput(
@@ -130,6 +132,7 @@ class RemoveCluster(ICommand):
         )
 
         self._remove_cluster(study_data.config)
+        self._remove_cluster_from_binding_constraints(study_data)
 
         return CommandOutput(
             status=True,
@@ -159,37 +162,49 @@ class RemoveCluster(ICommand):
             and self.area_id == other.area_id
         )
 
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_cluster import (
-            CreateCluster,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateCluster)
-                and transform_name_to_id(command.cluster_name)
-                == self.cluster_id
-                and command.area_id == self.area_id
-            ):
-                # todo revert binding constraints that has the cluster in constraint and also search in base for one
-                return [command]
-
-        try:
-            return self._get_command_extractor().extract_cluster(
-                base, self.area_id, self.cluster_id
-            )
-            # todo revert binding constraints that has the cluster in constraint
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_cluster {self.area_id}#{self.cluster_id}",
-                exc_info=e,
-            )
-            return []
-
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
 
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def _remove_cluster_from_binding_constraints(
+        self, study_data: FileStudy
+    ) -> None:
+
+        binding_constraints = study_data.tree.get(
+            ["input", "bindingconstraints", "bindingconstraints"]
+        )
+
+        id_to_remove = []
+
+        for id, bc in binding_constraints.items():
+            if f"{self.area_id}.{self.cluster_id}" in bc.keys():
+                id_to_remove.append(id)
+
+        for id in id_to_remove:
+            study_data.tree.delete(
+                [
+                    "input",
+                    "bindingconstraints",
+                    binding_constraints[id]["id"],
+                ]
+            )
+            study_data.config.bindings.remove(
+                next(
+                    iter(
+                        [
+                            bind
+                            for bind in study_data.config.bindings
+                            if bind.id == binding_constraints[id]["id"]
+                        ]
+                    )
+                )
+            )
+
+            del binding_constraints[id]
+
+        study_data.tree.save(
+            binding_constraints,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )

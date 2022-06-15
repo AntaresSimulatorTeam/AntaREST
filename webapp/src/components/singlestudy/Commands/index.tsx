@@ -25,7 +25,7 @@ function CommandsDrawer(props: Props) {
       <Toolbar sx={{ py: 3 }}>
         <TitleContainer>
           <Typography sx={{ color: "grey.500", fontSize: "0.9em" }}>
-            {t("variants:commands").toUpperCase()}
+            {t("variants.commands").toUpperCase()}
           </Typography>
         </TitleContainer>
       </Toolbar>

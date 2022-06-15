@@ -6,8 +6,8 @@ import AddIcon from "@mui/icons-material/Add";
 
 interface PropsType {
   mainContent: ReactNode | undefined;
-  secondaryContent: ReactNode;
-  onSearchFilterChange: (value: string) => void;
+  secondaryContent?: ReactNode;
+  onSearchFilterChange?: (value: string) => void;
   onAdd?: () => void;
 }
 
@@ -25,21 +25,24 @@ function PropertiesView(props: PropsType) {
       alignItems="center"
       boxSizing="border-box"
       sx={{
-        paddingBottom: 1,
+        pt: onSearchFilterChange ? 1 : 2,
+        pb: 1,
       }}
     >
-      <TextField
-        label={t("main:search")}
-        variant="outlined"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
-        }}
-        onChange={(e) => onSearchFilterChange(e.target.value as string)}
-      />
+      {onSearchFilterChange && (
+        <TextField
+          label={t("global.search")}
+          variant="outlined"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          onChange={(e) => onSearchFilterChange(e.target.value as string)}
+        />
+      )}
       {mainContent}
       {secondaryContent}
       {onAdd && (

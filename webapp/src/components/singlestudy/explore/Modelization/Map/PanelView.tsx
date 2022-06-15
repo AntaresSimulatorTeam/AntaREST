@@ -15,8 +15,8 @@ import {
   LinkProperties,
   UpdateAreaUi,
 } from "../../../../../common/types";
-import BasicModal from "../../../../common/BasicModal";
 import LinksView from "./LinksView";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   cursor: "pointer",
@@ -27,7 +27,7 @@ export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
 }));
 
 const StyledHuePicker = styled(HuePicker)(({ theme }) => ({
-  width: "95% !important",
+  width: "90% !important",
   margin: theme.spacing(1),
 }));
 
@@ -122,21 +122,21 @@ function PanelView(props: PropType) {
           >
             <TextField
               sx={{ mt: 1 }}
-              label={t("singlestudy:areaName")}
+              label={t("study.modelization.map.areaName")}
               variant="filled"
               value={node.name}
               disabled
             />
             <TextField
               sx={{ mt: 1 }}
-              label={t("singlestudy:posX")}
+              label={t("study.modelization.posX")}
               variant="filled"
               value={node.x}
               disabled
             />
             <TextField
               sx={{ mt: 1 }}
-              label={t("singlestudy:posY")}
+              label={t("study.modelization.posY")}
               variant="filled"
               value={node.y}
               disabled
@@ -180,7 +180,7 @@ function PanelView(props: PropType) {
                 color: "text.secondary",
               }}
             >
-              {t("singlestudy:links")}
+              {t("study.links")}
             </Typography>
             <Box
               width="90%"
@@ -191,7 +191,7 @@ function PanelView(props: PropType) {
               marginBottom="8px"
             >
               <Typography sx={{ fontWeight: "bold", color: "text.secondary" }}>
-                {t("singlestudy:area1")}
+                {t("study.area1")}
               </Typography>
               <StyledLinkTypo
                 variant="body2"
@@ -209,7 +209,7 @@ function PanelView(props: PropType) {
               marginBottom="8px"
             >
               <Typography sx={{ fontWeight: "bold", color: "text.secondary" }}>
-                {t("singlestudy:area2")}
+                {t("study.area2")}
               </Typography>
               <StyledLinkTypo
                 variant="body2"
@@ -232,58 +232,31 @@ function PanelView(props: PropType) {
             size="small"
             onClick={() => setSelectedItem(undefined)}
           >
-            {t("main:backButton")}
+            {t("button.back")}
           </Button>
           <StyledDeleteIcon onClick={() => setOpenConfirmationModal(true)} />
         </Box>
       </Box>
-      {openConfirmationModal && node && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          closeButtonLabel={t("main:noButton")}
-          actionButtonLabel={t("main:yesButton")}
-          onActionButtonClick={() => {
-            onDelete(node.id);
+      {openConfirmationModal && (
+        <ConfirmationDialog
+          onCancel={() => setOpenConfirmationModal(false)}
+          onConfirm={() => {
+            if (node) {
+              onDelete(node.id);
+            }
+            if (link) {
+              onDelete(link.source, link.target);
+            }
             setOpenConfirmationModal(false);
           }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
+          alert="warning"
+          open
         >
           <Typography sx={{ p: 3 }}>
-            {t("singlestudy:confirmDeleteArea")}
+            {node && t("study.question.deleteArea")}
+            {link && t("study.question.deleteLink")}
           </Typography>
-        </BasicModal>
-      )}
-      {openConfirmationModal && link && (
-        <BasicModal
-          open={openConfirmationModal}
-          title={t("main:confirmationModalTitle")}
-          closeButtonLabel={t("main:noButton")}
-          actionButtonLabel={t("main:yesButton")}
-          onActionButtonClick={() => {
-            onDelete(link.source, link.target);
-            setOpenConfirmationModal(false);
-          }}
-          onClose={() => setOpenConfirmationModal(false)}
-          rootStyle={{
-            maxWidth: "800px",
-            maxHeight: "800px",
-            display: "flex",
-            flexFlow: "column nowrap",
-            alignItems: "center",
-          }}
-        >
-          <Typography sx={{ p: 3 }}>
-            {t("singlestudy:confirmDeleteLink")}
-          </Typography>
-        </BasicModal>
+        </ConfirmationDialog>
       )}
     </>
   );

@@ -1,13 +1,9 @@
-import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -135,32 +131,6 @@ class RemoveLink(ICommand):
         if not isinstance(other, RemoveLink):
             return False
         return self.area1 == other.area1 and self.area2 == other.area2
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.create_link import (
-            CreateLink,
-        )
-
-        for command in reversed(history):
-            if (
-                isinstance(command, CreateLink)
-                and command.area1 == self.area1
-                and command.area2 == self.area2
-            ):
-                return [command]
-        area_from, area_to = sorted([self.area1, self.area2])
-        try:
-            return self._get_command_extractor().extract_link(
-                base, area_from, area_to
-            )
-        except ChildNotFoundError as e:
-            logging.getLogger(__name__).warning(
-                f"Failed to extract revert command for remove_link {self.area1}/{self.area2}",
-                exc_info=e,
-            )
-            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

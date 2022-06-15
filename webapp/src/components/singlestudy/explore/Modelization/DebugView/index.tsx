@@ -9,7 +9,6 @@ import StudyTreeView from "./StudyTreeView";
 import StudyDataView from "./StudyDataView";
 import { StudyDataType, StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { scrollbarStyle } from "../../../../../theme";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 
 const logError = debug("antares:studyview:error");
@@ -35,10 +34,7 @@ function DebugView() {
         const data = await getStudyData(sid, "", -1);
         setStudyData(data);
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("studymanager:failtoretrievedata"),
-          e as AxiosError
-        );
+        enqueueErrorSnackbar(t("studies.error.retrieveData"), e as AxiosError);
         logError("Failed to fetch study data", sid, e);
       } finally {
         setLoaded(true);
@@ -66,12 +62,7 @@ function DebugView() {
     >
       {study && studyData && (
         <>
-          <Box
-            height="100%"
-            flex="0 0 30%"
-            overflow="auto"
-            sx={{ ...scrollbarStyle }}
-          >
+          <Box height="100%" flex="0 0 30%" overflow="auto">
             <Box p={1}>
               {studyData && (
                 <StudyTreeView

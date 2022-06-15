@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import cast
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
@@ -13,7 +13,6 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import (
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 def test_update_rawfile(
@@ -30,7 +29,7 @@ def test_update_rawfile(
         command_context=command_context,
     )
 
-    reverted_commands = command.revert([], empty_study)
+    reverted_commands = CommandReverter().revert(command, [], empty_study)
     assert cast(
         UpdateRawFile, reverted_commands[0]
     ).b64Data == base64.b64encode(original_data).decode("utf-8")
@@ -40,7 +39,9 @@ def test_update_rawfile(
         b64Data="",
         command_context=command_context,
     )
-    reverted_commands = command.revert([alt_command], empty_study)
+    reverted_commands = CommandReverter().revert(
+        command, [alt_command], empty_study
+    )
     assert cast(UpdateRawFile, reverted_commands[0]).b64Data == ""
 
     assert command.match(alt_command)

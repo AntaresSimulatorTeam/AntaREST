@@ -1,24 +1,29 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { PropsWithChildren, useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ConnectedProps, connect } from "react-redux";
 import debug from "debug";
 import { Box, Button, keyframes, styled, Typography } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
-import { AppState } from "../../../store/reducers";
 import { isUserAdmin } from "../../../services/utils";
-import { getMaintenanceMode } from "../../../services/api/maintenance";
 import { getConfig } from "../../../services/config";
-import { setMaintenanceMode } from "../../../store/global";
-import MessageInfoModal from "./MessageInfoModal";
+import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
+import { setMaintenanceMode } from "../../../redux/ducks/ui";
+import { getAuthUser, getMaintenanceMode } from "../../../redux/selectors";
+import { getMaintenanceMode as getMaintenanceModeAPI } from "../../../services/api/maintenance";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 const logError = debug("antares:maintenancewrapper:error");
 
 const zoomEffect = keyframes`
-0% { transform: scale(1.0) },
-100% { transform: scale(1.05)}
+  0% { 
+    transform: scale(1.0) 
+  }
+  100% { 
+    transform: scale(1.05)
+  }
 `;
 
 const StyledErrorIcon = styled(ErrorIcon)(({ theme }) => ({
@@ -29,24 +34,18 @@ const StyledErrorIcon = styled(ErrorIcon)(({ theme }) => ({
   marginRight: theme.spacing(5),
 }));
 
-const mapState = (state: AppState) => ({
-  user: state.auth.user,
-  maintenance: state.global.maintenanceMode,
-});
+interface Props {
+  children: ReactNode;
+}
 
-const mapDispatch = {
-  setMaintenance: setMaintenanceMode,
-};
-
-const connector = connect(mapState, mapDispatch);
-type PropsFromRedux = ConnectedProps<typeof connector>;
-type PropTypes = PropsFromRedux;
-
-function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
+function MaintenanceWrapper(props: Props) {
+  const { children } = props;
   const [t] = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { children, user, maintenance, setMaintenance } = props;
+  const user = useAppSelector(getAuthUser);
+  const maintenanceMode = useAppSelector(getMaintenanceMode);
+  const dispatch = useAppDispatch();
 
   const onClick = () => {
     navigate("/login");
@@ -54,20 +53,19 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
 
   useEffect(() => {
     const init = async () => {
-      const { maintenanceMode } = getConfig();
       try {
-        const tmpMaintenance = await getMaintenanceMode();
-        setMaintenance(tmpMaintenance);
+        const tmpMaintenance = await getMaintenanceModeAPI();
+        dispatch(setMaintenanceMode(tmpMaintenance));
       } catch (e) {
         logError(e);
-        setMaintenance(maintenanceMode);
+        dispatch(setMaintenanceMode(getConfig().maintenanceMode));
       }
     };
     init();
   }, []);
 
   if (
-    maintenance &&
+    maintenanceMode &&
     (user === undefined || !isUserAdmin(user)) &&
     location.pathname !== "/login"
   ) {
@@ -99,7 +97,7 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
           }}
           onClick={onClick}
         >
-          {t("main:connexion")}
+          {t("global.connexion")}
         </Button>
         <Box
           display="flex"
@@ -116,12 +114,12 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
               color: "primary.main",
             }}
           >
-            {t("main:appUnderMaintenance")}
+            {t("maintenance.message.underMaintenance")}
             <br />
-            {t("main:comeBackLater")}
+            {t("maintenance.message.comeBackLater")}
           </Typography>
         </Box>
-        <MessageInfoModal />
+        <MessageInfoDialog />
       </Box>
     );
   }
@@ -129,9 +127,9 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
   return (
     <>
       {children}
-      <MessageInfoModal />
+      <MessageInfoDialog />
     </>
   );
 }
 
-export default connector(MaintenanceWrapper);
+export default MaintenanceWrapper;

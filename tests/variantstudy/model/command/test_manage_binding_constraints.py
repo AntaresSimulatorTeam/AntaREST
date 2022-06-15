@@ -2,8 +2,11 @@ from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
+from antarest.study.storage.variantstudy.business.command_extractor import (
+    CommandExtractor,
+)
+from antarest.study.storage.variantstudy.business.command_reverter import (
+    CommandReverter,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
@@ -32,9 +35,6 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-    CommandExtractor,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -265,7 +265,7 @@ def test_revert(command_context: CommandContext):
         values=[[0]],
         command_context=command_context,
     )
-    assert base.revert([], None) == [
+    assert CommandReverter().revert(base, [], None) == [
         RemoveBindingConstraint(id="foo", command_context=command_context)
     ]
 
@@ -281,10 +281,11 @@ def test_revert(command_context: CommandContext):
     mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
         base,
-        "_get_command_extractor",
+        "get_command_extractor",
         Mock(return_value=mock_command_extractor),
     )
-    assert base.revert(
+    assert CommandReverter().revert(
+        base,
         [
             UpdateBindingConstraint(
                 id="foo",
@@ -317,7 +318,8 @@ def test_revert(command_context: CommandContext):
             command_context=command_context,
         )
     ]
-    assert base.revert(
+    assert CommandReverter().revert(
+        base,
         [
             UpdateBindingConstraint(
                 id="foo",
@@ -352,54 +354,7 @@ def test_revert(command_context: CommandContext):
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
-    base.revert([], study)
-    mock_command_extractor.extract_binding_constraint.assert_called_with(
-        study, "foo"
-    )
-
-    base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    mock_command_extractor = Mock(spec=CommandExtractor)
-    object.__setattr__(
-        base,
-        "_get_command_extractor",
-        Mock(return_value=mock_command_extractor),
-    )
-    assert base.revert(
-        [
-            UpdateBindingConstraint(
-                id="foo",
-                enabled=True,
-                time_step=TimeStep.WEEKLY,
-                operator=BindingConstraintOperator.BOTH,
-                coeffs={"a": [0.3]},
-                values=[[0]],
-                command_context=command_context,
-            ),
-            CreateBindingConstraint(
-                name="foo",
-                enabled=True,
-                time_step=TimeStep.HOURLY,
-                operator=BindingConstraintOperator.EQUAL,
-                coeffs={"a": [0.3]},
-                values=[[0]],
-                command_context=command_context,
-            ),
-        ],
-        None,
-    ) == [
-        CreateBindingConstraint(
-            name="foo",
-            enabled=True,
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.EQUAL,
-            coeffs={"a": [0.3]},
-            command_context=command_context,
-        )
-    ]
-    mock_command_extractor.extract_binding_constraint.side_effect = (
-        ChildNotFoundError("")
-    )
-    base.revert([], study)
+    CommandReverter().revert(base, [], study)
     mock_command_extractor.extract_binding_constraint.assert_called_with(
         study, "foo"
     )

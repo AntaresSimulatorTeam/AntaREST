@@ -1,23 +1,23 @@
 import { styled, Box, Paper } from "@mui/material";
-import { scrollbarStyle } from "../../../../../../theme";
 
 export const Root = styled(Box)(({ theme }) => ({
   flex: 1,
   height: "100%",
+  width: "100%",
   display: "flex",
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  padding: theme.spacing(1, 0),
+  padding: theme.spacing(1, 1),
 }));
 
 export const Header = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
   flexFlow: "row nowrap",
-  justifyContent: "flex-end",
+  justifyContent: "space-between",
   alignItems: "center",
-  padding: theme.spacing(1, 2),
+  padding: theme.spacing(0, 2),
 }));
 
 export const Content = styled(Paper)(({ theme }) => ({
@@ -31,7 +31,6 @@ export const Content = styled(Paper)(({ theme }) => ({
   alignItems: "flex-start",
   overflow: "auto",
   position: "relative",
-  ...scrollbarStyle,
 }));
 
 export default {};

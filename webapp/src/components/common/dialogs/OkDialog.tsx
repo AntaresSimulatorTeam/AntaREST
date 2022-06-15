@@ -21,16 +21,28 @@ function OkDialog(props: OkDialogProps) {
     props;
   const { t } = useTranslation();
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClose = (
+    ...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>
+  ) => {
+    onOk();
+    onClose?.(...args);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <BasicDialog
-      onClose={(...args) => {
-        onOk();
-        onClose?.(...args);
-      }}
+      onClose={handleClose}
       {...basicDialogProps}
       actions={
         <Button autoFocus variant="contained" {...okButtonProps} onClick={onOk}>
-          {okButtonText || t("main:okButton")}
+          {okButtonText || t("button.ok")}
         </Button>
       }
     />

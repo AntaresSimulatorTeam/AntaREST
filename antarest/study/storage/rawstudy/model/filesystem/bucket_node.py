@@ -1,6 +1,6 @@
 from typing import Optional, List, Union, Dict, Callable, Any
 
-from antarest.core.model import JSON
+from antarest.core.model import JSON, SUB_JSON
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -59,7 +59,7 @@ class BucketNode(FolderNode):
 
     def save(
         self,
-        data: Union[str, int, bool, float, bytes, JSON],
+        data: SUB_JSON,
         url: Optional[List[str]] = None,
     ) -> None:
         if not self.config.path.exists():
@@ -85,9 +85,7 @@ class BucketNode(FolderNode):
             else:
                 self._save(data, key)
 
-    def _save(
-        self, data: Union[str, int, bool, float, bytes, JSON], key: str
-    ) -> None:
+    def _save(self, data: SUB_JSON, key: str) -> None:
         registered_file = self._get_registered_file(key)
         if registered_file:
             node, filename = (

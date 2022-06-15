@@ -11,6 +11,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils import (
+    validate_matrix,
+    strip_matrix_protocol,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,10 +22,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -180,22 +180,6 @@ class CreateCluster(ICommand):
             and self.prepro == other.prepro
             and self.modulation == other.modulation
         )
-
-    def revert(
-        self, history: List["ICommand"], base: FileStudy
-    ) -> List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.remove_cluster import (
-            RemoveCluster,
-        )
-
-        cluster_id = transform_name_to_id(self.cluster_name)
-        return [
-            RemoveCluster(
-                area_id=self.area_id,
-                cluster_id=cluster_id,
-                command_context=self.command_context,
-            )
-        ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateCluster, other)

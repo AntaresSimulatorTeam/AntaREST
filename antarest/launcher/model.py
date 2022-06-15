@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 
 from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime, Sequence, ForeignKey  # type: ignore
@@ -8,6 +8,19 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
+
+
+class LauncherParametersDTO(BaseModel):
+    adequacy_patch: Optional[Dict[str, Any]] = None
+    nb_cpu: Optional[int] = None
+    post_processing: bool = False
+    time_limit: Optional[int] = None
+    xpansion: bool = False
+    xpansion_r_version: bool = False
+    archive_output: bool = False
+    output_suffix: Optional[str] = None
+    other_options: Optional[str] = None
+    # add extensions field here
 
 
 class LogType(str, enum.Enum):
@@ -38,6 +51,7 @@ class JobResultDTO(BaseModel):
     msg: Optional[str]
     output_id: Optional[str]
     exit_code: Optional[int]
+    solver_stats: Optional[str]
 
 
 class JobLog(DTO, Base):  # type: ignore
@@ -80,6 +94,7 @@ class JobResult(DTO, Base):  # type: ignore
     msg = Column(String())
     output_id = Column(String())
     exit_code = Column(Integer)
+    solver_stats = Column(String(), nullable=True)
     logs = relationship(
         JobLog, uselist=True, cascade="all, delete, delete-orphan"
     )
@@ -98,6 +113,7 @@ class JobResult(DTO, Base):  # type: ignore
             msg=self.msg,
             output_id=self.output_id,
             exit_code=self.exit_code,
+            solver_stats=self.solver_stats,
         )
 
     def __eq__(self, o: Any) -> bool:
