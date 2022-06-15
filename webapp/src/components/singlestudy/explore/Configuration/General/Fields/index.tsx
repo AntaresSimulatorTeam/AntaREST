@@ -45,9 +45,9 @@ function Fields(props: Props) {
       return "First day must be lower or equal to last day";
     }
     if (getValues("leapYear")) {
-      return v <= 365 ? true : "Maximum is 365 for a leap year";
+      return v <= 366 ? true : "Maximum is 366 for a leap year";
     }
-    return v <= 364 ? true : "Maximum is 364 for a non-leap year";
+    return v <= 365 ? true : "Maximum is 365 for a non-leap year";
   };
 
   ////////////////////////////////////////////////////////////////
