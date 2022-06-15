@@ -1,6 +1,7 @@
 import * as R from "ramda";
 import { Box, Divider, TextField } from "@mui/material";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { StyledFieldset } from "../styles";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import { StudyMetadata } from "../../../../../../common/types";
@@ -24,6 +25,7 @@ interface Props {
 function Fields(props: Props) {
   const { study } = props;
   const studyVersion = Number(study.version);
+  const [t] = useTranslation();
   const { register, setValue, watch, getValues } = useFormContext<FormValues>();
   const buildingMode = watch("buildingMode");
 
@@ -45,9 +47,9 @@ function Fields(props: Props) {
       return "First day must be lower or equal to last day";
     }
     if (getValues("leapYear")) {
-      return v <= 365 ? true : "Maximum is 365 for a leap year";
+      return v <= 366 ? true : "Maximum is 366 for a leap year";
     }
-    return v <= 364 ? true : "Maximum is 364 for a non-leap year";
+    return v <= 365 ? true : "Maximum is 365 for a non-leap year";
   };
 
   ////////////////////////////////////////////////////////////////
@@ -73,7 +75,7 @@ function Fields(props: Props) {
           })}
         />
         <TextField
-          label="First day"
+          label={t("study.modelization.configuration.general.firstDay")}
           variant="filled"
           {...register("firstDay", {
             deps: "lastDay",
@@ -83,7 +85,7 @@ function Fields(props: Props) {
           })}
         />
         <TextField
-          label="Last day"
+          label={t("study.modelization.configuration.general.lastDay")}
           variant="filled"
           {...register("lastDay", {
             deps: "firstDay",
@@ -93,7 +95,9 @@ function Fields(props: Props) {
           })}
         />
       </StyledFieldset>
-      <StyledFieldset legend="Calendar">
+      <StyledFieldset
+        legend={t("study.modelization.configuration.general.calendar")}
+      >
         <TextField
           label="Horizon"
           variant="filled"
@@ -102,21 +106,21 @@ function Fields(props: Props) {
           })}
         />
         <SelectFE
-          label="Year"
+          label={t("study.modelization.configuration.general.year")}
           options={YEAR_OPTIONS}
           {...register("firstMonth", {
             onAutoSubmit: saveValue("general/first-month-in-year"),
           })}
         />
         <SelectFE
-          label="Week"
+          label={t("study.modelization.configuration.general.week")}
           options={WEEK_OPTIONS}
           {...register("firstWeekDay", {
             onAutoSubmit: saveValue("general/first.weekday"),
           })}
         />
         <SelectFE
-          label="1st January"
+          label={t("study.modelization.configuration.general.firstDayOfYear")}
           options={FIRST_JANUARY_OPTIONS}
           {...register("firstJanuary", {
             onAutoSubmit: saveValue("general/january.1st"),
@@ -124,7 +128,7 @@ function Fields(props: Props) {
         />
         <SwitchFE
           sx={{ flex: 1, flexBasis: "100%" }}
-          label="Leap year"
+          label={t("study.modelization.configuration.general.leapYear")}
           {...register("leapYear", {
             deps: ["firstDay", "lastDay"],
             onAutoSubmit: saveValue("general/leapyear"),
@@ -142,7 +146,7 @@ function Fields(props: Props) {
           }}
         >
           <TextField
-            label="Number"
+            label={t("global.number")}
             variant="filled"
             {...register("nbYears", {
               validate: (v) => {

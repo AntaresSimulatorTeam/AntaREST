@@ -7,7 +7,9 @@ interface PropsType<T> {
   setSelectedItem: (item: T, index: number) => void;
 }
 
-function ListElement<T extends { name: string }>(props: PropsType<T>) {
+function ListElement<T extends { name: string; label?: string }>(
+  props: PropsType<T>
+) {
   const { list, currentElement, setSelectedItem } = props;
 
   return (
@@ -31,7 +33,7 @@ function ListElement<T extends { name: string }>(props: PropsType<T>) {
           <ListItemText
             sx={{ "&> span": { textOverflow: "ellipsis", overflow: "hidden" } }}
           >
-            {element.name}
+            {element.label || element.name}
           </ListItemText>
           <ListItemIcon
             sx={{
