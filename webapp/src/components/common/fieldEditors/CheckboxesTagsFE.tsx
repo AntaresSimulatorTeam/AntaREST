@@ -40,7 +40,6 @@ function CheckboxesTagsFE<
     // Default value on MUI
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getOptionLabel = (option: any) => option?.label ?? option,
-    onChange,
     error,
     helperText,
     ...rest
