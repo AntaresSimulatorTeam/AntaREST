@@ -294,6 +294,7 @@
     "studies.studyarchiving": "Étude en cours d'archivage...",
     "studies.studyunarchiving": "Étude en cours de désarchivage...",
     "studies.refresh": "Charger les études",
+    "studies.batchMode": "Mode batch",
     "studies.sortByName": "Ordre alphabétique",
     "studies.sortByDate": "Date",
     "studies.managedStudiesFilter": "Études managées",

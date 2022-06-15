@@ -294,6 +294,7 @@
     "studies.studyarchiving": "Archiving study...",
     "studies.studyunarchiving": "Unarchiving study...",
     "studies.refresh": "Refresh studies",
+    "studies.batchMode": "Batch mode",
     "studies.sortByName": "Alphabetical order",
     "studies.sortByDate": "Date",
     "studies.managedStudiesFilter": "Managed studies",

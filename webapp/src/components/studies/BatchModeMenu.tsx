@@ -1,5 +1,5 @@
 import BoltIcon from "@mui/icons-material/Bolt";
-import { Box, Button, IconButton } from "@mui/material";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import { t } from "i18next";
 import { useState } from "react";
 import LibraryAddCheckIcon from "@mui/icons-material/LibraryAddCheck";
@@ -60,13 +60,15 @@ function BatchModeMenu(props: Props) {
           )}
         </>
       )}
-      <IconButton
-        sx={{ cursor: "pointer" }}
-        color={selectionMode ? "primary" : undefined}
-        onClick={() => setSelectionMode(!selectionMode)}
-      >
-        <LibraryAddCheckIcon />
-      </IconButton>
+      <Tooltip title={t("studies.batchMode") as string}>
+        <IconButton
+          sx={{ cursor: "pointer" }}
+          color={selectionMode ? "primary" : undefined}
+          onClick={() => setSelectionMode(!selectionMode)}
+        >
+          <LibraryAddCheckIcon />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }
