@@ -255,7 +255,7 @@
     "study.modelization.nodeProperties.splilled": "Non évacuée",
     "study.modelization.nodeProperties.lastResortShedding": "Moyen de dernier recours pour l'écrêtement",
     "study.modelization.nodeProperties.nonDispatchPower": "Production non pilotable",
-    "study.modelization.nodeProperties.dispatchHydroPower": "Hydrolique pilotable",
+    "study.modelization.nodeProperties.dispatchHydroPower": "Hydraulique pilotable",
     "study.modelization.nodeProperties.otherDispatchPower": "Autres productions pilotables",
     "study.modelization.nodeProperties.outputFilter": "Affichage des sorties",
     "study.modelization.nodeProperties.filterByYear": "Sorties année par année",
