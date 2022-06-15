@@ -76,7 +76,6 @@ function LinkMatrixView(props: Props) {
                 "study.modelization.links.matrix.columns.transCapaDirect"
               )}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
-              columnsNames={columnsNames}
               computStats={MatrixStats.NOCOL}
             />
             <Divider sx={{ width: "1px", bgcolor: "divider" }} />
@@ -86,7 +85,6 @@ function LinkMatrixView(props: Props) {
                 "study.modelization.links.matrix.columns.transCapaIndirect"
               )}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
-              columnsNames={columnsNames}
               computStats={MatrixStats.NOCOL}
             />
           </>

@@ -47,7 +47,7 @@ export default function LinkForm(
     value: item.toLowerCase(),
   }));
 
-  const optionType = ["ac", "dc", "gaz", "virt"].map((item) => ({
+  const optionType = ["ac", "dc", "gaz", "virt", "other"].map((item) => ({
     label: t(`study.modelization.links.type.${item}`),
     value: item.toLowerCase(),
   }));

@@ -230,6 +230,7 @@
     "study.modelization.links.type.dc": "DC",
     "study.modelization.links.type.gaz": "Gas",
     "study.modelization.links.type.virt": "Virt",
+    "study.modelization.links.type.other": "Other",
     "study.modelization.links.matrix.parameters": "Parameters",
     "study.modelization.links.matrix.capacities": "Capacities",
     "study.modelization.links.matrix.columns.transCapaDirect": "Trans. capacity direct",
