@@ -1,5 +1,6 @@
 import logging
 import re
+import tempfile
 import threading
 from html import escape
 from http import HTTPStatus
@@ -33,8 +34,8 @@ class Watcher:
     Files Watcher to listen raw studies changes and trigger a database update.
     """
 
-    LOCK = Path("watcher")
-    SCAN_LOCK = Path("scan.lock")
+    LOCK = Path(tempfile.gettempdir()) / "watcher"
+    SCAN_LOCK = Path(tempfile.gettempdir()) / "scan.lock"
 
     def __init__(
         self,
@@ -256,7 +257,7 @@ class Watcher:
             logger.info(
                 f"Waiting for FileLock to synchronize {directory_path or 'all studies'}"
             )
-            with FileLock(self.config.storage.tmp_dir / Watcher.SCAN_LOCK):
+            with FileLock(Watcher.SCAN_LOCK):
                 logger.info(
                     f"FileLock acquired to synchronize for {directory_path or 'all studies'}"
                 )

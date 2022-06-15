@@ -1,7 +1,7 @@
 security:
-  disabled: true
+  disabled: false
   jwt:
-    key: super-secret
+    key: secretkeytochange
   login:
     admin:
       pwd: admin
@@ -10,19 +10,22 @@ security:
     default_group_role: 10
 
 db:
-  url: "sqlite:///database.db"
+  url: "postgresql://postgres:somepass@postgresql:5432/postgres"
+  admin_url: "postgresql://postgres:somepass@postgresql:5432/postgres"
+  pool_recycle: 3600
 
 storage:
-  tmp_dir: ./tmp
-  matrixstore: ./matrices
-  archive_dir: ./examples/archives
+  tmp_dir: /antarest_tmp_dir
+  archive_dir: /studies/archives
+  matrixstore: /matrixstore
+  matrix_gc_dry_run: true
   workspaces:
     default: # required, no filters applied, this folder is not watched
-      path: ./examples/internal_studies/
+      path: /workspaces/internal_studies/
     # other workspaces can be added
     # if a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
     tmp:
-      path: ./examples/studies/
+      path: /workspaces/studies/
       # filter_in: ['.*'] # default to '.*'
       # filter_out: [] # default to empty
       # groups: [] # default empty
@@ -31,7 +34,7 @@ launcher:
   default: local
   local:
     binaries:
-      700: path/to/700
+      800: /antares_simulator/antares-8.2-solver
 #  slurm:
 #    local_workspace: path/to/workspace
 #    username: username
@@ -56,22 +59,22 @@ launcher:
 
 debug: false
 
-root_path: ""
+root_path: "/api"
 
 #tasks:
 #  max_workers: 5
 server:
   worker_threadpool_size: 12
-  services:
-    - watcher
+#  services:
+#    - watcher
     
 logging:
   level: INFO
-  logfile: ./tmp/antarest.log
-#  json: false
+#  logfile: /logs/antarest.log
+#  json: true
 
 # Uncomment these lines to use redis as a backend for the eventbus
 # It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
-#redis:
-#  host: localhost
-#  port: 6379
+redis:
+  host: redis
+  port: 6379

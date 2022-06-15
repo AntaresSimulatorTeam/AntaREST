@@ -1,0 +1,10 @@
+version: '2.1'
+services:
+  antares-antarest:
+    user: uid:gid
+  antares-antarest-watcher:
+    user: uid:gid
+  antares-antarest-matrix-gc:
+    user: uid:gid
+  postgresql:
+    user: uid:gid

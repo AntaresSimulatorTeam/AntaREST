@@ -1,4 +1,5 @@
-FROM python:3.8-slim-buster
+#FROM python:3.8-slim-buster
+FROM brunneis/python:3.8.3-ubuntu-20.04
 
 ENV ANTAREST_CONF /resources/application.yaml
 

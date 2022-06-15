@@ -1,0 +1,4 @@
+{
+  "restEndpoint": "/api",
+  "wsEndpoint": "/api/ws"
+}
