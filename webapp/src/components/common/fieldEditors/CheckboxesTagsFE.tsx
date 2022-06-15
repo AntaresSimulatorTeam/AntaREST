@@ -6,6 +6,8 @@ import {
 } from "@mui/material";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import { forwardRef } from "react";
+import { mergeSxProp } from "../../../utils/muiUtils";
 
 interface CheckboxesTagsFEProps<
   T,
@@ -20,19 +22,36 @@ interface CheckboxesTagsFEProps<
     | "renderTags"
   > {
   label?: string;
+  error?: boolean;
+  helperText?: string;
 }
 
 function CheckboxesTagsFE<
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined
->(props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
-  const { label, sx, ...rest } = props;
+>(
+  props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
+  ref: React.Ref<unknown>
+) {
+  const {
+    label,
+    sx,
+    // Default value on MUI
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getOptionLabel = (option: any) => option?.label ?? option,
+    onChange,
+    error,
+    helperText,
+    ...rest
+  } = props;
 
   return (
     <Autocomplete
       {...rest}
-      sx={[{ width: 1, p: "8px" }, ...(Array.isArray(sx) ? sx : [sx])]}
+      ref={ref}
+      getOptionLabel={getOptionLabel}
+      sx={mergeSxProp({ width: 1, p: "8px" }, sx)}
       multiple
       disableCloseOnSelect
       renderOption={(props, option, { selected }) => (
@@ -43,18 +62,29 @@ function CheckboxesTagsFE<
             style={{ marginRight: 8 }}
             checked={selected}
           />
-          {rest.getOptionLabel?.(option) ?? String(option)}
+          {getOptionLabel(option)}
         </li>
       )}
       renderInput={(params) => (
-        <TextField sx={{ m: 0 }} variant="filled" label={label} {...params} />
+        <TextField
+          sx={{ m: 0 }}
+          variant="filled"
+          label={label}
+          error={error}
+          helperText={helperText}
+          {...params}
+        />
       )}
     />
   );
 }
 
-CheckboxesTagsFE.defaultProps = {
-  label: undefined,
-};
-
-export default CheckboxesTagsFE;
+export default forwardRef(CheckboxesTagsFE) as <
+  T,
+  DisableClearable extends boolean | undefined = undefined,
+  FreeSolo extends boolean | undefined = undefined
+>(
+  props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo> & {
+    ref?: React.Ref<unknown>;
+  }
+) => ReturnType<typeof CheckboxesTagsFE>;

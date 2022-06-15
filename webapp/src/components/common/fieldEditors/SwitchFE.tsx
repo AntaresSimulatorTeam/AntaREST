@@ -27,12 +27,14 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
     labelPlacement,
     helperText,
     error,
+    sx,
     ...rest
   } = props;
 
   const fieldEditor = (
     <Switch
       {...rest}
+      sx={!label ? sx : undefined}
       checked={value}
       defaultChecked={defaultValue}
       inputRef={ref}
@@ -42,6 +44,7 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
   if (label) {
     return (
       <FormControlLabel
+        sx={sx}
         control={fieldEditor}
         label={label}
         labelPlacement={labelPlacement}

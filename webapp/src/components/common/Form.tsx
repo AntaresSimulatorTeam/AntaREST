@@ -201,7 +201,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       const error = errors[name];
 
-      if (config?.defaultValues?.[name]) {
+      if (RA.isNotNil(config?.defaultValues?.[name])) {
         res.defaultValue = config?.defaultValues?.[name];
       }
 
@@ -248,7 +248,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   };
 
   return (
-    <BackdropLoading open={isSubmitting}>
+    <BackdropLoading open={isSubmitting || !autoSubmitConfig.enable}>
       <form id={id} onSubmit={handleFormSubmit}>
         {RA.isFunction(children) ? (
           children(sharedProps)
