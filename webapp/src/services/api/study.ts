@@ -114,7 +114,7 @@ export const createStudy = async (
 };
 
 export const editStudy = async (
-  data: object,
+  data: object | string | boolean | number,
   sid: string,
   path = "",
   depth = 1
