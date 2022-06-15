@@ -205,7 +205,7 @@ function Fields(props: Props) {
           }}
         >
           <SwitchFE
-            label="Simulation synhtesis"
+            label="Simulation synthesis"
             {...register("simulationSynthesis", {
               onAutoSubmit: saveValue("output/synthesis"),
             })}
