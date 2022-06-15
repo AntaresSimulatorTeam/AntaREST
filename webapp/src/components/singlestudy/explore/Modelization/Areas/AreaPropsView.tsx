@@ -4,6 +4,7 @@ import PropertiesView from "../../../../common/PropertiesView";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudyAreas } from "../../../../../redux/selectors";
 import ListElement from "../../common/ListElement";
+import { transformNameToId } from "../../../../../services/utils";
 
 interface PropsType {
   studyId: string;
@@ -27,7 +28,13 @@ function AreaPropsView(props: PropsType) {
       }
       return [];
     };
-    setFilteredAreas(filter());
+    setFilteredAreas(
+      filter().map((el) => ({
+        ...el,
+        name: transformNameToId(el.name),
+        label: el.name,
+      }))
+    );
   }, [areas, areaNameFilter]);
 
   ////////////////////////////////////////////////////////////////
@@ -40,7 +47,7 @@ function AreaPropsView(props: PropsType) {
         <ListElement
           list={filteredAreas}
           currentElement={currentArea}
-          setSelectedItem={(elm) => onClick(elm.name)}
+          setSelectedItem={(elm) => onClick(transformNameToId(elm.name))}
         />
       }
       secondaryContent={<div />}

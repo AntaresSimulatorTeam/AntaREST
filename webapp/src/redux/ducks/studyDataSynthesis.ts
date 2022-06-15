@@ -66,7 +66,9 @@ export const createStudyData = createAsyncThunk<
       // Set current link
       const links = selectLinks(studyData);
       const linkList = links ? Object.values(links) : [];
-      if (linkList.length > 0) dispatch(setCurrentLink(linkList[0].name));
+      if (linkList.length > 0) {
+        dispatch(setCurrentLink(linkList[0].name));
+      }
 
       return studyData;
     } catch (err) {

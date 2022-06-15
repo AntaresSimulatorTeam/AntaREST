@@ -36,11 +36,11 @@ function Areas() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleAreaClick = (areaName: string): void => {
+  const handleAreaClick = (areaId: string): void => {
     if (studyData?.areas === undefined) return;
-    const elm = studyData?.areas[areaName.toLowerCase()];
+    const elm = studyData?.areas[areaId];
     if (elm) {
-      dispatch(setCurrentArea(areaName.toLowerCase()));
+      dispatch(setCurrentArea(areaId));
     }
   };
 
@@ -56,9 +56,7 @@ function Areas() {
             <AreaPropsView
               studyId={study.id}
               onClick={handleAreaClick}
-              currentArea={
-                selectedArea !== undefined ? selectedArea.name : undefined
-              }
+              currentArea={currentArea !== undefined ? currentArea : undefined}
             />
           )}
         </Box>

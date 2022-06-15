@@ -406,6 +406,7 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 export interface LinkElement {
+  label: string;
   name: string;
   area1: string;
   area2: string;

@@ -201,28 +201,19 @@ export const selectLinks = (
 ): LinkListElement | undefined => {
   if (studyData) {
     const links: LinkListElement = {};
-    Object.values(studyData.areas).forEach((elm1) => {
-      Object.keys(elm1.links).forEach((elm2) => {
-        const tmpAreaName = studyData.areas[elm2].name;
-        const area1 =
-          elm1.name.localeCompare(tmpAreaName) < 0 ? elm1.name : tmpAreaName;
-        const area2 = elm1.name === area1 ? tmpAreaName : elm1.name;
-        /* const link = links.find(
-          (item: LinkCreationInfo) =>
-            item.area1 === area1 && item.area2 === area2
-        );
-        if (link === undefined)
-          links.push({
-            area1,
-            area2,
-          });*/
-        const name = `${area1} / ${area2}`;
-        if (!(name in links))
-          links[name] = {
-            name,
-            area1,
-            area2,
-          };
+    Object.keys(studyData.areas).forEach((elm1) => {
+      const area1 = studyData.areas[elm1];
+      Object.keys(area1.links).forEach((elm2) => {
+        const area2 = studyData.areas[elm2];
+        const area1Id = elm1.localeCompare(elm2) < 0 ? elm1 : elm2;
+        const area2Id = elm1 === area1Id ? elm2 : elm1;
+        const name = `${area1Id} / ${area2Id}`;
+        links[name] = {
+          label: `${area1.name} / ${area2.name}`,
+          name,
+          area1: area1Id,
+          area2: area2Id,
+        };
       });
     });
     return links;
