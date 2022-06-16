@@ -1,5 +1,12 @@
 # User interface
 
+## What's new (2.5.0)
+
+- [Launch batch mode](#launch-batch-mode)
+- [Strict folder filtering](#strict-folder-filtering)
+- [Zipped output retrieval](#launch-dialog)
+
+
 The application is split in 3 main menus : Studies, Jobs and Data.
 API documentation, external reference links and user account details is also available.
 
@@ -37,6 +44,29 @@ Some actions are available from this view:
 - deleting the study
 
 ![](../assets/media/img/userguide_studyactions.png)
+
+### Launch Dialog
+
+When launching a study, a dialog will open with some choices.
+
+
+![](../assets/media/img/userguide_launch_dialog.png)
+
+
+### Launch batch mode
+
+To launch multiple studies at once, we can click on the checkbox icon to enable selection mode. In this mode, we can click
+on study cards to select / unselect them. Then clicking on the launch button will open
+the launch dialog.
+
+![](../assets/media/img/userguide_batch_launch.png)
+
+### Strict folder filtering
+
+The folder icon next to the breadcrumb path allow to filter (when activated) the studies to only the direct descendant of the selected folder. 
+
+![](../assets/media/img/userguide_strict_folder_filter.png)
+
 
 For more operation over a study, we can click on a study "explore" button and go to the dedicated study view.
 The url of dedicated study view can be bookmarked for sharing or quick access.
