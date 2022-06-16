@@ -76,8 +76,8 @@ function Candidates() {
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
-    },
-    [study]
+      deps: [study],
+    }
   );
 
   const { data: capaLinks } = usePromiseWithSnackbarError(
@@ -94,8 +94,7 @@ function Candidates() {
       }
       return {};
     },
-    { errorMessage: t("xpansion.error.loadConfiguration") },
-    [study]
+    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] }
   );
 
   const deleteXpansion = async () => {

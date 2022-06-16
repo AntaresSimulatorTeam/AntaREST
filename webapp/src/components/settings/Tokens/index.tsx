@@ -123,8 +123,7 @@ function Tokens() {
       const user = await getUser(authUser.id);
       return bots.map((bot) => ({ ...bot, user }));
     },
-    { errorMessage: t("settings.error.tokensError") },
-    [authUser]
+    { errorMessage: t("settings.error.tokensError"), deps: [authUser] }
   );
 
   useUpdateEffect(() => {
