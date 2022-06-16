@@ -542,4 +542,6 @@ const StudyCard = memo((props: Props) => {
   );
 }, areEqual);
 
+StudyCard.displayName = "StudyCard";
+
 export default StudyCard;

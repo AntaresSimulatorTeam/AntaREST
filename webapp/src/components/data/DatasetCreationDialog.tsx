@@ -38,6 +38,8 @@ const HelperIcon = forwardRef<HTMLInputElement>((props, ref) => {
   return <div />;
 });
 
+HelperIcon.displayName = "HelperIcon";
+
 function DatasetCreationDialog(props: PropTypes) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();

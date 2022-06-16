@@ -72,6 +72,8 @@ const Row = memo((props: ListChildComponentProps) => {
   );
 }, areEqual);
 
+Row.displayName = "Row";
+
 function DataListing(props: PropsType) {
   const { datasets = [], selectedItem, setSelectedItem } = props;
 

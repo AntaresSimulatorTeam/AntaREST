@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import {
   DragDropContext,
@@ -9,7 +9,7 @@ import {
 import { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
 
-const Row = React.memo((props: ListChildComponentProps) => {
+const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
   const {
     items,
@@ -47,6 +47,8 @@ const Row = React.memo((props: ListChildComponentProps) => {
     </Draggable>
   );
 }, areEqual);
+
+Row.displayName = "Row";
 
 export type DraggableListProps = {
   items: CommandItem[];
