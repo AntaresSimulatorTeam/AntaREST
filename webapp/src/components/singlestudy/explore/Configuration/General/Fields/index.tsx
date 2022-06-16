@@ -15,6 +15,7 @@ import {
 } from "../utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useFormContext } from "../../../../../common/Form";
+import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
 
 interface Props {
   study: StudyMetadata;
@@ -27,7 +28,11 @@ function Fields(props: Props) {
   const studyVersion = Number(study.version);
   const [t] = useTranslation();
   const { register, setValue, watch, getValues } = useFormContext<FormValues>();
-  const buildingMode = watch("buildingMode");
+  const [buildingMode, firstDay, lastDay] = watch([
+    "buildingMode",
+    "firstDay",
+    "lastDay",
+  ]);
 
   useEffect(() => {
     if (buildingMode === "Derated") {
@@ -35,16 +40,34 @@ function Fields(props: Props) {
     }
   }, [buildingMode, setValue]);
 
+  useDebouncedEffect(
+    () => {
+      if (firstDay > 0 && firstDay > lastDay) {
+        setValue("lastDay", firstDay);
+      }
+    },
+    { wait: 500, deps: [firstDay] }
+  );
+
+  useDebouncedEffect(
+    () => {
+      if (lastDay > 0 && lastDay < firstDay) {
+        setValue("firstDay", lastDay);
+      }
+    },
+    { wait: 500, deps: [lastDay] }
+  );
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleDayValidation = (v: number) => {
-    if (v === 0 || Number.isNaN(v)) {
+    if (v < 1 || Number.isNaN(v)) {
       return "Minimum is 1";
     }
     if (getValues("firstDay") > getValues("lastDay")) {
-      return "First day must be lower or equal to last day";
+      return false;
     }
     if (getValues("leapYear")) {
       return v <= 366 ? true : "Maximum is 366 for a leap year";
@@ -155,7 +178,7 @@ function Fields(props: Props) {
                     ? true
                     : "Value must be 1 when building mode is derated";
                 }
-                if (v === 0) {
+                if (v < 1) {
                   return "Minimum is 1";
                 }
                 return v <= 50000 ? true : "Maximum is 50000";
