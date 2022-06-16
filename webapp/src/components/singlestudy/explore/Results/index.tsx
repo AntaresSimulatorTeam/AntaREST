@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { ReactNode } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
@@ -35,20 +35,12 @@ import {
 import { convertUTCToLocalTime } from "../../../../services/utils";
 import LaunchJobLogView from "../../../tasks/LaunchJobLogView";
 
-/**
- * Types
- */
-
 interface OutputDetail {
   name: string;
   creationDate?: string;
   completionDate?: string;
   job?: LaunchJob;
 }
-
-/**
- * Utils
- */
 
 const combineJobsAndOutputs = (
   jobs: LaunchJob[],
@@ -85,10 +77,6 @@ const combineJobsAndOutputs = (
   return runningJobs.concat(outputDetails);
 };
 
-/**
- * Component
- */
-
 function Results() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
@@ -97,18 +85,42 @@ function Results() {
   const { data: studyJobs, isLoading: studyJobsLoading } =
     usePromiseWithSnackbarError(() => getStudyJobs(study.id), {
       errorMessage: t("results.error.jobs"),
+      deps: [study.id],
     });
 
   const { data: studyOutputs, isLoading: studyOutputsLoading } =
     usePromiseWithSnackbarError(() => getStudyOutputs(study.id), {
       errorMessage: t("results.error.outputs"),
+      deps: [study.id],
     });
+
+  const outputs = useMemo(() => {
+    if (studyJobs && studyOutputs) {
+      return combineJobsAndOutputs(studyJobs, studyOutputs).sort((a, b) => {
+        if (!a.completionDate || !b.completionDate) {
+          if (!a.completionDate && !b.completionDate) {
+            return moment(a.creationDate).isAfter(moment(b.creationDate))
+              ? -1
+              : 1;
+          }
+          if (!a.completionDate) {
+            return -1;
+          }
+          return 1;
+        }
+        return moment(a.completionDate).isAfter(moment(b.completionDate))
+          ? -1
+          : 1;
+      });
+    }
+    return [];
+  }, [studyJobs, studyOutputs]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOutputNameClick = (outputName: string) => {
+  const handleOutputNameClick = (outputName: string) => () => {
     navigate(`/studies/${study.id}/explore/results/${outputName}`);
   };
 
@@ -116,19 +128,17 @@ function Results() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  const outputs = combineJobsAndOutputs(studyJobs || [], studyOutputs || []);
-
   return (
     <Box
       sx={{
-        width: "100%",
-        height: "100%",
+        width: 1,
+        height: 1,
         overflow: "auto",
         p: 2,
       }}
     >
       <TableContainer component={Paper}>
-        <Table sx={{ width: "100%", height: "90%" }} aria-label="simple table">
+        <Table sx={{ width: 1, height: "90%" }} aria-label="simple table">
           <TableHead>
             <TableRow
               sx={{
@@ -153,213 +163,182 @@ function Results() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {
-              R.cond([
-                [
-                  () => studyJobsLoading && studyOutputsLoading,
-                  () => (
-                    <>
-                      {Array.from({ length: 3 }, (v, k) => k).map((v) => (
-                        <TableRow
-                          key={`sk-${v}`}
-                          sx={{
-                            "& td, & th": {
-                              borderColor: "divider",
-                            },
-                            "&:last-child > td, &:last-child > th": {
-                              border: 0,
-                            },
-                          }}
-                        >
-                          <TableCell colSpan={3} scope="row">
-                            <Skeleton sx={{ width: 1, height: 50 }} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </>
-                  ),
-                ],
-                [
-                  () => !!(outputs && outputs.length > 0),
-                  () => (
-                    <>
-                      {outputs
-                        .sort((a, b) => {
-                          if (!a.completionDate || !b.completionDate) {
-                            if (!a.completionDate && !b.completionDate) {
-                              return moment(a.creationDate).isAfter(
-                                moment(b.creationDate)
-                              )
-                                ? -1
-                                : 1;
-                            }
-                            if (!a.completionDate) {
-                              return -1;
-                            }
-                            return 1;
-                          }
-                          return moment(a.completionDate).isAfter(
-                            moment(b.completionDate)
-                          )
-                            ? -1
-                            : 1;
-                        })
-                        .map((row) => (
-                          <TableRow
-                            key={`job-${row.name}`}
+            {R.cond([
+              [
+                () => studyJobsLoading && studyOutputsLoading,
+                () => (
+                  <>
+                    {Array.from({ length: 3 }, (v, k) => k).map((v) => (
+                      <TableRow
+                        key={`sk-${v}`}
+                        sx={{
+                          "& td, & th": {
+                            borderColor: "divider",
+                          },
+                          "&:last-child > td, &:last-child > th": {
+                            border: 0,
+                          },
+                        }}
+                      >
+                        <TableCell colSpan={3} scope="row">
+                          <Skeleton sx={{ width: 1, height: 50 }} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                ),
+              ],
+              [
+                () => outputs.length > 0,
+                () => (
+                  <>
+                    {outputs.map((row) => (
+                      <TableRow
+                        key={`job-${row.name}`}
+                        sx={{
+                          "& td, & th": {
+                            borderColor: "divider",
+                          },
+                          "&:last-child > td, &:last-child > th": {
+                            border: 0,
+                          },
+                        }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {row.completionDate ? (
+                            <Typography
+                              sx={{
+                                "&:hover": { textDecoration: "underline" },
+                                cursor: "pointer",
+                              }}
+                              onClick={handleOutputNameClick(row.name)}
+                            >
+                              {row.name}
+                            </Typography>
+                          ) : (
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                              <CircularProgress
+                                size="1rem"
+                                color="inherit"
+                                sx={{
+                                  mr: 1,
+                                }}
+                              />
+                              <Typography>{row.name}</Typography>
+                            </Box>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box
                             sx={{
-                              "& td, & th": {
-                                borderColor: "divider",
-                              },
-                              "&:last-child > td, &:last-child > th": {
-                                border: 0,
-                              },
+                              display: "flex",
+                              alignItems: "flex-end",
+                              justifyContent: "center",
+                              flexDirection: "column",
+                              color: grey[500],
+                              fontSize: "0.85rem",
                             }}
                           >
-                            <TableCell component="th" scope="row">
-                              {row.completionDate ? (
-                                <Typography
+                            {row.creationDate && (
+                              <Box
+                                width="168px"
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <CalendarTodayIcon
                                   sx={{
-                                    "&:hover": { textDecoration: "underline" },
-                                    cursor: "pointer",
+                                    fontSize: 16,
+                                    marginRight: "0.5em",
                                   }}
-                                  onClick={() =>
-                                    handleOutputNameClick(row.name)
-                                  }
-                                >
-                                  {row.name}
-                                </Typography>
-                              ) : (
-                                <Box
-                                  sx={{ display: "flex", alignItems: "center" }}
-                                >
-                                  <CircularProgress
-                                    size="1rem"
-                                    color="inherit"
+                                />
+                                {convertUTCToLocalTime(row.creationDate)}
+                              </Box>
+                            )}
+                            <Box
+                              width="168px"
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              {row.completionDate && (
+                                <>
+                                  <EventAvailableIcon
                                     sx={{
-                                      mr: 1,
+                                      fontSize: 16,
+                                      marginRight: "0.5em",
                                     }}
                                   />
-                                  <Typography>{row.name}</Typography>
-                                </Box>
+                                  {convertUTCToLocalTime(row.completionDate)}
+                                </>
                               )}
-                            </TableCell>
-                            <TableCell align="right">
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "flex-end",
-                                  justifyContent: "center",
-                                  flexDirection: "column",
-                                  color: grey[500],
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                {row.creationDate && (
-                                  <Box
-                                    width="168px"
-                                    display="flex"
-                                    justifyContent="space-between"
-                                    alignItems="center"
-                                  >
-                                    <CalendarTodayIcon
-                                      sx={{
-                                        fontSize: 16,
-                                        marginRight: "0.5em",
-                                      }}
-                                    />
-                                    {convertUTCToLocalTime(row.creationDate)}
-                                  </Box>
-                                )}
-                                <Box
-                                  width="168px"
-                                  display="flex"
-                                  justifyContent="space-between"
-                                  alignItems="center"
-                                >
-                                  {row.completionDate && (
-                                    <>
-                                      <EventAvailableIcon
-                                        sx={{
-                                          fontSize: 16,
-                                          marginRight: "0.5em",
-                                        }}
-                                      />
-                                      {convertUTCToLocalTime(
-                                        row.completionDate
-                                      )}
-                                    </>
-                                  )}
-                                </Box>
-                              </Box>
-                            </TableCell>
-                            <TableCell align="right">
-                              <Box
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="flex-end"
-                              >
-                                <Box>
-                                  {row.completionDate && row.job ? (
-                                    <Tooltip
-                                      title={t("global.download") as string}
-                                    >
-                                      <DownloadIcon
-                                        sx={{
-                                          fontSize: 22,
-                                          color: "action.active",
-                                          cursor: "pointer",
-                                          "&:hover": { color: "action.hover" },
-                                        }}
-                                        onClick={() => {
-                                          if (row.job) {
-                                            downloadJobOutput(row.job.id);
-                                          }
-                                        }}
-                                      />
-                                    </Tooltip>
-                                  ) : (
-                                    <Box />
-                                  )}
-                                </Box>
-                                {row.job && (
-                                  <LaunchJobLogView
-                                    job={row.job}
-                                    logButton
-                                    logErrorButton
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="flex-end"
+                          >
+                            <Box>
+                              {row.completionDate && row.job ? (
+                                <Tooltip title={t("global.download") as string}>
+                                  <DownloadIcon
+                                    sx={{
+                                      fontSize: 22,
+                                      color: "action.active",
+                                      cursor: "pointer",
+                                      "&:hover": { color: "action.hover" },
+                                    }}
+                                    onClick={() => {
+                                      if (row.job) {
+                                        downloadJobOutput(row.job.id);
+                                      }
+                                    }}
                                   />
-                                )}
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </>
-                  ),
-                ],
-                [
-                  R.T,
-                  () => (
-                    <TableRow
-                      key="job-none"
-                      sx={{
-                        "& td, & th": {
-                          borderColor: "divider",
-                        },
-                        "&:last-child > td, &:last-child > th": {
-                          border: 0,
-                        },
-                      }}
-                    >
-                      <TableCell colSpan={3} scope="row">
-                        <Typography sx={{ m: 2 }} align="center">
-                          {t("results.noOutputs")}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ),
-                ],
-              ])() as ReactNode
-            }
+                                </Tooltip>
+                              ) : (
+                                <Box />
+                              )}
+                            </Box>
+                            {row.job && (
+                              <LaunchJobLogView
+                                job={row.job}
+                                logButton
+                                logErrorButton
+                              />
+                            )}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                ),
+              ],
+              [
+                R.T,
+                () => (
+                  <TableRow
+                    key="job-none"
+                    sx={{
+                      "& td, & th": {
+                        borderColor: "divider",
+                      },
+                      "&:last-child > td, &:last-child > th": {
+                        border: 0,
+                      },
+                    }}
+                  >
+                    <TableCell colSpan={3} scope="row">
+                      <Typography sx={{ m: 2 }} align="center">
+                        {t("results.noOutputs")}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ),
+              ],
+            ])()}
           </TableBody>
         </Table>
       </TableContainer>
