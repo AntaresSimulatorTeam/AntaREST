@@ -5,10 +5,11 @@
   },
   "extends": [
     "eslint:recommended",
+    "airbnb",
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react/jsx-runtime",
-    "airbnb",
+    "plugin:react-hooks/recommended",
     "airbnb/hooks",
     "plugin:prettier/recommended"
   ],
@@ -33,7 +34,6 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": ["react", "react-hooks", "@typescript-eslint"],
   "rules": {
     "@typescript-eslint/no-shadow": "off",
     "@typescript-eslint/no-unused-vars": [
@@ -56,7 +56,6 @@
       }
     ],
     "import/prefer-default-export": "off",
-    "no-undef": "off",
     "no-param-reassign": [
       "error",
       {

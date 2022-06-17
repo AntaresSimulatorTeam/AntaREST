@@ -63,4 +63,6 @@ const BooleanFE = forwardRef((props: BooleanFEProps, ref) => {
   );
 });
 
+BooleanFE.displayName = "BooleanFE";
+
 export default BooleanFE;

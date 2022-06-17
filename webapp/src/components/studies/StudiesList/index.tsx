@@ -123,8 +123,7 @@ function StudiesList(props: StudiesListProps) {
     (scrollProp: GridOnScrollProps) => {
       dispatch(setStudyScrollPosition(scrollProp.scrollTop));
     },
-    400,
-    { trailing: true }
+    { wait: 400, trailing: true }
   );
 
   const handleToggleSelectStudy = useCallback((sid: string) => {

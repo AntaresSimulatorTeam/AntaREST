@@ -48,6 +48,8 @@ const Row = memo((props: ListChildComponentProps) => {
   );
 }, areEqual);
 
+Row.displayName = "Row";
+
 function LinksView(props: PropsType) {
   const { links, node, setSelectedItem } = props;
   const [t] = useTranslation();

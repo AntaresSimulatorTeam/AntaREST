@@ -79,4 +79,6 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   );
 });
 
+SelectFE.displayName = "SelectFE";
+
 export default SelectFE;

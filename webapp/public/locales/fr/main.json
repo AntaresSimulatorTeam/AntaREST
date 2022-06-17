@@ -225,7 +225,7 @@
     "study.modelization.links.type": "Type",
     "study.modelization.links.transmissionCapa": "Transmission capacities",
     "study.modelization.links.transmissionCapa.infinite": "Infinite",
-    "study.modelization.links.transmissionCapa.ignore": "Ignore",
+    "study.modelization.links.transmissionCapa.ignore": "Null",
     "study.modelization.links.transmissionCapa.enabled": "Enabled",
     "study.modelization.links.type.ac": "AC",
     "study.modelization.links.type.dc": "DC",

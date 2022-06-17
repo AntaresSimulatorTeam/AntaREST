@@ -171,7 +171,7 @@ function LauncherDialog(props: Props) {
             ) : (
               <List>
                 {studyNames.map((name) => (
-                  <ListItem>
+                  <ListItem key={name}>
                     <Typography variant="caption">{name}</Typography>
                   </ListItem>
                 ))}

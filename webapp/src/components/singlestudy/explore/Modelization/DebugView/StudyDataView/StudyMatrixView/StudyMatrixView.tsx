@@ -49,8 +49,8 @@ function StudyMatrixView(props: PropTypes) {
     () => getStudyMatrixIndex(study, formatedPath),
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
-    },
-    [study, formatedPath]
+      deps: [study, formatedPath],
+    }
   );
 
   ////////////////////////////////////////////////////////////////

@@ -13,8 +13,7 @@ function GeneralParameters() {
 
   const { data, status, error } = usePromiseWithSnackbarError(
     () => getFormValues(study.id),
-    { errorMessage: "Cannot get study data" }, // TODO i18n
-    [study.id]
+    { errorMessage: "Cannot get study data", deps: [study.id] } // TODO i18n
   );
 
   return R.cond([

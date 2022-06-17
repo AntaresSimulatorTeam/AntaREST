@@ -17,7 +17,6 @@ function Properties() {
   const [t] = useTranslation();
   const { data: defaultValues, status } = usePromise(
     () => getDefaultValues(study.id, currentArea, t),
-    {},
     [study.id, currentArea]
   );
 

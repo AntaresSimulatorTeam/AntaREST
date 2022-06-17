@@ -69,4 +69,6 @@ const StudyCardCell = memo<Props>(
   }
 );
 
+StudyCardCell.displayName = "StudyCardCell";
+
 export default StudyCardCell;
