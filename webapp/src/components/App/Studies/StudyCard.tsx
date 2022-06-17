@@ -162,7 +162,7 @@ const StudyCard = memo((props: Props) => {
 
   const handleCopyClick = () => {
     studyApi
-      .copyStudy(id, `${study?.name} (${t("study.copyId")})`, false)
+      .copyStudy(id, `${study?.name} (${t("studies.copySuffix")})`, false)
       .catch((err) => {
         enqueueErrorSnackbar(t("studies.error.copyStudy"), err);
         logError("Failed to copy study", study, err);
@@ -440,7 +440,7 @@ const StudyCard = memo((props: Props) => {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("study.copyId")}</ListItemText>
+                <ListItemText>{t("global.copy")}</ListItemText>
               </MenuItem>
               {study.managed && (
                 <MenuItem
