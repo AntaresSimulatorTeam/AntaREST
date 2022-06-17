@@ -52,5 +52,3 @@ export const buildStudyTree = (
   }
   return tree;
 };
-
-export default {};

@@ -33,7 +33,7 @@ import {
   StudyOutput,
 } from "../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../services/utils";
-import LaunchJobLogView from "../../../tasks/LaunchJobLogView";
+import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 
 interface OutputDetail {
   name: string;

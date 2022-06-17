@@ -3,20 +3,20 @@ import * as R from "ramda";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import SideNav from "../../components/studies/SideNav";
-import StudiesList from "../../components/studies/StudiesList";
+import SideNav from "./SideNav";
+import StudiesList from "./StudiesList";
 import { fetchStudies } from "../../redux/ducks/studies";
-import RootPage from "../../components/common/page/RootPage";
-import HeaderTopRight from "../../components/studies/HeaderTopRight";
-import HeaderBottom from "../../components/studies/HeaderBottom";
-import SimpleLoader from "../../components/common/loaders/SimpleLoader";
+import RootPage from "../common/page/RootPage";
+import HeaderTopRight from "./HeaderTopRight";
+import HeaderBottom from "./HeaderBottom";
+import SimpleLoader from "../common/loaders/SimpleLoader";
 import {
   getStudiesState,
   getStudyIdsFilteredAndSorted,
 } from "../../redux/selectors";
 import { FetchStatus } from "../../redux/utils";
 import useAsyncAppSelector from "../../redux/hooks/useAsyncAppSelector";
-import FilterDrawer from "../../components/studies/FilterDrawer";
+import FilterDrawer from "./FilterDrawer";
 
 function Studies() {
   const [t] = useTranslation();

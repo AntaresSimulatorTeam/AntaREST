@@ -3,13 +3,13 @@ import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { SyntheticEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import RootPage from "../components/common/page/RootPage";
-import Groups from "../components/settings/Groups";
-import Maintenance from "../components/settings/Maintenance";
-import Tokens from "../components/settings/Tokens";
-import Users from "../components/settings/Users";
-import useAppSelector from "../redux/hooks/useAppSelector";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../redux/selectors";
+import RootPage from "../common/page/RootPage";
+import Groups from "./Groups";
+import Maintenance from "./Maintenance";
+import Tokens from "./Tokens";
+import Users from "./Users";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../redux/selectors";
 
 /**
  * Component

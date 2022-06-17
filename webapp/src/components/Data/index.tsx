@@ -7,24 +7,24 @@ import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Typography, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
-import DataPropsView from "../components/data/DataPropsView";
+import DataPropsView from "./DataPropsView";
 import {
   deleteDataSet,
   exportMatrixDataset,
   getMatrixList,
   getExportMatrixUrl,
-} from "../services/api/matrix";
-import { MatrixInfoDTO, MatrixDataSetDTO } from "../common/types";
-import DatasetCreationDialog from "../components/data/DatasetCreationDialog";
-import ConfirmationDialog from "../components/common/dialogs/ConfirmationDialog";
-import RootPage from "../components/common/page/RootPage";
-import MatrixDialog from "../components/data/MatrixDialog";
-import useEnqueueErrorSnackbar from "../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../components/common/loaders/SimpleLoader";
-import SplitLayoutView from "../components/common/SplitLayoutView";
-import FileTable from "../components/common/FileTable";
-import { getAuthUser } from "../redux/selectors";
-import useAppSelector from "../redux/hooks/useAppSelector";
+} from "../../services/api/matrix";
+import { MatrixInfoDTO, MatrixDataSetDTO } from "../../common/types";
+import DatasetCreationDialog from "./DatasetCreationDialog";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import RootPage from "../common/page/RootPage";
+import MatrixDialog from "./MatrixDialog";
+import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
+import SimpleLoader from "../common/loaders/SimpleLoader";
+import SplitLayoutView from "../common/SplitLayoutView";
+import FileTable from "../common/FileTable";
+import { getAuthUser } from "../../redux/selectors";
+import useAppSelector from "../../redux/hooks/useAppSelector";
 
 function Data() {
   const [t] = useTranslation();

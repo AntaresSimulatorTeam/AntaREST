@@ -1,8 +1,8 @@
 import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { StudyMetadata } from "../../common/types";
-import { StudiesSortConf, StudyFilters } from "../../redux/ducks/studies";
+import { StudyMetadata } from "../common/types";
+import { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
 
 ////////////////////////////////////////////////////////////////
 // Sort

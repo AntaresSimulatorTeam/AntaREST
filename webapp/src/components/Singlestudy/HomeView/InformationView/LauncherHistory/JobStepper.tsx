@@ -13,7 +13,7 @@ import { AxiosError } from "axios";
 import { JobStatus, LaunchJob } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import { killStudy } from "../../../../../services/api/study";
-import LaunchJobLogView from "../../../../tasks/LaunchJobLogView";
+import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   CancelContainer,

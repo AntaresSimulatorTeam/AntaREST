@@ -5,7 +5,7 @@ import { AxiosError } from "axios";
 import { isStringEmpty, isUserAdmin } from "../../../services/utils";
 import { getMessageInfo as getMessageInfoAPI } from "../../../services/api/maintenance";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import OkDialog from "../../../components/common/dialogs/OkDialog";
+import OkDialog from "../../common/dialogs/OkDialog";
 import { setMessageInfo } from "../../../redux/ducks/ui";
 import { getAuthUser, getMessageInfo } from "../../../redux/selectors";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
