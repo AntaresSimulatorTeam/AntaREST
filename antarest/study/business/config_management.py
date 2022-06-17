@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import reduce
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
@@ -13,13 +13,12 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class OutputVariable(str, Enum):
+class OutputVariableBase(str, Enum):
     OV_COST = "OV. COST"
     OP_COST = "OP. COST"
     MRG_PRICE = "MRG. PRICE"
     CO2_EMIS = "CO2 EMIS."
     DTG_BY_PLANT = "DTG by plant"
-    RES_GENERATION_BY_PLANT = "RES generation by plant"
     BALANCE = "BALANCE"
     ROW_BAL = "ROW BAL."
     PSP = "PSP"
@@ -35,18 +34,6 @@ class OutputVariable(str, Enum):
     OIL = "OIL"
     MIX_FUEL = "MIX. FUEL"
     MISC_DTG = "MISC. DTG"
-    MISC_DTG_2 = "MISC. DTG 2"
-    MISC_DTG_3 = "MISC. DTG 3"
-    MISC_DTG_4 = "MISC. DTG 4"
-    WIND_OFFSHORE = "WIND OFFSHORE"
-    WIND_ONSHORE = "WIND ONSHORE"
-    SOLAR_CONCRT = "SOLAR CONCRT."
-    SOLAR_PV = "SOLAR PV"
-    SOLAR_ROOFT = "SOLAR ROOFT"
-    RENW_1 = "RENW. 1"
-    RENW_2 = "RENW. 2"
-    RENW_3 = "RENW. 3"
-    RENW_4 = "RENW. 4"
     H_STOR = "H. STOR"
     H_PUMP = "H. PUMP"
     H_LEV = "H. LEV"
@@ -77,12 +64,41 @@ class OutputVariable(str, Enum):
     HURDLE_COST = "HURDLE COST"
 
 
+class OutputVariable810(str, Enum):
+    RES_GENERATION_BY_PLANT = "RES generation by plant"
+    MISC_DTG_2 = "MISC. DTG 2"
+    MISC_DTG_3 = "MISC. DTG 3"
+    MISC_DTG_4 = "MISC. DTG 4"
+    WIND_OFFSHORE = "WIND OFFSHORE"
+    WIND_ONSHORE = "WIND ONSHORE"
+    SOLAR_CONCRT = "SOLAR CONCRT."
+    SOLAR_PV = "SOLAR PV"
+    SOLAR_ROOFT = "SOLAR ROOFT"
+    RENW_1 = "RENW. 1"
+    RENW_2 = "RENW. 2"
+    RENW_3 = "RENW. 3"
+    RENW_4 = "RENW. 4"
+
+
+OutputVariable = Union[OutputVariableBase, OutputVariable810]
+OUTPUT_VARIABLE_LIST = [var for var in OutputVariableBase] + [
+    var for var in OutputVariable810
+]
+
+
 class ConfigManager:
     def __init__(
         self,
         storage_service: StudyStorageService,
     ) -> None:
         self.storage_service = storage_service
+
+    @staticmethod
+    def get_output_variables(study) -> List[str]:
+        version = int(study.version)
+        if version < 810:
+            return [var for var in OutputVariableBase]
+        return OUTPUT_VARIABLE_LIST
 
     def get_thematic_trimming(
         self, study: RawStudy
@@ -91,19 +107,19 @@ class ConfigManager:
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["settings", "generaldata"])
         trimming_config = config.get("variable selection", None)
+        variable_list = self.get_output_variables(study)
         if trimming_config:
             if trimming_config.get("selected_vars_reset", True):
                 return {
-                    var: var.value
-                    not in trimming_config.get("select_var -", [])
-                    for var in OutputVariable
+                    var: var not in trimming_config.get("select_var -", [])
+                    for var in variable_list
                 }
             else:
                 return {
-                    var: var.value in trimming_config.get("select_var +", [])
-                    for var in OutputVariable
+                    var: var in trimming_config.get("select_var +", [])
+                    for var in variable_list
                 }
-        return {var: True for var in OutputVariable}
+        return {var: True for var in variable_list}
 
     def set_thematic_trimming(
         self, study: Study, state: Dict[OutputVariable, bool]

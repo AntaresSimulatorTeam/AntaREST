@@ -3,7 +3,10 @@ from unittest.mock import Mock
 
 from antarest.study.business.config_management import (
     ConfigManager,
+    OutputVariableBase,
+    OutputVariable810,
     OutputVariable,
+    OUTPUT_VARIABLE_LIST,
 )
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
@@ -42,7 +45,7 @@ def test_thematic_trimming_config():
         ),
     )
 
-    study = VariantStudy()
+    study = VariantStudy(version="820")
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -66,34 +69,40 @@ def test_thematic_trimming_config():
         },
     ]
 
-    expected = {var: True for var in OutputVariable}
-    assert config_manager.get_thematic_trimming(study) == expected
-    expected[OutputVariable.AVL_DTG] = False
-    assert config_manager.get_thematic_trimming(study) == expected
-    expected = {var: False for var in OutputVariable}
-    expected[OutputVariable.CONG_FEE_ALG] = True
+    expected = {var: True for var in [var for var in OutputVariableBase]}
+    study.version = "800"
     assert config_manager.get_thematic_trimming(study) == expected
 
-    new_config = {var: True for var in OutputVariable}
-    new_config[OutputVariable.COAL] = False
+    study.version = "820"
+    expected = {var: True for var in OUTPUT_VARIABLE_LIST}
+    expected[OutputVariableBase.AVL_DTG] = False
+    assert config_manager.get_thematic_trimming(study) == expected
+    expected = {var: False for var in OUTPUT_VARIABLE_LIST}
+    expected[OutputVariableBase.CONG_FEE_ALG] = True
+    assert config_manager.get_thematic_trimming(study) == expected
+
+    new_config = {var: True for var in OUTPUT_VARIABLE_LIST}
+    new_config[OutputVariableBase.COAL] = False
     config_manager.set_thematic_trimming(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variable selection",
-            data={"select_var -": [str(OutputVariable.COAL)]},
+            data={"select_var -": [OutputVariableBase.COAL.value]},
             command_context=command_context,
         )
     )
-    new_config = {var: False for var in OutputVariable}
-    new_config[OutputVariable.DTG_BY_PLANT] = True
+    new_config = {var: False for var in OUTPUT_VARIABLE_LIST}
+    new_config[OutputVariable810.RENW_1] = True
     config_manager.set_thematic_trimming(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variable selection",
             data={
                 "selected_vars_reset": False,
-                "select_var +": [str(OutputVariable.DTG_BY_PLANT)],
+                "select_var +": [OutputVariable810.RENW_1.value],
             },
             command_context=command_context,
         )
     )
+
+    assert len(OUTPUT_VARIABLE_LIST) == 61

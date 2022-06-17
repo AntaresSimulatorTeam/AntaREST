@@ -22,7 +22,10 @@ from antarest.study.business.area_management import (
     AreaInfoDTO,
     AreaUI,
 )
-from antarest.study.business.config_management import OutputVariable
+from antarest.study.business.config_management import (
+    OutputVariableBase,
+    OutputVariable,
+)
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.model import PatchCluster, PatchArea
 from antarest.study.service import StudyService
