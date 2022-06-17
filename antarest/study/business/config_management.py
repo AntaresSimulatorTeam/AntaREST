@@ -81,8 +81,8 @@ class OutputVariable810(str, Enum):
 
 
 OutputVariable = Union[OutputVariableBase, OutputVariable810]
-OUTPUT_VARIABLE_LIST = [var for var in OutputVariableBase] + [
-    var for var in OutputVariable810
+OUTPUT_VARIABLE_LIST: List[str] = [var.value for var in OutputVariableBase] + [
+    var.value for var in OutputVariable810
 ]
 
 
@@ -94,15 +94,13 @@ class ConfigManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def get_output_variables(study) -> List[str]:
+    def get_output_variables(study: Study) -> List[str]:
         version = int(study.version)
         if version < 810:
-            return [var for var in OutputVariableBase]
+            return [var.value for var in OutputVariableBase]
         return OUTPUT_VARIABLE_LIST
 
-    def get_thematic_trimming(
-        self, study: RawStudy
-    ) -> Dict[OutputVariable, bool]:
+    def get_thematic_trimming(self, study: Study) -> Dict[str, bool]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["settings", "generaldata"])
@@ -122,7 +120,7 @@ class ConfigManager:
         return {var: True for var in variable_list}
 
     def set_thematic_trimming(
-        self, study: Study, state: Dict[OutputVariable, bool]
+        self, study: Study, state: Dict[str, bool]
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         state_by_active: Dict[bool, List[str]] = reduce(
@@ -150,8 +148,8 @@ class ConfigManager:
     @staticmethod
     def _agg_states(
         state: Dict[bool, List[str]],
-        key: OutputVariable,
-        ref: Dict[OutputVariable, bool],
+        key: str,
+        ref: Dict[str, bool],
     ) -> Dict[bool, List[str]]:
-        state[ref[key]].append(key.value)
+        state[ref[key]].append(key)
         return state

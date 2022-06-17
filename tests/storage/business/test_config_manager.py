@@ -5,11 +5,8 @@ from antarest.study.business.config_management import (
     ConfigManager,
     OutputVariableBase,
     OutputVariable810,
-    OutputVariable,
     OUTPUT_VARIABLE_LIST,
 )
-from antarest.study.model import RawStudy
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

@@ -23,7 +23,6 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.config_management import (
-    OutputVariableBase,
     OutputVariable,
 )
 from antarest.study.business.link_management import LinkInfoDTO
@@ -229,7 +228,7 @@ def create_study_data_routes(
         "/studies/{uuid}/config/thematic_trimming",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=Dict[OutputVariable, bool],
+        response_model=Dict[str, bool],
     )
     def get_thematic_trimming(
         uuid: str,
@@ -264,7 +263,13 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
         study_service.config_manager.set_thematic_trimming(
-            study, thematic_trimming_config
+            study,
+            {
+                output_variable.value: thematic_trimming_config[
+                    output_variable
+                ]
+                for output_variable in thematic_trimming_config
+            },
         )
 
     @bp.post(
