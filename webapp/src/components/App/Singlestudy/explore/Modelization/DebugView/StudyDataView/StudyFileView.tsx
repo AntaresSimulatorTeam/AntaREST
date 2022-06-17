@@ -6,7 +6,10 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Box, Button } from "@mui/material";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
-import { getStudyData, importFile } from "../../../../../../../services/api/study";
+import {
+  getStudyData,
+  importFile,
+} from "../../../../../../../services/api/study";
 import { Header, Root, Content } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";

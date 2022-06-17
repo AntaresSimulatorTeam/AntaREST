@@ -3,7 +3,11 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import { GroupDTO, RoleType, UserDetailsDTO } from "../../../../../common/types";
+import {
+  GroupDTO,
+  RoleType,
+  UserDetailsDTO,
+} from "../../../../../common/types";
 import { createRole, deleteUserRoles } from "../../../../../services/api/user";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";

@@ -1,5 +1,7 @@
 import { result } from "lodash";
-import usePromise, { PromiseStatus } from "../../../../../../../hooks/usePromise";
+import usePromise, {
+  PromiseStatus,
+} from "../../../../../../../hooks/usePromise";
 import { getStudyData } from "../../../../../../../services/api/study";
 
 export interface FieldElement<T = unknown> {

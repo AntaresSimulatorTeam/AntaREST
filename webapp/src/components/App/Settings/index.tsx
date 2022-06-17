@@ -9,7 +9,10 @@ import Maintenance from "./Maintenance";
 import Tokens from "./Tokens";
 import Users from "./Users";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
+import {
+  isAuthUserAdmin,
+  isAuthUserInGroupAdmin,
+} from "../../../redux/selectors";
 
 /**
  * Component

@@ -11,7 +11,10 @@ import {
   getStudyData,
   importFile,
 } from "../../../../../../../../services/api/study";
-import { MatrixType, MatrixEditDTO } from "../../../../../../../../common/types";
+import {
+  MatrixType,
+  MatrixEditDTO,
+} from "../../../../../../../../common/types";
 import { Header, Root, Content } from "../style";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import { StyledButton } from "./style";

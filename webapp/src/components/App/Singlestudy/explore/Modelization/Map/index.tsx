@@ -29,7 +29,7 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import GraphView from "./GraphView";
 import MapPropsView from "./MapPropsView";
 import CreateAreaModal from "./CreateAreaModal";
-import mapbackground from "../../../../../assets/mapbackground.png";
+import mapbackground from "./mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { setCurrentArea } from "../../../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";

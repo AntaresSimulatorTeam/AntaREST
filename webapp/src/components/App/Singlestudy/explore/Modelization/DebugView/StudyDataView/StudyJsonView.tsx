@@ -6,7 +6,10 @@ import { useTranslation } from "react-i18next";
 import ReactJson from "react-json-view";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Typography } from "@mui/material";
-import { editStudy, getStudyData } from "../../../../../../../services/api/study";
+import {
+  editStudy,
+  getStudyData,
+} from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { Header, Root, Content } from "./style";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";

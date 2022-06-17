@@ -2,7 +2,9 @@ import * as R from "ramda";
 import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
-import usePromise, { PromiseStatus } from "../../../../../../../hooks/usePromise";
+import usePromise, {
+  PromiseStatus,
+} from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";
 import { getDefaultValues, LinkFields } from "./utils";

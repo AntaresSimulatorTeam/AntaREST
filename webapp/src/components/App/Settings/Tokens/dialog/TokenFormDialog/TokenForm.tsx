@@ -29,7 +29,10 @@ import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { getAuthUser, isAuthUserAdmin } from "../../../../../../redux/selectors";
+import {
+  getAuthUser,
+  isAuthUserAdmin,
+} from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 
 interface Props extends UseFormReturn {

@@ -8,7 +8,11 @@ import { usePromise } from "react-use";
 import * as R from "ramda";
 import SingleSelect from "../../../common/SelectSingle";
 import MultiSelect from "../../../common/SelectMulti";
-import { GenericInfo, GroupDTO, StudyPublicMode } from "../../../../common/types";
+import {
+  GenericInfo,
+  GroupDTO,
+  StudyPublicMode,
+} from "../../../../common/types";
 import TextSeparator from "../../../common/TextSeparator";
 import { getGroups } from "../../../../services/api/user";
 import TagTextInput from "../../../common/TagTextInput";

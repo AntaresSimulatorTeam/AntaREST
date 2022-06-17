@@ -8,7 +8,10 @@ import NoContent from "../../../../../common/page/NoContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import LinkPropsView from "./LinkPropsView";
 import useStudyData from "../../hooks/useStudyData";
-import { getCurrentLinkId, selectLinks } from "../../../../../../redux/selectors";
+import {
+  getCurrentLinkId,
+  selectLinks,
+} from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentLink } from "../../../../../../redux/ducks/studyDataSynthesis";

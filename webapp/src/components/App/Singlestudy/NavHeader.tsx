@@ -41,7 +41,7 @@ import {
   unarchiveStudy as callUnarchiveStudy,
 } from "../../../services/api/study";
 import { deleteStudy, toggleFavorite } from "../../../redux/ducks/studies";
-import LauncherDialog from "../../Studies/LauncherDialog";
+import LauncherDialog from "../Studies/LauncherDialog";
 import PropertiesDialog from "./PropertiesDialog";
 import {
   buildModificationDate,
@@ -51,7 +51,7 @@ import {
 } from "../../../services/utils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { isCurrentStudyFavorite } from "../../../redux/selectors";
-import ExportDialog from "../../Studies/ExportModal";
+import ExportDialog from "../Studies/ExportModal";
 import StarToggle from "../../common/StarToggle";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
