@@ -249,16 +249,16 @@ function Fields(props: Props) {
             <>
               <BooleanFE
                 label="Geographic trimming"
-                trueText="None"
-                falseText="Custom"
+                trueText="Custom"
+                falseText="None"
                 {...register("geographicTrimming", {
                   onAutoSubmit: saveValue("general/geographic-trimming"),
                 })}
               />
               <BooleanFE
                 label="Thematic trimming"
-                trueText="None"
-                falseText="Custom"
+                trueText="Custom"
+                falseText="None"
                 {...register("thematicTrimming", {
                   onAutoSubmit: saveValue("general/thematic-trimming"),
                 })}
