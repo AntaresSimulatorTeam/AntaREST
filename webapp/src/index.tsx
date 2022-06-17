@@ -3,7 +3,7 @@ import { Provider } from "react-redux";
 import { StyledEngineProvider } from "@mui/material";
 import { initI18n } from "./i18n";
 import "./index.css";
-import App from "./App";
+import App from "./components/App";
 import { Config, initConfig } from "./services/config";
 import storage, { StorageKey } from "./services/utils/localStorage";
 import store from "./redux/store";

@@ -3,7 +3,7 @@ import { MatrixType } from "../../common/types";
 import {
   XpansionCandidate,
   XpansionSettings,
-} from "../../components/singlestudy/explore/Xpansion/types";
+} from "../../components/App/Singlestudy/explore/Xpansion/types";
 import client from "./client";
 
 export const createXpansionConfiguration = async (
