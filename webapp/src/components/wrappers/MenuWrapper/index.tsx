@@ -27,7 +27,7 @@ import {
 } from "@mui/material";
 import { useMount } from "react-use";
 import logo from "../../../assets/logo.png";
-import NotificationBadge from "../../Tasks/NotificationBadge";
+import NotificationBadge from "../../App/Tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
 import { setMenuExtensionStatus } from "../../../redux/ducks/ui";
 import {

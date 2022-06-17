@@ -6,7 +6,7 @@ import {
   StudyMetadata,
   UserDetailsDTO,
 } from "../common/types";
-import { buildStudyTree } from "../components/Studies/utils";
+import { buildStudyTree } from "../components/App/Studies/utils";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
