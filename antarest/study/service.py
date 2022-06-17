@@ -63,6 +63,7 @@ from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaUI,
 )
+from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
 from antarest.study.business.xpansion_management import (
@@ -174,6 +175,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
+        self.config_manager = ConfigManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.cache_service = cache_service
@@ -477,6 +479,17 @@ class StudyService:
             )
         )
         return new_metadata
+
+    def check_study_access(
+        self,
+        uuid: str,
+        permission: StudyPermissionType,
+        params: RequestParameters,
+    ) -> Study:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, permission)
+        self._assert_study_unarchived(study)
+        return study
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """

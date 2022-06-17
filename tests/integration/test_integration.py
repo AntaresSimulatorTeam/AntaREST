@@ -174,6 +174,15 @@ def test_main(app: FastAPI):
     )
     assert res.status_code == 200
 
+    # config / thematic trimming
+    res = client.get(
+        f"/v1/studies/{study_id}/config/thematic_trimming",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
     # study matrix index
     res = client.get(
         f"/v1/studies/{study_id}/matrixindex",
