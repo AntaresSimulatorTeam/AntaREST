@@ -7,8 +7,6 @@ from antarest.study.model import (
     RawStudy,
     Study,
 )
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
@@ -96,12 +94,13 @@ class ConfigManager:
         if trimming_config:
             if trimming_config.get("selected_vars_reset", True):
                 return {
-                    var: var not in trimming_config.get("select_var -", [])
+                    var: var.value
+                    not in trimming_config.get("select_var -", [])
                     for var in OutputVariable
                 }
             else:
                 return {
-                    var: var in trimming_config.get("select_var +", [])
+                    var: var.value in trimming_config.get("select_var +", [])
                     for var in OutputVariable
                 }
         return {var: True for var in OutputVariable}
@@ -110,7 +109,7 @@ class ConfigManager:
         self, study: Study, state: Dict[OutputVariable, bool]
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        state_by_active: Dict[bool, List[OutputVariable]] = reduce(
+        state_by_active: Dict[bool, List[str]] = reduce(
             lambda agg, output: self._agg_states(agg, output, state),
             state.keys(),
             {True: [], False: []},
@@ -134,9 +133,9 @@ class ConfigManager:
 
     @staticmethod
     def _agg_states(
-        state: Dict[bool, List[OutputVariable]],
+        state: Dict[bool, List[str]],
         key: OutputVariable,
         ref: Dict[OutputVariable, bool],
-    ) -> Dict[bool, List[OutputVariable]]:
-        state[ref[key]].append(key)
+    ) -> Dict[bool, List[str]]:
+        state[ref[key]].append(key.value)
         return state

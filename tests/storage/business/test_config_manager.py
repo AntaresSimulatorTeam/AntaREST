@@ -80,7 +80,7 @@ def test_thematic_trimming_config():
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variable selection",
-            data={"select_var -": [OutputVariable.COAL]},
+            data={"select_var -": [str(OutputVariable.COAL)]},
             command_context=command_context,
         )
     )
@@ -92,7 +92,7 @@ def test_thematic_trimming_config():
             target="settings/generaldata/variable selection",
             data={
                 "selected_vars_reset": False,
-                "select_var +": [OutputVariable.DTG_BY_PLANT],
+                "select_var +": [str(OutputVariable.DTG_BY_PLANT)],
             },
             command_context=command_context,
         )
