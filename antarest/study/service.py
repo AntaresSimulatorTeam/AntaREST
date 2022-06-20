@@ -1421,7 +1421,7 @@ class StudyService:
         self, uuid: str, commands: List[CommandDTO], params: RequestParameters
     ) -> None:
         study = self.get_study(uuid)
-        if isinstance(study, VariantStudyService):
+        if isinstance(study, VariantStudy):
             self.storage_service.variant_study_service.append_commands(
                 uuid, commands, params
             )
