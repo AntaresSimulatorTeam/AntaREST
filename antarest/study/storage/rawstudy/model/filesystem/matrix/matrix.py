@@ -53,6 +53,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.config.path.exists() or not self.get_link_path().exists():
             return
 
+        logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
         matrix = self.context.resolver.resolve(uuid)
         if not matrix or not isinstance(matrix, dict):

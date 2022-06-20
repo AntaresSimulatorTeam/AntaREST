@@ -6,6 +6,7 @@ from antarest.core.requests import RequestParameters
 from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -24,7 +25,8 @@ def execute_or_add_commands(
                 raise CommandApplicationError(result.message)
             executed_commands.append(command)
         storage_service.variant_study_service.invalidate_cache(study)
-        file_study.tree.async_denormalize()
+        if not is_managed(study):
+            file_study.tree.async_denormalize()
     else:
         storage_service.variant_study_service.append_commands(
             study.id,
