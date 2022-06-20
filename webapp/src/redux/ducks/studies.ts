@@ -211,18 +211,6 @@ export const fetchStudies = createAsyncThunk<
 >(n("FETCH_STUDIES"), async (_, { dispatch, getState, rejectWithValue }) => {
   try {
     const studies = await api.getStudies();
-    const state = getState();
-    const currentFavorites = getFavoriteStudyIds(state);
-    const newFavorites = R.innerJoin(
-      (fav, study) => fav === study.id,
-      currentFavorites,
-      studies
-    );
-
-    if (currentFavorites.length !== newFavorites.length) {
-      dispatch(setFavoriteStudies(newFavorites));
-    }
-
     dispatch(fetchStudyVersions());
 
     return studies;

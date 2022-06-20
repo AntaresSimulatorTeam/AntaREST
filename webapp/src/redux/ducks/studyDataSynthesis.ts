@@ -61,13 +61,19 @@ export const createStudyData = createAsyncThunk<
 
       // Set current area
       const areas = Object.keys(studyData.areas);
-      if (areas.length > 0) dispatch(setCurrentArea(areas[0]));
+      if (areas.length > 0) {
+        dispatch(setCurrentArea(areas[0]));
+      } else {
+        dispatch(setCurrentArea(""));
+      }
 
       // Set current link
       const links = selectLinks(studyData);
       const linkList = links ? Object.values(links) : [];
       if (linkList.length > 0) {
         dispatch(setCurrentLink(linkList[0].name));
+      } else {
+        dispatch(setCurrentLink(""));
       }
 
       return studyData;
