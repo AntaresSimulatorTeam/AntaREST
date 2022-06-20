@@ -13,6 +13,8 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
+from antarest.study.service import StudyService
+from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
@@ -25,13 +27,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_variant_routes(
-    variant_study_service: VariantStudyService,
+    study_service: StudyService,
     config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
     Args:
-        variant_study_service: study service facade to handle request
+        study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -39,6 +41,7 @@ def create_study_variant_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    variant_study_service = study_service.storage_service.variant_study_service
 
     @bp.post(
         "/studies/{uuid}/variants",
@@ -159,16 +162,14 @@ def create_study_variant_routes(
         uuid: str,
         commands: List[CommandDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
+    ) -> None:
         logger.info(
             f"Appending new command to variant study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.append_commands(
-            sanitized_uuid, commands, params
-        )
+        study_service.apply_commands(sanitized_uuid, commands, params)
 
     @bp.put(
         "/studies/{uuid}/commands",

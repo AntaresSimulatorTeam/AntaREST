@@ -66,6 +66,7 @@ from antarest.study.business.area_management import (
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
@@ -139,6 +140,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -1414,6 +1416,44 @@ class StudyService:
         else:
             raise NotImplementedError()
         return command  # for testing purpose
+
+    def apply_commands(
+        self, uuid: str, commands: List[CommandDTO], params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        if isinstance(study, VariantStudyService):
+            self.storage_service.variant_study_service.append_commands(
+                uuid, commands, params
+            )
+        else:
+            file_study = self.storage_service.raw_study_service.get_raw(study)
+            assert_permission(params.user, study, StudyPermissionType.WRITE)
+            self._assert_study_unarchived(study)
+            parsed_commands: List[ICommand] = []
+            for command in commands:
+                parsed_commands.extend(
+                    self.storage_service.variant_study_service.command_factory.to_icommand(
+                        command
+                    )
+                )
+            execute_or_add_commands(
+                study,
+                file_study,
+                parsed_commands,
+                self.storage_service,
+            )
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_DATA_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=create_permission_from_study(study),
+                )
+            )
+            logger.info(
+                "Study %s updated by user %s",
+                uuid,
+                params.get_user_id(),
+            )
 
     def edit_study(
         self,

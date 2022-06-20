@@ -1,3 +1,5 @@
+from threading import Thread
+
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -54,3 +56,8 @@ class FileStudyTree(FolderNode):
             children["output"] = Output(self.context, output_config)
 
         return children
+
+    def async_denormalize(self) -> Thread:
+        thread = Thread(target=self.denormalize)
+        thread.start()
+        return thread
