@@ -16,7 +16,7 @@ export function initI18n(version = "unknown") {
     // init i18next
     // for all options read: https://www.i18next.com/overview/configuration-options
     .init({
-      fallbackLng: "fr",
+      fallbackLng: "en",
       backend: {
         loadPath: () => `/locales/{{lng}}/{{ns}}.json?v=${version}`,
       },
