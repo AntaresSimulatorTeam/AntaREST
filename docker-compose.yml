@@ -15,7 +15,7 @@ services:
       - ./resources/deploy/config.prod.yaml:/resources/application.yaml
       - ./resources/deploy/logs:/logs
       - ./resources/deploy/gunicorn.py:/conf/gunicorn.py
-      - /home/buiquangpau/opt/antares-8.2.2-Ubuntu-20.04/bin:/antares_simulator
+      - ./antares-8.2.2-Ubuntu-20.04/bin:/antares_simulator
   antares-antarest-watcher:
     image: antarest:latest
     container_name: antarest-watcher
