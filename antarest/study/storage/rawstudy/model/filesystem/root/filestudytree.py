@@ -70,6 +70,6 @@ class FileStudyTree(FolderNode):
         thread.start()
         return thread
 
-    def _threaded_denormalize(self):
+    def _threaded_denormalize(self) -> None:
         with db():
             self.denormalize()
