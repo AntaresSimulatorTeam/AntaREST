@@ -125,6 +125,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
     get_start_date,
+    study_matcher,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
@@ -316,12 +317,20 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, managed: bool, params: RequestParameters
+        self,
+        managed: bool,
+        name: Optional[str],
+        workspace: Optional[str],
+        folder: Optional[str],
+        params: RequestParameters,
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
             managed: indicate if just managed studies should be retrieved
+            name: optional name of the study to match
+            folder: optional folder prefix of the study to match
+            workspace: optional workspace of the study to match
             params: request parameters
 
         Returns: List of study information
@@ -356,7 +365,8 @@ class StudyService:
                     study_dto,
                     StudyPermissionType.READ,
                     raising=False,
-                ),
+                )
+                and study_matcher(name, workspace, folder),
                 studies.values(),
             )
         }
@@ -1668,12 +1678,13 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
+        with_ui: bool,
         params: RequestParameters,
     ) -> List[LinkInfoDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.links.get_all_links(study)
+        return self.links.get_all_links(study, with_ui)
 
     def create_area(
         self,

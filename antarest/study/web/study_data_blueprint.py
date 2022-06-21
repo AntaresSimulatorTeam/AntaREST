@@ -75,6 +75,7 @@ def create_study_data_routes(
     )
     def get_links(
         uuid: str,
+        with_ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -82,7 +83,7 @@ def create_study_data_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, params)
+        areas_list = study_service.get_all_links(uuid, with_ui, params)
         return areas_list
 
     @bp.post(

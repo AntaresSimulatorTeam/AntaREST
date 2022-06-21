@@ -61,12 +61,15 @@ def create_study_routes(
     )
     def get_studies(
         managed: bool = False,
+        name: Optional[str] = None,
+        folder: Optional[str] = None,
+        workspace: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = study_service.get_studies_information(
-            managed, params
+            managed, name, workspace, folder, params
         )
         return available_studies
 

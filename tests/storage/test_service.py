@@ -67,7 +67,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission
+from antarest.study.storage.utils import assert_permission, study_matcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -218,6 +218,9 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         managed=False,
+        name=None,
+        workspace=None,
+        folder=None,
         params=RequestParameters(
             user=JWTUser(id=2, impersonator=2, type="users")
         ),
@@ -231,6 +234,9 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         managed=False,
+        name=None,
+        workspace=None,
+        folder=None,
         params=RequestParameters(
             user=JWTUser(id=2, impersonator=2, type="users")
         ),
@@ -242,6 +248,9 @@ def test_study_listing() -> None:
     cache.get.return_value = None
     studies = service.get_studies_information(
         managed=True,
+        name=None,
+        workspace=None,
+        folder=None,
         params=RequestParameters(
             user=JWTUser(id=2, impersonator=2, type="users")
         ),
@@ -932,6 +941,32 @@ def test_check_errors():
     assert ["Hello", "World"] == service.check_errors("hello world")
     study_service.check_errors.assert_called_once_with(study)
     repo.get.assert_called_once_with("hello world")
+
+
+@pytest.mark.unit_test
+def test_study_match() -> None:
+    assert not study_matcher(name=None, folder="ab", workspace="hell")(
+        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+    )
+    assert study_matcher(name=None, folder="ab", workspace="hello")(
+        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+    )
+    assert not study_matcher(name=None, folder="abd", workspace="hello")(
+        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+    )
+    assert not study_matcher(name=None, folder="ab", workspace="hello")(
+        StudyMetadataDTO.construct(id="1", workspace="hello")
+    )
+    assert study_matcher(name="f", folder=None, workspace="hello")(
+        StudyMetadataDTO.construct(
+            id="1", name="foo", folder="abc/de", workspace="hello"
+        )
+    )
+    assert not study_matcher(name="foob", folder=None, workspace="hell")(
+        StudyMetadataDTO.construct(
+            id="1", name="foo", folder="abc/de", workspace="hello"
+        )
+    )
 
 
 @pytest.mark.unit_test
