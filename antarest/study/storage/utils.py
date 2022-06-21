@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast
+from typing import Optional, Union, cast, List, Callable
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -212,6 +212,23 @@ def create_permission_from_study(
         if study.public_mode is not None
         else PublicMode.NONE,
     )
+
+
+def study_matcher(
+    name: Optional[str], workspace: Optional[str], folder: Optional[str]
+) -> Callable[[StudyMetadataDTO], bool]:
+    def study_match(study: StudyMetadataDTO) -> bool:
+        if name and not study.name.startswith(name):
+            return False
+        if workspace and study.workspace != workspace:
+            return False
+        if folder and (
+            not study.folder or not study.folder.startswith(folder)
+        ):
+            return False
+        return True
+
+    return study_match
 
 
 def assert_permission(

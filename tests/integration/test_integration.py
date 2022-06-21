@@ -609,12 +609,18 @@ def test_area_management(app: FastAPI):
         },
     )
     res_links = client.get(
-        f"/v1/studies/{study_id}/links",
+        f"/v1/studies/{study_id}/links?with_ui=true",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res_links.json() == [{"area1": "area 1", "area2": "area 2"}]
+    assert res_links.json() == [
+        {
+            "area1": "area 1",
+            "area2": "area 2",
+            "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
+        }
+    ]
     client.delete(
         f"/v1/studies/{study_id}/links/area%201/area%202",
         headers={
