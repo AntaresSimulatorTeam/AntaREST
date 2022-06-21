@@ -168,6 +168,7 @@ def unzip(
     if remove_source_zip:
         zip_path.unlink()
 
+
 def suppress_exception(
     callback: Callable[[], T],
     logger: Callable[[Exception], None],
