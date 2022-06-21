@@ -43,6 +43,6 @@ python antarest/main.py -c resources/application.yaml --auto-upgrade-db
 
 ## Deploy
 
-There is to way to use and/or deploy the application :
+There are 2 ways to use and/or deploy the application :
 - As [a server application](./2-DEPLOY.md#production-server-deployment)
 - As [a desktop systray application](./2-DEPLOY.md#local-application-build)

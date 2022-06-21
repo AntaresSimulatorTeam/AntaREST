@@ -2,11 +2,11 @@
 
 This application can be used in two modes:
 - a production dockerized environment
-- as a local desktop application
+- a local desktop application
 
 ## Production server deployment
 
-The production server deployment use `docker` and `docker-compose` to run the following containers :
+The production server deployment uses `docker` and `docker-compose` to run the following containers :
 - antarest : the web application workers
 - antarest-watcher : the workspace scanner worker
 - antarest-matrix-gc: the matrices garbage collector worker 
@@ -14,19 +14,19 @@ The production server deployment use `docker` and `docker-compose` to run the fo
 - postgresql : the database
 - nginx : the web server front end (can be used to set up ssl)
 
-The following example shows how to deploy this simple base environment (that can be tweaked to scale up and down).
+The following example shows how to deploy this simple base environment.
 
 ### Example deployment steps
 
 Requirements :
+- a linux host
 - docker
 - docker-compose
-- linux host
 
-This steps should work on any linux system with docker and docker-compose installed.
+These steps should work on any linux system with docker and docker-compose installed.
 
 0. First, the steps 1 and 3 of the [quick start build](0-INSTALL.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST)
-   (don't forget the git submodule) and that your working directory is at the root of the project.
+   (don't forget the git submodule), the frontend built and that your working directory is at the root of the project.
 
 1. Then download and unzip AntaresSimulator binaries:
 ```
@@ -39,8 +39,8 @@ tar xzf antares-8.2.2-Ubuntu-20.04.tar.gz
 docker build -t antarest:latest .
 ```
 
-3. Prepare the environment.  
-   a. Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` and replace the UID and GUI values with your user's one. (This will prevent docker containers to write files into your file system with root permissions.)  
+3. Prepare the environment (This is important, in order to prevent docker containers to write files into your file system with root permissions.)  
+   a. Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` and replace the UID and GUI values with your user's one.  
 You can get these values by running the following commands:
    - UID: `id -u`
    - GID: `id -g`
@@ -56,7 +56,7 @@ You can get these values by running the following commands:
 6. To stop the application you can juste hit "CTRL-C" to end the containers
 
 This is an example deployment.  
-You'll have to edit your own `docker-compose.yml` file and [`application.yaml` configuration](./1-CONFIG.md).
+You'll have to edit your own `docker-compose.yml` file and [`application.yaml` configuration](./1-CONFIG.md) to customize it to your needs.
 
 ## Local application build
 
