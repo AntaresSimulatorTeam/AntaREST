@@ -1,10 +1,14 @@
-# AntaREST Storage
+# Antares Web
 
 [![CI](https://github.com/AntaresSimulatorTeam/AntaREST/workflows/main/badge.svg)](https://github.com/AntaresSimulatorTeam/AntaREST/actions?query=workflow%3Amain)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AntaresSimulatorTeam_api-iso-antares&metric=coverage)](https://sonarcloud.io/dashboard?id=AntaresSimulatorTeam_api-iso-antares)
 [![Licence](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST)](https://www.apache.org/licenses/LICENSE-2.0)
 
-<!-- ![architecture api antares](./docs/images/archi-api-antares.png) -->
+![Screenshot](./docs/assets/media/img/readme_screenshot.png)
+
+## Documentation
+
+The full project documentation can be found in the [readthedocs website](https://antares-web.readthedocs.io/en/latest).
 
 ## Build the API
 

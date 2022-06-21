@@ -1,0 +1,65 @@
+version: '2.1'
+services:
+  antares-antarest:
+    image: antarest:latest
+    container_name : antarest
+    environment :
+      - UVICORN_ROOT_PATH=/api
+    depends_on:
+      - redis
+      - postgresql
+    volumes:
+      - ./resources/deploy/examples:/workspaces
+      - ./resources/deploy/tmp:/antarest_tmp_dir
+      - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/config.prod.yaml:/resources/application.yaml
+      - ./resources/deploy/logs:/logs
+      - ./resources/deploy/gunicorn.py:/conf/gunicorn.py
+      - ./antares-8.2.2-Ubuntu-20.04/bin:/antares_simulator
+  antares-antarest-watcher:
+    image: antarest:latest
+    container_name: antarest-watcher
+    volumes:
+      - ./resources/deploy/examples:/workspaces
+      - ./resources/deploy/tmp:/antarest_tmp_dir
+      - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/config.prod.yaml:/resources/application.yaml
+      - ./resources/deploy/logs:/logs
+    depends_on:
+      - antares-antarest
+    command: watcher
+  antares-antarest-matrix-gc:
+    image: antarest:latest
+    container_name : antarest-matrix-gc
+    volumes:
+      - ./resources/deploy/examples:/workspaces
+      - ./resources/deploy/tmp:/antarest_tmp_dir
+      - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/config.prod.yaml:/resources/application.yaml
+      - ./resources/deploy/logs:/logs
+    depends_on:
+      - antares-antarest
+    command: matrix_gc
+  postgresql:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      - POSTGRES_PASSWORD=somepass
+      - PG_DATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ./resources/deploy/db:/var/lib/postgresql/data
+    command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
+  redis:
+    image: redis:latest
+    container_name : redis
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - antares-antarest
+    ports:
+      - 80:80
+    volumes:
+      - ./resources/deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./webapp/build:/www
+      - ./resources/deploy/web.config.json:/www/config.json:ro
