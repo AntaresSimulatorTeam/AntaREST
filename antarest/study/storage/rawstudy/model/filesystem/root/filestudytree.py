@@ -1,3 +1,6 @@
+import logging
+from threading import Thread
+
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -24,6 +27,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import 
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import (
     User,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class FileStudyTree(FolderNode):
@@ -54,3 +60,11 @@ class FileStudyTree(FolderNode):
             children["output"] = Output(self.context, output_config)
 
         return children
+
+    def async_denormalize(self) -> Thread:
+        logger.info(
+            f"Denormalizing (async) study data for study {self.config.study_id}"
+        )
+        thread = Thread(target=self.denormalize)
+        thread.start()
+        return thread

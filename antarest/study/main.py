@@ -23,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
+from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -143,7 +144,7 @@ def build_study_service(
         )
         application.include_router(
             create_study_variant_routes(
-                variant_study_service=variant_study_service,
+                study_service=study_service,
                 config=config,
             )
         )
