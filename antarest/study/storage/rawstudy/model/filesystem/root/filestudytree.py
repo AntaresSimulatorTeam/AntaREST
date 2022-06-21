@@ -1,6 +1,7 @@
 import logging
 from threading import Thread
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -65,6 +66,10 @@ class FileStudyTree(FolderNode):
         logger.info(
             f"Denormalizing (async) study data for study {self.config.study_id}"
         )
-        thread = Thread(target=self.denormalize)
+        thread = Thread(target=self._threaded_denormalize)
         thread.start()
         return thread
+
+    def _threaded_denormalize(self):
+        with db():
+            self.denormalize()
