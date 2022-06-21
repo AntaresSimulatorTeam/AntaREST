@@ -173,7 +173,10 @@ class ConfigPathBuilder:
         try:
             if path.suffix == ".zip":
                 zf = ZipFile(path, "r")
-                error = path.stem + "/checkIntegrity.txt" not in zf.namelist()
+                error = (
+                    str(Path(path.stem / "checkIntegrity.txt"))
+                    not in zf.namelist()
+                )
             else:
                 error = not (path / "checkIntegrity.txt").exists()
             (
