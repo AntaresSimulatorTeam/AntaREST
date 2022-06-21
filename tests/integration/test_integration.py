@@ -136,7 +136,7 @@ def test_main(app: FastAPI):
         },
     )
     res_output = res.json()
-    assert len(res_output) == 4
+    assert len(res_output) == 5
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",

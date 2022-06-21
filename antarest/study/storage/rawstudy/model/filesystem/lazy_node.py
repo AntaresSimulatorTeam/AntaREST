@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, List, Generic, Union, cast
+from typing import Optional, List, Generic, Union, cast, Tuple, Any
 
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -29,6 +28,17 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     ) -> None:
         self.context = context
         super().__init__(config)
+
+    def _get_real_file_path(
+        self,
+    ) -> Tuple[Path, Any]:
+        tmp_dir = None
+        if self.config.zip_path:
+            path, tmp_dir = self._extract_file_to_tmp_dir()
+
+        else:
+            path = self.config.path
+        return path, tmp_dir
 
     def _get(
         self,

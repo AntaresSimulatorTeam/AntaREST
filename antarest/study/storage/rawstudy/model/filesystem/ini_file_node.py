@@ -1,7 +1,6 @@
 from typing import List, Optional, cast, Dict, Any, Union
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import (
@@ -15,7 +14,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
     INode,
-    TREE,
 )
 
 
@@ -60,10 +58,17 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         if depth == 0:
             return {}
         url = url or []
-        try:
-            json = self.reader.read(self.path)
-        except Exception as e:
-            raise IniReaderError(self.__class__.__name__, str(e))
+
+        if self.config.zip_path:
+            file_path, tmp_dir = self._extract_file_to_tmp_dir()
+            json = self.reader.read(file_path)
+            tmp_dir.cleanup()
+        else:
+            try:
+                json = self.reader.read(self.path)
+            except Exception as e:
+                raise IniReaderError(self.__class__.__name__, str(e))
+
         if len(url) == 2:
             json = json[url[0]][url[1]]
         elif len(url) == 1:

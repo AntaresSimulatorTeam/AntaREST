@@ -1,5 +1,6 @@
 import logging
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Any
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -12,7 +13,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
@@ -37,11 +37,14 @@ class InputSeriesMatrix(MatrixNode):
 
     def parse(
         self,
+        file_path: Optional[Path] = None,
+        tmp_dir: Any = None,
     ) -> JSON:
+        file_path = file_path or self.config.path
         try:
             stopwatch = StopWatch()
             matrix: pd.DataFrame = pd.read_csv(
-                self.config.path,
+                file_path,
                 sep="\t",
                 dtype=float,
                 header=None,
@@ -58,7 +61,7 @@ class InputSeriesMatrix(MatrixNode):
 
             return data
         except EmptyDataError:
-            logger.warning(f"Empty file found when parsing {self.config.path}")
+            logger.warning(f"Empty file found when parsing {file_path}")
             return {}
 
     def _dump_json(self, data: JSON) -> None:

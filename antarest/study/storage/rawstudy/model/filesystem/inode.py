@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, TypeVar, Generic, Any
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import List, Optional, Dict, TypeVar, Generic, Any, Tuple
+from zipfile import ZipFile
 
+from antarest.core.exceptions import ShouldNotHappenException
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -127,6 +131,34 @@ class INode(ABC, Generic[G, S, V]):
             raise ValueError(
                 f"url should be fully resolved when arrives on {self.__class__.__name__}"
             )
+
+    def _extract_file_to_tmp_dir(
+        self,
+    ) -> Tuple[Path, Any]:
+        """
+        Happens when the file is inside an archive (aka self.config.zip_file is set)
+        Unzip the file into a temporary directory.
+
+        Returns:
+            The actual path of the extracted file
+            the tmp_dir object which MUST be cleared after use of the file
+        """
+        if self.config.zip_path is None:
+            raise ShouldNotHappenException()
+        zip_path_without_extension = str(self.config.zip_path).split(".")[0]
+        inside_zip_path = (
+            self.config.zip_path.stem
+            + "/"
+            + str(self.config.path)[len(zip_path_without_extension) + 1 :]
+        )
+        tmp_dir = TemporaryDirectory()
+        if self.config.zip_path:
+            with ZipFile(self.config.zip_path) as zip_obj:
+                zip_obj.extract(inside_zip_path, tmp_dir.name)
+            path = Path(tmp_dir.name) / inside_zip_path
+            return path, tmp_dir
+        else:
+            raise ShouldNotHappenException()
 
 
 TREE = Dict[str, INode[Any, Any, Any]]
