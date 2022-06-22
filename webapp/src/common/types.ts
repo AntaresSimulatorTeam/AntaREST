@@ -594,4 +594,67 @@ export interface TaskView {
   status: string;
 }
 
-export default {};
+export interface ThematicTrimmingConfigDTO {
+  "OV. COST": boolean;
+  "OP. COST": boolean;
+  "MRG. PRICE": boolean;
+  "CO2 EMIS.": boolean;
+  "DTG by plant": boolean;
+  BALANCE: boolean;
+  "ROW BAL.": boolean;
+  PSP: boolean;
+  "MISC. NDG": boolean;
+  LOAD: boolean;
+  "H. ROR": boolean;
+  WIND: boolean;
+  SOLAR: boolean;
+  NUCLEAR: boolean;
+  LIGNITE: boolean;
+  COAL: boolean;
+  GAS: boolean;
+  OIL: boolean;
+  "MIX. FUEL": boolean;
+  "MISC. DTG": boolean;
+  "H. STOR": boolean;
+  "H. PUMP": boolean;
+  "H. LEV": boolean;
+  "H. INFL": boolean;
+  "H. OVFL": boolean;
+  "H. VAL": boolean;
+  "H. COST": boolean;
+  "UNSP. ENRG": boolean;
+  "SPIL. ENRG": boolean;
+  LOLD: boolean;
+  LOLP: boolean;
+  "AVL DTG": boolean;
+  "DTG MRG": boolean;
+  "MAX MRG": boolean;
+  "NP COST": boolean;
+  "NP Cost by plant": boolean;
+  NODU: boolean;
+  "NODU by plant": boolean;
+  "FLOW LIN.": boolean;
+  "UCAP LIN.": boolean;
+  "LOOP FLOW": boolean;
+  "FLOW QUAD.": boolean;
+  "CONG. FEE (ALG.)": boolean;
+  "CONG. FEE (ABS.)": boolean;
+  "MARG. COST": boolean;
+  "CONG. PROD +": boolean;
+  "CONG. PROD -": boolean;
+  "HURDLE COST": boolean;
+  // Study version >= 810
+  "RES generation by plant"?: boolean;
+  "MISC. DTG 2"?: boolean;
+  "MISC. DTG 3"?: boolean;
+  "MISC. DTG 4"?: boolean;
+  "WIND OFFSHORE"?: boolean;
+  "WIND ONSHORE"?: boolean;
+  "SOLAR CONCRT."?: boolean;
+  "SOLAR PV"?: boolean;
+  "SOLAR ROOFT"?: boolean;
+  "RENW. 1"?: boolean;
+  "RENW. 2"?: boolean;
+  "RENW. 3"?: boolean;
+  "RENW. 4"?: boolean;
+}
