@@ -26,6 +26,7 @@ import CommandDrawer from "./Commands";
 import { addWsMessageListener } from "../../../services/webSockets";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
+import { setDefaultAreaLinkSelection } from "../../../redux/ducks/studyDataSynthesis";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -102,6 +103,7 @@ function SingleStudy(props: Props) {
     const init = async () => {
       if (studyId) {
         dispatch(setCurrentStudy(studyId));
+        dispatch(setDefaultAreaLinkSelection(studyId));
         updateStudyData();
       }
     };

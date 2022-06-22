@@ -17,7 +17,7 @@ import {
   setMessageInfo,
   setWebSocketConnected,
 } from "../redux/ducks/ui";
-import { setStudyData } from "../redux/ducks/studyDataSynthesis";
+import { updateStudyData } from "../redux/ducks/studyDataSynthesis";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -206,7 +206,7 @@ function makeStudyDataListener(dispatch: AppDispatch) {
   return function listener(e: WSMessage<GenericInfo>): void {
     switch (e.type) {
       case WSEvent.STUDY_DATA_EDITED:
-        dispatch(setStudyData(e));
+        dispatch(updateStudyData(e));
         break;
     }
   };
