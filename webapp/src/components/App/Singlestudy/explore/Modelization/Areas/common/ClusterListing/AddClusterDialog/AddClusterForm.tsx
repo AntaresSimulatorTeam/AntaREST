@@ -45,7 +45,7 @@ function AddClusterForm(props: FormObj & OtherProps) {
         {...register("name", {
           required: t("form.field.required") as string,
           validate: (value) => {
-            if (clusterNameList.includes(value)) {
+            if (clusterNameList.includes(value.toLowerCase())) {
               return t("study.error.form.clusterName") as string;
             }
           },

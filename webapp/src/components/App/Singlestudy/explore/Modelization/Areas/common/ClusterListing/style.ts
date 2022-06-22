@@ -10,9 +10,9 @@ export const Root = styled(Box)(({ theme }) => ({
 
 export const Header = styled(Box)(({ theme }) => ({
   width: "100%",
-  height: "100px",
+  height: "60px",
   display: "flex",
-  justifyContent: "space-between",
+  justifyContent: "flex-end",
   alignItems: "center",
 }));
 

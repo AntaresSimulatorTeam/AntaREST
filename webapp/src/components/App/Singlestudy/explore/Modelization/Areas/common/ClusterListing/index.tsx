@@ -1,7 +1,4 @@
-import SearchIcon from "@mui/icons-material/Search";
 import {
-  InputAdornment,
-  TextField,
   Box,
   Button,
   List,
@@ -31,13 +28,12 @@ import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import {
-  editStudy,
-  getStudyData,
-} from "../../../../../../../../services/api/study";
+import { getStudyData } from "../../../../../../../../services/api/study";
 import { Clusters, byGroup, Cluster, ClusterList } from "./utils";
 import AddClusterDialog from "./AddClusterDialog";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { appendCommand } from "../../../../../../../../services/api/variant";
+import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 
 interface Props {
   fixedGroupList: Array<string>;
@@ -50,7 +46,6 @@ function ClusterListing(props: Props) {
   const { fixedGroupList } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
-  console.log("CURRENT AREA: ", currentArea);
   const { data: clusterInitData, status } = usePromise(
     () =>
       getStudyData(study.id, `input/thermal/clusters/${currentArea}/list`, 3),
@@ -64,7 +59,7 @@ function ClusterListing(props: Props) {
     );
     const clustersObj = Object.keys(clusterDataList).map(
       (group) =>
-        [group, { items: clusterDataList[group], isOpen: false }] as Readonly<
+        [group, { items: clusterDataList[group], isOpen: true }] as Readonly<
           [
             string,
             {
@@ -81,10 +76,6 @@ function ClusterListing(props: Props) {
   const [clusterList, setClusterList] = useState<Clusters>(clusters);
   const [isAddClusterDialogOpen, setIsAddClusterDialogOpen] = useState(false);
 
-  const handleSearchFilterChange = (value: string): void => {
-    console.log("FILTER: ", value);
-  };
-
   const handleToggleGroupOpen = (groupName: string): void => {
     setClusterList({
       ...clusterList,
@@ -96,14 +87,16 @@ function ClusterListing(props: Props) {
   };
 
   const handleClusterDeletion = async (name: string) => {
-    const tmpData = { ...clusterData };
-    delete tmpData[name];
     try {
-      await editStudy(
-        tmpData,
-        study.id,
-        `input/thermal/clusters/${currentArea}/list`
-      );
+      const tmpData = { ...clusterData };
+      delete tmpData[name];
+      await appendCommand(study.id, {
+        action: CommandEnum.REMOVE_CLUSTER,
+        args: {
+          area_id: currentArea,
+          cluster_id: name.toLowerCase(),
+        },
+      });
       setClusterData(tmpData);
       enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
     } catch (e) {
@@ -122,18 +115,6 @@ function ClusterListing(props: Props) {
   return (
     <Root>
       <Header>
-        <TextField
-          label={t("global.search")}
-          variant="outlined"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          onChange={(e) => handleSearchFilterChange(e.target.value as string)}
-        />
         <Button
           color="primary"
           variant="text"
@@ -148,7 +129,7 @@ function ClusterListing(props: Props) {
           [
             R.equals(PromiseStatus.Resolved),
             () => (
-              <Box width="100%" height="100%">
+              <Box sx={{ width: "100%", height: "100%" }}>
                 <List
                   sx={{
                     width: "100%",
@@ -162,7 +143,7 @@ function ClusterListing(props: Props) {
                       sx={{
                         color: "white",
                         bgcolor: "#0000",
-                        fontSize: "16px",
+                        fontSize: "18px",
                       }}
                     >
                       {t("study.modelization.clusters.byGroups")}
@@ -228,9 +209,12 @@ function ClusterListing(props: Props) {
                   <AddClusterDialog
                     open={isAddClusterDialogOpen}
                     title={t("study.modelization.clusters.newCluster")}
-                    clusterGroupList={fixedGroupList.concat(
-                      Object.keys(clusterList)
-                    )}
+                    clusterGroupList={[
+                      ...new Set([
+                        ...fixedGroupList,
+                        ...Object.keys(clusterList),
+                      ]),
+                    ]}
                     clusterData={clusterData}
                     studyId={study.id}
                     area={currentArea}

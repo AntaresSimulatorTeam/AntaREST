@@ -43,9 +43,15 @@ function AddClusterDialog(props: PropType) {
         action: CommandEnum.CREATE_CLUSTER,
         args: {
           area_id: area,
-          cluster_name: name,
+          cluster_name: (name as string).toLowerCase(),
           parameters: {
             group,
+            unitcount: 0,
+            nominalcapacity: 0,
+            spinning: 0,
+            co2: 0,
+            "marginal-cost": 0,
+            "market-bid-cost": 0,
           },
         },
       });
