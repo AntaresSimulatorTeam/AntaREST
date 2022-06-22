@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast, List, Callable
+from typing import Optional, Union, cast, Callable, Tuple, Any
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -345,3 +345,13 @@ def get_start_date(
         first_week_size=first_week_size,
         level=level,
     )
+
+
+def extract_file_to_tmp_dir(
+    zip_path: Path, inside_zip_path: Path
+) -> Tuple[Path, Any]:
+    tmp_dir = tempfile.TemporaryDirectory()
+    with ZipFile(zip_path) as zip_obj:
+        zip_obj.extract(str(inside_zip_path), tmp_dir.name)
+    path = Path(tmp_dir.name) / inside_zip_path
+    return path, tmp_dir

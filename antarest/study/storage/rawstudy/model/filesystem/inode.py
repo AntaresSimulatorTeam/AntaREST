@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import List, Optional, Dict, TypeVar, Generic, Any, Tuple
-from zipfile import ZipFile
 
-from antarest.core.exceptions import ShouldNotHappenException
+from antarest.core.exceptions import (
+    ShouldNotHappenException,
+    WritingInsideZippedFileException,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -145,20 +146,24 @@ class INode(ABC, Generic[G, S, V]):
         """
         if self.config.zip_path is None:
             raise ShouldNotHappenException()
-        zip_path_without_extension = str(self.config.zip_path).split(".")[0]
-        inside_zip_path = (
-            self.config.zip_path.stem
-            + "/"
-            + str(self.config.path)[len(zip_path_without_extension) + 1 :]
-        )
-        tmp_dir = TemporaryDirectory()
+        inside_zip_path = str(self.config.path)[
+            len(str(self.config.zip_path.parent)) + 1 :
+        ]
         if self.config.zip_path:
-            with ZipFile(self.config.zip_path) as zip_obj:
-                zip_obj.extract(inside_zip_path, tmp_dir.name)
-            path = Path(tmp_dir.name) / inside_zip_path
-            return path, tmp_dir
+            from antarest.study.storage.utils import extract_file_to_tmp_dir
+
+            return extract_file_to_tmp_dir(
+                self.config.zip_path, Path(inside_zip_path)
+            )
         else:
             raise ShouldNotHappenException()
+
+    def _assert_not_in_zipped_file(self) -> None:
+        """Prevents writing inside a zip file"""
+        if self.config.zip_path:
+            raise WritingInsideZippedFileException(
+                "Trying to save inside a zipped file"
+            )
 
 
 TREE = Dict[str, INode[Any, Any, Any]]

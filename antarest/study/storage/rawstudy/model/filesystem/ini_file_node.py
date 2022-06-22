@@ -97,6 +97,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         return output
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+        self._assert_not_in_zipped_file()
         url = url or []
         json = self.reader.read(self.path) if self.path.exists() else {}
         formatted_data = data

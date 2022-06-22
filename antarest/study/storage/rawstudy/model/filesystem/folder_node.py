@@ -6,7 +6,6 @@ from typing import List, Optional, Tuple, Union, Dict
 from fastapi import HTTPException
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -143,6 +142,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
+            self._assert_not_in_zipped_file()
             if not self.config.path.exists():
                 self.config.path.mkdir()
             assert isinstance(data, Dict)

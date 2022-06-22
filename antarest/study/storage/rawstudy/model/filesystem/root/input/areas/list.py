@@ -8,7 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
     INode,
-    TREE,
 )
 
 
@@ -39,10 +38,16 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> List[str]:
-        lines = self.config.path.read_text().split("\n")
+        if self.config.zip_path:
+            path, tmp_dir = self._extract_file_to_tmp_dir()
+            lines = path.read_text().split("\n")
+            tmp_dir.cleanup()
+        else:
+            lines = self.config.path.read_text().split("\n")
         return [l.strip() for l in lines if l.strip()]
 
     def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
+        self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
     def delete(self, url: Optional[List[str]] = None) -> None:

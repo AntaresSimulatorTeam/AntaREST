@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -128,7 +129,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: true if study presents in disk, false else.
 
         """
-        return (self.get_study_path(metadata) / "study.antares").is_file()
+        path = self.get_study_path(metadata)
+        if path.suffix == ".zip":
+            zf = ZipFile(path, "r")
+            return str(Path(path.stem) / "study.antares") in zf.namelist()
+
+        return (path / "study.antares").is_file()
 
     def get_raw(
         self,

@@ -8,6 +8,7 @@ from http.client import HTTPException
 from pathlib import Path
 from time import time, sleep
 from typing import List, Optional
+from zipfile import ZipFile
 
 from filelock import FileLock
 
@@ -129,7 +130,17 @@ class Watcher:
                     f"No scan directive file found. Will skip further scan of folder {path}"
                 )
                 return []
+
+            study_antares_exist: bool = False
+
             if (path / "study.antares").exists():
+                study_antares_exist = True
+            elif path.suffix == ".zip":
+                zf = ZipFile(path, "r")
+                if str(Path(path.stem) / "study.antares") in zf.namelist():
+                    study_antares_exist = True
+
+            if study_antares_exist:
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
             else:
@@ -138,7 +149,7 @@ class Watcher:
                     for child in path.iterdir():
                         try:
                             if (
-                                child.is_dir()
+                                (child.is_dir() or child.suffix == ".zip")
                                 and any(
                                     [
                                         re.search(regex, child.name)

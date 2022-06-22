@@ -47,12 +47,10 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.utils import concat_files, StopWatch
+from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import (
-    Operation,
-    MatrixSlice,
     MatrixEditInstructionDTO,
 )
 from antarest.matrixstore.utils import parse_tsv_matrix
@@ -703,7 +701,7 @@ class StudyService:
                         study = RawStudy(
                             id=str(uuid4()),
                             name=folder.path.name,
-                            path=str(folder.path),
+                            path=str(folder.path.parent / folder.path.stem),
                             folder=str(dir_name),
                             workspace=folder.workspace,
                             owner=None,

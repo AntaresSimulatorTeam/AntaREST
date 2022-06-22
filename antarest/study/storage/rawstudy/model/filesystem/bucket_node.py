@@ -1,7 +1,6 @@
-from typing import Optional, List, Union, Dict, Callable, Any
+from typing import Optional, List, Dict, Callable, Any
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -62,6 +61,7 @@ class BucketNode(FolderNode):
         data: SUB_JSON,
         url: Optional[List[str]] = None,
     ) -> None:
+        self._assert_not_in_zipped_file()
         if not self.config.path.exists():
             self.config.path.mkdir()
 

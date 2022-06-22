@@ -286,6 +286,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = ENR_MODELLING.AGGREGATED.value
+    zip_path: Optional[Path] = None
 
     @staticmethod
     def from_build_config(
@@ -321,4 +322,5 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
+            zip_path=self.zip_path,
         )

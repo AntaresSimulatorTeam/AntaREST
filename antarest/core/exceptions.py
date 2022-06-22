@@ -126,5 +126,10 @@ class UrlNotMatchJsonDataError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class WritingInsideZippedFileException(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class StudyOutputNotFoundError(Exception):
     pass
