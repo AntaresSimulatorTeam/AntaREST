@@ -176,6 +176,8 @@ export const getStudyDataState = (state: AppState): StudyDataState =>
 
 const studyDataSelectors = studyDataAdapter.getSelectors(getStudyDataState);
 
+export const getStudyDataIds = studyDataSelectors.selectIds;
+
 export const getAllStudyData = studyDataSelectors.selectAll;
 
 export const getStudyData = studyDataSelectors.selectById;

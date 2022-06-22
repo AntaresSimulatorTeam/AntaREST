@@ -11,7 +11,7 @@ import {
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import { selectLinks } from "../selectors";
+import { getStudyData, getStudyDataIds, selectLinks } from "../selectors";
 import { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 
@@ -79,9 +79,7 @@ export const setDefaultAreaLinkSelection =
   (studyId: FileStudyTreeConfigDTO["study_id"]): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const studyData = studyDataAdapter
-      .getSelectors()
-      .selectById(state.studyDataSynthesis, studyId);
+    const studyData = getStudyData(state, studyId);
     initDefaultAreaLinkSelection(dispatch, studyData);
   };
 
@@ -112,16 +110,11 @@ export const setStudyData = createAsyncThunk<
   return api.getStudySynthesis(id as string).catch(rejectWithValue);
 });
 
-export const updateStudyData =
+export const refreshStudyData =
   (event: WSMessage<GenericInfo>): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    if (
-      studyDataAdapter
-        .getSelectors()
-        .selectIds(state.studyDataSynthesis)
-        .indexOf(event.payload.id) !== -1
-    ) {
+    if (getStudyDataIds(state).indexOf(event.payload.id) !== -1) {
       dispatch(setStudyData(event));
     }
   };
