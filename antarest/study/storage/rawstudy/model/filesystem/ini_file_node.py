@@ -1,4 +1,8 @@
+import tempfile
+from pathlib import Path
 from typing import List, Optional, cast, Dict, Any, Union
+
+from filelock import FileLock
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.core.utils.utils import assert_this
@@ -93,19 +97,20 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
-        json = self.reader.read(self.path) if self.path.exists() else {}
-        formatted_data = data
-        if isinstance(data, str):
-            formatted_data = IniReader.parse_value(data)
-        if len(url) == 2:
-            if url[0] not in json:
-                json[url[0]] = {}
-            json[url[0]][url[1]] = formatted_data
-        elif len(url) == 1:
-            json[url[0]] = formatted_data
-        else:
-            json = cast(JSON, formatted_data)
-        self.writer.write(json, self.path)
+        with FileLock(str(Path(tempfile.gettempdir()) / f"{self.config.study_id}-{self.path}.lock")):
+            json = self.reader.read(self.path) if self.path.exists() else {}
+            formatted_data = data
+            if isinstance(data, str):
+                formatted_data = IniReader.parse_value(data)
+            if len(url) == 2:
+                if url[0] not in json:
+                    json[url[0]] = {}
+                json[url[0]][url[1]] = formatted_data
+            elif len(url) == 1:
+                json[url[0]] = formatted_data
+            else:
+                json = cast(JSON, formatted_data)
+            self.writer.write(json, self.path)
 
     def delete(self, url: Optional[List[str]] = None) -> None:
         url = url or []
