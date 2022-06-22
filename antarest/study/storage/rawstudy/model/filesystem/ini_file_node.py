@@ -1,3 +1,4 @@
+import os
 import tempfile
 from pathlib import Path
 from typing import List, Optional, cast, Dict, Any, Union
@@ -97,7 +98,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
-        with FileLock(str(Path(tempfile.gettempdir()) / f"{self.config.study_id}-{self.path}.lock")):
+        with FileLock(
+            str(
+                Path(tempfile.gettempdir())
+                / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
+            )
+        ):
             json = self.reader.read(self.path) if self.path.exists() else {}
             formatted_data = data
             if isinstance(data, str):
