@@ -350,8 +350,7 @@ def get_start_date(
 def extract_file_to_tmp_dir(
     zip_path: Path, inside_zip_path: Path
 ) -> Tuple[Path, Any]:
-    str_inside_zip_path = str(inside_zip_path)
-    str_inside_zip_path.replace("\\", "/")
+    str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     with ZipFile(zip_path) as zip_obj:
         zip_obj.extract(str_inside_zip_path, tmp_dir.name)
