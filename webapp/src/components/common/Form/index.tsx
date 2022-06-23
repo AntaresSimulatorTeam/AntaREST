@@ -43,7 +43,7 @@ export interface UseFormRegisterReturnPlus<
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > extends UseFormRegisterReturn {
-  defaultValue?: FieldPathValue<TFieldValues, TFieldName>;
+  value?: FieldPathValue<TFieldValues, TFieldName>;
   error?: boolean;
   helperText?: string;
 }
@@ -115,8 +115,16 @@ function Form<TFieldValues extends FieldValues, TContext>(
     mode: "onChange",
     ...config,
   });
-  const { handleSubmit, formState, register, unregister, reset, setValue } =
-    formObj;
+  const {
+    control,
+    handleSubmit,
+    formState,
+    register,
+    unregister,
+    reset,
+    setValue,
+    watch,
+  } = formObj;
   const { isValid, isSubmitting, isDirty, dirtyFields, errors } = formState;
   const allowSubmit = isDirty && isValid && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -127,6 +135,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const lastDataSubmitted = useRef<UnpackNestedValue<TFieldValues>>();
+  const watchAllFields = watch();
 
   useUpdateEffect(
     () => {
@@ -210,9 +219,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       const error = errors[name];
 
-      if (RA.isNotNil(config?.defaultValues?.[name])) {
-        res.defaultValue = config?.defaultValues?.[name];
-      }
+      res.value = R.path(name.split("."), watchAllFields);
 
       if (error) {
         res.error = true;
@@ -223,13 +230,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       return res;
     },
-    [
-      autoSubmitConfig.enable,
-      config?.defaultValues,
-      errors,
-      register,
-      simulateSubmit,
-    ]
+    [autoSubmitConfig.enable, errors, register, simulateSubmit, watchAllFields]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
