@@ -61,9 +61,12 @@ export const deleteLink = async (
 };
 
 export const getAllLinks = async (
-  uuid: string
+  uuid: string,
+  withUi?: boolean
 ): Promise<Array<LinkCreationInfo>> => {
-  const res = await client.get(`/v1/studies/${uuid}/links`);
+  const res = await client.get(
+    `/v1/studies/${uuid}/links${withUi ? `?with_ui=${withUi}` : ""}`
+  );
   return res.data;
 };
 

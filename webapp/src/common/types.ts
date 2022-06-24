@@ -563,9 +563,16 @@ export interface UpdateAreaUi {
   color_rgb: Array<number>;
 }
 
+export interface LinkCreationUI {
+  color: string;
+  style: string;
+  width: number;
+}
+
 export interface LinkCreationInfo {
   area1: string;
   area2: string;
+  ui?: LinkCreationUI;
 }
 
 export interface AreaCreationDTO {

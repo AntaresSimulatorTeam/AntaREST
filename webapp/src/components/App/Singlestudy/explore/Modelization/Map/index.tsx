@@ -20,6 +20,7 @@ import {
   deleteArea,
   deleteLink,
   createLink,
+  getAllLinks,
 } from "../../../../../../services/api/studydata";
 import {
   getAreaPositions,
@@ -300,19 +301,18 @@ function Map() {
               };
             });
             setNodeData(tempNodeData);
+            const links = await getAllLinks(study.id, true);
             setLinkData(
-              Object.keys(data.areas).reduce(
-                (links, currentAreaId) =>
-                  links.concat(
-                    Object.keys(data.areas[currentAreaId].links).map(
-                      (linkId) => ({
-                        source: currentAreaId,
-                        target: linkId,
-                      })
-                    )
-                  ),
-                [] as Array<LinkProperties>
-              )
+              links.map((link) => {
+                return {
+                  source: link.area1,
+                  target: link.area2,
+                  color: link.ui
+                    ? `rgb(${link.ui?.color.split(",").join(", ")}`
+                    : "#d3d3d3",
+                  strokeDasharray: link.ui?.style === "dot" ? 10 : 0,
+                };
+              })
             );
           }
         } catch (e) {
