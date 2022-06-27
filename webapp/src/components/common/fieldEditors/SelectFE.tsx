@@ -56,7 +56,12 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   return (
     <FormControl variant={variant} {...formControlProps}>
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} labelId={labelId} inputRef={ref}>
+      <Select
+        {...selectProps}
+        variant={variant}
+        labelId={labelId}
+        inputRef={ref}
+      >
         {emptyValue && (
           <MenuItem value="">
             {/* TODO i18n */}

@@ -1,8 +1,7 @@
 import * as R from "ramda";
-import { Box, Button, Divider, TextField } from "@mui/material";
+import { Box, Divider, TextField } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { StyledFieldset } from "../styles";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { StudyMetadata } from "../../../../../../../common/types";
@@ -20,13 +19,12 @@ import useDebouncedEffect from "../../../../../../../hooks/useDebouncedEffect";
 
 interface Props {
   study: StudyMetadata;
-  setDialog: React.Dispatch<React.SetStateAction<"thematicTrimming" | "">>;
 }
 
 // TODO i18n
 
 function Fields(props: Props) {
-  const { study, setDialog } = props;
+  const { study } = props;
   const studyVersion = Number(study.version);
   const [t] = useTranslation();
   const { register, setValue, watch, getValues } = useFormContext<FormValues>();
@@ -257,22 +255,14 @@ function Fields(props: Props) {
                   onAutoSubmit: saveValue("general/geographic-trimming"),
                 })}
               />
-              <Box>
-                <BooleanFE
-                  label="Thematic trimming"
-                  trueText="Custom"
-                  falseText="None"
-                  {...register("thematicTrimming", {
-                    onAutoSubmit: saveValue("general/thematic-trimming"),
-                  })}
-                />
-                <Button
-                  startIcon={<SettingsIcon />}
-                  onClick={() => setDialog("thematicTrimming")}
-                >
-                  Settings
-                </Button>
-              </Box>
+              <BooleanFE
+                label="Thematic trimming"
+                trueText="Custom"
+                falseText="None"
+                {...register("thematicTrimming", {
+                  onAutoSubmit: saveValue("general/thematic-trimming"),
+                })}
+              />
             </>
           ) : (
             <SwitchFE
