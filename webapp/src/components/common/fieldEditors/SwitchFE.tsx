@@ -4,6 +4,7 @@ import {
   Switch,
   SwitchProps,
 } from "@mui/material";
+import clsx from "clsx";
 import { forwardRef } from "react";
 
 export interface SwitchFEProps
@@ -27,6 +28,7 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
     labelPlacement,
     helperText,
     error,
+    className,
     sx,
     ...rest
   } = props;
@@ -34,6 +36,7 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
   const fieldEditor = (
     <Switch
       {...rest}
+      className={clsx(!label && ["SwitchFE", className])}
       sx={!label ? sx : undefined}
       checked={value}
       defaultChecked={defaultValue}
@@ -45,6 +48,7 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
     return (
       <FormControlLabel
         sx={sx}
+        className={clsx("SwitchFE", className)}
         control={fieldEditor}
         label={label}
         labelPlacement={labelPlacement}
