@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useCallback, useRef } from "react";
+import { FormEvent, useCallback, useEffect, useRef } from "react";
 import {
   FieldPath,
   FieldPathValue,
@@ -26,6 +26,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BackdropLoading from "../loaders/BackdropLoading";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues
@@ -115,16 +116,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     mode: "onChange",
     ...config,
   });
-  const {
-    control,
-    handleSubmit,
-    formState,
-    register,
-    unregister,
-    reset,
-    setValue,
-    watch,
-  } = formObj;
+  const { handleSubmit, formState, reset, watch } = formObj;
   const { isValid, isSubmitting, isDirty, dirtyFields, errors } = formState;
   const allowSubmit = isDirty && isValid && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -135,7 +127,16 @@ function Form<TFieldValues extends FieldValues, TContext>(
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const lastDataSubmitted = useRef<UnpackNestedValue<TFieldValues>>();
+  const preventClose = useRef(false);
   const watchAllFields = watch();
+  const wrapperFnsData = useAutoUpdateRef({
+    fieldValues: watchAllFields,
+    fieldErrors: errors,
+    register: formObj.register,
+    unregister: formObj.unregister,
+    setValue: formObj.setValue,
+    isAutoConfigEnabled: autoSubmitConfig.enable,
+  });
 
   useUpdateEffect(
     () => {
@@ -149,6 +150,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
     // Entire `formState` must be put in the deps: https://react-hook-form.com/api/useform/formstate
     [formState]
   );
+
+  useEffect(() => {
+    const listener = (event: BeforeUnloadEvent) => {
+      if (preventClose.current) {
+        // eslint-disable-next-line no-param-reassign
+        event.returnValue = "Form not submitted yet. Sure you want to leave?"; // TODO i18n
+      }
+    };
+
+    window.addEventListener("beforeunload", listener);
+
+    return () => {
+      window.removeEventListener("beforeunload", listener);
+    };
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -183,21 +199,37 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    })().catch((error) => {
-      enqueueErrorSnackbar(t("form.submit.error"), error);
-    });
+    })()
+      .catch((error) => {
+        enqueueErrorSnackbar(t("form.submit.error"), error);
+      })
+      .finally(() => {
+        preventClose.current = false;
+      });
   };
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const simulateSubmit = useDebounce(() => {
+  const simulateSubmitClick = useDebounce(() => {
     submitRef.current?.click();
   }, autoSubmitConfig.wait);
 
+  const simulateSubmit = useAutoUpdateRef(() => {
+    preventClose.current = true;
+    simulateSubmitClick();
+  });
+
+  ////////////////////////////////////////////////////////////////
+  // API
+  ////////////////////////////////////////////////////////////////
+
   const registerWrapper = useCallback<UseFormRegisterPlus<TFieldValues>>(
     (name, options) => {
+      const { register, fieldValues, fieldErrors, isAutoConfigEnabled } =
+        wrapperFnsData.current;
+
       if (options?.onAutoSubmit) {
         fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
       }
@@ -206,8 +238,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
         ...options,
         onChange: (e: unknown) => {
           options?.onChange?.(e);
-          if (autoSubmitConfig.enable) {
-            simulateSubmit();
+          if (isAutoConfigEnabled) {
+            simulateSubmit.current();
           }
         },
       };
@@ -217,9 +249,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
         typeof name
       >;
 
-      const error = errors[name];
+      const error = fieldErrors[name];
 
-      res.value = R.path(name.split("."), watchAllFields);
+      res.value = R.path(name.split("."), fieldValues);
 
       if (error) {
         res.error = true;
@@ -230,11 +262,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       return res;
     },
-    [autoSubmitConfig.enable, errors, register, simulateSubmit, watchAllFields]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
     (name, options) => {
+      const { unregister } = wrapperFnsData.current;
+
       if (name) {
         const names = RA.ensureArray(name) as Path<TFieldValues>[];
         names.forEach((n) => {
@@ -243,23 +278,27 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
       return unregister(name, options);
     },
-    [unregister]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const setValueWrapper = useCallback<UseFormSetValue<TFieldValues>>(
     (name, value, options) => {
+      const { setValue, isAutoConfigEnabled } = wrapperFnsData.current;
+
       const newOptions: typeof options = {
-        shouldDirty: autoSubmitConfig.enable, // Option false by default
+        shouldDirty: isAutoConfigEnabled, // Option false by default
         ...options,
       };
 
-      if (autoSubmitConfig.enable && newOptions.shouldDirty) {
-        simulateSubmit();
+      if (isAutoConfigEnabled && newOptions.shouldDirty) {
+        simulateSubmit.current();
       }
 
       setValue(name, value, newOptions);
     },
-    [autoSubmitConfig.enable, setValue, simulateSubmit]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   ////////////////////////////////////////////////////////////////
