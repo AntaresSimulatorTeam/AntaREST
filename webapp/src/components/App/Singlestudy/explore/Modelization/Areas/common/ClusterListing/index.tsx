@@ -27,7 +27,10 @@ import usePromise, {
 import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { StudyMetadata } from "../../../../../../../../common/types";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import {
+  getCurrentAreaId,
+  getCurrentClusters,
+} from "../../../../../../../../redux/selectors";
 import { getStudyData } from "../../../../../../../../services/api/study";
 import { Clusters, byGroup, Cluster, ClusterList } from "./utils";
 import AddClusterDialog from "./AddClusterDialog";
@@ -46,10 +49,14 @@ function ClusterListing(props: Props) {
   const { fixedGroupList } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
+  const clusterInitList = useAppSelector((state) =>
+    getCurrentClusters(study.id, state)
+  );
+  // TO DO: Replace this and Optimize to add/remove the right clusters
   const { data: clusterInitData, status } = usePromise(
     () =>
       getStudyData(study.id, `input/thermal/clusters/${currentArea}/list`, 3),
-    [study.id, currentArea]
+    [study.id, currentArea, clusterInitList]
   );
 
   const [clusterData, setClusterData] = useState<ClusterList>(clusterInitData);
@@ -97,7 +104,7 @@ function ClusterListing(props: Props) {
           cluster_id: name.toLowerCase(),
         },
       });
-      setClusterData(tmpData);
+      // setClusterData(tmpData);
       enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.deleteCluster"), e as AxiosError);
