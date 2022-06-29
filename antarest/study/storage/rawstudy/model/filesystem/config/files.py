@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Tuple, Optional, cast
 from zipfile import ZipFile
 
 from antarest.core.model import JSON
+from antarest.study.common.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     MultipleSameKeysIniReader,
@@ -86,8 +87,6 @@ class ConfigPathBuilder:
     ) -> Any:
         tmp_dir = None
         if root.suffix == ".zip":
-            from antarest.study.storage.utils import extract_file_to_tmp_dir
-
             output_data_path, tmp_dir = extract_file_to_tmp_dir(
                 root, Path(root.stem) / inside_root_path
             )
@@ -243,7 +242,7 @@ class ConfigPathBuilder:
                 nbyears=nbyears,
                 by_year=by_year,
                 synthesis=synthesis,
-                error=error,  # TODO: does not work when zipped
+                error=error,
                 playlist=playlist,
                 archived=path.suffix == ".zip",
             )

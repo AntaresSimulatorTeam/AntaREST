@@ -6,6 +6,7 @@ from antarest.core.exceptions import (
     ShouldNotHappenException,
     WritingInsideZippedFileException,
 )
+from antarest.study.common.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -150,8 +151,6 @@ class INode(ABC, Generic[G, S, V]):
             len(str(self.config.zip_path.parent)) + 1 :
         ]
         if self.config.zip_path:
-            from antarest.study.storage.utils import extract_file_to_tmp_dir
-
             return extract_file_to_tmp_dir(
                 self.config.zip_path, Path(inside_zip_path)
             )

@@ -8,7 +8,6 @@ from http.client import HTTPException
 from pathlib import Path
 from time import time, sleep
 from typing import List, Optional
-from zipfile import ZipFile
 
 from filelock import FileLock
 
@@ -131,18 +130,10 @@ class Watcher:
                 )
                 return []
 
-            study_antares_exist: bool = False
-
             if (path / "study.antares").exists():
-                study_antares_exist = True
-            elif path.suffix == ".zip":
-                zf = ZipFile(path, "r")
-                if str(Path(path.stem) / "study.antares") in zf.namelist():
-                    study_antares_exist = True
-
-            if study_antares_exist:
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
+
             else:
                 folders: List[StudyFolder] = list()
                 if path.is_dir():

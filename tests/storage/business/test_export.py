@@ -64,11 +64,11 @@ def test_export_file(tmp_path: Path, outputs: bool):
     study_service.export_study(study, export_path, outputs)
     zipf = ZipFile(export_path)
 
-    assert "file.txt" in zipf.namelist()
-    assert "test/" in zipf.namelist()
-    assert "test/file.txt" in zipf.namelist()
-    assert ("output/" in zipf.namelist()) == outputs
-    assert ("output/file.txt" in zipf.namelist()) == outputs
+    assert "study/file.txt" in zipf.namelist()
+    assert "study/test/" in zipf.namelist()
+    assert "study/test/file.txt" in zipf.namelist()
+    assert ("study/output/" in zipf.namelist()) == outputs
+    assert ("study/output/file.txt" in zipf.namelist()) == outputs
 
 
 @pytest.mark.unit_test

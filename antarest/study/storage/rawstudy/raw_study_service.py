@@ -120,17 +120,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             else:
                 raise e
 
-    def exists(self, metadata: RawStudy) -> bool:
+    def exists(self, study: RawStudy) -> bool:
         """
         Check study exist.
         Args:
-            metadata: study
+            study: study
 
         Returns: true if study presents in disk, false else.
 
         """
-        path = self.get_study_path(metadata)
-        if path.suffix == ".zip":
+        path = self.get_study_path(study)
+
+        if study.archived:
+            path = self.get_archive_path(study)
             zf = ZipFile(path, "r")
             return str(Path(path.stem) / "study.antares") in zf.namelist()
 
@@ -355,10 +357,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.patch_service.set_reference_output(study, output_id, status)
         remove_from_cache(self.cache, study.id)
 
-    def archive(self, study: RawStudy) -> None:
+    def archive(self, study: RawStudy) -> Path:
         archive_path = self.get_archive_path(study)
-        self.export_study(study, archive_path)
+        new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
+        return new_study_path
 
     def get_archive_path(self, study: RawStudy) -> Path:
         return Path(self.config.storage.archive_dir / f"{study.id}.zip")
@@ -372,6 +375,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: study path
 
         """
+        if metadata.archived:
+            return self.get_archive_path(metadata)
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:

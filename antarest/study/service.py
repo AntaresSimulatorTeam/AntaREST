@@ -216,7 +216,6 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        self._assert_study_unarchived(study)
         return self.storage_service.get_storage(study).get(
             study, url, depth, formatted
         )
@@ -237,7 +236,6 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        self._assert_study_unarchived(study)
         output: Union[str, JSON]
         if isinstance(study, RawStudy):
             output = self.storage_service.get_storage(study).get(
@@ -701,7 +699,7 @@ class StudyService:
                         study = RawStudy(
                             id=str(uuid4()),
                             name=folder.path.name,
-                            path=str(folder.path.parent / folder.path.stem),
+                            path=str(folder.path),
                             folder=str(dir_name),
                             workspace=folder.workspace,
                             owner=None,
@@ -1204,7 +1202,6 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         logger.info(
             "study %s output listing asked by user %s",
             study_id,
@@ -1666,7 +1663,6 @@ class StudyService:
     ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return (
             self.areas.get_all_areas_ui_info(study)
             if ui
@@ -1681,7 +1677,6 @@ class StudyService:
     ) -> List[LinkInfoDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.links.get_all_links(study, with_ui)
 
     def create_area(
@@ -1830,7 +1825,9 @@ class StudyService:
 
         def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.archive(study_to_archive)
+            archived_path = self.storage_service.raw_study_service.archive(
+                study_to_archive
+            )
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
             self.event_bus.push(
@@ -1887,6 +1884,7 @@ class StudyService:
                     study_to_archive, io.BytesIO(fh.read())
                 )
             study_to_archive.archived = False
+
             os.unlink(
                 self.storage_service.raw_study_service.get_archive_path(
                     study_to_archive
@@ -2033,7 +2031,6 @@ class StudyService:
     ) -> XpansionSettingsDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_xpansion_settings(study)
 
     def update_xpansion_settings(
@@ -2067,7 +2064,6 @@ class StudyService:
     ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_candidate(study, candidate_name)
 
     def get_candidates(
@@ -2075,7 +2071,6 @@ class StudyService:
     ) -> List[XpansionCandidateDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_candidates(study)
 
     def update_xpansion_candidate(
@@ -2139,7 +2134,6 @@ class StudyService:
     ) -> bytes:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_single_xpansion_constraints(
             study, filename
         )
@@ -2149,7 +2143,6 @@ class StudyService:
     ) -> List[str]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_all_xpansion_constraints(study)
 
     def add_capa(
@@ -2173,14 +2166,12 @@ class StudyService:
     ) -> JSON:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_single_capa(study, filename)
 
     def get_all_capa(self, uuid: str, params: RequestParameters) -> List[str]:
 
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
         return self.xpansion_manager.get_all_capa(study)
 
     def update_matrix(

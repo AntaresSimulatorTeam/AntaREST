@@ -61,8 +61,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         if self.config.zip_path:
             file_path, tmp_dir = self._extract_file_to_tmp_dir()
-            json = self.reader.read(file_path)
-            tmp_dir.cleanup()
+            try:
+                json = self.reader.read(file_path)
+            except Exception as e:
+                raise IniReaderError(self.__class__.__name__, str(e))
+            finally:
+                tmp_dir.cleanup()
         else:
             try:
                 json = self.reader.read(self.path)
