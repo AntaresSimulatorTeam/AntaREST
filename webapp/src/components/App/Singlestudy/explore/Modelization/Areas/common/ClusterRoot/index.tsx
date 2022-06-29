@@ -12,7 +12,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import * as R from "ramda";
-import { useOutletContext } from "react-router";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -39,17 +38,22 @@ import { appendCommand } from "../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 
 interface Props {
+  children: (elm: {
+    cluster: Cluster["id"];
+    groupList: Array<string>;
+    nameList: Array<string>;
+    back: () => void;
+  }) => React.ReactNode;
+  study: StudyMetadata;
   fixedGroupList: Array<string>;
   type: "thermal" | "renewables";
-  onClusterClick: (cluster: Cluster["id"]) => void;
 }
 
-function ClusterListing(props: Props) {
+function ClusterRoot(props: Props) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-  const { type, fixedGroupList, onClusterClick } = props;
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { study, type, fixedGroupList, children } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
   const clusterInitList = useAppSelector((state) =>
     getCurrentClusters(study.id, state)
@@ -89,11 +93,17 @@ function ClusterListing(props: Props) {
 
   const [clusterList, setClusterList] = useState<Clusters>(clusters);
   const [isAddClusterDialogOpen, setIsAddClusterDialogOpen] = useState(false);
+  const [currentCluster, setCurrentCluster] = useState<Cluster["id"]>();
 
   const clusterGroupList: Array<string> = useMemo(() => {
     const tab = [...new Set([...fixedGroupList, ...Object.keys(clusters)])];
     return tab;
   }, [clusters, fixedGroupList]);
+
+  const clusterNameList: Array<string> = useMemo(
+    () => (clusterData ? Object.keys(clusterData) : []),
+    [clusterData]
+  );
 
   const handleToggleGroupOpen = (groupName: string): void => {
     setClusterList({
@@ -127,7 +137,7 @@ function ClusterListing(props: Props) {
     setClusterList({ ...clusters });
   }, [clusters]);
 
-  return (
+  return currentCluster === undefined ? (
     <Root>
       <Header>
         <Button
@@ -204,7 +214,7 @@ function ClusterListing(props: Props) {
                             <List component="div" disablePadding>
                               <ListItemButton
                                 sx={{ pl: 4 }}
-                                onClick={() => onClusterClick(item.id)}
+                                onClick={() => setCurrentCluster(item.id)}
                               >
                                 <ListItemText primary={item.name} />
                                 <IconButton
@@ -238,7 +248,16 @@ function ClusterListing(props: Props) {
         ])(status)}
       </ListContainer>
     </Root>
+  ) : (
+    <>
+      {children({
+        cluster: currentCluster,
+        groupList: clusterGroupList,
+        nameList: clusterNameList,
+        back: () => setCurrentCluster(undefined),
+      })}
+    </>
   );
 }
 
-export default ClusterListing;
+export default ClusterRoot;
