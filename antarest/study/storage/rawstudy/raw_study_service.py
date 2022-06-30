@@ -293,7 +293,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: new study information.
 
         """
-        path_study = self.get_study_path(metadata)
+        path_study = self.get_study_path_to_unarchive(metadata)
         path_study.mkdir()
 
         try:
@@ -377,6 +377,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         if metadata.archived:
             return self.get_archive_path(metadata)
+        return Path(metadata.path)
+
+    def get_study_path_to_unarchive(self, metadata: Study) -> Path:
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
