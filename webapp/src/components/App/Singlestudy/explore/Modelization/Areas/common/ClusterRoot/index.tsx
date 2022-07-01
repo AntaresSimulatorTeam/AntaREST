@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -42,18 +43,18 @@ interface Props {
     cluster: Cluster["id"];
     groupList: Array<string>;
     nameList: Array<string>;
-    back: () => void;
   }) => React.ReactNode;
   study: StudyMetadata;
   fixedGroupList: Array<string>;
   type: "thermal" | "renewables";
+  backButtonName: string;
 }
 
 function ClusterRoot(props: Props) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-  const { study, type, fixedGroupList, children } = props;
+  const { study, type, fixedGroupList, backButtonName, children } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
   const clusterInitList = useAppSelector((state) =>
     getCurrentClusters(study.id, state)
@@ -136,6 +137,10 @@ function ClusterRoot(props: Props) {
   useEffect(() => {
     setClusterList({ ...clusters });
   }, [clusters]);
+
+  useEffect(() => {
+    setCurrentCluster(undefined);
+  }, [currentArea]);
 
   return currentCluster === undefined ? (
     <Root>
@@ -249,14 +254,25 @@ function ClusterRoot(props: Props) {
       </ListContainer>
     </Root>
   ) : (
-    <>
-      {children({
-        cluster: currentCluster,
-        groupList: clusterGroupList,
-        nameList: clusterNameList,
-        back: () => setCurrentCluster(undefined),
-      })}
-    </>
+    <Root sx={{ p: 2 }}>
+      <Header sx={{ justifyContent: "flex-start", mb: 3 }}>
+        <Button
+          variant="text"
+          color="secondary"
+          onClick={() => setCurrentCluster(undefined)}
+          startIcon={<ArrowBackIcon />}
+        >
+          {backButtonName}
+        </Button>
+      </Header>
+      <Box sx={{ width: "100%", flex: 1, overflowY: "auto" }}>
+        {children({
+          cluster: currentCluster,
+          groupList: clusterGroupList,
+          nameList: clusterNameList,
+        })}
+      </Box>
+    </Root>
   );
 }
 

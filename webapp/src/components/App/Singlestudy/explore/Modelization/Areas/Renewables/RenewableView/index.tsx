@@ -2,8 +2,8 @@ import * as R from "ramda";
 import Form from "../../../../../../../common/Form";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import ThermalForm from "./ThermalForm";
-import { getDefaultValues, ThermalFields } from "./utils";
+import RenewableForm from "./RenewableForm";
+import { getDefaultValues, RenewableFields } from "./utils";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
 import usePromise, {
   PromiseStatus,
@@ -17,7 +17,7 @@ interface Props {
   study: StudyMetadata;
 }
 
-export default function ThermalView(props: Props) {
+export default function RenewableView(props: Props) {
   const { cluster, study, nameList, groupList } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
 
@@ -35,10 +35,10 @@ export default function ThermalView(props: Props) {
           () => (
             <Form
               autoSubmit
-              config={{ defaultValues: defaultValues as ThermalFields }}
+              config={{ defaultValues: defaultValues as RenewableFields }}
             >
               {(formObj) =>
-                ThermalForm({
+                RenewableForm({
                   ...formObj,
                   study,
                   cluster,

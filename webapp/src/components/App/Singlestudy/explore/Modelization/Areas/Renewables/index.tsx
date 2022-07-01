@@ -1,7 +1,8 @@
-import { Box } from "@mui/material";
-import { useState } from "react";
-import ClusterListing from "../common/ClusterListing";
-import { Cluster } from "../common/ClusterListing/utils";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+import { StudyMetadata } from "../../../../../../../common/types";
+import NoContent from "../../../../../../common/page/NoContent";
+import ClusterRoot from "../common/ClusterRoot";
 
 function Renewables() {
   const fixedGroupList = [
@@ -15,22 +16,17 @@ function Renewables() {
     "Other RES 3",
     "Other RES 4",
   ];
-  const [currentCluster, setCurrentCluster] = useState<Cluster>();
-  return currentCluster === undefined ? (
-    <ClusterListing
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [t] = useTranslation();
+  return (
+    <ClusterRoot
+      study={study}
       fixedGroupList={fixedGroupList}
-      onClusterClick={(cluster: Cluster) => setCurrentCluster(cluster)}
-    />
-  ) : (
-    <Box
-      sx={{
-        width: "100%",
-        height: "100%",
-        bgcolor: "black",
-      }}
+      type="renewables"
+      backButtonName={t("study.modelization.clusters.backClusterList")}
     >
-      {currentCluster && <p>{currentCluster.name}</p>}
-    </Box>
+      {({ cluster, groupList, nameList }) => <NoContent />}
+    </ClusterRoot>
   );
 }
 

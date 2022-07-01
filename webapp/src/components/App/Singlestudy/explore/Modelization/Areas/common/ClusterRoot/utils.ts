@@ -8,27 +8,6 @@ export interface ClusterElement {
   group: string;
 }
 
-/* name: string;
-group: string;
-enabled?: boolean; // Default: true
-unitcount?: number; // Default: 0
-nominalcapacity?: number; // Default: 0
-"gen-ts"?: GenTsType; // Default: use global parameter
-"min-stable-power"?: number; // Default: 0
-"min-down-time"?: number; // Default: 1
-"must-run"?: boolean; // Default: false
-spinning?: number; // Default: 0
-co2?: number; // Default: 0
-"volatility.forced"?: number; // Default: 0
-"volatility.planned"?: number; // Default: 0
-"law.forced"?: LawType; // Default: uniform
-"law.planned"?: LawType; // Default: uniform
-"marginal-cost"?: number; // Default: 0
-"spread-cost"?: number; // Default: 0
-"fixed-cost"?: number; // Default: 0
-"startup-cost"?: number; // Default: 0
-"market-bid-cost"?: number; // Default: 0 */
-
 export type ClusterList = {
   [cluster: string]: ClusterElement;
 };

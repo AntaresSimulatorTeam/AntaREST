@@ -1,5 +1,4 @@
-import { Box, Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ClusterRoot from "../common/ClusterRoot";
@@ -19,36 +18,21 @@ function Thermal() {
     "Other 4",
   ];
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-
+  const [t] = useTranslation();
   return (
-    <ClusterRoot study={study} fixedGroupList={fixedGroupList} type="thermal">
-      {({ cluster, groupList, nameList, back }) => (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            bgcolor: "black",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Box sx={{ width: "100%", height: "80px" }}>
-            <Button
-              variant="text"
-              color="secondary"
-              onClick={back}
-              startIcon={<ArrowBackIcon />}
-            >
-              Back to Cluster list
-            </Button>
-          </Box>
-          <ThermalView
-            study={study}
-            cluster={cluster}
-            groupList={groupList}
-            nameList={nameList}
-          />
-        </Box>
+    <ClusterRoot
+      study={study}
+      fixedGroupList={fixedGroupList}
+      type="thermal"
+      backButtonName={t("study.modelization.clusters.backClusterList")}
+    >
+      {({ cluster, groupList, nameList }) => (
+        <ThermalView
+          study={study}
+          cluster={cluster}
+          groupList={groupList}
+          nameList={nameList}
+        />
       )}
     </ClusterRoot>
   );
