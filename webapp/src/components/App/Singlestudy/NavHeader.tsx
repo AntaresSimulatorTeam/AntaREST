@@ -296,14 +296,16 @@ function NavHeader(props: Props) {
           alignItems="center"
           boxSizing="border-box"
         >
-          {isExplorer === true && (
+          {isExplorer && (
             <Button
               size="small"
               variant="contained"
               color="primary"
-              onClick={() => onLaunchClick()}
+              onClick={
+                study?.archived ? () => unarchiveStudy(study) : onLaunchClick
+              }
             >
-              {t("global.launch")}
+              {study?.archived ? t("global.unarchive") : t("global.launch")}
             </Button>
           )}
           {study && study.type === "variantstudy" && (

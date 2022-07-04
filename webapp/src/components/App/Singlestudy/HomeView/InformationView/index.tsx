@@ -8,7 +8,10 @@ import CreateVariantModal from "./CreateVariantModal";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 import LauncherDialog from "../../../Studies/LauncherDialog";
-import { copyStudy } from "../../../../../services/api/study";
+import {
+  copyStudy,
+  unarchiveStudy as callUnarchiveStudy,
+} from "../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
@@ -34,6 +37,17 @@ function InformationView(props: Props) {
       );
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
+    }
+  };
+
+  const unarchiveStudy = async (study: StudyMetadata) => {
+    try {
+      await callUnarchiveStudy(study.id);
+    } catch (e) {
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: study.name }),
+        e as AxiosError
+      );
     }
   };
 
@@ -88,7 +102,7 @@ function InformationView(props: Props) {
           >
             {t("global.open")}
           </Button>
-          {study && (
+          {study && !study.archived && (
             <Button
               variant="text"
               color="primary"
@@ -106,9 +120,15 @@ function InformationView(props: Props) {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => setOpenLauncherModal(true)}
+          onClick={
+            study?.archived
+              ? () => {
+                  unarchiveStudy(study);
+                }
+              : () => setOpenLauncherModal(true)
+          }
         >
-          {t("global.launch")}
+          {study?.archived ? t("global.unarchive") : t("global.launch")}
         </Button>
       </Box>
       {study && tree && openVariantModal && (

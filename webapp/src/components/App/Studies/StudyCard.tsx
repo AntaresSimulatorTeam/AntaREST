@@ -369,20 +369,12 @@ const StudyCard = memo((props: Props) => {
         </Box>
       </CardContent>
       <CardActions>
-        {study.archived ? (
-          <Button size="small" color="primary" onClick={handleUnarchiveClick}>
-            {t("global.unarchive")}
+        <NavLink to={`/studies/${study.id}`} style={{ textDecoration: "none" }}>
+          <Button size="small" color="primary">
+            {t("button.explore")}
           </Button>
-        ) : (
-          <NavLink
-            to={`/studies/${study.id}`}
-            style={{ textDecoration: "none" }}
-          >
-            <Button size="small" color="primary">
-              {t("button.explore")}
-            </Button>
-          </NavLink>
-        )}
+        </NavLink>
+
         <Tooltip title={t("studies.moreActions") as string}>
           <Button
             size="small"
