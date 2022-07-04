@@ -259,17 +259,6 @@ function LauncherDialog(props: Props) {
           <FormControlLabel
             control={
               <Checkbox
-                checked={!!options.archive_output}
-                onChange={(e, checked) => {
-                  handleChange("archive_output", checked);
-                }}
-              />
-            }
-            label={t("study.archiveOutputMode") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
                 checked={!!options.xpansion}
                 onChange={(e, checked) => {
                   handleChange("xpansion", checked);

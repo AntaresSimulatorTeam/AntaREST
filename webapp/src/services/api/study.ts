@@ -268,8 +268,6 @@ export interface LaunchOptions {
   // eslint-disable-next-line camelcase
   output_suffix?: string;
   // eslint-disable-next-line camelcase
-  archive_output?: boolean;
-  // eslint-disable-next-line camelcase
   other_options?: string;
 }
 
