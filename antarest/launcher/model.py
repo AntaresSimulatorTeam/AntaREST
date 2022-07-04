@@ -17,7 +17,7 @@ class LauncherParametersDTO(BaseModel):
     time_limit: Optional[int] = None
     xpansion: bool = False
     xpansion_r_version: bool = False
-    archive_output: bool = False
+    archive_output: bool = True
     output_suffix: Optional[str] = None
     other_options: Optional[str] = None
     # add extensions field here
