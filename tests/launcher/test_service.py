@@ -478,7 +478,7 @@ def test_get_logs(tmp_path: Path):
         JobLog(message="second message", log_type=str(JobLogType.BEFORE)),
         JobLog(message="last message", log_type=str(JobLogType.AFTER)),
     ]
-    job_result_mock.launcher_params = None
+    job_result_mock.launcher_params = '{"archive_output": false}'
 
     launcher_service.job_result_repository.get.return_value = job_result_mock
     slurm_launcher = Mock()
@@ -569,12 +569,18 @@ def test_manage_output(tmp_path: Path):
         None,
         JobResult(id=job_id, study_id=study_id),
         JobResult(id=job_id, study_id=study_id, output_id="some id"),
-        JobResult(id=job_id, study_id=study_id),
+        JobResult(
+            id=job_id,
+            study_id=study_id,
+        ),
         JobResult(
             id=job_id,
             study_id=study_id,
             launcher_params=json.dumps(
-                {f"{LAUNCHER_PARAM_NAME_SUFFIX}": "hello"}
+                {
+                    "archive_output": False,
+                    f"{LAUNCHER_PARAM_NAME_SUFFIX}": "hello",
+                }
             ),
         ),
     ]
