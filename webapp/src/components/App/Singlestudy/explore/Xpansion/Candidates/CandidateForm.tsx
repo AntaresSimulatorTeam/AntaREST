@@ -21,13 +21,13 @@ import {
   StyledVisibilityIcon,
   StyledDeleteIcon,
 } from "../share/styles";
-import { LinkCreationInfo } from "../../../../../../common/types";
+import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../../common/SelectSingle";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;
-  links: Array<LinkCreationInfo>;
+  links: Array<LinkCreationInfoDTO>;
   capacities: Array<string>;
   deleteCandidate: (name: string | undefined) => Promise<void>;
   updateCandidate: (

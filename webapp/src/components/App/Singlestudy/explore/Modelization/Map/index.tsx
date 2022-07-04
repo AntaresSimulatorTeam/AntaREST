@@ -301,16 +301,30 @@ function Map() {
               };
             });
             setNodeData(tempNodeData);
-            const links = await getAllLinks(study.id, true);
+            const links = await getAllLinks({ uuid: study.id, withUi: true });
             setLinkData(
               links.map((link) => {
+                let style = [0];
+                let linecap = "butt";
+                if (link.ui?.style === "dot") {
+                  style = [1, 5];
+                  linecap = "round";
+                }
+                if (link.ui?.style === "dash") {
+                  style = [16, 8];
+                  linecap = "square";
+                }
+                if (link.ui?.style === "dotdash") {
+                  style = [10, 6, 1, 6];
+                  linecap = "square";
+                }
                 return {
                   source: link.area1,
                   target: link.area2,
-                  color: link.ui
-                    ? `rgb(${link.ui?.color.split(",").join(", ")}`
-                    : "#d3d3d3",
-                  strokeDasharray: link.ui?.style === "dot" ? 10 : 0,
+                  color: `rgb(${link.ui?.color}`,
+                  strokeDasharray: style,
+                  strokeLinecap: linecap,
+                  strokeWidth: link.ui?.width,
                 };
               })
             );

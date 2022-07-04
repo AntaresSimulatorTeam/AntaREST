@@ -89,7 +89,7 @@ function Candidates() {
       if (exist) {
         return {
           capacities: await getAllCapacities(study.id),
-          links: await getAllLinks(study.id),
+          links: await getAllLinks({ uuid: study.id }),
         };
       }
       return {};
