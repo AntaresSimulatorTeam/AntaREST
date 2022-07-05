@@ -198,13 +198,13 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         names = list(children.keys()) if names[0] == "*" else names
         if names[0] not in children:
             raise ChildNotFoundError(
-                f"{names[0]} not a children of {self.__class__.__name__}"
+                f"{names[0]} not a child of {self.__class__.__name__}"
             )
         child_class = type(children[names[0]])
         for name in names:
             if name not in children:
                 raise ChildNotFoundError(
-                    f"{name} not a children of {self.__class__.__name__}"
+                    f"{name} not a child of {self.__class__.__name__}"
                 )
             if type(children[name]) != child_class:
                 raise FilterError("Filter selection has different classes")

@@ -148,7 +148,7 @@ class INode(ABC, Generic[G, S, V]):
         if self.config.zip_path is None:
             raise ShouldNotHappenException()
         inside_zip_path = str(self.config.path)[
-            len(str(self.config.zip_path.parent)) + 1 :
+            len(str(self.config.zip_path)[:-4]) + 1 :
         ]
         if self.config.zip_path:
             return extract_file_to_tmp_dir(

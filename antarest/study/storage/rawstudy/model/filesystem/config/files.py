@@ -88,7 +88,7 @@ class ConfigPathBuilder:
         tmp_dir = None
         if root.suffix == ".zip":
             output_data_path, tmp_dir = extract_file_to_tmp_dir(
-                root, Path(root.stem) / inside_root_path
+                root, inside_root_path
             )
         else:
             output_data_path = root / inside_root_path
@@ -223,10 +223,7 @@ class ConfigPathBuilder:
         try:
             if path.suffix == ".zip":
                 zf = ZipFile(path, "r")
-                error = (
-                    str(Path(path.stem) / "checkIntegrity.txt")
-                    not in zf.namelist()
-                )
+                error = str("checkIntegrity.txt") not in zf.namelist()
             else:
                 error = not (path / "checkIntegrity.txt").exists()
             (
@@ -275,10 +272,8 @@ class ConfigPathBuilder:
     def _parse_outputs_parameters(
         path: Path,
     ) -> Tuple[int, bool, bool, Optional[List[int]]]:
-        parameters_path_inside_output = (
-            path.stem + "/about-the-study/parameters.ini"
-        )
-        full_path_parameters = path.parent / parameters_path_inside_output
+        parameters_path_inside_output = "about-the-study/parameters.ini"
+        full_path_parameters = path / parameters_path_inside_output
         tmp_dir = None
 
         if path.suffix == ".zip":

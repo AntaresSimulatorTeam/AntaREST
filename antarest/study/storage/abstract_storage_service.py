@@ -308,9 +308,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         ) as tmpdir:
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.export_study_flat(
-                metadata, tmp_study_path / target.stem, outputs
-            )
+            self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
             filename = shutil.make_archive(
                 base_name=os.path.splitext(target)[0],  # TODO:MAYBE THIS
