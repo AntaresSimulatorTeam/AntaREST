@@ -496,15 +496,14 @@ class LauncherService:
         job_output_path = self._get_job_output_fallback_path(job_id)
 
         try:
+            output_name = extract_output_name(output_path, output_suffix_name)
             os.mkdir(job_output_path)
             if output_path.suffix != ".zip":
                 imported_output_path = job_output_path / "imported"
                 shutil.copytree(output_path, imported_output_path)
-                output_name = extract_output_name(
-                    imported_output_path, output_suffix_name
-                )
                 imported_output_path.rename(Path(job_output_path, output_name))
             else:
+
                 shutil.copy(
                     output_path, job_output_path / f"{output_name}.zip"
                 )

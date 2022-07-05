@@ -44,9 +44,9 @@ class LinkManager:
                 ui_info: Optional[LinkUIDTO] = None
                 if with_ui and links_config and link in links_config:
                     ui_info = LinkUIDTO(
-                        color=f"{links_config[link]['colorr']},{links_config[link]['colorg']},{links_config[link]['colorb']}",
-                        width=links_config[link]["link-width"],
-                        style=links_config[link]["link-style"],
+                        color=f"{links_config[link].get('colorr', '163')},{links_config[link].get('colorg', '163')},{links_config[link].get('colorb', '163')}",
+                        width=links_config[link].get("link-width", 1),
+                        style=links_config[link].get("link-style", "plain"),
                     )
                 result.append(
                     LinkInfoDTO(area1=area_id, area2=link, ui=ui_info)

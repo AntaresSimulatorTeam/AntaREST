@@ -18,7 +18,13 @@ import {
 import * as api from "../../services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
-import { makeActionName, FetchStatus, AsyncEntityState } from "../utils";
+import {
+  makeActionName,
+  FetchStatus,
+  AsyncEntityState,
+  createThunk,
+} from "../utils";
+import { setDefaultAreaLinkSelection } from "./studyDataSynthesis";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -93,9 +99,13 @@ const n = makeActionName("study");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-export const setCurrentStudy = createAction<
+export const setCurrentStudy = createThunk<
+  NonNullable<StudiesState["current"]>,
   NonNullable<StudiesState["current"]>
->(n("SET_CURRENT"));
+>(n("SET_CURRENT"), (arg: string, { dispatch }) => {
+  dispatch(setDefaultAreaLinkSelection(arg));
+  return arg;
+});
 
 export const setStudyScrollPosition = createAction<
   StudiesState["scrollPosition"]

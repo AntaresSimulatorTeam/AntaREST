@@ -13,6 +13,7 @@ import {
   AreasConfig,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
+  ThematicTrimmingConfigDTO,
 } from "../../common/types";
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
@@ -267,8 +268,6 @@ export interface LaunchOptions {
   // eslint-disable-next-line camelcase
   output_suffix?: string;
   // eslint-disable-next-line camelcase
-  archive_output?: boolean;
-  // eslint-disable-next-line camelcase
   other_options?: string;
 }
 
@@ -389,4 +388,18 @@ export const scanFolder = async (folderPath: string): Promise<void> => {
   await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
 };
 
-export default {};
+export const getThematicTrimmingConfig = async (
+  studyId: StudyMetadata["id"]
+): Promise<ThematicTrimmingConfigDTO> => {
+  const res = await client.get(
+    `/v1/studies/${studyId}/config/thematic_trimming`
+  );
+  return res.data;
+};
+
+export const setThematicTrimmingConfig = async (
+  studyId: StudyMetadata["id"],
+  config: ThematicTrimmingConfigDTO
+): Promise<void> => {
+  await client.put(`/v1/studies/${studyId}/config/thematic_trimming`, config);
+};

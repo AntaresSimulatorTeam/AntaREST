@@ -310,10 +310,10 @@ class SlurmLauncher(AbstractLauncher):
 
         study_list = self.data_repo_tinydb.get_list_of_studies()
 
-        all_done = True
+        nb_study_done = 0
 
         for study in study_list:
-            all_done = all_done and (study.finished or study.with_error)
+            nb_study_done += 1 if (study.finished or study.with_error) else 0
             if study.done:
                 try:
                     self.log_tail_manager.stop_tracking(
@@ -355,7 +355,8 @@ class SlurmLauncher(AbstractLauncher):
                     self.create_update_log(study.name),
                 )
 
-        if all_done:
+        # we refetch study list here because by the time the import_output is done, maybe some new studies has been added
+        if nb_study_done == len(self.data_repo_tinydb.get_list_of_studies()):
             self.stop()
 
     @staticmethod

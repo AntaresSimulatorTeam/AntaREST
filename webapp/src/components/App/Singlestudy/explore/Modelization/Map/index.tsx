@@ -20,6 +20,7 @@ import {
   deleteArea,
   deleteLink,
   createLink,
+  getAllLinks,
 } from "../../../../../../services/api/studydata";
 import {
   getAreaPositions,
@@ -33,6 +34,7 @@ import mapbackground from "./mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { setCurrentArea } from "../../../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import { linkStyle } from "./utils";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -300,19 +302,19 @@ function Map() {
               };
             });
             setNodeData(tempNodeData);
+            const links = await getAllLinks({ uuid: study.id, withUi: true });
             setLinkData(
-              Object.keys(data.areas).reduce(
-                (links, currentAreaId) =>
-                  links.concat(
-                    Object.keys(data.areas[currentAreaId].links).map(
-                      (linkId) => ({
-                        source: currentAreaId,
-                        target: linkId,
-                      })
-                    )
-                  ),
-                [] as Array<LinkProperties>
-              )
+              links.map((link) => {
+                const [style, linecap] = linkStyle(link.ui?.style);
+                return {
+                  source: link.area1,
+                  target: link.area2,
+                  color: `rgb(${link.ui?.color}`,
+                  strokeDasharray: style,
+                  strokeLinecap: linecap,
+                  strokeWidth: link.ui?.width,
+                };
+              })
             );
           }
         } catch (e) {
