@@ -41,7 +41,9 @@ const folderPredicate = R.curry(
         studyNodeId += `/${folderPath}`;
       }
     }
-    return strict ? studyNodeId === folder : studyNodeId.startsWith(folder);
+    return strict
+      ? studyNodeId === folder
+      : `${studyNodeId}/`.startsWith(`${folder}/`);
   }
 );
 
