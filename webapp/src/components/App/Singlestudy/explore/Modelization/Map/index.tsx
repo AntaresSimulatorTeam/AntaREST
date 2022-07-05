@@ -34,6 +34,7 @@ import mapbackground from "./mapbackground.png";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { setCurrentArea } from "../../../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import { linkStyle } from "./utils";
 
 const FONT_SIZE = 16;
 const NODE_HEIGHT = 400;
@@ -304,20 +305,7 @@ function Map() {
             const links = await getAllLinks({ uuid: study.id, withUi: true });
             setLinkData(
               links.map((link) => {
-                let style = [0];
-                let linecap = "butt";
-                if (link.ui?.style === "dot") {
-                  style = [1, 5];
-                  linecap = "round";
-                }
-                if (link.ui?.style === "dash") {
-                  style = [16, 8];
-                  linecap = "square";
-                }
-                if (link.ui?.style === "dotdash") {
-                  style = [10, 6, 1, 6];
-                  linecap = "square";
-                }
+                const [style, linecap] = linkStyle(link.ui?.style);
                 return {
                   source: link.area1,
                   target: link.area2,
