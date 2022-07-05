@@ -134,7 +134,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         if study.archived:
             path = self.get_archive_path(study)
             zf = ZipFile(path, "r")
-            return str(Path(path.stem) / "study.antares") in zf.namelist()
+            return str("study.antares") in zf.namelist()
 
         return (path / "study.antares").is_file()
 
