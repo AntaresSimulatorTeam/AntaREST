@@ -21,7 +21,7 @@ export const linkStyle = (linkStyle: string): Array<Array<number> | string> => {
       },
     ],
     [
-      R.equals("plain"),
+      (_: string): boolean => true,
       (): Array<Array<number> | string> => {
         return [[0], "butt"];
       },
