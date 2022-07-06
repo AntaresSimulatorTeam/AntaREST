@@ -34,7 +34,7 @@ interface Props {
   tabStyle?: "normal" | "withoutBorder";
 }
 
-function BasicTabs(props: Props) {
+function TabWrapper(props: Props) {
   const { study, tabList, border, tabStyle } = props;
   const location = useLocation();
   const navigate = useNavigate();
@@ -88,9 +88,9 @@ function BasicTabs(props: Props) {
   );
 }
 
-BasicTabs.defaultProps = {
+TabWrapper.defaultProps = {
   border: undefined,
   tabStyle: "normal",
 };
 
-export default BasicTabs;
+export default TabWrapper;
