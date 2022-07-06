@@ -129,16 +129,18 @@ class Watcher:
                     f"No scan directive file found. Will skip further scan of folder {path}"
                 )
                 return []
+
             if (path / "study.antares").exists():
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
+
             else:
                 folders: List[StudyFolder] = list()
                 if path.is_dir():
                     for child in path.iterdir():
                         try:
                             if (
-                                child.is_dir()
+                                (child.is_dir())
                                 and any(
                                     [
                                         re.search(regex, child.name)

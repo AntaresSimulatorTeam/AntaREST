@@ -44,7 +44,7 @@ function DebugView() {
   );
 
   useEffect(() => {
-    if (study && !study.archived) {
+    if (study) {
       initStudyData(study.id);
     }
   }, [study, initStudyData]);

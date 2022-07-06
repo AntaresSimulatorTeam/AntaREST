@@ -274,19 +274,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 Path(path_output.parent, output_full_name + extension)
             )
 
-            if not is_zipped:
-                data = self.get(
-                    metadata, f"output/{output_full_name}", -1, use_cache=False
-                )
+            data = self.get(
+                metadata, f"output/{output_full_name}", -1, use_cache=False
+            )
 
-                if data is None:
-                    self.delete_output(metadata, "imported_output")
-                    raise BadOutputError("The output provided is not conform.")
-            else:
-                # TODO: remove this part of code when study tree zipfile support is implemented
-                logger.warning(
-                    "The imported output is zipped: no check is done"
-                )
+            if data is None:
+                self.delete_output(metadata, "imported_output")
+                raise BadOutputError("The output provided is not conform.")
 
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)

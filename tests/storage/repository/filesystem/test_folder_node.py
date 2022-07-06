@@ -25,6 +25,7 @@ from tests.storage.repository.filesystem.utils import (
 def build_tree() -> INode:
     config = Mock()
     config.path.exist.return_value = True
+    config.zip_path = None
     return TestMiddleNode(
         context=Mock(),
         config=config,

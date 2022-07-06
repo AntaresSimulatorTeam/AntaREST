@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast, List, Callable
+from typing import Optional, Union, cast, Callable
 from uuid import uuid4
 from zipfile import ZipFile
 

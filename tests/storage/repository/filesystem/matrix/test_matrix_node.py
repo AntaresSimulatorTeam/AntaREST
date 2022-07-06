@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Optional, List
 from unittest.mock import Mock
 
@@ -32,6 +33,8 @@ class MockMatrixNode(MatrixNode):
 
     def parse(
         self,
+        file_path: Optional[Path] = None,
+        tmp_dir: Optional[TemporaryDirectory] = None,
     ) -> JSON:
         return MOCK_MATRIX_JSON
 

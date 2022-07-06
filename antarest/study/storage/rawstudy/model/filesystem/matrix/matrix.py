@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from pathlib import Path
+from typing import List, Optional, Union, Any
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -38,7 +39,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         return f"matrixfile://{self.config.path.name}"
 
     def normalize(self) -> None:
-        if self.get_link_path().exists():
+        if self.get_link_path().exists() or self.config.zip_path:
             return
 
         matrix = self.parse()
@@ -71,17 +72,24 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
+        file_path, tmp_dir = self._get_real_file_path()
         if not formatted:
-            if self.config.path.exists():
-                return self.config.path.read_bytes()
+            if file_path.exists():
+                return file_path.read_bytes()
 
             logger.warning(f"Missing file {self.config.path}")
+            if tmp_dir:
+                tmp_dir.cleanup()
             return b""
 
-        return self.parse()
+        return self.parse(file_path, tmp_dir)
 
     @abstractmethod
-    def parse(self) -> JSON:
+    def parse(
+        self,
+        file_path: Optional[Path] = None,
+        tmp_dir: Any = None,
+    ) -> JSON:
         """
         Parse the matrix content
         """

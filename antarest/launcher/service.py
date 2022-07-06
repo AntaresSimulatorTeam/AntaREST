@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -24,7 +23,6 @@ from antarest.core.interfaces.eventbus import (
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.model import (
     StudyPermissionType,
-    JSON,
 )
 from antarest.core.requests import (
     RequestParameters,
@@ -54,7 +52,6 @@ from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
     extract_output_name,
-    fix_study_root,
     find_single_output_path,
 )
 
@@ -404,11 +401,10 @@ class LauncherService:
         job_result = self.job_result_repository.get(str(job_id))
 
         if job_result:
-            # TODO: remove this part of code when study tree zipfile support is implemented
             launcher_parameters = LauncherParametersDTO.parse_raw(
                 job_result.launcher_params or "{}"
             )
-            if job_result.output_id and not launcher_parameters.archive_output:
+            if job_result.output_id:
                 if log_type == LogType.STDOUT:
                     launcher_logs = cast(
                         bytes,
@@ -574,7 +570,9 @@ class LauncherService:
                         output_true_path.parent
                         / f"{output_true_path.name}.zip"
                     )
-                    zip_dir(output_true_path, zip_path=zip_path)
+                    zip_dir(
+                        output_true_path, zip_path=zip_path
+                    )  # TODO: remove source dir ?
                     stopwatch.log_elapsed(
                         lambda x: logger.info(
                             f"Zipped output for job {job_id} in {x}s"
