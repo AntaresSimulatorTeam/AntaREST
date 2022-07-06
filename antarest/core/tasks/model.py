@@ -17,6 +17,7 @@ class TaskType(str, Enum):
     ARCHIVE = "ARCHIVE"
     UNARCHIVE = "UNARCHIVE"
     SCAN = "SCAN"
+    WORKER_TASK = "WORKER_TASK"
 
 
 class TaskStatus(Enum):

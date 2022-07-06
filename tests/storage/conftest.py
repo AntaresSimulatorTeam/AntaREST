@@ -3,7 +3,7 @@ import datetime
 import sys
 import uuid
 from pathlib import Path
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Dict, Union
 from unittest.mock import Mock
 
 import pytest
@@ -292,6 +292,16 @@ class SimpleSyncTaskService(ITaskService):
             pass
 
         return notifier
+
+    def add_worker_task(
+        self,
+        task_type: str,
+        task_args: Dict[str, Union[int, float, bool, str]],
+        name: Optional[str],
+        ref_id: Optional[str],
+        request_params: RequestParameters,
+    ) -> str:
+        raise NotImplementedError()
 
     def add_task(
         self,

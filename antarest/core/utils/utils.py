@@ -3,7 +3,7 @@ import shutil
 import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional, Callable, TypeVar, List
+from typing import IO, Any, Optional, Callable, TypeVar, List, Union, Awaitable
 from zipfile import (
     ZipFile,
     BadZipFile,
@@ -90,7 +90,10 @@ def get_local_path() -> Path:
 
 
 def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
-    return redis.Redis(host=config.host, port=config.port, db=0)
+    redis_client = redis.Redis(
+        host=config.host, port=config.port, password=config.password, db=0
+    )
+    return redis_client
 
 
 class StopWatch:
@@ -164,3 +167,14 @@ def unzip(
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
+
+
+def suppress_exception(
+    callback: Callable[[], T],
+    logger: Callable[[Exception], None],
+) -> Optional[T]:
+    try:
+        return callback()
+    except Exception as e:
+        logger(e)
+        return None
