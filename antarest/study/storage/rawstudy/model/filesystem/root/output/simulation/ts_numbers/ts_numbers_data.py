@@ -15,12 +15,20 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> List[int]:
-        if self.config.path.exists():
-            with open(self.config.path, "r") as fh:
-                data = fh.readlines()
-                if len(data) >= 1:
-                    return [int(d) for d in data[1:]]
+        file_path, tmp_dir = self._get_real_file_path()
 
+        if file_path.exists():
+            with open(file_path, "r") as fh:
+                data = fh.readlines()
+
+            if tmp_dir:
+                tmp_dir.cleanup()
+
+            if len(data) >= 1:
+                return [int(d) for d in data[1:]]
+
+        if tmp_dir:
+            tmp_dir.cleanup()
         logger.warning(f"Missing file {self.config.path}")
         return []
 

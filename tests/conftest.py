@@ -1,7 +1,9 @@
 import sys
+import time
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import Mock
 
 import pytest
@@ -75,3 +77,12 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_pointer_path(a, b)
     else:
         _assert_others(a, b)
+
+
+def autoretry_assert(func: Callable[..., bool], timeout: int) -> None:
+    threshold = datetime.utcnow() + timedelta(seconds=timeout)
+    while datetime.utcnow() < threshold:
+        if func():
+            return
+        time.sleep(0.2)
+    raise AssertionError()

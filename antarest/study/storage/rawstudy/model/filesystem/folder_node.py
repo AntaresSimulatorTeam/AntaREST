@@ -6,7 +6,6 @@ from typing import List, Optional, Tuple, Union, Dict
 from fastapi import HTTPException
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -32,7 +31,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     """
     Hub node which forward request deeper in tree according to url. Or expand request according to depth.
     Its children is set node by node following antares tree structure.
-    Strucuture is implemented in antarest.study.repository.filesystem.root
+    Structure is implemented in antarest.study.repository.filesystem.root
     """
 
     def __init__(
@@ -143,6 +142,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
+            self._assert_not_in_zipped_file()
             if not self.config.path.exists():
                 self.config.path.mkdir()
             assert isinstance(data, Dict)
@@ -198,13 +198,13 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         names = list(children.keys()) if names[0] == "*" else names
         if names[0] not in children:
             raise ChildNotFoundError(
-                f"{names[0]} not a children of {self.__class__.__name__}"
+                f"{names[0]} not a child of {self.__class__.__name__}"
             )
         child_class = type(children[names[0]])
         for name in names:
             if name not in children:
                 raise ChildNotFoundError(
-                    f"{name} not a children of {self.__class__.__name__}"
+                    f"{name} not a child of {self.__class__.__name__}"
                 )
             if type(children[name]) != child_class:
                 raise FilterError("Filter selection has different classes")

@@ -136,7 +136,7 @@ def test_main(app: FastAPI):
         },
     )
     res_output = res.json()
-    assert len(res_output) == 4
+    assert len(res_output) == 5
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
@@ -168,6 +168,15 @@ def test_main(app: FastAPI):
     # study synthesis
     res = client.get(
         f"/v1/studies/{study_id}/synthesis",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # config / thematic trimming
+    res = client.get(
+        f"/v1/studies/{study_id}/config/thematic_trimming",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -600,12 +609,18 @@ def test_area_management(app: FastAPI):
         },
     )
     res_links = client.get(
-        f"/v1/studies/{study_id}/links",
+        f"/v1/studies/{study_id}/links?with_ui=true",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res_links.json() == [{"area1": "area 1", "area2": "area 2"}]
+    assert res_links.json() == [
+        {
+            "area1": "area 1",
+            "area2": "area 2",
+            "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
+        }
+    ]
     client.delete(
         f"/v1/studies/{study_id}/links/area%201/area%202",
         headers={

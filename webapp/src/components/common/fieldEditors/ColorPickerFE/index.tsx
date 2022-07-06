@@ -121,4 +121,6 @@ const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
   );
 });
 
+ColorPicker.displayName = "ColorPicker";
+
 export default ColorPicker;

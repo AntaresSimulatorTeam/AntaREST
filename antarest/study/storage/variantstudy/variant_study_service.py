@@ -221,7 +221,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study_id: str,
         commands: List[CommandDTO],
         params: RequestParameters,
-    ) -> str:
+    ) -> None:
         """
         Add command to list of commands (at the end)
         Args:
@@ -245,7 +245,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             ]
         )
         self.invalidate_cache(study)
-        return str(study.id)
 
     def replace_commands(
         self,

@@ -138,4 +138,6 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
   }
 );
 
+SnackErrorMessage.displayName = "SnackErrorMessage";
+
 export default SnackErrorMessage;

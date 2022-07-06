@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 from http import HTTPStatus
-from typing import Callable, Optional, List, Dict, Awaitable
+from typing import Callable, Optional, List, Dict, Awaitable, Union, cast
 
 from fastapi import HTTPException
 
@@ -38,6 +38,7 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import retry
+from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,17 @@ Task = Callable[[TaskUpdateNotifier], TaskResult]
 
 
 class ITaskService(ABC):
+    @abstractmethod
+    def add_worker_task(
+        self,
+        task_type: str,
+        task_args: Dict[str, Union[int, float, bool, str]],
+        name: Optional[str],
+        ref_id: Optional[str],
+        request_params: RequestParameters,
+    ) -> str:
+        raise NotImplementedError()
+
     @abstractmethod
     def add_task(
         self,
@@ -101,9 +113,71 @@ class TaskJobService(ITaskService):
         self.threadpool = ThreadPoolExecutor(
             max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_"
         )
-        self.event_bus.add_listener(self.create_task_event_callback())
+        self.event_bus.add_listener(
+            self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST]
+        )
         # set the status of previously running job to FAILED due to server restart
         self._fix_running_status()
+
+    def _create_worker_task(
+        self,
+        task_id: str,
+        task_type: str,
+        task_args: Dict[str, Union[int, float, bool, str]],
+    ) -> Callable[[TaskUpdateNotifier], TaskResult]:
+        task_result_wrapper: List[TaskResult] = []
+
+        def _create_awaiter(
+            res_wrapper: List[TaskResult],
+        ) -> Callable[[Event], Awaitable[None]]:
+            async def _await_task_end(event: Event) -> None:
+                task_event = cast(WorkerTaskResult, event.payload)
+                if task_event.task_id == task_id:
+                    res_wrapper.append(task_event.task_result)
+
+            return _await_task_end
+
+        def _send_worker_task(logger: TaskUpdateNotifier) -> TaskResult:
+            listener_id = self.event_bus.add_listener(
+                _create_awaiter(task_result_wrapper),
+                [EventType.WORKER_TASK_ENDED],
+            )
+            self.event_bus.queue(
+                Event(
+                    type=EventType.WORKER_TASK,
+                    payload=WorkerTaskCommand(
+                        task_id=task_id,
+                        task_type=task_type,
+                        task_args=task_args,
+                    ),
+                ),
+                task_type,
+            )
+            while not task_result_wrapper:
+                time.sleep(1)
+            self.event_bus.remove_listener(listener_id)
+            return task_result_wrapper[0]
+
+        return _send_worker_task
+
+    def add_worker_task(
+        self,
+        task_type: str,
+        task_args: Dict[str, Union[int, float, bool, str]],
+        name: Optional[str],
+        ref_id: Optional[str],
+        request_params: RequestParameters,
+    ) -> str:
+        task = self._create_task(
+            name, TaskType.WORKER_TASK, ref_id, request_params
+        )
+        self._launch_task(
+            self._create_worker_task(str(task.id), task_type, task_args),
+            task,
+            None,
+            request_params,
+        )
+        return str(task.id)
 
     def add_task(
         self,
@@ -114,10 +188,21 @@ class TaskJobService(ITaskService):
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
+        task = self._create_task(name, task_type, ref_id, request_params)
+        self._launch_task(action, task, custom_event_messages, request_params)
+        return str(task.id)
+
+    def _create_task(
+        self,
+        name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
+        request_params: RequestParameters,
+    ) -> TaskJob:
         if not request_params.user:
             raise MustBeAuthenticatedError()
 
-        task = self.repo.save(
+        return self.repo.save(
             TaskJob(
                 name=name or "Unnamed",
                 owner_id=request_params.user.impersonator,
@@ -125,6 +210,16 @@ class TaskJobService(ITaskService):
                 ref_id=ref_id,
             )
         )
+
+    def _launch_task(
+        self,
+        action: Task,
+        task: TaskJob,
+        custom_event_messages: Optional[CustomTaskEventMessages],
+        request_params: RequestParameters,
+    ) -> None:
+        if not request_params.user:
+            raise MustBeAuthenticatedError()
 
         self.event_bus.push(
             Event(
@@ -144,12 +239,10 @@ class TaskJobService(ITaskService):
             self._run_task, action, task.id, custom_event_messages
         )
         self.tasks[task.id] = future
-        return str(task.id)
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
         async def task_event_callback(event: Event) -> None:
-            if event.type == EventType.TASK_CANCEL_REQUEST:
-                self._cancel_task(str(event.payload), dispatch=False)
+            self._cancel_task(str(event.payload), dispatch=False)
 
         return task_event_callback
 
@@ -227,13 +320,14 @@ class TaskJobService(ITaskService):
             )
             end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
             while time.time() < end:
-                task = self.repo.get(task_id)
-                if not task:
-                    logger.error(f"Awaited task {task_id} was not found")
-                    break
-                if TaskStatus(task.status).is_final():
-                    break
-                time.sleep(2)
+                with db():
+                    task = self.repo.get(task_id)
+                    if not task:
+                        logger.error(f"Awaited task {task_id} was not found")
+                        break
+                    if TaskStatus(task.status).is_final():
+                        break
+                    time.sleep(2)
 
     def _run_task(
         self,

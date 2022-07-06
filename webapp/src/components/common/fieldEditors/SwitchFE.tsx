@@ -55,4 +55,6 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
   return fieldEditor;
 });
 
+SwitchFE.displayName = "SwitchFE";
+
 export default SwitchFE;

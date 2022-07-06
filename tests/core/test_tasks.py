@@ -1,12 +1,13 @@
 import datetime
-from typing import Callable
+from pathlib import Path
+from typing import Callable, List
 from unittest.mock import Mock, ANY, call
 
 import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import EventType, Event
+from antarest.core.interfaces.eventbus import EventType, Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -22,9 +23,13 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.eventbus.business.local_eventbus import LocalEventBus
+from antarest.eventbus.service import EventBusService
+from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
+from tests.conftest import with_db_context
 
 
-def test_service() -> TaskJobService:
+def test_service() -> None:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -256,7 +261,78 @@ def test_service() -> TaskJobService:
     service.await_task("elsewhere")
     repo_mock.get.assert_called_with("elsewhere")
 
-    return service
+
+class DummyWorker(AbstractWorker):
+    def __init__(
+        self, event_bus: IEventBus, accept: List[str], tmp_path: Path
+    ):
+        super().__init__(event_bus, accept)
+        self.tmp_path = tmp_path
+
+    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        relative_path = task_info.task_args["file"]
+        (self.tmp_path / relative_path).touch()
+        return TaskResult(success=True, message="")
+
+
+@with_db_context
+def test_worker_tasks(tmp_path: Path):
+    repo_mock = Mock(spec=TaskJobRepository)
+    repo_mock.list.return_value = []
+    event_bus = EventBusService(LocalEventBus())
+    service = TaskJobService(
+        config=Config(), repository=repo_mock, event_bus=event_bus
+    )
+
+    worker = DummyWorker(event_bus, ["test"], tmp_path)
+    worker.start(threaded=True)
+
+    file_to_create = "foo"
+
+    assert not (tmp_path / file_to_create).exists()
+
+    repo_mock.save.side_effect = [
+        TaskJob(
+            id="taskid",
+            name="Unnamed",
+            owner_id=0,
+            type=TaskType.WORKER_TASK,
+            ref_id=None,
+        ),
+        TaskJob(
+            id="taskid",
+            name="Unnamed",
+            owner_id=0,
+            type=TaskType.WORKER_TASK,
+            ref_id=None,
+            status=TaskStatus.RUNNING,
+        ),
+        TaskJob(
+            id="taskid",
+            name="Unnamed",
+            owner_id=0,
+            type=TaskType.WORKER_TASK,
+            ref_id=None,
+            status=TaskStatus.COMPLETED,
+        ),
+    ]
+    repo_mock.get_or_raise.return_value = TaskJob(
+        id="taskid",
+        name="Unnamed",
+        owner_id=0,
+        type=TaskType.WORKER_TASK,
+        ref_id=None,
+    )
+    task_id = service.add_worker_task(
+        "test",
+        {"file": file_to_create},
+        None,
+        None,
+        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    service.await_task(task_id)
+
+    assert (tmp_path / file_to_create).exists()
 
 
 def test_repository():

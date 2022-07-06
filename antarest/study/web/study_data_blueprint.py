@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.model import StudyPermissionType
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -20,6 +21,9 @@ from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaInfoDTO,
     AreaUI,
+)
+from antarest.study.business.config_management import (
+    OutputVariable,
 )
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.model import PatchCluster, PatchArea
@@ -71,6 +75,7 @@ def create_study_data_routes(
     )
     def get_links(
         uuid: str,
+        with_ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -78,7 +83,7 @@ def create_study_data_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, params)
+        areas_list = study_service.get_all_links(uuid, with_ui, params)
         return areas_list
 
     @bp.post(
@@ -218,6 +223,54 @@ def create_study_data_routes(
         params = RequestParameters(user=current_user)
         study_service.update_matrix(
             uuid, path, matrix_edit_instructions, params
+        )
+
+    @bp.get(
+        "/studies/{uuid}/config/thematic_trimming",
+        tags=[APITag.study_data],
+        summary="Get thematic trimming config",
+        response_model=Dict[str, bool],
+    )
+    def get_thematic_trimming(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching thematic trimming config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.config_manager.get_thematic_trimming(study)
+
+    @bp.put(
+        "/studies/{uuid}/config/thematic_trimming",
+        tags=[APITag.study_data],
+        summary="Set thematic trimming config",
+    )
+    def set_thematic_trimming(
+        uuid: str,
+        thematic_trimming_config: Dict[OutputVariable, bool] = Body(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Updating thematic trimming config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.config_manager.set_thematic_trimming(
+            study,
+            {
+                output_variable.value: thematic_trimming_config[
+                    output_variable
+                ]
+                for output_variable in thematic_trimming_config
+            },
         )
 
     @bp.post(

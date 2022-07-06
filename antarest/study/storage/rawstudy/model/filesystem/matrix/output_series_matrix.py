@@ -1,7 +1,7 @@
 import logging
-from typing import List, Optional, cast, Union
+from pathlib import Path
+from typing import List, Optional, cast, Union, Any
 
-import numpy as np
 import pandas as pd  # type: ignore
 from pandas import DataFrame
 
@@ -56,15 +56,23 @@ class OutputSeriesMatrix(
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
-    def parse_dataframe(self) -> DataFrame:
+    def parse_dataframe(
+        self,
+        file_path: Optional[Path] = None,
+        tmp_dir: Any = None,
+    ) -> DataFrame:
+        file_path = file_path or self.config.path
         df = pd.read_csv(
-            self.config.path,
+            file_path,
             sep="\t",
             skiprows=4,
             header=[0, 1, 2],
             na_values="N/A",
             float_precision="legacy",
         )
+
+        if tmp_dir:
+            tmp_dir.cleanup()
 
         date, body = self.date_serializer.extract_date(df)
 
@@ -76,8 +84,10 @@ class OutputSeriesMatrix(
 
     def parse(
         self,
+        file_path: Optional[Path] = None,
+        tmp_dir: Any = None,
     ) -> JSON:
-        matrix = self.parse_dataframe()
+        matrix = self.parse_dataframe(file_path, tmp_dir)
         return cast(JSON, matrix.to_dict(orient="split"))
 
     def _dump_json(self, data: JSON) -> None:
@@ -124,14 +134,19 @@ class OutputSeriesMatrix(
         expanded: bool = False,
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
+        file_path, tmp_dir = self._get_real_file_path()
         if not formatted:
-            if self.config.path.exists():
-                return self.config.path.read_bytes()
+            if file_path.exists():
+                if tmp_dir:
+                    tmp_dir.cleanup()
+                return file_path.read_bytes()
 
             logger.warning(f"Missing file {self.config.path}")
+            if tmp_dir:
+                tmp_dir.cleanup()
             return b""
 
-        return self.parse()
+        return self.parse(file_path, tmp_dir)
 
     def dump(
         self, data: Union[bytes, JSON], url: Optional[List[str]] = None

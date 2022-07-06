@@ -1,11 +1,13 @@
 import logging
 import re
 import tempfile
+from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, cast
 from zipfile import ZipFile
 
 from antarest.core.model import JSON
+from antarest.study.common.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     MultipleSameKeysIniReader,
@@ -25,6 +27,16 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 )
 
 logger = logging.getLogger(__name__)
+
+
+class FileType(Enum):
+    TXT = "txt"
+    SIMPLE_INI = "simple_ini"
+    MULTI_INI = "multi_ini"
+
+
+class FileTypeNotSupportedException(Exception):
+    pass
 
 
 class ConfigPathBuilder:
@@ -50,10 +62,12 @@ class ConfigPathBuilder:
             study_path
         )
 
+        study_path_without_zip_extension = study_path.parent / study_path.stem
+
         return FileStudyTreeConfig(
             study_path=study_path,
             output_path=output_path or study_path / "output",
-            path=study_path,
+            path=study_path_without_zip_extension,
             study_id=study_id,
             version=ConfigPathBuilder._parse_version(study_path),
             areas=ConfigPathBuilder._parse_areas(study_path),
@@ -65,19 +79,59 @@ class ConfigPathBuilder:
             store_new_set=sns,
             archive_input_series=asi,
             enr_modelling=enr_modelling,
+            zip_path=study_path if study_path.suffix == ".zip" else None,
         )
 
     @staticmethod
+    def _extract_data_from_file(
+        root: Path,
+        inside_root_path: Path,
+        file_type: FileType,
+        multi_ini_keys: Optional[List[str]] = None,
+    ) -> Any:
+        tmp_dir = None
+        if root.suffix == ".zip":
+            output_data_path, tmp_dir = extract_file_to_tmp_dir(
+                root, inside_root_path
+            )
+        else:
+            output_data_path = root / inside_root_path
+
+        try:
+            if file_type == FileType.TXT:
+                output_data: Any = output_data_path.read_text().split("\n")
+            elif file_type == FileType.MULTI_INI:
+                output_data = MultipleSameKeysIniReader(multi_ini_keys).read(
+                    output_data_path
+                )
+            elif file_type == FileType.SIMPLE_INI:
+                output_data = IniReader().read(output_data_path)
+            else:
+                raise FileTypeNotSupportedException()
+        finally:
+            if tmp_dir:
+                tmp_dir.cleanup()
+
+        return output_data
+
+    @staticmethod
     def _parse_version(path: Path) -> int:
-        studyinfo = IniReader().read(path / "study.antares")
-        version: int = studyinfo.get("antares", {}).get("version", -1)
+        study_info = ConfigPathBuilder._extract_data_from_file(
+            root=path,
+            inside_root_path=Path("study.antares"),
+            file_type=FileType.SIMPLE_INI,
+        )
+        version: int = study_info.get("antares", {}).get("version", -1)
         return version
 
     @staticmethod
     def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
-        general = MultipleSameKeysIniReader().read(
-            path / "settings/generaldata.ini"
+        general = ConfigPathBuilder._extract_data_from_file(
+            root=path,
+            inside_root_path=Path("settings/generaldata.ini"),
+            file_type=FileType.MULTI_INI,
         )
+
         store_new_set: bool = general.get("output", {}).get(
             "storenewset", False
         )
@@ -90,14 +144,18 @@ class ConfigPathBuilder:
             if e.strip()
         ]
         enr_modelling: str = general.get("other preferences", {}).get(
-            "renewables-generation-modelling", "aggregated"
+            "renewable-generation-modelling", "aggregated"
         )
         return store_new_set, archive_input_series, enr_modelling
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
-        bindings = IniReader().read(
-            root / "input/bindingconstraints/bindingconstraints.ini"
+        bindings = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(
+                "input/bindingconstraints/bindingconstraints.ini"
+            ),
+            file_type=FileType.SIMPLE_INI,
         )
         output_list = []
         for id, bind in bindings.items():
@@ -124,8 +182,11 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
-        json = MultipleSameKeysIniReader(["+", "-"]).read(
-            root / "input/areas/sets.ini"
+        json = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path("input/areas/sets.ini"),
+            file_type=FileType.MULTI_INI,
+            multi_ini_keys=["+", "-"],
         )
         return {
             name.lower(): DistrictSet(
@@ -144,7 +205,11 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
-        areas = (root / "input/areas/list.txt").read_text().split("\n")
+        areas = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path("input/areas/list.txt"),
+            file_type=FileType.TXT,
+        )
         areas = [a for a in areas if a != ""]
         return {
             transform_name_to_id(a): ConfigPathBuilder.parse_area(root, a)
@@ -171,6 +236,11 @@ class ConfigPathBuilder:
             "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.stem
         )
         try:
+            if path.suffix == ".zip":
+                zf = ZipFile(path, "r")
+                error = str("checkIntegrity.txt") not in zf.namelist()
+            else:
+                error = not (path / "checkIntegrity.txt").exists()
             (
                 nbyears,
                 by_year,
@@ -184,7 +254,7 @@ class ConfigPathBuilder:
                 nbyears=nbyears,
                 by_year=by_year,
                 synthesis=synthesis,
-                error=not (path / "checkIntegrity.txt").exists(),
+                error=error,
                 playlist=playlist,
                 archived=path.suffix == ".zip",
             )
@@ -259,8 +329,10 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_thermal(root: Path, area: str) -> List[Cluster]:
-        list_ini = IniReader().read(
-            root / f"input/thermal/clusters/{area}/list.ini"
+        list_ini = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/thermal/clusters/{area}/list.ini"),
+            file_type=FileType.SIMPLE_INI,
         )
         return [
             Cluster(
@@ -273,24 +345,31 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_renewables(root: Path, area: str) -> List[Cluster]:
-        ini_path = root / f"input/renewables/clusters/{area}/list.ini"
-        if not ini_path.exists():
-            return []
-
-        list_ini = IniReader().read(ini_path)
-        return [
-            Cluster(
-                id=transform_name_to_id(key),
-                enabled=list_ini.get(key, {}).get("enabled", True),
-                name=list_ini.get(key, {}).get("name", None),
+        try:
+            list_ini = ConfigPathBuilder._extract_data_from_file(
+                root=root,
+                inside_root_path=Path(
+                    f"input/renewables/clusters/{area}/list.ini"
+                ),
+                file_type=FileType.SIMPLE_INI,
             )
-            for key in list(list_ini.keys())
-        ]
+            return [
+                Cluster(
+                    id=transform_name_to_id(key),
+                    enabled=list_ini.get(key, {}).get("enabled", True),
+                    name=list_ini.get(key, {}).get("name", None),
+                )
+                for key in list(list_ini.keys())
+            ]
+        except:
+            return []
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:
-        properties_ini = IniReader().read(
-            root / f"input/links/{area}/properties.ini"
+        properties_ini = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/links/{area}/properties.ini"),
+            file_type=FileType.SIMPLE_INI,
         )
         return {
             link: Link.from_json(properties_ini[link])
@@ -299,14 +378,20 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
-        filters: str = IniReader().read(
-            root / f"input/areas/{area}/optimization.ini"
-        )["filtering"]["filter-synthesis"]
+        optimization = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/areas/{area}/optimization.ini"),
+            file_type=FileType.SIMPLE_INI,
+        )
+        filters: str = optimization["filtering"]["filter-synthesis"]
         return Link.split(filters)
 
     @staticmethod
     def _parse_filters_year(root: Path, area: str) -> List[str]:
-        filters: str = IniReader().read(
-            root / f"input/areas/{area}/optimization.ini"
-        )["filtering"]["filter-year-by-year"]
+        optimization = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/areas/{area}/optimization.ini"),
+            file_type=FileType.SIMPLE_INI,
+        )
+        filters: str = optimization["filtering"]["filter-year-by-year"]
         return Link.split(filters)

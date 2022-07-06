@@ -1,6 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, TypeVar, Generic, Any
+from pathlib import Path
+from typing import List, Optional, Dict, TypeVar, Generic, Any, Tuple
 
+from antarest.core.exceptions import (
+    ShouldNotHappenException,
+    WritingInsideZippedFileException,
+)
+from antarest.study.common.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -126,6 +132,36 @@ class INode(ABC, Generic[G, S, V]):
         if len(url) > 0:
             raise ValueError(
                 f"url should be fully resolved when arrives on {self.__class__.__name__}"
+            )
+
+    def _extract_file_to_tmp_dir(
+        self,
+    ) -> Tuple[Path, Any]:
+        """
+        Happens when the file is inside an archive (aka self.config.zip_file is set)
+        Unzip the file into a temporary directory.
+
+        Returns:
+            The actual path of the extracted file
+            the tmp_dir object which MUST be cleared after use of the file
+        """
+        if self.config.zip_path is None:
+            raise ShouldNotHappenException()
+        inside_zip_path = str(self.config.path)[
+            len(str(self.config.zip_path)[:-4]) + 1 :
+        ]
+        if self.config.zip_path:
+            return extract_file_to_tmp_dir(
+                self.config.zip_path, Path(inside_zip_path)
+            )
+        else:
+            raise ShouldNotHappenException()
+
+    def _assert_not_in_zipped_file(self) -> None:
+        """Prevents writing inside a zip file"""
+        if self.config.zip_path:
+            raise WritingInsideZippedFileException(
+                "Trying to save inside a zipped file"
             )
 
 

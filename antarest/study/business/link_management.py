@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel
 
@@ -13,21 +13,44 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 )
 
 
+class LinkUIDTO(BaseModel):
+    color: str
+    width: float
+    style: str
+
+
 class LinkInfoDTO(BaseModel):
     area1: str
     area2: str
+    ui: Optional[LinkUIDTO] = None
 
 
 class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: Study) -> List[LinkInfoDTO]:
+    def get_all_links(
+        self, study: Study, with_ui: bool = False
+    ) -> List[LinkInfoDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result = []
         for area_id, area in file_study.config.areas.items():
+            links_config: Optional[Dict[str, Any]] = None
+            if with_ui:
+                links_config = file_study.tree.get(
+                    ["input", "links", area_id, "properties"]
+                )
             for link in area.links:
-                result.append(LinkInfoDTO(area1=area_id, area2=link))
+                ui_info: Optional[LinkUIDTO] = None
+                if with_ui and links_config and link in links_config:
+                    ui_info = LinkUIDTO(
+                        color=f"{links_config[link].get('colorr', '163')},{links_config[link].get('colorg', '163')},{links_config[link].get('colorb', '163')}",
+                        width=links_config[link].get("link-width", 1),
+                        style=links_config[link].get("link-style", "plain"),
+                    )
+                result.append(
+                    LinkInfoDTO(area1=area_id, area2=link, ui=ui_info)
+                )
 
         return result
 

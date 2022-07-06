@@ -1,3 +1,5 @@
+import tempfile
+from pathlib import Path
 from typing import Dict
 
 from filelock import FileLock
@@ -32,7 +34,9 @@ class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
-        with FileLock("matrix_constant_init.lock"):
+        with FileLock(
+            str(Path(tempfile.gettempdir()) / "matrix_constant_init.lock")
+        ):
             self._init()
 
     def _init(self) -> None:

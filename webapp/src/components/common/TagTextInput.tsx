@@ -1,5 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable no-use-before-define */
 import * as React from "react";
 import Chip from "@mui/material/Chip";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -38,6 +36,7 @@ function TagTextInput(props: Props) {
       }}
       renderTags={(value: readonly string[], getTagProps) =>
         value.map((option: string, index: number) => (
+          // eslint-disable-next-line react/jsx-key
           <Chip variant="outlined" label={option} {...getTagProps({ index })} />
         ))
       }

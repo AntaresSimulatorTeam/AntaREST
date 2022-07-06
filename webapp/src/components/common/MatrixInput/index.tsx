@@ -55,16 +55,16 @@ function MatrixInput(props: PropsType) {
     },
     {
       errorMessage: t("data.error.matrix"),
-    },
-    [study, url]
+      deps: [study, url],
+    }
   );
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     () => getStudyMatrixIndex(study.id, url),
     {
       errorMessage: t("matrix.error.failedtoretrieveindex"),
-    },
-    [study, url]
+      deps: [study, url],
+    }
   );
 
   ////////////////////////////////////////////////////////////////

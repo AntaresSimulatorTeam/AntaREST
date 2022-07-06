@@ -1,0 +1,80 @@
+security:
+  disabled: false
+  jwt:
+    key: secretkeytochange
+  login:
+    admin:
+      pwd: admin
+  external_auth:
+    url: ""
+    default_group_role: 10
+
+db:
+  url: "postgresql://postgres:somepass@postgresql:5432/postgres"
+  admin_url: "postgresql://postgres:somepass@postgresql:5432/postgres"
+  pool_recycle: 3600
+
+storage:
+  tmp_dir: /antarest_tmp_dir
+  archive_dir: /studies/archives
+  matrixstore: /matrixstore
+  matrix_gc_dry_run: true
+  workspaces:
+    default: # required, no filters applied, this folder is not watched
+      path: /workspaces/internal_studies/
+    # other workspaces can be added
+    # if a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
+    tmp:
+      path: /workspaces/studies/
+      # filter_in: ['.*'] # default to '.*'
+      # filter_out: [] # default to empty
+      # groups: [] # default empty
+
+launcher:
+  default: local
+  local:
+    binaries:
+      800: /antares_simulator/antares-8.2-solver
+#  slurm:
+#    local_workspace: path/to/workspace
+#    username: username
+#    hostname: 0.0.0.0
+#    port: 22
+#    private_key_file: path/to/key
+#    key_password: key_password
+#    password: password_is_optional_but_necessary_if_key_is_absent
+#    default_wait_time: 900
+#    default_time_limit: 172800
+#    default_n_cpu: 12
+#    default_json_db_name: launcher_db.json
+#    slurm_script_path: /path/to/launchantares_v1.1.3.sh
+#    db_primary_key: name
+#    antares_versions_on_remote_server :
+#      - "610"
+#      - "700"
+#      - "710"
+#      - "720"
+#      - "800"
+
+
+debug: false
+
+root_path: "/api"
+
+#tasks:
+#  max_workers: 5
+server:
+  worker_threadpool_size: 12
+#  services:
+#    - watcher
+    
+logging:
+  level: INFO
+#  logfile: /logs/antarest.log
+#  json: true
+
+# Uncomment these lines to use redis as a backend for the eventbus
+# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
+redis:
+  host: redis
+  port: 6379

@@ -124,6 +124,7 @@ class FileStudyTreeConfig(DTO):
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
         cache: Optional[Dict[str, List[str]]] = None,
+        zip_path: Optional[Path] = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -138,8 +139,16 @@ class FileStudyTreeConfig(DTO):
         self.archive_input_series = archive_input_series or list()
         self.enr_modelling = enr_modelling
         self.cache = cache or dict()
+        self.zip_path = zip_path
 
-    def next_file(self, name: str) -> "FileStudyTreeConfig":
+    def next_file(
+        self, name: str, is_output: bool = False
+    ) -> "FileStudyTreeConfig":
+        if is_output and name in self.outputs and self.outputs[name].archived:
+            zip_path: Optional[Path] = self.path / f"{name}.zip"
+        else:
+            zip_path = self.zip_path
+
         return FileStudyTreeConfig(
             study_path=self.study_path,
             output_path=self.output_path,
@@ -154,6 +163,7 @@ class FileStudyTreeConfig(DTO):
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
             cache=self.cache,
+            zip_path=zip_path,
         )
 
     def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
@@ -276,6 +286,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = ENR_MODELLING.AGGREGATED.value
+    zip_path: Optional[Path] = None
 
     @staticmethod
     def from_build_config(
@@ -294,6 +305,7 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=config.store_new_set,
             archive_input_series=config.archive_input_series,
             enr_modelling=config.enr_modelling,
+            zip_path=config.zip_path,
         )
 
     def to_build_config(self) -> FileStudyTreeConfig:
@@ -310,4 +322,5 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
+            zip_path=self.zip_path,
         )

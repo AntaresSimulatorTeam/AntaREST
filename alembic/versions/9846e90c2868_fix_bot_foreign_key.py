@@ -5,7 +5,6 @@ Revises: 63ed81e5ce6f
 Create Date: 2021-11-19 11:58:11.378519
 
 """
-from sqlite3 import Connection
 
 from alembic import op
 import sqlalchemy as sa
@@ -13,6 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 from sqlalchemy import text
+from sqlalchemy.engine import Connection
 
 from antarest.login.model import Bot, User
 

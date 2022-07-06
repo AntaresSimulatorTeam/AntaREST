@@ -1,5 +1,6 @@
-import { DependencyList, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePromise as usePromiseWrapper } from "react-use";
+import { isDependencyList } from "../utils/reactUtils";
 
 export enum PromiseStatus {
   Idle = "idle",
@@ -21,20 +22,26 @@ export interface UsePromiseResponse<T> {
 export interface UsePromiseParams {
   resetDataOnReload?: boolean;
   resetErrorOnReload?: boolean;
+  deps?: React.DependencyList;
+}
+
+type DepsOrParams = React.DependencyList | UsePromiseParams;
+
+function toParams(value: DepsOrParams = {}): UsePromiseParams {
+  return isDependencyList(value) ? { deps: value } : value;
 }
 
 function usePromise<T>(
   fn: () => Promise<T>,
-  params: UsePromiseParams = {},
-  deps: DependencyList = []
+  params?: DepsOrParams
 ): UsePromiseResponse<T> {
+  const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
   const [status, setStatus] = useState(PromiseStatus.Idle);
   const [error, setError] = useState<Error | string | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
   const mounted = usePromiseWrapper();
-  const { resetDataOnReload, resetErrorOnReload } = params;
 
   useEffect(
     () => {

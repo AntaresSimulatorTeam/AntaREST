@@ -410,18 +410,9 @@ def test_get_all_area():
 
     links = link_manager.get_all_links(study)
     assert [
-        {
-            "area1": "a1",
-            "area2": "a2",
-        },
-        {
-            "area1": "a1",
-            "area2": "a3",
-        },
-        {
-            "area1": "a2",
-            "area2": "a3",
-        },
+        {"area1": "a1", "area2": "a2", "ui": None},
+        {"area1": "a1", "area2": "a3", "ui": None},
+        {"area1": "a2", "area2": "a3", "ui": None},
     ] == [link.dict() for link in links]
 
     pass

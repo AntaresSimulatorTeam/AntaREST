@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -119,16 +120,23 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             else:
                 raise e
 
-    def exists(self, metadata: RawStudy) -> bool:
+    def exists(self, study: RawStudy) -> bool:
         """
         Check study exist.
         Args:
-            metadata: study
+            study: study
 
         Returns: true if study presents in disk, false else.
 
         """
-        return (self.get_study_path(metadata) / "study.antares").is_file()
+        path = self.get_study_path(study)
+
+        if study.archived:
+            path = self.get_archive_path(study)
+            zf = ZipFile(path, "r")
+            return str("study.antares") in zf.namelist()
+
+        return (path / "study.antares").is_file()
 
     def get_raw(
         self,
@@ -285,7 +293,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: new study information.
 
         """
-        path_study = self.get_study_path(metadata)
+        path_study = Path(metadata.path)
         path_study.mkdir()
 
         try:
@@ -349,10 +357,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.patch_service.set_reference_output(study, output_id, status)
         remove_from_cache(self.cache, study.id)
 
-    def archive(self, study: RawStudy) -> None:
+    def archive(self, study: RawStudy) -> Path:
         archive_path = self.get_archive_path(study)
-        self.export_study(study, archive_path)
+        new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
+        remove_from_cache(cache=self.cache, root_id=study.id)
+        self.cache.invalidate(study.id)
+        return new_study_path
 
     def get_archive_path(self, study: RawStudy) -> Path:
         return Path(self.config.storage.archive_dir / f"{study.id}.zip")
@@ -366,6 +377,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: study path
 
         """
+        if metadata.archived:
+            return self.get_archive_path(metadata)
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
