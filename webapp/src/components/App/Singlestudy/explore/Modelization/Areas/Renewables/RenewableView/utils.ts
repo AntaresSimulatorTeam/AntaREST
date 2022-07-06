@@ -33,16 +33,17 @@ export async function getDefaultValues(
   const data: RenewableType = await getStudyData(studyId, pathPrefix, 3);
   return {
     name: data.name,
-    group: data.group,
-    enabled: data.enabled,
-    unitcount: data.unitcount,
-    nominalCapacity: data.nominalcapacity,
-    tsInterpretation: data["ts-interpretation"],
+    group: data.group || "*",
+    enabled: data.enabled !== undefined ? data.enabled : true,
+    unitcount: data.unitcount || 0,
+    nominalCapacity: data.nominalcapacity || 0,
+    tsInterpretation: data["ts-interpretation"] || "power generation",
   };
 }
 
 export function getRenewablePath(area: string, cluster: string): RenewablePath {
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
+  console.log("HOLA: ", pathPrefix);
   return {
     name: `${pathPrefix}/name`,
     group: `${pathPrefix}/group`,

@@ -49,6 +49,7 @@ export default function ThermalForm(
   );
 
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
+  console.log("BENGA: ", pathPrefix);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAutoSubmit = async (
@@ -58,6 +59,7 @@ export default function ThermalForm(
     defaultValue: any
   ) => {
     try {
+      console.log("T'ABUSE");
       if (data === defaultValue || data === undefined) {
         const tmpValues = { ...defaultValues };
         if (name in tmpValues) delete tmpValues[name];
@@ -133,7 +135,7 @@ export default function ThermalForm(
             {...register("name", {
               required: t("form.field.required") as string,
               onAutoSubmit: (value) =>
-                handleAutoSubmit("name", path.mustRun, value, ""),
+                handleAutoSubmit("name", path.name, value, ""),
               validate: (value) => {
                 if (nameList.includes(value.toLowerCase())) {
                   return t("study.error.form.clusterName") as string;
@@ -147,6 +149,11 @@ export default function ThermalForm(
             freeSolo
             options={groupList}
             placeholder={defaultValues?.group}
+            {...register("group", {
+              required: t("form.field.required") as string,
+              onAutoSubmit: (value) =>
+                handleAutoSubmit("group", path.group, value, ""),
+            })}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -157,11 +164,6 @@ export default function ThermalForm(
                   // Allow to show placeholder when field is empty
                   defaultValues?.group ? { shrink: true } : {}
                 }
-                {...register("group", {
-                  required: t("form.field.required") as string,
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit("group", path.group, value, ""),
-                })}
                 inputProps={{
                   ...params.inputProps,
                   // autoComplete: "disabled", // disable autocomplete and autofill
@@ -240,7 +242,7 @@ export default function ThermalForm(
       >
         <MatrixInput
           study={study}
-          url={`input/thermal/prepro/${area}/${cluster}/data`}
+          url={`input/renewables/series/${area}/${cluster}/series`}
           computStats={MatrixStats.NOCOL}
         />
       </Box>

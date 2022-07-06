@@ -24,6 +24,8 @@ export enum CommandEnum {
   CREATE_BINDING_CONSTRAINT = "create_binding_constraint",
   UPDATE_BINDING_CONSTRAINT = "update_binding_constraint",
   REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint",
+  CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster",
+  REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster",
   CREATE_CLUSTER = "create_cluster",
   REMOVE_CLUSTER = "remove_cluster",
   REPLACE_MATRIX = "replace_matrix",

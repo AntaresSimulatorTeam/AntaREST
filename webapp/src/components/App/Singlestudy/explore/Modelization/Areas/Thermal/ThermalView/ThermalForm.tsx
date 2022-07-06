@@ -40,6 +40,7 @@ export default function ThermalForm(
   const studyId = study.id;
 
   console.log("DEFAULT VALUES FORM: ", defaultValues);
+  console.log("CLUSTER (THERMAL): ", cluster);
 
   const genTsOptions = [
     "use global parameter",
@@ -61,6 +62,7 @@ export default function ThermalForm(
     data: any,
     defaultValue: any
   ) => {
+    console.log("BONJOUR AUTOSUBMIT");
     try {
       if (data === defaultValue || data === undefined) {
         const tmpValues = { ...defaultValues };
@@ -137,7 +139,7 @@ export default function ThermalForm(
             {...register("name", {
               required: t("form.field.required") as string,
               onAutoSubmit: (value) =>
-                handleAutoSubmit("name", path.mustRun, value, ""),
+                handleAutoSubmit("name", path.name, value, ""),
               validate: (value) => {
                 if (nameList.includes(value.toLowerCase())) {
                   return t("study.error.form.clusterName") as string;
@@ -151,6 +153,11 @@ export default function ThermalForm(
             freeSolo
             options={groupList}
             placeholder={defaultValues?.group}
+            {...register("group", {
+              required: t("form.field.required") as string,
+              onAutoSubmit: (value) =>
+                handleAutoSubmit("group", path.group, value, ""),
+            })}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -161,11 +168,6 @@ export default function ThermalForm(
                   // Allow to show placeholder when field is empty
                   defaultValues?.group ? { shrink: true } : {}
                 }
-                {...register("group", {
-                  required: t("form.field.required") as string,
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit("group", path.group, value, ""),
-                })}
                 inputProps={{
                   ...params.inputProps,
                   autoComplete: "disabled", // disable autocomplete and autofill
@@ -210,6 +212,8 @@ export default function ThermalForm(
               label={t("study.modelization.clusters.unitcount")}
               variant="filled"
               type="number"
+              error={!!errors.unitcount}
+              helperText={errors.unitcount?.message}
               placeholder={defaultValues?.unitcount?.toString()}
               InputLabelProps={
                 defaultValues?.unitcount !== undefined ? { shrink: true } : {}

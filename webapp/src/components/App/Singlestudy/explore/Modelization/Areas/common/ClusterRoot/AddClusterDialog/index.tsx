@@ -10,7 +10,7 @@ import FormDialog, {
 import AddClusterForm from "./AddClusterForm";
 import { SubmitHandlerData } from "../../../../../../../../common/Form";
 import useEnqueueErrorSnackbar from "../../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { appendCommand } from "../../../../../../../../../services/api/variant";
+import { appendCommands } from "../../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../../Commands/Edition/commandTypes";
 
 interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
@@ -18,13 +18,14 @@ interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   clusterGroupList: Array<string>;
   studyId: string;
   area: string;
+  type: "thermal" | "renewables";
 }
 
 function AddClusterDialog(props: PropType) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-  const { clusterGroupList, clusterData, studyId, area, ...dialogProps } =
+  const { type, clusterGroupList, clusterData, studyId, area, ...dialogProps } =
     props;
   const { onCancel } = dialogProps;
   const clusterNameList: Array<string> = useMemo(
@@ -39,16 +40,21 @@ function AddClusterDialog(props: PropType) {
   const handleSubmit = async (data: SubmitHandlerData) => {
     const { name, group } = data.dirtyValues;
     try {
-      await appendCommand(studyId, {
-        action: CommandEnum.CREATE_CLUSTER,
-        args: {
-          area_id: area,
-          cluster_name: (name as string).toLowerCase(),
-          parameters: {
-            group: group || "*",
+      await appendCommands(studyId, [
+        {
+          action:
+            type === "thermal"
+              ? CommandEnum.CREATE_CLUSTER
+              : CommandEnum.CREATE_RENEWABLES_CLUSTER,
+          args: {
+            area_id: area,
+            cluster_name: (name as string).toLowerCase(),
+            parameters: {
+              group: group || "*",
+            },
           },
         },
-      });
+      ]);
       enqueueSnackbar(t("study.success.addCluster"), { variant: "success" });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.addCluster"), e as AxiosError);

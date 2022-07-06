@@ -35,7 +35,7 @@ import { getStudyData } from "../../../../../../../../services/api/study";
 import { Clusters, byGroup, ClusterElement } from "./utils";
 import AddClusterDialog from "./AddClusterDialog";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { appendCommand } from "../../../../../../../../services/api/variant";
+import { appendCommands } from "../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 
 interface Props {
@@ -120,14 +120,18 @@ function ClusterRoot(props: Props) {
     try {
       const tmpData = { ...clusterData };
       delete tmpData[id];
-      await appendCommand(study.id, {
-        action: CommandEnum.REMOVE_CLUSTER,
-        args: {
-          area_id: currentArea,
-          cluster_id: id,
+      await appendCommands(study.id, [
+        {
+          action:
+            type === "thermal"
+              ? CommandEnum.REMOVE_CLUSTER
+              : CommandEnum.REMOVE_RENEWABLES_CLUSTER,
+          args: {
+            area_id: currentArea,
+            cluster_id: id,
+          },
         },
-      });
-      // setClusterData(tmpData);
+      ]);
       enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.deleteCluster"), e as AxiosError);
@@ -244,6 +248,7 @@ function ClusterRoot(props: Props) {
                     clusterData={clusterData}
                     studyId={study.id}
                     area={currentArea}
+                    type={type}
                     onCancel={() => setIsAddClusterDialogOpen(false)}
                   />
                 )}

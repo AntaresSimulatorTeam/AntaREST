@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
-import NoContent from "../../../../../../common/page/NoContent";
 import ClusterRoot from "../common/ClusterRoot";
+import RenewableView from "./RenewableView";
 
 function Renewables() {
   const fixedGroupList = [
@@ -25,7 +25,14 @@ function Renewables() {
       type="renewables"
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
-      {({ cluster, groupList, nameList }) => <NoContent />}
+      {({ cluster, groupList, nameList }) => (
+        <RenewableView
+          cluster={cluster}
+          groupList={groupList}
+          nameList={nameList}
+          study={study}
+        />
+      )}
     </ClusterRoot>
   );
 }
