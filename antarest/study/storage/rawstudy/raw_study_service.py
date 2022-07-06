@@ -361,6 +361,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         archive_path = self.get_archive_path(study)
         new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
+        remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)
         return new_study_path
 

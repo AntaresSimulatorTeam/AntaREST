@@ -1898,7 +1898,7 @@ class StudyService:
                     permissions=create_permission_from_study(study),
                 )
             )
-            self.cache_service.invalidate(uuid)
+            remove_from_cache(cache=self.cache_service, root_id=uuid)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(

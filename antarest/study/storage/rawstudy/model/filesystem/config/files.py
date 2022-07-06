@@ -108,12 +108,6 @@ class ConfigPathBuilder:
                 output_data = IniReader().read(output_data_path)
             else:
                 raise FileTypeNotSupportedException()
-        except Exception as e:
-            logger.error(
-                f"Failed to extract data from {root/inside_root_path}",
-                exc_info=e,
-            )
-            output_data = None
         finally:
             if tmp_dir:
                 tmp_dir.cleanup()
