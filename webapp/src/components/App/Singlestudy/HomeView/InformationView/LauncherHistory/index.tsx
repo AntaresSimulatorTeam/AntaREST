@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import HistoryIcon from "@mui/icons-material/History";
+import moment from "moment";
 import {
   LaunchJob,
   LaunchJobDTO,
@@ -85,12 +86,17 @@ function LauncherHistory(props: Props) {
         try {
           const data = await getStudyJobs(sid);
           setStudyJobs(
-            data.sort((j1, j2) =>
-              (j1.completionDate || j1.creationDate) >
-              (j2.completionDate || j2.creationDate)
-                ? -1
-                : 1
-            )
+            data.sort((j1, j2) => {
+              const defaultCompletionDate = moment();
+              const j1CompletionDate =
+                j1.completionDate || defaultCompletionDate;
+              const j2CompletionDate =
+                j2.completionDate || defaultCompletionDate;
+              if (j1CompletionDate === j2CompletionDate) {
+                return j1.creationDate > j2.creationDate ? -1 : 1;
+              }
+              return j1CompletionDate > j2CompletionDate ? -1 : 1;
+            })
           );
         } catch (e) {
           enqueueErrorSnackbar(
