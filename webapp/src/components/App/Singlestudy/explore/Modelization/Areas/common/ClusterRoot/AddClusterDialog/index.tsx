@@ -18,7 +18,7 @@ interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   clusterGroupList: Array<string>;
   studyId: string;
   area: string;
-  type: "thermal" | "renewables";
+  type: "thermals" | "renewables";
 }
 
 function AddClusterDialog(props: PropType) {
@@ -43,7 +43,7 @@ function AddClusterDialog(props: PropType) {
       await appendCommands(studyId, [
         {
           action:
-            type === "thermal"
+            type === "thermals"
               ? CommandEnum.CREATE_CLUSTER
               : CommandEnum.CREATE_RENEWABLES_CLUSTER,
           args: {

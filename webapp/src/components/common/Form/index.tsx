@@ -178,7 +178,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
       const res = [];
 
       if (autoSubmitConfig.enable) {
+        console.log("AUTOSUBMIT ENABLED");
         const listeners = fieldAutoSubmitListeners.current;
+        console.log("LISTENERS ? : ", listeners);
         res.push(
           ...Object.keys(listeners)
             .filter((key) => R.hasPath(stringToPath(key), dirtyValues))
@@ -188,7 +190,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             })
         );
       }
-
+      console.log("RES ? : ", res);
       if (onSubmit) {
         res.push(onSubmit({ values: data, dirtyValues }, e));
       }

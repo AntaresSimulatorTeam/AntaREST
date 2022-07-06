@@ -34,7 +34,7 @@ export default function ThermalView(props: Props) {
           R.equals(PromiseStatus.Resolved),
           () => (
             <Form
-              autoSubmit
+              autoSubmit={true}
               config={{ defaultValues: defaultValues as ThermalFields }}
             >
               {(formObj) =>

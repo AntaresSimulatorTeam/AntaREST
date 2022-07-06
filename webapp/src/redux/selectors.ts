@@ -233,13 +233,14 @@ export const getStudyLinks = createSelector(getStudyData, (data) => {
 });
 
 export const getCurrentClusters = (
+  type: "thermals" | "renewables",
   studyId: string,
   state: AppState
 ): Array<Cluster> => {
   const currentStudyState = getStudyDataState(state);
   const { currentArea } = currentStudyState;
   const clusters =
-    currentStudyState.entities[studyId]?.areas[currentArea].thermals;
+    currentStudyState.entities[studyId]?.areas[currentArea][type];
   return clusters || [];
 };
 

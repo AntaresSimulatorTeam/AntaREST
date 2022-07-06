@@ -46,7 +46,7 @@ interface Props {
   }) => React.ReactNode;
   study: StudyMetadata;
   fixedGroupList: Array<string>;
-  type: "thermal" | "renewables";
+  type: "thermals" | "renewables";
   backButtonName: string;
 }
 
@@ -57,12 +57,18 @@ function ClusterRoot(props: Props) {
   const { study, type, fixedGroupList, backButtonName, children } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
   const clusterInitList = useAppSelector((state) =>
-    getCurrentClusters(study.id, state)
+    getCurrentClusters(type, study.id, state)
   );
   // TO DO: Replace this and Optimize to add/remove the right clusters
   const { data: clusterData, status } = usePromise(
     () =>
-      getStudyData(study.id, `input/${type}/clusters/${currentArea}/list`, 3),
+      getStudyData(
+        study.id,
+        `input/${
+          type === "thermals" ? "thermal" : type
+        }/clusters/${currentArea}/list`,
+        3
+      ),
     [study.id, currentArea, clusterInitList]
   );
 
@@ -123,7 +129,7 @@ function ClusterRoot(props: Props) {
       await appendCommands(study.id, [
         {
           action:
-            type === "thermal"
+            type === "thermals"
               ? CommandEnum.REMOVE_CLUSTER
               : CommandEnum.REMOVE_RENEWABLES_CLUSTER,
           args: {

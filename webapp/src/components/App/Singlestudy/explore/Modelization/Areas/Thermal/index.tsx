@@ -23,7 +23,7 @@ function Thermal() {
     <ClusterRoot
       study={study}
       fixedGroupList={fixedGroupList}
-      type="thermal"
+      type="thermals"
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
       {({ cluster, groupList, nameList }) => (
