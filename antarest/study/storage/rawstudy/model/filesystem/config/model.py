@@ -144,7 +144,7 @@ class FileStudyTreeConfig(DTO):
     def next_file(
         self, name: str, is_output: bool = False
     ) -> "FileStudyTreeConfig":
-        if is_output and self.outputs[name].archived:
+        if is_output and name in self.outputs and self.outputs[name].archived:
             zip_path: Optional[Path] = self.path / f"{name}.zip"
         else:
             zip_path = self.zip_path

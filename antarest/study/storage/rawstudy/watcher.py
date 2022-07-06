@@ -140,7 +140,7 @@ class Watcher:
                     for child in path.iterdir():
                         try:
                             if (
-                                (child.is_dir() or child.suffix == ".zip")
+                                (child.is_dir())
                                 and any(
                                     [
                                         re.search(regex, child.name)

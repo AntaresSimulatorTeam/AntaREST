@@ -1898,6 +1898,7 @@ class StudyService:
                     permissions=create_permission_from_study(study),
                 )
             )
+            self.cache_service.invalidate(uuid)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(

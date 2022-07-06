@@ -311,7 +311,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
             filename = shutil.make_archive(
-                base_name=os.path.splitext(target)[0],  # TODO:MAYBE THIS
+                base_name=os.path.splitext(target)[0],
                 format="zip",
                 root_dir=tmp_study_path,
             )

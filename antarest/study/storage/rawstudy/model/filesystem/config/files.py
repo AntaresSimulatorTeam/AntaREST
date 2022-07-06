@@ -35,6 +35,10 @@ class FileType(Enum):
     MULTI_INI = "multi_ini"
 
 
+class FileTypeNotSupportedException(Exception):
+    pass
+
+
 class ConfigPathBuilder:
     """
     Fetch information need by StudyConfig from filesystem data
@@ -93,24 +97,37 @@ class ConfigPathBuilder:
         else:
             output_data_path = root / inside_root_path
 
-        if file_type == FileType.TXT:
-            output_data: Any = output_data_path.read_text().split("\n")
-        elif file_type == FileType.MULTI_INI:
-            output_data = MultipleSameKeysIniReader(multi_ini_keys).read(
-                output_data_path
+        try:
+            if file_type == FileType.TXT:
+                output_data: Any = output_data_path.read_text().split("\n")
+            elif file_type == FileType.MULTI_INI:
+                output_data = MultipleSameKeysIniReader(multi_ini_keys).read(
+                    output_data_path
+                )
+            elif file_type == FileType.SIMPLE_INI:
+                output_data = IniReader().read(output_data_path)
+            else:
+                raise FileTypeNotSupportedException()
+        except Exception as e:
+            logger.error(
+                f"Failed to extract data from {root/inside_root_path}",
+                exc_info=e,
             )
-        elif file_type == FileType.SIMPLE_INI:
-            output_data = IniReader().read(output_data_path)
-
-        if tmp_dir:
-            tmp_dir.cleanup()
+            output_data = None
+        finally:
+            if tmp_dir:
+                tmp_dir.cleanup()
 
         return output_data
 
     @staticmethod
     def _parse_version(path: Path) -> int:
-        studyinfo = IniReader().read(path / "study.antares")
-        version: int = studyinfo.get("antares", {}).get("version", -1)
+        study_info = ConfigPathBuilder._extract_data_from_file(
+            root=path,
+            inside_root_path=Path("study.antares"),
+            file_type=FileType.SIMPLE_INI,
+        )
+        version: int = study_info.get("antares", {}).get("version", -1)
         return version
 
     @staticmethod
@@ -139,8 +156,12 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
-        bindings = IniReader().read(
-            root / "input/bindingconstraints/bindingconstraints.ini"
+        bindings = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(
+                "input/bindingconstraints/bindingconstraints.ini"
+            ),
+            file_type=FileType.SIMPLE_INI,
         )
         output_list = []
         for id, bind in bindings.items():
@@ -314,8 +335,10 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_thermal(root: Path, area: str) -> List[Cluster]:
-        list_ini = IniReader().read(
-            root / f"input/thermal/clusters/{area}/list.ini"
+        list_ini = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/thermal/clusters/{area}/list.ini"),
+            file_type=FileType.SIMPLE_INI,
         )
         return [
             Cluster(
@@ -328,24 +351,31 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_renewables(root: Path, area: str) -> List[Cluster]:
-        ini_path = root / f"input/renewables/clusters/{area}/list.ini"
-        if not ini_path.exists():
-            return []
-
-        list_ini = IniReader().read(ini_path)
-        return [
-            Cluster(
-                id=transform_name_to_id(key),
-                enabled=list_ini.get(key, {}).get("enabled", True),
-                name=list_ini.get(key, {}).get("name", None),
+        try:
+            list_ini = ConfigPathBuilder._extract_data_from_file(
+                root=root,
+                inside_root_path=Path(
+                    f"input/renewables/clusters/{area}/list.ini"
+                ),
+                file_type=FileType.SIMPLE_INI,
             )
-            for key in list(list_ini.keys())
-        ]
+            return [
+                Cluster(
+                    id=transform_name_to_id(key),
+                    enabled=list_ini.get(key, {}).get("enabled", True),
+                    name=list_ini.get(key, {}).get("name", None),
+                )
+                for key in list(list_ini.keys())
+            ]
+        except:
+            return []
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:
-        properties_ini = IniReader().read(
-            root / f"input/links/{area}/properties.ini"
+        properties_ini = ConfigPathBuilder._extract_data_from_file(
+            root=root,
+            inside_root_path=Path(f"input/links/{area}/properties.ini"),
+            file_type=FileType.SIMPLE_INI,
         )
         return {
             link: Link.from_json(properties_ini[link])
