@@ -93,9 +93,13 @@ function LauncherHistory(props: Props) {
               const j2CompletionDate =
                 j2.completionDate || defaultCompletionDate;
               if (j1CompletionDate === j2CompletionDate) {
-                return j1.creationDate > j2.creationDate ? -1 : 1;
+                return moment(j1.creationDate).isAfter(moment(j2.creationDate))
+                  ? -1
+                  : 1;
               }
-              return j1CompletionDate > j2CompletionDate ? -1 : 1;
+              return moment(j1CompletionDate).isAfter(moment(j2CompletionDate))
+                ? -1
+                : 1;
             })
           );
         } catch (e) {
