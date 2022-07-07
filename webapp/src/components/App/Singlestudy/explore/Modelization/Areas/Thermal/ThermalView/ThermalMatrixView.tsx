@@ -30,6 +30,22 @@ function ThermalMatrixView(props: Props) {
   const { study, area, cluster } = props;
   const [value, setValue] = React.useState(0);
 
+  const commonNames = [
+    "Marginal Cost modulation",
+    "Market bid modulation",
+    "Capacity mod",
+    "Mid Gen modulation",
+  ];
+
+  const tsGenNames = [
+    "FO Duration",
+    "PO Duration",
+    "FO Rate",
+    "PO Rate",
+    "NPO Min",
+    "NPO Max",
+  ];
+
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
@@ -67,6 +83,7 @@ function ThermalMatrixView(props: Props) {
                 url={`input/thermal/prepro/${area}/${cluster}/modulation`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.common")}
+                columnsNames={commonNames}
               />
             ),
           ],
@@ -78,6 +95,7 @@ function ThermalMatrixView(props: Props) {
                 url={`input/thermal/prepro/${area}/${cluster}/data`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.tsGen")}
+                columnsNames={tsGenNames}
               />
             ),
           ],

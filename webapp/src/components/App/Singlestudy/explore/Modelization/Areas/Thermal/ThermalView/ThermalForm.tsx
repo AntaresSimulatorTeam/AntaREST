@@ -1,4 +1,4 @@
-import { Autocomplete, Box, TextField } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,12 +20,11 @@ interface Props {
   area: string;
   cluster: string;
   study: StudyMetadata;
-  nameList: Array<string>;
   groupList: Array<string>;
 }
 
 export default function ThermalForm(props: Props) {
-  const { nameList, groupList, study, area, cluster } = props;
+  const { groupList, study, area, cluster } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const {
@@ -38,14 +37,13 @@ export default function ThermalForm(props: Props) {
   }, [area, cluster]);
   const studyId = study.id;
 
-  // console.log("DEFAULT VALUES FORM: ", defaultValues);
-  // console.log("CLUSTER (THERMAL): ", cluster);
-
   const genTsOptions = [
     "use global parameter",
     "force no generation",
     "force generation",
   ].map((item) => ({ label: item, value: item }));
+
+  const groupOptions = groupList.map((item) => ({ label: item, value: item }));
 
   const lawOptions = ["uniform", "geometric"].map((item) => ({
     label: item,
@@ -61,16 +59,12 @@ export default function ThermalForm(props: Props) {
     data: any,
     defaultValue: any
   ) => {
-    console.log("BONJOUR AUTOSUBMIT");
     try {
       if (data === defaultValue || data === undefined) {
         const tmpValues = { ...defaultValues };
         if (name in tmpValues) delete tmpValues[name];
-        console.log("DEFAULT TMP VALUE: ", tmpValues);
-        console.log("PATH PREFIX: ", pathPrefix);
         await editStudy(tmpValues, studyId, pathPrefix);
       } else {
-        console.log("NO DEFAULT: ", data);
         await editStudy(data, studyId, path);
       }
     } catch (error) {
@@ -126,7 +120,7 @@ export default function ThermalForm(props: Props) {
           <TextField
             sx={{ flex: 1, mr: 1 }}
             variant="filled"
-            autoFocus
+            // autoFocus
             label={t("global.name")}
             error={!!errors.name}
             helperText={errors.name?.message}
@@ -139,42 +133,9 @@ export default function ThermalForm(props: Props) {
               required: t("form.field.required") as string,
               onAutoSubmit: (value) =>
                 handleAutoSubmit("name", path.name, value, ""),
-              validate: (value) => {
-                if (nameList.includes(value.toLowerCase())) {
-                  return t("study.error.form.clusterName") as string;
-                }
-              },
             })}
           />
-          <Autocomplete
-            id="form-cluster-group"
-            sx={{ ml: 1, flex: 1 }}
-            freeSolo
-            options={groupList}
-            placeholder={defaultValues?.group}
-            {...register("group", {
-              required: t("form.field.required") as string,
-              onAutoSubmit: (value) =>
-                handleAutoSubmit("group", path.group, value, ""),
-            })}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="filled"
-                error={!!errors.group}
-                helperText={errors.group?.message}
-                InputLabelProps={
-                  // Allow to show placeholder when field is empty
-                  defaultValues?.group ? { shrink: true } : {}
-                }
-                inputProps={{
-                  ...params.inputProps,
-                  autoComplete: "disabled", // disable autocomplete and autofill
-                }}
-                label={t("study.modelization.clusters.clusterGroup")}
-              />
-            )}
-          />
+          {renderSelect("group", groupOptions)}
         </Content>
       </Fieldset>
       <Fieldset

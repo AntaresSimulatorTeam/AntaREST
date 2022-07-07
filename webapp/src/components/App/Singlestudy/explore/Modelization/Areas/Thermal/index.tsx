@@ -26,13 +26,8 @@ function Thermal() {
       type="thermals"
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
-      {({ cluster, groupList, nameList }) => (
-        <ThermalView
-          study={study}
-          cluster={cluster}
-          groupList={groupList}
-          nameList={nameList}
-        />
+      {({ cluster, groupList }) => (
+        <ThermalView study={study} cluster={cluster} groupList={groupList} />
       )}
     </ClusterRoot>
   );

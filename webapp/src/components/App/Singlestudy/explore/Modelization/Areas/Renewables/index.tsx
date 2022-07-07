@@ -25,13 +25,8 @@ function Renewables() {
       type="renewables"
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
-      {({ cluster, groupList, nameList }) => (
-        <RenewableView
-          cluster={cluster}
-          groupList={groupList}
-          nameList={nameList}
-          study={study}
-        />
+      {({ cluster, groupList }) => (
+        <RenewableView cluster={cluster} groupList={groupList} study={study} />
       )}
     </ClusterRoot>
   );

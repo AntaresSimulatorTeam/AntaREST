@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { TextField, Autocomplete } from "@mui/material";
+import { TextField, Box } from "@mui/material";
 import { FormObj } from "../../../../../../../../common/Form";
+import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
 
 interface OtherProps {
-  clusterNameList: Array<string>;
   clusterGroupList: Array<string>;
 }
 
@@ -11,12 +11,15 @@ function AddClusterForm(props: FormObj & OtherProps) {
   const {
     register,
     formState: { errors },
-    clusterNameList,
     clusterGroupList,
     defaultValues,
   } = props;
 
   const { t } = useTranslation();
+  const groupOptions = clusterGroupList.map((item) => ({
+    label: item,
+    value: item,
+  }));
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -44,39 +47,31 @@ function AddClusterForm(props: FormObj & OtherProps) {
         fullWidth
         {...register("name", {
           required: t("form.field.required") as string,
-          validate: (value) => {
-            if (clusterNameList.includes(value.toLowerCase())) {
-              return t("study.error.form.clusterName") as string;
-            }
-          },
         })}
       />
-      <Autocomplete
-        id="add-cluster-dialog-group"
-        freeSolo
-        options={clusterGroupList}
-        placeholder={defaultValues?.group}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            variant="filled"
-            error={!!errors.group}
-            helperText={errors.group?.message}
-            InputLabelProps={
-              // Allow to show placeholder when field is empty
-              defaultValues?.group ? { shrink: true } : {}
-            }
-            {...register("group", {
-              required: t("form.field.required") as string,
-            })}
-            inputProps={{
-              ...params.inputProps,
-              autoComplete: "disabled", // disable autocomplete and autofill
-            }}
-            label={t("study.modelization.clusters.clusterGroup")}
-          />
-        )}
-      />
+      <Box
+        sx={{
+          display: "flex",
+          width: "auto",
+        }}
+      >
+        <SelectFE
+          {...register("group", {
+            required: t("form.field.required") as string,
+          })}
+          defaultValue={(defaultValues || {}).group || []}
+          variant="filled"
+          options={groupOptions}
+          formControlProps={{
+            sx: {
+              flex: 1,
+              boxSizing: "border-box",
+            },
+          }}
+          sx={{ width: "auto", minWidth: "250px" }}
+          label={t(`study.modelization.clusters.group`)}
+        />
+      </Box>
     </>
   );
 }

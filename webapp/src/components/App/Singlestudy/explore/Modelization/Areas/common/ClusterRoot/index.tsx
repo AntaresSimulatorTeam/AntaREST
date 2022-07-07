@@ -4,10 +4,9 @@ import {
   List,
   ListSubheader,
   Collapse,
-  ListItemButton,
-  ListItemIcon,
   ListItemText,
   IconButton,
+  Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -16,11 +15,16 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
-import { Header, ListContainer, Root } from "./style";
+import {
+  Header,
+  ListContainer,
+  Root,
+  GroupButton,
+  ClusterButton,
+} from "./style";
 import usePromise, {
   PromiseStatus,
 } from "../../../../../../../../hooks/usePromise";
@@ -42,7 +46,6 @@ interface Props {
   children: (elm: {
     cluster: Cluster["id"];
     groupList: Array<string>;
-    nameList: Array<string>;
   }) => React.ReactNode;
   study: StudyMetadata;
   fixedGroupList: Array<string>;
@@ -107,11 +110,6 @@ function ClusterRoot(props: Props) {
     return tab;
   }, [clusters, fixedGroupList]);
 
-  const clusterNameList: Array<string> = useMemo(
-    () => (clusterData ? Object.keys(clusterData) : []),
-    [clusterData]
-  );
-
   const handleToggleGroupOpen = (groupName: string): void => {
     setClusterList({
       ...clusterList,
@@ -169,56 +167,63 @@ function ClusterRoot(props: Props) {
           [
             R.equals(PromiseStatus.Resolved),
             () => (
-              <Box sx={{ width: "100%", height: "100%" }}>
-                <List
+              <List
+                sx={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+                // component="nav"
+                aria-labelledby="nested-list-subheader"
+                subheader={
+                  <ListSubheader
+                    component="div"
+                    id="nested-list-subheader"
+                    sx={{
+                      color: "white",
+                      bgcolor: "#0000",
+                      fontSize: "18px",
+                    }}
+                  >
+                    {t("study.modelization.clusters.byGroups")}
+                  </ListSubheader>
+                }
+              >
+                <Box
                   sx={{
+                    display: "flex",
+                    flexDirection: "column",
                     width: "100%",
+                    height: "100%",
+                    overflowY: "auto",
                   }}
-                  component="nav"
-                  aria-labelledby="nested-list-subheader"
-                  subheader={
-                    <ListSubheader
-                      component="div"
-                      id="nested-list-subheader"
-                      sx={{
-                        color: "white",
-                        bgcolor: "#0000",
-                        fontSize: "18px",
-                      }}
-                    >
-                      {t("study.modelization.clusters.byGroups")}
-                    </ListSubheader>
-                  }
                 >
                   {Object.keys(clusterList).map((group) => {
                     const clusterItems = clusterList[group];
                     const { items, isOpen } = clusterItems;
                     return (
                       <Fragment key={group}>
-                        <ListItemButton
+                        <GroupButton
                           onClick={() => handleToggleGroupOpen(group)}
-                          sx={{
-                            width: "100%",
-                            mb: 1,
-                          }}
                         >
-                          <ListItemIcon>
-                            <ArrowForwardRoundedIcon color="primary" />
-                          </ListItemIcon>
                           <ListItemText
-                            primary={group}
-                            sx={{
-                              color: "white",
-                              fontWeight: "bold",
-                              borderRadius: "4px",
-                            }}
+                            primary={
+                              <Typography
+                                sx={{
+                                  color: "white",
+                                  fontWeight: "bold",
+                                  borderRadius: "4px",
+                                }}
+                              >
+                                {group}
+                              </Typography>
+                            }
                           />
                           {isOpen ? (
                             <ExpandLessIcon color="primary" />
                           ) : (
                             <ExpandMoreIcon color="primary" />
                           )}
-                        </ListItemButton>
+                        </GroupButton>
                         {items.map((item: ClusterElement) => (
                           <Collapse
                             key={item.id}
@@ -227,8 +232,7 @@ function ClusterRoot(props: Props) {
                             unmountOnExit
                           >
                             <List component="div" disablePadding>
-                              <ListItemButton
-                                sx={{ pl: 4 }}
+                              <ClusterButton
                                 onClick={() => setCurrentCluster(item.id)}
                               >
                                 <ListItemText primary={item.name} />
@@ -241,14 +245,14 @@ function ClusterRoot(props: Props) {
                                 >
                                   <DeleteIcon />
                                 </IconButton>
-                              </ListItemButton>
+                              </ClusterButton>
                             </List>
                           </Collapse>
                         ))}
                       </Fragment>
                     );
                   })}
-                </List>
+                </Box>
                 {isAddClusterDialogOpen && (
                   <AddClusterDialog
                     open={isAddClusterDialogOpen}
@@ -261,7 +265,7 @@ function ClusterRoot(props: Props) {
                     onCancel={() => setIsAddClusterDialogOpen(false)}
                   />
                 )}
-              </Box>
+              </List>
             ),
           ],
         ])(status)}
@@ -283,7 +287,6 @@ function ClusterRoot(props: Props) {
         {children({
           cluster: currentCluster,
           groupList: clusterGroupList,
-          nameList: clusterNameList,
         })}
       </Box>
     </Root>

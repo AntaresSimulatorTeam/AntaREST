@@ -1,4 +1,4 @@
-import { Autocomplete, Box, TextField } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,11 +23,10 @@ interface Props {
   area: string;
   cluster: string;
   study: StudyMetadata;
-  nameList: Array<string>;
   groupList: Array<string>;
 }
 export default function ThermalForm(props: Props) {
-  const { nameList, groupList, study, area, cluster } = props;
+  const { groupList, study, area, cluster } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const {
@@ -40,14 +39,13 @@ export default function ThermalForm(props: Props) {
   }, [area, cluster]);
   const studyId = study.id;
 
-  console.log("DEFAULT VALUES FORM (RENEWABLES): ", defaultValues);
-
   const tsModeOptions = ["power generation", "production factor"].map(
     (item) => ({ label: item, value: item })
   );
 
+  const groupOptions = groupList.map((item) => ({ label: item, value: item }));
+
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
-  console.log("BENGA: ", pathPrefix);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAutoSubmit = async (
@@ -57,15 +55,11 @@ export default function ThermalForm(props: Props) {
     defaultValue: any
   ) => {
     try {
-      console.log("T'ABUSE");
       if (data === defaultValue || data === undefined) {
         const tmpValues = { ...defaultValues };
         if (name in tmpValues) delete tmpValues[name];
-        console.log("DEFAULT TMP VALUE (RENEWABLE): ", tmpValues);
-        console.log("PATH PREFIX: ", pathPrefix);
         await editStudy(tmpValues, studyId, pathPrefix);
       } else {
-        console.log("NO DEFAULT (RENEWABLE): ", data);
         await editStudy(data, studyId, path);
       }
     } catch (error) {
@@ -134,42 +128,9 @@ export default function ThermalForm(props: Props) {
               required: t("form.field.required") as string,
               onAutoSubmit: (value) =>
                 handleAutoSubmit("name", path.name, value, ""),
-              validate: (value) => {
-                if (nameList.includes(value.toLowerCase())) {
-                  return t("study.error.form.clusterName") as string;
-                }
-              },
             })}
           />
-          <Autocomplete
-            id="form-cluster-group"
-            sx={{ ml: 1, flex: 1 }}
-            freeSolo
-            options={groupList}
-            placeholder={defaultValues?.group}
-            {...register("group", {
-              required: t("form.field.required") as string,
-              onAutoSubmit: (value) =>
-                handleAutoSubmit("group", path.group, value, ""),
-            })}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="filled"
-                error={!!errors.group}
-                helperText={errors.group?.message}
-                InputLabelProps={
-                  // Allow to show placeholder when field is empty
-                  defaultValues?.group ? { shrink: true } : {}
-                }
-                inputProps={{
-                  ...params.inputProps,
-                  // autoComplete: "disabled", // disable autocomplete and autofill
-                }}
-                label={t("study.modelization.clusters.clusterGroup")}
-              />
-            )}
-          />
+          {renderSelect("group", groupOptions)}
           {renderSelect("tsInterpretation", tsModeOptions)}
         </Content>
       </Fieldset>

@@ -1,5 +1,3 @@
-// import { isStringEmpty } from "../../../../../../../../services/utils";
-import { useMemo } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -28,10 +26,6 @@ function AddClusterDialog(props: PropType) {
   const { type, clusterGroupList, clusterData, studyId, area, ...dialogProps } =
     props;
   const { onCancel } = dialogProps;
-  const clusterNameList: Array<string> = useMemo(
-    () => (clusterData ? Object.keys(clusterData) : []),
-    [clusterData]
-  );
   const defaultValues: AddClustersFields = {
     name: "",
     group: "",
@@ -73,7 +67,6 @@ function AddClusterDialog(props: PropType) {
       {(formObj) =>
         AddClusterForm({
           ...formObj,
-          clusterNameList,
           clusterGroupList,
         })
       }

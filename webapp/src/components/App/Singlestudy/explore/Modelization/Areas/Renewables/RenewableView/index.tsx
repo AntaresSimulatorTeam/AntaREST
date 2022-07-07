@@ -13,12 +13,11 @@ import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 interface Props {
   cluster: Cluster["id"];
   groupList: Array<string>;
-  nameList: Array<string>;
   study: StudyMetadata;
 }
 
 export default function RenewableView(props: Props) {
-  const { cluster, study, nameList, groupList } = props;
+  const { cluster, study, groupList } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
 
   const { data: defaultValues, status } = usePromise(
@@ -41,7 +40,6 @@ export default function RenewableView(props: Props) {
                 study={study}
                 cluster={cluster}
                 area={currentArea}
-                nameList={nameList}
                 groupList={groupList}
               />
             </Form>
