@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../../common/Fieldset";
-import { AutoSubmitHandler, FormObj } from "../../../../../../../common/Form";
+import {
+  AutoSubmitHandler,
+  useFormContext,
+} from "../../../../../../../common/Form";
 import { getRenewablePath, RenewableFields } from "./utils";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -16,27 +19,22 @@ import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import { Content, Root } from "./style";
 import MatrixInput from "../../../../../../../common/MatrixInput";
 
-export default function ThermalForm(
-  props: FormObj<RenewableFields, unknown> & {
-    area: string;
-    cluster: string;
-    study: StudyMetadata;
-    nameList: Array<string>;
-    groupList: Array<string>;
-  }
-) {
+interface Props {
+  area: string;
+  cluster: string;
+  study: StudyMetadata;
+  nameList: Array<string>;
+  groupList: Array<string>;
+}
+export default function ThermalForm(props: Props) {
+  const { nameList, groupList, study, area, cluster } = props;
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [t] = useTranslation();
   const {
     register,
     formState: { errors },
     defaultValues,
-    nameList,
-    groupList,
-    study,
-    area,
-    cluster,
-  } = props;
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [t] = useTranslation();
+  } = useFormContext<RenewableFields>();
   const path = useMemo(() => {
     return getRenewablePath(area, cluster);
   }, [area, cluster]);

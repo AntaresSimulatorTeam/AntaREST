@@ -234,7 +234,10 @@ function ClusterRoot(props: Props) {
                                 <ListItemText primary={item.name} />
                                 <IconButton
                                   edge="end"
-                                  onClick={() => handleClusterDeletion(item.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClusterDeletion(item.id);
+                                  }}
                                 >
                                   <DeleteIcon />
                                 </IconButton>

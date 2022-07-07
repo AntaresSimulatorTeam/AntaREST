@@ -34,19 +34,16 @@ export default function ThermalView(props: Props) {
           R.equals(PromiseStatus.Resolved),
           () => (
             <Form
-              autoSubmit={true}
+              autoSubmit
               config={{ defaultValues: defaultValues as ThermalFields }}
             >
-              {(formObj) =>
-                ThermalForm({
-                  ...formObj,
-                  study,
-                  cluster,
-                  area: currentArea,
-                  nameList,
-                  groupList,
-                })
-              }
+              <ThermalForm
+                study={study}
+                cluster={cluster}
+                area={currentArea}
+                nameList={nameList}
+                groupList={groupList}
+              />
             </Form>
           ),
         ],

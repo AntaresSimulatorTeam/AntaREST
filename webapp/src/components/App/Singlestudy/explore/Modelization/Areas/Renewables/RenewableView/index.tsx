@@ -37,16 +37,13 @@ export default function RenewableView(props: Props) {
               autoSubmit
               config={{ defaultValues: defaultValues as RenewableFields }}
             >
-              {(formObj) =>
-                RenewableForm({
-                  ...formObj,
-                  study,
-                  cluster,
-                  area: currentArea,
-                  nameList,
-                  groupList,
-                })
-              }
+              <RenewableForm
+                study={study}
+                cluster={cluster}
+                area={currentArea}
+                nameList={nameList}
+                groupList={groupList}
+              />
             </Form>
           ),
         ],

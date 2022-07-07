@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../../common/Fieldset";
-import { AutoSubmitHandler, FormObj } from "../../../../../../../common/Form";
+import {
+  AutoSubmitHandler,
+  useFormContext,
+} from "../../../../../../../common/Form";
 import { getThermalPath, ThermalFields } from "./utils";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -13,34 +16,30 @@ import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import ThermalMatrixView from "./ThermalMatrixView";
 import { Content, Root } from "./style";
 
-export default function ThermalForm(
-  props: FormObj<ThermalFields, unknown> & {
-    area: string;
-    cluster: string;
-    study: StudyMetadata;
-    nameList: Array<string>;
-    groupList: Array<string>;
-  }
-) {
-  const {
-    register,
-    formState: { errors },
-    defaultValues,
-    nameList,
-    groupList,
-    study,
-    area,
-    cluster,
-  } = props;
+interface Props {
+  area: string;
+  cluster: string;
+  study: StudyMetadata;
+  nameList: Array<string>;
+  groupList: Array<string>;
+}
+
+export default function ThermalForm(props: Props) {
+  const { nameList, groupList, study, area, cluster } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
+  const {
+    register,
+    defaultValues,
+    formState: { errors },
+  } = useFormContext<ThermalFields>();
   const path = useMemo(() => {
     return getThermalPath(area, cluster);
   }, [area, cluster]);
   const studyId = study.id;
 
-  console.log("DEFAULT VALUES FORM: ", defaultValues);
-  console.log("CLUSTER (THERMAL): ", cluster);
+  // console.log("DEFAULT VALUES FORM: ", defaultValues);
+  // console.log("CLUSTER (THERMAL): ", cluster);
 
   const genTsOptions = [
     "use global parameter",
