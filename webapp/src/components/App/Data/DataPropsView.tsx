@@ -8,7 +8,7 @@ interface PropTypes {
   dataset: Array<MatrixDataSetDTO>;
   selectedItem: string;
   setSelectedItem: (item: string) => void;
-  onAdd: () => void;
+  onAdd?: () => void;
 }
 
 function DataPropsView(props: PropTypes) {

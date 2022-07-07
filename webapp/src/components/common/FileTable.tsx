@@ -21,6 +21,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import IosShareIcon from "@mui/icons-material/IosShare";
 import DownloadIcon from "@mui/icons-material/Download";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
@@ -33,10 +34,11 @@ const logErr = debug("antares:createimportform:error");
 interface PropType {
   title: ReactNode;
   content: Array<GenericInfo>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   onRead: (id: string) => Promise<void>;
   uploadFile?: (file: File) => Promise<void>;
   onFileDownload?: (id: string) => string;
+  onAssign?: (id: string) => Promise<void>;
   allowImport?: boolean;
   allowDelete?: boolean;
   copyId?: boolean;
@@ -53,6 +55,7 @@ function FileTable(props: PropType) {
     onRead,
     uploadFile,
     onFileDownload,
+    onAssign,
     allowImport,
     allowDelete,
     copyId,
@@ -83,7 +86,6 @@ function FileTable(props: PropType) {
       width="100%"
       height="100%"
       flexDirection="column"
-      sx={{ px: 1 }}
     >
       {title}
       <Divider sx={{ mt: 1, mb: 2 }} />
@@ -158,6 +160,21 @@ function FileTable(props: PropType) {
                           </Tooltip>
                         </IconButton>
                       )}
+                      {onAssign && (
+                        <IconButton
+                          onClick={() => onAssign(row.id as string)}
+                          sx={{
+                            mx: 1,
+                            color: "action.active",
+                          }}
+                        >
+                          <Tooltip title={t("global.assign") as string}>
+                            <IosShareIcon
+                              sx={{ height: "20px", width: "20px" }}
+                            />
+                          </Tooltip>
+                        </IconButton>
+                      )}
                       <Typography>{row.name}</Typography>
                     </Box>
                   </TableCell>
@@ -210,7 +227,7 @@ function FileTable(props: PropType) {
           </Table>
         </TableContainer>
       </Box>
-      {openConfirmationModal && openConfirmationModal.length > 0 && (
+      {openConfirmationModal && openConfirmationModal.length > 0 && onDelete && (
         <ConfirmationDialog
           open
           titleIcon={DeleteIcon}
