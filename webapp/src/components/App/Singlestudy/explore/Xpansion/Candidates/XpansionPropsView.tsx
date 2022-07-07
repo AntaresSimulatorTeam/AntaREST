@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,103 +25,61 @@ function XpansionPropsView(props: PropsType) {
     deleteXpansion,
   } = props;
   const [filteredCandidates, setFilteredCandidates] =
-    useState<Array<XpansionCandidate>>();
+    useState<Array<XpansionCandidate>>(candidateList);
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<boolean>(false);
 
-  const filter = (currentName: string): XpansionCandidate[] => {
-    if (candidateList) {
-      return candidateList.filter(
-        (item) =>
-          !currentName || item.name.search(new RegExp(currentName, "i")) !== -1
-      );
-    }
-    return [];
-  };
+  const filter = useCallback(
+    (currentName: string): XpansionCandidate[] => {
+      if (candidateList) {
+        return candidateList.filter(
+          (item) =>
+            !currentName ||
+            item.name.search(new RegExp(currentName, "i")) !== -1
+        );
+      }
+      return [];
+    },
+    [candidateList]
+  );
 
-  const onChange = async (currentName: string) => {
-    if (currentName !== "") {
-      const f = filter(currentName);
-      setFilteredCandidates(f);
-    } else {
-      setFilteredCandidates(undefined);
-    }
-  };
+  useEffect(() => {
+    setFilteredCandidates(filter(searchFilter));
+  }, [filter, searchFilter]);
 
   return (
     <>
       <PropertiesView
         mainContent={
-          !filteredCandidates && (
-            <Box
-              width="100%"
-              display="flex"
-              flexDirection="column"
-              alignItems="flex-end"
-              flexGrow={1}
-            >
-              <ListElement
-                list={candidateList}
-                currentElement={selectedItem}
-                setSelectedItem={(elm) => setSelectedItem(elm.name)}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  color: "secondary.dark",
-                }}
-              >
-                <Button
-                  sx={{ color: "error.light" }}
-                  size="small"
-                  onClick={() => setOpenConfirmationModal(true)}
-                >
-                  {t("global.delete")}
-                </Button>
-              </Box>
-            </Box>
-          )
+          <ListElement
+            list={filteredCandidates}
+            currentElement={selectedItem}
+            setSelectedItem={(elm) => setSelectedItem(elm.name)}
+          />
         }
         secondaryContent={
-          filteredCandidates && (
-            <Box
-              width="100%"
-              display="flex"
-              flexDirection="column"
-              alignItems="flex-end"
-              flexGrow={1}
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: "24px",
+              right: "24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              color: "secondary.dark",
+            }}
+          >
+            <Button
+              sx={{ color: "error.light" }}
+              size="small"
+              onClick={() => setOpenConfirmationModal(true)}
             >
-              <ListElement
-                list={filteredCandidates}
-                currentElement={selectedItem}
-                setSelectedItem={(elm) => setSelectedItem(elm.name)}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  color: "secondary.dark",
-                }}
-              >
-                <Button
-                  sx={{ color: "error.light" }}
-                  size="small"
-                  onClick={() => setOpenConfirmationModal(true)}
-                >
-                  {t("global.delete")}
-                </Button>
-              </Box>
-            </Box>
-          )
+              {t("global.delete")}
+            </Button>
+          </Box>
         }
-        onSearchFilterChange={(e) => onChange(e as string)}
+        onSearchFilterChange={setSearchFilter}
         onAdd={onAdd}
       />
       {openConfirmationModal && candidateList && (
