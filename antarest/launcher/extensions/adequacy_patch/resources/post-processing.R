@@ -39,11 +39,11 @@ remove_data <- function(path_prefix, data_type, data_list, include_id) {
         if (!data_list[[item]]) {
             item_data <- paste(c(path_prefix, data_type, item), collapse="/")
             cat(paste0("Removing from ", data_type, " ", item, " in ", path_prefix, "\n"))
-            unlink(file.path(paste0(item_data, "values-hourly.txt", collapse="/")))
+            unlink(file.path(paste0(c(item_data, "values-hourly.txt"), collapse="/")))
             if (include_id) {
-                unlink(file.path(paste0(item_data, "id-hourly.txt", collapse="/")))
+                unlink(file.path(paste0(c(item_data, "id-hourly.txt"), collapse="/")))
             }
-            unlink(file.path(paste0(item_data, "details-hourly.txt", collapse="/")))
+            unlink(file.path(paste0(c(item_data, "details-hourly.txt"), collapse="/")))
             if (length(list.files(file.path(item_data))) == 0) {
                 unlink(file.path(item_data))
             }
