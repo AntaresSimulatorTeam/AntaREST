@@ -551,13 +551,13 @@ class LauncherService:
                     output_true_path,
                     job_launch_params,
                 )
-                self._save_solver_stats(job_result, output_path)
+                self._save_solver_stats(job_result, output_true_path)
 
                 if additional_logs:
                     for log_name, log_paths in additional_logs.items():
                         concat_files(
                             log_paths,
-                            output_path / log_name,
+                            output_true_path / log_name,
                         )
 
                 zip_path: Optional[Path] = None
@@ -607,6 +607,9 @@ class LauncherService:
                             ),
                         ),
                     )
+                finally:
+                    if zip_path:
+                        os.unlink(zip_path)
         raise JobNotFound()
 
     def _download_fallback_output(

@@ -557,10 +557,12 @@ def test_manage_output(tmp_path: Path):
         task_service=Mock(),
     )
 
-    output_path = tmp_path / "new_output"
+    output_path = tmp_path / "output"
     os.mkdir(output_path)
-    (output_path / "log").touch()
-    (output_path / "data").touch()
+    new_output_path = output_path / "new_output"
+    os.mkdir(new_output_path)
+    (new_output_path / "log").touch()
+    (new_output_path / "data").touch()
     additional_log = tmp_path / "output.log"
     additional_log.write_text("some log")
     job_id = "job_id"
@@ -612,7 +614,7 @@ def test_manage_output(tmp_path: Path):
         is None
     )
 
-    (output_path / "info.antares-output").write_text(
+    (new_output_path / "info.antares-output").write_text(
         f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}"
     )
     output_name = launcher_service._import_output(
