@@ -53,6 +53,7 @@ from antarest.study.storage.utils import (
     create_permission_from_study,
     extract_output_name,
     find_single_output_path,
+    detect_multiple_output,
 )
 
 logger = logging.getLogger(__name__)
@@ -545,71 +546,71 @@ class LauncherService:
                     job_result.launcher_params or "{}"
                 )
                 output_true_path = find_single_output_path(output_path)
-                self._before_import_hooks(
-                    job_id,
-                    job_result.study_id,
-                    output_true_path,
-                    job_launch_params,
+                output_suffix = cast(
+                    Optional[str],
+                    getattr(
+                        job_launch_params,
+                        LAUNCHER_PARAM_NAME_SUFFIX,
+                        None,
+                    ),
                 )
-                self._save_solver_stats(job_result, output_true_path)
-
-                if additional_logs:
-                    for log_name, log_paths in additional_logs.items():
-                        concat_files(
-                            log_paths,
-                            output_true_path / log_name,
-                        )
-
-                zip_path: Optional[Path] = None
-                stopwatch = StopWatch()
-                if LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params or "{}"
-                ).archive_output:
-                    logger.info("Re zipping output for transfer")
-                    zip_path = (
-                        output_true_path.parent
-                        / f"{output_true_path.name}.zip"
-                    )
-                    zip_dir(
-                        output_true_path, zip_path=zip_path
-                    )  # TODO: remove source dir ?
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Zipped output for job {job_id} in {x}s"
-                        )
-                    )
-
-                final_output_path = zip_path or output_true_path
-                try:
-                    return self.study_service.import_output(
-                        job_result.study_id,
-                        final_output_path,
-                        RequestParameters(DEFAULT_ADMIN_USER),
-                        cast(
-                            Optional[str],
-                            getattr(
-                                job_launch_params,
-                                LAUNCHER_PARAM_NAME_SUFFIX,
-                                None,
-                            ),
-                        ),
-                    )
-                except StudyNotFoundError:
-                    return self._import_fallback_output(
+                multiple_outputs = detect_multiple_output(output_true_path)
+                output_id = extract_output_name(
+                    multiple_outputs[0], output_suffix
+                )
+                for single_output_path in multiple_outputs:
+                    self._before_import_hooks(
                         job_id,
-                        final_output_path,
-                        cast(
-                            Optional[str],
-                            getattr(
-                                job_launch_params,
-                                LAUNCHER_PARAM_NAME_SUFFIX,
-                                None,
-                            ),
-                        ),
+                        job_result.study_id,
+                        single_output_path,
+                        job_launch_params,
                     )
-                finally:
-                    if zip_path:
-                        os.unlink(zip_path)
+                    self._save_solver_stats(job_result, single_output_path)
+
+                    if additional_logs:
+                        for log_name, log_paths in additional_logs.items():
+                            concat_files(
+                                log_paths,
+                                single_output_path / log_name,
+                            )
+
+                    zip_path: Optional[Path] = None
+                    stopwatch = StopWatch()
+                    if LauncherParametersDTO.parse_raw(
+                        job_result.launcher_params or "{}"
+                    ).archive_output:
+                        logger.info("Re zipping output for transfer")
+                        zip_path = (
+                            single_output_path.parent
+                            / f"{single_output_path.name}.zip"
+                        )
+                        zip_dir(
+                            output_true_path, zip_path=zip_path
+                        )  # TODO: remove source dir ?
+                        stopwatch.log_elapsed(
+                            lambda x: logger.info(
+                                f"Zipped output for job {job_id} in {x}s"
+                            )
+                        )
+
+                    final_output_path = zip_path or single_output_path
+                    try:
+                        return self.study_service.import_output(
+                            job_result.study_id,
+                            final_output_path,
+                            RequestParameters(DEFAULT_ADMIN_USER),
+                            output_suffix,
+                        )
+                    except StudyNotFoundError:
+                        return self._import_fallback_output(
+                            job_id,
+                            final_output_path,
+                            output_suffix,
+                        )
+                    finally:
+                        if zip_path:
+                            os.unlink(zip_path)
+                return output_id
         raise JobNotFound()
 
     def _download_fallback_output(

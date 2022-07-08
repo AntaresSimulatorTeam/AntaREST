@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast, Callable
+from typing import Optional, Union, cast, Callable, List
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -121,6 +121,16 @@ def find_single_output_path(all_output_path: Path) -> Path:
     if len(children) == 1:
         return find_single_output_path(all_output_path / children[0])
     return all_output_path
+
+
+def detect_multiple_output(output_path: Path) -> List[Path]:
+    children = os.listdir(output_path)
+    if (
+        len(children) > 1
+        and Path(output_path, children[0], "info.antares-output").exists()
+    ):
+        return list(map(lambda p: Path(output_path, p), children))
+    return [output_path]
 
 
 def extract_output_name(
