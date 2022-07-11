@@ -444,9 +444,9 @@ class SlurmLauncher(AbstractLauncher):
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
 
-        try:
-            # export study
-            with self.antares_launcher_lock:
+        with self.antares_launcher_lock:
+            try:
+                # export study
                 self.callbacks.export_study(
                     launch_uuid, study_uuid, study_path, launcher_params
                 )
@@ -468,24 +468,26 @@ class SlurmLauncher(AbstractLauncher):
                 )
                 logger.info("Study exported and run with launcher")
 
-            self.callbacks.update_status(
-                str(launch_uuid), JobStatus.RUNNING, None, None
-            )
-        except Exception as e:
-            logger.error(f"Failed to launch study {study_uuid}", exc_info=e)
-            self.callbacks.append_after_log(
-                launch_uuid,
-                f"Unexpected error when launching study : {str(e)}",
-            )
-            self.callbacks.update_status(
-                str(launch_uuid), JobStatus.FAILED, str(e), None
-            )
-            self._clean_up_study(str(launch_uuid))
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.RUNNING, None, None
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to launch study {study_uuid}", exc_info=e
+                )
+                self.callbacks.append_after_log(
+                    launch_uuid,
+                    f"Unexpected error when launching study : {str(e)}",
+                )
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.FAILED, str(e), None
+                )
+                self._clean_up_study(str(launch_uuid))
+            finally:
+                self._delete_workspace_file(study_path)
 
         if not self.thread:
             self.start()
-
-        self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO
