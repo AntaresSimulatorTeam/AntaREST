@@ -427,7 +427,7 @@
     "data.error.matrix": "Unable to retrieve matrix data",
     "data.error.fileNotUploaded": "Please select a file",
     "data.error.matrixDelete": "Matrix not deleted",
-    "data.error.copyMatrixId": "Failed to copy the matrix Id",
+    "data.error.copyMatrixId": "Failed to copy the matrix ID",
     "data.error.matrixAssignation": "Failed to assign the matrix",
     "data.succes.matrixAssignation": "Matrix successfully assigned",
     "data.success.matrixUpdate": "Matrix successfully updated",

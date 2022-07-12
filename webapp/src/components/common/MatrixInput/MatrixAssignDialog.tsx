@@ -26,10 +26,8 @@ interface Props {
 function MatrixAssignDialog(props: Props) {
   const [t] = useTranslation();
   const { study, path, open, onClose } = props;
-  const [selectedItem, setSelectedItem] = useState<string>();
-  const [currentMatrix, setCurrentMatrix] = useState<
-    MatrixInfoDTO | undefined
-  >();
+  const [selectedItem, setSelectedItem] = useState("");
+  const [currentMatrix, setCurrentMatrix] = useState<MatrixInfoDTO>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -54,17 +52,23 @@ function MatrixAssignDialog(props: Props) {
       }
     );
 
+  useEffect(() => {
+    setCurrentMatrix(undefined);
+  }, [selectedItem]);
+
+  const matrices = dataList?.find((item) => item.id === selectedItem)?.matrices;
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleMatrixClick = async (id: string) => {
     if (selectedItem && dataList) {
-      const tmp = dataList.find((o) => o.id === selectedItem);
-      if (tmp) {
+      const item = dataList.find((o) => o.id === selectedItem);
+      if (item) {
         setCurrentMatrix({
           id,
-          name: tmp.matrices.find((o) => o.id === id)?.name || "",
+          name: item.matrices.find((o) => o.id === id)?.name || "",
         });
       }
     }
@@ -89,12 +93,6 @@ function MatrixAssignDialog(props: Props) {
     }
   };
 
-  useEffect(() => {
-    setCurrentMatrix(undefined);
-  }, [selectedItem]);
-
-  const matrices = dataList?.find((item) => item.id === selectedItem)?.matrices;
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -115,7 +113,7 @@ function MatrixAssignDialog(props: Props) {
           left={
             <DataPropsView
               dataset={dataList}
-              selectedItem={selectedItem || ""}
+              selectedItem={selectedItem}
               setSelectedItem={setSelectedItem}
             />
           }

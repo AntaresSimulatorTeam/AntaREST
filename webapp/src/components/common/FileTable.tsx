@@ -60,8 +60,7 @@ function FileTable(props: PropType) {
     allowDelete,
     copyId,
   } = props;
-  const [openConfirmationModal, setOpenConfirmationModal] =
-    useState<string>("");
+  const [openConfirmationModal, setOpenConfirmationModal] = useState("");
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const onImport = async (file: File) => {
@@ -227,7 +226,7 @@ function FileTable(props: PropType) {
           </Table>
         </TableContainer>
       </Box>
-      {openConfirmationModal && openConfirmationModal.length > 0 && onDelete && (
+      {openConfirmationModal && onDelete && (
         <ConfirmationDialog
           open
           titleIcon={DeleteIcon}
