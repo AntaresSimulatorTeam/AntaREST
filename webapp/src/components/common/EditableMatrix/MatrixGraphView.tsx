@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Plot from "react-plotly.js";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {

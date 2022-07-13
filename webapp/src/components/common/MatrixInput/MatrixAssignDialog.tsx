@@ -16,6 +16,7 @@ import EditableMatrix from "../EditableMatrix";
 import FileTable from "../FileTable";
 import SimpleLoader from "../loaders/SimpleLoader";
 import SplitLayoutView from "../SplitLayoutView";
+import UsePromiseCond from "../utils/UsePromiseCond";
 
 interface Props {
   study: StudyMetadata;
@@ -32,26 +33,30 @@ function MatrixAssignDialog(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const { data: dataList, isLoading } = usePromiseWithSnackbarError(
-    () => getMatrixList(),
+  const {
+    data: dataList,
+    status: statusList,
+    error: errorList,
+  } = usePromiseWithSnackbarError(() => getMatrixList(), {
+    errorMessage: t("data.error.matrixList"),
+  });
+
+  const {
+    data: dataMatrix,
+    status: statusMatrix,
+    error: errorMatrix,
+  } = usePromiseWithSnackbarError(
+    async () => {
+      if (currentMatrix) {
+        const res = await getMatrix(currentMatrix.id);
+        return res;
+      }
+    },
     {
-      errorMessage: t("data.error.matrixList"),
+      errorMessage: t("data.error.matrix"),
+      deps: [currentMatrix],
     }
   );
-
-  const { data: matrix, isLoading: isMatrixLoading } =
-    usePromiseWithSnackbarError(
-      async () => {
-        if (currentMatrix) {
-          const res = await getMatrix(currentMatrix.id);
-          return res;
-        }
-      },
-      {
-        errorMessage: t("data.error.matrix"),
-        deps: [currentMatrix],
-      }
-    );
 
   useEffect(() => {
     setCurrentMatrix(undefined);
@@ -111,89 +116,104 @@ function MatrixAssignDialog(props: Props) {
         sx: { width: "1200px", height: "700px" },
       }}
     >
-      {!isLoading && dataList && (
-        <SplitLayoutView
-          left={
-            <DataPropsView
-              dataset={dataList}
-              selectedItem={selectedItem}
-              setSelectedItem={setSelectedItem}
-            />
-          }
-          right={
-            <Box sx={{ width: "100%", height: "100%" }}>
-              {selectedItem && !currentMatrix && (
-                <FileTable
-                  title={
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          color: "text.primary",
-                          fontSize: "1.25rem",
-                          fontWeight: 400,
-                          lineHeight: 1.334,
-                        }}
-                      >
-                        {`Matrices - ${
-                          dataList.find((item) => item.id === selectedItem)
-                            ?.name
-                        }`}
-                      </Typography>
-                    </Box>
-                  }
-                  content={matrices || []}
-                  onRead={handleMatrixClick}
-                  onAssign={handleAssignation}
+      {dataList && (
+        <UsePromiseCond
+          status={statusList}
+          ifPending={<SimpleLoader />}
+          ifRejected={<div>{errorList}</div>}
+          ifResolved={
+            <SplitLayoutView
+              left={
+                <DataPropsView
+                  dataset={dataList}
+                  selectedItem={selectedItem}
+                  setSelectedItem={setSelectedItem}
                 />
-              )}
-              {currentMatrix && matrix && !isMatrixLoading ? (
-                <>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: "text.primary",
-                        fontSize: "1.25rem",
-                        fontWeight: 400,
-                        lineHeight: 1.334,
-                      }}
-                    >
-                      {`Matrices - ${
-                        dataList.find((item) => item.id === selectedItem)?.name
-                      }`}
-                    </Typography>
+              }
+              right={
+                <Box sx={{ width: "100%", height: "100%" }}>
+                  {selectedItem && !currentMatrix && (
+                    <FileTable
+                      title={
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "text.primary",
+                              fontSize: "1.25rem",
+                              fontWeight: 400,
+                              lineHeight: 1.334,
+                            }}
+                          >
+                            {`Matrices - ${
+                              dataList.find((item) => item.id === selectedItem)
+                                ?.name
+                            }`}
+                          </Typography>
+                        </Box>
+                      }
+                      content={matrices || []}
+                      onRead={handleMatrixClick}
+                      onAssign={handleAssignation}
+                    />
+                  )}
+                  {currentMatrix && dataMatrix && (
+                    <UsePromiseCond
+                      status={statusMatrix}
+                      ifPending={<SimpleLoader />}
+                      ifRejected={<div>{errorMatrix}</div>}
+                      ifResolved={
+                        <>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                color: "text.primary",
+                                fontSize: "1.25rem",
+                                fontWeight: 400,
+                                lineHeight: 1.334,
+                              }}
+                            >
+                              {`Matrices - ${
+                                dataList.find(
+                                  (item) => item.id === selectedItem
+                                )?.name
+                              }`}
+                            </Typography>
 
-                    <Box display="flex" justifyContent="flex-end">
-                      <ButtonBack onClick={() => setCurrentMatrix(undefined)} />
-                    </Box>
-                  </Box>
-                  <Divider sx={{ mt: 1, mb: 2 }} />
-                  <EditableMatrix
-                    matrix={matrix as MatrixDTO}
-                    readOnly
-                    matrixTime={false}
-                    toggleView
-                  />
-                </>
-              ) : (
-                currentMatrix && <SimpleLoader />
-              )}
-            </Box>
+                            <Box display="flex" justifyContent="flex-end">
+                              <ButtonBack
+                                onClick={() => setCurrentMatrix(undefined)}
+                              />
+                            </Box>
+                          </Box>
+                          <Divider sx={{ mt: 1, mb: 2 }} />
+                          <EditableMatrix
+                            matrix={dataMatrix as MatrixDTO}
+                            readOnly
+                            matrixTime={false}
+                            toggleView
+                          />
+                        </>
+                      }
+                    />
+                  )}
+                </Box>
+              }
+            />
           }
         />
       )}
-      {isLoading && <SimpleLoader />}
     </BasicDialog>
   );
 }
