@@ -21,8 +21,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import IosShareIcon from "@mui/icons-material/IosShare";
 import DownloadIcon from "@mui/icons-material/Download";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import { GenericInfo } from "../../common/types";
@@ -159,21 +159,6 @@ function FileTable(props: PropType) {
                           </Tooltip>
                         </IconButton>
                       )}
-                      {onAssign && (
-                        <IconButton
-                          onClick={() => onAssign(row.id as string)}
-                          sx={{
-                            mx: 1,
-                            color: "action.active",
-                          }}
-                        >
-                          <Tooltip title={t("global.assign") as string}>
-                            <IosShareIcon
-                              sx={{ height: "20px", width: "20px" }}
-                            />
-                          </Tooltip>
-                        </IconButton>
-                      )}
                       <Typography>{row.name}</Typography>
                     </Box>
                   </TableCell>
@@ -216,6 +201,19 @@ function FileTable(props: PropType) {
                       >
                         <Tooltip title={t("global.delete") as string}>
                           <DeleteIcon />
+                        </Tooltip>
+                      </IconButton>
+                    )}
+                    {onAssign && (
+                      <IconButton
+                        onClick={() => onAssign(row.id as string)}
+                        sx={{
+                          mx: 1,
+                          color: "action.active",
+                        }}
+                      >
+                        <Tooltip title={t("global.assign") as string}>
+                          <ArrowForwardIcon />
                         </Tooltip>
                       </IconButton>
                     )}

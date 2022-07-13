@@ -10,6 +10,7 @@ import { getMatrix, getMatrixList } from "../../../services/api/matrix";
 import { appendCommands } from "../../../services/api/variant";
 import DataPropsView from "../../App/Data/DataPropsView";
 import { CommandEnum } from "../../App/Singlestudy/Commands/Edition/commandTypes";
+import ButtonBack from "../ButtonBack";
 import BasicDialog, { BasicDialogProps } from "../dialogs/BasicDialog";
 import EditableMatrix from "../EditableMatrix";
 import FileTable from "../FileTable";
@@ -102,7 +103,9 @@ function MatrixAssignDialog(props: Props) {
       open={open}
       onClose={onClose}
       title={t("data.assignMatrix")}
-      sx={{ "&> div:nth-of-type(3) > div": { maxWidth: "unset" } }}
+      sx={{
+        "& .css-3nvuj9-MuiPaper-root-MuiDialog-paper": { maxWidth: "unset" },
+      }}
       actions={<Button onClick={onClose}>{t("button.close")}</Button>}
       contentProps={{
         sx: { width: "1200px", height: "700px" },
@@ -172,13 +175,7 @@ function MatrixAssignDialog(props: Props) {
                     </Typography>
 
                     <Box display="flex" justifyContent="flex-end">
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => setCurrentMatrix(undefined)}
-                      >
-                        Retour
-                      </Button>
+                      <ButtonBack onClick={() => setCurrentMatrix(undefined)} />
                     </Box>
                   </Box>
                   <Divider sx={{ mt: 1, mb: 2 }} />
