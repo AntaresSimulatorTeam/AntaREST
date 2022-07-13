@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union, Any
 
+import pandas as pd  # type: ignore
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -89,7 +91,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self,
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
-    ) -> JSON:
+        return_dataframe: bool = False,
+    ) -> Union[JSON, pd.DataFrame]:
         """
         Parse the matrix content
         """

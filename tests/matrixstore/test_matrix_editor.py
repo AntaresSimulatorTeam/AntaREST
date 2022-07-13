@@ -1,5 +1,6 @@
 from typing import List
 
+import pandas as pd
 import pytest
 
 from antarest.matrixstore.business.matrix_editor import (
@@ -17,7 +18,7 @@ from antarest.matrixstore.model import MatrixData
         (
             [
                 MatrixSlice(row_from=0, column_from=0),
-                MatrixSlice(row_from=2, row_to=4, column_from=2, column_to=4),
+                MatrixSlice(row_from=2, row_to=3, column_from=2, column_to=3),
             ],
             Operation(operation="+", value=2),
             [
@@ -100,11 +101,12 @@ def test_matrix_editor(
     operation: Operation,
     expected_result: List[List[MatrixData]],
 ):
-    matrix_data = [[-1] * 5] * 5
+    matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
-    assert (
-        MatrixEditor.update_matrix_content_with_slices(
-            matrix_data=matrix_data, slices=slices, operation=operation
-        )
-        == expected_result
+    output_matrix = MatrixEditor.update_matrix_content_with_slices(
+        matrix_data=matrix_data, slices=slices, operation=operation
+    )
+
+    assert output_matrix.equals(
+        pd.DataFrame(expected_result).astype(matrix_data.dtypes)
     )

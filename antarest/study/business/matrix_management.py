@@ -1,13 +1,15 @@
 from typing import List
 
+from antarest.core.exceptions import ShouldNotHappenException
 from antarest.matrixstore.business.matrix_editor import (
-    Operation,
-    MatrixSlice,
     MatrixEditor,
     MatrixEditInstructionDTO,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import (
@@ -34,7 +36,12 @@ class MatrixManager:
             self.storage_service.variant_study_service.command_factory.command_context.matrix_service
         )
 
-        whole_matrix = storage_service.get(metadata=study, url=path)
+        matrix_node = file_study.tree.get_node(url=path.split("/"))
+
+        if not isinstance(matrix_node, InputSeriesMatrix):
+            raise ShouldNotHappenException()
+
+        whole_matrix = matrix_node.parse(return_dataframe=True)
         updated_matrix_data = whole_matrix["data"]
         for edit_instruction in edit_instructions:
             updated_matrix_data = (
