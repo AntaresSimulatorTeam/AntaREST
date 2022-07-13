@@ -141,7 +141,7 @@ const DEFAULT_VALUES: FormValues = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
-  const { general, output } = await getStudyData<{
+  const { general = {}, output = {} } = await getStudyData<{
     general: Partial<SettingsGeneralDataGeneral>;
     output: Partial<SettingsGeneralDataOutput>;
   }>(studyId, "settings/generaldata", 2);
