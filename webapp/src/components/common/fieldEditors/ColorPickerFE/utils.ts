@@ -20,7 +20,7 @@ export function stringToRGB(color: string): ColorResult["rgb"] | undefined {
   return undefined;
 }
 
-export function RGBToString(color: Partial<ColorResult["rgb"]>): string {
+export function rgbToString(color: Partial<ColorResult["rgb"]>): string {
   const { r, g, b } = color;
   if (r === undefined || g === undefined || b === undefined) return "";
   return `${r},${g},${b}`;
