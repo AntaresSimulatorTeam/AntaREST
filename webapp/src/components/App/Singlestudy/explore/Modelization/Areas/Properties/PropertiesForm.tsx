@@ -7,7 +7,7 @@ import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
 import { FormObj } from "../../../../../../common/Form";
-import ColorPicker from "../../../../../../common/fieldEditors/ColorPickerFE";
+import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
 import { stringToRGB } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
 import { getPropertiesPath, PropertiesFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
@@ -101,8 +101,8 @@ export default function PropertiesForm(
               }
               disabled
             />
-            <ColorPicker
-              currentColor={defaultValues?.color}
+            <ColorPickerFE
+              value={defaultValues?.color}
               {...register("color", {
                 onAutoSubmit: (value) => {
                   const color = stringToRGB(value);

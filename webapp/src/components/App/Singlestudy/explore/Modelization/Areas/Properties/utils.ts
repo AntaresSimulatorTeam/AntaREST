@@ -1,7 +1,7 @@
 import { FieldValues } from "react-hook-form";
 import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../../services/api/study";
-import { RGBToString } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
+import { rgbToString } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
 
 export interface PropertiesType {
   ui: {
@@ -84,7 +84,7 @@ export async function getDefaultValues(
   // Return element
   return {
     name: areaName,
-    color: RGBToString({
+    color: rgbToString({
       r: uiElement.color_r,
       g: uiElement.color_g,
       b: uiElement.color_b,
