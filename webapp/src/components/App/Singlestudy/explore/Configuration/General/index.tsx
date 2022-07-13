@@ -1,12 +1,11 @@
 import { useOutletContext } from "react-router";
-import * as R from "ramda";
 import { StudyMetadata } from "../../../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import { getFormValues } from "./utils";
-import { PromiseStatus } from "../../../../../../hooks/usePromise";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function GeneralParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -16,21 +15,18 @@ function GeneralParameters() {
     { errorMessage: "Cannot get study data", deps: [study.id] } // TODO i18n
   );
 
-  return R.cond([
-    [
-      R.either(R.equals(PromiseStatus.Idle), R.equals(PromiseStatus.Pending)),
-      () => <SimpleLoader />,
-    ],
-    [R.equals(PromiseStatus.Rejected), () => <div>{error}</div>],
-    [
-      R.equals(PromiseStatus.Resolved),
-      () => (
+  return (
+    <UsePromiseCond
+      status={status}
+      ifPending={<SimpleLoader />}
+      ifRejected={<div>{error}</div>}
+      ifResolved={
         <Form autoSubmit config={{ defaultValues: data }}>
           <Fields study={study} />
         </Form>
-      ),
-    ],
-  ])(status);
+      }
+    />
+  );
 }
 
 export default GeneralParameters;
