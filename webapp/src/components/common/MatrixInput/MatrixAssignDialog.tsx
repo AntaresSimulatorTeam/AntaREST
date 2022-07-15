@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MatrixDTO, MatrixInfoDTO, StudyMetadata } from "../../../common/types";
+import { MatrixInfoDTO, StudyMetadata } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getMatrix, getMatrixList } from "../../../services/api/matrix";
@@ -33,19 +33,11 @@ function MatrixAssignDialog(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    data: dataList,
-    status: statusList,
-    error: errorList,
-  } = usePromiseWithSnackbarError(() => getMatrixList(), {
+  const resList = usePromiseWithSnackbarError(() => getMatrixList(), {
     errorMessage: t("data.error.matrixList"),
   });
 
-  const {
-    data: dataMatrix,
-    status: statusMatrix,
-    error: errorMatrix,
-  } = usePromiseWithSnackbarError(
+  const resMatrix = usePromiseWithSnackbarError(
     async () => {
       if (currentMatrix) {
         const res = await getMatrix(currentMatrix.id);
@@ -62,10 +54,8 @@ function MatrixAssignDialog(props: Props) {
     setCurrentMatrix(undefined);
   }, [selectedItem]);
 
-  const dataSet = dataList?.find((item) => item.id === selectedItem);
-
+  const dataSet = resList.data?.find((item) => item.id === selectedItem);
   const matrices = dataSet?.matrices;
-
   const matrixName = `${t("global.matrixes")} - ${dataSet?.name}`;
 
   ////////////////////////////////////////////////////////////////
@@ -117,16 +107,16 @@ function MatrixAssignDialog(props: Props) {
         sx: { width: "1200px", height: "700px" },
       }}
     >
-      {dataList && (
-        <UsePromiseCond
-          status={statusList}
-          ifPending={<SimpleLoader />}
-          ifRejected={<div>{errorList}</div>}
-          ifResolved={
+      <UsePromiseCond
+        response={resList}
+        ifPending={() => <SimpleLoader />}
+        ifRejected={(error) => <div>{error}</div>}
+        ifResolved={(dataset) =>
+          dataset && (
             <SplitLayoutView
               left={
                 <DataPropsView
-                  dataset={dataList}
+                  dataset={dataset}
                   selectedItem={selectedItem}
                   setSelectedItem={setSelectedItem}
                 />
@@ -160,12 +150,12 @@ function MatrixAssignDialog(props: Props) {
                       onAssign={handleAssignation}
                     />
                   )}
-                  {currentMatrix && dataMatrix && (
-                    <UsePromiseCond
-                      status={statusMatrix}
-                      ifPending={<SimpleLoader />}
-                      ifRejected={<div>{errorMatrix}</div>}
-                      ifResolved={
+                  <UsePromiseCond
+                    response={resMatrix}
+                    ifPending={() => <SimpleLoader />}
+                    ifRejected={(error) => <div>{error}</div>}
+                    ifResolved={(matrix) =>
+                      matrix && (
                         <>
                           <Box
                             sx={{
@@ -193,21 +183,21 @@ function MatrixAssignDialog(props: Props) {
                           </Box>
                           <Divider sx={{ mt: 1, mb: 2 }} />
                           <EditableMatrix
-                            matrix={dataMatrix as MatrixDTO}
+                            matrix={matrix}
                             readOnly
                             matrixTime={false}
                             toggleView
                           />
                         </>
-                      }
-                    />
-                  )}
+                      )
+                    }
+                  />
                 </Box>
               }
             />
-          }
-        />
-      )}
+          )
+        }
+      />
     </BasicDialog>
   );
 }
