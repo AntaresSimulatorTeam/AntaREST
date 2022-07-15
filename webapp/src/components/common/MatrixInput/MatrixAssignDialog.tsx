@@ -64,6 +64,10 @@ function MatrixAssignDialog(props: Props) {
 
   const matrices = dataList?.find((item) => item.id === selectedItem)?.matrices;
 
+  const matrixName = `${t("global.matrixes")} - ${
+    dataList?.find((item) => item.id === selectedItem)?.name
+  }`;
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -109,7 +113,7 @@ function MatrixAssignDialog(props: Props) {
       onClose={onClose}
       title={t("data.assignMatrix")}
       sx={{
-        "& .css-3nvuj9-MuiPaper-root-MuiDialog-paper": { maxWidth: "unset" },
+        "& .MuiDialog-paper": { maxWidth: "unset" },
       }}
       actions={<Button onClick={onClose}>{t("button.close")}</Button>}
       contentProps={{
@@ -150,10 +154,7 @@ function MatrixAssignDialog(props: Props) {
                               lineHeight: 1.334,
                             }}
                           >
-                            {`Matrices - ${
-                              dataList.find((item) => item.id === selectedItem)
-                                ?.name
-                            }`}
+                            {matrixName}
                           </Typography>
                         </Box>
                       }
@@ -184,11 +185,7 @@ function MatrixAssignDialog(props: Props) {
                                 lineHeight: 1.334,
                               }}
                             >
-                              {`Matrices - ${
-                                dataList.find(
-                                  (item) => item.id === selectedItem
-                                )?.name
-                              }`}
+                              {matrixName}
                             </Typography>
 
                             <Box display="flex" justifyContent="flex-end">

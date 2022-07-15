@@ -57,6 +57,7 @@
     "global.color": "Color",
     "global.advancedParams": "Advanced parameters",
     "global.matrix": "Matrix",
+    "global.matrixes": "Matrixes",
     "global.chooseFile": "Choose a file",
     "global.assign": "Assign",
     "global.errorLogs": "Error logs",
