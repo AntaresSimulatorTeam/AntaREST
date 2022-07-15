@@ -13,6 +13,7 @@ export const StyledTab = styled(Tabs, {
 })<{ border?: boolean; tabStyle?: "normal" | "withoutBorder" }>(
   ({ theme, border, tabStyle }) => ({
     width: "98%",
+    height: "50px",
     ...(border === true && {
       borderBottom: 1,
       borderColor: "divider",

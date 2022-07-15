@@ -120,7 +120,7 @@ export default function ThermalForm(props: Props) {
           <TextField
             sx={{ flex: 1, mr: 1 }}
             variant="filled"
-            // autoFocus
+            autoFocus
             label={t("global.name")}
             error={!!errors.name}
             helperText={errors.name?.message}

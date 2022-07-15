@@ -15,7 +15,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import {
@@ -171,8 +171,14 @@ function ClusterRoot(props: Props) {
                 sx={{
                   width: "100%",
                   boxSizing: "border-box",
+                  height: "100%",
+                  p: 0,
+                  m: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
                 }}
-                // component="nav"
+                component="nav"
                 aria-labelledby="nested-list-subheader"
                 subheader={
                   <ListSubheader
@@ -182,6 +188,7 @@ function ClusterRoot(props: Props) {
                       color: "white",
                       bgcolor: "#0000",
                       fontSize: "18px",
+                      height: "60px",
                     }}
                   >
                     {t("study.modelization.clusters.byGroups")}
@@ -193,7 +200,7 @@ function ClusterRoot(props: Props) {
                     display: "flex",
                     flexDirection: "column",
                     width: "100%",
-                    height: "100%",
+                    boxSizing: "border-box",
                     overflowY: "auto",
                   }}
                 >
@@ -201,7 +208,15 @@ function ClusterRoot(props: Props) {
                     const clusterItems = clusterList[group];
                     const { items, isOpen } = clusterItems;
                     return (
-                      <Fragment key={group}>
+                      <Box
+                        key={group}
+                        sx={{
+                          flex: "none",
+                          display: "flex",
+                          flexDirection: "column",
+                          boxSizing: "border-box",
+                        }}
+                      >
                         <GroupButton
                           onClick={() => handleToggleGroupOpen(group)}
                         >
@@ -249,7 +264,7 @@ function ClusterRoot(props: Props) {
                             </List>
                           </Collapse>
                         ))}
-                      </Fragment>
+                      </Box>
                     );
                   })}
                 </Box>

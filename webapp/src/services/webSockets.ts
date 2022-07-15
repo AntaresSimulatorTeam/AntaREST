@@ -206,7 +206,6 @@ function makeStudyDataListener(dispatch: AppDispatch) {
   return function listener(e: WSMessage<GenericInfo>): void {
     switch (e.type) {
       case WSEvent.STUDY_DATA_EDITED:
-        console.log("STUDY DATA EDITED: ", e.payload);
         dispatch(refreshStudyData(e));
         break;
     }

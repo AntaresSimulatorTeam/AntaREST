@@ -43,7 +43,6 @@ export async function getDefaultValues(
 
 export function getRenewablePath(area: string, cluster: string): RenewablePath {
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
-  console.log("HOLA: ", pathPrefix);
   return {
     name: `${pathPrefix}/name`,
     group: `${pathPrefix}/group`,
