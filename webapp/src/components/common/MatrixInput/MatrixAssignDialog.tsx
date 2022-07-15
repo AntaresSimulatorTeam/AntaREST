@@ -73,14 +73,11 @@ function MatrixAssignDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleMatrixClick = async (id: string) => {
-    if (selectedItem && dataList) {
-      const item = dataList.find((o) => o.id === selectedItem);
-      if (item) {
-        setCurrentMatrix({
-          id,
-          name: item.matrices.find((o) => o.id === id)?.name || "",
-        });
-      }
+    if (matrices) {
+      setCurrentMatrix({
+        id,
+        name: matrices.find((o) => o.id === id)?.name || "",
+      });
     }
   };
 
