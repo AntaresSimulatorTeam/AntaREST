@@ -62,11 +62,11 @@ function MatrixAssignDialog(props: Props) {
     setCurrentMatrix(undefined);
   }, [selectedItem]);
 
-  const matrices = dataList?.find((item) => item.id === selectedItem)?.matrices;
+  const dataSet = dataList?.find((item) => item.id === selectedItem);
 
-  const matrixName = `${t("global.matrixes")} - ${
-    dataList?.find((item) => item.id === selectedItem)?.name
-  }`;
+  const matrices = dataSet?.matrices;
+
+  const matrixName = `${t("global.matrixes")} - ${dataSet?.name}`;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
