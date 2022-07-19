@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { AutoSubmitHandler, FormObj } from "../../../../../../common/Form";
+import {
+  AutoSubmitHandler,
+  UseFormReturnPlus,
+} from "../../../../../../common/Form";
 import { getLinkPath, LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -18,7 +21,7 @@ import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 
 export default function LinkForm(
-  props: FormObj<LinkFields, unknown> & {
+  props: UseFormReturnPlus<LinkFields, unknown> & {
     link: LinkElement;
     study: StudyMetadata;
   }

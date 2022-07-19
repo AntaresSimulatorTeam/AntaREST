@@ -6,14 +6,14 @@ import { editStudy } from "../../../../../../../services/api/study";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { FormObj } from "../../../../../../common/Form";
+import { UseFormReturnPlus } from "../../../../../../common/Form";
 import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
 import { stringToRGB } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
 import { getPropertiesPath, PropertiesFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 
 export default function PropertiesForm(
-  props: FormObj<PropertiesFields, unknown> & {
+  props: UseFormReturnPlus<PropertiesFields, unknown> & {
     studyId: string;
     areaName: string;
   }
