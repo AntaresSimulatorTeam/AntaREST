@@ -11,6 +11,7 @@ import { FormValues } from "../../utils";
 import {
   getColumns,
   getFieldNames,
+  ThematicTrimmingConfig,
   thematicTrimmingConfigToDTO,
 } from "./utils";
 
@@ -23,7 +24,8 @@ interface Props {
 function ThematicTrimmingDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
-  const { register, getValues, setValue } = useFormContext<FormValues>();
+  const { control, register, getValues, setValue } =
+    useFormContext<FormValues>();
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -40,9 +42,17 @@ function ThematicTrimmingDialog(props: Props) {
   const handleUpdateConfig = (fn: Pred) => () => {
     const config = getCurrentConfig();
     const fieldNames = getFieldNames(study.version);
-    setValue("thematicTrimmingConfig", {
+    const newConfig: ThematicTrimmingConfig = {
       ...getCurrentConfig(),
       ...R.map(fn, R.pick(fieldNames, config)),
+    };
+
+    // More performant than `setValue('thematicTrimmingConfig', newConfig);`
+    Object.entries(newConfig).forEach(([key, value]) => {
+      setValue(
+        `thematicTrimmingConfig.${key as keyof ThematicTrimmingConfig}`,
+        value
+      );
     });
   };
 
@@ -103,13 +113,14 @@ function ThematicTrimmingDialog(props: Props) {
             {column.map(([label, name]) => (
               <SwitchFE
                 key={name}
+                name={`thematicTrimmingConfig.${name}`}
                 sx={{
                   "& + .SwitchFE": {
                     mt: 2,
                   },
                 }}
                 label={label}
-                {...register(`thematicTrimmingConfig.${name}`)}
+                control={control}
               />
             ))}
           </Box>

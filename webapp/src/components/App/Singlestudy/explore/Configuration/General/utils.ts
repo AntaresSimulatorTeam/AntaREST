@@ -149,9 +149,10 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
+  // For unknown reason, `general` and `output` may be empty
   const { general = {}, output = {} } = await getStudyData<{
-    general: Partial<SettingsGeneralDataGeneral>;
-    output: Partial<SettingsGeneralDataOutput>;
+    general?: Partial<SettingsGeneralDataGeneral>;
+    output?: Partial<SettingsGeneralDataOutput>;
   }>(studyId, "settings/generaldata", 2);
 
   const {
