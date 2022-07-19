@@ -27,13 +27,7 @@ function LinkView(props: Props) {
         ifPending={() => <SimpleLoader />}
         ifResolved={(data) => (
           <Form autoSubmit config={{ defaultValues: data }}>
-            {(formObj) =>
-              LinkForm({
-                ...formObj,
-                link,
-                study,
-              })
-            }
+            <LinkForm link={link} study={study} />
           </Form>
         )}
       />
