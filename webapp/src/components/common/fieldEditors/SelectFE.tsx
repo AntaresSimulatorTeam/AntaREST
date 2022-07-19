@@ -7,19 +7,19 @@ import {
   Select,
   SelectProps,
 } from "@mui/material";
-import { forwardRef, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
 import { startCase } from "lodash";
 import { O } from "ts-toolbelt";
+import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 type OptionObj<T extends O.Object = O.Object> = {
   label: string;
   value: string | number;
 } & T;
 
-export interface SelectFEProps
-  extends Omit<SelectProps, "labelId" | "inputRef"> {
+export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
   options: Array<string | OptionObj>;
   helperText?: React.ReactNode;
   emptyValue?: boolean;
@@ -35,13 +35,14 @@ function formatOptions(
   }));
 }
 
-const SelectFE = forwardRef((props: SelectFEProps, ref) => {
+function SelectFE(props: SelectFEProps) {
   const {
     options,
     helperText,
     emptyValue,
     variant = "filled",
     formControlProps,
+    inputRef,
     ...selectProps
   } = props;
   const { label } = selectProps;
@@ -56,7 +57,7 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
   return (
     <FormControl variant={variant} {...formControlProps}>
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} labelId={labelId} inputRef={ref}>
+      <Select {...selectProps} labelId={labelId}>
         {emptyValue && (
           <MenuItem value="">
             {/* TODO i18n */}
@@ -72,8 +73,6 @@ const SelectFE = forwardRef((props: SelectFEProps, ref) => {
       {helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
-});
+}
 
-SelectFE.displayName = "SelectFE";
-
-export default SelectFE;
+export default reactHookFormSupport()(SelectFE);

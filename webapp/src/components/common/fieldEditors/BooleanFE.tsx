@@ -1,6 +1,6 @@
 import { SelectChangeEvent } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { forwardRef } from "react";
+import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 import SelectFE, { SelectFEProps } from "./SelectFE";
 
 interface BooleanFEProps extends Omit<SelectFEProps, "options" | "multiple"> {
@@ -31,7 +31,7 @@ function toValidEvent<
   } as T;
 }
 
-const BooleanFE = forwardRef((props: BooleanFEProps, ref) => {
+function BooleanFE(props: BooleanFEProps) {
   const {
     defaultValue,
     value,
@@ -39,6 +39,7 @@ const BooleanFE = forwardRef((props: BooleanFEProps, ref) => {
     falseText,
     onChange,
     onBlur,
+    inputRef,
     ...rest
   } = props;
 
@@ -58,11 +59,9 @@ const BooleanFE = forwardRef((props: BooleanFEProps, ref) => {
         { label: trueText || "True", value: "true" },
         { label: falseText || "False", value: "false" },
       ]}
-      ref={ref}
+      inputRef={inputRef}
     />
   );
-});
+}
 
-BooleanFE.displayName = "BooleanFE";
-
-export default BooleanFE;
+export default reactHookFormSupport({ defaultValue: false })(BooleanFE);

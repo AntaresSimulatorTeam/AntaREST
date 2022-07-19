@@ -5,13 +5,10 @@ import {
   SwitchProps,
 } from "@mui/material";
 import clsx from "clsx";
-import { forwardRef } from "react";
+import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface SwitchFEProps
-  extends Omit<
-    SwitchProps,
-    "checked" | "defaultChecked" | "defaultValue" | "inputRef"
-  > {
+  extends Omit<SwitchProps, "checked" | "defaultChecked" | "defaultValue"> {
   value?: boolean;
   defaultValue?: boolean;
   label?: string;
@@ -20,7 +17,7 @@ export interface SwitchFEProps
   helperText?: React.ReactNode;
 }
 
-const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
+function SwitchFE(props: SwitchFEProps) {
   const {
     value,
     defaultValue,
@@ -40,7 +37,6 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
       sx={!label ? sx : undefined}
       checked={value}
       defaultChecked={defaultValue}
-      inputRef={ref}
     />
   );
 
@@ -57,8 +53,6 @@ const SwitchFE = forwardRef((props: SwitchFEProps, ref) => {
   }
 
   return fieldEditor;
-});
+}
 
-SwitchFE.displayName = "SwitchFE";
-
-export default SwitchFE;
+export default reactHookFormSupport({ defaultValue: false })(SwitchFE);
