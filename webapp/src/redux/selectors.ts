@@ -244,6 +244,16 @@ export const getCurrentClusters = (
   return clusters || [];
 };
 
+export const getBindingConst = (
+  studyId: string,
+  state: AppState
+): FileStudyTreeConfigDTO["bindings"] => {
+  const currentStudyState = getStudyDataState(state);
+  const bindingConst = currentStudyState.entities[studyId]?.bindings;
+  console.log("BIND: ", currentStudyState.entities);
+  return bindingConst || [];
+};
+
 ////////////////////////////////////////////////////////////////
 // UI
 ////////////////////////////////////////////////////////////////
