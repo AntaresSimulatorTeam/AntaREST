@@ -110,9 +110,9 @@ class ContextFilter(logging.Filter):
         request: Optional[Request] = _request.get()
         request_id: Optional[str] = _request_id.get()
         if request is not None:
-            record.ip = request.scope.get("client", ("undefined"))[0]  # type: ignore
-        record.trace_id = request_id  # type: ignore
-        record.pid = os.getpid()  # type: ignore
+            record.ip = request.scope.get("client", ("undefined"))[0]
+        record.trace_id = request_id
+        record.pid = os.getpid()
         return True
 
 
