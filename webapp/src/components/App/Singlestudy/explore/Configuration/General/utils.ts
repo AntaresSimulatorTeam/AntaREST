@@ -1,6 +1,13 @@
 import * as RA from "ramda-adjunct";
 import { StudyMetadata } from "../../../../../../common/types";
-import { getStudyData } from "../../../../../../services/api/study";
+import {
+  getStudyData,
+  getThematicTrimmingConfig,
+} from "../../../../../../services/api/study";
+import {
+  ThematicTrimmingConfig,
+  formatThematicTrimmingConfigDTO,
+} from "./dialogs/ThematicTrimmingDialog/utils";
 
 enum Month {
   January = "january",
@@ -115,10 +122,11 @@ export interface FormValues {
   mcScenario: SettingsGeneralDataOutput["storenewset"];
   geographicTrimming: SettingsGeneralDataGeneral["geographic-trimming"];
   thematicTrimming: SettingsGeneralDataGeneral["thematic-trimming"];
+  thematicTrimmingConfig: ThematicTrimmingConfig;
   filtering: SettingsGeneralDataGeneral["filtering"];
 }
 
-const DEFAULT_VALUES: FormValues = {
+const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   mode: "Adequacy",
   firstDay: 1,
   lastDay: 1,
@@ -141,9 +149,10 @@ const DEFAULT_VALUES: FormValues = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
+  // For unknown reason, `general` and `output` may be empty
   const { general = {}, output = {} } = await getStudyData<{
-    general: Partial<SettingsGeneralDataGeneral>;
-    output: Partial<SettingsGeneralDataOutput>;
+    general?: Partial<SettingsGeneralDataGeneral>;
+    output?: Partial<SettingsGeneralDataOutput>;
   }>(studyId, "settings/generaldata", 2);
 
   const {
@@ -161,6 +170,8 @@ export async function getFormValues(
   else if (customScenarios || customTsNumbers) {
     buildingMode = "Custom";
   }
+
+  const thematicTrimmingConfigDto = await getThematicTrimmingConfig(studyId);
 
   return {
     ...DEFAULT_VALUES,
@@ -188,5 +199,8 @@ export async function getFormValues(
       output
     ),
     buildingMode,
+    thematicTrimmingConfig: formatThematicTrimmingConfigDTO(
+      thematicTrimmingConfigDto
+    ),
   };
 }

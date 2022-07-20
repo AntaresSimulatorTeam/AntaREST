@@ -1,5 +1,5 @@
 import { Box, TextField, TextFieldProps, InputAdornment } from "@mui/material";
-import { ChangeEvent, forwardRef, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { ColorResult, SketchPicker } from "react-color";
 import { useTranslation } from "react-i18next";
 import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
@@ -7,6 +7,7 @@ import { useClickAway, useKey, useUpdateEffect } from "react-use";
 import { rgbToString, stringToRGB } from "./utils";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 import { composeRefs } from "../../../../utils/reactUtils";
+import reactHookFormSupport from "../../../../hoc/reactHookFormSupport";
 
 export type ColorPickerFEProps = Omit<
   TextFieldProps,
@@ -16,8 +17,9 @@ export type ColorPickerFEProps = Omit<
   defaultValue?: string;
 };
 
-const ColorPickerFE = forwardRef((props: ColorPickerFEProps, ref) => {
-  const { value, defaultValue, onChange, sx, ...textFieldProps } = props;
+function ColorPickerFE(props: ColorPickerFEProps) {
+  const { value, defaultValue, onChange, sx, inputRef, ...textFieldProps } =
+    props;
   const [currentColor, setCurrentColor] = useState(defaultValue || value || "");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const internalRef = useRef<HTMLInputElement>();
@@ -75,7 +77,7 @@ const ColorPickerFE = forwardRef((props: ColorPickerFEProps, ref) => {
         sx={{ mx: 1 }}
         value={currentColor}
         placeholder={currentColor}
-        inputRef={composeRefs(ref, internalRef)}
+        inputRef={composeRefs(inputRef, internalRef)}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -108,8 +110,6 @@ const ColorPickerFE = forwardRef((props: ColorPickerFEProps, ref) => {
       )}
     </Box>
   );
-});
+}
 
-ColorPickerFE.displayName = "ColorPicker";
-
-export default ColorPickerFE;
+export default reactHookFormSupport({ defaultValue: "" })(ColorPickerFE);

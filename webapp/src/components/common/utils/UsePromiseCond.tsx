@@ -1,15 +1,16 @@
 import * as R from "ramda";
-import { PromiseStatus } from "../../../hooks/usePromise";
+import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
 
-export interface UsePromiseCondProps {
-  status: PromiseStatus;
-  ifPending?: React.ReactNode;
-  ifRejected?: React.ReactNode;
-  ifResolved?: React.ReactNode;
+export interface UsePromiseCondProps<T> {
+  response: UsePromiseResponse<T>;
+  ifPending?: () => React.ReactNode;
+  ifRejected?: (error: UsePromiseResponse<T>["error"]) => React.ReactNode;
+  ifResolved?: (data: UsePromiseResponse<T>["data"]) => React.ReactNode;
 }
 
-function UsePromiseCond(props: UsePromiseCondProps) {
-  const { status, ifPending, ifRejected, ifResolved } = props;
+function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
+  const { response, ifPending, ifRejected, ifResolved } = props;
+  const { status, data, error } = response;
 
   return (
     <>
@@ -19,10 +20,10 @@ function UsePromiseCond(props: UsePromiseCondProps) {
             R.equals(PromiseStatus.Idle),
             R.equals(PromiseStatus.Pending)
           ),
-          () => ifPending,
+          () => ifPending?.(),
         ],
-        [R.equals(PromiseStatus.Rejected), () => ifRejected],
-        [R.equals(PromiseStatus.Resolved), () => ifResolved],
+        [R.equals(PromiseStatus.Rejected), () => ifRejected?.(error)],
+        [R.equals(PromiseStatus.Resolved), () => ifResolved?.(data)],
       ])(status)}
     </>
   );

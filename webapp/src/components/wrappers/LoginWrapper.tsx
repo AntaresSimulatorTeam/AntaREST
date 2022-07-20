@@ -1,13 +1,7 @@
 import { ReactNode, useState } from "react";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { LoadingButton } from "@mui/lab";
 import { login } from "../../redux/ducks/auth";
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
@@ -19,8 +13,11 @@ import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
 import storage, { StorageKey } from "../../services/utils/localStorage";
+import Form, { SubmitHandlerData } from "../common/Form";
+import StringFE from "../common/fieldEditors/StringFE";
+import PasswordFE from "../common/fieldEditors/PasswordFE";
 
-interface Inputs {
+interface FormValues {
   username: string;
   password: string;
 }
@@ -31,7 +28,6 @@ interface Props {
 
 function LoginWrapper(props: Props) {
   const { children } = props;
-  const { register, handleSubmit, reset, formState } = useForm<Inputs>();
   const [loginError, setLoginError] = useState("");
   const { t } = useTranslation();
   const user = useAppSelector(getAuthUser);
@@ -68,18 +64,18 @@ function LoginWrapper(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLoginSubmit: SubmitHandler<Inputs> = async (data) => {
+  const handleSubmit = async (data: SubmitHandlerData<FormValues>) => {
+    const { values } = data;
+
     setLoginError("");
-    setTimeout(async () => {
-      try {
-        await dispatch(login(data)).unwrap();
-      } catch (e) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setLoginError((e as any).data?.message || t("login.error"));
-      } finally {
-        reset({ username: data.username });
-      }
-    }, 500);
+
+    try {
+      await dispatch(login(values)).unwrap();
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setLoginError((err as any).data?.message || t("login.error"));
+      throw err;
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -152,53 +148,50 @@ function LoginWrapper(props: Props) {
             </Typography>
           </Box>
           <Box width="70%" my={2}>
-            <form
-              style={{ marginTop: "16px" }}
-              onSubmit={handleSubmit(handleLoginSubmit)}
-            >
-              <TextField
-                label="NNI"
-                variant="filled"
-                fullWidth
-                inputProps={{ ...register("username", { required: true }) }}
-                sx={{ my: 3 }}
-                required
-              />
-              <TextField
-                variant="filled"
-                required
-                type="password"
-                label={t("global.password")}
-                fullWidth
-                inputProps={{
-                  autoComplete: "current-password",
-                  ...register("password", { required: true }),
-                }}
-              />
-              {loginError && (
-                <Box
-                  mt={2}
-                  color="error.main"
-                  mb={4}
-                  sx={{ fontSize: "0.9rem" }}
-                >
-                  {loginError}
-                </Box>
-              )}
-              <Box display="flex" justifyContent="center" mt={6}>
-                <Button
-                  disabled={formState.isSubmitting}
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                >
-                  {formState.isSubmitting && (
-                    <CircularProgress size="1em" sx={{ mr: "1em" }} />
+            <Form onSubmit={handleSubmit} hideSubmitButton>
+              {({ control, formState: { isSubmitting, isSubmitAllowed } }) => (
+                <>
+                  <StringFE
+                    name="username"
+                    sx={{ my: 3 }}
+                    label="NNI"
+                    variant="filled"
+                    fullWidth
+                    control={control}
+                    rules={{ required: t("form.field.required") }}
+                  />
+                  <PasswordFE
+                    name="password"
+                    variant="filled"
+                    label={t("global.password")}
+                    inputProps={{ autoComplete: "current-password" }}
+                    fullWidth
+                    control={control}
+                    rules={{ required: t("form.field.required") }}
+                  />
+                  {loginError && (
+                    <Box
+                      mt={2}
+                      color="error.main"
+                      mb={4}
+                      sx={{ fontSize: "0.9rem" }}
+                    >
+                      {loginError}
+                    </Box>
                   )}
-                  {t("global.connexion")}
-                </Button>
-              </Box>
-            </form>
+                  <Box display="flex" justifyContent="center" mt={6}>
+                    <LoadingButton
+                      type="submit"
+                      variant="contained"
+                      loading={isSubmitting}
+                      disabled={!isSubmitAllowed}
+                    >
+                      {t("global.connexion")}
+                    </LoadingButton>
+                  </Box>
+                </>
+              )}
+            </Form>
           </Box>
         </Box>
       </Box>

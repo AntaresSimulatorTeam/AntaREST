@@ -1,7 +1,8 @@
 import * as R from "ramda";
-import { Box, Divider, TextField } from "@mui/material";
+import { Box, Button, Divider } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { StyledFieldset } from "../styles";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { StudyMetadata } from "../../../../../../../common/types";
@@ -16,18 +17,21 @@ import {
 import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import { useFormContext } from "../../../../../../common/Form";
 import useDebouncedEffect from "../../../../../../../hooks/useDebouncedEffect";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 
 interface Props {
   study: StudyMetadata;
+  setDialog: React.Dispatch<React.SetStateAction<"thematicTrimming" | "">>;
 }
 
 // TODO i18n
 
 function Fields(props: Props) {
-  const { study } = props;
+  const { study, setDialog } = props;
   const studyVersion = Number(study.version);
   const [t] = useTranslation();
-  const { register, setValue, watch, getValues } = useFormContext<FormValues>();
+  const { control, setValue, watch, getValues } = useFormContext<FormValues>();
   const [buildingMode, firstDay, lastDay] = watch([
     "buildingMode",
     "firstDay",
@@ -91,71 +95,81 @@ function Fields(props: Props) {
     <>
       <StyledFieldset legend="Simulation">
         <SelectFE
+          name="mode"
           label="Mode"
           options={["Economy", "Adequacy", "draft"]}
-          {...register("mode", {
+          control={control}
+          rules={{
             onAutoSubmit: saveValue("general/mode"),
-          })}
+          }}
         />
-        <TextField
+        <NumberFE
+          name="firstDay"
           label={t("study.modelization.configuration.general.firstDay")}
           variant="filled"
-          {...register("firstDay", {
+          control={control}
+          rules={{
             deps: "lastDay",
-            valueAsNumber: true,
             validate: handleDayValidation,
             onAutoSubmit: saveValue("general/simulation.start"),
-          })}
+          }}
         />
-        <TextField
+        <NumberFE
+          name="lastDay"
           label={t("study.modelization.configuration.general.lastDay")}
           variant="filled"
-          {...register("lastDay", {
+          control={control}
+          rules={{
             deps: "firstDay",
-            valueAsNumber: true,
             validate: handleDayValidation,
             onAutoSubmit: saveValue("general/simulation.end"),
-          })}
+          }}
         />
       </StyledFieldset>
       <StyledFieldset
         legend={t("study.modelization.configuration.general.calendar")}
       >
-        <TextField
+        <StringFE
+          name="horizon"
           label="Horizon"
           variant="filled"
-          {...register("horizon", {
-            onAutoSubmit: saveValue("general/horizon"),
-          })}
+          control={control}
+          rules={{ onAutoSubmit: saveValue("general/horizon") }}
         />
         <SelectFE
+          name="firstMonth"
           label={t("study.modelization.configuration.general.year")}
           options={YEAR_OPTIONS}
-          {...register("firstMonth", {
+          control={control}
+          rules={{
             onAutoSubmit: saveValue("general/first-month-in-year"),
-          })}
+          }}
         />
         <SelectFE
+          name="firstWeekDay"
           label={t("study.modelization.configuration.general.week")}
           options={WEEK_OPTIONS}
-          {...register("firstWeekDay", {
+          control={control}
+          rules={{
             onAutoSubmit: saveValue("general/first.weekday"),
-          })}
+          }}
         />
         <SelectFE
+          name="firstJanuary"
           label={t("study.modelization.configuration.general.firstDayOfYear")}
           options={FIRST_JANUARY_OPTIONS}
-          {...register("firstJanuary", {
-            onAutoSubmit: saveValue("general/january.1st"),
-          })}
+          control={control}
+          rules={{ onAutoSubmit: saveValue("general/january.1st") }}
         />
         <SwitchFE
+          name="leapYear"
           sx={{ flex: 1, flexBasis: "100%" }}
           label={t("study.modelization.configuration.general.leapYear")}
-          {...register("leapYear", {
+          control={control}
+          rules={{
             deps: ["firstDay", "lastDay"],
             onAutoSubmit: saveValue("general/leapyear"),
-          })}
+          }}
         />
       </StyledFieldset>
       <Box sx={{ display: "flex" }}>
@@ -168,10 +182,12 @@ function Fields(props: Props) {
             sx: { flexDirection: "column" },
           }}
         >
-          <TextField
+          <NumberFE
+            name="nbYears"
             label={t("global.number")}
             variant="filled"
-            {...register("nbYears", {
+            control={control}
+            rules={{
               validate: (v) => {
                 if (buildingMode === "Derated") {
                   return v === 1
@@ -183,14 +199,15 @@ function Fields(props: Props) {
                 }
                 return v <= 50000 ? true : "Maximum is 50000";
               },
-              valueAsNumber: true,
               onAutoSubmit: saveValue("general/nbyears"),
-            })}
+            }}
           />
           <SelectFE
+            name="buildingMode"
             label="Building mode"
             options={["Automatic", "Custom", "Derated"]}
-            {...register("buildingMode", {
+            control={control}
+            rules={{
               deps: "nbYears",
               onAutoSubmit: (v) => {
                 if (v === "Derated") {
@@ -206,15 +223,15 @@ function Fields(props: Props) {
                   saveValue("general/derated", false),
                 ]);
               },
-            })}
+            }}
           />
           <BooleanFE
+            name="selectionMode"
             label="Selection mode"
             trueText="Custom"
             falseText="Automatic"
-            {...register("selectionMode", {
-              onAutoSubmit: saveValue("general/user-playlist"),
-            })}
+            control={control}
+            rules={{ onAutoSubmit: saveValue("general/user-playlist") }}
           />
         </StyledFieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
@@ -228,48 +245,60 @@ function Fields(props: Props) {
           }}
         >
           <SwitchFE
+            name="simulationSynthesis"
             label="Simulation synthesis"
-            {...register("simulationSynthesis", {
-              onAutoSubmit: saveValue("output/synthesis"),
-            })}
+            control={control}
+            rules={{ onAutoSubmit: saveValue("output/synthesis") }}
           />
           <SwitchFE
+            name="yearByYear"
             label="Year-by-year"
-            {...register("yearByYear", {
-              onAutoSubmit: saveValue("general/year-by-year"),
-            })}
+            control={control}
+            rules={{ onAutoSubmit: saveValue("general/year-by-year") }}
           />
           <SwitchFE
+            name="mcScenario"
             label="MC Scenario"
-            {...register("mcScenario", {
-              onAutoSubmit: saveValue("output/storenewset"),
-            })}
+            control={control}
+            rules={{ onAutoSubmit: saveValue("output/storenewset") }}
           />
           {studyVersion >= 710 ? (
             <>
               <BooleanFE
+                name="geographicTrimming"
                 label="Geographic trimming"
                 trueText="Custom"
                 falseText="None"
-                {...register("geographicTrimming", {
+                control={control}
+                rules={{
                   onAutoSubmit: saveValue("general/geographic-trimming"),
-                })}
+                }}
               />
-              <BooleanFE
-                label="Thematic trimming"
-                trueText="Custom"
-                falseText="None"
-                {...register("thematicTrimming", {
-                  onAutoSubmit: saveValue("general/thematic-trimming"),
-                })}
-              />
+              <Box>
+                <BooleanFE
+                  name="thematicTrimming"
+                  label="Thematic trimming"
+                  trueText="Custom"
+                  falseText="None"
+                  control={control}
+                  rules={{
+                    onAutoSubmit: saveValue("general/thematic-trimming"),
+                  }}
+                />
+                <Button
+                  startIcon={<SettingsIcon />}
+                  onClick={() => setDialog("thematicTrimming")}
+                >
+                  Settings
+                </Button>
+              </Box>
             </>
           ) : (
             <SwitchFE
+              name="filtering"
               label="Filtering"
-              {...register("filtering", {
-                onAutoSubmit: saveValue("general/filtering"),
-              })}
+              control={control}
+              rules={{ onAutoSubmit: saveValue("general/filtering") }}
             />
           )}
         </StyledFieldset>

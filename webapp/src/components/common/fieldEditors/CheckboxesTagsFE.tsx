@@ -6,7 +6,6 @@ import {
 } from "@mui/material";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import { forwardRef } from "react";
 import { mergeSxProp } from "../../../utils/muiUtils";
 
 interface CheckboxesTagsFEProps<
@@ -24,16 +23,14 @@ interface CheckboxesTagsFEProps<
   label?: string;
   error?: boolean;
   helperText?: string;
+  inputRef?: React.Ref<unknown>;
 }
 
 function CheckboxesTagsFE<
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined
->(
-  props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
-  ref: React.Ref<unknown>
-) {
+>(props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   const {
     label,
     sx,
@@ -42,13 +39,14 @@ function CheckboxesTagsFE<
     getOptionLabel = (option: any) => option?.label ?? option,
     error,
     helperText,
+    inputRef,
     ...rest
   } = props;
 
   return (
     <Autocomplete
       {...rest}
-      ref={ref}
+      ref={inputRef}
       getOptionLabel={getOptionLabel}
       sx={mergeSxProp({ width: 1, p: "8px" }, sx)}
       multiple
@@ -78,12 +76,4 @@ function CheckboxesTagsFE<
   );
 }
 
-export default forwardRef(CheckboxesTagsFE) as <
-  T,
-  DisableClearable extends boolean | undefined = undefined,
-  FreeSolo extends boolean | undefined = undefined
->(
-  props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo> & {
-    ref?: React.Ref<unknown>;
-  }
-) => ReturnType<typeof CheckboxesTagsFE>;
+export default CheckboxesTagsFE;

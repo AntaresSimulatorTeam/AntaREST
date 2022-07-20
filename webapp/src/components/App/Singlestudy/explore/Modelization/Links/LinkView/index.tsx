@@ -4,7 +4,7 @@ import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";
-import { getDefaultValues, LinkFields } from "./utils";
+import { getDefaultValues } from "./utils";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
@@ -15,7 +15,7 @@ interface Props {
 function LinkView(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { link } = props;
-  const { data: defaultValues, status } = usePromise(
+  const res = usePromise(
     () => getDefaultValues(study.id, link.area1, link.area2),
     [study.id, link.area1, link.area2]
   );
@@ -23,22 +23,13 @@ function LinkView(props: Props) {
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
       <UsePromiseCond
-        status={status}
-        ifPending={<SimpleLoader />}
-        ifResolved={
-          <Form
-            autoSubmit
-            config={{ defaultValues: defaultValues as LinkFields }}
-          >
-            {(formObj) =>
-              LinkForm({
-                ...formObj,
-                link,
-                study,
-              })
-            }
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifResolved={(data) => (
+          <Form autoSubmit config={{ defaultValues: data }}>
+            <LinkForm link={link} study={study} />
           </Form>
-        }
+        )}
       />
     </Box>
   );

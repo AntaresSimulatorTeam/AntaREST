@@ -7,7 +7,7 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import Form from "../../../../../../common/Form";
 import PropertiesForm from "./PropertiesForm";
-import { getDefaultValues, PropertiesFields } from "./utils";
+import { getDefaultValues } from "./utils";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
@@ -15,7 +15,7 @@ function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
-  const { data: defaultValues, status } = usePromise(
+  const res = usePromise(
     () => getDefaultValues(study.id, currentArea, t),
     [study.id, currentArea]
   );
@@ -23,13 +23,10 @@ function Properties() {
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
       <UsePromiseCond
-        status={status}
-        ifPending={<SimpleLoader />}
-        ifResolved={
-          <Form
-            autoSubmit
-            config={{ defaultValues: defaultValues as PropertiesFields }}
-          >
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifResolved={(data) => (
+          <Form autoSubmit config={{ defaultValues: data }}>
             {(formObj) =>
               PropertiesForm({
                 ...formObj,
@@ -38,7 +35,7 @@ function Properties() {
               })
             }
           </Form>
-        }
+        )}
       />
     </Box>
   );
