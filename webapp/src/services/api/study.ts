@@ -126,7 +126,12 @@ export const editStudy = async (
   }
   const res = await client.post(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
-    formattedData
+    formattedData,
+    {
+      headers: {
+        "content-type": "application/json",
+      },
+    }
   );
   return res.data;
 };
