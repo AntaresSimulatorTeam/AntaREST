@@ -1,14 +1,17 @@
-import { Box, styled } from "@mui/material";
+import { styled, experimental_sx as sx } from "@mui/material";
+import Fieldset from "../../../../../../../common/Fieldset";
 
-export const Root = styled(Box)(({ theme }) => ({
-  display: "flex",
-  width: "100%",
-  flex: 1,
-  flexDirection: "column",
-}));
-
-export const Content = styled(Box)(({ theme }) => ({
-  width: "100%",
-  display: "flex",
-  justifyContent: "flex-start",
-}));
+export const StyledFieldset = styled(Fieldset)(
+  sx({
+    p: 0,
+    pb: 5,
+    ".MuiBox-root": {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 2,
+      ".MuiFormControl-root": {
+        width: 220,
+      },
+    },
+  })
+);

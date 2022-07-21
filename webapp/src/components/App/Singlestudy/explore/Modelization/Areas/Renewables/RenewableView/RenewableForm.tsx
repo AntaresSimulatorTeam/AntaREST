@@ -1,23 +1,22 @@
-import { Box, TextField } from "@mui/material";
-import { AxiosError } from "axios";
+import * as R from "ramda";
+import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import Fieldset from "../../../../../../../common/Fieldset";
-import {
-  AutoSubmitHandler,
-  useFormContext,
-} from "../../../../../../../common/Form";
+import { useFormContext } from "../../../../../../../common/Form";
 import { getRenewablePath, RenewableFields } from "./utils";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   MatrixStats,
   StudyMetadata,
 } from "../../../../../../../../common/types";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import { Content, Root } from "./style";
+import SelectFE, {
+  SelectFEProps,
+} from "../../../../../../../common/fieldEditors/SelectFE";
+import { StyledFieldset } from "./style";
 import MatrixInput from "../../../../../../../common/MatrixInput";
+import StringFE from "../../../../../../../common/fieldEditors/StringFE";
+import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 
 interface Props {
   area: string;
@@ -27,13 +26,8 @@ interface Props {
 }
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const {
-    register,
-    formState: { errors },
-    defaultValues,
-  } = useFormContext<RenewableFields>();
+  const { control, defaultValues } = useFormContext<RenewableFields>();
   const path = useMemo(() => {
     return getRenewablePath(area, cluster);
   }, [area, cluster]);
@@ -48,149 +42,69 @@ export default function ThermalForm(props: Props) {
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAutoSubmit = async (
-    name: string,
-    path: string,
-    data: any,
-    defaultValue: any
-  ) => {
-    try {
-      if (data === defaultValue || data === undefined) {
-        const tmpValues = { ...defaultValues };
-        if (name in tmpValues) delete tmpValues[name];
-        await editStudy(tmpValues, studyId, pathPrefix);
-      } else {
-        await editStudy(data, studyId, path);
-      }
-    } catch (error) {
-      enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
+  const saveValue = R.curry((name: string, defaultValue: any, data: any) => {
+    if (data === defaultValue || data === undefined) {
+      const tmpValues = { ...defaultValues };
+      if (name in tmpValues) delete tmpValues[name];
+      return editStudy(tmpValues, studyId, pathPrefix);
     }
-  };
+    return editStudy(data, studyId, path[name]);
+  });
 
-  const renderSelect = (
-    fieldId: string,
-    options: Array<{ label: string; value: string }>,
-    first?: boolean,
-    onAutoSubmit?: AutoSubmitHandler<RenewableFields, string>
-  ) => (
-    <Box
-      sx={{
-        display: "flex",
-        width: "auto",
-        ...(first === true ? { mr: 2 } : { mx: 2 }),
+  const renderSelect = (name: string, options: SelectFEProps["options"]) => (
+    <SelectFE
+      name={name}
+      label={t(`study.modelization.clusters.${name}`)}
+      options={options}
+      control={control}
+      rules={{
+        onAutoSubmit: saveValue(name, options.length > 0 ? options[0] : ""),
       }}
-    >
-      <SelectFE
-        {...register(fieldId, {
-          onAutoSubmit:
-            onAutoSubmit ||
-            ((value) => {
-              handleAutoSubmit(
-                fieldId,
-                path[fieldId],
-                value,
-                options.length > 0 ? options[0] : ""
-              );
-            }),
-        })}
-        defaultValue={(defaultValues || {})[fieldId] || []}
-        variant="filled"
-        options={options}
-        formControlProps={{
-          sx: {
-            flex: 1,
-            boxSizing: "border-box",
-          },
-        }}
-        sx={{ width: "auto", minWidth: "250px" }}
-        label={t(`study.modelization.clusters.${fieldId}`)}
-      />
-    </Box>
+    />
   );
 
   return (
-    <Root>
-      <Fieldset legend={t("global.general")} style={{ padding: "16px" }}>
-        <Content>
-          <TextField
-            sx={{ flex: 1, mr: 1 }}
-            variant="filled"
-            autoFocus
-            label={t("global.name")}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            placeholder={defaultValues?.name}
-            InputLabelProps={
-              // Allow to show placeholder when field is empty
-              defaultValues?.name ? { shrink: true } : {}
-            }
-            {...register("name", {
-              required: t("form.field.required") as string,
-              onAutoSubmit: (value) =>
-                handleAutoSubmit("name", path.name, value, ""),
-            })}
-          />
-          {renderSelect("group", groupOptions)}
-          {renderSelect("tsInterpretation", tsModeOptions)}
-        </Content>
-      </Fieldset>
-      <Fieldset
+    <>
+      <StyledFieldset legend={t("global.general")}>
+        <StringFE
+          name="name"
+          label={t("global.name")}
+          variant="filled"
+          control={control}
+          rules={{ onAutoSubmit: saveValue("name", "") }}
+        />
+        {renderSelect("group", groupOptions)}
+        {renderSelect("tsInterpretation", tsModeOptions)}
+      </StyledFieldset>
+      <StyledFieldset
         legend={t("study.modelization.clusters.operatingParameters")}
         style={{ padding: "16px" }}
       >
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
+        <SwitchFE
+          name="enabled"
+          label={t("study.modelization.clusters.enabled")}
+          control={control}
+          rules={{ onAutoSubmit: saveValue("enabled", true) }}
+        />
+        <NumberFE
+          name="unitcount"
+          label={t("study.modelization.clusters.unitcount")}
+          variant="filled"
+          control={control}
+          rules={{
+            onAutoSubmit: saveValue("unitcount", 0),
           }}
-        >
-          <Content>
-            <SwitchFE
-              label={t("study.modelization.clusters.enabled")}
-              {...register("enabled", {
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit("enabled", path.enabled, value, true),
-              })}
-            />
-            <TextField
-              sx={{ mr: 2 }}
-              label={t("study.modelization.clusters.unitcount")}
-              variant="filled"
-              type="number"
-              placeholder={defaultValues?.unitcount?.toString()}
-              InputLabelProps={
-                defaultValues?.unitcount !== undefined ? { shrink: true } : {}
-              }
-              {...register("unitcount", {
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit("unitcount", path.unitcount, value, 0),
-              })}
-            />
-            <TextField
-              sx={{ mx: 2 }}
-              label={t("study.modelization.clusters.nominalCapacity")}
-              variant="filled"
-              type="number"
-              placeholder={defaultValues?.nominalCapacity?.toString()}
-              InputLabelProps={
-                defaultValues?.nominalCapacity !== undefined
-                  ? { shrink: true }
-                  : {}
-              }
-              {...register("nominalCapacity", {
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit(
-                    "nominalCapacity",
-                    path.nominalCapacity,
-                    value,
-                    0
-                  ),
-              })}
-            />
-          </Content>
-        </Box>
-      </Fieldset>
+        />
+        <NumberFE
+          name="nominalCapacity"
+          label={t("study.modelization.clusters.nominalCapacity")}
+          variant="filled"
+          control={control}
+          rules={{
+            onAutoSubmit: saveValue("nominalCapacity", 0),
+          }}
+        />
+      </StyledFieldset>
       <Box
         sx={{
           width: "100%",
@@ -205,6 +119,6 @@ export default function ThermalForm(props: Props) {
           computStats={MatrixStats.NOCOL}
         />
       </Box>
-    </Root>
+    </>
   );
 }

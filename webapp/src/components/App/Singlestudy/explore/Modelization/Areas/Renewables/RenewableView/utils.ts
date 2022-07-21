@@ -6,7 +6,7 @@ type TsModeType = "power generation" | "production factor";
 
 export interface RenewableType {
   name: string;
-  group: string;
+  group?: string;
   "ts-interpretation": TsModeType;
   enabled: boolean; // Default: true
   unitcount: number; // Default: 0
@@ -15,7 +15,7 @@ export interface RenewableType {
 
 export interface RenewableFields extends FieldValues {
   name: string;
-  group: string;
+  group?: string;
   tsInterpretation: TsModeType;
   enabled?: boolean; // Default: true
   unitcount?: number; // Default: 0
@@ -33,7 +33,7 @@ export async function getDefaultValues(
   const data: RenewableType = await getStudyData(studyId, pathPrefix, 3);
   return {
     name: data.name,
-    group: data.group || "*",
+    group: data.group,
     enabled: data.enabled !== undefined ? data.enabled : true,
     unitcount: data.unitcount || 0,
     nominalCapacity: data.nominalcapacity || 0,

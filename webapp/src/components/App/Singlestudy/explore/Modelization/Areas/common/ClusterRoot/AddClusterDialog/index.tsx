@@ -64,12 +64,7 @@ function AddClusterDialog(props: PropType) {
       onSubmit={handleSubmit}
       {...dialogProps}
     >
-      {(formObj) =>
-        AddClusterForm({
-          ...formObj,
-          clusterGroupList,
-        })
-      }
+      <AddClusterForm clusterGroupList={clusterGroupList} />
     </FormDialog>
   );
 }

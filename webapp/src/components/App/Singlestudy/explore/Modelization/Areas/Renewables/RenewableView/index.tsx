@@ -1,14 +1,13 @@
-import * as R from "ramda";
+import { Box } from "@mui/material";
 import Form from "../../../../../../../common/Form";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import RenewableForm from "./RenewableForm";
-import { getDefaultValues, RenewableFields } from "./utils";
+import { getDefaultValues } from "./utils";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
-import usePromise, {
-  PromiseStatus,
-} from "../../../../../../../../hooks/usePromise";
+import usePromise from "../../../../../../../../hooks/usePromise";
 import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   cluster: Cluster["id"];
@@ -20,32 +19,27 @@ export default function RenewableView(props: Props) {
   const { cluster, study, groupList } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
 
-  const { data: defaultValues, status } = usePromise(
+  const res = usePromise(
     () => getDefaultValues(study.id, currentArea, cluster),
     [study.id, currentArea]
   );
 
   return (
-    <>
-      {R.cond([
-        [R.equals(PromiseStatus.Pending), () => <SimpleLoader />],
-        [
-          R.equals(PromiseStatus.Resolved),
-          () => (
-            <Form
-              autoSubmit
-              config={{ defaultValues: defaultValues as RenewableFields }}
-            >
-              <RenewableForm
-                study={study}
-                cluster={cluster}
-                area={currentArea}
-                groupList={groupList}
-              />
-            </Form>
-          ),
-        ],
-      ])(status)}
-    </>
+    <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
+      <UsePromiseCond
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifResolved={(data) => (
+          <Form autoSubmit config={{ defaultValues: data }}>
+            <RenewableForm
+              study={study}
+              cluster={cluster}
+              area={currentArea}
+              groupList={groupList}
+            />
+          </Form>
+        )}
+      />
+    </Box>
   );
 }
