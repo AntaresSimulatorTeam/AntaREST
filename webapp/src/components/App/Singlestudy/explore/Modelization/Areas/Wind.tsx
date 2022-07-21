@@ -3,6 +3,7 @@ import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
+import { Root } from "./style";
 
 function Wind() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -10,7 +11,9 @@ function Wind() {
   const url = `input/wind/series/wind_${currentArea}`;
 
   return (
-    <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
+    <Root>
+      <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
+    </Root>
   );
 }
 
