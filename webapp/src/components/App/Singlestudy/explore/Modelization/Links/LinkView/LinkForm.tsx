@@ -171,59 +171,54 @@ function LinkForm(props: Props) {
     options: Array<{ label: string; value: string }>,
     onAutoSubmit?: AutoSubmitHandler<LinkFields, string>
   ) => (
-    <Box sx={{ display: "flex", flexGrow: 1 }}>
-      <SelectFE
-        name={filterName}
-        variant="filled"
-        options={options}
-        formControlProps={{
-          sx: {
-            flex: 1,
-            mx: 2,
-            boxSizing: "border-box",
-          },
-        }}
-        sx={{ width: "100%", minWidth: "200px" }}
-        label={t(`study.modelization.links.${filterName}`)}
-        control={control}
-        rules={{
-          onAutoSubmit:
-            onAutoSubmit ||
-            ((value) => {
-              handleAutoSubmit(path[filterName], value);
-            }),
-        }}
-      />
-    </Box>
+    <SelectFE
+      name={filterName}
+      variant="filled"
+      options={options}
+      formControlProps={{
+        sx: {
+          flex: 1,
+          boxSizing: "border-box",
+        },
+      }}
+      sx={{ width: "100%", minWidth: "200px" }}
+      label={t(`study.modelization.links.${filterName}`)}
+      control={control}
+      rules={{
+        onAutoSubmit:
+          onAutoSubmit ||
+          ((value) => {
+            handleAutoSubmit(path[filterName], value);
+          }),
+      }}
+    />
   );
   const renderFilter = (filterName: string) => (
-    <Box sx={{ mb: 2 }}>
-      <SelectFE
-        name={filterName}
-        multiple
-        renderValue={(value: unknown) => {
+    <SelectFE
+      name={filterName}
+      multiple
+      renderValue={(value: unknown) => {
+        const selection = value
+          ? (value as Array<string>).filter((val) => val !== "")
+          : [];
+        return selection.length > 0
+          ? selection.map((elm) => t(`study.${elm}`)).join(", ")
+          : t("global.none");
+      }}
+      variant="filled"
+      options={filterOptions}
+      sx={{ minWidth: "200px" }}
+      label={t(`study.modelization.nodeProperties.${filterName}`)}
+      control={control}
+      rules={{
+        onAutoSubmit: (value) => {
           const selection = value
             ? (value as Array<string>).filter((val) => val !== "")
             : [];
-          return selection.length > 0
-            ? selection.map((elm) => t(`study.${elm}`)).join(", ")
-            : t("global.none");
-        }}
-        variant="filled"
-        options={filterOptions}
-        sx={{ minWidth: "200px" }}
-        label={t(`study.modelization.nodeProperties.${filterName}`)}
-        control={control}
-        rules={{
-          onAutoSubmit: (value) => {
-            const selection = value
-              ? (value as Array<string>).filter((val) => val !== "")
-              : [];
-            handleAutoSubmit(path[filterName], selection.join(", "));
-          },
-        }}
-      />
-    </Box>
+          handleAutoSubmit(path[filterName], selection.join(", "));
+        },
+      }}
+    />
   );
 
   return (
@@ -231,7 +226,6 @@ function LinkForm(props: Props) {
       sx={{
         width: "100%",
         height: "100%",
-        py: 2,
       }}
     >
       <Box
@@ -240,60 +234,37 @@ function LinkForm(props: Props) {
           flexDirection: "column",
         }}
       >
-        <Fieldset legend={t("global.general")} style={{ padding: "16px" }}>
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "flex-start",
+        <Fieldset legend={t("global.general")}>
+          <SwitchFE
+            name="hurdleCost"
+            label={t("study.modelization.links.hurdleCost")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.hurdleCost, value),
             }}
-          >
-            <SwitchFE
-              name="hurdleCost"
-              label={t("study.modelization.links.hurdleCost")}
-              control={control}
-              rules={{
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit(path.hurdleCost, value),
-              }}
-            />
-            <SwitchFE
-              name="loopFlows"
-              sx={{ mx: 2 }}
-              label={t("study.modelization.links.loopFlows")}
-              control={control}
-              rules={{
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit(path.loopFlows, value),
-              }}
-            />
-            <SwitchFE
-              name="pst"
-              sx={{ mx: 2 }}
-              label={t("study.modelization.links.pst")}
-              control={control}
-              rules={{
-                onAutoSubmit: (value) => handleAutoSubmit(path.pst, value),
-              }}
-            />
-            {renderSelect("transmissionCapa", optionTransCap)}
-            {renderSelect("type", optionType, handleTypeAutoSubmit)}
-          </Box>
+          />
+          <SwitchFE
+            name="loopFlows"
+            label={t("study.modelization.links.loopFlows")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.loopFlows, value),
+            }}
+          />
+          <SwitchFE
+            name="pst"
+            label={t("study.modelization.links.pst")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.pst, value),
+            }}
+          />
+          {renderSelect("transmissionCapa", optionTransCap)}
+          {renderSelect("type", optionType, handleTypeAutoSubmit)}
         </Fieldset>
-        <Fieldset
-          legend={t("study.modelization.nodeProperties.outputFilter")}
-          style={{ padding: "16px" }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {renderFilter("filterSynthesis")}
-            {renderFilter("filterByYear")}
-          </Box>
+        <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
+          {renderFilter("filterSynthesis")}
+          {renderFilter("filterByYear")}
         </Fieldset>
         <Box
           sx={{

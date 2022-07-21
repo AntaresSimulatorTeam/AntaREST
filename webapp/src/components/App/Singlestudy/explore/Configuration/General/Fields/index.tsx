@@ -3,7 +3,6 @@ import { Box, Button, Divider } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { StyledFieldset } from "../styles";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { StudyMetadata } from "../../../../../../../common/types";
 import { editStudy } from "../../../../../../../services/api/study";
@@ -19,6 +18,7 @@ import { useFormContext } from "../../../../../../common/Form";
 import useDebouncedEffect from "../../../../../../../hooks/useDebouncedEffect";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
+import Fieldset from "../../../../../../common/Fieldset";
 
 interface Props {
   study: StudyMetadata;
@@ -93,7 +93,7 @@ function Fields(props: Props) {
 
   return (
     <>
-      <StyledFieldset legend="Simulation">
+      <Fieldset legend="Simulation">
         <SelectFE
           name="mode"
           label="Mode"
@@ -125,10 +125,8 @@ function Fields(props: Props) {
             onAutoSubmit: saveValue("general/simulation.end"),
           }}
         />
-      </StyledFieldset>
-      <StyledFieldset
-        legend={t("study.modelization.configuration.general.calendar")}
-      >
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.configuration.general.calendar")}>
         <StringFE
           name="horizon"
           label="Horizon"
@@ -171,9 +169,9 @@ function Fields(props: Props) {
             onAutoSubmit: saveValue("general/leapyear"),
           }}
         />
-      </StyledFieldset>
+      </Fieldset>
       <Box sx={{ display: "flex" }}>
-        <StyledFieldset
+        <Fieldset
           legend="Monte-Carlo Scenarios"
           sx={{
             flex: 1,
@@ -233,9 +231,9 @@ function Fields(props: Props) {
             control={control}
             rules={{ onAutoSubmit: saveValue("general/user-playlist") }}
           />
-        </StyledFieldset>
+        </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-        <StyledFieldset
+        <Fieldset
           legend="Output profile"
           sx={{
             flex: 1,
@@ -301,7 +299,7 @@ function Fields(props: Props) {
               rules={{ onAutoSubmit: saveValue("general/filtering") }}
             />
           )}
-        </StyledFieldset>
+        </Fieldset>
       </Box>
     </>
   );
