@@ -210,7 +210,10 @@ function MatrixInput(props: PropsType) {
           study={study}
           path={url}
           open={openMatrixAsignDialog}
-          onClose={() => setOpenMatrixAsignDialog(false)}
+          onClose={() => {
+            setOpenMatrixAsignDialog(false);
+            reloadMatrix();
+          }}
         />
       )}
     </Root>

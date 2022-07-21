@@ -85,6 +85,7 @@ function MatrixAssignDialog(props: Props) {
       enqueueSnackbar(t("data.succes.matrixAssignation"), {
         variant: "success",
       });
+      onClose();
     } catch (e) {
       enqueueErrorSnackbar(t("data.error.matrixAssignation"), e as AxiosError);
     }
