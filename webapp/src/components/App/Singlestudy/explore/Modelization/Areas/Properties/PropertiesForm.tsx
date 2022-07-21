@@ -151,99 +151,108 @@ export default function PropertiesForm(
               flexDirection: "column",
             }}
           >
-            <Typography>{`${t(
-              "study.modelization.nodeProperties.energyCost"
-            )} (€/Wh)`}</Typography>
             <Box
               sx={{
-                width: "100%",
                 display: "flex",
-                mt: 1,
+                flexDirection: "column",
               }}
             >
-              <NumberFE
-                name="energieCostUnsupplied"
-                label={t("study.modelization.nodeProperties.unsupplied")}
-                variant="filled"
-                placeholder={defaultValues?.energieCostUnsupplied?.toString()}
-                InputLabelProps={
-                  defaultValues?.energieCostUnsupplied !== undefined
-                    ? { shrink: true }
-                    : {}
-                }
-                control={control}
-                rules={{
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.energieCostUnsupplied, value),
+              <Typography>{`${t(
+                "study.modelization.nodeProperties.energyCost"
+              )} (€/Wh)`}</Typography>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  mt: 1,
                 }}
-              />
-              <NumberFE
-                name="energieCostSpilled"
-                sx={{ mx: 1 }}
-                label={t("study.modelization.nodeProperties.splilled")}
-                variant="filled"
-                placeholder={defaultValues?.energieCostSpilled?.toString()}
-                InputLabelProps={
-                  defaultValues?.energieCostSpilled !== undefined
-                    ? { shrink: true }
-                    : {}
-                }
-                control={control}
-                rules={{
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.energieCostSpilled, value),
-                }}
-              />
+              >
+                <NumberFE
+                  name="energieCostUnsupplied"
+                  label={t("study.modelization.nodeProperties.unsupplied")}
+                  variant="filled"
+                  placeholder={defaultValues?.energieCostUnsupplied?.toString()}
+                  InputLabelProps={
+                    defaultValues?.energieCostUnsupplied !== undefined
+                      ? { shrink: true }
+                      : {}
+                  }
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.energieCostUnsupplied, value),
+                  }}
+                />
+                <NumberFE
+                  name="energieCostSpilled"
+                  sx={{ mx: 1 }}
+                  label={t("study.modelization.nodeProperties.splilled")}
+                  variant="filled"
+                  placeholder={defaultValues?.energieCostSpilled?.toString()}
+                  InputLabelProps={
+                    defaultValues?.energieCostSpilled !== undefined
+                      ? { shrink: true }
+                      : {}
+                  }
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.energieCostSpilled, value),
+                  }}
+                />
+              </Box>
             </Box>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              mt: 4,
-            }}
-          >
-            <Typography>
-              {t("study.modelization.nodeProperties.lastResortShedding")}
-            </Typography>
             <Box
               sx={{
-                width: "100%",
                 display: "flex",
-                mt: 1,
+                flexDirection: "column",
+                mt: 4,
               }}
             >
-              <SwitchFE
-                name="nonDispatchPower"
-                label={t("study.modelization.nodeProperties.nonDispatchPower")}
-                control={control}
-                rules={{
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.nonDispatchPower, value),
+              <Typography>
+                {t("study.modelization.nodeProperties.lastResortShedding")}
+              </Typography>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  mt: 1,
                 }}
-              />
-              <SwitchFE
-                name="dispatchHydroPower"
-                label={t(
-                  "study.modelization.nodeProperties.dispatchHydroPower"
-                )}
-                control={control}
-                rules={{
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.dispatchHydroPower, value),
-                }}
-              />
-              <SwitchFE
-                name="otherDispatchPower"
-                label={t(
-                  "study.modelization.nodeProperties.otherDispatchPower"
-                )}
-                control={control}
-                rules={{
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.otherDispatchPower, value),
-                }}
-              />
+              >
+                <SwitchFE
+                  name="nonDispatchPower"
+                  label={t(
+                    "study.modelization.nodeProperties.nonDispatchPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.nonDispatchPower, value),
+                  }}
+                />
+                <SwitchFE
+                  name="dispatchHydroPower"
+                  label={t(
+                    "study.modelization.nodeProperties.dispatchHydroPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.dispatchHydroPower, value),
+                  }}
+                />
+                <SwitchFE
+                  name="otherDispatchPower"
+                  label={t(
+                    "study.modelization.nodeProperties.otherDispatchPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.otherDispatchPower, value),
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
         </Fieldset>

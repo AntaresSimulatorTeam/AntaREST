@@ -131,7 +131,7 @@ function MatrixInput(props: PropsType) {
           >
             {title || t("xpansion.timeSeries")}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "flex-end" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             {!isLoading && data?.columns?.length > 1 && (
               <ButtonGroup variant="contained">
                 <StyledButton onClick={() => setToggleView((prev) => !prev)}>
