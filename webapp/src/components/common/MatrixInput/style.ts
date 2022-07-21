@@ -8,7 +8,6 @@ export const Root = styled(Box)(({ theme }) => ({
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  padding: theme.spacing(1, 1),
 }));
 
 export const Header = styled(Box)(({ theme }) => ({
@@ -16,12 +15,10 @@ export const Header = styled(Box)(({ theme }) => ({
   display: "flex",
   flexFlow: "row nowrap",
   justifyContent: "space-between",
-  alignItems: "center",
-  padding: theme.spacing(0, 1),
+  alignItems: "flex-end",
 }));
 
 export const Content = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(1),
   boxSizing: "border-box",
   flex: 1,
   width: "100%",

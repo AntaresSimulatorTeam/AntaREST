@@ -131,9 +131,6 @@ function FileTable(props: PropType) {
                 <TableRow
                   key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
-                    "&> th": {
-                      padding: 1,
-                    },
                     "&> th, >td": {
                       borderBottom: "solid 1px",
                       borderColor: theme.palette.divider,
@@ -208,8 +205,8 @@ function FileTable(props: PropType) {
                       <IconButton
                         onClick={() => onAssign(row.id as string)}
                         sx={{
-                          mx: 1,
-                          color: "action.active",
+                          ml: 1,
+                          color: "primary.main",
                         }}
                       >
                         <Tooltip title={t("global.assign") as string}>

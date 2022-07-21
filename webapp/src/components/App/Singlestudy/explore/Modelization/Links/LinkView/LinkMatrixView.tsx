@@ -9,7 +9,7 @@ import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
 
 export const StyledTab = styled(Tabs)({
-  width: "98%",
+  width: "100%",
   borderBottom: 1,
   borderColor: "divider",
 });
@@ -78,7 +78,7 @@ function LinkMatrixView(props: Props) {
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
               computStats={MatrixStats.NOCOL}
             />
-            <Divider sx={{ width: "1px", bgcolor: "divider" }} />
+            <Divider sx={{ width: "1px", mx: 2, bgcolor: "divider" }} />
             <MatrixInput
               study={study}
               title={t(

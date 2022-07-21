@@ -165,7 +165,7 @@ function MatrixInput(props: PropsType) {
             </Button>
           </Box>
         </Header>
-        <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
+        <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
         {!isLoading && data?.columns?.length > 1 ? (
           <EditableMatrix
@@ -210,7 +210,10 @@ function MatrixInput(props: PropsType) {
           study={study}
           path={url}
           open={openMatrixAsignDialog}
-          onClose={() => setOpenMatrixAsignDialog(false)}
+          onClose={() => {
+            setOpenMatrixAsignDialog(false);
+            reloadMatrix();
+          }}
         />
       )}
     </Root>
