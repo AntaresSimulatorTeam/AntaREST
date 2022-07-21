@@ -1,22 +1,15 @@
-import * as R from "ramda";
 import { Box } from "@mui/material";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../../services/api/study";
-import { useFormContext } from "../../../../../../../common/Form";
 import { getRenewablePath, RenewableFields } from "./utils";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   MatrixStats,
   StudyMetadata,
 } from "../../../../../../../../common/types";
-import SelectFE, {
-  SelectFEProps,
-} from "../../../../../../../common/fieldEditors/SelectFE";
-import { StyledFieldset } from "./style";
 import MatrixInput from "../../../../../../../common/MatrixInput";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
+import { IFormGenerator } from "../../../../../../../common/FormGenerator";
+import AutoSubmitGeneratorForm from "../../../../../../../common/FormGenerator/AutoSubmitGenerator";
 
 interface Props {
   area: string;
@@ -27,84 +20,98 @@ interface Props {
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const { control, defaultValues } = useFormContext<RenewableFields>();
   const path = useMemo(() => {
     return getRenewablePath(area, cluster);
   }, [area, cluster]);
   const studyId = study.id;
 
-  const tsModeOptions = ["power generation", "production factor"].map(
-    (item) => ({ label: item, value: item })
+  const tsModeOptions = useMemo(
+    () =>
+      ["power generation", "production factor"].map((item) => ({
+        label: item,
+        value: item,
+      })),
+    []
   );
-
-  const groupOptions = groupList.map((item) => ({ label: item, value: item }));
-
+  const groupOptions = useMemo(
+    () => groupList.map((item) => ({ label: item, value: item })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(groupList)]
+  );
   const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const saveValue = R.curry((name: string, defaultValue: any, data: any) => {
-    if (data === defaultValue || data === undefined) {
-      const tmpValues = { ...defaultValues };
-      if (name in tmpValues) delete tmpValues[name];
-      return editStudy(tmpValues, studyId, pathPrefix);
-    }
-    return editStudy(data, studyId, path[name]);
-  });
+  const saveValue = useCallback(
+    (defaultValues: any, noDataValue: any, name: string, data: any) => {
+      if (data === noDataValue || data === undefined) {
+        const tmpValues = { ...defaultValues };
+        if (name in tmpValues) delete tmpValues[name];
+        return editStudy(tmpValues, studyId, pathPrefix);
+      }
+      return editStudy(data, studyId, path[name]);
+    },
+    [path, pathPrefix, studyId]
+  );
 
-  const renderSelect = (name: string, options: SelectFEProps["options"]) => (
-    <SelectFE
-      name={name}
-      label={t(`study.modelization.clusters.${name}`)}
-      options={options}
-      control={control}
-      rules={{
-        onAutoSubmit: saveValue(name, options.length > 0 ? options[0] : ""),
-      }}
-    />
+  const jsonGenerator: IFormGenerator<RenewableFields> = useMemo(
+    () => [
+      {
+        translationId: "global.general",
+        fields: [
+          {
+            type: "text",
+            name: "name",
+            label: t("global.name"),
+          },
+          {
+            type: "select",
+            name: "group",
+            label: t("study.modelization.clusters.group"),
+            options: groupOptions,
+            noDataValue: groupOptions[0],
+          },
+          {
+            type: "select",
+            name: "tsInterpretation",
+            label: t("study.modelization.clusters.tsInterpretation"),
+            options: tsModeOptions,
+            noDataValue: tsModeOptions[0],
+          },
+        ],
+      },
+      {
+        translationId: "study.modelization.clusters.operatingParameters",
+        fields: [
+          {
+            type: "switch",
+            name: "enabled",
+            label: t("study.modelization.clusters.enabled"),
+            noDataValue: true,
+          },
+          {
+            type: "number",
+            name: "unitcount",
+            label: t("study.modelization.clusters.unitcount"),
+            noDataValue: 0,
+          },
+          {
+            type: "number",
+            name: "nominalCapacity",
+            label: t("study.modelization.clusters.nominalCapacity"),
+            noDataValue: 0,
+          },
+        ],
+      },
+    ],
+    [groupOptions, t, tsModeOptions]
   );
 
   return (
     <>
-      <StyledFieldset legend={t("global.general")}>
-        <StringFE
-          name="name"
-          label={t("global.name")}
-          variant="filled"
-          control={control}
-          rules={{ onAutoSubmit: saveValue("name", "") }}
-        />
-        {renderSelect("group", groupOptions)}
-        {renderSelect("tsInterpretation", tsModeOptions)}
-      </StyledFieldset>
-      <StyledFieldset
-        legend={t("study.modelization.clusters.operatingParameters")}
-        style={{ padding: "16px" }}
-      >
-        <SwitchFE
-          name="enabled"
-          label={t("study.modelization.clusters.enabled")}
-          control={control}
-          rules={{ onAutoSubmit: saveValue("enabled", true) }}
-        />
-        <NumberFE
-          name="unitcount"
-          label={t("study.modelization.clusters.unitcount")}
-          variant="filled"
-          control={control}
-          rules={{
-            onAutoSubmit: saveValue("unitcount", 0),
-          }}
-        />
-        <NumberFE
-          name="nominalCapacity"
-          label={t("study.modelization.clusters.nominalCapacity")}
-          variant="filled"
-          control={control}
-          rules={{
-            onAutoSubmit: saveValue("nominalCapacity", 0),
-          }}
-        />
-      </StyledFieldset>
+      <AutoSubmitGeneratorForm
+        jsonTemplate={jsonGenerator}
+        saveField={saveValue}
+      />
       <Box
         sx={{
           width: "100%",

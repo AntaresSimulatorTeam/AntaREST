@@ -8,20 +8,14 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SxProps, Theme } from "@mui/material";
-import SelectFE, {
-  SelectFEProps,
-} from "../../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { StyledFieldset } from "./styles";
-import {
-  RegisterOptionsPlus,
-  useFormContext,
-} from "../../../../../../../common/Form";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import BooleanFE, {
-  BooleanFEProps,
-} from "../../../../../../../common/fieldEditors/BooleanFE";
+import { useMemo } from "react";
+import SelectFE, { SelectFEProps } from "../fieldEditors/SelectFE";
+import StringFE from "../fieldEditors/StringFE";
+import Fieldset from "../Fieldset";
+import { RegisterOptionsPlus, useFormContext } from "../Form";
+import NumberFE from "../fieldEditors/NumberFE";
+import SwitchFE from "../fieldEditors/SwitchFE";
+import BooleanFE, { BooleanFEProps } from "../fieldEditors/BooleanFE";
 
 export type GeneratorFieldType =
   | "text"
@@ -35,8 +29,10 @@ export interface IGeneratorField<T> {
   name: Path<T> & (string | undefined);
   label: string;
   sx?: SxProps<Theme> | undefined;
-  rules: (
-    defaultValues: UnpackNestedValue<DeepPartial<T>> | undefined
+  noDataValue?: any;
+  rules?: (
+    defaultValues?: UnpackNestedValue<DeepPartial<T>> | undefined,
+    noDataValue?: any
   ) =>
     | Omit<
         RegisterOptionsPlus<T, Path<T> & (string | undefined)>,
@@ -54,9 +50,14 @@ export interface BooleanField<T> extends IGeneratorField<T> {
   trueText: BooleanFEProps["trueText"];
 }
 
+export type IGeneratorFieldType<T> =
+  | IGeneratorField<T>
+  | SelectField<T>
+  | BooleanField<T>;
+
 export interface IFieldsetType<T> {
   translationId: string;
-  fields: Array<IGeneratorField<T> | SelectField<T> | BooleanField<T>>;
+  fields: Array<IGeneratorFieldType<T>>;
 }
 
 export type IFormGenerator<T> = Array<IFieldsetType<T>>;
@@ -71,20 +72,26 @@ function formateFieldset<T>(fieldset: IFieldsetType<T>) {
   return { ...otherProps, fields: formatedFields, id: uuidv4() };
 }
 
-export default function AutoSubmitFormGenerator<T extends FieldValues>(
+export default function FormGenerator<T extends FieldValues>(
   props: FormGeneratorProps<T>
 ) {
   const { jsonTemplate } = props;
-  const formatedTemplate = jsonTemplate.map(formateFieldset);
+  const formatedTemplate = useMemo(
+    () => jsonTemplate.map(formateFieldset),
+    [jsonTemplate]
+  );
   const [t] = useTranslation();
   const { control, defaultValues } = useFormContext<T>();
 
   return (
     <>
       {formatedTemplate.map((fieldset) => (
-        <StyledFieldset key={fieldset.id} legend={t(fieldset.translationId)}>
+        <Fieldset key={fieldset.id} legend={t(fieldset.translationId)}>
           {fieldset.fields.map((field) => {
-            const { id, rules, ...otherProps } = field;
+            const { id, rules, type, noDataValue, ...otherProps } = field;
+            const vRules = rules
+              ? rules(defaultValues, noDataValue)
+              : undefined;
             return (
               <>
                 {R.cond([
@@ -96,7 +103,7 @@ export default function AutoSubmitFormGenerator<T extends FieldValues>(
                         {...otherProps}
                         variant="filled"
                         control={control}
-                        rules={rules(defaultValues)}
+                        rules={vRules}
                       />
                     ),
                   ],
@@ -108,7 +115,7 @@ export default function AutoSubmitFormGenerator<T extends FieldValues>(
                         {...otherProps}
                         variant="filled"
                         control={control}
-                        rules={rules(defaultValues)}
+                        rules={vRules}
                       />
                     ),
                   ],
@@ -119,19 +126,19 @@ export default function AutoSubmitFormGenerator<T extends FieldValues>(
                         key={id}
                         {...otherProps}
                         control={control}
-                        rules={rules(defaultValues)}
+                        rules={vRules}
                       />
                     ),
                   ],
                   [
-                    R.equals("switch"),
+                    R.equals("boolean"),
                     () => (
                       <BooleanFE
                         key={id}
                         {...otherProps}
                         variant="filled"
                         control={control}
-                        rules={rules(defaultValues)}
+                        rules={vRules}
                       />
                     ),
                   ],
@@ -147,15 +154,15 @@ export default function AutoSubmitFormGenerator<T extends FieldValues>(
                         {...otherProps}
                         variant="filled"
                         control={control}
-                        rules={rules(defaultValues)}
+                        rules={vRules}
                       />
                     ),
                   ],
-                ])(field.type)}
+                ])(type)}
               </>
             );
           })}
-        </StyledFieldset>
+        </Fieldset>
       ))}
     </>
   );
