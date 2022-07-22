@@ -93,8 +93,8 @@ function GroupForm(props: UseFormReturnPlus) {
         sx={{ mx: 0 }}
         autoFocus
         label={t("global.name")}
-        error={!!errors.name}
-        helperText={errors.name?.message}
+        error={!!errors?.name}
+        helperText={errors?.name?.message}
         placeholder={defaultValues?.name}
         InputLabelProps={
           // Allow to show placeholder when field is empty

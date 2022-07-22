@@ -112,8 +112,8 @@ function TokenForm(props: Props) {
           sx={{ mx: 0 }}
           autoFocus
           label={t("global.name")}
-          error={!!errors.name}
-          helperText={errors.name?.message}
+          error={!!errors?.name}
+          helperText={errors?.name?.message}
           required
           fullWidth
           {...register("name", {

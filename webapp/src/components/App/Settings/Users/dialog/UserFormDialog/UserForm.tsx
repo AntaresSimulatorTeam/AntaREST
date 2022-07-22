@@ -100,8 +100,8 @@ function UserForm(props: Props) {
           <TextField
             autoFocus
             label={t("global.username")}
-            error={!!errors.username}
-            helperText={errors.username?.message}
+            error={!!errors?.username}
+            helperText={errors?.username?.message}
             {...commonTextFieldProps}
             {...register("username", {
               required: t("form.field.required") as string,
@@ -115,8 +115,8 @@ function UserForm(props: Props) {
           <TextField
             label={t("global.password")}
             type="password"
-            error={!!errors.password}
-            helperText={errors.password?.message}
+            error={!!errors?.password}
+            helperText={errors?.password?.message}
             {...commonTextFieldProps}
             {...register("password", {
               required: t("form.field.required") as string,
