@@ -10,8 +10,8 @@ import {
   Cluster,
   MatrixStats,
   StudyMetadata,
-} from "../../../../../../../../common/types";
-import MatrixInput from "../../../../../../../common/MatrixInput";
+} from "../../../../../../../common/types";
+import MatrixInput from "../../../../../../common/MatrixInput";
 
 export const StyledTab = styled(Tabs)({
   width: "98%",

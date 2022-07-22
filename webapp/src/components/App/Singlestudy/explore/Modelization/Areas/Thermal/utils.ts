@@ -1,6 +1,6 @@
 import { FieldValues } from "react-hook-form";
-import { Cluster } from "../../../../../../../../common/types";
-import { getStudyData } from "../../../../../../../../services/api/study";
+import { Cluster } from "../../../../../../../common/types";
+import { getStudyData } from "../../../../../../../services/api/study";
 
 type GenTsType =
   | "use global parameter"
@@ -76,7 +76,7 @@ export async function getDefaultValues(
     minStablePower: data["min-stable-power"] || 0,
     minUpTime: data["min-up-time"] || 1,
     minDownTime: data["min-down-time"] || 1,
-    mustRun: data["must-run"] || false,
+    mustRun: data["must-run"] !== undefined ? data["must-run"] : false,
     spinning: data.spinning || 0,
     co2: data.co2 || 0,
     volatilityForced: data["volatility.forced"] || 0,

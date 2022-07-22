@@ -1,12 +1,12 @@
 import { Box } from "@mui/material";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { editStudy } from "../../../../../../../../services/api/study";
 import { getThermalPath, ThermalFields } from "./utils";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import { StudyMetadata } from "../../../../../../../common/types";
 import ThermalMatrixView from "./ThermalMatrixView";
-import { IFormGenerator } from "../../../../../../../common/FormGenerator";
-import AutoSubmitGeneratorForm from "../../../../../../../common/FormGenerator/AutoSubmitGenerator";
+import { IFormGenerator } from "../../../../../../common/FormGenerator";
+import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
+import { saveField } from "../Renewables/utils";
 
 interface Props {
   area: string;
@@ -18,8 +18,11 @@ interface Props {
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const path = useMemo(() => {
-    return getThermalPath(area, cluster);
+  const { path, pathPrefix } = useMemo(() => {
+    return {
+      path: getThermalPath(area, cluster),
+      pathPrefix: `input/thermal/clusters/${area}/list/${cluster}`,
+    };
   }, [area, cluster]);
   const studyId = study.id;
 
@@ -45,18 +48,8 @@ export default function ThermalForm(props: Props) {
     []
   );
 
-  const pathPrefix = `input/thermal/clusters/${area}/list/${cluster}`;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const saveValue = useCallback(
-    (defaultValues: any, noDataValue: any, name: string, data: any) => {
-      if (data === noDataValue || data === undefined) {
-        const tmpValues = { ...defaultValues };
-        if (name in tmpValues) delete tmpValues[name];
-        return editStudy(tmpValues, studyId, pathPrefix);
-      }
-      return editStudy(data, studyId, path[name]);
-    },
+  const saveValue = useMemo(
+    () => saveField(studyId, pathPrefix, path),
     [path, pathPrefix, studyId]
   );
 

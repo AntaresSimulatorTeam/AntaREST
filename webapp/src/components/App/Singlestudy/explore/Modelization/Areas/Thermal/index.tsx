@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ClusterRoot from "../common/ClusterRoot";
-import ThermalView from "./ThermalView";
+import ThermalForm from "./ThermalForm";
+import { getDefaultValues } from "./utils";
 
 function Thermal() {
   const fixedGroupList = [
@@ -24,10 +25,16 @@ function Thermal() {
       study={study}
       fixedGroupList={fixedGroupList}
       type="thermals"
+      getDefaultValues={getDefaultValues}
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
-      {({ cluster, groupList }) => (
-        <ThermalView study={study} cluster={cluster} groupList={groupList} />
+      {({ study, cluster, area, groupList }) => (
+        <ThermalForm
+          study={study}
+          cluster={cluster}
+          area={area}
+          groupList={groupList}
+        />
       )}
     </ClusterRoot>
   );

@@ -18,6 +18,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
+import { FieldValues } from "react-hook-form";
 import {
   Header,
   ListContainer,
@@ -41,23 +42,38 @@ import AddClusterDialog from "./AddClusterDialog";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { appendCommands } from "../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
+import ClusterView from "./ClusterView";
 
-interface Props {
+interface ClusterRootProps<T> {
   children: (elm: {
+    study: StudyMetadata;
     cluster: Cluster["id"];
+    area: string;
     groupList: Array<string>;
   }) => React.ReactNode;
+  getDefaultValues: (
+    studyId: StudyMetadata["id"],
+    area: string,
+    cluster: string
+  ) => Promise<T>;
   study: StudyMetadata;
   fixedGroupList: Array<string>;
   type: "thermals" | "renewables";
   backButtonName: string;
 }
 
-function ClusterRoot(props: Props) {
+function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-  const { study, type, fixedGroupList, backButtonName, children } = props;
+  const {
+    study,
+    type,
+    fixedGroupList,
+    backButtonName,
+    getDefaultValues,
+    children,
+  } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
   const clusterInitList = useAppSelector((state) =>
     getCurrentClusters(type, study.id, state)
@@ -299,10 +315,19 @@ function ClusterRoot(props: Props) {
         </Button>
       </Header>
       <Box sx={{ width: "100%", flex: 1, overflowY: "auto" }}>
-        {children({
-          cluster: currentCluster,
-          groupList: clusterGroupList,
-        })}
+        <ClusterView
+          area={currentArea}
+          cluster={currentCluster}
+          studyId={study.id}
+          getDefaultValues={getDefaultValues}
+        >
+          {children({
+            study,
+            cluster: currentCluster,
+            area: currentArea,
+            groupList: clusterGroupList,
+          })}
+        </ClusterView>
       </Box>
     </Root>
   );

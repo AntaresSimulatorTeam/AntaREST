@@ -1,6 +1,10 @@
+import * as R from "ramda";
 import { FieldValues } from "react-hook-form";
-import { Cluster } from "../../../../../../../../common/types";
-import { getStudyData } from "../../../../../../../../services/api/study";
+import { Cluster, StudyMetadata } from "../../../../../../../common/types";
+import {
+  editStudy,
+  getStudyData,
+} from "../../../../../../../services/api/study";
 
 type TsModeType = "power generation" | "production factor";
 
@@ -52,5 +56,24 @@ export function getRenewablePath(area: string, cluster: string): RenewablePath {
     tsInterpretation: `${pathPrefix}/ts-interpretation`,
   };
 }
+
+function saveFieldInternal(
+  studyId: StudyMetadata["id"],
+  pathPrefix: string,
+  path: { [elm: string]: string },
+  defaultValues: any,
+  noDataValue: any,
+  name: string,
+  data: any
+): Promise<void> {
+  if (data === noDataValue || data === undefined) {
+    const tmpValues = { ...defaultValues };
+    if (name in tmpValues) delete tmpValues[name];
+    return editStudy(tmpValues, studyId, pathPrefix);
+  }
+  return editStudy(data, studyId, path[name]);
+}
+
+export const saveField = R.curry(saveFieldInternal);
 
 export default {};

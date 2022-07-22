@@ -1,15 +1,11 @@
 import { Box } from "@mui/material";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { editStudy } from "../../../../../../../../services/api/study";
-import { getRenewablePath, RenewableFields } from "./utils";
-import {
-  MatrixStats,
-  StudyMetadata,
-} from "../../../../../../../../common/types";
-import MatrixInput from "../../../../../../../common/MatrixInput";
-import { IFormGenerator } from "../../../../../../../common/FormGenerator";
-import AutoSubmitGeneratorForm from "../../../../../../../common/FormGenerator/AutoSubmitGenerator";
+import { getRenewablePath, RenewableFields, saveField } from "./utils";
+import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
+import MatrixInput from "../../../../../../common/MatrixInput";
+import { IFormGenerator } from "../../../../../../common/FormGenerator";
+import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 
 interface Props {
   area: string;
@@ -20,8 +16,11 @@ interface Props {
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const path = useMemo(() => {
-    return getRenewablePath(area, cluster);
+  const { path, pathPrefix } = useMemo(() => {
+    return {
+      path: getRenewablePath(area, cluster),
+      pathPrefix: `input/renewables/clusters/${area}/list/${cluster}`,
+    };
   }, [area, cluster]);
   const studyId = study.id;
 
@@ -38,18 +37,9 @@ export default function ThermalForm(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(groupList)]
   );
-  const pathPrefix = `input/renewables/clusters/${area}/list/${cluster}`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const saveValue = useCallback(
-    (defaultValues: any, noDataValue: any, name: string, data: any) => {
-      if (data === noDataValue || data === undefined) {
-        const tmpValues = { ...defaultValues };
-        if (name in tmpValues) delete tmpValues[name];
-        return editStudy(tmpValues, studyId, pathPrefix);
-      }
-      return editStudy(data, studyId, path[name]);
-    },
+  const saveValue = useMemo(
+    () => saveField(studyId, pathPrefix, path),
     [path, pathPrefix, studyId]
   );
 

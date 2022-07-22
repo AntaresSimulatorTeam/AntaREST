@@ -8,7 +8,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SxProps, Theme } from "@mui/material";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import SelectFE, { SelectFEProps } from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
@@ -93,13 +93,12 @@ export default function FormGenerator<T extends FieldValues>(
               ? rules(defaultValues, noDataValue)
               : undefined;
             return (
-              <>
+              <Fragment key={id}>
                 {R.cond([
                   [
                     R.equals("text"),
                     () => (
                       <StringFE
-                        key={id}
                         {...otherProps}
                         variant="filled"
                         control={control}
@@ -111,7 +110,6 @@ export default function FormGenerator<T extends FieldValues>(
                     R.equals("number"),
                     () => (
                       <NumberFE
-                        key={id}
                         {...otherProps}
                         variant="filled"
                         control={control}
@@ -123,7 +121,6 @@ export default function FormGenerator<T extends FieldValues>(
                     R.equals("switch"),
                     () => (
                       <SwitchFE
-                        key={id}
                         {...otherProps}
                         control={control}
                         rules={vRules}
@@ -134,7 +131,6 @@ export default function FormGenerator<T extends FieldValues>(
                     R.equals("boolean"),
                     () => (
                       <BooleanFE
-                        key={id}
                         {...otherProps}
                         variant="filled"
                         control={control}
@@ -146,7 +142,6 @@ export default function FormGenerator<T extends FieldValues>(
                     R.equals("select"),
                     () => (
                       <SelectFE
-                        key={id}
                         options={
                           (otherProps as Omit<SelectField<T>, "id" | "rules">)
                             .options || []
@@ -159,7 +154,7 @@ export default function FormGenerator<T extends FieldValues>(
                     ),
                   ],
                 ])(type)}
-              </>
+              </Fragment>
             );
           })}
         </Fieldset>
