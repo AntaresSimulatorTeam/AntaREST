@@ -21,12 +21,13 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Button } from "@mui/material";
+import { Box, Button, CircularProgress } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import useDebouncedState from "../../../hooks/useDebouncedState";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues
@@ -139,6 +140,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const preventClose = useRef(false);
+  const [showLoader, setLoader] = useDebouncedState(false, 750);
+
+  useUpdateEffect(() => {
+    setLoader(isSubmitting);
+    if (isSubmitting) {
+      setLoader.flush();
+    }
+  }, [isSubmitting]);
 
   useUpdateEffect(
     () => {
@@ -299,6 +308,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   return (
     <form {...formProps} onSubmit={handleFormSubmit}>
+      {showLoader && (
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            right: 0,
+            height: 0,
+            textAlign: "right",
+          }}
+        >
+          <CircularProgress color="secondary" size={20} />
+        </Box>
+      )}
       {RA.isFunction(children) ? (
         children(sharedProps)
       ) : (
