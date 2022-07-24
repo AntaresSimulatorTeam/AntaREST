@@ -149,7 +149,7 @@ function LoginWrapper(props: Props) {
           </Box>
           <Box width="70%" my={2}>
             <Form onSubmit={handleSubmit} hideSubmitButton>
-              {({ control, formState: { isSubmitting, isSubmitAllowed } }) => (
+              {({ control, formState: { isDirty, isSubmitting } }) => (
                 <>
                   <StringFE
                     name="username"
@@ -184,7 +184,7 @@ function LoginWrapper(props: Props) {
                       type="submit"
                       variant="contained"
                       loading={isSubmitting}
-                      disabled={!isSubmitAllowed}
+                      disabled={!isDirty || isSubmitting}
                     >
                       {t("global.connexion")}
                     </LoadingButton>
