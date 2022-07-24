@@ -60,11 +60,6 @@ export interface ControlPlus<
   register: UseFormRegisterPlus<TFieldValues>;
 }
 
-export interface FormStatePlus<TFieldValues extends FieldValues = FieldValues>
-  extends FormState<TFieldValues> {
-  isSubmitAllowed: boolean;
-}
-
 export interface UseFormReturnPlus<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
@@ -72,7 +67,6 @@ export interface UseFormReturnPlus<
   register: UseFormRegisterPlus<TFieldValues>;
   control: ControlPlus<TFieldValues, TContext>;
   defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
-  formState: FormStatePlus<TFieldValues>;
 }
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
@@ -128,7 +122,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     formState,
     reset,
   } = formObj;
-
+  // * /!\ `formState` is a proxy
   const { isValid, isSubmitting, isDirty, dirtyFields } = formState;
   const isSubmitAllowed = isDirty && isValid && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -289,10 +283,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const sharedProps = {
     ...formObj,
-    formState: {
-      ...formState,
-      isSubmitAllowed,
-    },
+    formState,
     defaultValues: config?.defaultValues,
     register: registerWrapper,
     unregister: unregisterWrapper,
