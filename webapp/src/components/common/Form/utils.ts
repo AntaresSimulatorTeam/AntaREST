@@ -28,13 +28,15 @@ export function getDirtyValues(
 
   // Here, we have an object.
   return Object.fromEntries(
-    Object.keys(dirtyFields).map((key) => [
-      key,
-      getDirtyValues(
-        dirtyFields[key] as UnknownArrayOrObject | true,
-        (allValues as Record<string, unknown>)[key] as UnknownArrayOrObject
-      ),
-    ])
+    Object.keys(dirtyFields)
+      .filter((key) => dirtyFields[key] !== false)
+      .map((key) => [
+        key,
+        getDirtyValues(
+          dirtyFields[key] as UnknownArrayOrObject | true,
+          (allValues as Record<string, unknown>)[key] as UnknownArrayOrObject
+        ),
+      ])
   );
 }
 
