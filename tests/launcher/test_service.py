@@ -40,6 +40,7 @@ from antarest.launcher.service import (
     ORPHAN_JOBS_VISIBILITY_THRESHOLD,
     JobNotFound,
     LAUNCHER_PARAM_NAME_SUFFIX,
+    EXECUTION_INFO_FILE,
 )
 from antarest.login.auth import Auth
 from antarest.login.model import User
@@ -697,7 +698,7 @@ tsgen_solar	21606	1
 tsgen_thermal	407	2
 tsgen_wind	2500	1
     """
-    (output_path / "time_measurement.txt").write_text(expected_saved_stats)
+    (output_path / EXECUTION_INFO_FILE).write_text(expected_saved_stats)
 
     launcher_service._save_solver_stats(job_result, output_path)
     launcher_service.job_result_repository.save.assert_called_with(

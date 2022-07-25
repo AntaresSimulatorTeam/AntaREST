@@ -72,6 +72,7 @@ class LauncherServiceNotAvailableException(HTTPException):
 
 ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
+EXECUTION_INFO_FILE = "execution_info.ini"
 
 
 class LauncherService:
@@ -519,7 +520,7 @@ class LauncherService:
         self, job_result: JobResult, output_path: Path
     ) -> None:
         try:
-            measurement_file = output_path / "time_measurement.txt"
+            measurement_file = output_path / EXECUTION_INFO_FILE
             if measurement_file.exists():
                 job_result.solver_stats = measurement_file.read_text(
                     encoding="utf-8"
