@@ -9,6 +9,7 @@ import {
   FormState,
   Path,
   RegisterOptions,
+  SubmitErrorHandler,
   UnpackNestedValue,
   useForm,
   useFormContext as useFormContextOriginal,
@@ -80,6 +81,7 @@ export interface FormProps<
     data: SubmitHandlerData<TFieldValues>,
     event?: React.BaseSyntheticEvent
   ) => any | Promise<any>;
+  onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
     | ((formObj: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
@@ -99,6 +101,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const {
     config,
     onSubmit,
+    onSubmitError,
     children,
     submitButtonText,
     hideSubmitButton,
@@ -109,6 +112,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const formObj = useForm<TFieldValues, TContext>({
     mode: "onChange",
+    delayError: 750,
     ...config,
   });
 
@@ -123,8 +127,10 @@ function Form<TFieldValues extends FieldValues, TContext>(
     reset,
   } = formObj;
   // * /!\ `formState` is a proxy
-  const { isValid, isSubmitting, isDirty, dirtyFields } = formState;
-  const isSubmitAllowed = isDirty && isValid && !isSubmitting;
+  const { isSubmitting, isDirty, dirtyFields } = formState;
+  // Don't add `isValid` because we need to trigger fields validation.
+  // In case we have invalid default value for example.
+  const isSubmitAllowed = isDirty && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -170,7 +176,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    handleSubmit((data, e) => {
+    handleSubmit(function onValid(data, e) {
       const dirtyValues = getDirtyValues(dirtyFields, data) as Partial<
         typeof data
       >;
@@ -194,7 +200,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    })()
+    }, onSubmitError)()
       .catch((error) => {
         enqueueErrorSnackbar(t("form.submit.error"), error);
       })
