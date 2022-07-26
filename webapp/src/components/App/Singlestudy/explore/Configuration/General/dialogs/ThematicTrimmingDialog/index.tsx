@@ -2,6 +2,7 @@ import { Box, Button, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import { Pred } from "ramda";
+import { useState } from "react";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import { setThematicTrimmingConfig } from "../../../../../../../../services/api/study";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
@@ -9,11 +10,12 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContext } from "../../../../../../../common/Form";
 import { FormValues } from "../../utils";
 import {
-  getColumns,
   getFieldNames,
   ThematicTrimmingConfig,
   thematicTrimmingConfigToDTO,
 } from "./utils";
+import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
+import { isSearchMatching } from "../../../../../../../../utils/textUtils";
 
 interface Props {
   study: StudyMetadata;
@@ -24,6 +26,7 @@ interface Props {
 function ThematicTrimmingDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
+  const [search, setSearch] = useState("");
   const { control, register, getValues, setValue } =
     useFormContext<FormValues>();
 
@@ -41,11 +44,7 @@ function ThematicTrimmingDialog(props: Props) {
 
   const handleUpdateConfig = (fn: Pred) => () => {
     const config = getCurrentConfig();
-    const fieldNames = getFieldNames(study.version);
-    const newConfig: ThematicTrimmingConfig = {
-      ...getCurrentConfig(),
-      ...R.map(fn, R.pick(fieldNames, config)),
-    };
+    const newConfig: ThematicTrimmingConfig = R.map(fn, config);
 
     // More performant than `setValue('thematicTrimmingConfig', newConfig);`
     Object.entries(newConfig).forEach(([key, value]) => {
@@ -74,57 +73,55 @@ function ThematicTrimmingDialog(props: Props) {
       onClose={onClose}
       title="Thematic Trimming"
       maxWidth="md"
+      fullWidth
       actions={<Button onClick={onClose}>{t("button.close")}</Button>}
       contentProps={{
         sx: { pb: 0 },
       }}
+      PaperProps={{ sx: { height: "100%" } }}
     >
       <Box
         sx={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           pb: 2,
         }}
       >
-        <Button color="secondary" onClick={handleUpdateConfig(R.T)}>
-          Enable all
-        </Button>
-        <Button color="secondary" onClick={handleUpdateConfig(R.F)}>
-          Disable all
-        </Button>
-        <Divider orientation="vertical" flexItem sx={{ margin: "0 5px" }} />
-        <Button color="secondary" onClick={handleUpdateConfig(R.not)}>
-          Reverse
-        </Button>
+        <SearchFE
+          sx={{ m: 0 }}
+          value={search}
+          setSearchValue={setSearch}
+          size="small"
+        />
+        <Box
+          sx={{
+            display: "flex",
+          }}
+        >
+          <Button color="secondary" onClick={handleUpdateConfig(R.T)}>
+            Enable all
+          </Button>
+          <Button color="secondary" onClick={handleUpdateConfig(R.F)}>
+            Disable all
+          </Button>
+          <Divider orientation="vertical" flexItem sx={{ margin: "0 5px" }} />
+          <Button color="secondary" onClick={handleUpdateConfig(R.not)}>
+            Reverse
+          </Button>
+        </Box>
       </Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        {getColumns(study.version).map((column, index) => (
-          <Box
-            // eslint-disable-next-line react/no-array-index-key
-            key={index}
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              "& + .MuiBox-root": {
-                ml: 5,
-              },
-            }}
-          >
-            {column.map(([label, name]) => (
-              <SwitchFE
-                key={name}
-                name={`thematicTrimmingConfig.${name}`}
-                sx={{
-                  "& + .SwitchFE": {
-                    mt: 2,
-                  },
-                }}
-                label={label}
-                control={control}
-              />
-            ))}
-          </Box>
-        ))}
+      <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+        {getFieldNames(getCurrentConfig())
+          .filter(([, label]) => isSearchMatching(search, label))
+          .map(([name, label]) => (
+            <SwitchFE
+              key={name}
+              name={`thematicTrimmingConfig.${name}`}
+              sx={{ width: 1 / 3, m: "0 0 5px" }}
+              label={label}
+              control={control}
+            />
+          ))}
       </Box>
     </BasicDialog>
   );
