@@ -29,6 +29,7 @@ import { RESERVED_USER_NAMES } from "../utils";
 import { UserDetailsDTO } from "../../../../common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
+import { isSearchMatching } from "../../../../utils/textUtils";
 
 /**
  * Types
@@ -113,10 +114,7 @@ function Users() {
   const filteredAndSortedUsers = useMemo(() => {
     let list = users.filter((u) => !RESERVED_USER_NAMES.includes(u.name));
     if (searchValue) {
-      const searchVal = searchValue.toLowerCase();
-      list = users?.filter((user) =>
-        user.name.toLowerCase().includes(searchVal)
-      );
+      list = users?.filter((user) => isSearchMatching(searchValue, user.name));
     }
     return sortByName(list);
   }, [searchValue, users]);

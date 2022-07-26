@@ -31,6 +31,7 @@ import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
 import { getAuthUser } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { isSearchMatching } from "../../../../utils/textUtils";
 
 /**
  * Types
@@ -128,10 +129,9 @@ function Groups() {
       }));
 
     if (searchValue) {
-      const searchVal = searchValue.toLowerCase();
-      list = groups?.filter((group) =>
-        group.name.toLowerCase().includes(searchVal)
-      );
+      list = groups?.filter((group) => {
+        return isSearchMatching(searchValue, group.name);
+      });
     }
     return sortByName(list);
   }, [searchValue, groups, authUser]);

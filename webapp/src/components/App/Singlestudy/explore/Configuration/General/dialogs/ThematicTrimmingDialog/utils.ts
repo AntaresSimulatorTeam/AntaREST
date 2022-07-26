@@ -1,10 +1,7 @@
 import { camelCase } from "lodash";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import {
-  StudyMetadata,
-  ThematicTrimmingConfigDTO,
-} from "../../../../../../../../common/types";
+import { ThematicTrimmingConfigDTO } from "../../../../../../../../common/types";
 
 export interface ThematicTrimmingConfig {
   ovCost: boolean;
@@ -71,7 +68,7 @@ export interface ThematicTrimmingConfig {
   renw4?: boolean;
 }
 
-const keysMap = {
+const keysMap: Record<keyof ThematicTrimmingConfig, string> = {
   ovCost: "OV. COST",
   opCost: "OP. COST",
   mrgPrice: "MRG. PRICE",
@@ -120,6 +117,7 @@ const keysMap = {
   congProdPlus: "CONG. PROD +",
   congProdMinus: "CONG. PROD -",
   hurdleCost: "HURDLE COST",
+  // Study version >= 810
   resGenerationByPlant: "RES generation by plant",
   miscDtg2: "MISC. DTG 2",
   miscDtg3: "MISC. DTG 3",
@@ -134,6 +132,14 @@ const keysMap = {
   renw3: "RENW. 3",
   renw4: "RENW. 4",
 };
+
+// Allow to support all study versions
+// by using directly the server config
+export function getFieldNames(
+  config: ThematicTrimmingConfig
+): Array<[keyof ThematicTrimmingConfig, string]> {
+  return R.toPairs(R.pick(R.keys(config), keysMap));
+}
 
 export function formatThematicTrimmingConfigDTO(
   configDTO: ThematicTrimmingConfigDTO
@@ -154,43 +160,4 @@ export function thematicTrimmingConfigToDTO(
   config: ThematicTrimmingConfig
 ): ThematicTrimmingConfigDTO {
   return RA.renameKeys(keysMap, config) as ThematicTrimmingConfigDTO;
-}
-
-export function getColumns(
-  studyVersion: StudyMetadata["version"]
-): Array<Array<[string, keyof ThematicTrimmingConfig]>> {
-  const version = Number(studyVersion);
-
-  return [
-    [
-      ["OV. Cost", "ovCost"],
-      ["CO2 Emis.", "co2Emis"],
-      ["Balance", "balance"],
-      ["MISC. NDG", "miscNdg"],
-      ["Wind", "wind"],
-      ["Lignite", "lignite"],
-    ],
-    [
-      ["OP. Cost", "opCost"],
-      ["DTG by plant", "dtgByPlant"],
-      ["Row bal.", "rowBal"],
-      ["Load", "load"],
-      ["Solar", "solar"],
-    ],
-    [
-      ["MRG. Price", "mrgPrice"],
-      version >= 810 && ["RES generation by plant", "resGenerationByPlant"],
-      ["PSP", "psp"],
-      ["H. ROR", "hRor"],
-      ["Nuclear", "nuclear"],
-    ].filter(Boolean) as Array<[string, keyof ThematicTrimmingConfig]>,
-  ];
-}
-
-export function getFieldNames(
-  studyVersion: StudyMetadata["version"]
-): Array<keyof ThematicTrimmingConfig> {
-  return getColumns(studyVersion).flatMap((column) => {
-    return column.map(([, fieldName]) => fieldName);
-  });
 }
