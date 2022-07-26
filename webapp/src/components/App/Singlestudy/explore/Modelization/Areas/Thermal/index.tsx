@@ -3,21 +3,9 @@ import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ClusterRoot from "../common/ClusterRoot";
 import ThermalForm from "./ThermalForm";
-import { getDefaultValues } from "./utils";
+import { fixedGroupList, getDefaultValues } from "./utils";
 
 function Thermal() {
-  const fixedGroupList = [
-    "Gas",
-    "Hard Coal",
-    "Lignite",
-    "Mixed fuel",
-    "Nuclear",
-    "Oil",
-    "Other",
-    "Other 2",
-    "Other 3",
-    "Other 4",
-  ];
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   return (

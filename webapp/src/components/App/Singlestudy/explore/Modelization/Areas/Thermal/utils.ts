@@ -118,4 +118,28 @@ export function getThermalPath(area: string, cluster: string): ThermalPath {
   };
 }
 
+export const genTsOptions = [
+  "use global parameter",
+  "force no generation",
+  "force generation",
+].map((item) => ({ label: item, value: item }));
+
+export const lawOptions = ["uniform", "geometric"].map((item) => ({
+  label: item,
+  value: item,
+}));
+
+export const fixedGroupList = [
+  "Gas",
+  "Hard Coal",
+  "Lignite",
+  "Mixed fuel",
+  "Nuclear",
+  "Oil",
+  "Other",
+  "Other 2",
+  "Other 3",
+  "Other 4",
+];
+
 export default {};

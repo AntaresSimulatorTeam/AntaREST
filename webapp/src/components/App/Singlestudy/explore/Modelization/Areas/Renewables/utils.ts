@@ -57,23 +57,39 @@ export function getRenewablePath(area: string, cluster: string): RenewablePath {
   };
 }
 
-function saveFieldInternal(
-  studyId: StudyMetadata["id"],
-  pathPrefix: string,
-  path: { [elm: string]: string },
-  defaultValues: any,
-  noDataValue: any,
-  name: string,
-  data: any
-): Promise<void> {
-  if (data === noDataValue || data === undefined) {
-    const tmpValues = { ...defaultValues };
-    if (name in tmpValues) delete tmpValues[name];
-    return editStudy(tmpValues, studyId, pathPrefix);
+export const saveField = R.curry(
+  (
+    studyId: StudyMetadata["id"],
+    pathPrefix: string,
+    path: { [elm: string]: string },
+    defaultValues: any,
+    noDataValue: any,
+    name: string,
+    data: any
+  ): Promise<void> => {
+    if (data === noDataValue || data === undefined) {
+      const { [name]: ignore, ...toEdit } = defaultValues;
+      return editStudy(toEdit, studyId, pathPrefix);
+    }
+    return editStudy(data, studyId, path[name]);
   }
-  return editStudy(data, studyId, path[name]);
-}
+);
 
-export const saveField = R.curry(saveFieldInternal);
+export const tsModeOptions = ["power generation", "production factor"].map(
+  (item) => ({
+    label: item,
+    value: item,
+  })
+);
 
-export default {};
+export const fixedGroupList = [
+  "Wind Onshore",
+  "Wind Offshore",
+  "Solar Thermal",
+  "Solar PV",
+  "Solar Rooftop",
+  "Other RES 1",
+  "Other RES 2",
+  "Other RES 3",
+  "Other RES 4",
+];

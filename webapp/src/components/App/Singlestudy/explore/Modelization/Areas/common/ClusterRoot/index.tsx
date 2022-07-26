@@ -26,9 +26,7 @@ import {
   GroupButton,
   ClusterButton,
 } from "./style";
-import usePromise, {
-  PromiseStatus,
-} from "../../../../../../../../hooks/usePromise";
+import usePromise from "../../../../../../../../hooks/usePromise";
 import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
@@ -43,6 +41,7 @@ import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErr
 import { appendCommands } from "../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 import ClusterView from "./ClusterView";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface ClusterRootProps<T> {
   children: (elm: {
@@ -79,7 +78,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
     getCurrentClusters(type, study.id, state)
   );
   // TO DO: Replace this and Optimize to add/remove the right clusters
-  const { data: clusterData, status } = usePromise(
+  const res = usePromise(
     () =>
       getStudyData(
         study.id,
@@ -90,6 +89,8 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
       ),
     [study.id, currentArea, clusterInitList]
   );
+
+  const { data: clusterData } = res;
 
   const clusters = useMemo(() => {
     const tmpData: Array<ClusterElement> = clusterData
@@ -126,6 +127,18 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
     return tab;
   }, [clusters, fixedGroupList]);
 
+  useEffect(() => {
+    setClusterList({ ...clusters });
+  }, [clusters]);
+
+  useEffect(() => {
+    setCurrentCluster(undefined);
+  }, [currentArea]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleToggleGroupOpen = (groupName: string): void => {
     setClusterList({
       ...clusterList,
@@ -158,13 +171,9 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
     }
   };
 
-  useEffect(() => {
-    setClusterList({ ...clusters });
-  }, [clusters]);
-
-  useEffect(() => {
-    setCurrentCluster(undefined);
-  }, [currentArea]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return currentCluster === undefined ? (
     <Root>
@@ -178,128 +187,124 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
         </Button>
       </Header>
       <ListContainer>
-        {R.cond([
-          [R.equals(PromiseStatus.Pending), () => <SimpleLoader />],
-          [
-            R.equals(PromiseStatus.Resolved),
-            () => (
-              <List
-                sx={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  height: "100%",
-                  p: 0,
-                  m: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                }}
-                component="nav"
-                aria-labelledby="nested-list-subheader"
-                subheader={
-                  <ListSubheader
-                    component="div"
-                    id="nested-list-subheader"
-                    sx={{
-                      color: "white",
-                      bgcolor: "#0000",
-                      fontSize: "18px",
-                      height: "60px",
-                    }}
-                  >
-                    {t("study.modelization.clusters.byGroups")}
-                  </ListSubheader>
-                }
-              >
-                <Box
+        <UsePromiseCond
+          response={res}
+          ifPending={() => <SimpleLoader />}
+          ifResolved={(data) => (
+            <List
+              sx={{
+                width: "100%",
+                boxSizing: "border-box",
+                height: "100%",
+                p: 0,
+                m: 0,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+              component="nav"
+              aria-labelledby="nested-list-subheader"
+              subheader={
+                <ListSubheader
+                  component="div"
+                  id="nested-list-subheader"
                   sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    width: "100%",
-                    boxSizing: "border-box",
-                    overflowY: "auto",
+                    color: "white",
+                    bgcolor: "#0000",
+                    fontSize: "18px",
+                    height: "60px",
                   }}
                 >
-                  {Object.keys(clusterList).map((group) => {
-                    const clusterItems = clusterList[group];
-                    const { items, isOpen } = clusterItems;
-                    return (
-                      <Box
-                        key={group}
-                        sx={{
-                          flex: "none",
-                          display: "flex",
-                          flexDirection: "column",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <GroupButton
-                          onClick={() => handleToggleGroupOpen(group)}
+                  {t("study.modelization.clusters.byGroups")}
+                </ListSubheader>
+              }
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  overflowY: "auto",
+                }}
+              >
+                {Object.keys(clusterList).map((group) => {
+                  const clusterItems = clusterList[group];
+                  const { items, isOpen } = clusterItems;
+                  return (
+                    <Box
+                      key={group}
+                      sx={{
+                        flex: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <GroupButton onClick={() => handleToggleGroupOpen(group)}>
+                        <ListItemText
+                          primary={
+                            <Typography
+                              sx={{
+                                color: "white",
+                                fontWeight: "bold",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              {group}
+                            </Typography>
+                          }
+                        />
+                        {isOpen ? (
+                          <ExpandLessIcon color="primary" />
+                        ) : (
+                          <ExpandMoreIcon color="primary" />
+                        )}
+                      </GroupButton>
+                      {items.map((item: ClusterElement) => (
+                        <Collapse
+                          key={item.id}
+                          in={isOpen}
+                          timeout="auto"
+                          unmountOnExit
                         >
-                          <ListItemText
-                            primary={
-                              <Typography
-                                sx={{
-                                  color: "white",
-                                  fontWeight: "bold",
-                                  borderRadius: "4px",
+                          <List component="div" disablePadding>
+                            <ClusterButton
+                              onClick={() => setCurrentCluster(item.id)}
+                            >
+                              <ListItemText primary={item.name} />
+                              <IconButton
+                                edge="end"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClusterDeletion(item.id);
                                 }}
                               >
-                                {group}
-                              </Typography>
-                            }
-                          />
-                          {isOpen ? (
-                            <ExpandLessIcon color="primary" />
-                          ) : (
-                            <ExpandMoreIcon color="primary" />
-                          )}
-                        </GroupButton>
-                        {items.map((item: ClusterElement) => (
-                          <Collapse
-                            key={item.id}
-                            in={isOpen}
-                            timeout="auto"
-                            unmountOnExit
-                          >
-                            <List component="div" disablePadding>
-                              <ClusterButton
-                                onClick={() => setCurrentCluster(item.id)}
-                              >
-                                <ListItemText primary={item.name} />
-                                <IconButton
-                                  edge="end"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleClusterDeletion(item.id);
-                                  }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </ClusterButton>
-                            </List>
-                          </Collapse>
-                        ))}
-                      </Box>
-                    );
-                  })}
-                </Box>
-                {isAddClusterDialogOpen && (
-                  <AddClusterDialog
-                    open={isAddClusterDialogOpen}
-                    title={t("study.modelization.clusters.newCluster")}
-                    clusterGroupList={clusterGroupList}
-                    clusterData={clusterData}
-                    studyId={study.id}
-                    area={currentArea}
-                    type={type}
-                    onCancel={() => setIsAddClusterDialogOpen(false)}
-                  />
-                )}
-              </List>
-            ),
-          ],
-        ])(status)}
+                                <DeleteIcon />
+                              </IconButton>
+                            </ClusterButton>
+                          </List>
+                        </Collapse>
+                      ))}
+                    </Box>
+                  );
+                })}
+              </Box>
+              {isAddClusterDialogOpen && (
+                <AddClusterDialog
+                  open={isAddClusterDialogOpen}
+                  title={t("study.modelization.clusters.newCluster")}
+                  clusterGroupList={clusterGroupList}
+                  clusterData={clusterData}
+                  studyId={study.id}
+                  area={currentArea}
+                  type={type}
+                  onCancel={() => setIsAddClusterDialogOpen(false)}
+                />
+              )}
+            </List>
+          )}
+        />
       </ListContainer>
     </Root>
   ) : (

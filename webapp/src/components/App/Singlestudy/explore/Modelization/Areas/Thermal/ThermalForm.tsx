@@ -1,7 +1,12 @@
 import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getThermalPath, ThermalFields } from "./utils";
+import {
+  genTsOptions,
+  getThermalPath,
+  lawOptions,
+  ThermalFields,
+} from "./utils";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ThermalMatrixView from "./ThermalMatrixView";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
@@ -18,34 +23,17 @@ interface Props {
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const { path, pathPrefix } = useMemo(() => {
-    return {
-      path: getThermalPath(area, cluster),
-      pathPrefix: `input/thermal/clusters/${area}/list/${cluster}`,
-    };
+  const [path, pathPrefix] = useMemo(() => {
+    return [
+      getThermalPath(area, cluster),
+      `input/thermal/clusters/${area}/list/${cluster}`,
+    ];
   }, [area, cluster]);
   const studyId = study.id;
-
-  const genTsOptions = useMemo(
-    () =>
-      ["use global parameter", "force no generation", "force generation"].map(
-        (item) => ({ label: item, value: item })
-      ),
-    []
-  );
 
   const groupOptions = useMemo(
     () => groupList.map((item) => ({ label: item, value: item })),
     [groupList]
-  );
-
-  const lawOptions = useMemo(
-    () =>
-      ["uniform", "geometric"].map((item) => ({
-        label: item,
-        value: item,
-      })),
-    []
   );
 
   const saveValue = useMemo(
@@ -206,7 +194,7 @@ export default function ThermalForm(props: Props) {
         ],
       },
     ],
-    [genTsOptions, t, groupOptions, lawOptions]
+    [t, groupOptions]
   );
 
   return (
@@ -217,7 +205,7 @@ export default function ThermalForm(props: Props) {
       />
       <Box
         sx={{
-          width: "100%",
+          width: 1,
           display: "flex",
           flexDirection: "column",
           height: "500px",

@@ -188,6 +188,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             })
         );
       }
+
       if (onSubmit) {
         res.push(onSubmit({ values: data, dirtyValues }, e));
       }

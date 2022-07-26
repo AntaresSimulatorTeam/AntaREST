@@ -1,7 +1,12 @@
 import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getRenewablePath, RenewableFields, saveField } from "./utils";
+import {
+  getRenewablePath,
+  RenewableFields,
+  saveField,
+  tsModeOptions,
+} from "./utils";
 import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
@@ -13,25 +18,18 @@ interface Props {
   study: StudyMetadata;
   groupList: Array<string>;
 }
-export default function ThermalForm(props: Props) {
+
+export default function RenewableForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const { path, pathPrefix } = useMemo(() => {
-    return {
-      path: getRenewablePath(area, cluster),
-      pathPrefix: `input/renewables/clusters/${area}/list/${cluster}`,
-    };
+  const [path, pathPrefix] = useMemo(() => {
+    return [
+      getRenewablePath(area, cluster),
+      `input/renewables/clusters/${area}/list/${cluster}`,
+    ];
   }, [area, cluster]);
   const studyId = study.id;
 
-  const tsModeOptions = useMemo(
-    () =>
-      ["power generation", "production factor"].map((item) => ({
-        label: item,
-        value: item,
-      })),
-    []
-  );
   const groupOptions = useMemo(
     () => groupList.map((item) => ({ label: item, value: item })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,7 +91,7 @@ export default function ThermalForm(props: Props) {
         ],
       },
     ],
-    [groupOptions, t, tsModeOptions]
+    [groupOptions, t]
   );
 
   return (
@@ -104,7 +102,7 @@ export default function ThermalForm(props: Props) {
       />
       <Box
         sx={{
-          width: "100%",
+          width: 1,
           display: "flex",
           flexDirection: "column",
           height: "500px",
