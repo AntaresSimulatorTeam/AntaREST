@@ -334,9 +334,6 @@ class StudyDownloader:
         Returns: JSON content file
 
         """
-        if file_study.config.outputs[output_id].archived:
-            raise OutputArchivedError(f"The output {output_id} is archived")
-
         url = f"/output/{output_id}"
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=get_start_date(file_study, output_id, data.level),
