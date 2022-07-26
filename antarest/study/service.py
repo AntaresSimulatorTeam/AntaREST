@@ -1331,7 +1331,7 @@ class StudyService:
         )
 
         if output_id and isinstance(output, Path) and output.suffix == ".zip":
-            self.unarchive_output(uuid, output_id, True, params)
+            self.unarchive_output(uuid, output_id, True, True, params)
 
         return output_id
 
@@ -2258,6 +2258,7 @@ class StudyService:
         study_id: str,
         output_id: str,
         use_task: bool,
+        keep_src_zip: bool,
         params: RequestParameters,
     ) -> Optional[str]:
         study = self.get_study(study_id)
@@ -2267,7 +2268,7 @@ class StudyService:
         if not use_task:
             stopwatch = StopWatch()
             self.storage_service.get_storage(study).unarchive_study_output(
-                study, output_id
+                study, output_id, keep_src_zip
             )
             stopwatch.log_elapsed(
                 lambda x: logger.info(
@@ -2277,7 +2278,9 @@ class StudyService:
             return None
 
         else:
-            task_name = f"Unarchive output {study_id}/{output_id}"
+            task_name = (
+                f"Unarchive output {study.name}/{output_id} ({study_id})"
+            )
 
             def unarchive_output_task(
                 notifier: TaskUpdateNotifier,
@@ -2287,7 +2290,7 @@ class StudyService:
                     stopwatch = StopWatch()
                     self.storage_service.get_storage(
                         study
-                    ).unarchive_study_output(study, output_id)
+                    ).unarchive_study_output(study, output_id, keep_src_zip)
                     stopwatch.log_elapsed(
                         lambda x: logger.info(
                             f"Output {output_id} of study {study_id} unarchived in {x}s"

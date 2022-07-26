@@ -386,12 +386,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
             return False
 
-    def unarchive_study_output(self, study: T, output_id: str) -> bool:
+    def unarchive_study_output(
+        self, study: T, output_id: str, keep_src_zip: bool
+    ) -> bool:
         try:
             unzip(
                 Path(study.path) / "output" / output_id,
                 Path(study.path) / "output" / f"{output_id}.zip",
-                remove_source_zip=True,
+                remove_source_zip=not keep_src_zip,
             )
             remove_from_cache(self.cache, study.id)
             return True

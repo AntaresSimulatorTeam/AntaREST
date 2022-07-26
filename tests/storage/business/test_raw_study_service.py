@@ -480,7 +480,7 @@ timestamp = 1599488150
     assert output_name == expected_output_name
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
 
-    study_service.unarchive_study_output(md, expected_output_name)
+    study_service.unarchive_study_output(md, expected_output_name, False)
     assert (study_path / "output" / expected_output_name).exists()
     assert not (
         study_path / "output" / (expected_output_name + ".zip")
@@ -489,7 +489,12 @@ timestamp = 1599488150
     assert not (study_path / "output" / expected_output_name).exists()
 
     output_name = study_service.import_output(md, zipped_output)
-    study_service.unarchive_study_output(md, expected_output_name)
+    study_service.unarchive_study_output(md, expected_output_name, True)
+    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
+    os.unlink(study_path / "output" / (expected_output_name + ".zip"))
+    assert not (
+        study_path / "output" / (expected_output_name + ".zip")
+    ).exists()
     study_service.archive_study_output(md, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
