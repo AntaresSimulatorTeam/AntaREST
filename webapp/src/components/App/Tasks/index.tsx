@@ -11,6 +11,7 @@ import {
   Box,
   CircularProgress,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { debounce } from "lodash";
@@ -20,7 +21,7 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import DownloadIcon from "@mui/icons-material/Download";
-import { grey } from "@mui/material/colors";
+import { grey, indigo } from "@mui/material/colors";
 import RootPage from "../../common/page/RootPage";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
 import DownloadLink from "../../common/DownloadLink";
@@ -124,6 +125,29 @@ function JobsListing() {
       <FiberManualRecordIcon
         style={{ color, fontSize: "10px", marginRight: "8px" }}
       />
+    );
+  };
+
+  const renderTags = (job: LaunchJob) => {
+    return (
+      <Box sx={{ ml: 2 }}>
+        {job.launcherParams?.xpansion && (
+          <Chip
+            key="xpansion"
+            label="Xpansion"
+            variant="filled"
+            sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+          />
+        )}
+        {job.launcherParams?.adequacy_patch && (
+          <Chip
+            key="adequacy_patch"
+            label="Adequacy patch"
+            variant="filled"
+            sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+          />
+        )}
+      </Box>
     );
   };
 
@@ -238,6 +262,7 @@ function JobsListing() {
                   `${t("global.unknown")} (${job.id})`}
               </Typography>
             </Link>
+            {renderTags(job)}
           </Box>
         ),
         dateView: (

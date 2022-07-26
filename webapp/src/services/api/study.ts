@@ -300,6 +300,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   status: j.status,
   creationDate: j.creation_date,
   completionDate: j.completion_date,
+  launcherParams: JSON.parse(j.launcher_params),
   msg: j.msg,
   outputId: j.output_id,
   exitCode: j.exit_code,
