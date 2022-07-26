@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -10,13 +10,11 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
-  LinearProgress,
   List,
   ListItem,
   Slider,
   TextField,
   Typography,
-  Tooltip,
   useTheme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -34,6 +32,8 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import LoadIndicator from "../../common/LoadIndicator";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 
@@ -57,7 +57,12 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
-  const [load, setLoad] = useState<number>(0);
+
+  const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
+    // trad
+    errorMessage: "marche pas",
+    deps: [open],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -91,16 +96,6 @@ function LauncherDialog(props: Props) {
     }
   };
 
-  useEffect(() => {
-    const init = async () => {
-      const tmpLoad = await getLauncherLoad();
-      if (tmpLoad.slurm * 100 !== load) {
-        setLoad(tmpLoad.slurm * 100);
-      }
-    };
-    init();
-  }, [load]);
-
   const handleChange = <T extends keyof LaunchOptions>(
     field: T,
     value: LaunchOptions[T]
@@ -126,8 +121,6 @@ function LauncherDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
-  // rouge 90% orange 75% sinon vert
 
   return (
     <BasicDialog
@@ -277,23 +270,13 @@ function LauncherDialog(props: Props) {
             }}
           >
             <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
-            <Tooltip title="Charge du launcher">
-              <Box sx={{ display: "flex", alignItems: "center", width: "30%" }}>
-                <Box sx={{ width: "100%", mr: 1 }}>
-                  <LinearProgress
-                    color="success"
-                    variant="determinate"
-                    value={load > 100 ? 100 : load}
-                  />
-                </Box>
-                <Box sx={{ minWidth: 35 }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                  >{`${Math.round(load)}%`}</Typography>
-                </Box>
-              </Box>
-            </Tooltip>
+            {load && (
+              <LoadIndicator
+                indicator={load.slurm}
+                size="30%"
+                tooltip="Charge du cluster"
+              />
+            )}
           </Box>
           <Slider
             sx={{
