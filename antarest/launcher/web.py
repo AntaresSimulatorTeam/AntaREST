@@ -172,6 +172,19 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
+        "/launcher/load",
+        tags=[APITag.launcher],
+        summary="Get the cluster load in usage percent",
+    )
+    def get_load(
+        from_cluster: bool = False,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[str, float]:
+        params = RequestParameters(user=current_user)
+        logger.info("Fetching launcher load")
+        return service.get_load(from_cluster)
+
+    @bp.get(
         "/launcher/_versions",
         tags=[APITag.launcher],
         summary="Get list of supported study version for all configured launchers",
