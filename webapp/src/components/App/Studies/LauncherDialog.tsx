@@ -12,6 +12,7 @@ import {
   FormGroup,
   List,
   ListItem,
+  Slider,
   TextField,
   Typography,
   useTheme,
@@ -290,6 +291,25 @@ function LauncherDialog(props: Props) {
             label="Adequacy patch"
           />
         </FormGroup>
+        <FormControl
+          sx={{
+            width: "100%",
+          }}
+        >
+          <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
+          <Slider
+            sx={{
+              width: "95%",
+              mx: 1,
+            }}
+            defaultValue={12}
+            step={1}
+            min={0}
+            color="secondary"
+            max={12}
+            valueLabelDisplay="auto"
+          />
+        </FormControl>
         <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
