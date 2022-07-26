@@ -38,7 +38,7 @@ function AddBindingConstDialog(props: PropType) {
     const { name, enabled, time_step, operator, comments } = data.dirtyValues;
     console.log("VALUES: ", data.dirtyValues);
     try {
-      /* await appendCommands(studyId, [
+      await appendCommands(studyId, [
         {
           action: CommandEnum.CREATE_BINDING_CONSTRAINT,
           args: {
@@ -50,7 +50,7 @@ function AddBindingConstDialog(props: PropType) {
             comments,
           },
         },
-      ]);*/
+      ]);
       enqueueSnackbar(t("study.success.addBindingConst"), {
         variant: "success",
       });
@@ -67,11 +67,7 @@ function AddBindingConstDialog(props: PropType) {
       onSubmit={handleSubmit}
       {...dialogProps}
     >
-      {(formObj) =>
-        AddBindingConstForm({
-          ...formObj,
-        })
-      }
+      <AddBindingConstForm />
     </FormDialog>
   );
 }

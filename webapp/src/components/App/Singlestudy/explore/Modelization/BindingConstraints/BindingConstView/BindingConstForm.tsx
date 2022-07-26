@@ -1,20 +1,15 @@
-import { Box, TextField } from "@mui/material";
 import { AxiosError } from "axios";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import {
-  AutoSubmitHandler,
-  useFormContext,
-} from "../../../../../../common/Form";
 import { getBindingConstPath, BindingConstFields } from "./utils";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../../common/types";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import { Content, Root } from "../style";
+import { Content } from "../style";
 import Constraint from "./Constraint";
+import { IFormGenerator } from "../../../../../../common/FormGenerator";
+import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 
 interface Props {
   bcIndex: number;
@@ -26,149 +21,94 @@ export default function BindingConstForm(props: Props) {
   const studyId = study.id;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const {
-    register,
-    defaultValues,
-    formState: { errors },
-  } = useFormContext<BindingConstFields>();
   const path = useMemo(() => {
     return getBindingConstPath(bcIndex);
   }, [bcIndex]);
 
-  const optionOperator = ["less", "equal", "greater", "both"].map((item) => ({
-    label: t(`study.modelization.bindingConst.operator.${item}`),
-    value: item.toLowerCase(),
-  }));
+  const optionOperator = useMemo(
+    () =>
+      ["less", "equal", "greater", "both"].map((item) => ({
+        label: t(`study.modelization.bindingConst.operator.${item}`),
+        value: item.toLowerCase(),
+      })),
+    [t]
+  );
 
-  const typeOptions = ["hourly", "daily", "weekly"].map((item) => ({
-    label: t(`study.${item}`),
-    value: item,
-  }));
+  const typeOptions = useMemo(
+    () =>
+      ["hourly", "daily", "weekly"].map((item) => ({
+        label: t(`study.${item}`),
+        value: item,
+      })),
+    [t]
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAutoSubmit = async (path: string, data: any) => {
-    try {
-      console.log("IT'S WORKING");
-      await editStudy(data, studyId, path);
-    } catch (error) {
-      enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
-    }
-  };
+  const saveValue = useCallback(
+    async (defaultValues: any, defaultValue: any, name: string, data: any) => {
+      try {
+        console.log("IT'S WORKING");
+        await editStudy(data, studyId, path[name]);
+      } catch (error) {
+        enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
+      }
+    },
+    [enqueueErrorSnackbar, path, studyId, t]
+  );
 
-  const renderSelect = (
-    fieldId: string,
-    options: Array<{ label: string; value: string }>,
-    first?: boolean,
-    onAutoSubmit?: AutoSubmitHandler<BindingConstFields, string>
-  ) => (
-    <Box
-      sx={{
-        display: "flex",
-        width: "auto",
-        ...(first === true ? { mr: 2 } : { mx: 2 }),
-      }}
-    >
-      <SelectFE
-        {...register(fieldId, {
-          onAutoSubmit:
-            onAutoSubmit ||
-            ((value) => {
-              handleAutoSubmit(path[fieldId], value);
-            }),
-        })}
-        defaultValue={(defaultValues || {})[fieldId] || []}
-        variant="filled"
-        options={options}
-        formControlProps={{
-          sx: {
-            flex: 1,
-            boxSizing: "border-box",
+  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
+    () => [
+      {
+        translationId: "global.general",
+        fields: [
+          {
+            type: "text",
+            name: "name",
+            label: t("global.name"),
+            required: t("form.field.required") as string,
           },
-        }}
-        sx={{ width: "auto", minWidth: "250px" }}
-        label={t(`study.modelization.bindingConst.${fieldId}`)}
-      />
-    </Box>
+          {
+            type: "text",
+            name: "comments",
+            label: t("study.modelization.bindingConst.comments"),
+          },
+          {
+            type: "select",
+            name: "type",
+            label: t("study.modelization.bindingConst.type"),
+            options: typeOptions,
+          },
+          {
+            type: "select",
+            name: "operator",
+            label: t("study.modelization.bindingConst.operator"),
+            options: optionOperator,
+          },
+          {
+            type: "switch",
+            name: "enabled",
+            label: t("study.modelization.bindingConst.enabled"),
+          },
+        ],
+      },
+    ],
+    [optionOperator, t, typeOptions]
   );
 
   return (
-    <Root>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-        }}
+    <>
+      <AutoSubmitGeneratorForm
+        jsonTemplate={jsonGenerator}
+        saveField={saveValue}
+      />
+      <Fieldset
+        legend={t("study.modelization.bindingConst.constraints")}
+        style={{ padding: "16px" }}
       >
-        <Fieldset
-          legend={t("global.general")}
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Content>
-            <TextField
-              sx={{ mr: 2 }}
-              variant="filled"
-              autoFocus
-              label={t("global.name")}
-              error={!!errors.name}
-              helperText={errors.name?.message}
-              placeholder={defaultValues?.name}
-              InputLabelProps={
-                // Allow to show placeholder when field is empty
-                defaultValues?.name ? { shrink: true } : {}
-              }
-              {...register("name", {
-                required: t("form.field.required") as string,
-                onAutoSubmit: (value) => handleAutoSubmit(path.name, value),
-              })}
-            />
-            <TextField
-              sx={{ flexGrow: 1 }}
-              variant="filled"
-              autoFocus
-              label={t("study.modelization.bindingConst.comments")}
-              error={!!errors.comments}
-              helperText={errors.comments?.message}
-              placeholder={defaultValues?.comments}
-              InputLabelProps={
-                // Allow to show placeholder when field is empty
-                defaultValues?.comments ? { shrink: true } : {}
-              }
-              {...register("comments", {
-                onAutoSubmit: (value) => handleAutoSubmit(path.comments, value),
-              })}
-            />
-          </Content>
-          <Content sx={{ my: 2 }}>
-            {renderSelect("type", typeOptions, true)}
-            {renderSelect("operator", optionOperator)}
-            <SwitchFE
-              sx={{ mx: 2 }}
-              label={t("study.modelization.bindingConst.enabled")}
-              {...register("enabled", {
-                onAutoSubmit: (value) => handleAutoSubmit(path.enabled, value),
-              })}
-            />
-          </Content>
-        </Fieldset>
-        <Fieldset
-          legend={t("study.modelization.bindingConst.constraints")}
-          style={{ padding: "16px" }}
-        >
-          <Content>
-            <Constraint areaList={[]} />
-          </Content>
-        </Fieldset>
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            height: "500px",
-          }}
-        />
-      </Box>
-    </Root>
+        <Content>
+          <Constraint areaList={[]} />
+        </Content>
+      </Fieldset>
+    </>
   );
 }

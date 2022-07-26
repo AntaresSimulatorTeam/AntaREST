@@ -1,16 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { TextField, Box } from "@mui/material";
-import { FormObj } from "../../../../../../common/Form";
+import { Box } from "@mui/material";
+import { useFormContext } from "react-hook-form";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { Root } from "../style";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import { CreateBindingConstraint } from "../../../../Commands/Edition/commandTypes";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
 
-function AddClusterForm(props: FormObj) {
-  const {
-    register,
-    formState: { errors },
-    defaultValues,
-  } = props;
+function AddClusterForm() {
+  const { control } = useFormContext<CreateBindingConstraint>();
 
   const { t } = useTranslation();
   const operatorOptions = ["less", "equal", "greater", "both"].map((item) => ({
@@ -27,33 +25,22 @@ function AddClusterForm(props: FormObj) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const renderInput = (
-    fielsId: string,
-    transId: string,
-    required?: boolean
-  ) => (
-    <TextField
-      sx={{ mx: 0, mb: 2 }}
-      variant="filled"
-      autoFocus
+  const renderInput = (name: string, transId: string, required?: boolean) => (
+    <StringFE
+      name={name}
+      sx={{ mx: 0, mb: 2, flex: 1 }}
       label={t(transId)}
-      error={!!errors[fielsId]}
-      helperText={errors[fielsId]?.message}
-      placeholder={defaultValues?.[fielsId]}
-      InputLabelProps={
-        // Allow to show placeholder when field is empty
-        defaultValues?.[fielsId] ? { shrink: true } : {}
-      }
+      variant="filled"
+      control={control}
       fullWidth
-      {...register(fielsId, {
-        required:
-          required === true ? (t("form.field.required") as string) : undefined,
-      })}
+      rules={{
+        required: t("form.field.required") as string,
+      }}
     />
   );
 
   const renderSelect = (
-    fieldId: string,
+    name: string,
     options: Array<{ label: string; value: string }>,
     transId?: string
   ) => (
@@ -65,12 +52,14 @@ function AddClusterForm(props: FormObj) {
       }}
     >
       <SelectFE
-        {...register(fieldId, {
-          required: t("form.field.required") as string,
-        })}
-        defaultValue={(defaultValues || {})[fieldId] || []}
-        variant="filled"
+        name={name}
+        label={t(
+          transId !== undefined
+            ? transId
+            : `study.modelization.bindingConst.${name}`
+        )}
         options={options}
+        control={control}
         formControlProps={{
           sx: {
             flex: 1,
@@ -78,11 +67,9 @@ function AddClusterForm(props: FormObj) {
           },
         }}
         sx={{ width: "auto", minWidth: "250px" }}
-        label={t(
-          transId !== undefined
-            ? transId
-            : `study.modelization.bindingConst.${fieldId}`
-        )}
+        rules={{
+          required: t("form.field.required") as string,
+        }}
       />
     </Box>
   );
@@ -94,9 +81,9 @@ function AddClusterForm(props: FormObj) {
   return (
     <Root>
       <SwitchFE
-        sx={{ mx: 0, mb: 2 }}
+        name="enabled"
         label={t("study.modelization.bindingConst.enabled")}
-        {...register("enabled")}
+        control={control}
       />
       {renderInput("name", "global.name", true)}
       {renderInput("comments", "study.modelization.bindingConst.comments")}
