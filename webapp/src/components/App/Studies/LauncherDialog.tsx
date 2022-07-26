@@ -43,7 +43,7 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
-  const [options, setOptions] = useState<LaunchOptions>({});
+  const [options, setOptions] = useState<LaunchOptions>({ nb_cpu: 12 });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
@@ -109,6 +109,8 @@ function LauncherDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  // rouge 90% orange 75% sinon vert
 
   return (
     <BasicDialog
@@ -249,6 +251,20 @@ function LauncherDialog(props: Props) {
               max: LAUNCH_DURATION_MAX_HOURS,
             })}
           />
+          <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
+          <Slider
+            sx={{
+              width: "95%",
+              mx: 1,
+            }}
+            defaultValue={12}
+            step={1}
+            min={0}
+            color="secondary"
+            max={24}
+            valueLabelDisplay="auto"
+            onChange={(event, val) => handleChange("nb_cpu", val as number)}
+          />
         </FormControl>
         <FormGroup
           sx={{
@@ -291,25 +307,6 @@ function LauncherDialog(props: Props) {
             label="Adequacy patch"
           />
         </FormGroup>
-        <FormControl
-          sx={{
-            width: "100%",
-          }}
-        >
-          <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
-          <Slider
-            sx={{
-              width: "95%",
-              mx: 1,
-            }}
-            defaultValue={12}
-            step={1}
-            min={0}
-            color="secondary"
-            max={12}
-            valueLabelDisplay="auto"
-          />
-        </FormControl>
         <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
