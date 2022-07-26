@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -10,11 +10,13 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
+  LinearProgress,
   List,
   ListItem,
   Slider,
   TextField,
   Typography,
+  Tooltip,
   useTheme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -23,7 +25,11 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import { StudyMetadata } from "../../../common/types";
-import { LaunchOptions, launchStudy } from "../../../services/api/study";
+import {
+  getLauncherLoad,
+  LaunchOptions,
+  launchStudy,
+} from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
@@ -51,6 +57,7 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
+  const [load, setLoad] = useState<number>(0);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -83,6 +90,16 @@ function LauncherDialog(props: Props) {
         });
     }
   };
+
+  useEffect(() => {
+    const init = async () => {
+      const tmpLoad = await getLauncherLoad();
+      if (tmpLoad.slurm * 100 !== load) {
+        setLoad(tmpLoad.slurm * 100);
+      }
+    };
+    init();
+  }, [load]);
 
   const handleChange = <T extends keyof LaunchOptions>(
     field: T,
@@ -148,7 +165,7 @@ function LauncherDialog(props: Props) {
           alignItems: "flex-start",
           px: 2,
           boxSizing: "border-box",
-          overflowY: "scroll",
+          overflowY: "auto",
           overflowX: "hidden",
         }}
       >
@@ -251,7 +268,33 @@ function LauncherDialog(props: Props) {
               max: LAUNCH_DURATION_MAX_HOURS,
             })}
           />
-          <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
+            <Tooltip title="Charge du launcher">
+              <Box sx={{ display: "flex", alignItems: "center", width: "30%" }}>
+                <Box sx={{ width: "100%", mr: 1 }}>
+                  <LinearProgress
+                    color="success"
+                    variant="determinate"
+                    value={load > 100 ? 100 : load}
+                  />
+                </Box>
+                <Box sx={{ minWidth: 35 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                  >{`${Math.round(load)}%`}</Typography>
+                </Box>
+              </Box>
+            </Tooltip>
+          </Box>
           <Slider
             sx={{
               width: "95%",
