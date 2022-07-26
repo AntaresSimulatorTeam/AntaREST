@@ -321,6 +321,7 @@ def test_get_all_area():
                 {
                     "id": "a",
                     "name": "A",
+                    "enabled": True,
                     "unitcount": 1,
                     "nominalcapacity": 500,
                     "group": None,
