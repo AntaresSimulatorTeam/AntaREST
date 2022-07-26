@@ -709,3 +709,70 @@ tsgen_wind	2500	1
             solver_stats=expected_saved_stats,
         )
     )
+
+
+def test_get_load(tmp_path: Path):
+    study_service = Mock()
+    job_repository = Mock()
+
+    launcher_service = LauncherService(
+        config=Mock(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(
+                local=LocalConfig(), slurm=SlurmConfig(default_n_cpu=12)
+            ),
+        ),
+        study_service=study_service,
+        job_result_repository=job_repository,
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+
+    job_repository.get_running.side_effect = [
+        [],
+        [],
+        [
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params=None,
+            ),
+        ],
+        [
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params='{"nb_cpu": 18}',
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="local",
+                launcher_params=None,
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params=None,
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="local",
+                launcher_params='{"nb_cpu": 7}',
+            ),
+        ],
+    ]
+
+    with pytest.raises(NotImplementedError):
+        launcher_service.get_load(from_cluster=True)
+
+    load = launcher_service.get_load()
+    assert load["slurm"] == 0
+    assert load["local"] == 0
+    load = launcher_service.get_load()
+    assert load["slurm"] == 12.0 / 64
+    assert load["local"] == 0
+    load = launcher_service.get_load()
+    assert load["slurm"] == 30.0 / 64
+    assert load["local"] == 8.0 / os.cpu_count()

@@ -673,6 +673,50 @@ class LauncherService:
             )
         raise JobNotFound()
 
+    def get_load(self, from_cluster: bool = False) -> Dict[str, float]:
+        all_running_jobs = self.job_result_repository.get_running()
+        local_running_jobs = []
+        slurm_running_jobs = []
+        for job in all_running_jobs:
+            if job.launcher == "slurm":
+                slurm_running_jobs.append(job)
+            elif job.launcher == "local":
+                local_running_jobs.append(job)
+            else:
+                logger.warning(f"Unknown job launcher {job.launcher}")
+        load = {}
+        if self.config.launcher.slurm:
+            if from_cluster:
+                raise NotImplementedError
+            slurm_used_cpus = reduce(
+                lambda count, j: count
+                + (
+                    LauncherParametersDTO.parse_raw(
+                        j.launcher_params or "{}"
+                    ).nb_cpu
+                    or self.config.launcher.slurm.default_n_cpu  # type: ignore
+                ),
+                slurm_running_jobs,
+                0,
+            )
+            load["slurm"] = (
+                float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
+            )
+        if self.config.launcher.local:
+            local_used_cpus = reduce(
+                lambda count, j: count
+                + (
+                    LauncherParametersDTO.parse_raw(
+                        j.launcher_params or "{}"
+                    ).nb_cpu
+                    or 1
+                ),
+                local_running_jobs,
+                0,
+            )
+            load["local"] = float(local_used_cpus) / (os.cpu_count() or 1)
+        return load
+
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
         version_dict = {}
         if self.config.launcher.local:
