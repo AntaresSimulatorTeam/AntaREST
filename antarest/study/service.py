@@ -1331,7 +1331,9 @@ class StudyService:
         )
 
         if output_id and isinstance(output, Path) and output.suffix == ".zip":
-            self.unarchive_output(uuid, output_id, True, True, params)
+            self.unarchive_output(
+                uuid, output_id, True, not is_managed(study), params
+            )
 
         return output_id
 
