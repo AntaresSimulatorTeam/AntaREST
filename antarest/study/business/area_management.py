@@ -46,6 +46,7 @@ class AreaCreationDTO(BaseModel):
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
+    enabled: bool = True
     unitcount: int = 0
     nominalcapacity: int = 0
     group: Optional[str] = None
