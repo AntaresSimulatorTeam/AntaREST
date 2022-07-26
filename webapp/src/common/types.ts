@@ -414,9 +414,9 @@ export interface LinkElement {
 export type LinkListElement = { [elm: string]: LinkElement };
 
 export enum StudyOutputDownloadType {
-  LINKS = "LINKS",
+  LINKS = "LINK",
   DISTRICT = "DISTRICT",
-  AREAS = "AREAS",
+  AREAS = "AREA",
 }
 
 export enum StudyOutputDownloadLevelDTO {
