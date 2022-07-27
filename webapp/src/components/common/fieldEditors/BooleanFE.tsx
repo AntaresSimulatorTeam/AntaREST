@@ -3,7 +3,8 @@ import * as RA from "ramda-adjunct";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 import SelectFE, { SelectFEProps } from "./SelectFE";
 
-interface BooleanFEProps extends Omit<SelectFEProps, "options" | "multiple"> {
+export interface BooleanFEProps
+  extends Omit<SelectFEProps, "options" | "multiple"> {
   defaultValue?: boolean;
   value?: boolean;
   trueText?: string;

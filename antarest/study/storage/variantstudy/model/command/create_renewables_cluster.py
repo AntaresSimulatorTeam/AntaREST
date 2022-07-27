@@ -93,6 +93,9 @@ class CreateRenewablesCluster(ICommand):
         cluster_list_config = study_data.tree.get(
             ["input", "renewables", "clusters", self.area_id, "list"]
         )
+        # default values
+        if "ts-interpretation" not in self.parameters:
+            self.parameters["ts-interpretation"] = "power-generation"
         cluster_list_config[self.cluster_name] = self.parameters
 
         self.parameters["name"] = self.cluster_name
