@@ -291,7 +291,7 @@ function LauncherDialog(props: Props) {
             min={LAUNCH_LOAD_SLIDER.min}
             color="secondary"
             max={LAUNCH_LOAD_SLIDER.max}
-            valueLabelDisplay="on"
+            valueLabelDisplay="auto"
             onChange={(event, val) => handleChange("nb_cpu", val as number)}
           />
         </FormControl>
