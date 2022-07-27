@@ -1302,6 +1302,7 @@ class StudyService:
         output: Union[IO[bytes], Path],
         params: RequestParameters,
         output_name_suffix: Optional[str] = None,
+        auto_unzip: bool = True,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1310,6 +1311,7 @@ class StudyService:
             output: zip file with simulation folder or simulation folder path
             params: request parameters
             output_name_suffix: optional suffix name for the output
+            auto_unzip: add a task to unzip the output after import
 
         Returns: output simulation json formatted
 
@@ -1330,7 +1332,12 @@ class StudyService:
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
 
-        if output_id and isinstance(output, Path) and output.suffix == ".zip":
+        if (
+            output_id
+            and isinstance(output, Path)
+            and output.suffix == ".zip"
+            and auto_unzip
+        ):
             self.unarchive_output(
                 uuid, output_id, True, not is_managed(study), params
             )

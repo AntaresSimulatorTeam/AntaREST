@@ -563,9 +563,7 @@ class LauncherService:
 
                 zip_path: Optional[Path] = None
                 stopwatch = StopWatch()
-                if LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params or "{}"
-                ).archive_output:
+                if job_launch_params.archive_output:
                     logger.info("Re zipping output for transfer")
                     zip_path = (
                         output_true_path.parent
@@ -594,6 +592,7 @@ class LauncherService:
                                 None,
                             ),
                         ),
+                        job_launch_params.auto_unzip,
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
