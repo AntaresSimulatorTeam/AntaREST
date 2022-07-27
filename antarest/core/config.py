@@ -163,6 +163,7 @@ class SlurmConfig:
     default_n_cpu: int = 1
     default_json_db_name: str = ""
     slurm_script_path: str = ""
+    max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(
         default_factory=lambda: []
     )
@@ -185,6 +186,7 @@ class SlurmConfig:
             antares_versions_on_remote_server=data[
                 "antares_versions_on_remote_server"
             ],
+            max_cores=data.get("max_cores", 64),
         )
 
 

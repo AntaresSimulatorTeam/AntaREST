@@ -40,6 +40,7 @@ from antarest.launcher.service import (
     ORPHAN_JOBS_VISIBILITY_THRESHOLD,
     JobNotFound,
     LAUNCHER_PARAM_NAME_SUFFIX,
+    EXECUTION_INFO_FILE,
 )
 from antarest.login.auth import Auth
 from antarest.login.model import User
@@ -557,10 +558,12 @@ def test_manage_output(tmp_path: Path):
         task_service=Mock(),
     )
 
-    output_path = tmp_path / "new_output"
+    output_path = tmp_path / "output"
     os.mkdir(output_path)
-    (output_path / "log").touch()
-    (output_path / "data").touch()
+    new_output_path = output_path / "new_output"
+    os.mkdir(new_output_path)
+    (new_output_path / "log").touch()
+    (new_output_path / "data").touch()
     additional_log = tmp_path / "output.log"
     additional_log.write_text("some log")
     job_id = "job_id"
@@ -612,7 +615,7 @@ def test_manage_output(tmp_path: Path):
         is None
     )
 
-    (output_path / "info.antares-output").write_text(
+    (new_output_path / "info.antares-output").write_text(
         f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}"
     )
     output_name = launcher_service._import_output(
@@ -695,7 +698,7 @@ tsgen_solar	21606	1
 tsgen_thermal	407	2
 tsgen_wind	2500	1
     """
-    (output_path / "time_measurement.txt").write_text(expected_saved_stats)
+    (output_path / EXECUTION_INFO_FILE).write_text(expected_saved_stats)
 
     launcher_service._save_solver_stats(job_result, output_path)
     launcher_service.job_result_repository.save.assert_called_with(
@@ -706,3 +709,70 @@ tsgen_wind	2500	1
             solver_stats=expected_saved_stats,
         )
     )
+
+
+def test_get_load(tmp_path: Path):
+    study_service = Mock()
+    job_repository = Mock()
+
+    launcher_service = LauncherService(
+        config=Mock(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(
+                local=LocalConfig(), slurm=SlurmConfig(default_n_cpu=12)
+            ),
+        ),
+        study_service=study_service,
+        job_result_repository=job_repository,
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+    )
+
+    job_repository.get_running.side_effect = [
+        [],
+        [],
+        [
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params=None,
+            ),
+        ],
+        [
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params='{"nb_cpu": 18}',
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="local",
+                launcher_params=None,
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="slurm",
+                launcher_params=None,
+            ),
+            Mock(
+                spec=JobResult,
+                launcher="local",
+                launcher_params='{"nb_cpu": 7}',
+            ),
+        ],
+    ]
+
+    with pytest.raises(NotImplementedError):
+        launcher_service.get_load(from_cluster=True)
+
+    load = launcher_service.get_load()
+    assert load["slurm"] == 0
+    assert load["local"] == 0
+    load = launcher_service.get_load()
+    assert load["slurm"] == 12.0 / 64
+    assert load["local"] == 0
+    load = launcher_service.get_load()
+    assert load["slurm"] == 30.0 / 64
+    assert load["local"] == 8.0 / os.cpu_count()

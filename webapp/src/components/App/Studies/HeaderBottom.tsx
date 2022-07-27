@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  InputAdornment,
-  TextField,
-} from "@mui/material";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import { Box, Button, Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { indigo, purple } from "@mui/material/colors";
 import useDebounce from "../../../hooks/useDebounce";
@@ -16,6 +8,7 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
 import { GroupDTO, UserDTO } from "../../../common/types";
 import { displayVersionName } from "../../../services/utils";
+import SearchFE from "../../common/fieldEditors/SearchFE";
 
 type PropTypes = {
   onOpenFilterClick: VoidFunction;
@@ -67,20 +60,11 @@ function HeaderBottom(props: PropTypes) {
 
   return (
     <Box display="flex" width="100%" alignItems="center">
-      <TextField
-        id="standard-basic"
-        variant="outlined"
+      <SearchFE
+        sx={{ mx: 0 }}
         defaultValue={filters.inputValue}
         onChange={handleSearchChange}
-        label={t("global.search")}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchOutlinedIcon />
-            </InputAdornment>
-          ),
-        }}
-        sx={{ mx: 0 }}
+        useLabel
       />
       <Divider
         sx={{

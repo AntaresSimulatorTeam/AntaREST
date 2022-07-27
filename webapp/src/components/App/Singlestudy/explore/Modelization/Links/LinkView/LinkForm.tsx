@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { AutoSubmitHandler, FormObj } from "../../../../../../common/Form";
+import {
+  AutoSubmitHandler,
+  useFormContext,
+} from "../../../../../../common/Form";
 import { getLinkPath, LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -17,13 +20,13 @@ import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 
-export default function LinkForm(
-  props: FormObj<LinkFields, unknown> & {
-    link: LinkElement;
-    study: StudyMetadata;
-  }
-) {
-  const { register, defaultValues, study, link } = props;
+interface Props {
+  link: LinkElement;
+  study: StudyMetadata;
+}
+
+function LinkForm(props: Props) {
+  const { study, link } = props;
   const studyId = study.id;
   const isTabMatrix = useMemo((): boolean => {
     let version = 0;
@@ -41,6 +44,8 @@ export default function LinkForm(
   const path = useMemo(() => {
     return getLinkPath(area1, area2);
   }, [area1, area2]);
+
+  const { control, defaultValues } = useFormContext<LinkFields>();
 
   const optionTransCap = ["infinite", "ignore", "enabled"].map((item) => ({
     label: t(`study.modelization.links.transmissionCapa.${item}`),
@@ -166,57 +171,54 @@ export default function LinkForm(
     options: Array<{ label: string; value: string }>,
     onAutoSubmit?: AutoSubmitHandler<LinkFields, string>
   ) => (
-    <Box sx={{ display: "flex", flexGrow: 1 }}>
-      <SelectFE
-        {...register(filterName, {
-          onAutoSubmit:
-            onAutoSubmit ||
-            ((value) => {
-              handleAutoSubmit(path[filterName], value);
-            }),
-        })}
-        defaultValue={(defaultValues || {})[filterName] || []}
-        variant="filled"
-        options={options}
-        formControlProps={{
-          sx: {
-            flex: 1,
-            mx: 2,
-            boxSizing: "border-box",
-          },
-        }}
-        sx={{ width: "100%", minWidth: "200px" }}
-        label={t(`study.modelization.links.${filterName}`)}
-      />
-    </Box>
+    <SelectFE
+      name={filterName}
+      variant="filled"
+      options={options}
+      formControlProps={{
+        sx: {
+          flex: 1,
+          boxSizing: "border-box",
+        },
+      }}
+      sx={{ width: "100%", minWidth: "200px" }}
+      label={t(`study.modelization.links.${filterName}`)}
+      control={control}
+      rules={{
+        onAutoSubmit:
+          onAutoSubmit ||
+          ((value) => {
+            handleAutoSubmit(path[filterName], value);
+          }),
+      }}
+    />
   );
   const renderFilter = (filterName: string) => (
-    <Box sx={{ mb: 2 }}>
-      <SelectFE
-        multiple
-        {...register(filterName, {
-          onAutoSubmit: (value) => {
-            const selection = value
-              ? (value as Array<string>).filter((val) => val !== "")
-              : [];
-            handleAutoSubmit(path[filterName], selection.join(", "));
-          },
-        })}
-        renderValue={(value: unknown) => {
+    <SelectFE
+      name={filterName}
+      multiple
+      renderValue={(value: unknown) => {
+        const selection = value
+          ? (value as Array<string>).filter((val) => val !== "")
+          : [];
+        return selection.length > 0
+          ? selection.map((elm) => t(`study.${elm}`)).join(", ")
+          : t("global.none");
+      }}
+      variant="filled"
+      options={filterOptions}
+      sx={{ minWidth: "200px" }}
+      label={t(`study.modelization.nodeProperties.${filterName}`)}
+      control={control}
+      rules={{
+        onAutoSubmit: (value) => {
           const selection = value
             ? (value as Array<string>).filter((val) => val !== "")
             : [];
-          return selection.length > 0
-            ? selection.map((elm) => t(`study.${elm}`)).join(", ")
-            : t("global.none");
-        }}
-        defaultValue={(defaultValues || {})[filterName] || []}
-        variant="filled"
-        options={filterOptions}
-        sx={{ minWidth: "200px" }}
-        label={t(`study.modelization.nodeProperties.${filterName}`)}
-      />
-    </Box>
+          handleAutoSubmit(path[filterName], selection.join(", "));
+        },
+      }}
+    />
   );
 
   return (
@@ -224,7 +226,6 @@ export default function LinkForm(
       sx={{
         width: "100%",
         height: "100%",
-        py: 2,
       }}
     >
       <Box
@@ -233,54 +234,37 @@ export default function LinkForm(
           flexDirection: "column",
         }}
       >
-        <Fieldset legend={t("global.general")} style={{ padding: "16px" }}>
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "flex-start",
+        <Fieldset legend={t("global.general")}>
+          <SwitchFE
+            name="hurdleCost"
+            label={t("study.modelization.links.hurdleCost")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.hurdleCost, value),
             }}
-          >
-            <SwitchFE
-              label={t("study.modelization.links.hurdleCost")}
-              {...register("hurdleCost", {
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit(path.hurdleCost, value),
-              })}
-            />
-            <SwitchFE
-              sx={{ mx: 2 }}
-              label={t("study.modelization.links.loopFlows")}
-              {...register("loopFlows", {
-                onAutoSubmit: (value) =>
-                  handleAutoSubmit(path.loopFlows, value),
-              })}
-            />
-            <SwitchFE
-              sx={{ mx: 2 }}
-              label={t("study.modelization.links.pst")}
-              {...register("pst", {
-                onAutoSubmit: (value) => handleAutoSubmit(path.pst, value),
-              })}
-            />
-            {renderSelect("transmissionCapa", optionTransCap)}
-            {renderSelect("type", optionType, handleTypeAutoSubmit)}
-          </Box>
+          />
+          <SwitchFE
+            name="loopFlows"
+            label={t("study.modelization.links.loopFlows")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.loopFlows, value),
+            }}
+          />
+          <SwitchFE
+            name="pst"
+            label={t("study.modelization.links.pst")}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.pst, value),
+            }}
+          />
+          {renderSelect("transmissionCapa", optionTransCap)}
+          {renderSelect("type", optionType, handleTypeAutoSubmit)}
         </Fieldset>
-        <Fieldset
-          legend={t("study.modelization.nodeProperties.outputFilter")}
-          style={{ padding: "16px" }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {renderFilter("filterSynthesis")}
-            {renderFilter("filterByYear")}
-          </Box>
+        <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
+          {renderFilter("filterSynthesis")}
+          {renderFilter("filterByYear")}
         </Fieldset>
         <Box
           sx={{
@@ -305,3 +289,5 @@ export default function LinkForm(
     </Box>
   );
 }
+
+export default LinkForm;

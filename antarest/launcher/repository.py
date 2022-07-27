@@ -44,6 +44,13 @@ class JobResultRepository:
         job_results: List[JobResult] = query.all()
         return job_results
 
+    def get_running(self) -> List[JobResult]:
+        query = db.session.query(JobResult).where(
+            JobResult.completion_date == None
+        )
+        job_results: List[JobResult] = query.all()
+        return job_results
+
     def find_by_study(self, study_id: str) -> List[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
         job_results: List[JobResult] = (

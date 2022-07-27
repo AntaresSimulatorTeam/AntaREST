@@ -11,88 +11,85 @@ from antarest.launcher.model import JobResult, JobStatus, JobLog, JobLogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
+from tests.conftest import with_db_context
 
 
 @pytest.mark.unit_test
+@with_db_context
 def test_job_result() -> None:
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
+    repo = JobResultRepository()
+    study_id = str(uuid4())
+    study_repo = StudyMetadataRepository(Mock())
+    study_repo.save(RawStudy(id=study_id))
+    a = JobResult(
+        id=str(uuid4()),
+        study_id=study_id,
+        job_status=JobStatus.SUCCESS,
+        msg="Hello, World!",
+        exit_code=0,
+    )
+    b = JobResult(
+        id=str(uuid4()),
+        study_id=study_id,
+        job_status=JobStatus.FAILED,
+        creation_date=datetime.datetime.utcfromtimestamp(1655136710),
+        completion_date=datetime.datetime.utcfromtimestamp(1655136720),
+        msg="You failed !!",
+        exit_code=1,
+    )
+    b2 = JobResult(
+        id=str(uuid4()),
+        study_id=study_id,
+        job_status=JobStatus.FAILED,
+        creation_date=datetime.datetime.utcfromtimestamp(1655136740),
+        msg="You failed !!",
+        exit_code=1,
+    )
+    b3 = JobResult(
+        id=str(uuid4()),
+        study_id="other_study",
+        job_status=JobStatus.FAILED,
+        creation_date=datetime.datetime.utcfromtimestamp(1655136729),
+        msg="You failed !!",
+        exit_code=1,
     )
 
-    with db():
-        repo = JobResultRepository()
-        study_id = str(uuid4())
-        study_repo = StudyMetadataRepository(Mock())
-        study_repo.save(RawStudy(id=study_id))
-        a = JobResult(
-            id=str(uuid4()),
-            study_id=study_id,
-            job_status=JobStatus.SUCCESS,
-            msg="Hello, World!",
-            exit_code=0,
-        )
-        b = JobResult(
-            id=str(uuid4()),
-            study_id=study_id,
-            job_status=JobStatus.FAILED,
-            creation_date=datetime.datetime.utcfromtimestamp(1655136710),
-            msg="You failed !!",
-            exit_code=1,
-        )
-        b2 = JobResult(
-            id=str(uuid4()),
-            study_id=study_id,
-            job_status=JobStatus.FAILED,
-            creation_date=datetime.datetime.utcfromtimestamp(1655136740),
-            msg="You failed !!",
-            exit_code=1,
-        )
-        b3 = JobResult(
-            id=str(uuid4()),
-            study_id="other_study",
-            job_status=JobStatus.FAILED,
-            creation_date=datetime.datetime.utcfromtimestamp(1655136729),
-            msg="You failed !!",
-            exit_code=1,
-        )
+    a = repo.save(a)
+    b = repo.save(b)
+    b2 = repo.save(b2)
+    b3 = repo.save(b3)
+    c = repo.get(a.id)
+    assert a == c
 
-        a = repo.save(a)
-        b = repo.save(b)
-        b2 = repo.save(b2)
-        b3 = repo.save(b3)
-        c = repo.get(a.id)
-        assert a == c
+    d = repo.find_by_study(study_id)
+    assert len(d) == 3
+    assert a == d[0]
 
-        d = repo.find_by_study(study_id)
-        assert len(d) == 3
-        assert a == d[0]
+    running = repo.get_running()
+    assert len(running) == 3
 
-        all = repo.get_all()
-        assert len(all) == 4
-        assert all[0] == a
-        assert all[1] == b2
-        assert all[2] == b3
-        assert all[3] == b
+    all = repo.get_all()
+    assert len(all) == 4
+    assert all[0] == a
+    assert all[1] == b2
+    assert all[2] == b3
+    assert all[3] == b
 
-        all = repo.get_all(filter_orphan=True)
-        assert len(all) == 3
+    all = repo.get_all(filter_orphan=True)
+    assert len(all) == 3
 
-        all = repo.get_all(latest=2)
-        assert len(all) == 2
+    all = repo.get_all(latest=2)
+    assert len(all) == 2
 
-        repo.delete(a.id)
-        assert repo.get(a.id) is None
+    repo.delete(a.id)
+    assert repo.get(a.id) is None
 
-        assert len(repo.find_by_study(study_id)) == 2
+    assert len(repo.find_by_study(study_id)) == 2
 
-        repo.delete_by_study_id(study_id=study_id)
-        assert repo.get(b.id) is None
-        assert repo.get(b2.id) is None
-        assert repo.get(b3.id) is not None
+    repo.delete_by_study_id(study_id=study_id)
+    assert repo.get(b.id) is None
+    assert repo.get(b2.id) is None
+    assert repo.get(b3.id) is not None
 
 
 @pytest.mark.unit_test

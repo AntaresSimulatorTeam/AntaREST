@@ -1,12 +1,12 @@
-import { Box, Button, InputAdornment, TextField } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useTranslation } from "react-i18next";
-import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
 import { GroupDetailsDTO } from "../../../../common/types";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { isAuthUserAdmin } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import SearchFE from "../../../common/fieldEditors/SearchFE";
 
 /**
  * Types
@@ -38,18 +38,7 @@ function Header(props: Props) {
           mb: "5px",
         }}
       >
-        <TextField
-          sx={{ m: 0 }}
-          placeholder={t("global.search")}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          onChange={(event) => setSearchValue(event.target.value)}
-        />
+        <SearchFE sx={{ m: 0 }} setSearchValue={setSearchValue} />
         {isUserAdmin && (
           <Button
             startIcon={<GroupAddIcon />}

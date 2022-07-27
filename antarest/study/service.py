@@ -1302,6 +1302,7 @@ class StudyService:
         output: Union[IO[bytes], Path],
         params: RequestParameters,
         output_name_suffix: Optional[str] = None,
+        auto_unzip: bool = True,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1310,6 +1311,7 @@ class StudyService:
             output: zip file with simulation folder or simulation folder path
             params: request parameters
             output_name_suffix: optional suffix name for the output
+            auto_unzip: add a task to unzip the output after import
 
         Returns: output simulation json formatted
 
@@ -1330,8 +1332,15 @@ class StudyService:
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
 
-        if output_id and isinstance(output, Path) and output.suffix == ".zip":
-            self.unarchive_output(uuid, output_id, True, params)
+        if (
+            output_id
+            and isinstance(output, Path)
+            and output.suffix == ".zip"
+            and auto_unzip
+        ):
+            self.unarchive_output(
+                uuid, output_id, True, not is_managed(study), params
+            )
 
         return output_id
 
@@ -2258,6 +2267,7 @@ class StudyService:
         study_id: str,
         output_id: str,
         use_task: bool,
+        keep_src_zip: bool,
         params: RequestParameters,
     ) -> Optional[str]:
         study = self.get_study(study_id)
@@ -2267,7 +2277,7 @@ class StudyService:
         if not use_task:
             stopwatch = StopWatch()
             self.storage_service.get_storage(study).unarchive_study_output(
-                study, output_id
+                study, output_id, keep_src_zip
             )
             stopwatch.log_elapsed(
                 lambda x: logger.info(
@@ -2277,7 +2287,9 @@ class StudyService:
             return None
 
         else:
-            task_name = f"Unarchive output {study_id}/{output_id}"
+            task_name = (
+                f"Unarchive output {study.name}/{output_id} ({study_id})"
+            )
 
             def unarchive_output_task(
                 notifier: TaskUpdateNotifier,
@@ -2287,7 +2299,7 @@ class StudyService:
                     stopwatch = StopWatch()
                     self.storage_service.get_storage(
                         study
-                    ).unarchive_study_output(study, output_id)
+                    ).unarchive_study_output(study, output_id, keep_src_zip)
                     stopwatch.log_elapsed(
                         lambda x: logger.info(
                             f"Output {output_id} of study {study_id} unarchived in {x}s"

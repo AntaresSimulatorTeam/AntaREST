@@ -35,6 +35,7 @@ import Header from "./Header";
 import { getAuthUser } from "../../../../redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { isSearchMatching } from "../../../../utils/textUtils";
 
 /**
  * Types
@@ -136,12 +137,9 @@ function Tokens() {
   const filteredAndSortedTokens = useMemo(() => {
     let list = tokens;
     if (searchValue) {
-      const searchVal = searchValue.toLowerCase();
-      list = tokens?.filter(
-        ({ name, user }) =>
-          name.toLowerCase().includes(searchVal) ||
-          user.name.toLocaleLowerCase().includes(searchVal)
-      );
+      list = tokens?.filter(({ name, user }) => {
+        return isSearchMatching(searchValue, [name, user.name]);
+      });
     }
     return sortByProp((token) => token.user.name, list);
   }, [searchValue, tokens]);

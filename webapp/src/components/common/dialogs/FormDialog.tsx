@@ -10,7 +10,7 @@ type SuperType<TFieldValues extends FieldValues, TContext> = Omit<
   BasicDialogProps,
   "onSubmit" | "children"
 > &
-  Omit<FormProps<TFieldValues, TContext>, "disableSubmitButton">;
+  Omit<FormProps<TFieldValues, TContext>, "hideSubmitButton">;
 
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -27,46 +27,49 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
   const {
     config,
     onSubmit,
+    onSubmitError,
     children,
+    autoSubmit,
+    onStateChange,
     onCancel,
     onClose,
     cancelButtonText,
     submitButtonText,
     ...dialogProps
   } = props;
-  const formId = useRef(uuidv4()).current;
+
   const formProps = {
     config,
     onSubmit,
+    onSubmitError,
     children,
-    id: formId,
-    disableSubmitButton: true,
+    autoSubmit,
   };
+
   const { t } = useTranslation();
+  const formId = useRef(uuidv4()).current;
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [allowSubmit, setAllowSubmit] = useState(false);
+  const [isSubmitAllowed, setIsSubmitAllowed] = useState(false);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleFormStateChange = ({
-    isDirty,
-    isValid,
-    isSubmitting,
-  }: FormState<TFieldValues>) => {
+  const handleFormStateChange = (formState: FormState<TFieldValues>) => {
+    const { isSubmitting, isDirty } = formState;
+    onStateChange?.(formState);
     setIsSubmitting(isSubmitting);
-    setAllowSubmit(isDirty && isValid && !isSubmitting);
+    setIsSubmitAllowed(isDirty && !isSubmitting);
   };
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const handleClose = ((...args) => {
+  const handleClose: FormDialogProps["onClose"] = (...args) => {
     onCancel();
     onClose?.(...args);
-  }) as FormDialogProps["onClose"];
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -87,7 +90,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
             type="submit"
             form={formId}
             variant="contained"
-            disabled={!allowSubmit}
+            disabled={!isSubmitAllowed}
           >
             {submitButtonText || t("global.save")}
           </Button>
@@ -96,6 +99,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
     >
       <Form
         {...formProps}
+        id={formId}
         onStateChange={handleFormStateChange}
         hideSubmitButton
       />

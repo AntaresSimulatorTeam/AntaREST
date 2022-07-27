@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import { TextField, InputAdornment, Box, Fab } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import { useTranslation } from "react-i18next";
+import { Box, Fab } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SearchFE from "./fieldEditors/SearchFE";
 
 interface PropsType {
   mainContent: ReactNode | undefined;
@@ -13,7 +12,6 @@ interface PropsType {
 
 function PropertiesView(props: PropsType) {
   const { onAdd, onSearchFilterChange, mainContent, secondaryContent } = props;
-  const [t] = useTranslation();
 
   return (
     <Box
@@ -30,18 +28,7 @@ function PropertiesView(props: PropsType) {
       }}
     >
       {onSearchFilterChange && (
-        <TextField
-          label={t("global.search")}
-          variant="outlined"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          onChange={(e) => onSearchFilterChange(e.target.value as string)}
-        />
+        <SearchFE setSearchValue={onSearchFilterChange} />
       )}
       {mainContent}
       {secondaryContent}

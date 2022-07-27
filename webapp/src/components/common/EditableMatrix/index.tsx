@@ -82,7 +82,7 @@ function EditableMatrix(props: PropTypes) {
           0,
           prependIndex ? 1 : 0,
           hot.countRows() - 1,
-          hot.countCols() - (computStats ? cols : 1) - (prependIndex ? 1 : 0)
+          hot.countCols() - (computStats ? cols : 0) - 1
         );
       }
     }

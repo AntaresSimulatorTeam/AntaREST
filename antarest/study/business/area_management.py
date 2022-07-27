@@ -46,6 +46,7 @@ class AreaCreationDTO(BaseModel):
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
+    enabled: bool = True
     unitcount: int = 0
     nominalcapacity: int = 0
     group: Optional[str] = None
@@ -188,7 +189,17 @@ class AreaManager:
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),
             UpdateConfig(
+                target=f"input/areas/{area_id}/ui/layerX/0",
+                data=area_ui.x,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
                 target=f"input/areas/{area_id}/ui/ui/y",
+                data=area_ui.y,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/layerY/0",
                 data=area_ui.y,
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),

@@ -13,6 +13,7 @@ import {
   AreasConfig,
   LaunchJobDTO,
   StudyMetadataPatchDTO,
+  ThematicTrimmingConfigDTO,
 } from "../../common/types";
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
@@ -125,7 +126,12 @@ export const editStudy = async (
   }
   const res = await client.post(
     `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
-    formattedData
+    formattedData,
+    {
+      headers: {
+        "content-type": "application/json",
+      },
+    }
   );
   return res.data;
 };
@@ -268,6 +274,8 @@ export interface LaunchOptions {
   output_suffix?: string;
   // eslint-disable-next-line camelcase
   other_options?: string;
+  // eslint-disable-next-line camelcase
+  auto_unzip?: boolean;
 }
 
 export const launchStudy = async (
@@ -283,6 +291,16 @@ export const launchStudy = async (
   return res.data;
 };
 
+interface LauncherLoadDTO {
+  slurm: number;
+  local: number;
+}
+
+export const getLauncherLoad = async (): Promise<LauncherLoadDTO> => {
+  const res = await client.get("/v1/launcher/load");
+  return res.data;
+};
+
 export const killStudy = async (jid: string): Promise<string> => {
   const res = await client.post(`/v1/launcher/jobs/${jid}/kill`);
   return res.data;
@@ -294,6 +312,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   status: j.status,
   creationDate: j.creation_date,
   completionDate: j.completion_date,
+  launcherParams: JSON.parse(j.launcher_params),
   msg: j.msg,
   outputId: j.output_id,
   exitCode: j.exit_code,
@@ -387,4 +406,18 @@ export const scanFolder = async (folderPath: string): Promise<void> => {
   await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
 };
 
-export default {};
+export const getThematicTrimmingConfig = async (
+  studyId: StudyMetadata["id"]
+): Promise<ThematicTrimmingConfigDTO> => {
+  const res = await client.get(
+    `/v1/studies/${studyId}/config/thematic_trimming`
+  );
+  return res.data;
+};
+
+export const setThematicTrimmingConfig = async (
+  studyId: StudyMetadata["id"],
+  config: ThematicTrimmingConfigDTO
+): Promise<void> => {
+  await client.put(`/v1/studies/${studyId}/config/thematic_trimming`, config);
+};

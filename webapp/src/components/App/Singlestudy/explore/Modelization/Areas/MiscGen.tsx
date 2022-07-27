@@ -3,6 +3,7 @@ import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
+import { Root } from "./style";
 
 function MiscGen() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -20,12 +21,14 @@ function MiscGen() {
   ];
 
   return (
-    <MatrixInput
-      study={study}
-      url={url}
-      columnsNames={colmunsNames}
-      computStats={MatrixStats.TOTAL}
-    />
+    <Root>
+      <MatrixInput
+        study={study}
+        url={url}
+        columnsNames={colmunsNames}
+        computStats={MatrixStats.TOTAL}
+      />
+    </Root>
   );
 }
 

@@ -184,7 +184,9 @@ def test_area_crud(
                 action=CommandName.UPDATE_CONFIG.value,
                 args=[
                     {"target": "input/areas/test/ui/ui/x", "data": "100"},
+                    {"target": "input/areas/test/ui/layerX/0", "data": "100"},
                     {"target": "input/areas/test/ui/ui/y", "data": "200"},
+                    {"target": "input/areas/test/ui/layerY/0", "data": "200"},
                     {
                         "target": "input/areas/test/ui/ui/color_r",
                         "data": "255",
@@ -321,6 +323,7 @@ def test_get_all_area():
                 {
                     "id": "a",
                     "name": "A",
+                    "enabled": True,
                     "unitcount": 1,
                     "nominalcapacity": 500,
                     "group": None,

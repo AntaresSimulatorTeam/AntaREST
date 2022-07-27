@@ -12,6 +12,7 @@ import {
   FormGroup,
   List,
   ListItem,
+  Slider,
   TextField,
   Typography,
   useTheme,
@@ -22,13 +23,21 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import { StudyMetadata } from "../../../common/types";
-import { LaunchOptions, launchStudy } from "../../../services/api/study";
+import {
+  getLauncherLoad,
+  LaunchOptions,
+  launchStudy,
+} from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import LoadIndicator from "../../common/LoadIndicator";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
+const LAUNCH_LOAD_DEFAULT = 12;
+const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
   open: boolean;
@@ -42,7 +51,10 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
-  const [options, setOptions] = useState<LaunchOptions>({});
+  const [options, setOptions] = useState<LaunchOptions>({
+    nb_cpu: LAUNCH_LOAD_DEFAULT,
+    auto_unzip: true,
+  });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
@@ -50,6 +62,11 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
+
+  const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
+    errorMessage: t("study.error.launchLoad"),
+    deps: [open],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -145,7 +162,7 @@ function LauncherDialog(props: Props) {
           alignItems: "flex-start",
           px: 2,
           boxSizing: "border-box",
-          overflowY: "scroll",
+          overflowY: "auto",
           overflowX: "hidden",
         }}
       >
@@ -248,7 +265,38 @@ function LauncherDialog(props: Props) {
               max: LAUNCH_DURATION_MAX_HOURS,
             })}
           />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              width: "100%",
+            }}
+          >
+            <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
+            {load && (
+              <LoadIndicator
+                indicator={load.slurm}
+                size="30%"
+                tooltip={t("study.clusterLoad")}
+              />
+            )}
+          </Box>
+          <Slider
+            sx={{
+              width: "95%",
+              mx: 1,
+            }}
+            defaultValue={LAUNCH_LOAD_DEFAULT}
+            step={LAUNCH_LOAD_SLIDER.step}
+            min={LAUNCH_LOAD_SLIDER.min}
+            color="secondary"
+            max={LAUNCH_LOAD_SLIDER.max}
+            valueLabelDisplay="auto"
+            onChange={(event, val) => handleChange("nb_cpu", val as number)}
+          />
         </FormControl>
+        <Typography sx={{ mt: 1 }}>{t("launcher.additionalModes")}</Typography>
         <FormGroup
           sx={{
             mt: 1,
@@ -256,39 +304,58 @@ function LauncherDialog(props: Props) {
             width: "100%",
           }}
         >
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.xpansion}
-                onChange={(e, checked) => {
-                  handleChange("xpansion", checked);
-                }}
-              />
-            }
-            label={t("study.xpansionMode") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.xpansion && !!options.xpansion_r_version}
-                onChange={(e, checked) =>
-                  handleChange("xpansion_r_version", checked)
-                }
-              />
-            }
-            label={t("study.useXpansionVersionR") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.adequacy_patch}
-                onChange={(e, checked) =>
-                  handleChange("adequacy_patch", checked ? {} : undefined)
-                }
-              />
-            }
-            label="Adequacy patch"
-          />
+          <Box sx={{ display: "flex" }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.xpansion}
+                  onChange={(e, checked) => {
+                    handleChange("xpansion", checked);
+                  }}
+                />
+              }
+              label={t("study.xpansionMode") as string}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.xpansion && !!options.xpansion_r_version}
+                  onChange={(e, checked) =>
+                    handleChange("xpansion_r_version", checked)
+                  }
+                />
+              }
+              label={t("study.useXpansionVersionR") as string}
+            />
+          </Box>
+          <Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.adequacy_patch}
+                  onChange={(e, checked) =>
+                    handleChange("adequacy_patch", checked ? {} : undefined)
+                  }
+                />
+              }
+              label="Adequacy patch"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  checked={!!(options.adequacy_patch as any)?.legacy}
+                  onChange={(e, checked) =>
+                    handleChange(
+                      "adequacy_patch",
+                      checked ? { legacy: true } : {}
+                    )
+                  }
+                />
+              }
+              label="Adequacy patch non linearized"
+            />
+          </Box>
         </FormGroup>
         <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
@@ -301,6 +368,24 @@ function LauncherDialog(props: Props) {
           <AccordionDetails>
             <FormControl
               sx={{
+                width: "100%",
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!!options.auto_unzip}
+                    onChange={(e, checked) =>
+                      handleChange("auto_unzip", checked)
+                    }
+                  />
+                }
+                label={t("launcher.autoUnzip")}
+              />
+            </FormControl>
+            <FormControl
+              sx={{
+                mt: 2,
                 width: "100%",
               }}
             >

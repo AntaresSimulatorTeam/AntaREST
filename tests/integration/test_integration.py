@@ -659,9 +659,9 @@ def test_area_management(app: FastAPI):
                 "color_b": 100,
                 "layers": 0,
             },
-            "layerX": {"O": 0},
-            "layerY": {"O": 0},
-            "layerColor": {"O": "230 , 108 , 44"},
+            "layerX": {"0": 100},
+            "layerY": {"0": 100},
+            "layerColor": {"0": "230 , 108 , 44"},
         },
         "area 2": {
             "ui": {
@@ -672,9 +672,9 @@ def test_area_management(app: FastAPI):
                 "color_b": 44,
                 "layers": 0,
             },
-            "layerX": {"O": 0},
-            "layerY": {"O": 0},
-            "layerColor": {"O": "230 , 108 , 44"},
+            "layerX": {"0": 0},
+            "layerY": {"0": 0},
+            "layerColor": {"0": "230 , 108 , 44"},
         },
     }
 

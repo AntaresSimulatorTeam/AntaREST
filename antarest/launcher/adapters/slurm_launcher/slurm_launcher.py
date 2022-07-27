@@ -311,11 +311,12 @@ class SlurmLauncher(AbstractLauncher):
         study_list = self.data_repo_tinydb.get_list_of_studies()
 
         nb_study_done = 0
-
+        studies_to_cleanup = []
         for study in study_list:
             nb_study_done += 1 if (study.finished or study.with_error) else 0
             if study.done:
                 try:
+                    studies_to_cleanup.append(study.name)
                     self.log_tail_manager.stop_tracking(
                         SlurmLauncher._get_log_path(study)
                     )
@@ -347,8 +348,6 @@ class SlurmLauncher(AbstractLauncher):
                         f"Failed to finalize study {study.name} launch",
                         exc_info=e,
                     )
-                finally:
-                    self._clean_up_study(study.name)
             else:
                 self.log_tail_manager.track(
                     SlurmLauncher._get_log_path(study),
@@ -356,8 +355,13 @@ class SlurmLauncher(AbstractLauncher):
                 )
 
         # we refetch study list here because by the time the import_output is done, maybe some new studies has been added
-        if nb_study_done == len(self.data_repo_tinydb.get_list_of_studies()):
-            self.stop()
+        # also we clean up the study after because it remove the study in the database
+        with self.antares_launcher_lock:
+            nb_studies = self.data_repo_tinydb.get_list_of_studies()
+            for study_id in studies_to_cleanup:
+                self._clean_up_study(study_id)
+            if nb_study_done == len(nb_studies):
+                self.stop()
 
     @staticmethod
     def _get_log_path(
@@ -444,9 +448,9 @@ class SlurmLauncher(AbstractLauncher):
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
 
-        try:
-            # export study
-            with self.antares_launcher_lock:
+        with self.antares_launcher_lock:
+            try:
+                # export study
                 self.callbacks.export_study(
                     launch_uuid, study_uuid, study_path, launcher_params
                 )
@@ -468,24 +472,26 @@ class SlurmLauncher(AbstractLauncher):
                 )
                 logger.info("Study exported and run with launcher")
 
-            self.callbacks.update_status(
-                str(launch_uuid), JobStatus.RUNNING, None, None
-            )
-        except Exception as e:
-            logger.error(f"Failed to launch study {study_uuid}", exc_info=e)
-            self.callbacks.append_after_log(
-                launch_uuid,
-                f"Unexpected error when launching study : {str(e)}",
-            )
-            self.callbacks.update_status(
-                str(launch_uuid), JobStatus.FAILED, str(e), None
-            )
-            self._clean_up_study(str(launch_uuid))
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.RUNNING, None, None
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to launch study {study_uuid}", exc_info=e
+                )
+                self.callbacks.append_after_log(
+                    launch_uuid,
+                    f"Unexpected error when launching study : {str(e)}",
+                )
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.FAILED, str(e), None
+                )
+                self._clean_up_study(str(launch_uuid))
+            finally:
+                self._delete_workspace_file(study_path)
 
         if not self.thread:
             self.start()
-
-        self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO

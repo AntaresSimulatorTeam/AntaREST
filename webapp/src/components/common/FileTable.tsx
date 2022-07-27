@@ -22,6 +22,7 @@ import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import { GenericInfo } from "../../common/types";
@@ -33,10 +34,11 @@ const logErr = debug("antares:createimportform:error");
 interface PropType {
   title: ReactNode;
   content: Array<GenericInfo>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   onRead: (id: string) => Promise<void>;
   uploadFile?: (file: File) => Promise<void>;
   onFileDownload?: (id: string) => string;
+  onAssign?: (id: string) => Promise<void>;
   allowImport?: boolean;
   allowDelete?: boolean;
   copyId?: boolean;
@@ -53,12 +55,12 @@ function FileTable(props: PropType) {
     onRead,
     uploadFile,
     onFileDownload,
+    onAssign,
     allowImport,
     allowDelete,
     copyId,
   } = props;
-  const [openConfirmationModal, setOpenConfirmationModal] =
-    useState<string>("");
+  const [openConfirmationModal, setOpenConfirmationModal] = useState("");
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const onImport = async (file: File) => {
@@ -83,7 +85,6 @@ function FileTable(props: PropType) {
       width="100%"
       height="100%"
       flexDirection="column"
-      sx={{ px: 1 }}
     >
       {title}
       <Divider sx={{ mt: 1, mb: 2 }} />
@@ -130,9 +131,6 @@ function FileTable(props: PropType) {
                 <TableRow
                   key={`${row.id}-${row.name}`}
                   sx={(theme) => ({
-                    "&> th": {
-                      padding: 1,
-                    },
                     "&> th, >td": {
                       borderBottom: "solid 1px",
                       borderColor: theme.palette.divider,
@@ -203,6 +201,19 @@ function FileTable(props: PropType) {
                         </Tooltip>
                       </IconButton>
                     )}
+                    {onAssign && (
+                      <IconButton
+                        onClick={() => onAssign(row.id as string)}
+                        sx={{
+                          ml: 1,
+                          color: "primary.main",
+                        }}
+                      >
+                        <Tooltip title={t("global.assign") as string}>
+                          <ArrowForwardIcon />
+                        </Tooltip>
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -210,7 +221,7 @@ function FileTable(props: PropType) {
           </Table>
         </TableContainer>
       </Box>
-      {openConfirmationModal && openConfirmationModal.length > 0 && (
+      {openConfirmationModal && onDelete && (
         <ConfirmationDialog
           open
           titleIcon={DeleteIcon}
@@ -236,6 +247,8 @@ function FileTable(props: PropType) {
 }
 
 FileTable.defaultProps = {
+  onDelete: undefined,
+  onAssign: undefined,
   uploadFile: undefined,
   allowImport: false,
   allowDelete: false,

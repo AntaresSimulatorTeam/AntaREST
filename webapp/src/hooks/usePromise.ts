@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { isDependencyList } from "../utils/reactUtils";
 

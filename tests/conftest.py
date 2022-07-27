@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.model import SUB_JSON
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
 
 project_dir: Path = Path(__file__).parent.parent
@@ -32,7 +32,8 @@ def with_db_context(f):
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )
-        return f(*args, **kwds)
+        with db():
+            return f(*args, **kwds)
 
     return wrapper
 

@@ -1,5 +1,6 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import {
+  Cluster,
   FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkListElement,
@@ -230,6 +231,18 @@ export const getStudyLinks = createSelector(getStudyData, (data) => {
   }
   return [];
 });
+
+export const getCurrentClusters = (
+  type: "thermals" | "renewables",
+  studyId: string,
+  state: AppState
+): Array<Cluster> => {
+  const currentStudyState = getStudyDataState(state);
+  const { currentArea } = currentStudyState;
+  const clusters =
+    currentStudyState.entities[studyId]?.areas[currentArea][type];
+  return clusters || [];
+};
 
 ////////////////////////////////////////////////////////////////
 // UI

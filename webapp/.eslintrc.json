@@ -70,6 +70,10 @@
     "react/react-in-jsx-scope": "off",
     "react/jsx-props-no-spreading": "off",
     "react/jsx-uses-react": "off",
+    "react/no-unstable-nested-components": [
+      "error",
+      { "allowAsProps": true }
+    ],
     "react/prop-types": "off",
     "react/require-default-props": "off",
     "react-hooks/exhaustive-deps": "warn",

@@ -577,6 +577,7 @@ def create_study_routes(
             study_id,
             output_id,
             use_task,
+            False,
             params,
         )
         return content

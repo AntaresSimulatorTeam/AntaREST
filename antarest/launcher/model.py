@@ -18,6 +18,7 @@ class LauncherParametersDTO(BaseModel):
     xpansion: bool = False
     xpansion_r_version: bool = False
     archive_output: bool = True
+    auto_unzip: bool = True
     output_suffix: Optional[str] = None
     other_options: Optional[str] = None
     # add extensions field here

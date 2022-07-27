@@ -72,6 +72,7 @@ class LauncherServiceNotAvailableException(HTTPException):
 
 ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
+EXECUTION_INFO_FILE = "execution_info.ini"
 
 
 class LauncherService:
@@ -328,7 +329,7 @@ class LauncherService:
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
                 if (
-                    (user and user.is_site_admin())
+                    (user and (user.is_site_admin() or user.is_admin_token()))
                     or job_result.creation_date >= orphan_visibility_threshold
                 ):
                     allowed_job_results.append(job_result)
@@ -519,7 +520,7 @@ class LauncherService:
         self, job_result: JobResult, output_path: Path
     ) -> None:
         try:
-            measurement_file = output_path / "time_measurement.txt"
+            measurement_file = output_path / EXECUTION_INFO_FILE
             if measurement_file.exists():
                 job_result.solver_stats = measurement_file.read_text(
                     encoding="utf-8"
@@ -551,20 +552,18 @@ class LauncherService:
                     output_true_path,
                     job_launch_params,
                 )
-                self._save_solver_stats(job_result, output_path)
+                self._save_solver_stats(job_result, output_true_path)
 
                 if additional_logs:
                     for log_name, log_paths in additional_logs.items():
                         concat_files(
                             log_paths,
-                            output_path / log_name,
+                            output_true_path / log_name,
                         )
 
                 zip_path: Optional[Path] = None
                 stopwatch = StopWatch()
-                if LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params or "{}"
-                ).archive_output:
+                if job_launch_params.archive_output:
                     logger.info("Re zipping output for transfer")
                     zip_path = (
                         output_true_path.parent
@@ -593,6 +592,7 @@ class LauncherService:
                                 None,
                             ),
                         ),
+                        job_launch_params.auto_unzip,
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
@@ -607,6 +607,9 @@ class LauncherService:
                             ),
                         ),
                     )
+                finally:
+                    if zip_path:
+                        os.unlink(zip_path)
         raise JobNotFound()
 
     def _download_fallback_output(
@@ -668,6 +671,50 @@ class LauncherService:
                 params,
             )
         raise JobNotFound()
+
+    def get_load(self, from_cluster: bool = False) -> Dict[str, float]:
+        all_running_jobs = self.job_result_repository.get_running()
+        local_running_jobs = []
+        slurm_running_jobs = []
+        for job in all_running_jobs:
+            if job.launcher == "slurm":
+                slurm_running_jobs.append(job)
+            elif job.launcher == "local":
+                local_running_jobs.append(job)
+            else:
+                logger.warning(f"Unknown job launcher {job.launcher}")
+        load = {}
+        if self.config.launcher.slurm:
+            if from_cluster:
+                raise NotImplementedError
+            slurm_used_cpus = reduce(
+                lambda count, j: count
+                + (
+                    LauncherParametersDTO.parse_raw(
+                        j.launcher_params or "{}"
+                    ).nb_cpu
+                    or self.config.launcher.slurm.default_n_cpu  # type: ignore
+                ),
+                slurm_running_jobs,
+                0,
+            )
+            load["slurm"] = (
+                float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
+            )
+        if self.config.launcher.local:
+            local_used_cpus = reduce(
+                lambda count, j: count
+                + (
+                    LauncherParametersDTO.parse_raw(
+                        j.launcher_params or "{}"
+                    ).nb_cpu
+                    or 1
+                ),
+                local_running_jobs,
+                0,
+            )
+            load["local"] = float(local_used_cpus) / (os.cpu_count() or 1)
+        return load
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
         version_dict = {}

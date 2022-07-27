@@ -1,78 +1,89 @@
-import {
-  Box,
-  Button,
-  TextField,
-  TextFieldProps,
-  InputAdornment,
-  setRef,
-} from "@mui/material";
-import { ChangeEvent, forwardRef, useEffect, useRef, useState } from "react";
+import { Box, TextField, TextFieldProps, InputAdornment } from "@mui/material";
+import { ChangeEvent, useRef, useState } from "react";
 import { ColorResult, SketchPicker } from "react-color";
 import { useTranslation } from "react-i18next";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
 import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
-import { RGBToString, stringToRGB } from "./utils";
+import { useClickAway, useKey, useUpdateEffect } from "react-use";
+import { rgbToString, stringToRGB } from "./utils";
+import { mergeSxProp } from "../../../../utils/muiUtils";
+import { composeRefs } from "../../../../utils/reactUtils";
+import reactHookFormSupport from "../../../../hoc/reactHookFormSupport";
 
-interface Props {
-  currentColor?: string;
-}
+export type ColorPickerFEProps = Omit<
+  TextFieldProps,
+  "type" | "defaultChecked"
+> & {
+  value?: string; // Format: R,G,B - ex: "255,255,255"
+  defaultValue?: string;
+};
 
-const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
-  const { currentColor, onChange, ...other } = props;
-  const [color, setColor] = useState<string>(currentColor || "");
-  const [t] = useTranslation();
+function ColorPickerFE(props: ColorPickerFEProps) {
+  const { value, defaultValue, onChange, sx, inputRef, ...textFieldProps } =
+    props;
+  const [currentColor, setCurrentColor] = useState(defaultValue || value || "");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const internalRef = useRef<HTMLTextAreaElement>();
+  const internalRef = useRef<HTMLInputElement>();
+  const pickerWrapperRef = useRef(null);
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    if (color && internalRef.current) {
-      if (onChange) {
-        onChange({
-          target: internalRef.current,
-        } as ChangeEvent<HTMLTextAreaElement>);
-      }
-    }
-  }, [color, onChange]);
+  useUpdateEffect(() => {
+    setCurrentColor(value ?? "");
+  }, [value]);
 
-  useEffect(() => {
-    if (currentColor) {
-      setColor(currentColor);
-    }
-  }, [currentColor]);
+  useClickAway(pickerWrapperRef, () => {
+    setIsPickerOpen(false);
+  });
+
+  useKey("Escape", () => setIsPickerOpen(false));
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = ({ hex, rgb }: ColorResult) => {
+    setCurrentColor(
+      ["transparent", "#0000"].includes(hex) ? "" : rgbToString(rgb)
+    );
+  };
+
+  const handleChangeComplete = () => {
+    onChange?.({
+      target: internalRef.current,
+      type: "change",
+    } as ChangeEvent<HTMLInputElement>);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-      }}
+      sx={mergeSxProp(
+        {
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          position: "relative",
+        },
+        sx
+      )}
     >
       <TextField
-        sx={{ mx: 1 }}
         label={t("global.color")}
         variant="filled"
-        placeholder={color}
-        inputRef={(instance) => {
-          setRef(ref, instance);
-          setRef(internalRef, instance);
-        }}
-        value={color}
-        InputLabelProps={
-          // Allow to show placeholder when field is empty
-          currentColor !== undefined ? { shrink: true } : {}
-        }
-        {...other}
+        {...textFieldProps}
+        sx={{ mx: 1 }}
+        value={currentColor}
+        placeholder={currentColor}
+        inputRef={composeRefs(inputRef, internalRef)}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <SquareRoundedIcon
                 sx={{
-                  color: color
-                    ? `rgb(${color})` // `rgb(${color.r},${color.g},${color.b})`
-                    : "#0000",
+                  color: currentColor ? `rgb(${currentColor})` : "transparent",
                 }}
               />
             </InputAdornment>
@@ -87,40 +98,18 @@ const ColorPicker = forwardRef((props: Props & TextFieldProps, ref) => {
             top: "calc(100% + 8px)",
             zIndex: 1000,
           }}
+          ref={pickerWrapperRef}
         >
           <SketchPicker
-            color={stringToRGB(color)}
-            onChangeComplete={(
-              color: ColorResult,
-              ev: ChangeEvent<HTMLInputElement>
-            ) => {
-              setColor(RGBToString(color.rgb));
-            }}
+            color={currentColor && stringToRGB(currentColor)}
+            onChange={handleChange}
+            onChangeComplete={handleChangeComplete}
+            disableAlpha
           />
-          <Button
-            variant="text"
-            onClick={() => setIsPickerOpen(false)}
-            sx={{
-              minWidth: 0,
-              minHeight: 0,
-              width: "auto",
-              height: "auto",
-              p: 0,
-              position: "absolute",
-              top: "-8px",
-              right: "-8px",
-              zIndex: 10000,
-              color: "black",
-            }}
-          >
-            <CancelRoundedIcon />
-          </Button>
         </Box>
       )}
     </Box>
   );
-});
+}
 
-ColorPicker.displayName = "ColorPicker";
-
-export default ColorPicker;
+export default reactHookFormSupport({ defaultValue: "" })(ColorPickerFE);

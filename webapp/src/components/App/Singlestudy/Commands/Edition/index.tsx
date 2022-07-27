@@ -77,8 +77,8 @@ function EditionView(props: Props) {
   const taskTimeoutId = useRef<NodeJS.Timeout>();
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
-    // dropped outside the list
-    if (!destination) return;
+    // dropped outside the list or same place
+    if (!destination || source.index === destination.index) return;
     const oldCommands = commands.concat([]);
     try {
       const elm = commands[source.index];

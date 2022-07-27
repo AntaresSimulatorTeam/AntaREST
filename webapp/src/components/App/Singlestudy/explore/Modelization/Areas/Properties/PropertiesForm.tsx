@@ -6,19 +6,20 @@ import { editStudy } from "../../../../../../../services/api/study";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { FormObj } from "../../../../../../common/Form";
-import ColorPicker from "../../../../../../common/fieldEditors/ColorPickerFE";
+import { UseFormReturnPlus } from "../../../../../../common/Form";
+import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
 import { stringToRGB } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
 import { getPropertiesPath, PropertiesFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 
 export default function PropertiesForm(
-  props: FormObj<PropertiesFields, unknown> & {
+  props: UseFormReturnPlus<PropertiesFields, unknown> & {
     studyId: string;
     areaName: string;
   }
 ) {
-  const { register, watch, defaultValues, studyId, areaName } = props;
+  const { control, getValues, defaultValues, studyId, areaName } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
@@ -43,15 +44,10 @@ export default function PropertiesForm(
   const renderFilter = (filterName: string) => (
     <Box sx={{ mb: 2 }}>
       <SelectFE
+        name={filterName}
+        sx={{ minWidth: "200px" }}
+        label={t(`study.modelization.nodeProperties.${filterName}`)}
         multiple
-        {...register(filterName, {
-          onAutoSubmit: (value) => {
-            const selection = value
-              ? (value as Array<string>).filter((val) => val !== "")
-              : [];
-            handleAutoSubmit(path[filterName], selection.join(", "));
-          },
-        })}
         renderValue={(value: unknown) => {
           const selection = value
             ? (value as Array<string>).filter((val) => val !== "")
@@ -63,8 +59,15 @@ export default function PropertiesForm(
         defaultValue={(defaultValues || {})[filterName] || []}
         variant="filled"
         options={filterOptions}
-        sx={{ minWidth: "200px" }}
-        label={t(`study.modelization.nodeProperties.${filterName}`)}
+        control={control}
+        rules={{
+          onAutoSubmit: (value) => {
+            const selection = value
+              ? (value as Array<string>).filter((val) => val !== "")
+              : [];
+            handleAutoSubmit(path[filterName], selection.join(", "));
+          },
+        }}
       />
     </Box>
   );
@@ -74,7 +77,7 @@ export default function PropertiesForm(
       sx={{
         width: "100%",
         height: "100%",
-        py: 2,
+        p: 2,
       }}
     >
       <Box
@@ -83,71 +86,64 @@ export default function PropertiesForm(
           flexDirection: "column",
         }}
       >
-        <Fieldset legend={t("global.general")} style={{ padding: "16px" }}>
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
+        <Fieldset legend={t("global.general")}>
+          <TextField
+            label={t("study.modelization.map.areaName")}
+            variant="filled"
+            value={defaultValues?.name}
+            InputLabelProps={
+              defaultValues?.name !== undefined ? { shrink: true } : {}
+            }
+            disabled
+          />
+          <ColorPickerFE
+            name="color"
+            value={defaultValues?.color}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => {
+                const color = stringToRGB(value);
+                if (color) {
+                  handleAutoSubmit(path.color, {
+                    color_r: color.r,
+                    color_g: color.g,
+                    color_b: color.b,
+                    x: getValues("posX"),
+                    y: getValues("posY"),
+                  });
+                }
+              },
             }}
-          >
-            <TextField
-              sx={{ mr: 1 }}
-              label={t("study.modelization.map.areaName")}
-              variant="filled"
-              value={defaultValues?.name}
-              InputLabelProps={
-                defaultValues?.name !== undefined ? { shrink: true } : {}
-              }
-              disabled
-            />
-            <ColorPicker
-              currentColor={defaultValues?.color}
-              {...register("color", {
-                onAutoSubmit: (value) => {
-                  const color = stringToRGB(value);
-                  if (color) {
-                    handleAutoSubmit(path.color, {
-                      color_r: color.r,
-                      color_g: color.g,
-                      color_b: color.b,
-                      x: watch("posX"),
-                      y: watch("posY"),
-                    });
-                  }
-                },
-              })}
-            />
-            <TextField
-              sx={{ mx: 1 }}
-              type="number"
-              label={t("study.modelization.posX")}
-              variant="filled"
-              placeholder={defaultValues?.posX?.toString()}
-              InputLabelProps={
-                defaultValues?.posX !== undefined ? { shrink: true } : {}
-              }
-              {...register("posX", {
-                onAutoSubmit: (value) => handleAutoSubmit(path.posX, value),
-              })}
-            />
-            <TextField
-              type="number"
-              label={t("study.modelization.posY")}
-              variant="filled"
-              placeholder={defaultValues?.posY?.toString()}
-              InputLabelProps={
-                defaultValues?.posY !== undefined ? { shrink: true } : {}
-              }
-              {...register("posY", {
-                onAutoSubmit: (value) => handleAutoSubmit(path.posY, value),
-              })}
-            />
-          </Box>
+          />
+          <NumberFE
+            name="posX"
+            label={t("study.modelization.posX")}
+            variant="filled"
+            placeholder={defaultValues?.posX?.toString()}
+            InputLabelProps={
+              defaultValues?.posX !== undefined ? { shrink: true } : {}
+            }
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.posX, value),
+            }}
+          />
+          <NumberFE
+            name="posY"
+            label={t("study.modelization.posY")}
+            variant="filled"
+            placeholder={defaultValues?.posY?.toString()}
+            InputLabelProps={
+              defaultValues?.posY !== undefined ? { shrink: true } : {}
+            }
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => handleAutoSubmit(path.posY, value),
+            }}
+          />
         </Fieldset>
         <Fieldset
           legend={t("study.modelization.nodeProperties.nodalOptimization")}
-          style={{ padding: "16px" }}
         >
           <Box
             sx={{
@@ -155,108 +151,114 @@ export default function PropertiesForm(
               flexDirection: "column",
             }}
           >
-            <Typography>{`${t(
-              "study.modelization.nodeProperties.energyCost"
-            )} (€/Wh)`}</Typography>
             <Box
               sx={{
-                width: "100%",
                 display: "flex",
-                mt: 1,
+                flexDirection: "column",
               }}
             >
-              <TextField
-                label={t("study.modelization.nodeProperties.unsupplied")}
-                variant="filled"
-                type="number"
-                placeholder={defaultValues?.energieCostUnsupplied?.toString()}
-                InputLabelProps={
-                  defaultValues?.energieCostUnsupplied !== undefined
-                    ? { shrink: true }
-                    : {}
-                }
-                {...register("energieCostUnsupplied", {
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.energieCostUnsupplied, value),
-                })}
-              />
-              <TextField
-                sx={{ mx: 1 }}
-                label={t("study.modelization.nodeProperties.splilled")}
-                variant="filled"
-                type="number"
-                placeholder={defaultValues?.energieCostSpilled?.toString()}
-                InputLabelProps={
-                  defaultValues?.energieCostSpilled !== undefined
-                    ? { shrink: true }
-                    : {}
-                }
-                {...register("energieCostSpilled", {
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.energieCostSpilled, value),
-                })}
-              />
+              <Typography>{`${t(
+                "study.modelization.nodeProperties.energyCost"
+              )} (€/Wh)`}</Typography>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  mt: 1,
+                }}
+              >
+                <NumberFE
+                  name="energieCostUnsupplied"
+                  label={t("study.modelization.nodeProperties.unsupplied")}
+                  variant="filled"
+                  placeholder={defaultValues?.energieCostUnsupplied?.toString()}
+                  InputLabelProps={
+                    defaultValues?.energieCostUnsupplied !== undefined
+                      ? { shrink: true }
+                      : {}
+                  }
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.energieCostUnsupplied, value),
+                  }}
+                />
+                <NumberFE
+                  name="energieCostSpilled"
+                  sx={{ mx: 1 }}
+                  label={t("study.modelization.nodeProperties.splilled")}
+                  variant="filled"
+                  placeholder={defaultValues?.energieCostSpilled?.toString()}
+                  InputLabelProps={
+                    defaultValues?.energieCostSpilled !== undefined
+                      ? { shrink: true }
+                      : {}
+                  }
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.energieCostSpilled, value),
+                  }}
+                />
+              </Box>
             </Box>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              mt: 4,
-            }}
-          >
-            <Typography>
-              {t("study.modelization.nodeProperties.lastResortShedding")}
-            </Typography>
             <Box
               sx={{
-                width: "100%",
                 display: "flex",
-                mt: 1,
+                flexDirection: "column",
+                mt: 4,
               }}
             >
-              <SwitchFE
-                label={t("study.modelization.nodeProperties.nonDispatchPower")}
-                {...register("nonDispatchPower", {
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.nonDispatchPower, value),
-                })}
-              />
-              <SwitchFE
-                label={t(
-                  "study.modelization.nodeProperties.dispatchHydroPower"
-                )}
-                {...register("dispatchHydroPower", {
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.dispatchHydroPower, value),
-                })}
-              />
-              <SwitchFE
-                label={t(
-                  "study.modelization.nodeProperties.otherDispatchPower"
-                )}
-                {...register("otherDispatchPower", {
-                  onAutoSubmit: (value) =>
-                    handleAutoSubmit(path.otherDispatchPower, value),
-                })}
-              />
+              <Typography>
+                {t("study.modelization.nodeProperties.lastResortShedding")}
+              </Typography>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  mt: 1,
+                }}
+              >
+                <SwitchFE
+                  name="nonDispatchPower"
+                  label={t(
+                    "study.modelization.nodeProperties.nonDispatchPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.nonDispatchPower, value),
+                  }}
+                />
+                <SwitchFE
+                  name="dispatchHydroPower"
+                  label={t(
+                    "study.modelization.nodeProperties.dispatchHydroPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.dispatchHydroPower, value),
+                  }}
+                />
+                <SwitchFE
+                  name="otherDispatchPower"
+                  label={t(
+                    "study.modelization.nodeProperties.otherDispatchPower"
+                  )}
+                  control={control}
+                  rules={{
+                    onAutoSubmit: (value) =>
+                      handleAutoSubmit(path.otherDispatchPower, value),
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
         </Fieldset>
-        <Fieldset
-          legend={t("study.modelization.nodeProperties.outputFilter")}
-          style={{ padding: "16px" }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {renderFilter("filterSynthesis")}
-            {renderFilter("filterByYear")}
-          </Box>
+        <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
+          {renderFilter("filterSynthesis")}
+          {renderFilter("filterByYear")}
         </Fieldset>
       </Box>
     </Box>

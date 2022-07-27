@@ -3,10 +3,18 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import { Typography, Box, ButtonGroup, Button, Divider } from "@mui/material";
+import {
+  Typography,
+  Box,
+  ButtonGroup,
+  Button,
+  Divider,
+  Tooltip,
+} from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import {
   MatrixEditDTO,
   MatrixStats,
@@ -21,6 +29,7 @@ import SimpleLoader from "../loaders/SimpleLoader";
 import NoContent from "../page/NoContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
+import MatrixAssignDialog from "./MatrixAssignDialog";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -39,6 +48,7 @@ function MatrixInput(props: PropsType) {
   const [t] = useTranslation();
   const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
+  const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
 
   const {
     data,
@@ -62,7 +72,7 @@ function MatrixInput(props: PropsType) {
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     () => getStudyMatrixIndex(study.id, url),
     {
-      errorMessage: t("matrix.error.failedtoretrieveindex"),
+      errorMessage: t("matrix.error.failedToretrieveIndex"),
       deps: [study, url],
     }
   );
@@ -122,8 +132,8 @@ function MatrixInput(props: PropsType) {
             {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {!isLoading && data?.columns?.length > 1 && (
-              <ButtonGroup sx={{ mr: 2 }} variant="contained">
+            {!isLoading && data?.columns?.length >= 1 && (
+              <ButtonGroup variant="contained">
                 <StyledButton onClick={() => setToggleView((prev) => !prev)}>
                   {toggleView ? (
                     <BarChartIcon sx={{ color: "text.main" }} />
@@ -134,6 +144,18 @@ function MatrixInput(props: PropsType) {
               </ButtonGroup>
             )}
             <Button
+              sx={{
+                mx: 2,
+              }}
+              variant="outlined"
+              color="primary"
+              onClick={() => setOpenMatrixAsignDialog(true)}
+            >
+              <Tooltip title={t("data.assignMatrix") as string}>
+                <InventoryIcon />
+              </Tooltip>
+            </Button>
+            <Button
               variant="outlined"
               color="primary"
               startIcon={<GetAppOutlinedIcon />}
@@ -143,9 +165,9 @@ function MatrixInput(props: PropsType) {
             </Button>
           </Box>
         </Header>
-        <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
+        <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && data?.columns?.length > 1 ? (
+        {!isLoading && data?.columns?.length >= 1 ? (
           <EditableMatrix
             matrix={data}
             matrixTime
@@ -181,6 +203,17 @@ function MatrixInput(props: PropsType) {
           dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}
+        />
+      )}
+      {openMatrixAsignDialog && (
+        <MatrixAssignDialog
+          study={study}
+          path={url}
+          open={openMatrixAsignDialog}
+          onClose={() => {
+            setOpenMatrixAsignDialog(false);
+            reloadMatrix();
+          }}
         />
       )}
     </Root>

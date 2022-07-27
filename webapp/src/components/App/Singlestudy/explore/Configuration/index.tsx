@@ -2,6 +2,7 @@
 import { Paper } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
+import UnderConstruction from "../../../../common/page/UnderConstruction";
 import PropertiesView from "../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../common/SplitLayoutView";
 import ListElement from "../common/ListElement";
@@ -9,7 +10,6 @@ import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import OptimizationPreferences from "./OptimizationPreferences";
 import RegionalDistricts from "./RegionalDistricts";
-import TimeSeriesManagement from "./TimeSeriesManagement";
 
 function Configuration() {
   const [currentElementIndex, setCurrentElementIndex] = useState(0);
@@ -44,7 +44,8 @@ function Configuration() {
         <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
           {R.cond([
             [R.equals(0), () => <General />],
-            [R.equals(1), () => <TimeSeriesManagement />],
+            // [R.equals(1), () => <TimeSeriesManagement />],
+            [R.equals(1), () => <UnderConstruction />],
             [R.equals(2), () => <RegionalDistricts />],
             [R.equals(3), () => <OptimizationPreferences />],
             [R.equals(4), () => <AdvancedParameters />],

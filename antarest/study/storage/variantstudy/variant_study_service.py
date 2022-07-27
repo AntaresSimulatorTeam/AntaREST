@@ -214,6 +214,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         study.commands.append(command_block)
         self.invalidate_cache(study)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
         return new_id
 
     def append_commands(

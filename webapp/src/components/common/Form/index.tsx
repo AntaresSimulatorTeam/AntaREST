@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useCallback, useRef } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  Control,
   FieldPath,
   FieldPathValue,
   FieldValues,
@@ -8,6 +9,7 @@ import {
   FormState,
   Path,
   RegisterOptions,
+  SubmitErrorHandler,
   UnpackNestedValue,
   useForm,
   useFormContext as useFormContextOriginal,
@@ -19,13 +21,13 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Button } from "@mui/material";
+import { Box, Button, CircularProgress } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BackdropLoading from "../loaders/BackdropLoading";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import useDebouncedState from "../../../hooks/useDebouncedState";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues
@@ -39,29 +41,33 @@ export type AutoSubmitHandler<
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = (value: FieldPathValue<TFieldValues, TFieldName>) => any | Promise<any>;
 
-export interface UseFormRegisterReturnPlus<
+export interface RegisterOptionsPlus<
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> extends UseFormRegisterReturn {
-  defaultValue?: FieldPathValue<TFieldValues, TFieldName>;
-  error?: boolean;
-  helperText?: string;
+> extends RegisterOptions<TFieldValues, TFieldName> {
+  onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
 }
 
 export type UseFormRegisterPlus<
   TFieldValues extends FieldValues = FieldValues
 > = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
   name: TFieldName,
-  options?: RegisterOptions<TFieldValues, TFieldName> & {
-    onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
-  }
-) => UseFormRegisterReturnPlus;
+  options?: RegisterOptionsPlus<TFieldValues, TFieldName>
+) => UseFormRegisterReturn;
 
-export interface FormObj<
+export interface ControlPlus<
+  TFieldValues extends FieldValues = FieldValues,
+  TContext = any
+> extends Control<TFieldValues, TContext> {
+  register: UseFormRegisterPlus<TFieldValues>;
+}
+
+export interface UseFormReturnPlus<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
 > extends UseFormReturn<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
+  control: ControlPlus<TFieldValues, TContext>;
   defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
 }
 
@@ -70,32 +76,24 @@ export type AutoSubmitConfig = { enable: boolean; wait?: number };
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
-> {
+> extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit"> {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerData<TFieldValues>,
     event?: React.BaseSyntheticEvent
   ) => any | Promise<any>;
+  onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
-    | ((formObj: FormObj<TFieldValues, TContext>) => React.ReactNode)
+    | ((formObj: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
-  id?: string;
 }
 
-interface UseFormReturnPlus<TFieldValues extends FieldValues, TContext = any>
-  extends UseFormReturn<TFieldValues, TContext> {
-  register: UseFormRegisterPlus<TFieldValues>;
-  defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
-}
-
-export function useFormContext<
-  TFieldValues extends FieldValues
->(): UseFormReturnPlus<TFieldValues> {
-  return useFormContextOriginal();
+export function useFormContext<TFieldValues extends FieldValues>() {
+  return useFormContextOriginal() as UseFormReturnPlus<TFieldValues>;
 }
 
 function Form<TFieldValues extends FieldValues, TContext>(
@@ -104,21 +102,36 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const {
     config,
     onSubmit,
+    onSubmitError,
     children,
     submitButtonText,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
-    id,
+    ...formProps
   } = props;
+
   const formObj = useForm<TFieldValues, TContext>({
     mode: "onChange",
+    delayError: 750,
     ...config,
   });
-  const { handleSubmit, formState, register, unregister, reset, setValue } =
-    formObj;
-  const { isValid, isSubmitting, isDirty, dirtyFields, errors } = formState;
-  const allowSubmit = isDirty && isValid && !isSubmitting;
+
+  const {
+    getValues,
+    register,
+    unregister,
+    setValue,
+    control,
+    handleSubmit,
+    formState,
+    reset,
+  } = formObj;
+  // * /!\ `formState` is a proxy
+  const { isSubmitting, isDirty, dirtyFields } = formState;
+  // Don't add `isValid` because we need to trigger fields validation.
+  // In case we have invalid default value for example.
+  const isSubmitAllowed = isDirty && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -126,7 +139,15 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const lastDataSubmitted = useRef<UnpackNestedValue<TFieldValues>>();
+  const preventClose = useRef(false);
+  const [showLoader, setLoader] = useDebouncedState(false, 750);
+
+  useUpdateEffect(() => {
+    setLoader(isSubmitting);
+    if (isSubmitting) {
+      setLoader.flush();
+    }
+  }, [isSubmitting]);
 
   useUpdateEffect(
     () => {
@@ -134,12 +155,28 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
       if (formState.isSubmitSuccessful) {
-        reset(lastDataSubmitted.current);
+        reset(getValues());
       }
     },
     // Entire `formState` must be put in the deps: https://react-hook-form.com/api/useform/formstate
     [formState]
   );
+
+  // Prevent browser close if a submit is pending (auto submit enabled)
+  useEffect(() => {
+    const listener = (event: BeforeUnloadEvent) => {
+      if (preventClose.current) {
+        // eslint-disable-next-line no-param-reassign
+        event.returnValue = "Form not submitted yet. Sure you want to leave?"; // TODO i18n
+      }
+    };
+
+    window.addEventListener("beforeunload", listener);
+
+    return () => {
+      window.removeEventListener("beforeunload", listener);
+    };
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -148,9 +185,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    handleSubmit((data, e) => {
-      lastDataSubmitted.current = data;
-
+    handleSubmit(function onValid(data, e) {
       const dirtyValues = getDirtyValues(dirtyFields, data) as Partial<
         typeof data
       >;
@@ -174,18 +209,31 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    })().catch((error) => {
-      enqueueErrorSnackbar(t("form.submit.error"), error);
-    });
+    }, onSubmitError)()
+      .catch((error) => {
+        enqueueErrorSnackbar(t("form.submit.error"), error);
+      })
+      .finally(() => {
+        preventClose.current = false;
+      });
   };
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const simulateSubmit = useDebounce(() => {
+  const simulateSubmitClick = useDebounce(() => {
     submitRef.current?.click();
   }, autoSubmitConfig.wait);
+
+  const simulateSubmit = useCallback(() => {
+    preventClose.current = true;
+    simulateSubmitClick();
+  }, [simulateSubmitClick]);
+
+  ////////////////////////////////////////////////////////////////
+  // API
+  ////////////////////////////////////////////////////////////////
 
   const registerWrapper = useCallback<UseFormRegisterPlus<TFieldValues>>(
     (name, options) => {
@@ -193,43 +241,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
         fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
       }
 
-      const newOptions = {
+      const newOptions: typeof options = {
         ...options,
-        onChange: (e: unknown) => {
-          options?.onChange?.(e);
+        onChange: (event: any) => {
+          options?.onChange?.(event);
           if (autoSubmitConfig.enable) {
             simulateSubmit();
           }
         },
       };
 
-      const res = register(name, newOptions) as UseFormRegisterReturnPlus<
-        TFieldValues,
-        typeof name
-      >;
-
-      const error = errors[name];
-
-      if (RA.isNotNil(config?.defaultValues?.[name])) {
-        res.defaultValue = config?.defaultValues?.[name];
-      }
-
-      if (error) {
-        res.error = true;
-        if (error.message) {
-          res.helperText = error.message;
-        }
-      }
-
-      return res;
+      return register(name, newOptions);
     },
-    [
-      autoSubmitConfig.enable,
-      config?.defaultValues,
-      errors,
-      register,
-      simulateSubmit,
-    ]
+    [autoSubmitConfig.enable, register, simulateSubmit]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
@@ -261,41 +285,61 @@ function Form<TFieldValues extends FieldValues, TContext>(
     [autoSubmitConfig.enable, setValue, simulateSubmit]
   );
 
+  const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
+    // Don't use spread to keep getters and setters
+    control.register = registerWrapper;
+    control.unregister = unregisterWrapper;
+    return control;
+  }, [control, registerWrapper, unregisterWrapper]);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   const sharedProps = {
     ...formObj,
+    formState,
     defaultValues: config?.defaultValues,
     register: registerWrapper,
     unregister: unregisterWrapper,
     setValue: setValueWrapper,
+    control: controlWrapper,
   };
 
   return (
-    <BackdropLoading open={isSubmitting && !autoSubmitConfig.enable}>
-      <form id={id} onSubmit={handleFormSubmit}>
-        {RA.isFunction(children) ? (
-          children(sharedProps)
-        ) : (
-          <FormProvider {...sharedProps}>{children}</FormProvider>
-        )}
-        <Button
-          sx={[
-            (hideSubmitButton || autoSubmitConfig.enable) && {
-              display: "none",
-            },
-          ]}
-          type="submit"
-          variant="contained"
-          disabled={!allowSubmit}
-          ref={submitRef}
+    <form {...formProps} onSubmit={handleFormSubmit}>
+      {showLoader && (
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            right: 0,
+            height: 0,
+            textAlign: "right",
+          }}
         >
-          {submitButtonText || t("global.save")}
-        </Button>
-      </form>
-    </BackdropLoading>
+          <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
+        </Box>
+      )}
+      {RA.isFunction(children) ? (
+        children(sharedProps)
+      ) : (
+        <FormProvider {...sharedProps}>{children}</FormProvider>
+      )}
+      <Button
+        sx={[
+          (hideSubmitButton || autoSubmitConfig.enable) && {
+            display: "none",
+          },
+        ]}
+        type="submit"
+        variant="contained"
+        disabled={!isSubmitAllowed}
+        ref={submitRef}
+      >
+        {submitButtonText || t("global.save")}
+      </Button>
+    </form>
   );
 }
 
