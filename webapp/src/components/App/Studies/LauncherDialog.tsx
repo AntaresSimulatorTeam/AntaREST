@@ -12,6 +12,7 @@ import {
   FormGroup,
   List,
   ListItem,
+  Slider,
   TextField,
   Typography,
   useTheme,
@@ -22,13 +23,21 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import { StudyMetadata } from "../../../common/types";
-import { LaunchOptions, launchStudy } from "../../../services/api/study";
+import {
+  getLauncherLoad,
+  LaunchOptions,
+  launchStudy,
+} from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import LoadIndicator from "../../common/LoadIndicator";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
+const LAUNCH_LOAD_DEFAULT = 12;
+const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
   open: boolean;
@@ -42,7 +51,9 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
-  const [options, setOptions] = useState<LaunchOptions>({});
+  const [options, setOptions] = useState<LaunchOptions>({
+    nb_cpu: LAUNCH_LOAD_DEFAULT,
+  });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
@@ -50,6 +61,11 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
+
+  const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
+    errorMessage: t("study.error.launchLoad"),
+    deps: [open],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -145,7 +161,7 @@ function LauncherDialog(props: Props) {
           alignItems: "flex-start",
           px: 2,
           boxSizing: "border-box",
-          overflowY: "scroll",
+          overflowY: "auto",
           overflowX: "hidden",
         }}
       >
@@ -247,6 +263,36 @@ function LauncherDialog(props: Props) {
             helperText={t("study.timeLimitHelper", {
               max: LAUNCH_DURATION_MAX_HOURS,
             })}
+          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              width: "100%",
+            }}
+          >
+            <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
+            {load && (
+              <LoadIndicator
+                indicator={load.slurm}
+                size="30%"
+                tooltip={t("study.clusterLoad")}
+              />
+            )}
+          </Box>
+          <Slider
+            sx={{
+              width: "95%",
+              mx: 1,
+            }}
+            defaultValue={LAUNCH_LOAD_DEFAULT}
+            step={LAUNCH_LOAD_SLIDER.step}
+            min={LAUNCH_LOAD_SLIDER.min}
+            color="secondary"
+            max={LAUNCH_LOAD_SLIDER.max}
+            valueLabelDisplay="auto"
+            onChange={(event, val) => handleChange("nb_cpu", val as number)}
           />
         </FormControl>
         <FormGroup

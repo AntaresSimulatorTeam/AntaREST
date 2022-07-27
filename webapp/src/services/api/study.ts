@@ -289,6 +289,16 @@ export const launchStudy = async (
   return res.data;
 };
 
+interface LauncherLoadDTO {
+  slurm: number;
+  local: number;
+}
+
+export const getLauncherLoad = async (): Promise<LauncherLoadDTO> => {
+  const res = await client.get("/v1/launcher/load");
+  return res.data;
+};
+
 export const killStudy = async (jid: string): Promise<string> => {
   const res = await client.post(`/v1/launcher/jobs/${jid}/kill`);
   return res.data;
