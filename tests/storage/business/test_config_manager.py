@@ -57,9 +57,9 @@ def test_thematic_trimming_config():
     )
     file_tree_mock.get.side_effect = [
         {},
-        {"variable selection": {"select_var -": ["AVL DTG"]}},
+        {"variables selection": {"select_var -": ["AVL DTG"]}},
         {
-            "variable selection": {
+            "variables selection": {
                 "selected_vars_reset": False,
                 "select_var +": ["CONG. FEE (ALG.)"],
             }
@@ -83,7 +83,7 @@ def test_thematic_trimming_config():
     config_manager.set_thematic_trimming(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
-            target="settings/generaldata/variable selection",
+            target="settings/generaldata/variables selection",
             data={"select_var -": [OutputVariableBase.COAL.value]},
             command_context=command_context,
         )
@@ -93,7 +93,7 @@ def test_thematic_trimming_config():
     config_manager.set_thematic_trimming(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
-            target="settings/generaldata/variable selection",
+            target="settings/generaldata/variables selection",
             data={
                 "selected_vars_reset": False,
                 "select_var +": [OutputVariable810.RENW_1.value],

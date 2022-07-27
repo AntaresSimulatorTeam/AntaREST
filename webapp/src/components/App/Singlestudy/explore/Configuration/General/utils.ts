@@ -9,6 +9,10 @@ import {
   formatThematicTrimmingConfigDTO,
 } from "./dialogs/ThematicTrimmingDialog/utils";
 
+////////////////////////////////////////////////////////////////
+// Enums
+////////////////////////////////////////////////////////////////
+
 enum Month {
   January = "january",
   February = "february",
@@ -34,34 +38,9 @@ enum WeekDay {
   Sunday = "Sunday",
 }
 
-// TODO i18n
-
-export const YEAR_OPTIONS: Array<{ label: string; value: Month }> = [
-  { label: "JAN - DEC", value: Month.January },
-  { label: "FEB - JAN", value: Month.February },
-  { label: "MAR - FEB", value: Month.March },
-  { label: "APR - MAR", value: Month.April },
-  { label: "MAY - APR", value: Month.May },
-  { label: "JUN - MAY", value: Month.June },
-  { label: "JUL - JUN", value: Month.July },
-  { label: "AUG - JUL", value: Month.August },
-  { label: "SEP - AUG", value: Month.September },
-  { label: "OCT - SEP", value: Month.October },
-  { label: "NOV - OCT", value: Month.November },
-  { label: "DEC - NOV", value: Month.December },
-];
-
-export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
-  { label: "MON - SUN", value: WeekDay.Monday },
-  { label: "TUE - MON", value: WeekDay.Tuesday },
-  { label: "WED - TUE", value: WeekDay.Wednesday },
-  { label: "THU - WED", value: WeekDay.Thursday },
-  { label: "FRI - THU", value: WeekDay.Friday },
-  { label: "SAT - FRI", value: WeekDay.Saturday },
-  { label: "SUN - SAT", value: WeekDay.Sunday },
-];
-
-export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
 
 interface SettingsGeneralDataGeneral {
   // Mode
@@ -105,6 +84,12 @@ interface SettingsGeneralDataOutput {
   storenewset: boolean;
 }
 
+interface SettingsGeneralData {
+  // For unknown reason, `general` and `output` may be empty
+  general?: Partial<SettingsGeneralDataGeneral>;
+  output?: Partial<SettingsGeneralDataOutput>;
+}
+
 export interface FormValues {
   mode: SettingsGeneralDataGeneral["mode"];
   firstDay: SettingsGeneralDataGeneral["simulation.start"];
@@ -126,10 +111,43 @@ export interface FormValues {
   filtering: SettingsGeneralDataGeneral["filtering"];
 }
 
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
+
+// TODO i18n
+
+export const YEAR_OPTIONS: Array<{ label: string; value: Month }> = [
+  { label: "JAN - DEC", value: Month.January },
+  { label: "FEB - JAN", value: Month.February },
+  { label: "MAR - FEB", value: Month.March },
+  { label: "APR - MAR", value: Month.April },
+  { label: "MAY - APR", value: Month.May },
+  { label: "JUN - MAY", value: Month.June },
+  { label: "JUL - JUN", value: Month.July },
+  { label: "AUG - JUL", value: Month.August },
+  { label: "SEP - AUG", value: Month.September },
+  { label: "OCT - SEP", value: Month.October },
+  { label: "NOV - OCT", value: Month.November },
+  { label: "DEC - NOV", value: Month.December },
+];
+
+export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
+  { label: "MON - SUN", value: WeekDay.Monday },
+  { label: "TUE - MON", value: WeekDay.Tuesday },
+  { label: "WED - TUE", value: WeekDay.Wednesday },
+  { label: "THU - WED", value: WeekDay.Thursday },
+  { label: "FRI - THU", value: WeekDay.Friday },
+  { label: "SAT - FRI", value: WeekDay.Saturday },
+  { label: "SUN - SAT", value: WeekDay.Sunday },
+];
+
+export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
+
 const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
-  mode: "Adequacy",
+  mode: "Economy",
   firstDay: 1,
-  lastDay: 1,
+  lastDay: 365,
   horizon: "",
   firstMonth: Month.January,
   firstWeekDay: WeekDay.Monday,
@@ -138,7 +156,7 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   nbYears: 1,
   buildingMode: "Automatic",
   selectionMode: false,
-  simulationSynthesis: false,
+  simulationSynthesis: true,
   yearByYear: false,
   mcScenario: false,
   geographicTrimming: false,
@@ -146,14 +164,18 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   filtering: false,
 };
 
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
+
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
-  // For unknown reason, `general` and `output` may be empty
-  const { general = {}, output = {} } = await getStudyData<{
-    general?: Partial<SettingsGeneralDataGeneral>;
-    output?: Partial<SettingsGeneralDataOutput>;
-  }>(studyId, "settings/generaldata", 2);
+  const { general = {}, output = {} } = await getStudyData<SettingsGeneralData>(
+    studyId,
+    "settings/generaldata",
+    2
+  );
 
   const {
     "custom-ts-numbers": customTsNumbers,

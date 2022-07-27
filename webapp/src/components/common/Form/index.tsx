@@ -9,6 +9,7 @@ import {
   FormState,
   Path,
   RegisterOptions,
+  SubmitErrorHandler,
   UnpackNestedValue,
   useForm,
   useFormContext as useFormContextOriginal,
@@ -20,12 +21,13 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Button } from "@mui/material";
+import { Box, Button, CircularProgress } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import useDebouncedState from "../../../hooks/useDebouncedState";
 
 export interface SubmitHandlerData<
   TFieldValues extends FieldValues = FieldValues
@@ -80,6 +82,7 @@ export interface FormProps<
     data: SubmitHandlerData<TFieldValues>,
     event?: React.BaseSyntheticEvent
   ) => any | Promise<any>;
+  onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
     | ((formObj: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
@@ -99,6 +102,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const {
     config,
     onSubmit,
+    onSubmitError,
     children,
     submitButtonText,
     hideSubmitButton,
@@ -109,6 +113,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const formObj = useForm<TFieldValues, TContext>({
     mode: "onChange",
+    delayError: 750,
     ...config,
   });
 
@@ -123,8 +128,10 @@ function Form<TFieldValues extends FieldValues, TContext>(
     reset,
   } = formObj;
   // * /!\ `formState` is a proxy
-  const { isValid, isSubmitting, isDirty, dirtyFields } = formState;
-  const isSubmitAllowed = isDirty && isValid && !isSubmitting;
+  const { isSubmitting, isDirty, dirtyFields } = formState;
+  // Don't add `isValid` because we need to trigger fields validation.
+  // In case we have invalid default value for example.
+  const isSubmitAllowed = isDirty && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -133,6 +140,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const preventClose = useRef(false);
+  const [showLoader, setLoader] = useDebouncedState(false, 750);
+
+  useUpdateEffect(() => {
+    setLoader(isSubmitting);
+    if (isSubmitting) {
+      setLoader.flush();
+    }
+  }, [isSubmitting]);
 
   useUpdateEffect(
     () => {
@@ -170,7 +185,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    handleSubmit((data, e) => {
+    handleSubmit(function onValid(data, e) {
       const dirtyValues = getDirtyValues(dirtyFields, data) as Partial<
         typeof data
       >;
@@ -194,7 +209,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    })()
+    }, onSubmitError)()
       .catch((error) => {
         enqueueErrorSnackbar(t("form.submit.error"), error);
       })
@@ -293,6 +308,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   return (
     <form {...formProps} onSubmit={handleFormSubmit}>
+      {showLoader && (
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            right: 0,
+            height: 0,
+            textAlign: "right",
+          }}
+        >
+          <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
+        </Box>
+      )}
       {RA.isFunction(children) ? (
         children(sharedProps)
       ) : (
