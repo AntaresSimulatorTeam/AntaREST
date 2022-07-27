@@ -53,6 +53,7 @@ function LauncherDialog(props: Props) {
   const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({
     nb_cpu: LAUNCH_LOAD_DEFAULT,
+    auto_unzip: true,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
@@ -295,6 +296,7 @@ function LauncherDialog(props: Props) {
             onChange={(event, val) => handleChange("nb_cpu", val as number)}
           />
         </FormControl>
+        <Typography sx={{ mt: 1 }}>{t("launcher.additionalModes")}</Typography>
         <FormGroup
           sx={{
             mt: 1,
@@ -302,39 +304,58 @@ function LauncherDialog(props: Props) {
             width: "100%",
           }}
         >
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.xpansion}
-                onChange={(e, checked) => {
-                  handleChange("xpansion", checked);
-                }}
-              />
-            }
-            label={t("study.xpansionMode") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.xpansion && !!options.xpansion_r_version}
-                onChange={(e, checked) =>
-                  handleChange("xpansion_r_version", checked)
-                }
-              />
-            }
-            label={t("study.useXpansionVersionR") as string}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.adequacy_patch}
-                onChange={(e, checked) =>
-                  handleChange("adequacy_patch", checked ? {} : undefined)
-                }
-              />
-            }
-            label="Adequacy patch"
-          />
+          <Box sx={{ display: "flex" }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.xpansion}
+                  onChange={(e, checked) => {
+                    handleChange("xpansion", checked);
+                  }}
+                />
+              }
+              label={t("study.xpansionMode") as string}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.xpansion && !!options.xpansion_r_version}
+                  onChange={(e, checked) =>
+                    handleChange("xpansion_r_version", checked)
+                  }
+                />
+              }
+              label={t("study.useXpansionVersionR") as string}
+            />
+          </Box>
+          <Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.adequacy_patch}
+                  onChange={(e, checked) =>
+                    handleChange("adequacy_patch", checked ? {} : undefined)
+                  }
+                />
+              }
+              label="Adequacy patch"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  checked={!!(options.adequacy_patch as any)?.legacy}
+                  onChange={(e, checked) =>
+                    handleChange(
+                      "adequacy_patch",
+                      checked ? { legacy: true } : {}
+                    )
+                  }
+                />
+              }
+              label="Adequacy patch non linearized"
+            />
+          </Box>
         </FormGroup>
         <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
@@ -347,6 +368,24 @@ function LauncherDialog(props: Props) {
           <AccordionDetails>
             <FormControl
               sx={{
+                width: "100%",
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!!options.auto_unzip}
+                    onChange={(e, checked) =>
+                      handleChange("auto_unzip", checked)
+                    }
+                  />
+                }
+                label={t("launcher.autoUnzip")}
+              />
+            </FormControl>
+            <FormControl
+              sx={{
+                mt: 2,
                 width: "100%",
               }}
             >

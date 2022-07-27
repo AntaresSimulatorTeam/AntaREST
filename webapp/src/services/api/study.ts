@@ -274,6 +274,8 @@ export interface LaunchOptions {
   output_suffix?: string;
   // eslint-disable-next-line camelcase
   other_options?: string;
+  // eslint-disable-next-line camelcase
+  auto_unzip?: boolean;
 }
 
 export const launchStudy = async (
