@@ -28,11 +28,14 @@ export interface IGeneratorField<T> {
   type: GeneratorFieldType;
   name: Path<T> & (string | undefined);
   label: string;
+  path: string;
   sx?: SxProps<Theme> | undefined;
-  noDataValue?: any;
+  required?: boolean | string;
   rules?: (
-    defaultValues?: UnpackNestedValue<DeepPartial<T>> | undefined,
-    noDataValue?: any
+    name: IGeneratorField<T>["name"],
+    path: string,
+    required?: boolean | string,
+    defaultValues?: UnpackNestedValue<DeepPartial<T>> | undefined
   ) =>
     | Omit<
         RegisterOptionsPlus<T, Path<T> & (string | undefined)>,
@@ -88,9 +91,9 @@ export default function FormGenerator<T extends FieldValues>(
       {formatedTemplate.map((fieldset) => (
         <Fieldset key={fieldset.id} legend={t(fieldset.translationId)}>
           {fieldset.fields.map((field) => {
-            const { id, rules, type, noDataValue, ...otherProps } = field;
+            const { id, path, rules, type, required, ...otherProps } = field;
             const vRules = rules
-              ? rules(defaultValues, noDataValue)
+              ? rules(field.name, path, required, defaultValues)
               : undefined;
             return (
               <Fragment key={id}>

@@ -11,20 +11,32 @@ interface ClusterViewProps<T> {
   area: string;
   cluster: Cluster["id"];
   studyId: StudyMetadata["id"];
+  noDataValues: Partial<T>;
+  type: "thermals" | "renewables";
   getDefaultValues: (
     studyId: StudyMetadata["id"],
     area: string,
-    cluster: string
+    cluster: string,
+    noDataValues: Partial<T>,
+    type: "thermals" | "renewables"
   ) => Promise<T>;
 }
 
 export default function ClusterView<T extends FieldValues>(
   props: PropsWithChildren<ClusterViewProps<T>>
 ) {
-  const { area, getDefaultValues, cluster, studyId, children } = props;
+  const {
+    area,
+    getDefaultValues,
+    cluster,
+    studyId,
+    noDataValues,
+    type,
+    children,
+  } = props;
 
   const res = usePromise(
-    () => getDefaultValues(studyId, area, cluster),
+    () => getDefaultValues(studyId, area, cluster, noDataValues, type),
     [studyId, area]
   );
 

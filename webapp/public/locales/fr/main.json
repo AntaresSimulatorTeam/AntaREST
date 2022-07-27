@@ -308,6 +308,7 @@
     "study.modelization.clusters.backClusterList": "Retour à la liste des clusters",
     "study.modelization.clusters.tsInterpretation": "Timeseries mode",
     "study.modelization.clusters.group": "Groupes",
+    "studies.modelization.clusters.question.delete": "Êtes-vous sûr de vouloir supprimer ce cluster ?",
     "study.error.addCluster": "Échec lors de la création du cluster",
     "study.error.deleteCluster": "Échec lors de la suppression du cluster",
     "study.error.form.clusterName": "Ce cluster existe déjà",

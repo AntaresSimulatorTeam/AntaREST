@@ -2,8 +2,9 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ClusterRoot from "../common/ClusterRoot";
+import { getDefaultValues } from "../common/utils";
 import RenewableForm from "./RenewableForm";
-import { fixedGroupList, getDefaultValues } from "./utils";
+import { fixedGroupList, noDataValues } from "./utils";
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -14,6 +15,7 @@ function Renewables() {
       study={study}
       fixedGroupList={fixedGroupList}
       type="renewables"
+      noDataValues={noDataValues}
       getDefaultValues={getDefaultValues}
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >

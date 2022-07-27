@@ -1,14 +1,18 @@
 import * as R from "ramda";
 import { useMemo } from "react";
 import { FieldValues } from "react-hook-form";
-import FormGenerator, { IFieldsetType, IFormGenerator } from ".";
+import FormGenerator, {
+  IFieldsetType,
+  IFormGenerator,
+  IGeneratorField,
+} from ".";
 
 interface AutoSubmitGeneratorFormProps<T> {
   jsonTemplate: IFormGenerator<T>;
   saveField: (
+    name: IGeneratorField<T>["name"],
+    path: string,
     defaultValues: any,
-    defaultValue: any,
-    name: string,
     data: any
   ) => void;
 }
@@ -24,12 +28,9 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
         const formatedFields: IFieldsetType<T>["fields"] = fields.map(
           (field) => ({
             ...field,
-            rules: (defaultValues, noDataValue) => ({
-              onAutoSubmit: R.curry(saveField)(
-                defaultValues,
-                noDataValue,
-                field.name
-              ),
+            rules: (name, path, required, defaultValues) => ({
+              onAutoSubmit: R.curry(saveField)(name, path, defaultValues),
+              required,
             }),
           })
         );

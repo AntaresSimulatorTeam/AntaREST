@@ -1,17 +1,12 @@
 import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  genTsOptions,
-  getThermalPath,
-  lawOptions,
-  ThermalFields,
-} from "./utils";
+import { genTsOptions, lawOptions, noDataValues, ThermalType } from "./utils";
 import { StudyMetadata } from "../../../../../../../common/types";
 import ThermalMatrixView from "./ThermalMatrixView";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
-import { saveField } from "../Renewables/utils";
+import { saveField } from "../common/utils";
 
 interface Props {
   area: string;
@@ -23,12 +18,10 @@ interface Props {
 export default function ThermalForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const [path, pathPrefix] = useMemo(() => {
-    return [
-      getThermalPath(area, cluster),
-      `input/thermal/clusters/${area}/list/${cluster}`,
-    ];
-  }, [area, cluster]);
+  const pathPrefix = useMemo(
+    () => `input/thermal/clusters/${area}/list/${cluster}`,
+    [area, cluster]
+  );
   const studyId = study.id;
 
   const groupOptions = useMemo(
@@ -37,11 +30,11 @@ export default function ThermalForm(props: Props) {
   );
 
   const saveValue = useMemo(
-    () => saveField(studyId, pathPrefix, path),
-    [path, pathPrefix, studyId]
+    () => saveField(studyId, pathPrefix, noDataValues),
+    [pathPrefix, studyId]
   );
 
-  const jsonGenerator: IFormGenerator<ThermalFields> = useMemo(
+  const jsonGenerator: IFormGenerator<ThermalType> = useMemo(
     () => [
       {
         translationId: "global.general",
@@ -50,13 +43,15 @@ export default function ThermalForm(props: Props) {
             type: "text",
             name: "name",
             label: t("global.name"),
+            path: `${pathPrefix}/name`,
+            disabled: true,
           },
           {
             type: "select",
             name: "group",
             label: t("study.modelization.clusters.group"),
+            path: `${pathPrefix}/group`,
             options: groupOptions,
-            noDataValue: groupOptions[0],
           },
         ],
       },
@@ -66,56 +61,56 @@ export default function ThermalForm(props: Props) {
           {
             type: "switch",
             name: "enabled",
+            path: `${pathPrefix}/enabled`,
             label: t("study.modelization.clusters.enabled"),
-            noDataValue: true,
           },
           {
             type: "switch",
-            name: "mustRun",
+            name: "must-run",
+            path: `${pathPrefix}/must-run`,
             label: t("study.modelization.clusters.mustRun"),
-            noDataValue: false,
           },
           {
             type: "number",
             name: "unitcount",
+            path: `${pathPrefix}/unitcount`,
             label: t("study.modelization.clusters.unitcount"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "nominalCapacity",
+            name: "nominalcapacity",
+            path: `${pathPrefix}/nominalcapacity`,
             label: t("study.modelization.clusters.nominalCapacity"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "minStablePower",
+            name: "min-stable-power",
+            path: `${pathPrefix}/min-stable-power`,
             label: t("study.modelization.clusters.minStablePower"),
-            noDataValue: 0,
           },
           {
             type: "number",
             name: "spinning",
+            path: `${pathPrefix}/spinning`,
             label: t("study.modelization.clusters.spinning"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "minUpTime",
+            name: "min-up-time",
+            path: `${pathPrefix}/min-up-time`,
             label: t("study.modelization.clusters.minUpTime"),
-            noDataValue: 1,
           },
           {
             type: "number",
-            name: "minDownTime",
+            name: "min-down-time",
+            path: `${pathPrefix}/min-down-time`,
             label: t("study.modelization.clusters.minDownTime"),
-            noDataValue: 1,
           },
           {
             type: "number",
             name: "co2",
+            path: `${pathPrefix}/co2`,
             label: t("study.modelization.clusters.co2"),
-            noDataValue: 0,
           },
         ],
       },
@@ -124,33 +119,33 @@ export default function ThermalForm(props: Props) {
         fields: [
           {
             type: "number",
-            name: "marginalCost",
+            name: "marginal-cost",
+            path: `${pathPrefix}/marginal-cost`,
             label: t("study.modelization.clusters.marginalCost"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "fixedCost",
+            name: "fixed-cost",
+            path: `${pathPrefix}/fixed-cost`,
             label: t("study.modelization.clusters.fixedCost"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "startupCost",
+            name: "startup-cost",
+            path: `${pathPrefix}/startup-cost`,
             label: t("study.modelization.clusters.startupCost"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "marketBidCost",
+            name: "market-bid-cost",
+            path: `${pathPrefix}/market-bid-cost`,
             label: t("study.modelization.clusters.marketBidCost"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "spreadCost",
+            name: "spread-cost",
+            path: `${pathPrefix}/spread-cost`,
             label: t("study.modelization.clusters.spreadCost"),
-            noDataValue: 1,
           },
         ],
       },
@@ -160,41 +155,41 @@ export default function ThermalForm(props: Props) {
         fields: [
           {
             type: "select",
-            name: "genTs",
+            name: "gen-ts",
+            path: `${pathPrefix}/gen-ts`,
             label: t("study.modelization.clusters.genTs"),
             options: genTsOptions,
-            noDataValue: genTsOptions[0],
           },
           {
             type: "number",
-            name: "volatilityForced",
+            name: "volatility.forced",
+            path: `${pathPrefix}/volatility.forced`,
             label: t("study.modelization.clusters.volatilityForced"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "volatilityPlanned",
+            name: "volatility.planned",
+            path: `${pathPrefix}/volatility.planned`,
             label: t("study.modelization.clusters.volatilityPlanned"),
-            noDataValue: 0,
           },
           {
             type: "select",
-            name: "lawForced",
+            name: "law.forced",
+            path: `${pathPrefix}/law.forced`,
             label: t("study.modelization.clusters.lawForced"),
             options: lawOptions,
-            noDataValue: lawOptions[0],
           },
           {
             type: "select",
-            name: "lawPlanned",
+            name: "law.planned",
+            path: `${pathPrefix}/law.planned`,
             label: t("study.modelization.clusters.lawPlanned"),
             options: lawOptions,
-            noDataValue: lawOptions[0],
           },
         ],
       },
     ],
-    [t, groupOptions]
+    [t, pathPrefix, groupOptions]
   );
 
   return (

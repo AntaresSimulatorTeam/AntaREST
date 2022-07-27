@@ -1,16 +1,12 @@
 import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  getRenewablePath,
-  RenewableFields,
-  saveField,
-  tsModeOptions,
-} from "./utils";
+import { noDataValues, RenewableType, tsModeOptions } from "./utils";
 import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
+import { saveField } from "../common/utils";
 
 interface Props {
   area: string;
@@ -22,12 +18,10 @@ interface Props {
 export default function RenewableForm(props: Props) {
   const { groupList, study, area, cluster } = props;
   const [t] = useTranslation();
-  const [path, pathPrefix] = useMemo(() => {
-    return [
-      getRenewablePath(area, cluster),
-      `input/renewables/clusters/${area}/list/${cluster}`,
-    ];
-  }, [area, cluster]);
+  const pathPrefix = useMemo(
+    () => `input/renewables/clusters/${area}/list/${cluster}`,
+    [area, cluster]
+  );
   const studyId = study.id;
 
   const groupOptions = useMemo(
@@ -37,11 +31,11 @@ export default function RenewableForm(props: Props) {
   );
 
   const saveValue = useMemo(
-    () => saveField(studyId, pathPrefix, path),
-    [path, pathPrefix, studyId]
+    () => saveField(studyId, pathPrefix, noDataValues),
+    [pathPrefix, studyId]
   );
 
-  const jsonGenerator: IFormGenerator<RenewableFields> = useMemo(
+  const jsonGenerator: IFormGenerator<RenewableType> = useMemo(
     () => [
       {
         translationId: "global.general",
@@ -49,21 +43,23 @@ export default function RenewableForm(props: Props) {
           {
             type: "text",
             name: "name",
+            path: `${pathPrefix}/name`,
             label: t("global.name"),
+            disabled: true,
           },
           {
             type: "select",
             name: "group",
+            path: `${pathPrefix}/group`,
             label: t("study.modelization.clusters.group"),
             options: groupOptions,
-            noDataValue: groupOptions[0],
           },
           {
             type: "select",
-            name: "tsInterpretation",
+            name: "ts-interpretation",
+            path: `${pathPrefix}/ts-interpretation`,
             label: t("study.modelization.clusters.tsInterpretation"),
             options: tsModeOptions,
-            noDataValue: tsModeOptions[0],
           },
         ],
       },
@@ -73,25 +69,25 @@ export default function RenewableForm(props: Props) {
           {
             type: "switch",
             name: "enabled",
+            path: `${pathPrefix}/enabled`,
             label: t("study.modelization.clusters.enabled"),
-            noDataValue: true,
           },
           {
             type: "number",
             name: "unitcount",
+            path: `${pathPrefix}/unitcount`,
             label: t("study.modelization.clusters.unitcount"),
-            noDataValue: 0,
           },
           {
             type: "number",
-            name: "nominalCapacity",
+            name: "nominalcapacity",
+            path: `${pathPrefix}/nominalcapacity`,
             label: t("study.modelization.clusters.nominalCapacity"),
-            noDataValue: 0,
           },
         ],
       },
     ],
-    [groupOptions, t]
+    [groupOptions, pathPrefix, t]
   );
 
   return (

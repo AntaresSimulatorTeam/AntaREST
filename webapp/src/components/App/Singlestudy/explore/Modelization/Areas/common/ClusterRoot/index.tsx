@@ -42,6 +42,7 @@ import { appendCommands } from "../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 import ClusterView from "./ClusterView";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
 
 interface ClusterRootProps<T> {
   children: (elm: {
@@ -53,8 +54,11 @@ interface ClusterRootProps<T> {
   getDefaultValues: (
     studyId: StudyMetadata["id"],
     area: string,
-    cluster: string
+    cluster: string,
+    noDataValues: Partial<T>,
+    type: "thermals" | "renewables"
   ) => Promise<T>;
+  noDataValues: Partial<T>;
   study: StudyMetadata;
   fixedGroupList: Array<string>;
   type: "thermals" | "renewables";
@@ -70,6 +74,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
     type,
     fixedGroupList,
     backButtonName,
+    noDataValues,
     getDefaultValues,
     children,
   } = props;
@@ -121,6 +126,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
   const [clusterList, setClusterList] = useState<Clusters>(clusters);
   const [isAddClusterDialogOpen, setIsAddClusterDialogOpen] = useState(false);
   const [currentCluster, setCurrentCluster] = useState<Cluster["id"]>();
+  const [clusterForDeletion, setClusterForDeletion] = useState<Cluster["id"]>();
 
   const clusterGroupList: Array<string> = useMemo(() => {
     const tab = [...new Set([...fixedGroupList, ...Object.keys(clusters)])];
@@ -168,6 +174,8 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
       enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.deleteCluster"), e as AxiosError);
+    } finally {
+      setClusterForDeletion(undefined);
     }
   };
 
@@ -277,7 +285,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
                                 edge="end"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleClusterDeletion(item.id);
+                                  setClusterForDeletion(item.id);
                                 }}
                               >
                                 <DeleteIcon />
@@ -290,6 +298,17 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
                   );
                 })}
               </Box>
+              {clusterForDeletion && (
+                <ConfirmationDialog
+                  title={t("dialog.title.confirmation")}
+                  onCancel={() => setClusterForDeletion(undefined)}
+                  onConfirm={() => handleClusterDeletion(clusterForDeletion)}
+                  alert="warning"
+                  open
+                >
+                  {t("studies.modelization.clusters.question.delete")}
+                </ConfirmationDialog>
+              )}
               {isAddClusterDialogOpen && (
                 <AddClusterDialog
                   open={isAddClusterDialogOpen}
@@ -324,7 +343,9 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
           area={currentArea}
           cluster={currentCluster}
           studyId={study.id}
+          noDataValues={noDataValues}
           getDefaultValues={getDefaultValues}
+          type={type}
         >
           {children({
             study,
