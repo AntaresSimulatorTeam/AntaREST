@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { LaunchOptions } from "../services/api/study";
 
 export type IdType = number | string;
 
@@ -110,6 +111,7 @@ export interface LaunchJob {
   status: JobStatus;
   creationDate: string;
   completionDate: string;
+  launcherParams?: LaunchOptions;
   msg: string;
   outputId: string;
   exitCode: number;
@@ -121,6 +123,7 @@ export interface LaunchJobDTO {
   status: JobStatus;
   creation_date: string;
   completion_date: string;
+  launcher_params: string;
   msg: string;
   output_id: string;
   exit_code: number;
