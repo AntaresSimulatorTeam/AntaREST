@@ -132,7 +132,7 @@ function MatrixInput(props: PropsType) {
             {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {!isLoading && data?.columns?.length > 1 && (
+            {!isLoading && data?.columns?.length >= 1 && (
               <ButtonGroup variant="contained">
                 <StyledButton onClick={() => setToggleView((prev) => !prev)}>
                   {toggleView ? (
@@ -167,7 +167,7 @@ function MatrixInput(props: PropsType) {
         </Header>
         <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && data?.columns?.length > 1 ? (
+        {!isLoading && data?.columns?.length >= 1 ? (
           <EditableMatrix
             matrix={data}
             matrixTime
