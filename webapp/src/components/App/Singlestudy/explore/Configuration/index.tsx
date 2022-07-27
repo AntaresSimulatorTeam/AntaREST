@@ -10,7 +10,6 @@ import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import OptimizationPreferences from "./OptimizationPreferences";
 import RegionalDistricts from "./RegionalDistricts";
-import TimeSeriesManagement from "./TimeSeriesManagement";
 
 function Configuration() {
   const [currentElementIndex, setCurrentElementIndex] = useState(0);
