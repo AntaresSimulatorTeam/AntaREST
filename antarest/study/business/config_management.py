@@ -104,7 +104,7 @@ class ConfigManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["settings", "generaldata"])
-        trimming_config = config.get("variable selection", None)
+        trimming_config = config.get("variables selection", None)
         variable_list = self.get_output_variables(study)
         if trimming_config:
             if trimming_config.get("selected_vars_reset", True):
@@ -137,7 +137,7 @@ class ConfigManager:
                 "select_var +": state_by_active[True],
             }
         command = UpdateConfig(
-            target="settings/generaldata/variable selection",
+            target="settings/generaldata/variables selection",
             data=config_data,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
