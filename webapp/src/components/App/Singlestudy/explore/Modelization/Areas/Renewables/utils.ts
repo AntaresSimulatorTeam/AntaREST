@@ -1,6 +1,6 @@
 import { FieldValues } from "react-hook-form";
 
-type TsModeType = "power generation" | "production factor";
+type TsModeType = "power-generation" | "production-factor";
 
 export interface RenewableType extends FieldValues {
   name: string;
@@ -17,7 +17,7 @@ export const noDataValues: Partial<RenewableType> = {
   nominalcapacity: 0,
 };
 
-export const tsModeOptions = ["power generation", "production factor"].map(
+export const tsModeOptions = ["power-generation", "production-factor"].map(
   (item) => ({
     label: item,
     value: item,
