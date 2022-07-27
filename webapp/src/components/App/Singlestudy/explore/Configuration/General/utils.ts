@@ -85,8 +85,9 @@ interface SettingsGeneralDataOutput {
 }
 
 interface SettingsGeneralData {
-  general: Partial<SettingsGeneralDataGeneral>;
-  output: Partial<SettingsGeneralDataOutput>;
+  // For unknown reason, `general` and `output` may be empty
+  general?: Partial<SettingsGeneralDataGeneral>;
+  output?: Partial<SettingsGeneralDataOutput>;
 }
 
 export interface FormValues {
@@ -170,11 +171,11 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
-  // For unknown reason, `general` and `output` may be empty
-  const { general = {}, output = {} } = await getStudyData<{
-    general?: Partial<SettingsGeneralDataGeneral>;
-    output?: Partial<SettingsGeneralDataOutput>;
-  }>(studyId, "settings/generaldata", 2);
+  const { general = {}, output = {} } = await getStudyData<SettingsGeneralData>(
+    studyId,
+    "settings/generaldata",
+    2
+  );
 
   const {
     "custom-ts-numbers": customTsNumbers,

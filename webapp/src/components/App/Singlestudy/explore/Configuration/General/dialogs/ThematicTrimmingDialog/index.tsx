@@ -43,6 +43,8 @@ function ThematicTrimmingDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleUpdateConfig = (fn: Pred) => () => {
+    setSearch("");
+
     const config = getCurrentConfig();
     const newConfig: ThematicTrimmingConfig = R.map(fn, config);
 
@@ -78,7 +80,8 @@ function ThematicTrimmingDialog(props: Props) {
       contentProps={{
         sx: { pb: 0 },
       }}
-      PaperProps={{ sx: { height: "100%" } }}
+      // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
+      PaperProps={{ sx: { height: "calc(100% - 64px)", maxHeight: "900px" } }}
     >
       <Box
         sx={{
