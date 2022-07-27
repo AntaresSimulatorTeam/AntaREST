@@ -144,9 +144,9 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
 export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 
 const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
-  mode: "Adequacy",
+  mode: "Economy",
   firstDay: 1,
-  lastDay: 1,
+  lastDay: 365,
   horizon: "",
   firstMonth: Month.January,
   firstWeekDay: WeekDay.Monday,
@@ -155,7 +155,7 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   nbYears: 1,
   buildingMode: "Automatic",
   selectionMode: false,
-  simulationSynthesis: false,
+  simulationSynthesis: true,
   yearByYear: false,
   mcScenario: false,
   geographicTrimming: false,
