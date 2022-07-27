@@ -263,7 +263,7 @@ export interface LaunchOptions {
   // eslint-disable-next-line camelcase
   xpansion_r_version?: boolean;
   // eslint-disable-next-line camelcase
-  nb_cpu: number;
+  nb_cpu?: number;
   // eslint-disable-next-line camelcase
   time_limit?: number;
   // eslint-disable-next-line camelcase
@@ -278,7 +278,7 @@ export interface LaunchOptions {
 
 export const launchStudy = async (
   sid: string,
-  options: LaunchOptions = { nb_cpu: 12 },
+  options: LaunchOptions = {},
   version: string | undefined = undefined
 ): Promise<string> => {
   const versionArg = version ? `?version=${version}` : "";

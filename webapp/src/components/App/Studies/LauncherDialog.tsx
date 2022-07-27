@@ -36,6 +36,8 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import LoadIndicator from "../../common/LoadIndicator";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
+const LAUNCH_LOAD_DEFAULT = 12;
+const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
   open: boolean;
@@ -49,7 +51,9 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
-  const [options, setOptions] = useState<LaunchOptions>({ nb_cpu: 12 });
+  const [options, setOptions] = useState<LaunchOptions>({
+    nb_cpu: LAUNCH_LOAD_DEFAULT,
+  });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
@@ -59,8 +63,7 @@ function LauncherDialog(props: Props) {
   );
 
   const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
-    // trad
-    errorMessage: "marche pas",
+    errorMessage: t("study.error.launchLoad"),
     deps: [open],
   });
 
@@ -265,16 +268,16 @@ function LauncherDialog(props: Props) {
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: "flex-end",
               width: "100%",
             }}
           >
-            <Typography sx={{ mt: 1 }}>Nombre de CPU</Typography>
+            <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
             {load && (
               <LoadIndicator
                 indicator={load.slurm}
                 size="30%"
-                tooltip="Charge du cluster"
+                tooltip={t("study.clusterLoad")}
               />
             )}
           </Box>
@@ -283,12 +286,12 @@ function LauncherDialog(props: Props) {
               width: "95%",
               mx: 1,
             }}
-            defaultValue={12}
-            step={1}
-            min={0}
+            defaultValue={LAUNCH_LOAD_DEFAULT}
+            step={LAUNCH_LOAD_SLIDER.step}
+            min={LAUNCH_LOAD_SLIDER.min}
             color="secondary"
-            max={24}
-            valueLabelDisplay="auto"
+            max={LAUNCH_LOAD_SLIDER.max}
+            valueLabelDisplay="on"
             onChange={(event, val) => handleChange("nb_cpu", val as number)}
           />
         </FormControl>

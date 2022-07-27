@@ -18,6 +18,7 @@ import {
   SelectChangeEvent,
   Checkbox,
   FormControlLabel,
+  Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -43,11 +44,11 @@ function JobTableView(props: PropType) {
     useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
-  const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
-    // trad
-    errorMessage: "marche pas",
-    deps: [],
-  });
+  const { data: load, reload: reloadLauncherLoad } =
+    usePromiseWithSnackbarError(() => getLauncherLoad(), {
+      errorMessage: t("study.error.launchLoad"),
+      deps: [],
+    });
 
   const applyFilter = useCallback(
     (taskList: TaskView[]) => {
@@ -105,16 +106,33 @@ function JobTableView(props: PropType) {
           ml: 2,
         }}
       >
-        {load && (
-          <LoadIndicator
-            indicator={load.slurm}
-            size="20%"
-            tooltip="Charge du cluster"
-          />
-        )}
+        <Box
+          sx={{
+            width: "30%",
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "flex-end",
+          }}
+        >
+          <Typography sx={{ mr: 2 }}>{t("study.clusterLoad")}</Typography>
+          {load && (
+            <LoadIndicator
+              indicator={load.slurm}
+              size="60%"
+              tooltip={t("study.clusterLoad")}
+            />
+          )}
+        </Box>
         <Box display="flex" alignItems="center">
           <Tooltip title={t("tasks.refresh") as string} sx={{ mr: 4 }}>
-            <Button color="primary" onClick={refresh} variant="outlined">
+            <Button
+              color="primary"
+              onClick={() => {
+                refresh();
+                reloadLauncherLoad();
+              }}
+              variant="outlined"
+            >
               <RefreshIcon />
             </Button>
           </Tooltip>
