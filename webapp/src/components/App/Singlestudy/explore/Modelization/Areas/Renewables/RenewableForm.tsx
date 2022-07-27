@@ -7,6 +7,7 @@ import MatrixInput from "../../../../../../common/MatrixInput";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 import { saveField } from "../common/utils";
+import { transformNameToId } from "../../../../../../../services/utils";
 
 interface Props {
   area: string;
@@ -106,7 +107,9 @@ export default function RenewableForm(props: Props) {
       >
         <MatrixInput
           study={study}
-          url={`input/renewables/series/${area}/${cluster}/series`}
+          url={`input/renewables/series/${area}/${transformNameToId(
+            cluster
+          )}/series`}
           computStats={MatrixStats.NOCOL}
         />
       </Box>

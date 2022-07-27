@@ -7,6 +7,7 @@ import ThermalMatrixView from "./ThermalMatrixView";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 import { saveField } from "../common/utils";
+import { transformNameToId } from "../../../../../../../services/utils";
 
 interface Props {
   area: string;
@@ -206,7 +207,11 @@ export default function ThermalForm(props: Props) {
           height: "500px",
         }}
       >
-        <ThermalMatrixView study={study} area={area} cluster={cluster} />
+        <ThermalMatrixView
+          study={study}
+          area={area}
+          cluster={transformNameToId(cluster)}
+        />
       </Box>
     </>
   );
