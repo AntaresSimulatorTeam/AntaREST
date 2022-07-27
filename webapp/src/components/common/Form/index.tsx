@@ -318,7 +318,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             textAlign: "right",
           }}
         >
-          <CircularProgress color="secondary" size={20} />
+          <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
         </Box>
       )}
       {RA.isFunction(children) ? (
