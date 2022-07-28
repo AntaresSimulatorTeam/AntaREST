@@ -26,7 +26,6 @@ import CommandDrawer from "./Commands";
 import { addWsMessageListener } from "../../../services/webSockets";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
-import { changeTitle } from "../../../utils/textUtils";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -110,9 +109,15 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   useEffect(() => {
-    if (study) {
-      changeTitle(`Antares Web | ${study.name} (${study.id})`);
+    const title = document.querySelector("title");
+    if (title && study) {
+      title.textContent = `Antares Web | ${study.name} (${study.id})`;
     }
+    return () => {
+      if (title) {
+        title.textContent = "Antares Web";
+      }
+    };
   }, [study]);
 
   useEffect(() => {

@@ -17,7 +17,6 @@ import {
 import { FetchStatus } from "../../../redux/utils";
 import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
 import FilterDrawer from "./FilterDrawer";
-import { resetTitle } from "../../../utils/textUtils";
 
 function Studies() {
   const [t] = useTranslation();
@@ -27,12 +26,6 @@ function Studies() {
     valueSelector: getStudyIdsFilteredAndSorted,
   });
   const [openFilter, setOpenFilter] = useState(false);
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX

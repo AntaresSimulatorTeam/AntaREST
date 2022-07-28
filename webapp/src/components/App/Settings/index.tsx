@@ -13,7 +13,6 @@ import {
   isAuthUserAdmin,
   isAuthUserInGroupAdmin,
 } from "../../../redux/selectors";
-import { resetTitle } from "../../../utils/textUtils";
 
 /**
  * Component
@@ -44,12 +43,6 @@ function Settings() {
   const handleTabChange = (event: SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
   };
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX

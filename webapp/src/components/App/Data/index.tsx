@@ -25,7 +25,6 @@ import SplitLayoutView from "../../common/SplitLayoutView";
 import FileTable from "../../common/FileTable";
 import { getAuthUser } from "../../../redux/selectors";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { resetTitle } from "../../../utils/textUtils";
 
 function Data() {
   const [t] = useTranslation();
@@ -135,12 +134,6 @@ function Data() {
       setDataList([]);
     };
   }, [user, t, enqueueErrorSnackbar]);
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  resetTitle();
 
   const matrices = dataList.find((item) => item.id === selectedItem)?.matrices;
 
