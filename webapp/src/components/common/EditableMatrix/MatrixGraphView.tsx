@@ -117,7 +117,7 @@ export default function MatrixGraphView(props: PropTypes) {
           label={t("matrix.monotonicView")}
         />
       </Box>
-      <Box sx={{ display: "block", width: "100%", height: "100%", m: 1 }}>
+      <Box sx={{ display: "block", width: 1, height: 1, m: 1 }}>
         <AutoSizer>
           {({ height, width }) => (
             <Plot
