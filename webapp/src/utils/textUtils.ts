@@ -9,3 +9,17 @@ export const isSearchMatching = R.curry(
     return RA.ensureArray(values).find(isMatching);
   }
 );
+
+export const resetTitle = (): void => {
+  const title = document.querySelector("title");
+  if (title) {
+    title.textContent = "Antares Web";
+  }
+};
+
+export const changeTitle = (text: string): void => {
+  const title = document.querySelector("title");
+  if (title) {
+    title.textContent = text;
+  }
+};

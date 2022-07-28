@@ -16,6 +16,7 @@ import storage, { StorageKey } from "../../services/utils/localStorage";
 import Form, { SubmitHandlerData } from "../common/Form";
 import StringFE from "../common/fieldEditors/StringFE";
 import PasswordFE from "../common/fieldEditors/PasswordFE";
+import { resetTitle } from "../../utils/textUtils";
 
 interface FormValues {
   username: string;
@@ -77,6 +78,12 @@ function LoginWrapper(props: Props) {
       throw err;
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX

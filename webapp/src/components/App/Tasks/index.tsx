@@ -62,6 +62,7 @@ import { getStudies } from "../../../redux/selectors";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { resetTitle } from "../../../utils/textUtils";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -501,10 +502,7 @@ function JobsListing() {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const title = document.querySelector("title");
-  if (title) {
-    title.textContent = "Antares Web";
-  }
+  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX

@@ -17,6 +17,7 @@ import {
 import { FetchStatus } from "../../../redux/utils";
 import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
 import FilterDrawer from "./FilterDrawer";
+import { resetTitle } from "../../../utils/textUtils";
 
 function Studies() {
   const [t] = useTranslation();
@@ -31,10 +32,7 @@ function Studies() {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const title = document.querySelector("title");
-  if (title) {
-    title.textContent = "Antares Web";
-  }
+  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX

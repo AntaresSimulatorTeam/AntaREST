@@ -13,6 +13,7 @@ import {
   isAuthUserAdmin,
   isAuthUserInGroupAdmin,
 } from "../../../redux/selectors";
+import { resetTitle } from "../../../utils/textUtils";
 
 /**
  * Component
@@ -48,10 +49,7 @@ function Settings() {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const title = document.querySelector("title");
-  if (title) {
-    title.textContent = "Antares Web";
-  }
+  resetTitle();
 
   ////////////////////////////////////////////////////////////////
   // JSX
