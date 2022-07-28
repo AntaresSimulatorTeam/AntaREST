@@ -162,14 +162,14 @@ def create_study_variant_routes(
         uuid: str,
         commands: List[CommandDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> Optional[List[str]]:
         logger.info(
             f"Appending new command to variant study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        study_service.apply_commands(sanitized_uuid, commands, params)
+        return study_service.apply_commands(sanitized_uuid, commands, params)
 
     @bp.put(
         "/studies/{uuid}/commands",

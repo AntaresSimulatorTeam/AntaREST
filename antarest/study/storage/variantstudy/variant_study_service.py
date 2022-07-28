@@ -228,7 +228,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study_id: str,
         commands: List[CommandDTO],
         params: RequestParameters,
-    ) -> None:
+    ) -> List[str]:
         """
         Add command to list of commands (at the end)
         Args:
@@ -241,8 +241,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
         self._check_commands_validity(study_id, commands)
         first_index = len(study.commands)
-        study.commands.extend(
-            [
+        new_commands = [
                 CommandBlock(
                     command=command.action,
                     args=json.dumps(command.args),
@@ -250,8 +249,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 for i, command in enumerate(commands)
             ]
-        )
+        study.commands.extend(new_commands)
         self.invalidate_cache(study)
+        return [c.id for c in new_commands]
 
     def replace_commands(
         self,

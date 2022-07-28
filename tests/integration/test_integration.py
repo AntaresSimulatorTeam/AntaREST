@@ -1048,6 +1048,7 @@ def test_variant_manager(app: FastAPI):
         },
     )
     assert res.status_code == 200
+    assert len(res.json()) == 1
 
     res = client.post(
         f"/v1/studies/{variant_id}/commands",
