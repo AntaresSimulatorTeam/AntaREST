@@ -497,6 +497,10 @@ function JobsListing() {
 
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
       <Box

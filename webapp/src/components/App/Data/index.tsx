@@ -137,6 +137,10 @@ function Data() {
 
   const matrices = dataList.find((item) => item.id === selectedItem)?.matrices;
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <RootPage title={t("data.title")} titleIcon={StorageIcon}>
       {loaded && (
