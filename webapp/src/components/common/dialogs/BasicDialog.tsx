@@ -9,7 +9,6 @@ import {
   experimental_sx as sx,
   DialogContentProps,
 } from "@mui/material";
-import { ElementType, ReactNode } from "react";
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
@@ -29,9 +28,9 @@ enum Alert {
 type AlertValues = keyof typeof Alert;
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {
-  title?: ReactNode;
-  titleIcon?: ElementType<SvgIconComponent>;
-  actions?: ReactNode;
+  title?: React.ReactNode;
+  titleIcon?: SvgIconComponent;
+  actions?: React.ReactNode;
   alert?: AlertValues;
   contentProps?: DialogContentProps;
 }
