@@ -135,7 +135,20 @@ function Data() {
     };
   }, [user, t, enqueueErrorSnackbar]);
 
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const title = document.querySelector("title");
+  if (title) {
+    title.textContent = "Antares Web";
+  }
+
   const matrices = dataList.find((item) => item.id === selectedItem)?.matrices;
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <RootPage title={t("data.title")} titleIcon={StorageIcon}>

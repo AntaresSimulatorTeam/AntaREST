@@ -109,6 +109,13 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   useEffect(() => {
+    const title = document.querySelector("title");
+    if (title && study) {
+      title.textContent = `Antares Web | ${study.name} (${study.id})`;
+    }
+  }, [study]);
+
+  useEffect(() => {
     return addWsMessageListener(listener);
   }, [listener]);
 
