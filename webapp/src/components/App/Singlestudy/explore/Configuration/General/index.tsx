@@ -48,7 +48,7 @@ function GeneralParameters() {
     <UsePromiseCond
       response={res}
       ifPending={() => <SimpleLoader />}
-      ifRejected={(error) => <div>{error}</div>}
+      ifRejected={(error) => <div>{error?.toString()}</div>}
       ifResolved={(data) => (
         <Form autoSubmit config={{ defaultValues: data }}>
           <Fields study={study} setDialog={setDialog} />

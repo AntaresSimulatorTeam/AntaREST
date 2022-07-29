@@ -76,7 +76,7 @@ export type AutoSubmitConfig = { enable: boolean; wait?: number };
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
-> extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit"> {
+> extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerData<TFieldValues>,

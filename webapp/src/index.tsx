@@ -1,4 +1,4 @@
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { StyledEngineProvider } from "@mui/material";
 import { initI18n } from "./i18n";
@@ -17,12 +17,14 @@ initConfig((config: Config) => {
 
   initI18n(config.version.gitcommit);
 
-  ReactDOM.render(
+  const container = document.getElementById("root") as HTMLElement;
+  const root = createRoot(container);
+
+  root.render(
     <StyledEngineProvider injectFirst>
       <Provider store={store}>
         <App />
       </Provider>
-    </StyledEngineProvider>,
-    document.getElementById("root")
+    </StyledEngineProvider>
   );
 });
