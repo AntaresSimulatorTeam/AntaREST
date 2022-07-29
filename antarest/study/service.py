@@ -362,7 +362,7 @@ class StudyService:
                     StudyPermissionType.READ,
                     raising=False,
                 )
-                and study_matcher(name, workspace, folder),
+                and study_matcher(name, workspace, folder)(study_dto),
                 studies.values(),
             )
         }
