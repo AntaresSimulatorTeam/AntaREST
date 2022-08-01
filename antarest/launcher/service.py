@@ -45,6 +45,7 @@ from antarest.launcher.model import (
     JobLog,
     JobLogType,
     LauncherParametersDTO,
+    XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -475,7 +476,8 @@ class LauncherService:
                 target_path,
                 output_list=[launcher_params.xpansion.output_id]
                 if launcher_params.xpansion
-                and launcher_params.xpansion.output_id
+                and isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                and launcher_params.xpansion.output_id is not None
                 else None,
             )
             self.append_log(job_id, "Study extracted", JobLogType.BEFORE)

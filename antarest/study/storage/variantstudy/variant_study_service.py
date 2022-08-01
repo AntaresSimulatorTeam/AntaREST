@@ -1175,7 +1175,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             if output_list_filter:
                 os.mkdir(output_dest_path)
                 for output in output_list_filter:
-                    shutil.copytree(src=output_src_path / output, dst=output_dest_path / output)
+                    shutil.copytree(
+                        src=output_src_path / output,
+                        dst=output_dest_path / output,
+                    )
             else:
                 shutil.copytree(src=output_src_path, dst=output_dest_path)
 

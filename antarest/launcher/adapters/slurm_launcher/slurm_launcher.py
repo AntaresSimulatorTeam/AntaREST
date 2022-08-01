@@ -33,7 +33,12 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO, XpansionParametersDTO
+from antarest.launcher.model import (
+    JobStatus,
+    LogType,
+    LauncherParametersDTO,
+    XpansionParametersDTO,
+)
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 
@@ -515,7 +520,10 @@ class SlurmLauncher(AbstractLauncher):
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"
                 )
-                if isinstance(launcher_params.xpansion, XpansionParametersDTO) and launcher_params.xpansion.sensitivity_mode:
+                if (
+                    isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                    and launcher_params.xpansion.sensitivity_mode
+                ):
                     other_options.append("xpansion_sensitivity")
             time_limit = launcher_params.time_limit
             if time_limit and isinstance(time_limit, int):
