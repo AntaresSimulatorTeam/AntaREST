@@ -527,6 +527,29 @@ def create_study_routes(
         )
         return content
 
+    @bp.delete(
+        "/studies/{study_id}/outputs/{output_id}",
+        tags=[APITag.study_outputs],
+        summary="Delete a simulation output",
+    )
+    def delete_output(
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"FDeleting output {output_id} from study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study_service.delete_output(
+            study_id,
+            output_id,
+            params,
+        )
+
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         tags=[APITag.study_outputs],

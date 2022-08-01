@@ -62,10 +62,8 @@ class ConfigPathBuilder:
             study_path
         )
 
-        study_path_without_zip_extension = (
-            study_path.parent / study_path.stem
-            if study_path.suffix == ".zip"
-            else study_path.name
+        study_path_without_zip_extension = study_path.parent / (
+            study_path.stem if study_path.suffix == ".zip" else study_path.name
         )
 
         return FileStudyTreeConfig(
