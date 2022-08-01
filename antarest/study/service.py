@@ -1055,11 +1055,7 @@ class StudyService:
             )
         )
 
-        logger.info(
-            f"Output {output_name} deleted from study {uuid}",
-            output_name,
-            uuid,
-        )
+        logger.info(f"Output {output_name} deleted from study {uuid}")
 
     def download_outputs(
         self,
