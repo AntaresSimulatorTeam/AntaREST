@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -16,33 +15,35 @@ import FileTable from "../../../../../common/FileTable";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import { Title } from "../share/styles";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 
 function Files() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const [constraints, setConstraints] = useState<Array<string>>();
-  const [loaded, setLoaded] = useState<boolean>(false);
   const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const init = useCallback(async () => {
-    try {
+  const {
+    data: constraints,
+    isLoading,
+    reload: reloadConstraints,
+  } = usePromiseWithSnackbarError(
+    async () => {
       if (study) {
-        const tempConstraints = await getAllConstraints(study.id);
-        setConstraints(tempConstraints);
+        return getAllConstraints(study.id);
       }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.loadConfiguration"),
-        e as AxiosError
-      );
-    } finally {
-      setLoaded(true);
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
     }
-  }, [study?.id, t]);
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const addOneConstraint = async (file: File) => {
     if (constraints) {
@@ -53,7 +54,7 @@ function Files() {
       } catch (e) {
         enqueueErrorSnackbar(t("xpansion.error.addFile"), e as AxiosError);
       } finally {
-        init();
+        reloadConstraints();
       }
     }
   };
@@ -70,26 +71,23 @@ function Files() {
   };
 
   const deleteConstraint = async (filename: string) => {
-    if (constraints) {
-      const tempConstraints = constraints.filter((a) => a !== filename);
-      try {
-        if (study) {
-          await deleteConstraints(study.id, filename);
-          setConstraints(tempConstraints);
-        }
-      } catch (e) {
-        enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
+    try {
+      if (study) {
+        await deleteConstraints(study.id, filename);
+        reloadConstraints();
       }
+    } catch (e) {
+      enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
     }
   };
 
-  useEffect(() => {
-    init();
-  }, [init]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
-      {loaded ? (
+      {!isLoading ? (
         <Box sx={{ width: "100%", height: "100%", p: 2 }}>
           <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
             <FileTable
