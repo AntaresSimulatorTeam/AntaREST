@@ -1055,12 +1055,7 @@ class StudyService:
             )
         )
 
-        logger.info(
-            "delete output %s on study %s by user %s",
-            output_name,
-            uuid,
-            params.get_user_id(),
-        )
+        logger.info(f"Output {output_name} deleted from study {uuid}")
 
     def download_outputs(
         self,

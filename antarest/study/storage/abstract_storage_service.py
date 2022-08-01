@@ -285,6 +285,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
+            if is_zipped:
+                Path(str(path_output) + ".zip").unlink(missing_ok=True)
             output_full_name = None
 
         return output_full_name
