@@ -201,27 +201,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        study = self._get_variant_study(study_id, params)
-        self._check_update_authorization(study)
-        index = len(study.commands)
-        new_id = str(uuid4())
-        command_block = CommandBlock(
-            id=new_id,
-            command=command.action,
-            study_id=study.id,
-            args=json.dumps(command.args),
-            index=index,
-        )
-        study.commands.append(command_block)
-        self.invalidate_cache(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
-            )
-        )
-        return new_id
+        command_ids = self.append_commands(study_id, [command], params)
+        return command_ids[0]
 
     def append_commands(
         self,
