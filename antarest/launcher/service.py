@@ -473,7 +473,10 @@ class LauncherService:
                 study_id,
                 RequestParameters(DEFAULT_ADMIN_USER),
                 target_path,
-                outputs=False,
+                output_list=[launcher_params.xpansion.output_id]
+                if launcher_params.xpansion
+                and launcher_params.xpansion.output_id
+                else None,
             )
             self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
             self._after_export_flat_hooks(

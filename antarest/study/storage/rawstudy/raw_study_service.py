@@ -313,20 +313,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata: RawStudy,
         dest: Path,
         outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         path_study = Path(metadata.path)
         start_time = time.time()
         ignore_patterns = (
-            (
                 lambda directory, contents: ["output"]
                 if str(directory) == str(path_study)
                 else []
-            )
-            if not outputs
-            else None
-        )
+            ) if not outputs or output_list_filter else None
         shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+        if output_list_filter:
+            for output in output_list_filter:
+                shutil.copytree(src=path_study / "output" / output, dst=dest / "output" / output)
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")

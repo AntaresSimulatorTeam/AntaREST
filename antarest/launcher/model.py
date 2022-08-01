@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime, Sequence, ForeignKey  # type: ignore
@@ -10,12 +10,18 @@ from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
 
 
+class XpansionParametersDTO(BaseModel):
+    output_id: Optional[str]
+    sensitivity_mode: bool = False
+    enabled: bool = True
+
+
 class LauncherParametersDTO(BaseModel):
     adequacy_patch: Optional[Dict[str, Any]] = None
     nb_cpu: Optional[int] = None
     post_processing: bool = False
     time_limit: Optional[int] = None
-    xpansion: bool = False
+    xpansion: Union[bool, Optional[XpansionParametersDTO]] = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True

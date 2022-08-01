@@ -246,7 +246,12 @@ class IStudyStorageService(ABC, Generic[T]):
 
     @abstractmethod
     def export_study_flat(
-        self, metadata: T, dest: Path, outputs: bool = True
+        self,
+        metadata: T,
+        dest: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
+        denormalize: bool = True,
     ) -> None:
         """
         Export study to destination
@@ -254,7 +259,9 @@ class IStudyStorageService(ABC, Generic[T]):
         Args:
             metadata: study
             dest: destination path
-            outputs: keep outputs or not
+            outputs: list of outputs to keep
+            output_list_filter: list of outputs to keep (None indicate all outputs)
+            denormalize: denormalize the study (replace matrix links by real matrices)
         Returns: None
 
         """

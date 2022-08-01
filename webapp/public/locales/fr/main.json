@@ -168,6 +168,7 @@
     "settings.error.updateMaintenance": "Erreur lors du changement du status de maintenance",
     "launcher.additionalModes": "Mode additionnels",
     "launcher.autoUnzip": "Dézippage automatique",
+    "launcher.xpansion.sensitivityMode": "Sensistivity mode",
     "study.runStudy": "Lancement d'étude",
     "study.otherOptions": "Autres options",
     "study.xpansionMode": "Mode Xpansion",

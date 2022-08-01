@@ -168,6 +168,7 @@
     "settings.error.updateMaintenance": "Maintenance mode not updated",
     "launcher.additionalModes": "Additional modes",
     "launcher.autoUnzip": "Automatically unzip",
+    "launcher.xpansion.sensitivityMode": "Sensistivity mode",
     "study.runStudy": "Study launch",
     "study.otherOptions": "Other options",
     "study.xpansionMode": "Xpansion mode",

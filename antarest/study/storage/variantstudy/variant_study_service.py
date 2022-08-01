@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shutil
 import tempfile
 import time
@@ -1155,6 +1156,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         dest: Path,
         outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
 
@@ -1170,7 +1172,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if outputs and output_src_path.is_dir():
             if output_dest_path.is_dir():
                 shutil.rmtree(output_dest_path)
-            shutil.copytree(src=output_src_path, dst=output_dest_path)
+            if output_list_filter:
+                os.mkdir(output_dest_path)
+                for output in output_list_filter:
+                    shutil.copytree(src=output_src_path / output, dst=output_dest_path / output)
+            else:
+                shutil.copytree(src=output_src_path, dst=output_dest_path)
 
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
