@@ -143,6 +143,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
+from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -2311,13 +2312,27 @@ class StudyService:
                     )
                     raise e
 
-            task_id = self.task_service.add_task(
-                unarchive_output_task,
-                task_name,
-                task_type=TaskType.UNARCHIVE,
+            dest = Path(study.path) / "output" / output_id
+            src = Path(study.path) / "output" / f"{output_id}.zip"
+            workspace = study.workspace
+            task_id = self.task_service.add_worker_task(
+                TaskType.UNARCHIVE,
+                f"unarchive_{workspace}",
+                ArchiveTaskArgs(
+                    src=str(src), dest=str(dest), remove_src=not keep_src_zip
+                ).dict(),
+                name=task_name,
                 ref_id=study.id,
-                custom_event_messages=None,
                 request_params=params,
             )
+
+            # task_id = self.task_service.add_task(
+            #     unarchive_output_task,
+            #     task_name,
+            #     task_type=TaskType.UNARCHIVE,
+            #     ref_id=study.id,
+            #     custom_event_messages=None,
+            #     request_params=params,
+            # )
 
             return task_id

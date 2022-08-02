@@ -50,7 +50,8 @@ class ITaskService(ABC):
     @abstractmethod
     def add_worker_task(
         self,
-        task_type: str,
+        task_type: TaskType,
+        task_queue: str,
         task_args: Dict[str, Union[int, float, bool, str]],
         name: Optional[str],
         ref_id: Optional[str],
@@ -131,7 +132,7 @@ class TaskJobService(ITaskService):
             res_wrapper: List[TaskResult],
         ) -> Callable[[Event], Awaitable[None]]:
             async def _await_task_end(event: Event) -> None:
-                task_event = cast(WorkerTaskResult, event.payload)
+                task_event = WorkerTaskResult.parse_obj(event.payload)
                 if task_event.task_id == task_id:
                     res_wrapper.append(task_event.task_result)
 
@@ -162,17 +163,18 @@ class TaskJobService(ITaskService):
 
     def add_worker_task(
         self,
-        task_type: str,
+        task_type: TaskType,
+        task_queue: str,
         task_args: Dict[str, Union[int, float, bool, str]],
         name: Optional[str],
         ref_id: Optional[str],
         request_params: RequestParameters,
     ) -> str:
         task = self._create_task(
-            name, TaskType.WORKER_TASK, ref_id, request_params
+            name, task_type, ref_id, request_params
         )
         self._launch_task(
-            self._create_worker_task(str(task.id), task_type, task_args),
+            self._create_worker_task(str(task.id), task_queue, task_args),
             task,
             None,
             request_params,

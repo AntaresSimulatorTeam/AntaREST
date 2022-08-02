@@ -324,6 +324,7 @@ def test_worker_tasks(tmp_path: Path):
         ref_id=None,
     )
     task_id = service.add_worker_task(
+        TaskType.WORKER_TASK,
         "test",
         {"file": file_to_create},
         None,

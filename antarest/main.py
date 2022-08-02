@@ -295,7 +295,7 @@ def create_worker(
 ) -> AbstractWorker:
     if not event_bus:
         _, event_bus, _, _, _, _, _ = create_core_services(None, config)
-    return ArchiveWorker(event_bus, ["archive_test"])
+    return ArchiveWorker(event_bus, "test")
 
 
 def create_services(
