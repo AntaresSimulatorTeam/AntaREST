@@ -102,7 +102,12 @@ function BindingConstraints() {
             [
               () => currentBindingConst !== undefined && bcIndex !== undefined,
               () =>
-                (<BindingConstView bcIndex={bcIndex as number} />) as ReactNode,
+                (
+                  <BindingConstView
+                    bcIndex={bcIndex as number}
+                    bindingConst={currentBindingConst}
+                  />
+                ) as ReactNode,
             ],
             // No Areas
             [
@@ -116,4 +121,4 @@ function BindingConstraints() {
   );
 }
 
-export default BindingConstraint;
+export default BindingConstraints;

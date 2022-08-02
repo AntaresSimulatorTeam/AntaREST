@@ -4,26 +4,27 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { getBindingConstPath, BindingConstFields } from "./utils";
+import { BindingConstFields } from "./utils";
 import { StudyMetadata } from "../../../../../../../common/types";
-import { Content } from "../style";
-import Constraint from "./Constraint";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
+import { Constraints } from "./Constraints";
 
 interface Props {
   bcIndex: number;
   study: StudyMetadata;
+  bindingConst: string;
 }
 
 export default function BindingConstForm(props: Props) {
-  const { study, bcIndex } = props;
+  const { study, bindingConst, bcIndex } = props;
   const studyId = study.id;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const path = useMemo(() => {
-    return getBindingConstPath(bcIndex);
-  }, [bcIndex]);
+  const pathPrefix = useMemo(
+    () => `input/bindingconstraints/bindingconstraints/${bcIndex}`,
+    [bcIndex]
+  );
 
   const optionOperator = useMemo(
     () =>
@@ -45,15 +46,15 @@ export default function BindingConstForm(props: Props) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveValue = useCallback(
-    async (defaultValues: any, defaultValue: any, name: string, data: any) => {
+    async (name: string, path: string, defaultValues: any, data: any) => {
       try {
-        console.log("IT'S WORKING");
-        await editStudy(data, studyId, path[name]);
+        console.log("IT'S WORKING: ", name);
+        await editStudy(data, studyId, path);
       } catch (error) {
         enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
       }
     },
-    [enqueueErrorSnackbar, path, studyId, t]
+    [enqueueErrorSnackbar, studyId, t]
   );
 
   const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
@@ -64,35 +65,40 @@ export default function BindingConstForm(props: Props) {
           {
             type: "text",
             name: "name",
+            path: `${pathPrefix}/name`,
             label: t("global.name"),
             required: t("form.field.required") as string,
           },
           {
             type: "text",
             name: "comments",
+            path: `${pathPrefix}/comments`,
             label: t("study.modelization.bindingConst.comments"),
           },
           {
             type: "select",
             name: "type",
+            path: `${pathPrefix}/type`,
             label: t("study.modelization.bindingConst.type"),
             options: typeOptions,
           },
           {
             type: "select",
             name: "operator",
+            path: `${pathPrefix}/operator`,
             label: t("study.modelization.bindingConst.operator"),
             options: optionOperator,
           },
           {
             type: "switch",
             name: "enabled",
+            path: `${pathPrefix}/enabled`,
             label: t("study.modelization.bindingConst.enabled"),
           },
         ],
       },
     ],
-    [optionOperator, t, typeOptions]
+    [optionOperator, pathPrefix, t, typeOptions]
   );
 
   return (
@@ -105,9 +111,7 @@ export default function BindingConstForm(props: Props) {
         legend={t("study.modelization.bindingConst.constraints")}
         style={{ padding: "16px" }}
       >
-        <Content>
-          <Constraint areaList={[]} />
-        </Content>
+        <Constraints bindingConst={bindingConst} studyId={study.id} />
       </Fieldset>
     </>
   );

@@ -10,11 +10,12 @@ import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   bcIndex: number;
+  bindingConst: string;
 }
 
 function BindingConstView(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { bcIndex } = props;
+  const { bcIndex, bindingConst } = props;
   const res = usePromise(
     () => getDefaultValues(study.id, bcIndex),
     [study.id, bcIndex]
@@ -30,7 +31,11 @@ function BindingConstView(props: Props) {
             autoSubmit
             config={{ defaultValues: data as BindingConstFields }}
           >
-            <BindingConstForm bcIndex={bcIndex} study={study} />
+            <BindingConstForm
+              bcIndex={bcIndex}
+              study={study}
+              bindingConst={bindingConst}
+            />
           </Form>
         )}
       />

@@ -4,6 +4,7 @@ import {
   LinkInfoWithUI,
   UpdateAreaUi,
 } from "../../common/types";
+import { ConstraintType } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import client from "./client";
 
 export const createArea = async (
@@ -57,6 +58,18 @@ export const deleteLink = async (
 ): Promise<string> => {
   const res = await client.delete(
     `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}?uuid=${uuid}&area_from=${areaIdFrom}&area_to=${areaIdTo}`
+  );
+  return res.data;
+};
+
+export const updateConstraint = async (
+  uuid: string,
+  bindingConst: string,
+  constraint: ConstraintType
+): Promise<string> => {
+  const res = await client.put(
+    `/v1/studies/${uuid}/bindingconstraint/${bindingConst}/constraint`,
+    constraint
   );
   return res.data;
 };

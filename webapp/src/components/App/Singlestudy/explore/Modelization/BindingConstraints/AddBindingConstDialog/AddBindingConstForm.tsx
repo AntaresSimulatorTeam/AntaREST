@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
-import { useFormContext } from "react-hook-form";
+import { FieldPath, useFormContext } from "react-hook-form";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { Root } from "../style";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
@@ -25,7 +25,11 @@ function AddClusterForm() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const renderInput = (name: string, transId: string, required?: boolean) => (
+  const renderInput = (
+    name: FieldPath<CreateBindingConstraint>,
+    transId: string,
+    required?: boolean
+  ) => (
     <StringFE
       name={name}
       sx={{ mx: 0, mb: 2, flex: 1 }}
@@ -40,7 +44,7 @@ function AddClusterForm() {
   );
 
   const renderSelect = (
-    name: string,
+    name: FieldPath<CreateBindingConstraint>,
     options: Array<{ label: string; value: string }>,
     transId?: string
   ) => (
