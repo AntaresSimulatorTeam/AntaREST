@@ -10,7 +10,7 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createGroup, createRole } from "../../../../../services/api/user";
-import { SubmitHandlerData } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
 /**
@@ -40,7 +40,7 @@ function CreateGroupDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { name, permissions } = data.values;
     let newGroup: GroupDTO;
 

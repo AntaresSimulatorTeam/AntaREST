@@ -11,7 +11,7 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../../services/api/user";
-import { SubmitHandlerData } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
@@ -33,7 +33,7 @@ function CreateUserDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { username, password, permissions } = data.values;
     let newUser: UserDTO;
 

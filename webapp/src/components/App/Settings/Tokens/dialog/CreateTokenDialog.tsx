@@ -15,7 +15,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import { createBot } from "../../../../../services/api/user";
 import OkDialog from "../../../../common/dialogs/OkDialog";
 import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-import { SubmitHandlerData } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -38,7 +38,7 @@ function CreateTokenDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { name, permissions } = data.values;
 
     try {

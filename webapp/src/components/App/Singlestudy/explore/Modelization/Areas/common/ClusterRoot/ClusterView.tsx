@@ -49,9 +49,7 @@ export default function ClusterView<T extends FieldValues>(
           <Form
             autoSubmit
             config={{
-              defaultValues: data as
-                | UnpackNestedValue<DeepPartial<T>>
-                | undefined,
+              defaultValues: data as DeepPartial<T>,
             }}
           >
             {children}
