@@ -16,6 +16,7 @@ import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../../common/FileTable";
 import { Title } from "../share/styles";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function Capacities() {
   const [t] = useTranslation();
@@ -26,11 +27,7 @@ function Capacities() {
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const {
-    data: capacities,
-    isLoading,
-    reload: reloadCapacities,
-  } = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     async () => {
       if (study) {
         return getAllCapacities(study.id);
@@ -40,6 +37,8 @@ function Capacities() {
       errorMessage: t("xpansion.error.loadConfiguration"),
     }
   );
+
+  const { data: capacities, reload: reloadCapacities } = res;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -87,25 +86,26 @@ function Capacities() {
 
   return (
     <>
-      {!isLoading ? (
-        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
-            <FileTable
-              title={<Title>{t("xpansion.capacities")}</Title>}
-              content={
-                capacities?.map((item) => ({ id: item, name: item })) || []
-              }
-              onDelete={deleteCapa}
-              onRead={getOneCapa}
-              uploadFile={addOneCapa}
-              allowImport
-              allowDelete
-            />
-          </Paper>
-        </Box>
-      ) : (
-        <SimpleLoader />
-      )}
+      <UsePromiseCond
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifRejected={(error) => <div>{error?.toString()}</div>}
+        ifResolved={(data) => (
+          <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+            <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+              <FileTable
+                title={<Title>{t("xpansion.capacities")}</Title>}
+                content={data?.map((item) => ({ id: item, name: item })) || []}
+                onDelete={deleteCapa}
+                onRead={getOneCapa}
+                uploadFile={addOneCapa}
+                allowImport
+                allowDelete
+              />
+            </Paper>
+          </Box>
+        )}
+      />
       {!!capacityViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
