@@ -16,6 +16,7 @@ import {
 import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
 import FilterDrawer from "./FilterDrawer";
 import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
+import RefreshButton from "./RefreshButton";
 
 function Studies() {
   const [t] = useTranslation();
@@ -55,7 +56,19 @@ function Studies() {
         <UseAsyncAppSelectorCond
           response={res}
           ifLoading={() => <SimpleLoader />}
-          ifFailed={(error) => <div>Error: {error?.toString()}</div>}
+          ifFailed={() => (
+            <Box
+              sx={{
+                width: 1,
+                height: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <RefreshButton showLabel />
+            </Box>
+          )}
           ifSucceeded={(value) => <StudiesList studyIds={value} />}
         />
         <FilterDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
