@@ -3,6 +3,7 @@ library(antaresRead)
 library(yaml)
 library(parallel)
 library(data.table)
+library(stringr)
 
 opts <- setSimulationPath(".")
 
