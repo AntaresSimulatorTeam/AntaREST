@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import InfoIcon from "@mui/icons-material/Info";
 import { useMemo } from "react";
 import { FieldValues } from "react-hook-form";
-import { BotDetailsDTO, GroupDTO, RoleType } from "../../../../../common/types";
+import { BotDetailsDTO } from "../../../../../common/types";
 import OkDialog, { OkDialogProps } from "../../../../common/dialogs/OkDialog";
 import TokenForm from "./TokenFormDialog/TokenForm";
 import Form from "../../../../common/Form";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as R from "ramda";
 import { useMemo } from "react";
 import { FieldValues } from "react-hook-form";
