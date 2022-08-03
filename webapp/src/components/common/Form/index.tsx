@@ -2,6 +2,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Control,
+  DeepPartial,
   FieldPath,
   FieldPathValue,
   FieldValues,
@@ -10,7 +11,6 @@ import {
   Path,
   RegisterOptions,
   SubmitErrorHandler,
-  UnpackNestedValue,
   useForm,
   useFormContext as useFormContextOriginal,
   UseFormProps,
@@ -29,11 +29,11 @@ import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 
-export interface SubmitHandlerData<
+export interface SubmitHandlerPlus<
   TFieldValues extends FieldValues = FieldValues
 > {
-  values: UnpackNestedValue<TFieldValues>;
-  dirtyValues: Partial<UnpackNestedValue<TFieldValues>>;
+  values: TFieldValues;
+  dirtyValues: DeepPartial<TFieldValues>;
 }
 
 export type AutoSubmitHandler<
@@ -53,7 +53,7 @@ export type UseFormRegisterPlus<
 > = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
   name: TFieldName,
   options?: RegisterOptionsPlus<TFieldValues, TFieldName>
-) => UseFormRegisterReturn;
+) => UseFormRegisterReturn<TFieldName>;
 
 export interface ControlPlus<
   TFieldValues extends FieldValues = FieldValues,
@@ -79,7 +79,7 @@ export interface FormProps<
 > extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
-    data: SubmitHandlerData<TFieldValues>,
+    data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
   ) => any | Promise<any>;
   onSubmitError?: SubmitErrorHandler<TFieldValues>;
@@ -90,6 +90,7 @@ export interface FormProps<
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
+  disableLoader?: boolean;
 }
 
 export function useFormContext<TFieldValues extends FieldValues>() {
@@ -108,6 +109,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     hideSubmitButton,
     onStateChange,
     autoSubmit,
+    disableLoader,
     ...formProps
   } = props;
 
@@ -186,7 +188,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     event.preventDefault();
 
     handleSubmit(function onValid(data, e) {
-      const dirtyValues = getDirtyValues(dirtyFields, data) as Partial<
+      const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
         typeof data
       >;
 
@@ -308,7 +310,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   return (
     <form {...formProps} onSubmit={handleFormSubmit}>
-      {showLoader && (
+      {showLoader && !disableLoader && (
         <Box
           sx={{
             position: "sticky",

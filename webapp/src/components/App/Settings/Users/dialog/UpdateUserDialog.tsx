@@ -12,7 +12,7 @@ import { createRole, deleteUserRoles } from "../../../../../services/api/user";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { SubmitHandlerData } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -53,7 +53,7 @@ function UpdateUserDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { permissions } = data.values;
 
     // TODO: replace with update method when working

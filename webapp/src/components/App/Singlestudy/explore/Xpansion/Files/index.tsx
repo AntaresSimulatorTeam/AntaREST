@@ -16,6 +16,7 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import { Title } from "../share/styles";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function Files() {
   const [t] = useTranslation();
@@ -26,11 +27,7 @@ function Files() {
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const {
-    data: constraints,
-    isLoading,
-    reload: reloadConstraints,
-  } = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     async () => {
       if (study) {
         return getAllConstraints(study.id);
@@ -40,6 +37,8 @@ function Files() {
       errorMessage: t("xpansion.error.loadConfiguration"),
     }
   );
+
+  const { data: constraints, reload: reloadConstraints } = res;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -87,25 +86,26 @@ function Files() {
 
   return (
     <>
-      {!isLoading ? (
-        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
-            <FileTable
-              title={<Title>{t("global.files")}</Title>}
-              content={
-                constraints?.map((item) => ({ id: item, name: item })) || []
-              }
-              onDelete={deleteConstraint}
-              onRead={getOneConstraint}
-              uploadFile={addOneConstraint}
-              allowImport
-              allowDelete
-            />
-          </Paper>
-        </Box>
-      ) : (
-        <SimpleLoader />
-      )}
+      <UsePromiseCond
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifRejected={(error) => <div>{error?.toString()}</div>}
+        ifResolved={(data) => (
+          <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+            <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+              <FileTable
+                title={<Title>{t("global.files")}</Title>}
+                content={data?.map((item) => ({ id: item, name: item })) || []}
+                onDelete={deleteConstraint}
+                onRead={getOneConstraint}
+                uploadFile={addOneConstraint}
+                allowImport
+                allowDelete
+              />
+            </Paper>
+          </Box>
+        )}
+      />
       {!!constraintViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}

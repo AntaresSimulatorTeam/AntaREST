@@ -1,11 +1,14 @@
 import * as R from "ramda";
 import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
 
-export interface UsePromiseCondProps<T> {
-  response: UsePromiseResponse<T>;
+export interface UsePromiseCondProps<
+  T,
+  Response extends UsePromiseResponse<T> = UsePromiseResponse<T>
+> {
+  response: Response;
   ifPending?: () => React.ReactNode;
-  ifRejected?: (error: UsePromiseResponse<T>["error"]) => React.ReactNode;
-  ifResolved?: (data: UsePromiseResponse<T>["data"]) => React.ReactNode;
+  ifRejected?: (error: Response["error"]) => React.ReactNode;
+  ifResolved?: (data: Response["data"]) => React.ReactNode;
 }
 
 function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {

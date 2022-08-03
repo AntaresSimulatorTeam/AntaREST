@@ -14,7 +14,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
-import { SubmitHandlerData } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form";
 
 type InheritPropsToOmit =
   | "title"
@@ -61,7 +61,7 @@ function UpdateGroupDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { name, permissions }: GroupFormDialogProps["defaultValues"] =
       data.dirtyValues;
     const groupName = name || group.name;

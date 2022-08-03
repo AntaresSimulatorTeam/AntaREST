@@ -1,11 +1,12 @@
 import { DialogContentText } from "@mui/material";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import InfoIcon from "@mui/icons-material/Info";
 import { useMemo } from "react";
-import { BotDetailsDTO, RoleType, UserDTO } from "../../../../../common/types";
+import { FieldValues } from "react-hook-form";
+import { BotDetailsDTO } from "../../../../../common/types";
 import OkDialog, { OkDialogProps } from "../../../../common/dialogs/OkDialog";
 import TokenForm from "./TokenFormDialog/TokenForm";
+import Form from "../../../../common/Form";
 
 /**
  * Types
@@ -15,10 +16,6 @@ interface Props extends Omit<OkDialogProps, "title" | "titleIcon"> {
   token: BotDetailsDTO;
 }
 
-type DefaultValuesType = {
-  permissions?: Array<{ user: UserDTO; type: RoleType }>;
-};
-
 /**
  * Component
  */
@@ -26,7 +23,8 @@ type DefaultValuesType = {
 function TokenInfoDialog(props: Props) {
   const { token, ...dialogProps } = props;
 
-  const defaultValues = useMemo(
+  // TODO: FieldValues is used to fix an issue with TokenForm
+  const defaultValues = useMemo<FieldValues>(
     () => ({
       name: token.name,
       permissions: token.roles.map((role) => ({
@@ -40,7 +38,6 @@ function TokenInfoDialog(props: Props) {
     [token]
   );
 
-  const formObj = useForm<DefaultValuesType>({ defaultValues });
   const { t } = useTranslation();
 
   return (
@@ -54,7 +51,9 @@ function TokenInfoDialog(props: Props) {
       <DialogContentText>
         {t("settings.currentToken", [token.name])}
       </DialogContentText>
-      <TokenForm onlyPermissions readOnly {...formObj} />
+      <Form config={{ defaultValues }} hideSubmitButton>
+        {(formObj) => <TokenForm onlyPermissions readOnly {...formObj} />}
+      </Form>
     </OkDialog>
   );
 }
