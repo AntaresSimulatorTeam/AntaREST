@@ -6,7 +6,7 @@ from unittest.mock import Mock, ANY, call
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config
+from antarest.core.config import Config, TaskConfig, RemoteWorkerConfig
 from antarest.core.interfaces.eventbus import EventType, Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.persistence import Base
@@ -281,7 +281,15 @@ def test_worker_tasks(tmp_path: Path):
     repo_mock.list.return_value = []
     event_bus = EventBusService(LocalEventBus())
     service = TaskJobService(
-        config=Config(), repository=repo_mock, event_bus=event_bus
+        config=Config(
+            tasks=TaskConfig(
+                remote_workers=[
+                    RemoteWorkerConfig(name="test", queues=["test"])
+                ]
+            )
+        ),
+        repository=repo_mock,
+        event_bus=event_bus,
     )
 
     worker = DummyWorker(event_bus, ["test"], tmp_path)
