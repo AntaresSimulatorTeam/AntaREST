@@ -301,7 +301,7 @@ class SimpleSyncTaskService(ITaskService):
         name: Optional[str],
         ref_id: Optional[str],
         request_params: RequestParameters,
-    ) -> str:
+    ) -> Optional[str]:
         raise NotImplementedError()
 
     def add_task(

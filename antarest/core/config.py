@@ -290,19 +290,38 @@ class CacheConfig:
 
 
 @dataclass(frozen=True)
+class RemoteWorkerConfig:
+    name: str
+    queues: List[str] = field(default_factory=list)
+
+    @staticmethod
+    def from_dict(data: JSON) -> "RemoteWorkerConfig":
+        return RemoteWorkerConfig(
+            name=data["name"], queues=data.get("queues", [])
+        )
+
+
+@dataclass(frozen=True)
 class TaskConfig:
     """
     Sub config object dedicated to the task module
     """
 
     max_workers: int = 5
+    remote_workers: List[RemoteWorkerConfig] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: JSON) -> "TaskConfig":
         return TaskConfig(
             max_workers=int(data["max_workers"])
             if "max_workers" in data
-            else 5
+            else 5,
+            remote_workers=list(
+                map(
+                    lambda x: RemoteWorkerConfig.from_dict(x),
+                    data.get("remote_workers", []),
+                )
+            ),
         )
 
 

@@ -2312,17 +2312,9 @@ class StudyService:
                     )
                     raise e
 
+            task_id: Optional[str] = None
             workspace = study.workspace
-            if workspace == DEFAULT_WORKSPACE_NAME:
-                task_id = self.task_service.add_task(
-                    unarchive_output_task,
-                    task_name,
-                    task_type=TaskType.UNARCHIVE,
-                    ref_id=study.id,
-                    custom_event_messages=None,
-                    request_params=params,
-                )
-            else:
+            if workspace != DEFAULT_WORKSPACE_NAME:
                 dest = Path(study.path) / "output" / output_id
                 src = Path(study.path) / "output" / f"{output_id}.zip"
                 task_id = self.task_service.add_worker_task(
@@ -2335,6 +2327,16 @@ class StudyService:
                     ).dict(),
                     name=task_name,
                     ref_id=study.id,
+                    request_params=params,
+                )
+
+            if not task_id:
+                task_id = self.task_service.add_task(
+                    unarchive_output_task,
+                    task_name,
+                    task_type=TaskType.UNARCHIVE,
+                    ref_id=study.id,
+                    custom_event_messages=None,
                     request_params=params,
                 )
 

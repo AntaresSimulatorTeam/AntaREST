@@ -56,7 +56,7 @@ class ITaskService(ABC):
         name: Optional[str],
         ref_id: Optional[str],
         request_params: RequestParameters,
-    ) -> str:
+    ) -> Optional[str]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -117,6 +117,7 @@ class TaskJobService(ITaskService):
         self.event_bus.add_listener(
             self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST]
         )
+        self.remote_workers = config.tasks.remote_workers
         # set the status of previously running job to FAILED due to server restart
         self._fix_running_status()
 
@@ -161,6 +162,12 @@ class TaskJobService(ITaskService):
 
         return _send_worker_task
 
+    def check_remote_worker_for_queue(self, task_queue: str) -> bool:
+        for rw in self.remote_workers:
+            if task_queue in rw.queues:
+                return True
+        return False
+
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -169,7 +176,11 @@ class TaskJobService(ITaskService):
         name: Optional[str],
         ref_id: Optional[str],
         request_params: RequestParameters,
-    ) -> str:
+    ) -> Optional[str]:
+        if not self.check_remote_worker_for_queue(task_queue):
+            logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
+            return None
+
         task = self._create_task(name, task_type, ref_id, request_params)
         self._launch_task(
             self._create_worker_task(str(task.id), task_queue, task_args),
