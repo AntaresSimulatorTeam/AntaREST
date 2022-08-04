@@ -4,8 +4,8 @@ from pathlib import Path
 
 from antarest.core.config import Config
 from antarest.core.logging.utils import configure_logger
-from antarest.core.utils.utils import get_local_path, get_commit_id
-from antarest.main import init_db, create_archive_worker
+from antarest.core.utils.utils import get_local_path
+from antarest.main import create_archive_worker
 from antarest import __version__
 
 
