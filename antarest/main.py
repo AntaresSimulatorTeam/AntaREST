@@ -187,6 +187,13 @@ def init_db(
         )
 
 
+def create_event_bus(application: Optional[FastAPI], config: Config) -> IEventBus:
+    redis_client = (
+        new_redis_instance(config.redis) if config.redis is not None else None
+    )
+    return build_eventbus(application, config, True, redis_client)
+
+
 def create_core_services(
     application: Optional[FastAPI], config: Config
 ) -> Tuple[
@@ -198,10 +205,7 @@ def create_core_services(
     MatrixService,
     StudyService,
 ]:
-    redis_client = (
-        new_redis_instance(config.redis) if config.redis is not None else None
-    )
-    event_bus = build_eventbus(application, config, True, redis_client)
+    event_bus = create_event_bus(application, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(
         application, event_bus, config
@@ -290,12 +294,12 @@ def create_matrix_gc(
         )
 
 
-def create_worker(
-    config: Config, event_bus: Optional[IEventBus] = None
+def create_archive_worker(
+    config: Config, workspace: str, event_bus: Optional[IEventBus] = None
 ) -> AbstractWorker:
     if not event_bus:
-        _, event_bus, _, _, _, _, _ = create_core_services(None, config)
-    return ArchiveWorker(event_bus, "test")
+        event_bus = create_event_bus(None, config)
+    return ArchiveWorker(event_bus, workspace)
 
 
 def create_services(
@@ -564,8 +568,8 @@ if __name__ == "__main__":
             res = get_local_path() / "resources"
             config = Config.from_yaml_file(res=res, file=config_file)
             configure_logger(config)
-            init_db(config_file, config, False, None)
-            worker = create_worker(config)
+#            init_db(config_file, config, False, None)
+            worker = create_archive_worker(config, "test")
             worker.start()
         else:
             raise UnknownModuleError(module)
