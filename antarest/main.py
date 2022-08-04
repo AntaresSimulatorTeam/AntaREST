@@ -301,7 +301,10 @@ def create_matrix_gc(
 
 
 def create_archive_worker(
-    config: Config, workspace: str, local_root: Path = Path("/"), event_bus: Optional[IEventBus] = None
+    config: Config,
+    workspace: str,
+    local_root: Path = Path("/"),
+    event_bus: Optional[IEventBus] = None,
 ) -> AbstractWorker:
     if not event_bus:
         event_bus, _ = create_event_bus(None, config)

@@ -22,7 +22,13 @@ class ArchiveTaskArgs(BaseModel):
 class ArchiveWorker(AbstractWorker):
     TASK_TYPE = "unarchive"
 
-    def __init__(self, event_bus: IEventBus, workspace: str, local_root: Path, config: Config):
+    def __init__(
+        self,
+        event_bus: IEventBus,
+        workspace: str,
+        local_root: Path,
+        config: Config,
+    ):
         self.workspace = workspace
         self.config = config
         self.local_root = local_root
@@ -53,6 +59,6 @@ class ArchiveWorker(AbstractWorker):
             )
             return TaskResult(success=False, message=str(e))
 
-    def translate_path(self, path: Path):
-        workspace = self.config.storage.workspaces.get(self.workspace)
+    def translate_path(self, path: Path) -> Path:
+        workspace = self.config.storage.workspaces[self.workspace]
         return self.local_root / path.relative_to(workspace.path)

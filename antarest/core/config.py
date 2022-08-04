@@ -49,8 +49,8 @@ class SecurityConfig:
     @staticmethod
     def from_dict(data: JSON) -> "SecurityConfig":
         return SecurityConfig(
-            jwt_key=data["jwt"]["key"],
-            admin_pwd=data["login"]["admin"]["pwd"],
+            jwt_key=data.get("jwt", {}).get("key", ""),
+            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", ""),
             disabled=data.get("disabled", False),
             external_auth=ExternalAuthConfig.from_dict(
                 data.get("external_auth", {})
@@ -205,15 +205,14 @@ class LauncherConfig:
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
-        try:
+        local: Optional[LocalConfig] = None
+        if "local" in data:
             local = LocalConfig.from_dict(data["local"])
-        except KeyError as e:
-            logger.error("Could not load local launcher", exc_info=e)
-            local = None
 
         slurm: Optional[SlurmConfig] = None
         if "slurm" in data:
             slurm = SlurmConfig.from_dict(data["slurm"])
+
         return LauncherConfig(
             default=data.get("default", "local"),
             local=local,
@@ -359,12 +358,12 @@ class Config:
 
         """
         return Config(
-            security=SecurityConfig.from_dict(data["security"]),
+            security=SecurityConfig.from_dict(data.get("security", {})),
             storage=StorageConfig.from_dict(data["storage"]),
-            launcher=LauncherConfig.from_dict(data["launcher"]),
+            launcher=LauncherConfig.from_dict(data.get("launcher", {})),
             db=DbConfig.from_dict(data["db"]) if "db" in data else DbConfig(),
             logging=LoggingConfig.from_dict(data.get("logging", {})),
-            debug=data["debug"],
+            debug=data.get("debug", False),
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
             redis=RedisConfig.from_dict(data["redis"])
