@@ -22,7 +22,11 @@ class ArchiveWorker(AbstractWorker):
     TASK_TYPE = "unarchive"
 
     def __init__(self, event_bus: IEventBus, workspace: str):
-        super().__init__("Unarchive worker", event_bus, [f"{ArchiveWorker.TASK_TYPE}_{workspace}"])
+        super().__init__(
+            "Unarchive worker",
+            event_bus,
+            [f"{ArchiveWorker.TASK_TYPE}_{workspace}"],
+        )
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         logger.info(f"Executing task {task_info.json()}")

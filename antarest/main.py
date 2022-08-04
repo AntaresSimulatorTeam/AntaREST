@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict, cast
 
+import redis
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
@@ -187,11 +188,16 @@ def init_db(
         )
 
 
-def create_event_bus(application: Optional[FastAPI], config: Config) -> IEventBus:
+def create_event_bus(
+    application: Optional[FastAPI], config: Config
+) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = (
         new_redis_instance(config.redis) if config.redis is not None else None
     )
-    return build_eventbus(application, config, True, redis_client)
+    return (
+        build_eventbus(application, config, True, redis_client),
+        redis_client,
+    )
 
 
 def create_core_services(
@@ -205,7 +211,7 @@ def create_core_services(
     MatrixService,
     StudyService,
 ]:
-    event_bus = create_event_bus(application, config)
+    event_bus, redis_client = create_event_bus(application, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(
         application, event_bus, config
@@ -298,7 +304,7 @@ def create_archive_worker(
     config: Config, workspace: str, event_bus: Optional[IEventBus] = None
 ) -> AbstractWorker:
     if not event_bus:
-        event_bus = create_event_bus(None, config)
+        event_bus, _ = create_event_bus(None, config)
     return ArchiveWorker(event_bus, workspace)
 
 
@@ -568,7 +574,7 @@ if __name__ == "__main__":
             res = get_local_path() / "resources"
             config = Config.from_yaml_file(res=res, file=config_file)
             configure_logger(config)
-#            init_db(config_file, config, False, None)
+            #            init_db(config_file, config, False, None)
             worker = create_archive_worker(config, "test")
             worker.start()
         else:

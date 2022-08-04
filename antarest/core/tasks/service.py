@@ -170,9 +170,7 @@ class TaskJobService(ITaskService):
         ref_id: Optional[str],
         request_params: RequestParameters,
     ) -> str:
-        task = self._create_task(
-            name, task_type, ref_id, request_params
-        )
+        task = self._create_task(name, task_type, ref_id, request_params)
         self._launch_task(
             self._create_worker_task(str(task.id), task_queue, task_args),
             task,

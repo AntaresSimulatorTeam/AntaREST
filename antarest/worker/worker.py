@@ -29,7 +29,9 @@ class WorkerTaskCommand(BaseModel):
 
 
 class AbstractWorker(abc.ABC):
-    def __init__(self, name: str, event_bus: IEventBus, accept: List[str]) -> None:
+    def __init__(
+        self, name: str, event_bus: IEventBus, accept: List[str]
+    ) -> None:
         self.name = name
         self.event_bus = event_bus
         for task_type in accept:
@@ -41,7 +43,9 @@ class AbstractWorker(abc.ABC):
         self.futures: Dict[str, Future[TaskResult]] = {}
 
     def start(self, threaded: bool = False) -> None:
-        logger.info(f"Starting worker {self.name} with threaded_mode={threaded}")
+        logger.info(
+            f"Starting worker {self.name} with threaded_mode={threaded}"
+        )
         if threaded:
             self.task_watcher.start()
         else:

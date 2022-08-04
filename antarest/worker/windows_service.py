@@ -7,7 +7,7 @@ from antarest.core.utils.utils import get_local_path
 from antarest.main import init_db, create_archive_worker
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     res = get_local_path() / "resources"
     if len(sys.argv) <= 1:
         sys.exit(1)
@@ -17,4 +17,3 @@ if __name__ == '__main__':
     init_db(config_file, config, False, None)
     worker = create_archive_worker(config, "aws_share_2")
     worker.start()
-
