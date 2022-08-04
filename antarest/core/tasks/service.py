@@ -178,7 +178,9 @@ class TaskJobService(ITaskService):
         request_params: RequestParameters,
     ) -> Optional[str]:
         if not self.check_remote_worker_for_queue(task_queue):
-            logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
+            logger.warning(
+                f"Failed to find configured remote worker for task queue {task_queue}"
+            )
             return None
 
         task = self._create_task(name, task_type, ref_id, request_params)

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import TaskResult
-from antarest.core.utils.utils import unzip
+from antarest.core.utils.utils import unzip, StopWatch
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 
 
@@ -44,13 +44,18 @@ class ArchiveWorker(AbstractWorker):
             archive_args = ArchiveTaskArgs.parse_obj(task_info.task_args)
             dest = self.translate_path(Path(archive_args.dest))
             src = self.translate_path(Path(archive_args.src))
+            stopwatch = StopWatch()
             logger.info(f"Extracting {src} into {dest}")
             unzip(
                 dest,
                 src,
                 remove_source_zip=archive_args.remove_src,
             )
-            logger.info(f"Successfuly extracted task {src} into {dest}")
+            stopwatch.log_elapsed(
+                lambda t: logger.info(
+                    f"Successfuly extracted {src} into {dest} in {t}s"
+                )
+            )
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(
