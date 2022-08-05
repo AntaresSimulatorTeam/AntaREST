@@ -89,6 +89,7 @@ class DbConfig:
     db_admin_url: Optional[str] = None
     db_connect_timeout: int = 10
     pool_recycle: Optional[int] = None
+    pool_pre_ping: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "DbConfig":
@@ -97,6 +98,7 @@ class DbConfig:
             db_url=data.get("url", ""),
             db_connect_timeout=data.get("db_connect_timeout", 10),
             pool_recycle=data.get("pool_recycle", None),
+            pool_pre_ping=data.get("pool_pre_ping", False),
         )
 
 

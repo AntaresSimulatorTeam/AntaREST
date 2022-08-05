@@ -163,6 +163,8 @@ def init_db(
     extra = {}
     if config.db.pool_recycle:
         extra["pool_recycle"] = config.db.pool_recycle
+    if config.db.pool_pre_ping:
+        extra["pool_pre_ping"] = True
 
     engine = create_engine(
         config.db.db_url, echo=config.debug, connect_args=connect_args, **extra
