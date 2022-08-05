@@ -1248,7 +1248,7 @@ def test_unarchive_output(tmp_path: Path):
     )
     study_mock.name = "my_study"
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-
+    service.task_service.reset_mock()
     service.repository.get.return_value = study_mock
 
     study_id = "my_study"
