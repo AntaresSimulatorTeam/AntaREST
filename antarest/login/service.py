@@ -349,7 +349,7 @@ class LoginService:
         if params.user and any(
             (
                 params.user.is_site_admin(),
-                params.user.is_group_admin(groups),
+                params.user.is_in_group(groups),
                 params.user.is_himself(user),
                 params.user.is_bot_of(user),
             )
@@ -357,9 +357,11 @@ class LoginService:
             return user
         else:
             logger.error(
-                "user %d not found by user %s", id, params.get_user_id()
+                "user %d info not allowed to fetch by user %s",
+                id,
+                params.get_user_id(),
             )
-            raise UserNotFoundError()
+            return None
 
     def get_identity(
         self, id: int, include_token: bool = False
@@ -409,8 +411,7 @@ class LoginService:
                     for role in self.roles.get_all_by_user(user.id)
                 ],
             )
-        else:
-            raise UserNotFoundError()
+        return None
 
     def get_bot(self, id: int, params: RequestParameters) -> Bot:
         """
