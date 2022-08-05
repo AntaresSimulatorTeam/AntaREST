@@ -131,6 +131,26 @@ class WritingInsideZippedFileException(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class NoBindingConstraintError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class NoConstraintError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class ConstraintAlreadyExistError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class ConstraintIdNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class StudyOutputNotFoundError(Exception):
     pass
 

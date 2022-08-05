@@ -16,7 +16,10 @@ import { BindingConstFields, ConstraintType } from "../utils";
 import { useFormContext } from "../../../../../../../common/Form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { LinkCreationInfoDTO } from "../../../../../../../../common/types";
+import {
+  LinkCreationInfoDTO,
+  LinkElement,
+} from "../../../../../../../../common/types";
 import { updateConstraint } from "../../../../../../../../services/api/studydata";
 
 interface ElementProps {
@@ -194,7 +197,7 @@ function ConstraintItem(props: ItemProps) {
       />
       {constraint.offset !== undefined ? (
         <>
-          <Typography sx={{ mx: 1 }}>X</Typography>
+          <Typography sx={{ mx: 1 }}>x</Typography>
           <ConstraintElement
             title="Offset"
             operator="+"
@@ -233,11 +236,12 @@ interface Props {
   constraint: ConstraintType;
   bindingConst: string;
   studyId: string;
+  linksOptions: Array<LinkElement>;
   // control: ControlPlus<BindingConstFields, any>;
   // defaultValues: Partial<BindingConstFields>;
 }
 export default function Constraint(props: Props) {
-  const { bindingConst, studyId, fieldset, constraint } = props;
+  const { bindingConst, linksOptions, studyId, fieldset, constraint } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
 
@@ -268,7 +272,6 @@ export default function Constraint(props: Props) {
       />
       <ConstraintItem
         constraint={constraint}
-        options1={[]}
         options2={[]}
         saveValue={saveValue}
       />
