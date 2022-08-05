@@ -42,6 +42,20 @@ class JWTUser(BaseModel):
         """
         return "admin" in [g.id for g in self.groups]
 
+    def is_in_group(self, groups: Union[Group, List[Group]]) -> bool:
+        """
+
+        Args:
+            groups: group or list of groups
+
+        Returns: true if the user is in any of the groups given
+
+        """
+        if isinstance(groups, Group):
+            return any(g.id == groups.id for g in self.groups)
+
+        return any(self.is_in_group(g) for g in groups)
+
     def is_group_admin(self, groups: Union[Group, List[Group]]) -> bool:
         """
 
