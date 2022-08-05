@@ -59,7 +59,7 @@ class ArchiveWorker(AbstractWorker):
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(
-                f"Failed to unarchive {archive_args.src} into {archive_args.dest}",
+                f"Task {task_info.json()} failed",
                 exc_info=e,
             )
             return TaskResult(success=False, message=str(e))
