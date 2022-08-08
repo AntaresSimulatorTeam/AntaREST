@@ -162,10 +162,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def _check_commands_validity(
         self, study_id: str, commands: List[CommandDTO]
-    ) -> None:
+    ) -> List[ICommand]:
+        command_objects: List[ICommand] = []
         for i, command in enumerate(commands):
             try:
-                self.command_factory.to_icommand(command)
+                command_objects.extend(self.command_factory.to_icommand(command))
             except Exception as e:
                 logger.error(
                     f"Command at index {i} for study {study_id}", exc_info=e
@@ -173,6 +174,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 raise CommandNotValid(
                     f"Command at index {i} for study {study_id}"
                 )
+        return command_objects
 
     def _check_update_authorization(self, metadata: VariantStudy) -> None:
         if metadata.generation_task:
@@ -220,7 +222,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study_id, commands)
         first_index = len(study.commands)
         new_commands = [
                 CommandBlock(
