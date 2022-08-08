@@ -17,6 +17,9 @@ class XpansionParametersDTO(BaseModel):
 
 
 class LauncherParametersDTO(BaseModel):
+    # Warning ! This class must be retrocompatible (that's the reason for the weird bool/XpansionParametersDTO union)
+    # The reason is that it's stored in json format in database and deserialized using the latest class version
+    # If compatibility is to be broken, an (alembic) data migration script should be added
     adequacy_patch: Optional[Dict[str, Any]] = None
     nb_cpu: Optional[int] = None
     post_processing: bool = False
