@@ -42,6 +42,8 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.utils import assert_this
+from antarest.study.business.utils import aggregate_commands
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -166,7 +168,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         command_objects: List[ICommand] = []
         for i, command in enumerate(commands):
             try:
-                command_objects.extend(self.command_factory.to_icommand(command))
+                command_objects.extend(
+                    self.command_factory.to_icommand(command)
+                )
             except Exception as e:
                 logger.error(
                     f"Command at index {i} for study {study_id}", exc_info=e
@@ -223,15 +227,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study_id, commands)
+        validated_commands = aggregate_commands(command_objs)
         first_index = len(study.commands)
         new_commands = [
-                CommandBlock(
-                    command=command.action,
-                    args=json.dumps(command.args),
-                    index=(first_index + i),
-                )
-                for i, command in enumerate(commands)
-            ]
+            CommandBlock(
+                command=command.action,
+                args=json.dumps(command.args),
+                index=(first_index + i),
+            )
+            for i, command in enumerate(validated_commands)
+        ]
         study.commands.extend(new_commands)
         self.invalidate_cache(study)
         return [c.id for c in new_commands]
@@ -252,7 +257,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study_id, commands)
+        validated_commands = aggregate_commands(command_objs)
         study.commands = []
         study.commands.extend(
             [
@@ -261,7 +267,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     args=json.dumps(command.args),
                     index=i,
                 )
-                for i, command in enumerate(commands)
+                for i, command in enumerate(validated_commands)
             ]
         )
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -350,12 +356,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, [command])
-
+        command_objs = self._check_commands_validity(study_id, [command])
+        validated_commands = aggregate_commands(command_objs)
+        assert_this(len(validated_commands) == 1)
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
-            study.commands[index].command = command.action
-            study.commands[index].args = json.dumps(command.args)
+            study.commands[index].command = validated_commands[0].action
+            study.commands[index].args = json.dumps(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def _get_variant_study(

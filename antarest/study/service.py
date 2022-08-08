@@ -1478,6 +1478,7 @@ class StudyService:
             uuid,
             params.get_user_id(),
         )
+        return None
 
     def edit_study(
         self,
