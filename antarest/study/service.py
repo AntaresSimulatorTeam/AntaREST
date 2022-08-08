@@ -1452,18 +1452,18 @@ class StudyService:
                 parsed_commands,
                 self.storage_service,
             )
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_DATA_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
-                )
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
             )
-            logger.info(
-                "Study %s updated by user %s",
-                uuid,
-                params.get_user_id(),
-            )
+        )
+        logger.info(
+            "Study %s updated by user %s",
+            uuid,
+            params.get_user_id(),
+        )
 
     def edit_study(
         self,
