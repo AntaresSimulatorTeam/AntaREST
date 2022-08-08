@@ -1,7 +1,10 @@
+import logging
 import tempfile
 from pathlib import Path
 from typing import Tuple, Any
 from zipfile import ZipFile
+
+logger = logging.getLogger(__name__)
 
 
 def extract_file_to_tmp_dir(

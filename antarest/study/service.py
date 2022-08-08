@@ -966,7 +966,7 @@ class StudyService:
         uuid: str,
         params: RequestParameters,
         dest: Path,
-        outputs: bool = True,
+        output_list: Optional[List[str]] = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
@@ -974,7 +974,7 @@ class StudyService:
         self._assert_study_unarchived(study)
 
         return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, outputs
+            study, dest, len(output_list or []) > 0, output_list
         )
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:

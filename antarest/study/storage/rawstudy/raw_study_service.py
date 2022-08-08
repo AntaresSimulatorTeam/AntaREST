@@ -40,6 +40,7 @@ from antarest.study.storage.utils import (
     is_managed,
     remove_from_cache,
     create_new_empty_study,
+    export_study_flat,
 )
 
 logger = logging.getLogger(__name__)
@@ -313,27 +314,18 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata: RawStudy,
         dest: Path,
         outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         path_study = Path(metadata.path)
-        start_time = time.time()
-        ignore_patterns = (
-            (
-                lambda directory, contents: ["output"]
-                if str(directory) == str(path_study)
-                else []
-            )
-            if not outputs
-            else None
+        export_study_flat(
+            path_study,
+            dest,
+            self.study_factory,
+            outputs,
+            output_list_filter,
+            denormalize,
         )
-        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
-        stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
-        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        study.tree.denormalize()
-        duration = "{:.3f}".format(time.time() - stop_time)
-        logger.info(f"Study {path_study} denormalized in {duration}s")
 
     def check_errors(
         self,

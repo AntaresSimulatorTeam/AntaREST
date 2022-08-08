@@ -22,10 +22,14 @@ import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
-import { StudyMetadata } from "../../../common/types";
+import {
+  StudyMetadata,
+  StudyOutput,
+  LaunchOptions,
+} from "../../../common/types";
 import {
   getLauncherLoad,
-  LaunchOptions,
+  getStudyOutputs,
   launchStudy,
 } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -34,6 +38,7 @@ import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import LoadIndicator from "../../common/LoadIndicator";
+import SelectSingle from "../../common/SelectSingle";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 12;
@@ -67,6 +72,11 @@ function LauncherDialog(props: Props) {
     errorMessage: t("study.error.launchLoad"),
     deps: [open],
   });
+
+  const { data: outputList } = usePromiseWithSnackbarError(
+    () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
+    { errorMessage: t("study.error.listOutputs"), deps: [studyIds] }
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -104,9 +114,21 @@ function LauncherDialog(props: Props) {
     field: T,
     value: LaunchOptions[T]
   ) => {
-    setOptions({
-      ...options,
+    setOptions((prevOptions) => ({
+      ...prevOptions,
       [field]: value,
+    }));
+  };
+
+  const handleObjectChange = <T extends keyof LaunchOptions>(
+    field: T,
+    value: object
+  ) => {
+    setOptions((prevOptions: LaunchOptions) => {
+      return {
+        ...prevOptions,
+        [field]: { ...(prevOptions[field] as object), ...value },
+      };
     });
   };
 
@@ -296,7 +318,7 @@ function LauncherDialog(props: Props) {
             onChange={(event, val) => handleChange("nb_cpu", val as number)}
           />
         </FormControl>
-        <Typography sx={{ mt: 1 }}>{t("launcher.additionalModes")}</Typography>
+        <Typography sx={{ mt: 1 }}>Xpansion</Typography>
         <FormGroup
           sx={{
             mt: 1,
@@ -310,7 +332,10 @@ function LauncherDialog(props: Props) {
                 <Checkbox
                   checked={!!options.xpansion}
                   onChange={(e, checked) => {
-                    handleChange("xpansion", checked);
+                    handleChange(
+                      "xpansion",
+                      checked ? { enabled: true } : undefined
+                    );
                   }}
                 />
               }
@@ -320,6 +345,7 @@ function LauncherDialog(props: Props) {
               control={
                 <Checkbox
                   checked={!!options.xpansion && !!options.xpansion_r_version}
+                  disabled={!options.xpansion}
                   onChange={(e, checked) =>
                     handleChange("xpansion_r_version", checked)
                   }
@@ -328,6 +354,48 @@ function LauncherDialog(props: Props) {
               label={t("study.useXpansionVersionR") as string}
             />
           </Box>
+          {outputList && outputList.length === 1 && (
+            <Box sx={{ display: "flex" }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    disabled={!!options.xpansion_r_version || !options.xpansion}
+                    checked={options.xpansion?.sensitivity_mode || false}
+                    onChange={(e, checked) =>
+                      handleObjectChange("xpansion", {
+                        sensitivity_mode: checked,
+                      })
+                    }
+                  />
+                }
+                label={t("launcher.xpansion.sensitivityMode") as string}
+              />
+              <SelectSingle
+                name={t("studies.selectOutput")}
+                list={outputList[0].map((o: StudyOutput) => ({
+                  id: o.name,
+                  name: o.name,
+                }))}
+                disabled={!!options.xpansion_r_version || !options.xpansion}
+                data={options.xpansion?.output_id || ""}
+                setValue={(data: string) =>
+                  handleObjectChange("xpansion", {
+                    output_id: data,
+                  })
+                }
+                sx={{ width: "300px", my: 3 }}
+              />
+            </Box>
+          )}
+        </FormGroup>
+        <Typography sx={{ mt: 1 }}>Adequacy Patch</Typography>
+        <FormGroup
+          sx={{
+            mt: 1,
+            mx: 1,
+            width: "100%",
+          }}
+        >
           <Box>
             <FormControlLabel
               control={

@@ -21,6 +21,7 @@ interface Props {
   variant?: "filled" | "standard" | "outlined" | undefined;
   handleChange?: (key: string, value: string | number) => void;
   required?: boolean;
+  disabled?: boolean;
 }
 
 function SelectSingle(props: Props) {
@@ -35,6 +36,7 @@ function SelectSingle(props: Props) {
     optional,
     handleChange,
     required,
+    disabled,
   } = props;
   const [t] = useTranslation();
 
@@ -55,6 +57,7 @@ function SelectSingle(props: Props) {
         id={`single-checkbox-${name}`}
         value={data}
         label={label}
+        disabled={disabled}
         onChange={
           handleChange
             ? (e) => handleChange(name, e.target.value as string)

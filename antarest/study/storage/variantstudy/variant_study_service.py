@@ -2,7 +2,6 @@ import json
 import logging
 import shutil
 import tempfile
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, cast, Tuple, Callable
@@ -71,6 +70,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     assert_permission,
     create_permission_from_study,
+    export_study_flat,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -1155,31 +1155,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         dest: Path,
         outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
-
         self._safe_generation(metadata)
         path_study = Path(metadata.path)
-        start_time = time.time()
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
         output_src_path = path_study / "output"
-        output_dest_path = dest / "output"
-        shutil.copytree(src=snapshot_path, dst=dest)
-
-        if outputs and output_src_path.is_dir():
-            if output_dest_path.is_dir():
-                shutil.rmtree(output_dest_path)
-            shutil.copytree(src=output_src_path, dst=output_dest_path)
-
-        stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
-        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        if denormalize:
-            study.tree.denormalize()
-            duration = "{:.3f}".format(time.time() - stop_time)
-            logger.info(f"Study {path_study} denormalized in {duration}s")
+        export_study_flat(
+            snapshot_path,
+            dest,
+            self.study_factory,
+            outputs,
+            output_list_filter,
+            denormalize,
+            output_src_path,
+        )
 
     def get_synthesis(
         self,

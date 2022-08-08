@@ -33,7 +33,12 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
+from antarest.launcher.model import (
+    JobStatus,
+    LogType,
+    LauncherParametersDTO,
+    XpansionParametersDTO,
+)
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 
@@ -277,14 +282,20 @@ class SlurmLauncher(AbstractLauncher):
         )
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
-            shutil.copytree(
-                self.local_workspace
-                / STUDIES_OUTPUT_DIR_NAME
-                / job_id
-                / "input"
-                / "links",
-                output_path / "updated_links",
-            )
+            if (output_path / "updated_links").exists():
+                logger.warning("Skipping updated links")
+                self.callbacks.append_after_log(
+                    job_id, f"Skipping updated links"
+                )
+            else:
+                shutil.copytree(
+                    self.local_workspace
+                    / STUDIES_OUTPUT_DIR_NAME
+                    / job_id
+                    / "input"
+                    / "links",
+                    output_path / "updated_links",
+                )
             if xpansion_mode == "r":
                 shutil.copytree(
                     self.local_workspace
@@ -498,14 +509,22 @@ class SlurmLauncher(AbstractLauncher):
     ) -> argparse.Namespace:
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
+            other_options = []
             if launcher_params.other_options:
-                launcher_args.other_options = re.sub(
-                    "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
+                other_options.append(
+                    re.sub(
+                        "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
+                    )
                 )
-            if launcher_params.xpansion:
+            if launcher_params.xpansion is not None:
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"
                 )
+                if (
+                    isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                    and launcher_params.xpansion.sensitivity_mode
+                ):
+                    other_options.append("xpansion_sensitivity")
             time_limit = launcher_params.time_limit
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT > time_limit:
@@ -535,6 +554,8 @@ class SlurmLauncher(AbstractLauncher):
                 launcher_params.adequacy_patch is not None
             ):  # the adequacy patch can be an empty object
                 launcher_args.post_processing = True
+
+            launcher_args.other_options = " ".join(other_options)
             return launcher_args
         return self.launcher_args
 
