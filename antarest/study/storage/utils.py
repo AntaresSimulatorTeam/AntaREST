@@ -3,11 +3,12 @@ import logging
 import os
 import shutil
 import tempfile
+import time
 from datetime import timedelta, datetime
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast, Callable
+from typing import Optional, Union, cast, Callable, List
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -32,7 +33,10 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    FileStudy,
+    StudyFactory,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
@@ -345,3 +349,50 @@ def get_start_date(
         first_week_size=first_week_size,
         level=level,
     )
+
+
+def export_study_flat(
+    path_study: Path,
+    dest: Path,
+    study_factory: StudyFactory,
+    outputs: bool = True,
+    output_list_filter: Optional[List[str]] = None,
+    denormalize: bool = True,
+    output_src_path: Optional[Path] = None,
+):
+    start_time = time.time()
+
+    output_src_path = output_src_path or path_study / "output"
+    output_dest_path = dest / "output"
+    ignore_patterns = (
+        lambda directory, contents: ["output"]
+        if str(directory) == str(path_study)
+        else []
+    )
+
+    shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+
+    if outputs and output_src_path.is_dir():
+        if output_dest_path.is_dir():
+            shutil.rmtree(output_dest_path)
+        if output_list_filter is not None:
+            os.mkdir(output_dest_path)
+            for output in output_list_filter:
+                shutil.copytree(
+                    src=output_src_path / output,
+                    dst=output_dest_path / output,
+                )
+        else:
+            shutil.copytree(
+                src=output_src_path,
+                dst=output_dest_path,
+            )
+
+    stop_time = time.time()
+    duration = "{:.3f}".format(stop_time - start_time)
+    logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+    study = study_factory.create_from_fs(dest, "", use_cache=False)
+    if denormalize:
+        study.tree.denormalize()
+        duration = "{:.3f}".format(time.time() - stop_time)
+        logger.info(f"Study {path_study} denormalized in {duration}s")
