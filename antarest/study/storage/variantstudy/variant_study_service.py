@@ -43,7 +43,7 @@ from antarest.core.tasks.service import (
     noop_notifier,
 )
 from antarest.core.utils.utils import assert_this
-from antarest.study.business.utils import aggregate_commands
+from antarest.study.storage.variantstudy.business.utils import aggregate_commands
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
