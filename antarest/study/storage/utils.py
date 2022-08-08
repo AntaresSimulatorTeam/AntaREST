@@ -359,7 +359,7 @@ def export_study_flat(
     output_list_filter: Optional[List[str]] = None,
     denormalize: bool = True,
     output_src_path: Optional[Path] = None,
-):
+) -> None:
     start_time = time.time()
 
     output_src_path = output_src_path or path_study / "output"
