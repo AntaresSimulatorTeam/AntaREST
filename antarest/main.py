@@ -30,6 +30,7 @@ from antarest.matrixstore.matrix_garbage_collector import (
     MatrixGarbageCollector,
 )
 from antarest.singleton_services import SingletonServices
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
 from antarest.utils import (
@@ -260,6 +261,13 @@ def fastapi_app(
     ):
         matrix_gc = cast(MatrixGarbageCollector, services["matrix_gc"])
         matrix_gc.start()
+
+    if (
+            config.server.services
+            and Module.AUTO_ARCHIVER.value in config.server.services
+    ):
+        auto_archiver = cast(AutoArchiveService, services["auto_archiver"])
+        auto_archiver.start()
 
     customize_openapi(application)
     return application, services
