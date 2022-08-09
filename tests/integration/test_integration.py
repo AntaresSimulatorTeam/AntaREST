@@ -1237,6 +1237,29 @@ def test_edit_matrix(app: FastAPI):
         headers=headers,
         json=[
             {
+                "coordinates": [(4, 5)],
+                "operation": {
+                    "operation": "=",
+                    "value": 42,
+                },
+            }
+        ],
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+    )
+    new_data = res.json()["data"]
+    assert new_data != initial_data
+    assert new_data[4][5] == 42
+
+    res = client.put(
+        f"/v1/studies/{study_id}/matrix?path=input/links/{area1_name}/{area2_name}_parameters",
+        headers=headers,
+        json=[
+            {
                 "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
                 "operation": {
                     "operation": "=",

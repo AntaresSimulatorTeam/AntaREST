@@ -505,10 +505,19 @@ export interface MatrixOperationDTO {
   value: number;
 }
 
-export interface MatrixEditDTO {
-  slices: MatrixSliceDTO[];
+export interface MatrixBaseEditDTO {
   operation: MatrixOperationDTO;
 }
+
+export interface MatrixSliceEditDTO extends MatrixBaseEditDTO {
+  slices: MatrixSliceDTO[];
+}
+
+export interface MatrixSingleEditDTO extends MatrixBaseEditDTO {
+  coordinates: number[][];
+}
+
+export type MatrixEditDTO = MatrixSliceDTO | MatrixSingleEditDTO;
 
 export interface MatrixAggregationResult {
   index: MatrixIndex;

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union, cast
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -39,21 +39,35 @@ class InputSeriesMatrix(MatrixNode):
         self,
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
-    ) -> JSON:
+        return_dataframe: bool = False,
+    ) -> Union[JSON, pd.DataFrame]:
         file_path = file_path or self.config.path
         try:
             stopwatch = StopWatch()
-            matrix: pd.DataFrame = pd.read_csv(
-                file_path,
-                sep="\t",
-                dtype=float,
-                header=None,
-                float_precision="legacy",
-            )
+            if self.get_link_path().exists():
+                link = self.get_link_path().read_text()
+                matrix_json = self.context.resolver.resolve(link)
+                matrix_json = cast(JSON, matrix_json)
+                matrix: pd.DataFrame = pd.DataFrame(
+                    data=matrix_json["data"],
+                    columns=matrix_json["columns"],
+                    index=matrix_json["index"],
+                )
+            else:
+                matrix = pd.read_csv(
+                    file_path,
+                    sep="\t",
+                    dtype=float,
+                    header=None,
+                    float_precision="legacy",
+                )
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Matrix parsed in {x}s")
             )
             matrix.dropna(how="any", axis=1, inplace=True)
+            if return_dataframe:
+                return matrix
+
             data: JSON = matrix.to_dict(orient="split")
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Matrix to dict in {x}s")

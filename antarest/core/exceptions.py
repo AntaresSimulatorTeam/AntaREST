@@ -133,3 +133,8 @@ class WritingInsideZippedFileException(HTTPException):
 
 class StudyOutputNotFoundError(Exception):
     pass
+
+
+class BadEditInstructionException(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
