@@ -2,7 +2,10 @@ from typing import List
 
 import pandas as pd  # type:ignore
 
-from antarest.core.exceptions import ShouldNotHappenException
+from antarest.core.exceptions import (
+    ShouldNotHappenException,
+    BadEditInstructionException,
+)
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditor,
     MatrixEditInstructionDTO,
@@ -47,11 +50,27 @@ class MatrixManager:
             return_dataframe=True
         )
         for edit_instruction in edit_instructions:
-            matrix_dataframe = MatrixEditor.update_matrix_content_with_slices(
-                matrix_data=matrix_dataframe,
-                slices=edit_instruction.slices,
-                operation=edit_instruction.operation,
-            )
+            if edit_instruction.slices:
+                matrix_dataframe = (
+                    MatrixEditor.update_matrix_content_with_slices(
+                        matrix_data=matrix_dataframe,
+                        slices=edit_instruction.slices,
+                        operation=edit_instruction.operation,
+                    )
+                )
+            elif edit_instruction.coordinates:
+                matrix_dataframe = (
+                    MatrixEditor.update_matrix_content_with_coordinates(
+                        df=matrix_dataframe,
+                        coordinates=edit_instruction.coordinates,
+                        operation=edit_instruction.operation,
+                    )
+                )
+            else:
+                raise BadEditInstructionException(
+                    "A matrix edition instruction must contain coordinates or slices"
+                )
+
         new_matrix_id = matrix_service.create(
             matrix_dataframe.to_numpy().tolist()
         )
