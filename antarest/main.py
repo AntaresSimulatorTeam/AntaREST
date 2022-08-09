@@ -237,7 +237,9 @@ def fastapi_app(
     application.add_middleware(
         RateLimitMiddleware,
         authenticate=auth_manager.create_auth_function(),
-        backend=RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
+        backend=RedisBackend(
+            config.redis.host, config.redis.port, 1, config.redis.password
+        )
         if config.redis is not None
         else MemoryBackend(),
         config=RATE_LIMIT_CONFIG,
