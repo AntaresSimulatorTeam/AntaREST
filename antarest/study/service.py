@@ -2305,7 +2305,7 @@ class StudyService:
                     raise e
 
             task_id: Optional[str] = None
-            workspace = study.workspace
+            workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
             if workspace != DEFAULT_WORKSPACE_NAME:
                 dest = Path(study.path) / "output" / output_id
                 src = Path(study.path) / "output" / f"{output_id}.zip"
