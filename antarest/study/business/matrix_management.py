@@ -1,5 +1,7 @@
 from typing import List
 
+import pandas as pd  # type:ignore
+
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditor,
@@ -41,17 +43,18 @@ class MatrixManager:
         if not isinstance(matrix_node, InputSeriesMatrix):
             raise ShouldNotHappenException()
 
-        whole_matrix = matrix_node.parse(return_dataframe=True)
-        updated_matrix_data = whole_matrix["data"]
+        matrix_dataframe: pd.DataFrame = matrix_node.parse(
+            return_dataframe=True
+        )
         for edit_instruction in edit_instructions:
-            updated_matrix_data = (
-                MatrixEditor.update_matrix_content_with_slices(
-                    matrix_data=updated_matrix_data,
-                    slices=edit_instruction.slices,
-                    operation=edit_instruction.operation,
-                )
+            matrix_dataframe = MatrixEditor.update_matrix_content_with_slices(
+                matrix_data=matrix_dataframe,
+                slices=edit_instruction.slices,
+                operation=edit_instruction.operation,
             )
-        new_matrix_id = matrix_service.create(updated_matrix_data)
+        new_matrix_id = matrix_service.create(
+            matrix_dataframe.to_numpy().tolist()
+        )
 
         command = [
             ReplaceMatrix(
