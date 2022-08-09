@@ -1,38 +1,30 @@
-import * as R from "ramda";
 import { Box } from "@mui/material";
-import { useMemo } from "react";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyLinks } from "../../../../../../../../redux/selectors";
-import { useFormContext } from "../../../../../../../common/Form";
-import { BindingConstFields, getContraintsValues } from "../utils";
+import { useState } from "react";
 import Constraint from "./Constraint";
-import { LinkElement } from "../../../../../../../../common/types";
+import { AllClustersAndLinks } from "../../../../../../../../common/types";
+import {
+  getBindingConstraint,
+  getClustersAndLinks,
+} from "../../../../../../../../services/api/studydata";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
+import usePromise from "../../../../../../../../hooks/usePromise";
+import { BindingConstType } from "../utils";
+import NoContent from "../../../../../../../common/page/NoContent";
 
 interface Props {
-  bindingConst: string;
+  bindingConstId: string;
   studyId: string;
 }
 
 export function Constraints(props: Props) {
-  const { bindingConst, studyId } = props;
-  const { defaultValues } = useFormContext<BindingConstFields>();
-  const links = useAppSelector((state) => getStudyLinks(state, studyId));
-  const linksOptions: Array<LinkElement> = useMemo(() => {
-    return links.map((elm) => {
-      const tab = R.sort<string>(R.comparator<string>(R.lt), [
-        elm.area1,
-        elm.area2,
-      ]);
-      return { ...elm, area1: tab[0], area2: tab[1] };
-    });
-    /* return [
-      [...new Set(sortedLinks.map((elm) => elm.area1))],
-      [...new Set(sortedLinks.map((elm) => elm.area2))],
-    ];*/
-  }, [links]);
-  const constraints = useMemo(
-    () => getContraintsValues(defaultValues as Partial<BindingConstFields>),
-    [defaultValues]
+  const { bindingConstId, studyId } = props;
+  const optionsRes = usePromise(() => getClustersAndLinks(studyId), [studyId]);
+
+  const [refresh, setRefresh] = useState<number>(0);
+  const bcRes = usePromise(
+    async () => getBindingConstraint(studyId, bindingConstId),
+    [bindingConstId, studyId, refresh]
   );
 
   return (
@@ -44,18 +36,37 @@ export function Constraints(props: Props) {
         mb: 1,
       }}
     >
-      {Object.keys(constraints).map((key, index) => {
-        return (
-          <Constraint
-            key={key}
-            constraint={constraints[key]}
-            fieldset={index > 0}
-            bindingConst={bindingConst}
-            studyId={studyId}
-            linksOptions={linksOptions}
+      <UsePromiseCond
+        response={bcRes}
+        ifPending={() => <SimpleLoader />}
+        ifResolved={(data: Omit<BindingConstType, "name"> | undefined) => (
+          <UsePromiseCond
+            response={optionsRes}
+            ifPending={() => <SimpleLoader />}
+            ifResolved={(options: AllClustersAndLinks | undefined) => {
+              return data && data.constraints && options ? (
+                <>
+                  {Object.keys(data.constraints).map((key, index) => {
+                    return (
+                      <Constraint
+                        key={key}
+                        constraint={data.constraints[key]}
+                        fieldset={index > 0}
+                        bindingConst={bindingConstId}
+                        studyId={studyId}
+                        options={options}
+                        onUpdate={() => setRefresh((r) => r + 1)}
+                      />
+                    );
+                  })}
+                </>
+              ) : (
+                <NoContent title="No constraints" />
+              );
+            }}
           />
-        );
-      })}
+        )}
+      />
     </Box>
   );
 }

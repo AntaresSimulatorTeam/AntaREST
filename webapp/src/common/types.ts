@@ -443,6 +443,27 @@ export interface LinkElement {
   area1: string;
   area2: string;
 }
+
+export interface ClusterElement {
+  area: string;
+  cluster: string;
+}
+
+export interface LinkClusterElement {
+  id: string;
+  name: string;
+}
+
+export interface LinkClusterItem {
+  element: LinkClusterElement;
+  item_list: Array<LinkClusterElement>;
+}
+
+export interface AllClustersAndLinks {
+  links: Array<LinkClusterItem>;
+  clusters: Array<LinkClusterItem>;
+}
+
 export type LinkListElement = { [elm: string]: LinkElement };
 
 export enum StudyOutputDownloadType {

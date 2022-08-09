@@ -256,7 +256,6 @@ export const getBindingConst = (
 ): FileStudyTreeConfigDTO["bindings"] => {
   const currentStudyState = getStudyDataState(state);
   const bindingConst = currentStudyState.entities[studyId]?.bindings;
-  console.log("BIND: ", currentStudyState.entities);
   return bindingConst || [];
 };
 

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
 from pydantic import BaseModel
 
@@ -12,7 +12,6 @@ from antarest.study.model import (
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import TimeStep, BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
-
 
 
 class LinkInfoDTO(BaseModel):
@@ -38,7 +37,6 @@ class BindingConstDTO(BaseModel):
     enabled: bool = True
     time_step: TimeStep
     operator: BindingConstraintOperator
-    # coeffs: Dict[str, List[float]]
     values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None
     constraints: Optional[Dict[str, ConstraintDTO]]
@@ -121,7 +119,7 @@ class BindingConstManager:
             binding_constraint.append(new_config)
         return binding_constraint
 
-    def get_constraint(self, study: Study, binding_constraint_id: str) -> Optional[BindingConstDTO]:
+    def get_binding_constraint(self, study: Study, binding_constraint_id: str) -> Optional[BindingConstDTO]:
         bc = self.get_binding_constraint_list(study)
         try:
             index = [elm.id for elm in bc].index(binding_constraint_id)
@@ -140,21 +138,25 @@ class BindingConstManager:
             constraint_id = f"{area1}%{area2}"
         return constraint_id
 
-    def add_new_constraint(
+    def add_new_constraint_term(
             self, study: Study, binding_constraint_id: str, new_constraint: ConstraintDTO,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_constraint(study, binding_constraint_id)
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
         if constraint is not None:
             constraint_id = BindingConstManager.get_constraint_id(new_constraint.data)
             constraints = constraint.constraints
             if constraints is None:
                 constraints = {}
             if constraint_id not in constraints:
-                constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=new_constraint.weight, offset=new_constraint.offset if new_constraint.offset is not None else 0)
-                coeffs={}
+                constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=new_constraint.weight,
+                                                           offset=new_constraint.offset if new_constraint.offset is not None else None,
+                                                           data=new_constraint.data)
+                coeffs = {}
                 for constKey, coeff in constraints.items():
-                    coeffs[constKey] = [coeff.weight, coeff.offset]
+                    coeffs[constKey] = [coeff.weight]
+                    if coeff.offset is not None:
+                        coeffs[constKey].append(coeff.offset)
 
                 command = UpdateBindingConstraint(
                     id=constraint.id,
@@ -162,7 +164,9 @@ class BindingConstManager:
                     time_step=constraint.time_step,
                     operator=constraint.operator,
                     coeffs=coeffs,
-                    values=constraint.values
+                    values=constraint.values,
+                    comments=constraint.comments,
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 )
                 execute_or_add_commands(
                     study, file_study, [command], self.storage_service
@@ -171,11 +175,11 @@ class BindingConstManager:
             raise ConstraintAlreadyExistError(study.id)
         raise NoBindingConstraintError(study.id)
 
-    def update_constraint(
+    def update_constraint_term(
             self, study: Study, binding_constraint_id: str, data: ConstraintDTO,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_constraint(study, binding_constraint_id)
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
         if constraint is not None:
             constraint_id = BindingConstManager.get_constraint_id(data.data)
             constraints = constraint.constraints
@@ -189,20 +193,25 @@ class BindingConstManager:
             if data.id != constraint_id:
                 del constraints[data.id]
 
-            constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=data.weight, doffset=data.offset if data.offset is not None else 0)
+            constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=data.weight,
+                                                       offset=data.offset if data.offset is not None else None, data=data.data)
             coeffs = {}
             for constKey, coeff in constraints.items():
-                coeffs[constKey] = [coeff.weight, coeff.offset]
+                coeffs[constKey] = [coeff.weight]
+                if coeff.offset is not None:
+                    coeffs[constKey].append(coeff.offset)
             command = UpdateBindingConstraint(
                 id=constraint.id,
                 enabled=constraint.enabled,
                 time_step=constraint.time_step,
                 operator=constraint.operator,
                 coeffs=coeffs,
-                values=constraint.values
+                values=constraint.values,
+                comments=constraint.comments,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
             )
             execute_or_add_commands(
                 study, file_study, [command], self.storage_service
             )
             return None
-        raise NoConstraintError(study.id)
+        raise NoBindingConstraintError(study.id)

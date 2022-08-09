@@ -67,6 +67,7 @@ export default function BindingConstForm(props: Props) {
             name: "name",
             path: `${pathPrefix}/name`,
             label: t("global.name"),
+            disabled: true,
             required: t("form.field.required") as string,
           },
           {
@@ -111,7 +112,7 @@ export default function BindingConstForm(props: Props) {
         legend={t("study.modelization.bindingConst.constraints")}
         style={{ padding: "16px" }}
       >
-        <Constraints bindingConst={bindingConst} studyId={study.id} />
+        <Constraints bindingConstId={bindingConst} studyId={study.id} />
       </Fieldset>
     </>
   );

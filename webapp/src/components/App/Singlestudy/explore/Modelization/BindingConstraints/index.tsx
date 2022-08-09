@@ -7,10 +7,7 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import NoContent from "../../../../../common/page/NoContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import BindingConstPropsView from "./BindingConstPropsView";
-import {
-  getBindingConst,
-  getCurrentBindingConstId,
-} from "../../../../../../redux/selectors";
+import { getCurrentBindingConstId } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studyDataSynthesis";
@@ -22,10 +19,6 @@ import { BindingConstType } from "./BindingConstView/utils";
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const pathPrefix = `input/bindingconstraints/bindingconstraints`;
-  const bindingConstInitList = useAppSelector((state) =>
-    getBindingConst(study.id, state)
-  );
-  console.log("BINDING CONST: ", bindingConstInitList);
   const {
     data: tmpStudyData,
     isLoading,
