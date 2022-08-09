@@ -55,6 +55,7 @@ class Module(str, Enum):
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
+    AUTO_ARCHIVER = "auto_archiver"
 
 
 def get_default_config_path_or_raise() -> Path:
