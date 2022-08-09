@@ -84,7 +84,7 @@ export const createDateFromIndex = (
 export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
   return tab.map((cell) => {
     return {
-      coordinates: [[cell[0] as number, cell[1] as number]],
+      coordinates: [[cell[0] as number, (cell[1] as number) - 1]],
       operation: { operation: Operator.EQ, value: parseInt(cell[3], 10) },
     };
   });
