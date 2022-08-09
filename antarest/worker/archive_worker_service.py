@@ -5,8 +5,8 @@ from pathlib import Path
 from antarest.core.config import Config
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
-from antarest.main import create_archive_worker
 from antarest import __version__
+from antarest.utils import create_archive_worker
 
 
 def parse_arguments() -> argparse.Namespace:
