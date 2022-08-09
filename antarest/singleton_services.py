@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from antarest.core.config import Config
+from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
 from antarest.utils import (
@@ -25,7 +26,7 @@ class SingletonServices:
     @staticmethod
     def _init(
         config_file: Path, services_list: List[Module]
-    ) -> Dict[Module, Any]:
+    ) -> Dict[Module, IService]:
         res = get_local_path() / "resources"
         config = Config.from_yaml_file(res=res, file=config_file)
         init_db(config_file, config, False, None)
@@ -41,7 +42,7 @@ class SingletonServices:
             study_service,
         ) = create_core_services(None, config)
 
-        services: Dict[Module, Any] = {}
+        services: Dict[Module, IService] = {}
 
         if Module.WATCHER in services_list:
             watcher = create_watcher(
@@ -70,7 +71,7 @@ class SingletonServices:
 
         self._loop()
 
-    def _loop(self):
+    def _loop(self) -> None:
         while True:
             try:
                 pass

@@ -9,6 +9,7 @@ from typing import List, Dict, Union
 from pydantic import BaseModel
 
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.service import IService
 from antarest.core.tasks.model import TaskResult
 
 
@@ -28,10 +29,11 @@ class WorkerTaskCommand(BaseModel):
     task_args: Dict[str, Union[int, float, bool, str]]
 
 
-class AbstractWorker(abc.ABC):
+class AbstractWorker(IService):
     def __init__(
         self, name: str, event_bus: IEventBus, accept: List[str]
     ) -> None:
+        super(AbstractWorker, self).__init__()
         self.name = name
         self.event_bus = event_bus
         for task_type in accept:
@@ -41,15 +43,6 @@ class AbstractWorker(abc.ABC):
         )
         self.task_watcher = Thread(target=self._loop, daemon=True)
         self.futures: Dict[str, Future[TaskResult]] = {}
-
-    def start(self, threaded: bool = False) -> None:
-        logger.info(
-            f"Starting worker {self.name} with threaded_mode={threaded}"
-        )
-        if threaded:
-            self.task_watcher.start()
-        else:
-            self._loop()
 
     async def listen_for_tasks(self, event: Event) -> None:
         logger.info(f"Accepting new task {event.json()}")
