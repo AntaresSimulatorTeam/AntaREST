@@ -6,7 +6,7 @@ class IService(ABC):
     def __init__(self) -> None:
         self.thread = threading.Thread(target=self._loop, daemon=True)
 
-    def start(self, threaded: bool = False) -> None:
+    def start(self, threaded: bool = True) -> None:
         if threaded:
             self.thread.start()
         else:
