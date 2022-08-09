@@ -20,7 +20,6 @@ from starlette.templating import Jinja2Templates
 from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.exceptions import UnknownModuleError
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
@@ -38,9 +37,6 @@ from antarest.utils import (
     get_default_config_path_or_raise,
     init_db,
     create_services,
-    create_watcher,
-    create_matrix_gc,
-    create_archive_worker,
 )
 
 logger = logging.getLogger(__name__)
@@ -241,7 +237,7 @@ def fastapi_app(
     application.add_middleware(
         RateLimitMiddleware,
         authenticate=auth_manager.create_auth_function(),
-        backend=RedisBackend(config.redis.host, config.redis.port, 1)
+        backend=RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
         if config.redis is not None
         else MemoryBackend(),
         config=RATE_LIMIT_CONFIG,
