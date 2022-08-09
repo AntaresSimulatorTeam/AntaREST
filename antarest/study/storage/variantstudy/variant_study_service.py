@@ -845,9 +845,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if isinstance(parent_study, RawStudy):
             study = self.study_factory.create_from_fs(
-                Path(parent_study.path),
+                self.raw_study_service.get_study_path(parent_study),
                 parent_study.id,
-                Path(parent_study.path) / "output",
                 use_cache=True,
             )
             parent_config = study.config
