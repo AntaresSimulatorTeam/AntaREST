@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Set, List, Optional
 
 from antarest.core.config import Config
+from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.repository import MatrixDataSetRepository
@@ -24,18 +25,18 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 logger = logging.getLogger(__name__)
 
 
-class MatrixGarbageCollector:
+class MatrixGarbageCollector(IService):
     def __init__(
         self,
         config: Config,
         study_service: StudyService,
         matrix_service: MatrixService,
     ):
+        super(MatrixGarbageCollector, self).__init__()
         self.saved_matrices_path: Path = config.storage.matrixstore
         self.managed_studies_path: Path = config.storage.workspaces[
             DEFAULT_WORKSPACE_NAME
         ].path
-        self.thread = threading.Thread(target=self._loop, daemon=True)
         self.study_service: StudyService = study_service
         self.variant_study_service: VariantStudyService = (
             study_service.storage_service.variant_study_service
@@ -142,9 +143,3 @@ class MatrixGarbageCollector:
                 logger.error(f"Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
             time.sleep(self.sleeping_time)
-
-    def start(self, threaded: bool = True) -> None:
-        if threaded:
-            self.thread.start()
-        else:
-            self._loop()
