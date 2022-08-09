@@ -38,6 +38,9 @@ class AutoArchiveService(IService):
                                 params=RequestParameters(DEFAULT_ADMIN_USER),
                             )
                         elif isinstance(VariantStudy, study):
+                            self.study_service.storage_service.variant_study_service.clear_snapshot(
+                                study
+                            )
                             self.study_service.archive_outputs(
                                 study.id,
                                 params=RequestParameters(DEFAULT_ADMIN_USER),

@@ -263,8 +263,8 @@ def fastapi_app(
         matrix_gc.start()
 
     if (
-            config.server.services
-            and Module.AUTO_ARCHIVER.value in config.server.services
+        config.server.services
+        and Module.AUTO_ARCHIVER.value in config.server.services
     ):
         auto_archiver = cast(AutoArchiveService, services["auto_archiver"])
         auto_archiver.start()
