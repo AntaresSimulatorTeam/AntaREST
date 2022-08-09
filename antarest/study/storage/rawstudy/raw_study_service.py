@@ -1,3 +1,4 @@
+import io
 import logging
 import shutil
 import time
@@ -318,14 +319,21 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         denormalize: bool = True,
     ) -> None:
         path_study = Path(metadata.path)
-        export_study_flat(
-            path_study,
-            dest,
-            self.study_factory,
-            outputs,
-            output_list_filter,
-            denormalize,
-        )
+
+        if metadata.archived:
+            self.unarchive(metadata)
+        try:
+            export_study_flat(
+                path_study,
+                dest,
+                self.study_factory,
+                outputs,
+                output_list_filter,
+                denormalize,
+            )
+        finally:
+            if metadata.archived:
+                shutil.rmtree(metadata.path)
 
     def check_errors(
         self,
@@ -356,6 +364,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)
         return new_study_path
+
+    def unarchive(self, study: RawStudy) -> None:
+        with open(
+            self.get_archive_path(study),
+            "rb",
+        ) as fh:
+            self.import_study(study, io.BytesIO(fh.read()))
 
     def get_archive_path(self, study: RawStudy) -> Path:
         return Path(self.config.storage.archive_dir / f"{study.id}.zip")

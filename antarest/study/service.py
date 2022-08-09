@@ -1879,15 +1879,7 @@ class StudyService:
 
         def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            with open(
-                self.storage_service.raw_study_service.get_archive_path(
-                    study_to_archive
-                ),
-                "rb",
-            ) as fh:
-                self.storage_service.raw_study_service.import_study(
-                    study_to_archive, io.BytesIO(fh.read())
-                )
+            self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
             os.unlink(
