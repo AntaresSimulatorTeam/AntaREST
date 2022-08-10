@@ -4,7 +4,6 @@ from typing import Dict, Any, List, Union
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
-    RawStudy,
     Study,
 )
 from antarest.study.storage.storage_service import StudyStorageService
@@ -80,10 +79,19 @@ class OutputVariable810(str, Enum):
     RENW_4 = "RENW. 4"
 
 
-OutputVariable = Union[OutputVariableBase, OutputVariable810]
-OUTPUT_VARIABLE_LIST: List[str] = [var.value for var in OutputVariableBase] + [
-    var.value for var in OutputVariable810
+class OutputVariable830(str, Enum):
+    DENS = "DENS"
+    PROFIT = "Profit"
+
+
+OutputVariable = Union[
+    Union[OutputVariableBase, OutputVariable810], OutputVariable830
 ]
+OUTPUT_VARIABLE_LIST: List[str] = (
+    [var.value for var in OutputVariableBase]
+    + [var.value for var in OutputVariable810]
+    + [var.value for var in OutputVariable830]
+)
 
 
 class ConfigManager:
@@ -96,9 +104,12 @@ class ConfigManager:
     @staticmethod
     def get_output_variables(study: Study) -> List[str]:
         version = int(study.version)
-        if version < 810:
-            return [var.value for var in OutputVariableBase]
-        return OUTPUT_VARIABLE_LIST
+        output_list = [var.value for var in OutputVariableBase]
+        if version >= 810:
+            output_list += [var.value for var in OutputVariable810]
+        if version >= 830:
+            output_list += [var.value for var in OutputVariable830]
+        return output_list
 
     def get_thematic_trimming(self, study: Study) -> Dict[str, bool]:
         storage_service = self.storage_service.get_storage(study)
