@@ -15,7 +15,6 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
 
-
 DUPLICATE_KEYS = [
     "playlist_year_weight",
     "playlist_year +",
@@ -125,6 +124,13 @@ class GeneralData(IniFileNode):
             del types["general"]["custom-ts-numbers"]
         if config.version >= 810:
             types["other preferences"]["renewables-generation-modelling"] = str
+        if config.version >= 830:
+            types["adequacy patch"] = {
+                "include-adq-patch": bool,
+                "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": bool,
+                "set-to-null-ntc-between-physical-out-for-first-step": bool,
+            }
+            types["optimization"]["include-split-exported-mps"] = bool
 
         IniFileNode.__init__(
             self,

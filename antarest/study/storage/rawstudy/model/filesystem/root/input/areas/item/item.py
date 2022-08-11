@@ -1,10 +1,10 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.adequacy_patch import (
+    InputAreasAdequacyPatch,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.optimization import (
     InputAreasOptimization,
 )
@@ -22,4 +22,8 @@ class InputAreasItem(FolderNode):
                 self.config.next_file("optimization.ini"),
             ),
         }
+        if self.config.version >= 830:
+            children["adequacy_patch"] = InputAreasAdequacyPatch(
+                self.context, self.config.next_file("adequacy_patch.ini")
+            )
         return children
