@@ -20,6 +20,7 @@ from antareslauncher.main_option_parser import (
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
@@ -69,10 +70,11 @@ class SlurmLauncher(AbstractLauncher):
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
+        cache: ICache,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
     ) -> None:
-        super().__init__(config, callbacks, event_bus)
+        super().__init__(config, callbacks, event_bus, cache)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 

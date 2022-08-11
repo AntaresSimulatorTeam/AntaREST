@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable, NamedTuple, Optional, Dict, List
 
 from antarest.core.config import Config
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     Event,
     EventType,
@@ -10,6 +11,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
 )
 from antarest.core.requests import RequestParameters
+from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
 from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
 
 
@@ -36,10 +38,12 @@ class AbstractLauncher(ABC):
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
+        cache: ICache,
     ):
         self.config = config
         self.callbacks = callbacks
         self.event_bus = event_bus
+        self.cache = cache
 
     @abstractmethod
     def run_study(
@@ -73,4 +77,32 @@ class AbstractLauncher(ABC):
                 )
             )
 
+            launch_progress_json = (
+                self.cache.get(id=f"Launch_Progress_{job_id}") or {}
+            )
+            launch_progress_dto = LaunchProgressDTO.parse_obj(
+                launch_progress_json
+            )
+
+            if LogParser.update_progress(log_line, launch_progress_dto):
+                self.event_bus.push(
+                    Event(
+                        type=EventType.LAUNCH_PROGRESS,
+                        payload={
+                            "progress": launch_progress_dto.progress,
+                            "message": "",
+                        },
+                        channel=EventChannelDirectory.JOB_LOGS + job_id,
+                    )
+                )
+                self.cache.put(
+                    f"Launch_Progress_{job_id}", launch_progress_dto.dict()
+                )
+
         return update_log
+
+    def get_launch_progress(self, job_id: str) -> float:
+        launch_progress_json = self.cache.get(
+            id=f"Launch_Progress_{job_id}"
+        ) or {"progress": 0}
+        return launch_progress_json.get("progress", 0)
