@@ -93,10 +93,17 @@ export const addConstraintTerm = async (
 export const getBindingConstraint = async (
   uuid: string,
   bindingConst: string
-): Promise<Omit<BindingConstType, "name">> => {
+): Promise<BindingConstType> => {
   const res = await client.get(
     `/v1/studies/${uuid}/bindingconstraint/${bindingConst}`
   );
+  return res.data;
+};
+
+export const getBindingConstraintList = async (
+  uuid: string
+): Promise<Array<BindingConstType>> => {
+  const res = await client.get(`/v1/studies/${uuid}/bindingconstraint`);
   return res.data;
 };
 

@@ -3,7 +3,7 @@ import {
   ClusterElement,
   LinkCreationInfoDTO,
 } from "../../../../../../../common/types";
-import { getStudyData } from "../../../../../../../services/api/study";
+import { getBindingConstraint } from "../../../../../../../services/api/studydata";
 
 type OperatorType = "less" | "equal" | "greater" | "both";
 type FilteringType = "hourly" | "daily" | "weekly";
@@ -19,27 +19,25 @@ export interface BindingConstType extends FieldValues {
   name: string;
   id: string;
   enabled: boolean;
-  type: FilteringType;
+  time_step: FilteringType;
   operator: OperatorType;
   comments?: string;
   constraints: Array<ConstraintType>;
 }
 
-export type BindingConstFields = Omit<BindingConstType, "id">;
+export type BindingConstFields = BindingConstType;
 
-export type BindingConstPath = Omit<
-  Record<keyof BindingConstFields, string>,
-  "id"
->;
+export type BindingConstPath = Record<keyof BindingConstFields, string>;
 
 export async function getDefaultValues(
   studyId: string,
-  bcIndex: number
+  bindingConstId: string
 ): Promise<BindingConstFields> {
-  // Path
-  const pathPrefix = `input/bindingconstraints/bindingconstraints/${bcIndex}`;
   // Fetch fields
-  const fields: BindingConstType = await getStudyData(studyId, pathPrefix, 3);
+  const fields: BindingConstType = await getBindingConstraint(
+    studyId,
+    bindingConstId
+  );
   return fields;
 }
 

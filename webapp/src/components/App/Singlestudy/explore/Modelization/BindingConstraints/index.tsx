@@ -13,43 +13,27 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studyDataSynthesis";
 import BindingConstView from "./BindingConstView";
 import usePromise from "../../../../../../hooks/usePromise";
-import { getStudyData } from "../../../../../../services/api/study";
-import { BindingConstType } from "./BindingConstView/utils";
+import { getBindingConstraintList } from "../../../../../../services/api/studydata";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const pathPrefix = `input/bindingconstraints/bindingconstraints`;
-  const {
-    data: tmpStudyData,
-    isLoading,
-    error,
-  } = usePromise(() => getStudyData(study.id, pathPrefix, 3), [study.id]);
-  const studyData = useMemo(() => {
-    const data: Array<BindingConstType> = [];
-    if (tmpStudyData) {
-      for (let i = 0; i < Object.keys(tmpStudyData).length; i += 1) {
-        data.push(tmpStudyData[i.toString()]);
-      }
-    }
-    return data;
-  }, [tmpStudyData]);
+  const res = usePromise(() => getBindingConstraintList(study.id), [study.id]);
   const currentBindingConst = useAppSelector(getCurrentBindingConstId);
-  const bcIndex = useMemo(() => {
-    const data = studyData?.findIndex((elm) => elm.id === currentBindingConst);
-    return data !== undefined && data >= 0 ? data : undefined;
-  }, [studyData, currentBindingConst]);
   const dispatch = useAppDispatch();
+
+  const bcIndex = useMemo(() => {
+    if (res.data)
+      return res.data.findIndex((elm) => elm.id === currentBindingConst);
+    return -1;
+  }, [res.data, currentBindingConst]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleBindingConstClick = (bindingConstId: string): void => {
-    if (studyData === undefined) return;
-    const elm = studyData.find((item) => item.id === bindingConstId);
-    if (elm) {
-      dispatch(setCurrentBindingConst(bindingConstId));
-    }
+    dispatch(setCurrentBindingConst(bindingConstId));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -59,46 +43,32 @@ function BindingConstraints() {
   return (
     <SplitLayoutView
       left={
-        <Box width="100%" height="100%">
-          {studyData !== undefined && (
-            <BindingConstPropsView
-              onClick={handleBindingConstClick}
-              list={studyData}
-              studyId={study.id}
-              currentBindingConst={currentBindingConst || undefined}
-            />
+        <UsePromiseCond
+          response={res}
+          ifPending={() => <SimpleLoader />}
+          ifResolved={(data) => (
+            <Box width="100%" height="100%">
+              <BindingConstPropsView
+                onClick={handleBindingConstClick}
+                list={data || []}
+                studyId={study.id}
+                currentBindingConst={currentBindingConst || undefined}
+              />
+            </Box>
           )}
-        </Box>
+        />
       }
       right={
         <>
           {R.cond([
-            // Loading
-            [
-              () => isLoading || studyData.length === 0,
-              () => (<SimpleLoader />) as ReactNode,
-            ],
-            [
-              () => error !== undefined,
-              () =>
-                (
-                  <NoContent
-                    title={
-                      (error as Error).message
-                        ? (error as Error).message
-                        : (error as string)
-                    }
-                  />
-                ) as ReactNode,
-            ],
             // Binding constraints list
             [
-              () => currentBindingConst !== undefined && bcIndex !== undefined,
+              () => currentBindingConst !== undefined && res.data !== undefined,
               () =>
                 (
                   <BindingConstView
-                    bcIndex={bcIndex as number}
                     bindingConst={currentBindingConst}
+                    bcIndex={bcIndex}
                   />
                 ) as ReactNode,
             ],

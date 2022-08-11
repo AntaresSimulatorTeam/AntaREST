@@ -15,10 +15,10 @@ interface Props {
 
 function BindingConstView(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { bcIndex, bindingConst } = props;
+  const { bindingConst, bcIndex } = props;
   const res = usePromise(
-    () => getDefaultValues(study.id, bcIndex),
-    [study.id, bcIndex]
+    () => getDefaultValues(study.id, bindingConst),
+    [study.id, bindingConst]
   );
 
   return (
@@ -32,9 +32,9 @@ function BindingConstView(props: Props) {
             config={{ defaultValues: data as BindingConstFields }}
           >
             <BindingConstForm
-              bcIndex={bcIndex}
               study={study}
               bindingConst={bindingConst}
+              bcIndex={bcIndex}
             />
           </Form>
         )}

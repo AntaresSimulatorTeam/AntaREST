@@ -1,16 +1,14 @@
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useFieldArray } from "react-hook-form";
 import Constraint from "./Constraint";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
-import {
-  getBindingConstraint,
-  getClustersAndLinks,
-} from "../../../../../../../../services/api/studydata";
+import { getClustersAndLinks } from "../../../../../../../../services/api/studydata";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import { BindingConstType } from "../utils";
 import NoContent from "../../../../../../../common/page/NoContent";
+import { useFormContext } from "../../../../../../../common/Form";
 
 interface Props {
   bindingConstId: string;
@@ -20,13 +18,12 @@ interface Props {
 export function Constraints(props: Props) {
   const { bindingConstId, studyId } = props;
   const optionsRes = usePromise(() => getClustersAndLinks(studyId), [studyId]);
-
-  const [refresh, setRefresh] = useState<number>(0);
-  const bcRes = usePromise(
-    async () => getBindingConstraint(studyId, bindingConstId),
-    [bindingConstId, studyId, refresh]
-  );
-
+  const { control } = useFormContext<BindingConstType>();
+  const { fields } = useFieldArray({
+    control,
+    name: "constraints",
+  });
+  console.log("YESSAI: ", fields);
   return (
     <Box
       sx={{
@@ -37,35 +34,27 @@ export function Constraints(props: Props) {
       }}
     >
       <UsePromiseCond
-        response={bcRes}
+        response={optionsRes}
         ifPending={() => <SimpleLoader />}
-        ifResolved={(data: Omit<BindingConstType, "name"> | undefined) => (
-          <UsePromiseCond
-            response={optionsRes}
-            ifPending={() => <SimpleLoader />}
-            ifResolved={(options: AllClustersAndLinks | undefined) => {
-              return data && data.constraints && options ? (
-                <>
-                  {Object.keys(data.constraints).map((key, index) => {
-                    return (
-                      <Constraint
-                        key={key}
-                        constraint={data.constraints[key]}
-                        fieldset={index > 0}
-                        bindingConst={bindingConstId}
-                        studyId={studyId}
-                        options={options}
-                        onUpdate={() => setRefresh((r) => r + 1)}
-                      />
-                    );
-                  })}
-                </>
-              ) : (
-                <NoContent title="No constraints" />
-              );
-            }}
-          />
-        )}
+        ifResolved={(options: AllClustersAndLinks | undefined) => {
+          return options ? (
+            <>
+              {fields.map((field, index: number) => {
+                return (
+                  <Constraint
+                    key={field.id}
+                    index={index}
+                    bindingConst={bindingConstId}
+                    studyId={studyId}
+                    options={options}
+                  />
+                );
+              })}
+            </>
+          ) : (
+            <NoContent title="No constraints" />
+          );
+        }}
       />
     </Box>
   );

@@ -4,23 +4,23 @@ import {
   FormControlLabel,
   Paper,
   Switch,
-  TextField,
   Typography,
 } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import TextSeparator from "../../../../../../../common/TextSeparator";
-import { ConstraintType } from "../utils";
+import { BindingConstFields, ConstraintType } from "../utils";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   AllClustersAndLinks,
-  ClusterElement,
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
 import { updateConstraintTerm } from "../../../../../../../../services/api/studydata";
 import OptionsList from "./OptionsList";
+import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
+import { useFormContext } from "../../../../../../../common/Form";
 
 interface ElementProps {
   title: string;
@@ -86,30 +86,44 @@ ConstraintElement.defaultProps = {
 };
 
 interface ItemProps {
-  constraint: ConstraintType;
   options: AllClustersAndLinks;
+  index: number;
   saveValue: (constraint: ConstraintType) => void;
 }
 
 function ConstraintItem(props: ItemProps) {
-  const { constraint, options, saveValue } = props;
+  const { control, defaultValues } = useFormContext<BindingConstFields>();
+  const { options, index, saveValue } = props;
   const [t] = useTranslation();
-  const { weight, offset, data } = constraint;
   const [isLink, setIsLink] = useState(
-    (data as LinkCreationInfoDTO).area1 !== undefined
+    (defaultValues?.constraints?.[index]?.data as LinkCreationInfoDTO).area1 !==
+      undefined
   );
   console.log("OPTIONS: ", options);
+  const values = useMemo(
+    () =>
+      defaultValues as Required<
+        Omit<BindingConstFields, "comments"> & { comments?: string }
+      >,
+    [defaultValues]
+  );
+  const constraint = useMemo(
+    () => values.constraints[index],
+    [index, values.constraints]
+  );
+
   const handleToggleLink = (): void => {
+    console.log("TOGLE: ", !isLink);
     saveValue({
       ...constraint,
       data: isLink
         ? {
-            area: "",
-            cluster: "",
+            area: options.clusters[0].element.id,
+            cluster: options.clusters[0].item_list[0].id,
           }
         : {
-            area1: "",
-            area2: "",
+            area1: options.links[0].element.id,
+            area2: options.links[0].item_list[0].id,
           },
     });
 
@@ -129,49 +143,28 @@ function ConstraintItem(props: ItemProps) {
         isLink={isLink}
         onToggleType={handleToggleLink}
         left={
-          <TextField
-            type="number"
-            variant="filled"
+          <NumberFE
+            name={`constraints.${index}.weight`}
             label={t("global.value")}
-            value={weight}
-            onChange={(e) =>
-              saveValue({
-                ...constraint,
-                weight: parseFloat(e.target.value),
-              })
-            }
+            variant="filled"
+            control={control}
+            rules={{
+              onAutoSubmit: (value) =>
+                saveValue({
+                  ...constraint,
+                  weight: parseFloat(value),
+                }),
+            }}
           />
         }
         right={
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <OptionsList
-              options={isLink ? options.links : options.clusters}
-              label1={t(isLink ? "study.area1" : "study.area")}
-              label2={t(isLink ? "study.area2" : "study.cluster")}
-              value1={
-                isLink
-                  ? (constraint.data as LinkCreationInfoDTO).area1
-                  : (constraint.data as ClusterElement).area
-              }
-              value2={
-                isLink
-                  ? (constraint.data as LinkCreationInfoDTO).area2
-                  : (constraint.data as ClusterElement).cluster
-              }
-              onChangeOption={(option1, option2) =>
-                saveValue({
-                  ...constraint,
-                  data: isLink
-                    ? {
-                        area1: option1,
-                        area2: option2,
-                      }
-                    : {
-                        area: option1,
-                        cluster: option2,
-                      },
-                })
-              }
+              isLink={isLink}
+              list={options}
+              constraint={constraint}
+              index={index}
+              saveValue={saveValue}
             />
           </Box>
         }
@@ -184,17 +177,19 @@ function ConstraintItem(props: ItemProps) {
             operator="+"
             left={<Typography>t</Typography>}
             right={
-              <TextField
-                type="number"
-                variant="filled"
+              <NumberFE
+                name={`constraints.${index}.offset`}
                 label={t("global.value")}
-                value={offset}
-                onChange={(e) =>
-                  saveValue({
-                    ...constraint,
-                    offset: parseFloat(e.target.value),
-                  })
-                }
+                variant="filled"
+                control={control}
+                rules={{
+                  deps: "lastDay",
+                  onAutoSubmit: (value) =>
+                    saveValue({
+                      ...constraint,
+                      offset: parseFloat(value),
+                    }),
+                }}
               />
             }
           />
@@ -214,33 +209,32 @@ function ConstraintItem(props: ItemProps) {
 }
 
 interface Props {
-  fieldset?: boolean;
-  constraint: ConstraintType;
+  index: number;
   bindingConst: string;
   studyId: string;
   options: AllClustersAndLinks;
-  onUpdate: () => void;
 }
 export default function Constraint(props: Props) {
-  const { bindingConst, options, studyId, fieldset, constraint, onUpdate } =
-    props;
+  const { bindingConst, options, studyId, index } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
+
+  console.log("HELLO: ", index);
 
   const saveValue = useCallback(
     async (constraint: ConstraintType) => {
       try {
+        console.log("UPDATE ", index, " with ", constraint);
         await updateConstraintTerm(studyId, bindingConst, constraint);
-        onUpdate();
         // console.log("Constraint: ", constraint);
       } catch (error) {
         enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
       }
     },
-    [bindingConst, enqueueErrorSnackbar, onUpdate, studyId, t]
+    [bindingConst, enqueueErrorSnackbar, index, studyId, t]
   );
 
-  return fieldset === true ? (
+  return index > 0 ? (
     <Box
       sx={{
         display: "flex",
@@ -253,21 +247,9 @@ export default function Constraint(props: Props) {
         rootStyle={{ my: 0.25 }}
         textStyle={{ fontSize: "22px" }}
       />
-      <ConstraintItem
-        constraint={constraint}
-        options={options}
-        saveValue={saveValue}
-      />
+      <ConstraintItem options={options} saveValue={saveValue} index={index} />
     </Box>
   ) : (
-    <ConstraintItem
-      constraint={constraint}
-      options={options}
-      saveValue={saveValue}
-    />
+    <ConstraintItem options={options} saveValue={saveValue} index={index} />
   );
 }
-
-Constraint.defaultProps = {
-  fieldset: undefined,
-};

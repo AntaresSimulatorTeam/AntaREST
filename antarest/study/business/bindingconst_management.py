@@ -4,12 +4,14 @@ from pydantic import BaseModel
 
 from antarest.core.exceptions import NoConstraintError, ConstraintAlreadyExistError, ConstraintIdNotFoundError, \
     NoBindingConstraintError
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     Study,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.utils import create_permission_from_study
 from antarest.study.storage.variantstudy.model.command.common import TimeStep, BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
@@ -39,7 +41,7 @@ class BindingConstDTO(BaseModel):
     operator: BindingConstraintOperator
     values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None
-    constraints: Optional[Dict[str, ConstraintDTO]]
+    constraints: Optional[List[ConstraintDTO]]
 
 
 class BindingConstManager:
@@ -80,15 +82,15 @@ class BindingConstManager:
                             weight = value_split[0]
                             offset = value_split[1]
                     if new_config.constraints is None:
-                        new_config.constraints = {}
-                    new_config.constraints[key] = ConstraintDTO(
+                        new_config.constraints = []
+                    new_config.constraints.append(ConstraintDTO(
                         id=key,
                         weight=weight,
                         offset=offset if offset is not None else None,
                         data=LinkInfoDTO(
                             area1=area1,
                             area2=area2,
-                        ))
+                        )))
                     continue
 
                 split = key.split(".")
@@ -105,15 +107,15 @@ class BindingConstManager:
                             weight = value_split[0]
                             offset = value_split[1]
                     if new_config.constraints is None:
-                        new_config.constraints = {}
-                    new_config.constraints[key] = ConstraintDTO(
+                        new_config.constraints = []
+                    new_config.constraints.append(ConstraintDTO(
                         id=key,
                         weight=weight,
                         offset=offset if offset is not None else None,
                         data=ClusterInfoDTO(
                             area=area,
                             cluster=cluster,
-                        ))
+                        )))
                     continue
 
             binding_constraint.append(new_config)
@@ -127,6 +129,15 @@ class BindingConstManager:
         except ValueError:
             return None
         return None
+
+    @staticmethod
+    def find_constraint_term_id(constraints: List[ConstraintDTO], constraint_id: str) -> int:
+        try:
+            index = [elm.id for elm in constraints].index(constraint_id)
+            return index
+        except ValueError:
+            return -1
+        return -1
 
     @staticmethod
     def get_constraint_id(data: Union[LinkInfoDTO, ClusterInfoDTO]) -> str:
@@ -147,16 +158,16 @@ class BindingConstManager:
             constraint_id = BindingConstManager.get_constraint_id(new_constraint.data)
             constraints = constraint.constraints
             if constraints is None:
-                constraints = {}
-            if constraint_id not in constraints:
-                constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=new_constraint.weight,
-                                                           offset=new_constraint.offset if new_constraint.offset is not None else None,
-                                                           data=new_constraint.data)
+                constraints = []
+            if BindingConstManager.find_constraint_term_id(constraints, constraint_id) < 0:
+                constraints.append(ConstraintDTO(id=constraint_id, weight=new_constraint.weight,
+                                                 offset=new_constraint.offset if new_constraint.offset is not None else None,
+                                                 data=new_constraint.data))
                 coeffs = {}
-                for constKey, coeff in constraints.items():
-                    coeffs[constKey] = [coeff.weight]
-                    if coeff.offset is not None:
-                        coeffs[constKey].append(coeff.offset)
+                for term in constraints:
+                    coeffs[term.id] = [term.weight]
+                    if term.offset is not None:
+                        coeffs[term.id].append(term.offset)
 
                 command = UpdateBindingConstraint(
                     id=constraint.id,
@@ -170,6 +181,13 @@ class BindingConstManager:
                 )
                 execute_or_add_commands(
                     study, file_study, [command], self.storage_service
+                )
+                self.storage_service.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_DATA_EDITED,
+                        payload=study.to_json_summary(),
+                        permissions=create_permission_from_study(study),
+                    )
                 )
                 return None
             raise ConstraintAlreadyExistError(study.id)
@@ -187,19 +205,21 @@ class BindingConstManager:
             if constraints is None:
                 raise NoConstraintError(study.id)
 
-            if data.id is None or data.id not in constraints:
+            data_id = BindingConstManager.find_constraint_term_id(constraints, data.id)
+            if data.id is None or data_id < 0:
                 raise ConstraintIdNotFoundError(study.id)
 
             if data.id != constraint_id:
-                del constraints[data.id]
+                del constraints[data_id]
 
-            constraints[constraint_id] = ConstraintDTO(id=constraint_id, weight=data.weight,
-                                                       offset=data.offset if data.offset is not None else None, data=data.data)
+            constraints.append(ConstraintDTO(id=constraint_id, weight=data.weight,
+                                             offset=data.offset if data.offset is not None else None, data=data.data))
             coeffs = {}
-            for constKey, coeff in constraints.items():
-                coeffs[constKey] = [coeff.weight]
-                if coeff.offset is not None:
-                    coeffs[constKey].append(coeff.offset)
+            for term in constraints:
+                coeffs[term.id] = [term.weight]
+                if term.offset is not None:
+                    coeffs[term.id].append(term.offset)
+
             command = UpdateBindingConstraint(
                 id=constraint.id,
                 enabled=constraint.enabled,
@@ -213,5 +233,12 @@ class BindingConstManager:
             execute_or_add_commands(
                 study, file_study, [command], self.storage_service
             )
+            # self.storage_service.event_bus.push(
+            #    Event(
+            #        type=EventType.STUDY_DATA_EDITED,
+            #        payload=study.to_json_summary(),
+            #        permissions=create_permission_from_study(study),
+            #    )
+            # )
             return None
         raise NoBindingConstraintError(study.id)

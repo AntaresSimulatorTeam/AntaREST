@@ -48,7 +48,6 @@ export default function BindingConstForm(props: Props) {
   const saveValue = useCallback(
     async (name: string, path: string, defaultValues: any, data: any) => {
       try {
-        console.log("IT'S WORKING: ", name);
         await editStudy(data, studyId, path);
       } catch (error) {
         enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
@@ -78,7 +77,7 @@ export default function BindingConstForm(props: Props) {
           },
           {
             type: "select",
-            name: "type",
+            name: "time_step",
             path: `${pathPrefix}/type`,
             label: t("study.modelization.bindingConst.type"),
             options: typeOptions,
