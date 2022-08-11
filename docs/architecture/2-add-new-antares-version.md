@@ -18,3 +18,6 @@ Output_variable list: https://antares-simulator.readthedocs.io/en/latest/referen
 
 ## antarest/study/storage/variantstudy/model/command
 * Edit concerned commands
+
+## scrpits/package_antares_web.sh
+* Edit solver version

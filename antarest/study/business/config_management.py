@@ -85,8 +85,9 @@ class OutputVariable830(str, Enum):
 
 
 OutputVariable = Union[
-    Union[OutputVariableBase, OutputVariable810], OutputVariable830
+    OutputVariableBase, OutputVariable810, OutputVariable830
 ]
+
 OUTPUT_VARIABLE_LIST: List[str] = (
     [var.value for var in OutputVariableBase]
     + [var.value for var in OutputVariable810]
