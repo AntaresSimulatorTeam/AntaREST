@@ -55,7 +55,7 @@ function SelectFE(props: SelectFEProps) {
   );
 
   return (
-    <FormControl variant={variant} {...formControlProps}>
+    <FormControl variant={variant} hiddenLabel={!label} {...formControlProps}>
       <InputLabel id={labelId}>{label}</InputLabel>
       <Select {...selectProps} labelId={labelId}>
         {emptyValue && (
