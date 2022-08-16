@@ -1,8 +1,4 @@
 {
-  "env": {
-    "browser": true,
-    "es6": true
-  },
   "extends": [
     "eslint:recommended",
     "airbnb",
@@ -28,8 +24,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2018,
-    "sourceType": "module"
+    "ecmaVersion": 2018
   },
   "rules": {
     "@typescript-eslint/no-shadow": "off",
@@ -92,9 +87,6 @@
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
       }
-    },
-    "react": {
-      "version": "detect"
     }
   }
 }
