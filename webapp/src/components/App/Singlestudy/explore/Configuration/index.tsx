@@ -10,6 +10,7 @@ import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import OptimizationPreferences from "./OptimizationPreferences";
 import RegionalDistricts from "./RegionalDistricts";
+import TimeSeriesManagement from "./TimeSeriesManagement";
 
 function Configuration() {
   const [currentElementIndex, setCurrentElementIndex] = useState(0);
@@ -44,7 +45,7 @@ function Configuration() {
         <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
           {R.cond([
             [R.equals(0), () => <General />],
-            // [R.equals(1), () => <TimeSeriesManagement />],
+            [R.equals(1), () => <TimeSeriesManagement />],
             [R.equals(1), () => <UnderConstruction />],
             [R.equals(2), () => <RegionalDistricts />],
             [R.equals(3), () => <OptimizationPreferences />],

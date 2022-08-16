@@ -1,11 +1,12 @@
+import { DeepPartial } from "react-hook-form";
 import { StudyMetadata } from "../../../../../../common/types";
-import { getStudyData } from "../../../../../../services/api/study";
+import client from "../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export enum TimeSeriesType {
+export enum TSType {
   Load = "load",
   Hydro = "hydro",
   Thermal = "thermal",
@@ -24,63 +25,30 @@ enum SeasonCorrelation {
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface SettingsGeneralDataGeneral {
-  generate: string;
-  nbtimeseriesload: number;
-  nbtimeserieshydro: number;
-  nbtimeserieswind: number;
-  nbtimeseriesthermal: number;
-  nbtimeseriessolar: number;
-  refreshtimeseries: string;
-  refreshintervalload: number;
-  refreshintervalhydro: number;
-  refreshintervalwind: number;
-  refreshintervalthermal: number;
-  refreshintervalsolar: number;
-  "intra-modal": string;
-  "inter-modal": string;
-}
-
-type SettingsGeneralDataInput = {
-  [key in Exclude<
-    TimeSeriesType,
-    TimeSeriesType.Thermal | TimeSeriesType.Renewables | TimeSeriesType.NTC
-  >]: {
-    prepro?: {
-      correlation?: {
-        general?: {
-          mode?: SeasonCorrelation;
-        };
-      };
-    };
-  };
-} & { import: string };
-
-interface SettingsGeneralDataOutput {
-  archives: string;
-}
-
-interface SettingsGeneralData {
-  // For unknown reason, `general`, `input` and `output` may be empty
-  general?: Partial<SettingsGeneralDataGeneral>;
-  input?: Partial<SettingsGeneralDataInput>;
-  output?: Partial<SettingsGeneralDataOutput>;
-}
-
-interface TimeSeriesValues {
-  readyMadeTsStatus: boolean;
+interface TSFormFieldsForType {
   stochasticTsStatus: boolean;
   number: number;
   refresh: boolean;
   refreshInterval: number;
-  seasonCorrelation: SeasonCorrelation | undefined;
+  seasonCorrelation: SeasonCorrelation;
   storeInInput: boolean;
   storeInOutput: boolean;
   intraModal: boolean;
   interModal: boolean;
 }
 
-export type FormValues = Record<TimeSeriesType, TimeSeriesValues>;
+export interface TSFormFields
+  extends Record<
+    Exclude<TSType, TSType.Thermal | TSType.Renewables | TSType.NTC>,
+    TSFormFieldsForType
+  > {
+  [TSType.Thermal]: Omit<TSFormFieldsForType, "seasonCorrelation">;
+  [TSType.Renewables]: Pick<
+    TSFormFieldsForType,
+    "stochasticTsStatus" | "intraModal" | "interModal"
+  >;
+  [TSType.NTC]: Pick<TSFormFieldsForType, "stochasticTsStatus" | "intraModal">;
+}
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -92,59 +60,20 @@ export const SEASONAL_CORRELATION_OPTIONS = Object.values(SeasonCorrelation);
 // Functions
 ////////////////////////////////////////////////////////////////
 
-function makeTimeSeriesValues(
-  type: TimeSeriesType,
-  data: SettingsGeneralData
-): TimeSeriesValues {
-  const { general = {}, output = {}, input = {} } = data;
-  const {
-    generate = "",
-    refreshtimeseries = "",
-    "intra-modal": intraModal = "",
-    "inter-modal": interModal = "",
-  } = general;
-  const { import: imp = "" } = input;
-  const { archives = "" } = output;
-  const isGenerateHasType = generate.includes(type);
-  const isSpecialType =
-    type === TimeSeriesType.Renewables || type === TimeSeriesType.NTC;
-
-  return {
-    readyMadeTsStatus: !isGenerateHasType,
-    stochasticTsStatus: isGenerateHasType,
-    number: isSpecialType ? NaN : general[`nbtimeseries${type}`] ?? 1,
-    refresh: refreshtimeseries.includes(type),
-    refreshInterval: isSpecialType
-      ? NaN
-      : general[`refreshinterval${type}`] ?? 100,
-    seasonCorrelation:
-      isSpecialType || type === TimeSeriesType.Thermal
-        ? undefined
-        : input[type]?.prepro?.correlation?.general?.mode ||
-          SeasonCorrelation.Annual,
-    storeInInput: imp.includes(type),
-    storeInOutput: archives.includes(type),
-    intraModal: intraModal.includes(type),
-    interModal: interModal.includes(type),
-  };
+function makeRequestURL(studyId: StudyMetadata["id"]): string {
+  return `v1/studies/${studyId}/config/timeseries_form_fields`;
 }
 
-export async function getFormValues(
+export async function getTimeSeriesFormFields(
   studyId: StudyMetadata["id"]
-): Promise<FormValues> {
-  const data = await getStudyData<SettingsGeneralData>(
-    studyId,
-    "settings/generaldata",
-    2
-  );
+): Promise<TSFormFields> {
+  const res = await client.get(makeRequestURL(studyId));
+  return res.data;
+}
 
-  return {
-    load: makeTimeSeriesValues(TimeSeriesType.Load, data),
-    thermal: makeTimeSeriesValues(TimeSeriesType.Thermal, data),
-    hydro: makeTimeSeriesValues(TimeSeriesType.Hydro, data),
-    wind: makeTimeSeriesValues(TimeSeriesType.Wind, data),
-    solar: makeTimeSeriesValues(TimeSeriesType.Solar, data),
-    renewables: makeTimeSeriesValues(TimeSeriesType.Renewables, data),
-    ntc: makeTimeSeriesValues(TimeSeriesType.NTC, data),
-  };
+export function setTimeSeriesFormFields(
+  studyId: StudyMetadata["id"],
+  values: DeepPartial<TSFormFields>
+): Promise<void> {
+  return client.put(makeRequestURL(studyId), values);
 }
