@@ -12,8 +12,6 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
-    MatrixSlice,
-    Operation,
     MatrixEditInstructionDTO,
 )
 from antarest.study.business.area_management import (
@@ -26,6 +24,9 @@ from antarest.study.business.config_management import (
     OutputVariable,
 )
 from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.timeseries_config_management import (
+    TSFormFields,
+)
 from antarest.study.model import PatchCluster, PatchArea
 from antarest.study.service import StudyService
 
@@ -246,7 +247,7 @@ def create_study_data_routes(
         return study_service.config_manager.get_thematic_trimming(study)
 
     @bp.put(
-        "/studies/{uuid}/config/thematic_trimming",
+        path="/studies/{uuid}/config/thematic_trimming",
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
@@ -271,6 +272,53 @@ def create_study_data_routes(
                 ]
                 for output_variable in thematic_trimming_config
             },
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/timeseries_form_fields",
+        tags=[APITag.study_data],
+        summary="Get time series config with values from form",
+        response_model=TSFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_timeseries_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> TSFormFields:
+
+        logger.info(
+            msg=f"Getting time series management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        return study_service.ts_config_manager.get_ts_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/timeseries_form_fields",
+        tags=[APITag.study_data],
+        summary="Set time series config with values from form",
+    )
+    def set_timeseries_form_values(
+        uuid: str,
+        field_values: TSFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+
+        logger.info(
+            f"Updating time series management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.ts_config_manager.set_ts_field_values(
+            study, field_values
         )
 
     @bp.post(

@@ -1,8 +1,11 @@
 from typing import List, Sequence
 
+from pydantic import BaseModel, Extra
+
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.string import to_camel_case
 from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -59,3 +62,13 @@ def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
         )
     )
     return commands_dto
+
+
+class FormFieldsBaseModel(BaseModel):
+    """
+    Pydantic Model for webapp form
+    """
+
+    class Config:
+        alias_generator = to_camel_case
+        extra = Extra.forbid

@@ -64,6 +64,9 @@ from antarest.study.business.area_management import (
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.timeseries_config_management import (
+    TimeSeriesConfigManager,
+)
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
     XpansionManager,
@@ -178,6 +181,7 @@ class StudyService:
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
+        self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.cache_service = cache_service
