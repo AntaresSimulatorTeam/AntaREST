@@ -51,13 +51,14 @@ function AddClusterForm(props: Props) {
           label={t(`study.modelization.clusters.group`)}
           options={groupOptions}
           control={control}
-          formControlProps={{
-            sx: {
-              flex: 1,
-              boxSizing: "border-box",
+          sx={{
+            flex: 1,
+            boxSizing: "border-box",
+            ".MuiInputBase-root": {
+              width: "auto",
+              minWidth: "250px",
             },
           }}
-          sx={{ width: "auto", minWidth: "250px" }}
           rules={{
             required: t("form.field.required") as string,
           }}

@@ -1,6 +1,5 @@
 import {
   FormControl,
-  FormControlProps,
   FormHelperText,
   InputLabel,
   MenuItem,
@@ -23,7 +22,6 @@ export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
   options: Array<string | OptionObj>;
   helperText?: React.ReactNode;
   emptyValue?: boolean;
-  formControlProps?: FormControlProps;
 }
 
 function formatOptions(
@@ -38,14 +36,17 @@ function formatOptions(
 function SelectFE(props: SelectFEProps) {
   const {
     options,
-    helperText,
     emptyValue,
-    variant = "filled",
-    formControlProps,
     inputRef,
+    variant = "filled",
+    helperText,
+    error,
+    label,
+    className,
+    sx,
     ...selectProps
   } = props;
-  const { label } = selectProps;
+
   const labelId = useRef(uuidv4()).current;
 
   const optionsFormatted = useMemo(
@@ -55,9 +56,15 @@ function SelectFE(props: SelectFEProps) {
   );
 
   return (
-    <FormControl variant={variant} hiddenLabel={!label} {...formControlProps}>
+    <FormControl
+      className={className}
+      variant={variant}
+      hiddenLabel={!label}
+      error={error}
+      sx={sx}
+    >
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} labelId={labelId}>
+      <Select {...selectProps} label={label} labelId={labelId}>
         {emptyValue && (
           <MenuItem value="">
             {/* TODO i18n */}
