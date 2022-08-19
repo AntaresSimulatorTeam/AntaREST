@@ -6,7 +6,7 @@ import {
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import { useFormContext } from "../../../../../../../common/Form";
+import { ControlPlus } from "../../../../../../../common/Form";
 import { BindingConstFields, ConstraintType } from "../utils";
 
 interface Props {
@@ -14,12 +14,12 @@ interface Props {
   isLink: boolean;
   constraint: ConstraintType;
   index: number;
+  control: ControlPlus<BindingConstFields, any>;
   saveValue: (constraint: ConstraintType) => void;
 }
 
 export default function OptionsList(props: Props) {
-  const { control } = useFormContext<BindingConstFields>();
-  const { list, isLink, constraint, index, saveValue } = props;
+  const { list, isLink, control, constraint, index, saveValue } = props;
   const [t] = useTranslation();
   console.log("OPTIONS LIST: ", index);
   const value1 = useMemo(
@@ -69,7 +69,13 @@ export default function OptionsList(props: Props) {
         options={options1}
         control={control}
         rules={{
-          onAutoSubmit: (value) =>
+          onAutoSubmit: (value) => {
+            console.log(
+              "FIRST -> VALUE 1: ",
+              value,
+              "; VALUE 2: ",
+              getFirstValue2(value)
+            );
             saveValue({
               ...constraint,
               data: isLink
@@ -81,7 +87,8 @@ export default function OptionsList(props: Props) {
                     area: value,
                     cluster: getFirstValue2(value),
                   },
-            }),
+            });
+          },
         }}
         sx={{ flexGrow: 1, height: "60px" }}
       />
@@ -91,7 +98,9 @@ export default function OptionsList(props: Props) {
         options={options2}
         control={control}
         rules={{
-          onAutoSubmit: (value) =>
+          onAutoSubmit: (value) => {
+            console.log("VALUE 1: ", value1, "; VALUE 2: ", value);
+
             saveValue({
               ...constraint,
               data: isLink
@@ -103,7 +112,8 @@ export default function OptionsList(props: Props) {
                     area: value1,
                     cluster: value,
                   },
-            }),
+            });
+          },
         }}
         sx={{ flexGrow: 1, height: "60px" }}
       />

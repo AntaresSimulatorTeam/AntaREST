@@ -81,8 +81,8 @@ export const updateConstraintTerm = async (
 export const addConstraintTerm = async (
   uuid: string,
   bindingConst: string,
-  constraint: ConstraintType
-): Promise<string> => {
+  constraint?: ConstraintType
+): Promise<ConstraintType | null> => {
   const res = await client.post(
     `/v1/studies/${uuid}/bindingconstraint/${bindingConst}`,
     constraint

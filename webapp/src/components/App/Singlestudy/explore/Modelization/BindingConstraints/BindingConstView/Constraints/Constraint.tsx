@@ -1,3 +1,4 @@
+import { ReactNode, useCallback, useState } from "react";
 import {
   Box,
   Button,
@@ -7,7 +8,6 @@ import {
   Typography,
 } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import { ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import TextSeparator from "../../../../../../../common/TextSeparator";
@@ -20,7 +20,7 @@ import {
 import { updateConstraintTerm } from "../../../../../../../../services/api/studydata";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { useFormContext } from "../../../../../../../common/Form";
+import { ControlPlus } from "../../../../../../../common/Form";
 
 interface ElementProps {
   title: string;
@@ -88,32 +88,21 @@ ConstraintElement.defaultProps = {
 interface ItemProps {
   options: AllClustersAndLinks;
   index: number;
+  constraint: ConstraintType;
+  control: ControlPlus<BindingConstFields, any>;
   saveValue: (constraint: ConstraintType) => void;
 }
 
 function ConstraintItem(props: ItemProps) {
-  const { control, defaultValues } = useFormContext<BindingConstFields>();
-  const { options, index, saveValue } = props;
+  const { options, control, constraint, index, saveValue } = props;
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(
-    (defaultValues?.constraints?.[index]?.data as LinkCreationInfoDTO).area1 !==
-      undefined
+    (constraint.data as LinkCreationInfoDTO).area1 !== undefined
   );
   console.log("OPTIONS: ", options);
-  const values = useMemo(
-    () =>
-      defaultValues as Required<
-        Omit<BindingConstFields, "comments"> & { comments?: string }
-      >,
-    [defaultValues]
-  );
-  const constraint = useMemo(
-    () => values.constraints[index],
-    [index, values.constraints]
-  );
 
-  const handleToggleLink = (): void => {
-    console.log("TOGLE: ", !isLink);
+  const handleToggleLink = useCallback((): void => {
+    console.log("TOGGLE: ", !isLink);
     saveValue({
       ...constraint,
       data: isLink
@@ -128,7 +117,7 @@ function ConstraintItem(props: ItemProps) {
     });
 
     setIsLink((value) => !value);
-  };
+  }, [constraint, isLink, options.clusters, options.links, saveValue]);
 
   return (
     <Box
@@ -163,6 +152,7 @@ function ConstraintItem(props: ItemProps) {
               isLink={isLink}
               list={options}
               constraint={constraint}
+              control={control}
               index={index}
               saveValue={saveValue}
             />
@@ -183,7 +173,6 @@ function ConstraintItem(props: ItemProps) {
                 variant="filled"
                 control={control}
                 rules={{
-                  deps: "lastDay",
                   onAutoSubmit: (value) =>
                     saveValue({
                       ...constraint,
@@ -212,10 +201,12 @@ interface Props {
   index: number;
   bindingConst: string;
   studyId: string;
+  constraint: ConstraintType;
   options: AllClustersAndLinks;
+  control: ControlPlus<BindingConstFields, any>;
 }
 export default function Constraint(props: Props) {
-  const { bindingConst, options, studyId, index } = props;
+  const { bindingConst, control, constraint, options, studyId, index } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
 
@@ -247,9 +238,21 @@ export default function Constraint(props: Props) {
         rootStyle={{ my: 0.25 }}
         textStyle={{ fontSize: "22px" }}
       />
-      <ConstraintItem options={options} saveValue={saveValue} index={index} />
+      <ConstraintItem
+        options={options}
+        saveValue={saveValue}
+        constraint={constraint}
+        index={index}
+        control={control}
+      />
     </Box>
   ) : (
-    <ConstraintItem options={options} saveValue={saveValue} index={index} />
+    <ConstraintItem
+      options={options}
+      saveValue={saveValue}
+      constraint={constraint}
+      index={index}
+      control={control}
+    />
   );
 }

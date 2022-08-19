@@ -31,11 +31,13 @@ function BindingConstView(props: Props) {
             autoSubmit
             config={{ defaultValues: data as BindingConstFields }}
           >
-            <BindingConstForm
-              study={study}
-              bindingConst={bindingConst}
-              bcIndex={bcIndex}
-            />
+            {bindingConst && (
+              <BindingConstForm
+                study={study}
+                bindingConst={bindingConst}
+                bcIndex={bcIndex}
+              />
+            )}
           </Form>
         )}
       />
