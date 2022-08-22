@@ -30,7 +30,9 @@ export interface PropertiesType {
     };
   };
   adequacy_patch?: {
-    "adequacy-patch-mode"?: AdequacyPatchMode;
+    "adequacy-patch"?: {
+      "adequacy-patch-mode"?: AdequacyPatchMode;
+    };
   };
 }
 
@@ -112,8 +114,12 @@ export async function getDefaultValues(
       const sElm = elm.replace(/\s+/g, "");
       return sElm as FilteringType;
     }),
-    ...(fields.adequacy_patch?.["adequacy-patch-mode"] !== undefined
-      ? { adequacyPatchMode: fields.adequacy_patch["adequacy-patch-mode"] }
+    ...(fields.adequacy_patch?.["adequacy-patch"]?.["adequacy-patch-mode"] !==
+    undefined
+      ? {
+          adequacyPatchMode:
+            fields.adequacy_patch["adequacy-patch"]["adequacy-patch-mode"],
+        }
       : {}),
   };
 }

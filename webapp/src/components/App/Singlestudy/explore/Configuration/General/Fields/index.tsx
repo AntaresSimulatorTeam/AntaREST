@@ -171,10 +171,12 @@ function Fields(props: Props) {
         />
       </Fieldset>
       {studyVersion >= 830 && (
-        <Fieldset legend="Adequacy patch">
+        <Fieldset
+          legend="Adequacy patch"
+          sx={{ "& > div > div": { flex: 1, flexBasis: "100%" } }}
+        >
           <SwitchFE
             name="adequacyPatchActive"
-            sx={{ flex: 1, flexBasis: "100%" }}
             label={t("study.configuration.adequacyPatch.activate")}
             control={control}
             rules={{
@@ -183,7 +185,6 @@ function Fields(props: Props) {
           />
           <SwitchFE
             name="adequacyPatchSetToNullFromTo"
-            sx={{ flex: 1, flexBasis: "100%" }}
             label={t(
               "study.configuration.adequacyPatch.setToNullNTCFromPhysicalOutToPhysicalInForFirstStep"
             )}
@@ -197,7 +198,6 @@ function Fields(props: Props) {
           />
           <SwitchFE
             name="adequacyPatchSetToNullBetween"
-            sx={{ flex: 1, flexBasis: "100%" }}
             label={t(
               "study.configuration.adequacyPatch.setToNullNTCBetweenPhysicalOutForFirstStep"
             )}

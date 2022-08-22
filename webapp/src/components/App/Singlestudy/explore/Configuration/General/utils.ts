@@ -188,13 +188,12 @@ export async function getFormValues(
   const {
     general = {},
     output = {},
-    ...rest
+    "adequacy patch": adequacyPatchConfig = {},
   } = await getStudyData<SettingsGeneralData>(
     studyId,
     "settings/generaldata",
     2
   );
-  const adequacyPatchConfig = rest["adequacy patch"] || {};
 
   const {
     "custom-ts-numbers": customTsNumbers,

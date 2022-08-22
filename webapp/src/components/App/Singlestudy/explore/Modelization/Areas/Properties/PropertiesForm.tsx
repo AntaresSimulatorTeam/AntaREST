@@ -270,9 +270,6 @@ export default function PropertiesForm(
               name="adequacyPatchMode"
               sx={{ minWidth: "200px" }}
               label={t("study.modelization.nodeProperties.adequacyPatchMode")}
-              defaultValue={
-                (defaultValues || {}).adequacyPatchMode || "outside"
-              }
               variant="filled"
               options={adequacyPatchModeOptions}
               control={control}
