@@ -286,6 +286,7 @@ function Fields(props: Props) {
                 <Button
                   startIcon={<SettingsIcon />}
                   onClick={() => setDialog("thematicTrimming")}
+                  disabled={!getValues("thematicTrimming")}
                 >
                   Settings
                 </Button>
