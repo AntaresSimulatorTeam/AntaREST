@@ -120,7 +120,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   });
 
   const {
-    getValues,
     register,
     unregister,
     setValue,
@@ -141,8 +140,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const preventClose = useRef(false);
   const [showLoader, setLoader] = useDebouncedState(false, 750);
+  const lastSubmittedData = useRef<TFieldValues>();
+  const preventClose = useRef(false);
 
   useUpdateEffect(() => {
     setLoader(isSubmitting);
@@ -157,7 +157,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
       if (formState.isSubmitSuccessful) {
-        reset(getValues());
+        // TODO: find a way to keep dirty, fields that changed between submit and reset
+        reset(lastSubmittedData.current);
       }
     },
     // Entire `formState` must be put in the deps: https://react-hook-form.com/api/useform/formstate
@@ -188,6 +189,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     event.preventDefault();
 
     handleSubmit(function onValid(data, e) {
+      lastSubmittedData.current = data;
+
       const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
         typeof data
       >;
