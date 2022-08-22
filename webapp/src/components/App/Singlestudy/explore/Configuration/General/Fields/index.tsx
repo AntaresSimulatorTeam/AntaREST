@@ -170,6 +170,47 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
+      {studyVersion >= 830 && (
+        <Fieldset legend="Adequacy patch">
+          <SwitchFE
+            name="adequacyPatchActive"
+            sx={{ flex: 1, flexBasis: "100%" }}
+            label={t("study.configuration.adequacyPatch.activate")}
+            control={control}
+            rules={{
+              onAutoSubmit: saveValue("adequacy patch/include-adq-patch"),
+            }}
+          />
+          <SwitchFE
+            name="adequacyPatchSetToNullFromTo"
+            sx={{ flex: 1, flexBasis: "100%" }}
+            label={t(
+              "study.configuration.adequacyPatch.setToNullNTCFromPhysicalOutToPhysicalInForFirstStep"
+            )}
+            control={control}
+            disabled={!getValues("adequacyPatchActive")}
+            rules={{
+              onAutoSubmit: saveValue(
+                "adequacy patch/set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
+              ),
+            }}
+          />
+          <SwitchFE
+            name="adequacyPatchSetToNullBetween"
+            sx={{ flex: 1, flexBasis: "100%" }}
+            label={t(
+              "study.configuration.adequacyPatch.setToNullNTCBetweenPhysicalOutForFirstStep"
+            )}
+            control={control}
+            disabled={!getValues("adequacyPatchActive")}
+            rules={{
+              onAutoSubmit: saveValue(
+                "adequacy patch/set-to-null-ntc-between-physical-out-for-first-step"
+              ),
+            }}
+          />
+        </Fieldset>
+      )}
       <Box sx={{ display: "flex" }}>
         <Fieldset
           legend="Monte-Carlo Scenarios"
