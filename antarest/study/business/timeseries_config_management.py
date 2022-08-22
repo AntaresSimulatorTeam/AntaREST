@@ -116,7 +116,7 @@ class TimeSeriesConfigManager:
             for ts_type in TSType
         }
 
-        return TSFormFields.construct(**fields)
+        return TSFormFields.construct(**fields)  # type: ignore
 
     def set_ts_field_values(
         self, study: Study, field_values: TSFormFields
