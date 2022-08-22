@@ -77,6 +77,9 @@ function Fields() {
                 type === TSType.Renewables || type === TSType.NTC;
               const emptyDisplay = "-";
               const notApplicableDisplay = "n/a";
+              const isReadyMadeStatusEnable = !getValues(
+                `${type}.stochasticTsStatus`
+              );
 
               const ifNotSpecialType = (
                 fn: (
@@ -93,7 +96,7 @@ function Fields() {
                   </TableCell>
                   <TableCell align="center">
                     <SwitchFE
-                      value={!getValues(`${type}.stochasticTsStatus`)}
+                      value={isReadyMadeStatusEnable}
                       onChange={(_, checked) => {
                         setValue(
                           `${type}.stochasticTsStatus`,
@@ -115,12 +118,17 @@ function Fields() {
                         control={control}
                         size="small"
                         fullWidth
+                        disabled={isReadyMadeStatusEnable}
                       />
                     ))}
                   </TableCell>
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
-                      <CheckBoxFE name={`${t}.refresh`} control={control} />
+                      <CheckBoxFE
+                        name={`${t}.refresh`}
+                        control={control}
+                        disabled={isReadyMadeStatusEnable}
+                      />
                     ))}
                   </TableCell>
                   <TableCell align="center">
@@ -130,6 +138,7 @@ function Fields() {
                         control={control}
                         size="small"
                         fullWidth
+                        disabled={isReadyMadeStatusEnable}
                       />
                     ))}
                   </TableCell>
@@ -141,6 +150,7 @@ function Fields() {
                           options={SEASONAL_CORRELATION_OPTIONS}
                           control={control}
                           size="small"
+                          disabled={isReadyMadeStatusEnable}
                         />
                       ) : (
                         notApplicableDisplay
@@ -152,6 +162,7 @@ function Fields() {
                       <CheckBoxFE
                         name={`${t}.storeInInput`}
                         control={control}
+                        disabled={isReadyMadeStatusEnable}
                       />
                     ))}
                   </TableCell>
@@ -160,17 +171,23 @@ function Fields() {
                       <CheckBoxFE
                         name={`${t}.storeInOutput`}
                         control={control}
+                        disabled={isReadyMadeStatusEnable}
                       />
                     ))}
                   </TableCell>
                   <TableCell align="center">
-                    <CheckBoxFE name={`${type}.intraModal`} control={control} />
+                    <CheckBoxFE
+                      name={`${type}.intraModal`}
+                      control={control}
+                      disabled={isReadyMadeStatusEnable}
+                    />
                   </TableCell>
                   <TableCell align="center">
                     {type !== TSType.NTC ? (
                       <CheckBoxFE
                         name={`${type}.interModal`}
                         control={control}
+                        disabled={isReadyMadeStatusEnable}
                       />
                     ) : (
                       emptyDisplay
