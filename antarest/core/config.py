@@ -90,6 +90,10 @@ class DbConfig:
     db_connect_timeout: int = 10
     pool_recycle: Optional[int] = None
     pool_pre_ping: bool = False
+    pool_use_null: bool = False
+    pool_max_overflow: int = 10
+    pool_size: int = 5
+    pool_use_lifo: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "DbConfig":
@@ -99,6 +103,10 @@ class DbConfig:
             db_connect_timeout=data.get("db_connect_timeout", 10),
             pool_recycle=data.get("pool_recycle", None),
             pool_pre_ping=data.get("pool_pre_ping", False),
+            pool_use_null=data.get("pool_use_null", False),
+            pool_max_overflow=data.get("pool_max_overflow", 10),
+            pool_size=data.get("pool_size", 5),
+            pool_use_lifo=data.get("pool_use_lifo", False),
         )
 
 

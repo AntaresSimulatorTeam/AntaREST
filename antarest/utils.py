@@ -12,6 +12,7 @@ from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool  # type: ignore
 
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
@@ -85,6 +86,14 @@ def init_db(
         extra["pool_recycle"] = config.db.pool_recycle
     if config.db.pool_pre_ping:
         extra["pool_pre_ping"] = True
+    if config.db.pool_use_null:
+        extra["pool_class"] = NullPool
+    if config.db.pool_max_overflow:
+        extra["max_overflow"] = config.db.pool_max_overflow
+    if config.db.pool_size:
+        extra["pool_size"] = config.db.pool_size
+    if config.db.pool_use_lifo:
+        extra["pool_use_lifo"] = config.db.pool_use_lifo
 
     engine = create_engine(
         config.db.db_url, echo=config.debug, connect_args=connect_args, **extra
