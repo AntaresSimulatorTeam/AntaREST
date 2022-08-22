@@ -1,10 +1,11 @@
 import {
   Checkbox,
   CheckboxProps,
+  FormControl,
   FormControlLabel,
   FormControlLabelProps,
+  FormHelperText,
 } from "@mui/material";
-import clsx from "clsx";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface CheckBoxFEProps
@@ -27,34 +28,31 @@ function CheckBoxFE(props: CheckBoxFEProps) {
     error,
     className,
     sx,
-    inputRef,
-    ...rest
+    ...checkboxProps
   } = props;
 
   const fieldEditor = (
     <Checkbox
-      {...rest}
-      className={clsx(!label && ["CheckBoxFE", className])}
-      sx={!label ? sx : undefined}
+      {...checkboxProps}
       checked={value}
       defaultChecked={defaultValue}
-      inputRef={inputRef}
     />
   );
 
-  if (label) {
-    return (
-      <FormControlLabel
-        sx={sx}
-        className={clsx("SwitchFE", className)}
-        control={fieldEditor}
-        label={label}
-        labelPlacement={labelPlacement}
-      />
-    );
-  }
-
-  return fieldEditor;
+  return (
+    <FormControl className={className} sx={sx} error={error}>
+      {label ? (
+        <FormControlLabel
+          control={fieldEditor}
+          label={label}
+          labelPlacement={labelPlacement}
+        />
+      ) : (
+        fieldEditor
+      )}
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+    </FormControl>
+  );
 }
 
 export default reactHookFormSupport({ defaultValue: false })(CheckBoxFE);

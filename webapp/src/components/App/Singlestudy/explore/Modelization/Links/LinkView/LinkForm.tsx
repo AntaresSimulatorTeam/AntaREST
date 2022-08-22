@@ -173,15 +173,7 @@ function LinkForm(props: Props) {
   ) => (
     <SelectFE
       name={filterName}
-      variant="filled"
       options={options}
-      formControlProps={{
-        sx: {
-          flex: 1,
-          boxSizing: "border-box",
-        },
-      }}
-      sx={{ width: "100%", minWidth: "200px" }}
       label={t(`study.modelization.links.${filterName}`)}
       control={control}
       rules={{
@@ -197,17 +189,7 @@ function LinkForm(props: Props) {
     <SelectFE
       name={filterName}
       multiple
-      renderValue={(value: unknown) => {
-        const selection = value
-          ? (value as Array<string>).filter((val) => val !== "")
-          : [];
-        return selection.length > 0
-          ? selection.map((elm) => t(`study.${elm}`)).join(", ")
-          : t("global.none");
-      }}
-      variant="filled"
       options={filterOptions}
-      sx={{ minWidth: "200px" }}
       label={t(`study.modelization.nodeProperties.${filterName}`)}
       control={control}
       rules={{

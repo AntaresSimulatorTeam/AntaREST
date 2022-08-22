@@ -1,10 +1,11 @@
 import {
+  FormControl,
   FormControlLabel,
   FormControlLabelProps,
+  FormHelperText,
   Switch,
   SwitchProps,
 } from "@mui/material";
-import clsx from "clsx";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface SwitchFEProps
@@ -27,32 +28,27 @@ function SwitchFE(props: SwitchFEProps) {
     error,
     className,
     sx,
-    ...rest
+    ...switchProps
   } = props;
 
   const fieldEditor = (
-    <Switch
-      {...rest}
-      className={clsx(!label && ["SwitchFE", className])}
-      sx={!label ? sx : undefined}
-      checked={value}
-      defaultChecked={defaultValue}
-    />
+    <Switch {...switchProps} checked={value} defaultChecked={defaultValue} />
   );
 
-  if (label) {
-    return (
-      <FormControlLabel
-        sx={sx}
-        className={clsx("SwitchFE", className)}
-        control={fieldEditor}
-        label={label}
-        labelPlacement={labelPlacement}
-      />
-    );
-  }
-
-  return fieldEditor;
+  return (
+    <FormControl className={className} sx={sx} error={error}>
+      {label ? (
+        <FormControlLabel
+          control={fieldEditor}
+          label={label}
+          labelPlacement={labelPlacement}
+        />
+      ) : (
+        fieldEditor
+      )}
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+    </FormControl>
+  );
 }
 
 export default reactHookFormSupport({ defaultValue: false })(SwitchFE);

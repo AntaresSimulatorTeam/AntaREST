@@ -1,19 +1,32 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import Form from "../../../../../common/Form";
+import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import Fields from "./Fields";
-import { getFormValues } from "./utils";
+import {
+  getTimeSeriesFormFields,
+  setTimeSeriesFormFields,
+  TSFormFields,
+} from "./utils";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   const res = usePromiseWithSnackbarError(
-    () => getFormValues(study.id),
-    { errorMessage: "Cannot get study data", deps: [study.id] } // TODO i18n
+    () => getTimeSeriesFormFields(study.id),
+    // TODO i18n
+    { errorMessage: "Cannot get time series fields", deps: [study.id] }
   );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = async (data: SubmitHandlerPlus<TSFormFields>) => {
+    return setTimeSeriesFormFields(study.id, data.dirtyValues);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -24,9 +37,9 @@ function TimeSeriesManagement() {
       response={res}
       ifPending={() => <SimpleLoader />}
       ifRejected={(error) => <div>{error?.toString()}</div>}
-      ifResolved={(data) => (
-        <Form autoSubmit config={{ defaultValues: data }}>
-          <Fields study={study} />
+      ifResolved={(defaultValues) => (
+        <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
+          <Fields />
         </Form>
       )}
     />

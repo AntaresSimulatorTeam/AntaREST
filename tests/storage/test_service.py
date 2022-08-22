@@ -280,7 +280,7 @@ def test_sync_studies_from_disk() -> None:
     md = RawStudy(
         id="d",
         path="d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = RawStudy(
         id="e",
@@ -344,7 +344,7 @@ def test_partial_sync_studies_from_disk() -> None:
     md = RawStudy(
         id="d",
         path=Path("directory/d"),
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT),
+        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = RawStudy(
         id="e",
