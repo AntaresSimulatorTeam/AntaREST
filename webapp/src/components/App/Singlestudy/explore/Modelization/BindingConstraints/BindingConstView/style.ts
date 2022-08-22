@@ -19,3 +19,10 @@ export const ConstraintTerm = styled(Box)(({ theme }) => ({
   width: "100%",
   flexDirection: "column",
 }));
+
+export const MatrixContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  height: "500px",
+  marginBottom: theme.spacing(6),
+}));

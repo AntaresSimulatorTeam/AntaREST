@@ -9,6 +9,7 @@ import Fieldset from "../../../../../../common/Fieldset";
 import { BindingConstFields, ConstraintType, dataToId } from "./utils";
 import {
   AllClustersAndLinks,
+  MatrixStats,
   StudyMetadata,
 } from "../../../../../../../common/types";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
@@ -17,8 +18,14 @@ import { ConstraintItem } from "./ConstraintTerm";
 import { useFormContext } from "../../../../../../common/Form";
 import { updateConstraintTerm } from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
-import { ConstraintHeader, ConstraintList, ConstraintTerm } from "./style";
+import {
+  ConstraintHeader,
+  ConstraintList,
+  ConstraintTerm,
+  MatrixContainer,
+} from "./style";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
+import MatrixInput from "../../../../../../common/MatrixInput";
 
 interface Props {
   bcIndex: number;
@@ -149,10 +156,15 @@ export default function BindingConstForm(props: Props) {
         jsonTemplate={jsonGenerator}
         saveField={saveValue}
       />
-      <Fieldset
-        legend={t("study.modelization.bindingConst.constraintTerm")}
-        style={{ padding: "16px" }}
-      >
+      <MatrixContainer>
+        <MatrixInput
+          study={study}
+          title={t("global.matrix")}
+          url={`input/bindingconstraints/${bindingConst}`}
+          computStats={MatrixStats.NOCOL}
+        />
+      </MatrixContainer>
+      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")}>
         <ConstraintList>
           <ConstraintHeader>
             <Button
