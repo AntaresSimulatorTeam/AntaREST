@@ -743,7 +743,8 @@ class LauncherService:
         self, job_id: str, params: RequestParameters
     ) -> float:
         job_result = self.job_result_repository.get(job_id)
-        assert job_result
+        if not job_result:
+            raise JobNotFound()
         study_uuid = job_result.study_id
         launcher = job_result.launcher
         study = self.study_service.get_study(study_uuid)
