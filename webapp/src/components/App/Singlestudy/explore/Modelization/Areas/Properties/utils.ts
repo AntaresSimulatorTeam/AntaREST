@@ -1,7 +1,10 @@
 import { FieldValues } from "react-hook-form";
 import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../../services/api/study";
+import { transformNameToId } from "../../../../../../../services/utils";
 import { rgbToString } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
+
+type AdequacyPatchMode = "outside" | "inside" | "virtual";
 
 export interface PropertiesType {
   ui: {
@@ -26,6 +29,11 @@ export interface PropertiesType {
       "filter-year-by-year": string; // "hourly, daily, weekly, monthly, annual";
     };
   };
+  adequacy_patch?: {
+    "adequacy-patch"?: {
+      "adequacy-patch-mode"?: AdequacyPatchMode;
+    };
+  };
 }
 
 type FilteringType = "hourly" | "daily" | "weekly" | "monthly" | "annual";
@@ -42,6 +50,7 @@ export interface PropertiesFields extends FieldValues {
   otherDispatchPower: boolean;
   filterSynthesis: Array<FilteringType>;
   filterByYear: Array<FilteringType>;
+  adequacyPatchMode?: AdequacyPatchMode;
 }
 
 export type PropertiesPath = Omit<
@@ -50,7 +59,7 @@ export type PropertiesPath = Omit<
 >;
 
 export function getPropertiesPath(areaName: string): PropertiesPath {
-  const pathPrefix = `input/areas/${areaName.toLowerCase()}`;
+  const pathPrefix = `input/areas/${transformNameToId(areaName)}`;
   const optimization = `${pathPrefix}/optimization`;
   const ui = `${pathPrefix}/ui/ui`;
   return {
@@ -64,6 +73,7 @@ export function getPropertiesPath(areaName: string): PropertiesPath {
     otherDispatchPower: `${optimization}/nodal optimization/other-dispatchable-power`,
     filterSynthesis: `${optimization}/filtering/filter-synthesis`,
     filterByYear: `${optimization}/filtering/filter-year-by-year`,
+    adequacyPatchMode: `${pathPrefix}/adequacy_patch/adequacy-patch/adequacy-patch-mode`,
   };
 }
 
@@ -104,6 +114,13 @@ export async function getDefaultValues(
       const sElm = elm.replace(/\s+/g, "");
       return sElm as FilteringType;
     }),
+    ...(fields.adequacy_patch?.["adequacy-patch"]?.["adequacy-patch-mode"] !==
+    undefined
+      ? {
+          adequacyPatchMode:
+            fields.adequacy_patch["adequacy-patch"]["adequacy-patch-mode"],
+        }
+      : {}),
   };
 }
 

@@ -66,6 +66,9 @@ export interface ThematicTrimmingConfig {
   renw2?: boolean;
   renw3?: boolean;
   renw4?: boolean;
+  // Study version >= 830
+  dens?: boolean;
+  profit?: boolean;
 }
 
 const keysMap: Record<keyof ThematicTrimmingConfig, string> = {
@@ -131,6 +134,9 @@ const keysMap: Record<keyof ThematicTrimmingConfig, string> = {
   renw2: "RENW. 2",
   renw3: "RENW. 3",
   renw4: "RENW. 4",
+  // Study version >= 830
+  dens: "DENS",
+  profit: "Profit",
 };
 
 // Allow to support all study versions

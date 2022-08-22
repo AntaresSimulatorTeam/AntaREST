@@ -17,14 +17,22 @@ export default function PropertiesForm(
   props: UseFormReturnPlus<PropertiesFields, unknown> & {
     studyId: string;
     areaName: string;
+    studyVersion: number;
   }
 ) {
-  const { control, getValues, defaultValues, studyId, areaName } = props;
+  const { control, getValues, defaultValues, studyId, areaName, studyVersion } =
+    props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
     (item) => ({
       label: t(`study.${item}`),
+      value: item,
+    })
+  );
+  const adequacyPatchModeOptions = ["inside", "outside", "virtual"].map(
+    (item) => ({
+      label: item,
       value: item,
     })
   );
@@ -256,6 +264,23 @@ export default function PropertiesForm(
             </Box>
           </Box>
         </Fieldset>
+        {studyVersion >= 830 && (
+          <Fieldset legend="Adequacy patch">
+            <SelectFE
+              name="adequacyPatchMode"
+              sx={{ minWidth: "200px" }}
+              label={t("study.modelization.nodeProperties.adequacyPatchMode")}
+              variant="filled"
+              options={adequacyPatchModeOptions}
+              control={control}
+              rules={{
+                onAutoSubmit: (value) => {
+                  handleAutoSubmit(path.adequacyPatchMode, value);
+                },
+              }}
+            />
+          </Fieldset>
+        )}
         <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
           {renderFilter("filterSynthesis")}
           {renderFilter("filterByYear")}

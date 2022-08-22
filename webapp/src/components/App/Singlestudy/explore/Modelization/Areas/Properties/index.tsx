@@ -32,6 +32,7 @@ function Properties() {
                 ...formObj,
                 areaName: currentArea,
                 studyId: study.id,
+                studyVersion: Number(study.version),
               })
             }
           </Form>
