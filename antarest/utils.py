@@ -84,7 +84,7 @@ def init_db(
     extra = {}
     if config.db.pool_use_null:
         extra["poolclass"] = NullPool
-    else:
+    elif not config.db.db_url.startswith("sqlite"):
         if config.db.pool_pre_ping:
             extra["pool_pre_ping"] = True
         if config.db.pool_recycle:
