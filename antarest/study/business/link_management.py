@@ -45,7 +45,7 @@ class LinkManager:
         self.storage_service = storage_service
 
     def get_all_links(
-            self, study: Study, with_ui: bool = False
+        self, study: Study, with_ui: bool = False
     ) -> List[LinkInfoDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result = []
@@ -74,29 +74,35 @@ class LinkManager:
         cluster_result = []
         link_result = []
         for area_id, area in file_study.config.areas.items():
-            element: GenericElement = GenericElement(id=area_id, name=area.name)
+            element: GenericElement = GenericElement(
+                id=area_id, name=area.name
+            )
             cluster_item_list: List[GenericElement] = []
             link_item_list: List[GenericElement] = []
 
             for thermal in area.thermals:
-                cluster_element = GenericElement(id=thermal.id, name=thermal.name)
-                cluster_item_list.append(
-                    cluster_element
+                cluster_element = GenericElement(
+                    id=thermal.id, name=thermal.name
                 )
+                cluster_item_list.append(cluster_element)
             for link in area.links:
-                link_element = GenericElement(id=link, name=file_study.config.areas[link].name)
-                link_item_list.append(
-                    link_element
+                link_element = GenericElement(
+                    id=link, name=file_study.config.areas[link].name
                 )
+                link_item_list.append(link_element)
             if len(cluster_item_list) > 0:
-                cluster_result.append(GenericItem(element=element, item_list=cluster_item_list))
+                cluster_result.append(
+                    GenericItem(element=element, item_list=cluster_item_list)
+                )
             if len(link_item_list) > 0:
-                link_result.append(GenericItem(element=element, item_list=link_item_list))
+                link_result.append(
+                    GenericItem(element=element, item_list=link_item_list)
+                )
 
         return AllCLustersAndLinks(links=link_result, clusters=cluster_result)
 
     def create_link(
-            self, study: Study, link_creation_info: LinkInfoDTO
+        self, study: Study, link_creation_info: LinkInfoDTO
     ) -> LinkInfoDTO:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)

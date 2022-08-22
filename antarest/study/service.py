@@ -61,7 +61,9 @@ from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaUI,
 )
-from antarest.study.business.bindingconst_management import BindingConstManager
+from antarest.study.business.binding_constraint_management import (
+    BindingConstraintManager,
+)
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
@@ -187,7 +189,9 @@ class StudyService:
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
-        self.bindingconst_manager = BindingConstManager(self.storage_service)
+        self.binding_constraint_manager = BindingConstraintManager(
+            self.storage_service
+        )
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []

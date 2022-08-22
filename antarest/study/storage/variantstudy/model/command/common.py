@@ -13,17 +13,6 @@ class TimeStep(Enum):
     DAILY = "daily"
     WEEKLY = "weekly"
 
-    @staticmethod
-    def from_str(label: str) -> "TimeStep":
-        if label == 'hourly':
-            return TimeStep.HOURLY
-        elif label == 'daily':
-            return TimeStep.DAILY
-        elif label == 'weekly':
-            return TimeStep.WEEKLY
-        else:
-            raise NotImplementedError
-
 
 class BindingConstraintOperator(Enum):
     BOTH = "both"

@@ -41,4 +41,19 @@ export async function getDefaultValues(
   return fields;
 }
 
+export function isDataLink(
+  data: LinkCreationInfoDTO | ClusterElement
+): boolean {
+  return (data as LinkCreationInfoDTO).area1 !== undefined;
+}
+
+export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
+  if (isDataLink(data)) {
+    const link = data as LinkCreationInfoDTO;
+    return `${link.area1}%${link.area2}`;
+  }
+  const cluster = data as ClusterElement;
+  return `${cluster.area}.${cluster.cluster}`;
+}
+
 export default {};

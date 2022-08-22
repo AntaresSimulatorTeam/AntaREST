@@ -69,7 +69,7 @@ export const deleteLink = async (
 export const updateConstraintTerm = async (
   uuid: string,
   bindingConst: string,
-  constraint: ConstraintType
+  constraint: Partial<ConstraintType>
 ): Promise<string> => {
   const res = await client.put(
     `/v1/studies/${uuid}/bindingconstraint/${bindingConst}`,
@@ -81,7 +81,7 @@ export const updateConstraintTerm = async (
 export const addConstraintTerm = async (
   uuid: string,
   bindingConst: string,
-  constraint?: ConstraintType
+  constraint: ConstraintType
 ): Promise<ConstraintType | null> => {
   const res = await client.post(
     `/v1/studies/${uuid}/bindingconstraint/${bindingConst}`,

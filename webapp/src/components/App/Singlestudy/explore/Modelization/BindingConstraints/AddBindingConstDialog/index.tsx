@@ -36,7 +36,6 @@ function AddBindingConstDialog(props: PropType) {
 
   const handleSubmit = async (data: SubmitHandlerData) => {
     const { name, enabled, time_step, operator, comments } = data.dirtyValues;
-    console.log("VALUES: ", data.dirtyValues);
     try {
       await appendCommands(studyId, [
         {
