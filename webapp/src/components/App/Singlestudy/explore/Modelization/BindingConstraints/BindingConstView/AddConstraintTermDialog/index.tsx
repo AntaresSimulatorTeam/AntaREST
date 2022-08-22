@@ -6,7 +6,7 @@ import { UseFieldArrayAppend } from "react-hook-form";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../../../../common/dialogs/FormDialog";
-import { SubmitHandlerData } from "../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../common/Form";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { BindingConstType, ConstraintType } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
@@ -41,7 +41,7 @@ function AddConstraintTermDialog(props: PropType) {
   };
   const optionsRes = usePromise(() => getClustersAndLinks(studyId), [studyId]);
 
-  const handleSubmit = async (values: SubmitHandlerData) => {
+  const handleSubmit = async (values: SubmitHandlerPlus) => {
     try {
       /*  */
       await addConstraintTerm(
@@ -49,7 +49,7 @@ function AddConstraintTermDialog(props: PropType) {
         bindingConstraint,
         values.dirtyValues as ConstraintType
       );
-      append(values.dirtyValues);
+      append(values.dirtyValues as ConstraintType);
       enqueueSnackbar(t("study.success.addConstraintTerm"), {
         variant: "success",
       });

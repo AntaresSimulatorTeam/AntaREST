@@ -64,12 +64,12 @@ function AddClusterForm() {
         )}
         options={options}
         control={control}
-        formControlProps={{
+        /* formControlProps={{
           sx: {
             flex: 1,
             boxSizing: "border-box",
           },
-        }}
+        }}*/
         sx={{ width: "auto", minWidth: "250px" }}
         rules={{
           required: t("form.field.required") as string,

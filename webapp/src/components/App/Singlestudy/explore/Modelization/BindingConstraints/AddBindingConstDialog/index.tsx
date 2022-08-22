@@ -6,7 +6,6 @@ import FormDialog, {
   FormDialogProps,
 } from "../../../../../../common/dialogs/FormDialog";
 import AddBindingConstForm from "./AddBindingConstForm";
-import { SubmitHandlerData } from "../../../../../../common/Form";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { appendCommands } from "../../../../../../../services/api/variant";
 import {
@@ -15,6 +14,7 @@ import {
   CreateBindingConstraint,
   TimeStep,
 } from "../../../../Commands/Edition/commandTypes";
+import { SubmitHandlerPlus } from "../../../../../../common/Form";
 
 interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
@@ -34,7 +34,7 @@ function AddBindingConstDialog(props: PropType) {
     coeffs: {},
   };
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { name, enabled, time_step, operator, comments } = data.dirtyValues;
     try {
       await appendCommands(studyId, [
