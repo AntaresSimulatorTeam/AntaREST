@@ -42,6 +42,7 @@ import LoadIndicator from "../../common/LoadIndicator";
 import SelectSingle from "../../common/SelectSingle";
 import { fetchStudyVersions } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 12;
@@ -152,13 +153,8 @@ function LauncherDialog(props: Props) {
       const { other_options: prevOtherOptions = "" } = prevOptions;
       const { toAdd, toRemove } = optionChanges.reduce(
         (acc, item) => {
-          const updatedToAdd = acc.toAdd;
-          const updatedToRemove = acc.toRemove;
-          (item.active ? updatedToAdd : updatedToRemove).push(item.option);
-          return {
-            toAdd: updatedToAdd,
-            toRemove: updatedToRemove,
-          };
+          acc[item.active ? "toAdd" : "toRemove"].push(item.option);
+          return acc;
         },
         { toAdd: [], toRemove: [] } as { toAdd: string[]; toRemove: string[] }
       );
@@ -496,35 +492,30 @@ function LauncherDialog(props: Props) {
                 width: "100%",
               }}
             >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={!!options.other_options?.match("xpress")}
-                    onChange={(e, checked) =>
-                      handleOtherOptionsChange([
-                        { option: "xpress", active: checked },
-                      ])
-                    }
-                  />
-                }
+              <CheckBoxFE
                 label={t("launcher.xpress")}
+                value={!!options.other_options?.match("xpress")}
+                onChange={(e, checked) =>
+                  handleOtherOptionsChange([
+                    { option: "xpress", active: checked },
+                  ])
+                }
               />
             </FormControl>
             <SelectSingle
               name={t("global.version")}
               list={versionList}
               data={solverVersion}
-              setValue={(data: string) => setSolverVersion(data)}
-              sx={{ width: "100%", mt: 2 }}
+              setValue={setSolverVersion}
+              sx={{ width: 1, mt: 2 }}
             />
             <FormControl
               sx={{
                 mt: 2,
-                width: "100%",
+                width: 1,
               }}
             >
               <TextField
-                id="launcher-option-other-options"
                 label={t("study.otherOptions")}
                 type="text"
                 variant="filled"
