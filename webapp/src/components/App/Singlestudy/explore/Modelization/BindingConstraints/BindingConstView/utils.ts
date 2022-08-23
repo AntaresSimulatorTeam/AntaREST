@@ -1,6 +1,7 @@
 import { FieldValues } from "react-hook-form";
 import {
   ClusterElement,
+  LinkClusterItem,
   LinkCreationInfoDTO,
 } from "../../../../../../../common/types";
 import { getBindingConstraint } from "../../../../../../../services/api/studydata";
@@ -55,5 +56,26 @@ export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
   const cluster = data as ClusterElement;
   return `${cluster.area}.${cluster.cluster}`;
 }
+
+export const isOptionExist = (
+  list: Array<LinkClusterItem>,
+  value1: string,
+  value2: string
+): boolean => {
+  const index1 = list.findIndex((item) => item.element.id === value1);
+  if (index1 < 0) return false;
+
+  const index2 = list[index1].item_list.findIndex((item) => item.id === value2);
+  if (index2 < 0) return false;
+
+  return true;
+};
+
+export const isTermExist = (
+  list: Array<ConstraintType>,
+  termId: string
+): boolean => {
+  return list.findIndex((item) => item.id === termId) >= 0;
+};
 
 export default {};

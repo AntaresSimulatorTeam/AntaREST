@@ -1,11 +1,11 @@
 import { AxiosError } from "axios";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@mui/material";
+import { Box, Button, Tab } from "@mui/material";
 import { useFieldArray } from "react-hook-form";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import Fieldset from "../../../../../../common/Fieldset";
 import { BindingConstFields, ConstraintType, dataToId } from "./utils";
 import {
   AllClustersAndLinks,
@@ -16,16 +16,21 @@ import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 import { ConstraintItem } from "./ConstraintTerm";
 import { useFormContext } from "../../../../../../common/Form";
-import { updateConstraintTerm } from "../../../../../../../services/api/studydata";
+import {
+  deleteConstraintTerm,
+  updateConstraintTerm,
+} from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
 import {
   ConstraintHeader,
   ConstraintList,
   ConstraintTerm,
   MatrixContainer,
+  StyledTab,
 } from "./style";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
 import MatrixInput from "../../../../../../common/MatrixInput";
+import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 
 interface Props {
   bcIndex: number;
@@ -40,10 +45,15 @@ export default function BindingConstForm(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const { control } = useFormContext<BindingConstFields>();
-  const { fields, update, append } = useFieldArray({
+  const { fields, update, append, remove } = useFieldArray({
     control,
     name: "constraints",
   });
+
+  const constraintsTerm = useMemo(
+    () => fields.map((elm) => ({ ...elm, id: dataToId(elm.data) })),
+    [JSON.stringify(fields)]
+  );
 
   const pathPrefix = useMemo(
     () => `input/bindingconstraints/bindingconstraints/${bcIndex}`,
@@ -69,6 +79,8 @@ export default function BindingConstForm(props: Props) {
   );
 
   const [addConstraintTermDialog, setAddConstraintTermDialog] = useState(false);
+  const [termToDelete, setTermToDelete] = useState<number>();
+  const [tabValue, setTabValue] = useState(0);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveValue = useCallback(
@@ -99,11 +111,36 @@ export default function BindingConstForm(props: Props) {
         tmpConst.id = dataToId(tmpConst.data);
         update(index, tmpConst);
       } catch (error) {
-        enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
+        enqueueErrorSnackbar(
+          t("study.error.updateConstraintTerm"),
+          error as AxiosError
+        );
       }
     },
     [bindingConst, enqueueErrorSnackbar, study.id, t, update]
   );
+
+  const deleteTerm = useCallback(
+    async (index: number) => {
+      try {
+        const constraintId = dataToId(constraintsTerm[index].data);
+        await deleteConstraintTerm(study.id, bindingConst, constraintId);
+        remove(index);
+      } catch (error) {
+        enqueueErrorSnackbar(
+          t("study.error.deleteConstraintTerm"),
+          error as AxiosError
+        );
+      } finally {
+        setTermToDelete(undefined);
+      }
+    },
+    [bindingConst, enqueueErrorSnackbar, constraintsTerm, remove, study.id, t]
+  );
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
     () => [
@@ -156,66 +193,111 @@ export default function BindingConstForm(props: Props) {
         jsonTemplate={jsonGenerator}
         saveField={saveValue}
       />
-      <MatrixContainer>
-        <MatrixInput
-          study={study}
-          title={t("global.matrix")}
-          url={`input/bindingconstraints/${bindingConst}`}
-          computStats={MatrixStats.NOCOL}
-        />
-      </MatrixContainer>
-      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")}>
-        <ConstraintList>
-          <ConstraintHeader>
-            <Button
-              variant="text"
-              color="primary"
-              onClick={() => setAddConstraintTermDialog(true)}
-            >
-              {t("study.modelization.bindingConst.addConstraintTerm")}
-            </Button>
-          </ConstraintHeader>
-          {fields.map((field: ConstraintType, index: number) => {
-            const constraint = field;
-            constraint.id = dataToId(field.data);
-            return index > 0 ? (
-              <ConstraintTerm key={constraint.id}>
-                <TextSeparator
-                  text="+"
-                  rootStyle={{ my: 0.25 }}
-                  textStyle={{ fontSize: "22px" }}
-                />
-                <ConstraintItem
-                  options={options}
-                  saveValue={(value) =>
-                    saveContraintValue(index, constraint, value)
+      <Box
+        width="100%"
+        height="100%"
+        display="flex"
+        flexDirection="column"
+        justifyContent="flex-start"
+        alignItems="center"
+      >
+        <StyledTab
+          value={tabValue}
+          onChange={handleTabChange}
+          aria-label="basic tabs example"
+        >
+          <Tab label={t("study.modelization.bindingConst.constraintTerm")} />
+          <Tab label={t("global.matrix")} />
+        </StyledTab>
+        <Box
+          sx={{
+            display: "flex",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          {tabValue === 0 ? (
+            <>
+              <ConstraintList>
+                <ConstraintHeader>
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={() => setAddConstraintTermDialog(true)}
+                  >
+                    {t("study.modelization.bindingConst.addConstraintTerm")}
+                  </Button>
+                </ConstraintHeader>
+                {constraintsTerm.map(
+                  (constraint: ConstraintType, index: number) => {
+                    return index > 0 ? (
+                      <ConstraintTerm key={constraint.id}>
+                        <TextSeparator
+                          text="+"
+                          rootStyle={{ my: 0.25 }}
+                          textStyle={{ fontSize: "22px" }}
+                        />
+                        <ConstraintItem
+                          options={options}
+                          saveValue={(value) =>
+                            saveContraintValue(index, constraint, value)
+                          }
+                          constraint={constraint}
+                          deleteTerm={() => setTermToDelete(index)}
+                        />
+                      </ConstraintTerm>
+                    ) : (
+                      <ConstraintItem
+                        key={constraint.id}
+                        options={options}
+                        saveValue={(value) =>
+                          saveContraintValue(index, constraint, value)
+                        }
+                        constraint={constraint}
+                        deleteTerm={() => setTermToDelete(index)}
+                      />
+                    );
                   }
-                  constraint={constraint}
+                )}
+              </ConstraintList>
+              {addConstraintTermDialog && (
+                <AddConstraintTermDialog
+                  open={addConstraintTermDialog}
+                  studyId={studyId}
+                  bindingConstraint={bindingConst}
+                  title={t("study.modelization.bindingConst.newBindingConst")}
+                  onCancel={() => setAddConstraintTermDialog(false)}
+                  append={append}
+                  constraintsTerm={constraintsTerm}
+                  options={options}
                 />
-              </ConstraintTerm>
-            ) : (
-              <ConstraintItem
-                key={constraint.id}
-                options={options}
-                saveValue={(value) =>
-                  saveContraintValue(index, constraint, value)
-                }
-                constraint={constraint}
+              )}
+              {termToDelete !== undefined && (
+                <ConfirmationDialog
+                  titleIcon={DeleteIcon}
+                  onCancel={() => setTermToDelete(undefined)}
+                  onConfirm={() => deleteTerm(termToDelete)}
+                  alert="warning"
+                  open
+                >
+                  {t(
+                    "study.modelization.bindingConst.question.deleteConstraintTerm"
+                  )}
+                </ConfirmationDialog>
+              )}
+            </>
+          ) : (
+            <MatrixContainer>
+              <MatrixInput
+                study={study}
+                title={t("global.matrix")}
+                url={`input/bindingconstraints/${bindingConst}`}
+                computStats={MatrixStats.NOCOL}
               />
-            );
-          })}
-        </ConstraintList>
-        {addConstraintTermDialog && (
-          <AddConstraintTermDialog
-            open={addConstraintTermDialog}
-            studyId={studyId}
-            bindingConstraint={bindingConst}
-            title={t("study.modelization.bindingConst.newBindingConst")}
-            onCancel={() => setAddConstraintTermDialog(false)}
-            append={append}
-          />
-        )}
-      </Fieldset>
+            </MatrixContainer>
+          )}
+        </Box>
+      </Box>
     </>
   );
 }

@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
+import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
 import { ConstraintType, isDataLink } from "../utils";
@@ -74,10 +75,11 @@ interface ItemProps {
   options: AllClustersAndLinks;
   constraint: ConstraintType;
   saveValue: (constraint: Partial<ConstraintType>) => void;
+  deleteTerm: () => void;
 }
 
 export function ConstraintItem(props: ItemProps) {
-  const { options, constraint, saveValue } = props;
+  const { options, constraint, saveValue, deleteTerm } = props;
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(isDataLink(constraint.data));
   const [weight, setWeight] = useState(constraint.weight);
@@ -206,11 +208,21 @@ export function ConstraintItem(props: ItemProps) {
           variant="text"
           color="secondary"
           startIcon={<AddCircleOutlineRoundedIcon />}
+          sx={{ ml: 1 }}
           onClick={() => handleOffset(0)}
         >
           {t("study.modelization.bindingConst.offset")}
         </Button>
       )}
+      <Button
+        variant="text"
+        color="error"
+        sx={{ mx: 1 }}
+        startIcon={<DeleteRoundedIcon />}
+        onClick={deleteTerm}
+      >
+        {t("global.delete")}
+      </Button>
     </ConstraintItemRoot>
   );
 }

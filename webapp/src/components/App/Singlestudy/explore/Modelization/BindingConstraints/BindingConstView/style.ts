@@ -1,4 +1,4 @@
-import { Box, styled } from "@mui/material";
+import { Box, Tabs, styled } from "@mui/material";
 
 export const ConstraintList = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -23,6 +23,14 @@ export const ConstraintTerm = styled(Box)(({ theme }) => ({
 export const MatrixContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
+  width: "100%",
   height: "500px",
+  paddingRight: theme.spacing(2),
   marginBottom: theme.spacing(6),
 }));
+
+export const StyledTab = styled(Tabs)({
+  width: "100%",
+  borderBottom: 1,
+  borderColor: "divider",
+});

@@ -105,6 +105,7 @@ export default function OptionsList(props: Props) {
         handleChange={(key, value) => handleValue1(value as string)}
         sx={{
           flexGrow: 1,
+          minWidth: "200px",
           height: "60px",
         }}
       />
@@ -116,7 +117,9 @@ export default function OptionsList(props: Props) {
         handleChange={(key, value) => handleValue2(value as string)}
         sx={{
           flexGrow: 1,
+          minWidth: "200px",
           height: "60px",
+          ml: 1,
         }}
       />
     </>

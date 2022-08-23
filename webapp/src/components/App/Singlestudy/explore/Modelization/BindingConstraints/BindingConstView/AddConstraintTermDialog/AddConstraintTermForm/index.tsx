@@ -72,6 +72,7 @@ export function ConstraintTermForm(props: ItemProps) {
           variant="text"
           color="secondary"
           startIcon={<AddCircleOutlineRoundedIcon />}
+          sx={{ mx: 1 }}
           onClick={() => setIsOffset(true)}
         >
           {t("study.modelization.bindingConst.offset")}

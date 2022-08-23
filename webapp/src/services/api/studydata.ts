@@ -90,6 +90,17 @@ export const addConstraintTerm = async (
   return res.data;
 };
 
+export const deleteConstraintTerm = async (
+  uuid: string,
+  bindingConst: string,
+  termId: ConstraintType["id"]
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${uuid}/bindingconstraint/${bindingConst}/term/${termId}`
+  );
+  return res.data;
+};
+
 export const getBindingConstraint = async (
   uuid: string,
   bindingConst: string

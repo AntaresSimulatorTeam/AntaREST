@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
@@ -42,6 +42,10 @@ export default function OptionsList(props: Props) {
     return [];
   };
 
+  useEffect(() => {
+    getOption2(options1[0].value);
+  }, [isLink]);
+
   return (
     <>
       <SelectFE
@@ -53,7 +57,7 @@ export default function OptionsList(props: Props) {
         rules={{
           required: t("form.field.required") as string,
         }}
-        sx={{ flexGrow: 1, height: "60px" }}
+        sx={{ minWidth: "200px", height: "60px" }}
       />
       <SelectFE
         name={`data.${name2}`}
@@ -63,7 +67,7 @@ export default function OptionsList(props: Props) {
         rules={{
           required: t("form.field.required") as string,
         }}
-        sx={{ flexGrow: 1, height: "60px" }}
+        sx={{ minWidth: "200px", ml: 1, height: "60px" }}
       />
     </>
   );
