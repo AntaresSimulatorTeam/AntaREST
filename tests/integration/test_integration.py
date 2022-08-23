@@ -637,6 +637,116 @@ def test_area_management(app: FastAPI):
             "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
         }
     ]
+
+    res_ts_config = client.get(
+        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_ts_config_json = res_ts_config.json()
+    assert res_ts_config_json == {
+        "load": {
+            "stochasticTsStatus": False,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "seasonCorrelation": "annual",
+            "storeInInput": False,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "hydro": {
+            "stochasticTsStatus": False,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "seasonCorrelation": "annual",
+            "storeInInput": False,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "thermal": {
+            "stochasticTsStatus": False,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "storeInInput": False,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "renewables": {
+            "stochasticTsStatus": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "ntc": {"stochasticTsStatus": False, "intraModal": False},
+    }
+    res_ts_config = client.put(
+        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "thermal": {"stochasticTsStatus": True},
+            "load": {
+                "stochasticTsStatus": True,
+                "storeInInput": True,
+                "seasonCorrelation": "monthly",
+            },
+        },
+    )
+    res_ts_config = client.get(
+        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_ts_config_json = res_ts_config.json()
+    assert res_ts_config_json == {
+        "load": {
+            "stochasticTsStatus": True,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "seasonCorrelation": "monthly",
+            "storeInInput": True,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "hydro": {
+            "stochasticTsStatus": False,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "seasonCorrelation": "annual",
+            "storeInInput": False,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "thermal": {
+            "stochasticTsStatus": True,
+            "number": 1,
+            "refresh": False,
+            "refreshInterval": 100,
+            "storeInInput": False,
+            "storeInOutput": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "renewables": {
+            "stochasticTsStatus": False,
+            "intraModal": False,
+            "interModal": False,
+        },
+        "ntc": {"stochasticTsStatus": False, "intraModal": False},
+    }
+
     client.delete(
         f"/v1/studies/{study_id}/links/area%201/area%202",
         headers={
