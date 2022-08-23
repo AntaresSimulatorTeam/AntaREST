@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -17,6 +17,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -35,10 +36,12 @@ import {
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../redux/selectors";
+import { getStudy, getStudyVersionsFormatted } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import LoadIndicator from "../../common/LoadIndicator";
 import SelectSingle from "../../common/SelectSingle";
+import { fetchStudyVersions } from "../../../redux/ducks/studies";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 12;
@@ -67,6 +70,8 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
+  const dispatch = useAppDispatch();
+  const versionList = useAppSelector(getStudyVersionsFormatted);
 
   const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
     errorMessage: t("study.error.launchLoad"),
@@ -77,6 +82,14 @@ function LauncherDialog(props: Props) {
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
     { errorMessage: t("study.error.listOutputs"), deps: [studyIds] }
   );
+
+  useEffect(() => {
+    (async () => {
+      if (!versionList || versionList.length === 0) {
+        dispatch(fetchStudyVersions());
+      }
+    })();
+  }, [versionList, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -128,6 +141,32 @@ function LauncherDialog(props: Props) {
       return {
         ...prevOptions,
         [field]: { ...(prevOptions[field] as object), ...value },
+      };
+    });
+  };
+
+  const handleOtherOptionsChange = (
+    optionChanges: Array<{ option: string; active: boolean }>
+  ) => {
+    setOptions((prevOptions) => {
+      const { other_options: prevOtherOptions = "" } = prevOptions;
+      const { toAdd, toRemove } = optionChanges.reduce(
+        (acc, item) => {
+          const updatedToAdd = acc.toAdd;
+          const updatedToRemove = acc.toRemove;
+          (item.active ? updatedToAdd : updatedToRemove).push(item.option);
+          return {
+            toAdd: updatedToAdd,
+            toRemove: updatedToRemove,
+          };
+        },
+        { toAdd: [], toRemove: [] } as { toAdd: string[]; toRemove: string[] }
+      );
+      return {
+        ...prevOptions,
+        other_options: R.without(toRemove, prevOtherOptions.split(/\s+/))
+          .concat(toAdd)
+          .join(" "),
       };
     });
   };
@@ -457,39 +496,40 @@ function LauncherDialog(props: Props) {
                 width: "100%",
               }}
             >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!!options.other_options?.match("xpress")}
+                    onChange={(e, checked) =>
+                      handleOtherOptionsChange([
+                        { option: "xpress", active: checked },
+                      ])
+                    }
+                  />
+                }
+                label={t("launcher.xpress")}
+              />
+            </FormControl>
+            <SelectSingle
+              name={t("global.version")}
+              list={versionList}
+              data={solverVersion}
+              setValue={(data: string) => setSolverVersion(data)}
+              sx={{ width: "100%", mt: 2 }}
+            />
+            <FormControl
+              sx={{
+                mt: 2,
+                width: "100%",
+              }}
+            >
               <TextField
                 id="launcher-option-other-options"
                 label={t("study.otherOptions")}
                 type="text"
                 variant="filled"
                 value={options.other_options}
-                onChange={(e) =>
-                  handleChange("other_options", e.target.value.trim())
-                }
-                InputLabelProps={{
-                  shrink: true,
-                  sx: {
-                    ".MuiInputLabel-root": {
-                      color: theme.palette.text.secondary,
-                    },
-                    ".Mui-focused": {},
-                  },
-                }}
-              />
-            </FormControl>
-            <FormControl
-              sx={{
-                width: "100%",
-                mt: 2,
-              }}
-            >
-              <TextField
-                id="launcher-version"
-                label={t("global.version")}
-                type="text"
-                variant="filled"
-                value={solverVersion}
-                onChange={(e) => setSolverVersion(e.target.value.trim())}
+                onChange={(e) => handleChange("other_options", e.target.value)}
                 InputLabelProps={{
                   shrink: true,
                   sx: {
