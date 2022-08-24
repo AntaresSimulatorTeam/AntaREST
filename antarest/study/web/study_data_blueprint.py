@@ -277,7 +277,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/config/timeseries_form_fields",
         tags=[APITag.study_data],
-        summary="Get time series config with values from form",
+        summary="Get Time Series config values for form",
         response_model=TSFormFields,
         response_model_exclude_none=True,
     )
@@ -285,9 +285,8 @@ def create_study_data_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TSFormFields:
-
         logger.info(
-            msg=f"Getting time series management config for study {uuid}",
+            msg=f"Getting Time Series config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -295,21 +294,20 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
 
-        return study_service.ts_config_manager.get_ts_field_values(study)
+        return study_service.ts_config_manager.get_field_values(study)
 
     @bp.put(
         path="/studies/{uuid}/config/timeseries_form_fields",
         tags=[APITag.study_data],
-        summary="Set time series config with values from form",
+        summary="Set Time Series config with values from form",
     )
     def set_timeseries_form_values(
         uuid: str,
         field_values: TSFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-
         logger.info(
-            f"Updating time series management config for study {uuid}",
+            f"Updating Time Series config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -317,9 +315,7 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
 
-        study_service.ts_config_manager.set_ts_field_values(
-            study, field_values
-        )
+        study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.post(
         "/studies/_update_version",
