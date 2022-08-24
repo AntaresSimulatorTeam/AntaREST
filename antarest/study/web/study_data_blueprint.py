@@ -294,7 +294,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.WRITE, params
+            uuid, StudyPermissionType.READ, params
         )
 
         return study_service.optimization_manager.get_field_values(study)
@@ -339,7 +339,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.WRITE, params
+            uuid, StudyPermissionType.READ, params
         )
 
         return study_service.ts_config_manager.get_field_values(study)
