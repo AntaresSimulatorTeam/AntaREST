@@ -638,6 +638,71 @@ def test_area_management(app: FastAPI):
         }
     ]
 
+    res_optimization_config = client.get(
+        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_optimization_config_json = res_optimization_config.json()
+    assert res_optimization_config_json == {
+        "bindingConstraints": True,
+        "hurdleCosts": True,
+        "transmissionCapacities": True,
+        "linkType": "local",
+        "thermalClustersMinStablePower": True,
+        "thermalClustersMinUdTime": True,
+        "dayAheadReserve": True,
+        "primaryReserve": True,
+        "strategicReserve": True,
+        "spinningReserve": True,
+        "exportMps": False,
+        "unfeasibleProblemBehavior": "error-verbose",
+        "simplexOptimizationRange": "week",
+        "splitExportedMps": False,
+        "enableAdequacyPatch": False,
+        "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
+        "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
+    }
+
+    res_optimization_config = client.put(
+        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "strategicReserve": False,
+            "unfeasibleProblemBehavior": "warning-verbose",
+            "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
+        },
+    )
+    res_optimization_config = client.get(
+        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_optimization_config_json = res_optimization_config.json()
+    assert res_optimization_config_json == {
+        "bindingConstraints": True,
+        "hurdleCosts": True,
+        "transmissionCapacities": True,
+        "linkType": "local",
+        "thermalClustersMinStablePower": True,
+        "thermalClustersMinUdTime": True,
+        "dayAheadReserve": True,
+        "primaryReserve": True,
+        "strategicReserve": False,
+        "spinningReserve": True,
+        "exportMps": False,
+        "unfeasibleProblemBehavior": "warning-verbose",
+        "simplexOptimizationRange": "week",
+        "splitExportedMps": False,
+        "enableAdequacyPatch": False,
+        "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
+        "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
+    }
+
     res_ts_config = client.get(
         f"/v1/studies/{study_id}/config/timeseries_form_fields",
         headers={

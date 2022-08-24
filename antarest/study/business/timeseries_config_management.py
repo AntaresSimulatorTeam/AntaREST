@@ -100,7 +100,7 @@ class TimeSeriesConfigManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_ts_field_values(self, study: Study) -> TSFormFields:
+    def get_field_values(self, study: Study) -> TSFormFields:
         """
         Get Time Series field values for the webapp form
         """
@@ -118,7 +118,7 @@ class TimeSeriesConfigManager:
 
         return TSFormFields.construct(**fields)  # type: ignore
 
-    def set_ts_field_values(
+    def set_field_values(
         self, study: Study, field_values: TSFormFields
     ) -> None:
         """
@@ -128,11 +128,11 @@ class TimeSeriesConfigManager:
 
         for ts_type, values in field_values:
             if values is not None:
-                self.__set_ts_field_values_for_type(
+                self.__set_field_values_for_type(
                     study, file_study, TSType(ts_type), values
                 )
 
-    def __set_ts_field_values_for_type(
+    def __set_field_values_for_type(
         self,
         study: Study,
         file_study: FileStudy,
@@ -282,7 +282,7 @@ class TimeSeriesConfigManager:
                     "mode",
                 ]
             )
-            or SeasonCorrelation.ANNUAL.value,
+            or SeasonCorrelation.ANNUAL,
             store_in_input=TimeSeriesConfigManager.__has_ts_type_in_str(
                 input_.get("import", ""), ts_type
             ),

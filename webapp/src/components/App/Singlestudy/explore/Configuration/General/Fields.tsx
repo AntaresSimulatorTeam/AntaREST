@@ -3,29 +3,27 @@ import { Box, Button, Divider } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { editStudy } from "../../../../../../../services/api/study";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import { StudyMetadata } from "../../../../../../common/types";
+import { editStudy } from "../../../../../../services/api/study";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   FIRST_JANUARY_OPTIONS,
   FormValues,
   WEEK_OPTIONS,
   YEAR_OPTIONS,
-} from "../utils";
-import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
-import { useFormContext } from "../../../../../../common/Form";
-import useDebouncedEffect from "../../../../../../../hooks/useDebouncedEffect";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import Fieldset from "../../../../../../common/Fieldset";
+} from "./utils";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import { useFormContext } from "../../../../../common/Form";
+import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import Fieldset from "../../../../../common/Fieldset";
 
 interface Props {
   study: StudyMetadata;
   setDialog: React.Dispatch<React.SetStateAction<"thematicTrimming" | "">>;
 }
-
-// TODO i18n
 
 function Fields(props: Props) {
   const { study, setDialog } = props;
@@ -93,10 +91,10 @@ function Fields(props: Props) {
 
   return (
     <>
-      <Fieldset legend="Simulation">
+      <Fieldset legend={t("study.configuration.general.simulation")}>
         <SelectFE
           name="mode"
-          label="Mode"
+          label={t("study.configuration.general.mode")}
           options={["Economy", "Adequacy", "draft"]}
           control={control}
           rules={{
@@ -105,7 +103,7 @@ function Fields(props: Props) {
         />
         <NumberFE
           name="firstDay"
-          label={t("study.modelization.configuration.general.firstDay")}
+          label={t("study.configuration.general.firstDay")}
           variant="filled"
           control={control}
           rules={{
@@ -116,7 +114,7 @@ function Fields(props: Props) {
         />
         <NumberFE
           name="lastDay"
-          label={t("study.modelization.configuration.general.lastDay")}
+          label={t("study.configuration.general.lastDay")}
           variant="filled"
           control={control}
           rules={{
@@ -126,7 +124,7 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
-      <Fieldset legend={t("study.modelization.configuration.general.calendar")}>
+      <Fieldset legend={t("study.configuration.general.calendar")}>
         <StringFE
           name="horizon"
           label="Horizon"
@@ -136,7 +134,7 @@ function Fields(props: Props) {
         />
         <SelectFE
           name="firstMonth"
-          label={t("study.modelization.configuration.general.year")}
+          label={t("study.configuration.general.year")}
           options={YEAR_OPTIONS}
           control={control}
           rules={{
@@ -145,7 +143,7 @@ function Fields(props: Props) {
         />
         <SelectFE
           name="firstWeekDay"
-          label={t("study.modelization.configuration.general.week")}
+          label={t("study.configuration.general.week")}
           options={WEEK_OPTIONS}
           control={control}
           rules={{
@@ -154,7 +152,7 @@ function Fields(props: Props) {
         />
         <SelectFE
           name="firstJanuary"
-          label={t("study.modelization.configuration.general.firstDayOfYear")}
+          label={t("study.configuration.general.firstDayOfYear")}
           options={FIRST_JANUARY_OPTIONS}
           control={control}
           rules={{ onAutoSubmit: saveValue("general/january.1st") }}
@@ -162,7 +160,7 @@ function Fields(props: Props) {
         <SwitchFE
           name="leapYear"
           sx={{ flex: 1, flexBasis: "100%" }}
-          label={t("study.modelization.configuration.general.leapYear")}
+          label={t("study.configuration.general.leapYear")}
           control={control}
           rules={{
             deps: ["firstDay", "lastDay"],
@@ -170,50 +168,9 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
-      {studyVersion >= 830 && (
-        <Fieldset
-          legend="Adequacy patch"
-          sx={{ "& > div > div": { flex: 1, flexBasis: "100%" } }}
-        >
-          <SwitchFE
-            name="adequacyPatchActive"
-            label={t("study.configuration.adequacyPatch.activate")}
-            control={control}
-            rules={{
-              onAutoSubmit: saveValue("adequacy patch/include-adq-patch"),
-            }}
-          />
-          <SwitchFE
-            name="adequacyPatchSetToNullFromTo"
-            label={t(
-              "study.configuration.adequacyPatch.setToNullNTCFromPhysicalOutToPhysicalInForFirstStep"
-            )}
-            control={control}
-            disabled={!getValues("adequacyPatchActive")}
-            rules={{
-              onAutoSubmit: saveValue(
-                "adequacy patch/set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
-              ),
-            }}
-          />
-          <SwitchFE
-            name="adequacyPatchSetToNullBetween"
-            label={t(
-              "study.configuration.adequacyPatch.setToNullNTCBetweenPhysicalOutForFirstStep"
-            )}
-            control={control}
-            disabled={!getValues("adequacyPatchActive")}
-            rules={{
-              onAutoSubmit: saveValue(
-                "adequacy patch/set-to-null-ntc-between-physical-out-for-first-step"
-              ),
-            }}
-          />
-        </Fieldset>
-      )}
       <Box sx={{ display: "flex" }}>
         <Fieldset
-          legend="Monte-Carlo Scenarios"
+          legend={t("study.configuration.general.monteCarloScenarios")}
           sx={{
             flex: 1,
           }}
@@ -243,7 +200,7 @@ function Fields(props: Props) {
           />
           <SelectFE
             name="buildingMode"
-            label="Building mode"
+            label={t("study.configuration.general.buildingMode")}
             options={["Automatic", "Custom", "Derated"]}
             control={control}
             rules={{
@@ -266,7 +223,7 @@ function Fields(props: Props) {
           />
           <BooleanFE
             name="selectionMode"
-            label="Selection mode"
+            label={t("study.configuration.general.selectionMode")}
             trueText="Custom"
             falseText="Automatic"
             control={control}
@@ -275,7 +232,7 @@ function Fields(props: Props) {
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
         <Fieldset
-          legend="Output profile"
+          legend={t("study.configuration.general.outputProfile")}
           sx={{
             flex: 1,
           }}
@@ -285,19 +242,19 @@ function Fields(props: Props) {
         >
           <SwitchFE
             name="simulationSynthesis"
-            label="Simulation synthesis"
+            label={t("study.configuration.general.simulationSynthesis")}
             control={control}
             rules={{ onAutoSubmit: saveValue("output/synthesis") }}
           />
           <SwitchFE
             name="yearByYear"
-            label="Year-by-year"
+            label={t("study.configuration.general.yearByYear")}
             control={control}
             rules={{ onAutoSubmit: saveValue("general/year-by-year") }}
           />
           <SwitchFE
             name="mcScenario"
-            label="MC Scenario"
+            label={t("study.configuration.general.mcScenario")}
             control={control}
             rules={{ onAutoSubmit: saveValue("output/storenewset") }}
           />
@@ -305,7 +262,7 @@ function Fields(props: Props) {
             <>
               <BooleanFE
                 name="geographicTrimming"
-                label="Geographic trimming"
+                label={t("study.configuration.general.geographicTrimming")}
                 trueText="Custom"
                 falseText="None"
                 control={control}
@@ -316,7 +273,7 @@ function Fields(props: Props) {
               <Box>
                 <BooleanFE
                   name="thematicTrimming"
-                  label="Thematic trimming"
+                  label={t("study.configuration.general.thematicTrimming")}
                   trueText="Custom"
                   falseText="None"
                   control={control}
@@ -329,14 +286,14 @@ function Fields(props: Props) {
                   onClick={() => setDialog("thematicTrimming")}
                   disabled={!getValues("thematicTrimming")}
                 >
-                  Settings
+                  {t("global.settings")}
                 </Button>
               </Box>
             </>
           ) : (
             <SwitchFE
               name="filtering"
-              label="Filtering"
+              label={t("study.configuration.general.filtering")}
               control={control}
               rules={{ onAutoSubmit: saveValue("general/filtering") }}
             />
