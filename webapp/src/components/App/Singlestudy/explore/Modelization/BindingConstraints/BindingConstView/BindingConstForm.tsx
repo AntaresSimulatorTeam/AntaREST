@@ -248,6 +248,7 @@ export default function BindingConstForm(props: Props) {
                           }
                           constraint={constraint}
                           deleteTerm={() => setTermToDelete(index)}
+                          constraintsTerm={constraintsTerm}
                         />
                       </ConstraintTerm>
                     ) : (
@@ -259,6 +260,7 @@ export default function BindingConstForm(props: Props) {
                         }
                         constraint={constraint}
                         deleteTerm={() => setTermToDelete(index)}
+                        constraintsTerm={constraintsTerm}
                       />
                     );
                   }

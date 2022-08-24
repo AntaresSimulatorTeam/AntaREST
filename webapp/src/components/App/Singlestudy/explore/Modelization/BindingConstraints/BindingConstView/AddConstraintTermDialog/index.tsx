@@ -131,7 +131,12 @@ function AddConstraintTermDialog(props: PropType) {
         response={optionsRes}
         ifPending={() => <SimpleLoader />}
         ifResolved={(options) =>
-          options && <AddConstraintTermForm options={options} />
+          options && (
+            <AddConstraintTermForm
+              options={options}
+              constraintsTerm={constraintsTerm}
+            />
+          )
         }
       />
     </FormDialog>

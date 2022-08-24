@@ -3,16 +3,22 @@ import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
 import { ControlPlus } from "../../../../../../../../common/Form";
-import { ConstraintType } from "../../utils";
+import {
+  BindingConstType,
+  ConstraintType,
+  dataToId,
+  isTermExist,
+} from "../../utils";
 
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
   control: ControlPlus<ConstraintType, any>;
+  constraintsTerm: BindingConstType["constraints"];
 }
 
 export default function OptionsList(props: Props) {
-  const { list, isLink, control } = props;
+  const { list, isLink, control, constraintsTerm } = props;
   const [t] = useTranslation();
   const name1 = useMemo(() => (isLink ? "area1" : "area"), [isLink]);
   const name2 = useMemo(() => (isLink ? "area2" : "cluster"), [isLink]);
@@ -34,10 +40,25 @@ export default function OptionsList(props: Props) {
     const index = options.findIndex((elm) => elm.element.id === value);
     if (index >= 0)
       setOptions2(
-        options[index].item_list.map((elm) => ({
-          label: elm.name,
-          value: elm.id,
-        }))
+        options[index].item_list
+          .filter(
+            (elm) =>
+              !isTermExist(
+                constraintsTerm,
+                dataToId(
+                  isLink
+                    ? {
+                        area1: value,
+                        area2: elm.id,
+                      }
+                    : { area: value, cluster: elm.id }
+                )
+              )
+          )
+          .map((elm) => ({
+            label: elm.name,
+            value: elm.id,
+          }))
       );
     return [];
   };

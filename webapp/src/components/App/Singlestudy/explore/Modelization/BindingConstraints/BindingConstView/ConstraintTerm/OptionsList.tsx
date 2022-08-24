@@ -3,13 +3,14 @@ import _ from "lodash";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintType } from "../utils";
+import { ConstraintType, dataToId, isTermExist } from "../utils";
 import { DEBOUNCE_DELAY } from ".";
 
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
   constraint: ConstraintType;
+  constraintsTerm: Array<ConstraintType>;
   saveValue: (constraint: Partial<ConstraintType>) => void;
   value1: string;
   value2: string;
@@ -24,6 +25,7 @@ export default function OptionsList(props: Props) {
     constraint,
     value1,
     value2,
+    constraintsTerm,
     saveValue,
     setValue1,
     setValue2,
@@ -44,13 +46,30 @@ export default function OptionsList(props: Props) {
 
   const options2 = useMemo(() => {
     const index = options.findIndex((elm) => elm.element.id === value1);
-    if (index >= 0)
-      return options[index].item_list.map((elm) => ({
+    if (index < 0) return [];
+
+    const tmp = options[index].item_list
+      .filter(
+        (elm) =>
+          elm.id === value2 ||
+          !isTermExist(
+            constraintsTerm,
+            dataToId(
+              isLink
+                ? {
+                    area1: value1,
+                    area2: elm.id,
+                  }
+                : { area: value1, cluster: elm.id }
+            )
+          )
+      )
+      .map((elm) => ({
         name: elm.name,
         id: elm.id,
       }));
-    return [];
-  }, [options, value1]);
+    return tmp;
+  }, [JSON.stringify(constraintsTerm), isLink, options, value1]);
 
   const getFirstValue2 = useCallback(
     (value: string): string => {

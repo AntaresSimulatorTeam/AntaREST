@@ -10,17 +10,18 @@ import {
   useFormContext,
 } from "../../../../../../../../common/Form";
 import { ConstraintItemRoot } from "../../ConstraintTerm/style";
-import { ConstraintType } from "../../utils";
+import { BindingConstType, ConstraintType } from "../../utils";
 import { ConstraintElement } from "../../constraintviews/ConstraintElement";
 import { OffsetInput } from "../../constraintviews/OffsetInput";
 
 interface ItemProps {
   options: AllClustersAndLinks;
+  constraintsTerm: BindingConstType["constraints"];
   control: ControlPlus<ConstraintType, any>;
 }
 
 export function ConstraintTermForm(props: ItemProps) {
-  const { options, control } = props;
+  const { options, constraintsTerm, control } = props;
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(true);
   const [isOffset, setIsOffset] = useState(false);
@@ -44,7 +45,12 @@ export function ConstraintTermForm(props: ItemProps) {
         }
         right={
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <OptionsList isLink={isLink} list={options} control={control} />
+            <OptionsList
+              isLink={isLink}
+              list={options}
+              constraintsTerm={constraintsTerm}
+              control={control}
+            />
           </Box>
         }
       />
@@ -87,10 +93,11 @@ export function ConstraintTermForm(props: ItemProps) {
 
 interface Props {
   options: AllClustersAndLinks;
+  constraintsTerm: BindingConstType["constraints"];
 }
 
 export default function AddConstraintTermForm(props: Props) {
-  const { options } = props;
+  const { options, constraintsTerm } = props;
   const { control } = useFormContext<ConstraintType>();
 
   ////////////////////////////////////////////////////////////////
@@ -106,7 +113,11 @@ export default function AddConstraintTermForm(props: Props) {
         width: "100%",
       }}
     >
-      <ConstraintTermForm options={options} control={control} />
+      <ConstraintTermForm
+        options={options}
+        constraintsTerm={constraintsTerm}
+        control={control}
+      />
     </Box>
   );
 }

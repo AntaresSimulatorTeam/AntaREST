@@ -23,12 +23,13 @@ export type ConstraintWithNullableOffset = Partial<
 interface ItemProps {
   options: AllClustersAndLinks;
   constraint: ConstraintType;
+  constraintsTerm: Array<ConstraintType>;
   saveValue: (constraint: ConstraintWithNullableOffset) => void;
   deleteTerm: () => void;
 }
 
 export function ConstraintItem(props: ItemProps) {
-  const { options, constraint, saveValue, deleteTerm } = props;
+  const { options, constraint, constraintsTerm, saveValue, deleteTerm } = props;
   const [t] = useTranslation();
   const [weight, setWeight] = useState(constraint.weight);
   const [offset, setOffset] = useState(constraint.offset);
@@ -106,6 +107,7 @@ export function ConstraintItem(props: ItemProps) {
               value2={value2}
               setValue1={setValue1}
               setValue2={setValue2}
+              constraintsTerm={constraintsTerm}
             />
           </Box>
         }
