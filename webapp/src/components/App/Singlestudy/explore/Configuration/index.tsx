@@ -8,7 +8,7 @@ import SplitLayoutView from "../../../../common/SplitLayoutView";
 import ListElement from "../common/ListElement";
 import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
-import OptimizationPreferences from "./OptimizationPreferences";
+import Optimization from "./Optimization";
 import RegionalDistricts from "./RegionalDistricts";
 import TimeSeriesManagement from "./TimeSeriesManagement";
 
@@ -48,7 +48,7 @@ function Configuration() {
             [R.equals(1), () => <TimeSeriesManagement />],
             [R.equals(1), () => <UnderConstruction />],
             [R.equals(2), () => <RegionalDistricts />],
-            [R.equals(3), () => <OptimizationPreferences />],
+            [R.equals(3), () => <Optimization />],
             [R.equals(4), () => <AdvancedParameters />],
           ])(currentElementIndex)}
         </Paper>
