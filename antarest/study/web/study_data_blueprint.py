@@ -24,6 +24,9 @@ from antarest.study.business.config_management import (
     OutputVariable,
 )
 from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.optimization_management import (
+    OptimizationFormFields,
+)
 from antarest.study.business.timeseries_config_management import (
     TSFormFields,
 )
@@ -272,6 +275,51 @@ def create_study_data_routes(
                 ]
                 for output_variable in thematic_trimming_config
             },
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/optimization_form_fields",
+        tags=[APITag.study_data],
+        summary="Get Optimization config values for form",
+        response_model=OptimizationFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_optimization_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> OptimizationFormFields:
+        logger.info(
+            msg=f"Getting Optimization management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        return study_service.optimization_manager.get_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/optimization_form_fields",
+        tags=[APITag.study_data],
+        summary="Set Optimization config with values from form",
+    )
+    def set_optimization_form_values(
+        uuid: str,
+        field_values: OptimizationFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating Optimization management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.optimization_manager.set_field_values(
+            study, field_values
         )
 
     @bp.get(
