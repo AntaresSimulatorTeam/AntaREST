@@ -14,7 +14,7 @@ import {
 } from "../../../../../../../common/types";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
-import { ConstraintItem } from "./ConstraintTerm";
+import { ConstraintItem, ConstraintWithNullableOffset } from "./ConstraintTerm";
 import { useFormContext } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
@@ -98,17 +98,21 @@ export default function BindingConstForm(props: Props) {
     async (
       index: number,
       prevConst: ConstraintType,
-      constraint: Partial<ConstraintType>
+      constraint: ConstraintWithNullableOffset
     ) => {
       try {
-        await updateConstraintTerm(study.id, bindingConst, constraint);
         const tmpConst = prevConst;
         if (constraint.weight !== undefined)
           tmpConst.weight = constraint.weight;
-        if (constraint.offset !== undefined)
-          tmpConst.offset = constraint.offset;
         if (constraint.data) tmpConst.data = constraint.data;
         tmpConst.id = dataToId(tmpConst.data);
+        if (constraint.offset !== undefined)
+          tmpConst.offset =
+            constraint.offset !== null ? constraint.offset : undefined;
+        await updateConstraintTerm(study.id, bindingConst, {
+          ...constraint,
+          offset: tmpConst.offset,
+        });
         update(index, tmpConst);
       } catch (error) {
         enqueueErrorSnackbar(

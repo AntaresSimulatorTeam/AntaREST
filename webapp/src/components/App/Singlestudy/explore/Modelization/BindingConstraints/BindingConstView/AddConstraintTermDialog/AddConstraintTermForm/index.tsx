@@ -10,8 +10,9 @@ import {
   useFormContext,
 } from "../../../../../../../../common/Form";
 import { ConstraintItemRoot } from "../../ConstraintTerm/style";
-import { ConstraintElement } from "../../ConstraintTerm";
 import { ConstraintType } from "../../utils";
+import { ConstraintElement } from "../../constraintviews/ConstraintElement";
+import { OffsetInput } from "../../constraintviews/OffsetInput";
 
 interface ItemProps {
   options: AllClustersAndLinks;
@@ -55,15 +56,17 @@ export function ConstraintTermForm(props: ItemProps) {
             operator="+"
             left={<Typography>t</Typography>}
             right={
-              <NumberFE
-                name="offset"
-                label={t("study.modelization.bindingConst.offset")}
-                variant="filled"
-                control={control}
-                rules={{
-                  required: t("form.field.required") as string,
-                }}
-              />
+              <OffsetInput onRemove={() => setIsOffset(false)}>
+                <NumberFE
+                  name="offset"
+                  label={t("study.modelization.bindingConst.offset")}
+                  variant="filled"
+                  control={control}
+                  rules={{
+                    required: t("form.field.required") as string,
+                  }}
+                />
+              </OffsetInput>
             }
           />
         </>

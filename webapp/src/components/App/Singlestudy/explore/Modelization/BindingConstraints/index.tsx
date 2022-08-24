@@ -7,7 +7,10 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import NoContent from "../../../../../common/page/NoContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import BindingConstPropsView from "./BindingConstPropsView";
-import { getCurrentBindingConstId } from "../../../../../../redux/selectors";
+import {
+  getBindingConst,
+  getCurrentBindingConstId,
+} from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studyDataSynthesis";
@@ -18,7 +21,13 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const res = usePromise(() => getBindingConstraintList(study.id), [study.id]);
+  const bindingConstraints = useAppSelector((state) =>
+    getBindingConst(state, study.id)
+  );
+  const res = usePromise(
+    () => getBindingConstraintList(study.id),
+    [study.id, JSON.stringify(bindingConstraints)]
+  );
   const currentBindingConst = useAppSelector(getCurrentBindingConstId);
   const dispatch = useAppDispatch();
 

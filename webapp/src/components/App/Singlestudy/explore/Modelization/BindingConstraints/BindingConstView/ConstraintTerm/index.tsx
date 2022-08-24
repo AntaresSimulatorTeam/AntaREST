@@ -1,12 +1,5 @@
-import { ReactNode, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  FormControlLabel,
-  Switch,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { useMemo, useState } from "react";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
@@ -18,63 +11,19 @@ import {
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
-import {
-  ConstraintElementData,
-  ConstraintElementHeader,
-  ConstraintElementRoot,
-  ConstraintItemRoot,
-} from "./style";
+import { ConstraintItemRoot } from "./style";
+import { ConstraintElement } from "../constraintviews/ConstraintElement";
+import { OffsetInput } from "../constraintviews/OffsetInput";
 
 export const DEBOUNCE_DELAY = 250;
-
-interface ElementProps {
-  title: string;
-  left: ReactNode;
-  right: ReactNode;
-  operator?: string;
-  isLink?: boolean;
-  onToggleType?: () => void;
-}
-
-export function ConstraintElement(props: ElementProps) {
-  const { title, isLink, left, right, operator, onToggleType } = props;
-  return (
-    <ConstraintElementRoot>
-      <ConstraintElementHeader>
-        <Typography
-          sx={{
-            color: "grey.400",
-            fontSize: "16px",
-          }}
-        >
-          {title}
-        </Typography>
-        {onToggleType !== undefined && (
-          <FormControlLabel
-            control={<Switch checked={isLink === true} />}
-            onChange={(event, checked) => onToggleType()}
-            label={isLink ? "Link" : "Cluster"}
-            labelPlacement="end"
-          />
-        )}
-      </ConstraintElementHeader>
-      <ConstraintElementData>
-        {left}
-        <Typography sx={{ mx: 1 }}>{operator}</Typography>
-        {right}
-      </ConstraintElementData>
-    </ConstraintElementRoot>
-  );
-}
-
-ConstraintElement.defaultProps = {
-  operator: "x",
-};
+export type ConstraintWithNullableOffset = Partial<
+  Omit<ConstraintType, "offset"> & { offset: number | null | undefined }
+>;
 
 interface ItemProps {
   options: AllClustersAndLinks;
   constraint: ConstraintType;
-  saveValue: (constraint: Partial<ConstraintType>) => void;
+  saveValue: (constraint: ConstraintWithNullableOffset) => void;
   deleteTerm: () => void;
 }
 
@@ -101,18 +50,20 @@ export function ConstraintItem(props: ItemProps) {
   const [value1, setValue1] = useState(initValue1);
   const [value2, setValue2] = useState(initValue2);
 
-  const handleOffset = _.debounce((value: string | number) => {
-    let pValue = 0;
-    try {
-      pValue = typeof value === "number" ? value : parseFloat(value);
-      pValue = Number.isNaN(pValue) ? 0 : pValue;
-    } catch (e) {
-      pValue = 0;
+  const handleOffset = _.debounce((value: string | number | null) => {
+    let pValue;
+    if (value !== null) {
+      try {
+        pValue = typeof value === "number" ? value : parseFloat(value);
+        pValue = Number.isNaN(pValue) ? 0 : pValue;
+      } catch (e) {
+        pValue = 0;
+      }
     }
     setOffset(pValue);
     saveValue({
       id: constraint.id,
-      offset: pValue,
+      offset: value === null ? value : pValue,
     });
   }, DEBOUNCE_DELAY);
 
@@ -159,7 +110,7 @@ export function ConstraintItem(props: ItemProps) {
           </Box>
         }
       />
-      {constraint.offset !== undefined && constraint.offset !== null ? (
+      {offset !== undefined && offset !== null ? (
         <>
           <Typography sx={{ mx: 1 }}>x</Typography>
           <ConstraintElement
@@ -167,13 +118,15 @@ export function ConstraintItem(props: ItemProps) {
             operator="+"
             left={<Typography>t</Typography>}
             right={
-              <TextField
-                label={t("study.modelization.bindingConst.offset")}
-                variant="filled"
-                type="number"
-                value={offset}
-                onChange={(e) => handleOffset(e.target.value)}
-              />
+              <OffsetInput onRemove={() => handleOffset(null)}>
+                <TextField
+                  label={t("study.modelization.bindingConst.offset")}
+                  variant="filled"
+                  type="number"
+                  value={offset}
+                  onChange={(e) => handleOffset(e.target.value)}
+                />
+              </OffsetInput>
             }
           />
         </>

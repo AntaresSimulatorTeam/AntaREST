@@ -207,9 +207,7 @@ class BindingConstraintManager:
                 weight=constraint_term.weight
                 if constraint_term.weight is not None
                 else 0.0,
-                offset=constraint_term.offset
-                if constraint_term.offset is not None
-                else None,
+                offset=constraint_term.offset,
                 data=constraint_term.data,
             )
         )
@@ -271,9 +269,7 @@ class BindingConstraintManager:
                     weight=data.weight
                     if data.weight is not None
                     else current_constraint.weight,
-                    offset=data.offset
-                    if data.offset is not None
-                    else current_constraint.offset,
+                    offset=data.offset,
                     data=data.data
                     if data.data is not None
                     else current_constraint.data,
