@@ -8,12 +8,12 @@ import {
 } from "@mui/material";
 import { capitalize } from "lodash";
 import * as R from "ramda";
-import CheckBoxFE from "../../../../../../common/fieldEditors/CheckBoxFE";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { useFormContext } from "../../../../../../common/Form";
-import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "../utils";
+import CheckBoxFE from "../../../../../common/fieldEditors/CheckBoxFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import { useFormContext } from "../../../../../common/Form";
+import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "./utils";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 

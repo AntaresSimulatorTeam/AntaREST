@@ -3,22 +3,22 @@ import { Box, Button, Divider } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { editStudy } from "../../../../../../../services/api/study";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import { StudyMetadata } from "../../../../../../common/types";
+import { editStudy } from "../../../../../../services/api/study";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   FIRST_JANUARY_OPTIONS,
   FormValues,
   WEEK_OPTIONS,
   YEAR_OPTIONS,
-} from "../utils";
-import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
-import { useFormContext } from "../../../../../../common/Form";
-import useDebouncedEffect from "../../../../../../../hooks/useDebouncedEffect";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import Fieldset from "../../../../../../common/Fieldset";
+} from "./utils";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import { useFormContext } from "../../../../../common/Form";
+import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import Fieldset from "../../../../../common/Fieldset";
 
 interface Props {
   study: StudyMetadata;
