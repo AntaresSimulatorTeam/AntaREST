@@ -38,7 +38,8 @@ function AddClusterForm() {
       control={control}
       fullWidth
       rules={{
-        required: t("form.field.required") as string,
+        required:
+          required === true ? (t("form.field.required") as string) : undefined,
       }}
     />
   );
@@ -64,12 +65,6 @@ function AddClusterForm() {
         )}
         options={options}
         control={control}
-        /* formControlProps={{
-          sx: {
-            flex: 1,
-            boxSizing: "border-box",
-          },
-        }}*/
         sx={{ width: "auto", minWidth: "250px" }}
         rules={{
           required: t("form.field.required") as string,

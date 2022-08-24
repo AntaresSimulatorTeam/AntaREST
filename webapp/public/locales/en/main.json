@@ -361,6 +361,7 @@
     "study.modelization.bindingConst.enabled": "Enabled",
     "study.modelization.bindingConst.newBindingConst": "New binding constraint",
     "study.modelization.bindingConst.constraintTerm": "Constraint term",
+    "study.modelization.bindingConst.newConstraintTerm": "New constraint term",
     "study.modelization.bindingConst.addConstraintTerm": "Add constraint term",
     "study.modelization.bindingConst.weight": "Weight",
     "study.modelization.bindingConst.offset": "Offset",

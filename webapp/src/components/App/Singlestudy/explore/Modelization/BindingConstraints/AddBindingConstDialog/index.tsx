@@ -28,7 +28,7 @@ function AddBindingConstDialog(props: PropType) {
   const { onCancel } = dialogProps;
   const defaultValues: CreateBindingConstraint = {
     name: "",
-    enabled: false,
+    enabled: true,
     time_step: TimeStep.HOURLY,
     operator: BindingConstraintOperator.LESS,
     coeffs: {},
@@ -42,9 +42,9 @@ function AddBindingConstDialog(props: PropType) {
           action: CommandEnum.CREATE_BINDING_CONSTRAINT,
           args: {
             name,
-            enabled,
-            time_step,
-            operator,
+            enabled: enabled !== undefined ? enabled : true,
+            time_step: time_step || TimeStep.HOURLY,
+            operator: operator || BindingConstraintOperator.LESS,
             coeffs: {},
             comments,
           },

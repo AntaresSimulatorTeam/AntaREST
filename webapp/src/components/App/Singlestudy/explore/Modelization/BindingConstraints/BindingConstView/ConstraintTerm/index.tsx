@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useMemo, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -81,9 +81,9 @@ interface ItemProps {
 export function ConstraintItem(props: ItemProps) {
   const { options, constraint, saveValue, deleteTerm } = props;
   const [t] = useTranslation();
-  const [isLink, setIsLink] = useState(isDataLink(constraint.data));
   const [weight, setWeight] = useState(constraint.weight);
   const [offset, setOffset] = useState(constraint.offset);
+  const isLink = useMemo(() => isDataLink(constraint.data), [constraint.data]);
   const initValue1 = useMemo(
     () =>
       isLink
@@ -131,36 +131,10 @@ export function ConstraintItem(props: ItemProps) {
     });
   }, DEBOUNCE_DELAY);
 
-  const handleToggleLink = useCallback((): void => {
-    const v1 = isLink
-      ? options.clusters[0].element.id
-      : options.links[0].element.id;
-    const v2 = isLink
-      ? options.clusters[0].item_list[0].id
-      : options.links[0].item_list[0].id;
-    saveValue({
-      id: constraint.id,
-      data: isLink
-        ? {
-            area: v1,
-            cluster: v2,
-          }
-        : {
-            area1: v1,
-            area2: v2,
-          },
-    });
-    setValue1(v1);
-    setValue2(v2);
-    setIsLink((value) => !value);
-  }, [constraint, isLink, options.clusters, options.links, saveValue]);
-
   return (
     <ConstraintItemRoot>
       <ConstraintElement
         title="Weight"
-        isLink={isLink}
-        onToggleType={handleToggleLink}
         left={
           <TextField
             label={t("study.modelization.bindingConst.weight")}

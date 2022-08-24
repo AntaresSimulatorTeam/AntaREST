@@ -361,6 +361,7 @@
     "study.modelization.bindingConst.enabled": "Activé",
     "study.modelization.bindingConst.newBindingConst": "Nouvelle contrainte couplante",
     "study.modelization.bindingConst.constraintTerm": "Termes de contraintes",
+    "study.modelization.bindingConst.newConstraintTerm": "Nouveau terme",
     "study.modelization.bindingConst.addConstraintTerm": "Ajouter un terme",
     "study.modelization.bindingConst.weight": "Poids",
     "study.modelization.bindingConst.offset": "Offset",
