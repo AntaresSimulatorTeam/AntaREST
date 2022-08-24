@@ -26,16 +26,7 @@ function Fields(props: Props) {
 
   return (
     <Box>
-      <Fieldset
-        legend={t("study.configuration.optimization.optimization")}
-        contentProps={{
-          sx: {
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          },
-        }}
-      >
+      <Fieldset legend={t("study.configuration.optimization.optimization")}>
         <SwitchFE
           label={t("study.configuration.optimization.bindingConstraints")}
           name="bindingConstraints"
