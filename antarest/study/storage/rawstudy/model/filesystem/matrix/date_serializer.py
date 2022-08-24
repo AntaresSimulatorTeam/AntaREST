@@ -259,7 +259,7 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
 
 class FactoryDateSerializer:
     """
-    Factory to choice correct DateMatrixSerializer according antares time frequency
+    Factory to choose correct DateMatrixSerializer according antares time frequency
     """
 
     @staticmethod

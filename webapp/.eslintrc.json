@@ -1,8 +1,4 @@
 {
-  "env": {
-    "browser": true,
-    "es6": true
-  },
   "extends": [
     "eslint:recommended",
     "airbnb",
@@ -28,11 +24,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "ecmaVersion": 2018,
-    "sourceType": "module"
+    "ecmaVersion": 2018
   },
   "rules": {
     "@typescript-eslint/no-shadow": "off",
@@ -67,9 +59,7 @@
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
     "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
-    "react/react-in-jsx-scope": "off",
     "react/jsx-props-no-spreading": "off",
-    "react/jsx-uses-react": "off",
     "react/no-unstable-nested-components": [
       "error",
       { "allowAsProps": true }

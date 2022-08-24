@@ -295,12 +295,13 @@ class SimpleSyncTaskService(ITaskService):
 
     def add_worker_task(
         self,
-        task_type: str,
+        task_type: TaskType,
+        task_queue: str,
         task_args: Dict[str, Union[int, float, bool, str]],
         name: Optional[str],
         ref_id: Optional[str],
         request_params: RequestParameters,
-    ) -> str:
+    ) -> Optional[str]:
         raise NotImplementedError()
 
     def add_task(

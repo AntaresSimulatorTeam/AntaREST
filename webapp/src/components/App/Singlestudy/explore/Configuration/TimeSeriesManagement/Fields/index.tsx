@@ -5,27 +5,20 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
 } from "@mui/material";
-import { StudyMetadata } from "../../../../../../../common/types";
+import { capitalize } from "lodash";
+import * as R from "ramda";
 import CheckBoxFE from "../../../../../../common/fieldEditors/CheckBoxFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContext } from "../../../../../../common/Form";
-import {
-  FormValues,
-  SEASONAL_CORRELATION_OPTIONS,
-  TimeSeriesType,
-} from "../utils";
+import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "../utils";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
-interface Props {
-  study: StudyMetadata;
-}
-
-function Fields(props: Props) {
-  const { register } = useFormContext<FormValues>();
+function Fields() {
+  const { control, getValues, setValue } = useFormContext<TSFormFields>();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -33,7 +26,7 @@ function Fields(props: Props) {
 
   return (
     <TableContainer>
-      <Table sx={{ minWidth: "1050px" }}>
+      <Table sx={{ minWidth: "1050px" }} size="small">
         <TableHead>
           <TableRow sx={{ th: { py: 1, borderBottom: "none" } }}>
             <TableCell />
@@ -77,85 +70,127 @@ function Fields(props: Props) {
             "th, td": { borderBottom: borderStyle },
           }}
         >
-          {(
-            Object.keys(TimeSeriesType) as Array<keyof typeof TimeSeriesType>
-          ).map((row) => {
-            const type = TimeSeriesType[row];
-            const isSpecialType =
-              type === TimeSeriesType.Renewables || type === TimeSeriesType.NTC;
-            const emptyDisplay = "-";
+          {R.values(TSType)
+            .filter((type) => !!getValues(type))
+            .map((type) => {
+              const isSpecialType =
+                type === TSType.Renewables || type === TSType.NTC;
+              const emptyDisplay = "-";
+              const notApplicableDisplay = "n/a";
+              const isReadyMadeStatusEnable = !getValues(
+                `${type}.stochasticTsStatus`
+              );
 
-            const render = (node: React.ReactNode) => {
-              return isSpecialType ? emptyDisplay : node;
-            };
+              const ifNotSpecialType = (
+                fn: (
+                  t: Exclude<TSType, TSType.Renewables | TSType.NTC>
+                ) => React.ReactNode
+              ) => {
+                return isSpecialType ? emptyDisplay : fn(type);
+              };
 
-            return (
-              <TableRow key={row}>
-                <TableCell sx={{ fontWeight: "bold" }}>{row}</TableCell>
-                <TableCell align="center">
-                  <SwitchFE {...register(`${type}.readyMadeTsStatus`)} />
-                </TableCell>
-                <TableCell align="center">
-                  {render(
-                    <SwitchFE {...register(`${type}.stochasticTsStatus`)} />
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  {render(
-                    <TextField
-                      type="number"
-                      {...register(`${type}.number`, {
-                        valueAsNumber: true,
-                      })}
+              return (
+                <TableRow key={type}>
+                  <TableCell sx={{ fontWeight: "bold" }}>
+                    {capitalize(type)}
+                  </TableCell>
+                  <TableCell align="center">
+                    <SwitchFE
+                      value={isReadyMadeStatusEnable}
+                      onChange={(_, checked) => {
+                        setValue(
+                          `${type}.stochasticTsStatus`,
+                          !checked as never
+                        );
+                      }}
                     />
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  {render(<CheckBoxFE {...register(`${type}.refresh`)} />)}
-                </TableCell>
-                <TableCell align="center">
-                  {render(
-                    <TextField
-                      type="number"
-                      {...register(`${type}.refreshInterval`, {
-                        valueAsNumber: true,
-                      })}
+                  </TableCell>
+                  <TableCell align="center">
+                    <SwitchFE
+                      name={`${type}.stochasticTsStatus`}
+                      control={control}
                     />
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  {render(
-                    type !== TimeSeriesType.Thermal ? (
-                      <SelectFE
-                        options={SEASONAL_CORRELATION_OPTIONS}
-                        {...register(`${type}.seasonCorrelation`)}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) => (
+                      <NumberFE
+                        name={`${t}.number`}
+                        control={control}
+                        size="small"
+                        fullWidth
+                        disabled={isReadyMadeStatusEnable}
+                      />
+                    ))}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) => (
+                      <CheckBoxFE
+                        name={`${t}.refresh`}
+                        control={control}
+                        disabled={isReadyMadeStatusEnable}
+                      />
+                    ))}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) => (
+                      <NumberFE
+                        name={`${t}.refreshInterval`}
+                        control={control}
+                        size="small"
+                        fullWidth
+                        disabled={isReadyMadeStatusEnable}
+                      />
+                    ))}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) =>
+                      t !== TSType.Thermal ? (
+                        <SelectFE
+                          name={`${t}.seasonCorrelation`}
+                          options={SEASONAL_CORRELATION_OPTIONS}
+                          control={control}
+                          size="small"
+                          disabled={isReadyMadeStatusEnable}
+                        />
+                      ) : (
+                        notApplicableDisplay
+                      )
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) => (
+                      <CheckBoxFE
+                        name={`${t}.storeInInput`}
+                        control={control}
+                        disabled={isReadyMadeStatusEnable}
+                      />
+                    ))}
+                  </TableCell>
+                  <TableCell align="center">
+                    {ifNotSpecialType((t) => (
+                      <CheckBoxFE
+                        name={`${t}.storeInOutput`}
+                        control={control}
+                        disabled={isReadyMadeStatusEnable}
+                      />
+                    ))}
+                  </TableCell>
+                  <TableCell align="center">
+                    <CheckBoxFE name={`${type}.intraModal`} control={control} />
+                  </TableCell>
+                  <TableCell align="center">
+                    {type !== TSType.NTC ? (
+                      <CheckBoxFE
+                        name={`${type}.interModal`}
+                        control={control}
                       />
                     ) : (
-                      "n/a"
-                    )
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  {render(<CheckBoxFE {...register(`${type}.storeInInput`)} />)}
-                </TableCell>
-                <TableCell align="center">
-                  {render(
-                    <CheckBoxFE {...register(`${type}.storeInOutput`)} />
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  <CheckBoxFE {...register(`${type}.intraModal`)} />
-                </TableCell>
-                <TableCell align="center">
-                  {type !== TimeSeriesType.NTC ? (
-                    <CheckBoxFE {...register(`${type}.interModal`)} />
-                  ) : (
-                    emptyDisplay
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
+                      emptyDisplay
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
         </TableBody>
       </Table>
     </TableContainer>

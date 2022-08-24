@@ -1,5 +1,4 @@
 import { useState } from "react";
-import * as R from "ramda";
 import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
@@ -14,13 +13,14 @@ import {
   getStudiesState,
   getStudyIdsFilteredAndSorted,
 } from "../../../redux/selectors";
-import { FetchStatus } from "../../../redux/utils";
 import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
 import FilterDrawer from "./FilterDrawer";
+import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
+import RefreshButton from "./RefreshButton";
 
 function Studies() {
   const [t] = useTranslation();
-  const studiesFilteredAndSorted = useAsyncAppSelector({
+  const res = useAsyncAppSelector({
     entityStateSelector: getStudiesState,
     fetchAction: fetchStudies,
     valueSelector: getStudyIdsFilteredAndSorted,
@@ -53,22 +53,24 @@ function Studies() {
       >
         <SideNav />
         <Divider sx={{ width: "1px", height: "98%", bgcolor: "divider" }} />
-        {R.cond([
-          [R.equals(FetchStatus.Loading), () => <SimpleLoader />],
-          [
-            R.equals(FetchStatus.Succeeded),
-            () => <StudiesList studyIds={studiesFilteredAndSorted.value} />,
-          ],
-          [
-            R.equals(FetchStatus.Failed),
-            () => {
-              // TODO Create a generic component to display error
-              return (
-                <div>Error: {studiesFilteredAndSorted.error?.toString()}</div>
-              );
-            },
-          ],
-        ])(studiesFilteredAndSorted.status)}
+        <UseAsyncAppSelectorCond
+          response={res}
+          ifLoading={() => <SimpleLoader />}
+          ifFailed={() => (
+            <Box
+              sx={{
+                width: 1,
+                height: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <RefreshButton showLabel />
+            </Box>
+          )}
+          ifSucceeded={(value) => <StudiesList studyIds={value} />}
+        />
         <FilterDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
       </Box>
     </RootPage>

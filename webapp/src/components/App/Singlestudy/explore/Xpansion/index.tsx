@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
 import { Box, Button } from "@mui/material";
@@ -11,12 +11,20 @@ import {
 } from "../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import TabWrapper from "../TabWrapper";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [configExist, setConfigExist] = useState<boolean>(true);
+  const [exist, setExist] = useState<boolean>(false);
+
+  const { data: configExist } = usePromiseWithSnackbarError(
+    () => xpansionConfigurationExist(study.id),
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
+    }
+  );
 
   const tabList = useMemo(
     () => [
@@ -40,6 +48,10 @@ function Xpansion() {
     [study]
   );
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const createXpansion = async () => {
     try {
       if (study) {
@@ -51,26 +63,13 @@ function Xpansion() {
         e as AxiosError
       );
     } finally {
-      setConfigExist(true);
+      setExist(true);
     }
   };
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        if (study) {
-          const exist = await xpansionConfigurationExist(study.id);
-          setConfigExist(exist);
-        }
-      } catch (e) {
-        enqueueErrorSnackbar(
-          t("xpansion.error.loadConfiguration"),
-          e as AxiosError
-        );
-      }
-    };
-    init();
-  });
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
@@ -83,7 +82,7 @@ function Xpansion() {
       boxSizing="border-box"
       overflow="hidden"
     >
-      {!configExist ? (
+      {!configExist || exist ? (
         <Box
           display="flex"
           justifyContent="center"

@@ -10,31 +10,9 @@ from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.utils import get_commit_id
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-
-
-def get_commit_id(path_resources: Path) -> Optional[str]:
-
-    commit_id = None
-
-    path_commit_id = path_resources / "commit_id"
-    if path_commit_id.exists():
-        commit_id = path_commit_id.read_text()[:-1]
-    else:
-        command = "git log -1 HEAD --format=%H"
-        process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
-        if process.returncode == 0:
-            commit_id = process.stdout.decode("utf-8")
-
-    if commit_id is not None:
-
-        def remove_carriage_return(value: str) -> str:
-            return value[:-1]
-
-        commit_id = remove_carriage_return(commit_id)
-
-    return commit_id
 
 
 class StatusDTO(BaseModel):

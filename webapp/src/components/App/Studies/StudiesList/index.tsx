@@ -8,7 +8,6 @@ import {
   ListItemText,
   SelectChangeEvent,
   ListItemIcon,
-  Button,
   Tooltip,
   FormControl,
   InputLabel,
@@ -21,7 +20,6 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import FolderOffIcon from "@mui/icons-material/FolderOff";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
 import { StudyMetadata } from "../../../../common/types";
@@ -30,7 +28,6 @@ import {
   STUDIES_LIST_HEADER_HEIGHT,
 } from "../../../../theme";
 import {
-  fetchStudies,
   setStudyScrollPosition,
   StudiesSortConf,
   updateStudiesSortConf,
@@ -47,6 +44,7 @@ import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
 import BatchModeMenu from "../BatchModeMenu";
+import RefreshButton from "../RefreshButton";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -242,15 +240,7 @@ function StudiesList(props: StudiesListProps) {
             selectionMode={selectionMode}
             setSelectionMode={setSelectionMode}
           />
-          <Tooltip title={t("studies.refresh") as string} sx={{ mr: 4 }}>
-            <Button
-              color="primary"
-              onClick={() => dispatch(fetchStudies())}
-              variant="outlined"
-            >
-              <RefreshIcon />
-            </Button>
-          </Tooltip>
+          <RefreshButton />
           <FormControl
             sx={{
               display: "flex",

@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { LaunchOptions } from "../services/api/study";
 
 export type IdType = number | string;
 
@@ -101,6 +100,36 @@ export interface VariantTreeDTO {
 export interface VariantTree {
   node: StudyMetadata;
   children: Array<VariantTree>;
+}
+
+export interface AdequacyPatchParams {
+  legacy?: boolean;
+}
+
+export interface XpansionParams {
+  enabled: boolean;
+  sensitivity_mode?: boolean;
+  output_id?: string;
+}
+
+export interface LaunchOptions {
+  xpansion?: XpansionParams;
+  // eslint-disable-next-line camelcase
+  xpansion_r_version?: boolean;
+  // eslint-disable-next-line camelcase
+  nb_cpu?: number;
+  // eslint-disable-next-line camelcase
+  time_limit?: number;
+  // eslint-disable-next-line camelcase
+  post_processing?: boolean;
+  // eslint-disable-next-line camelcase
+  adequacy_patch?: AdequacyPatchParams;
+  // eslint-disable-next-line camelcase
+  output_suffix?: string;
+  // eslint-disable-next-line camelcase
+  other_options?: string;
+  // eslint-disable-next-line camelcase
+  auto_unzip?: boolean;
 }
 
 export type JobStatus = "running" | "pending" | "success" | "failed";
@@ -476,10 +505,19 @@ export interface MatrixOperationDTO {
   value: number;
 }
 
-export interface MatrixEditDTO {
-  slices: MatrixSliceDTO[];
+export interface MatrixBaseEditDTO {
   operation: MatrixOperationDTO;
 }
+
+export interface MatrixSliceEditDTO extends MatrixBaseEditDTO {
+  slices: MatrixSliceDTO[];
+}
+
+export interface MatrixSingleEditDTO extends MatrixBaseEditDTO {
+  coordinates: number[][];
+}
+
+export type MatrixEditDTO = MatrixSliceDTO | MatrixSingleEditDTO;
 
 export interface MatrixAggregationResult {
   index: MatrixIndex;

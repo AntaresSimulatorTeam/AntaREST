@@ -17,6 +17,7 @@ export async function getDefaultValues<T extends FieldValues>(
   const pathPrefix = `input/${pathType}/clusters/${area}/list/${cluster}`;
   const data: T = await getStudyData(studyId, pathPrefix, 3);
   Object.keys(noDataValues).forEach((item) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data as any)[item] =
       data[item] !== undefined ? data[item] : noDataValues[item];
   });
@@ -30,14 +31,18 @@ export const saveField = R.curry(
     noDataValues: Partial<T>,
     name: string,
     path: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultValues: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any
   ): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (data === (noDataValues as any)[name] || data === undefined) {
       const { [name]: ignore, ...toEdit } = defaultValues;
       let edit = {};
       Object.keys(toEdit).forEach((item) => {
         if (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           toEdit[item] !== (noDataValues as any)[item] &&
           toEdit[item] !== undefined
         ) {

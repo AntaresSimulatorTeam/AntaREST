@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -18,13 +17,11 @@ import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnac
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../../services/utils/index";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 
 function Settings() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const [settings, setSettings] = useState<XpansionSettings>();
-  const [constraints, setConstraints] = useState<Array<string>>();
-  const [loaded, setLoaded] = useState<boolean>(false);
   const [constraintViewDialog, setConstraintViewDialog] = useState<{
     filename: string;
     content: string;
@@ -32,49 +29,36 @@ function Settings() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const initSettings = useCallback(async () => {
-    try {
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    reload: reloadSettings,
+  } = usePromiseWithSnackbarError(
+    async () => {
       if (study) {
-        const tempSettings = await getXpansionSettings(study.id);
-        setSettings(tempSettings);
+        return getXpansionSettings(study.id);
       }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.loadConfiguration"),
-        e as AxiosError
-      );
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
     }
-  }, [study?.id, t]);
+  );
 
-  const initFiles = useCallback(async () => {
-    try {
-      if (study) {
-        const tempConstraints = await getAllConstraints(study.id);
-        setConstraints(tempConstraints);
+  const { data: constraints, isLoading: constraintsLoading } =
+    usePromiseWithSnackbarError(
+      async () => {
+        if (study) {
+          return getAllConstraints(study.id);
+        }
+      },
+      {
+        errorMessage: t("xpansion.error.loadConfiguration"),
       }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.loadConfiguration"),
-        e as AxiosError
-      );
-    }
-  }, [study?.id, t]);
+    );
 
-  const init = useCallback(async () => {
-    try {
-      if (study) {
-        initSettings();
-        initFiles();
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.loadConfiguration"),
-        e as AxiosError
-      );
-    } finally {
-      setLoaded(true);
-    }
-  }, [study?.id, t, initSettings, initFiles]);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const updateSettings = async (value: XpansionSettings) => {
     try {
@@ -93,7 +77,7 @@ function Settings() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
-      initSettings();
+      reloadSettings();
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
@@ -111,13 +95,13 @@ function Settings() {
     }
   };
 
-  useEffect(() => {
-    init();
-  }, [init]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
-      {loaded && settings ? (
+      {!settingsLoading && !constraintsLoading && settings ? (
         <Box sx={{ width: "100%", height: "100%", p: 2 }}>
           <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
             <SettingsForm

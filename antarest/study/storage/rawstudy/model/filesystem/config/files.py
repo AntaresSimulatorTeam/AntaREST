@@ -62,7 +62,9 @@ class ConfigPathBuilder:
             study_path
         )
 
-        study_path_without_zip_extension = study_path.parent / study_path.stem
+        study_path_without_zip_extension = study_path.parent / (
+            study_path.stem if study_path.suffix == ".zip" else study_path.name
+        )
 
         return FileStudyTreeConfig(
             study_path=study_path,
@@ -223,7 +225,9 @@ class ConfigPathBuilder:
 
         files = sorted(output_path.iterdir())
         sims = {
-            f.stem: ConfigPathBuilder.parse_simulation(f)
+            f.stem
+            if f.suffix == ".zip"
+            else f.name: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
             if (f / "about-the-study").exists() or f.suffix == ".zip"
         }
@@ -233,7 +237,8 @@ class ConfigPathBuilder:
     def parse_simulation(path: Path) -> Optional["Simulation"]:
         modes = {"eco": "economy", "adq": "adequacy"}
         regex: Any = re.search(
-            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.stem
+            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)",
+            path.stem if path.suffix == ".zip" else path.name,
         )
         try:
             if path.suffix == ".zip":

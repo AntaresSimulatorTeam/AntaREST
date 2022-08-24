@@ -64,6 +64,9 @@ from antarest.study.business.area_management import (
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.timeseries_config_management import (
+    TimeSeriesConfigManager,
+)
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
     XpansionManager,
@@ -143,6 +146,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
+from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +181,7 @@ class StudyService:
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
+        self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.cache_service = cache_service
@@ -362,7 +367,7 @@ class StudyService:
                     StudyPermissionType.READ,
                     raising=False,
                 )
-                and study_matcher(name, workspace, folder),
+                and study_matcher(name, workspace, folder)(study_dto),
                 studies.values(),
             )
         }
@@ -965,7 +970,7 @@ class StudyService:
         uuid: str,
         params: RequestParameters,
         dest: Path,
-        outputs: bool = True,
+        output_list: Optional[List[str]] = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
@@ -973,7 +978,7 @@ class StudyService:
         self._assert_study_unarchived(study)
 
         return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, outputs
+            study, dest, len(output_list or []) > 0, output_list
         )
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
@@ -1055,12 +1060,7 @@ class StudyService:
             )
         )
 
-        logger.info(
-            "delete output %s on study %s by user %s",
-            output_name,
-            uuid,
-            params.get_user_id(),
-        )
+        logger.info(f"Output {output_name} deleted from study {uuid}")
 
     def download_outputs(
         self,
@@ -1456,18 +1456,18 @@ class StudyService:
                 parsed_commands,
                 self.storage_service,
             )
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_DATA_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
-                )
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
             )
-            logger.info(
-                "Study %s updated by user %s",
-                uuid,
-                params.get_user_id(),
-            )
+        )
+        logger.info(
+            "Study %s updated by user %s",
+            uuid,
+            params.get_user_id(),
+        )
 
     def edit_study(
         self,
@@ -1883,15 +1883,7 @@ class StudyService:
 
         def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            with open(
-                self.storage_service.raw_study_service.get_archive_path(
-                    study_to_archive
-                ),
-                "rb",
-            ) as fh:
-                self.storage_service.raw_study_service.import_study(
-                    study_to_archive, io.BytesIO(fh.read())
-                )
+            self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
             os.unlink(
@@ -2316,13 +2308,32 @@ class StudyService:
                     )
                     raise e
 
-            task_id = self.task_service.add_task(
-                unarchive_output_task,
-                task_name,
-                task_type=TaskType.UNARCHIVE,
-                ref_id=study.id,
-                custom_event_messages=None,
-                request_params=params,
-            )
+            task_id: Optional[str] = None
+            workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
+            if workspace != DEFAULT_WORKSPACE_NAME:
+                dest = Path(study.path) / "output" / output_id
+                src = Path(study.path) / "output" / f"{output_id}.zip"
+                task_id = self.task_service.add_worker_task(
+                    TaskType.UNARCHIVE,
+                    f"unarchive_{workspace}",
+                    ArchiveTaskArgs(
+                        src=str(src),
+                        dest=str(dest),
+                        remove_src=not keep_src_zip,
+                    ).dict(),
+                    name=task_name,
+                    ref_id=study.id,
+                    request_params=params,
+                )
+
+            if not task_id:
+                task_id = self.task_service.add_task(
+                    unarchive_output_task,
+                    task_name,
+                    task_type=TaskType.UNARCHIVE,
+                    ref_id=study.id,
+                    custom_event_messages=None,
+                    request_params=params,
+                )
 
             return task_id

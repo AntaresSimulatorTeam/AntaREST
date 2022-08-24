@@ -3,7 +3,6 @@
 mistune~=0.8.4
 m2r~=0.2.1
 
-wheel
 jsonref~=0.2
 PyYAML~=5.4.1
 filelock~=3.4.2

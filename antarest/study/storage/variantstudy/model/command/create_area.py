@@ -254,6 +254,11 @@ class CreateArea(ICommand):
                 self.command_context.generator_matrix_constants.get_null_matrix()
             )
 
+        if version >= 830:
+            new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
+                "adequacy-patch": {"adequacy-patch-mode": "outside"}
+            }
+
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
 
         study_data.tree.save(new_area_data)

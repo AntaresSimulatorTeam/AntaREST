@@ -1,6 +1,5 @@
 import { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
-import { ElementType, PropsWithChildren, ReactNode } from "react";
 import BasicPage from "./BasicPage";
 
 /**
@@ -9,17 +8,18 @@ import BasicPage from "./BasicPage";
 
 interface Props {
   title: string;
-  titleIcon?: ElementType<SvgIconComponent>;
-  headerTopRight?: ReactNode;
-  headerBottom?: ReactNode;
+  titleIcon?: SvgIconComponent;
+  headerTopRight?: React.ReactNode;
+  headerBottom?: React.ReactNode;
   hideHeaderDivider?: boolean;
+  children?: React.ReactNode;
 }
 
 /**
  * Component
  */
 
-function RootPage(props: PropsWithChildren<Props>) {
+function RootPage(props: Props) {
   const {
     title,
     titleIcon,

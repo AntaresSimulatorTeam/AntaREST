@@ -5,7 +5,7 @@ export function toAutoSubmitConfig(
   value: FormProps["autoSubmit"]
 ): Required<AutoSubmitConfig> {
   return {
-    wait: 1000,
+    wait: 500, // ! Keep 2s while this issue is not fixed: https://github.com/AntaresSimulatorTeam/AntaREST/issues/1050
     ...(RA.isPlainObj(value) ? value : { enable: !!value }),
   };
 }

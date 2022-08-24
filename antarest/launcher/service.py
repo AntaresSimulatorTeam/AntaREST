@@ -45,6 +45,7 @@ from antarest.launcher.model import (
     JobLog,
     JobLogType,
     LauncherParametersDTO,
+    XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -133,12 +134,13 @@ class LauncherService:
                 logger.info(
                     f"Applying extension {ext} after_export_flat_hook on job {job_id}"
                 )
-                self.extensions[ext].after_export_flat_hook(
-                    job_id,
-                    study_id,
-                    study_exported_path,
-                    launcher_params.__getattribute__(ext),
-                )
+                with db():
+                    self.extensions[ext].after_export_flat_hook(
+                        job_id,
+                        study_id,
+                        study_exported_path,
+                        launcher_params.__getattribute__(ext),
+                    )
 
     def _before_import_hooks(
         self,
@@ -465,20 +467,24 @@ class LauncherService:
         target_path: Path,
         launcher_params: LauncherParametersDTO,
     ) -> None:
+        self.append_log(
+            job_id, f"Extracting study {study_id}", JobLogType.BEFORE
+        )
         with db():
-            self.append_log(
-                job_id, f"Extracting study {study_id}", JobLogType.BEFORE
-            )
             self.study_service.export_study_flat(
                 study_id,
                 RequestParameters(DEFAULT_ADMIN_USER),
                 target_path,
-                outputs=False,
+                output_list=[launcher_params.xpansion.output_id]
+                if launcher_params.xpansion
+                and isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                and launcher_params.xpansion.output_id is not None
+                else None,
             )
-            self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-            self._after_export_flat_hooks(
-                job_id, study_id, target_path, launcher_params
-            )
+        self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
+        self._after_export_flat_hooks(
+            job_id, study_id, target_path, launcher_params
+        )
 
     def _get_job_output_fallback_path(self, job_id: str) -> Path:
         return self.config.storage.tmp_dir / f"output_{job_id}"

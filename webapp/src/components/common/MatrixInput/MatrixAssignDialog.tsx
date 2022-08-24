@@ -111,7 +111,7 @@ function MatrixAssignDialog(props: Props) {
       <UsePromiseCond
         response={resList}
         ifPending={() => <SimpleLoader />}
-        ifRejected={(error) => <div>{error}</div>}
+        ifRejected={(error) => <div>{error?.toString()}</div>}
         ifResolved={(dataset) =>
           dataset && (
             <SplitLayoutView
@@ -154,7 +154,7 @@ function MatrixAssignDialog(props: Props) {
                   <UsePromiseCond
                     response={resMatrix}
                     ifPending={() => <SimpleLoader />}
-                    ifRejected={(error) => <div>{error}</div>}
+                    ifRejected={(error) => <div>{error?.toString()}</div>}
                     ifResolved={(matrix) =>
                       matrix && (
                         <>

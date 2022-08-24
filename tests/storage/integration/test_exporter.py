@@ -1,7 +1,10 @@
+import os
 from pathlib import Path
+from typing import Optional, List
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -18,6 +21,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
+from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -100,3 +104,52 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         sta_mini_zip_path=sta_mini_zip_path,
     )
     assert_data(data)
+
+
+@pytest.mark.parametrize(
+    "outputs,outputlist,denormalize",
+    [
+        (True, None, True),
+        (True, [], False),
+        (True, ["20201014-1427eco"], False),
+        (False, ["20201014-1427eco"], False),
+    ],
+)
+def test_export_flat(
+    tmp_path: Path,
+    sta_mini_zip_path: Path,
+    outputs: bool,
+    outputlist: Optional[List[str]],
+    denormalize: bool,
+):
+    path_studies = tmp_path / "studies"
+    path_studies.mkdir(exist_ok=True)
+
+    export_path = tmp_path / "exports"
+    export_path.mkdir()
+
+    with ZipFile(sta_mini_zip_path) as zip_output:
+        zip_output.extractall(path=path_studies)
+
+    export_study_flat(
+        path_studies / "STA-mini",
+        export_path / "STA-mini-export",
+        Mock(),
+        outputs,
+        outputlist,
+        denormalize=denormalize,
+    )
+
+    export_output_path = export_path / "STA-mini-export" / "output"
+    if outputs:
+        assert export_output_path.exists()
+        if outputlist is not None:
+            if len(outputlist) == 0:
+                assert len(os.listdir(export_output_path)) == 0
+            else:
+                for item in outputlist:
+                    assert (export_output_path / item).exists()
+        else:
+            assert len(os.listdir(export_output_path)) == 5
+    else:
+        assert not export_output_path.exists()

@@ -12,6 +12,7 @@ from typing import List, Optional
 from filelock import FileLock
 
 from antarest.core.config import Config
+from antarest.core.interfaces.service import IService
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
@@ -29,7 +30,7 @@ class WorkspaceNotFound(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-class Watcher:
+class Watcher(IService):
     """
     Files Watcher to listen raw studies changes and trigger a database update.
     """
@@ -43,29 +44,20 @@ class Watcher:
         study_service: StudyService,
         task_service: ITaskService,
     ):
+        super(Watcher, self).__init__()
         self.study_service = study_service
         self.task_service = task_service
         self.config = config
         self.should_stop = False
-        self.thread = (
-            threading.Thread(target=self._loop, daemon=True)
-            if not config.storage.watcher_lock
+        self.allowed_to_start = (
+            not config.storage.watcher_lock
             or Watcher._get_lock(config.storage.watcher_lock_delay)
-            else None
         )
 
     def start(self, threaded: bool = True) -> None:
-        """
-        Start watching
-        Returns:
-
-        """
         self.should_stop = False
-        if threaded:
-            if self.thread and not self.thread.is_alive():
-                self.thread.start()
-        else:
-            self._loop()
+        if self.allowed_to_start:
+            super(Watcher, self).start(threaded=threaded)
 
     def stop(self) -> None:
         self.should_stop = True

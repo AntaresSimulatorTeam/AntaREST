@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -16,33 +15,34 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../../common/FileTable";
 import { Title } from "../share/styles";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function Capacities() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const [capacities, setCapacities] = useState<Array<string>>();
-  const [loaded, setLoaded] = useState<boolean>(false);
   const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
     content: MatrixType;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const init = useCallback(async () => {
-    try {
+  const res = usePromiseWithSnackbarError(
+    async () => {
       if (study) {
-        const tempCapa = await getAllCapacities(study.id);
-        setCapacities(tempCapa);
+        return getAllCapacities(study.id);
       }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.loadConfiguration"),
-        e as AxiosError
-      );
-    } finally {
-      setLoaded(true);
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
     }
-  }, [study?.id, t]);
+  );
+
+  const { data: capacities, reload: reloadCapacities } = res;
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const addOneCapa = async (file: File) => {
     if (capacities) {
@@ -53,7 +53,7 @@ function Capacities() {
       } catch (e) {
         enqueueErrorSnackbar(t("xpansion.error.addFile"), e as AxiosError);
       } finally {
-        init();
+        reloadCapacities();
       }
     }
   };
@@ -70,44 +70,42 @@ function Capacities() {
   };
 
   const deleteCapa = async (filename: string) => {
-    if (capacities) {
-      const tempCapa = capacities.filter((a) => a !== filename);
-      try {
-        if (study) {
-          await deleteCapacity(study.id, filename);
-          setCapacities(tempCapa);
-        }
-      } catch (e) {
-        enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
+    try {
+      if (study) {
+        await deleteCapacity(study.id, filename);
+        reloadCapacities();
       }
+    } catch (e) {
+      enqueueErrorSnackbar(t("xpansion.error.deleteFile"), e as AxiosError);
     }
   };
 
-  useEffect(() => {
-    init();
-  }, [init]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
-      {loaded ? (
-        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
-            <FileTable
-              title={<Title>{t("xpansion.capacities")}</Title>}
-              content={
-                capacities?.map((item) => ({ id: item, name: item })) || []
-              }
-              onDelete={deleteCapa}
-              onRead={getOneCapa}
-              uploadFile={addOneCapa}
-              allowImport
-              allowDelete
-            />
-          </Paper>
-        </Box>
-      ) : (
-        <SimpleLoader />
-      )}
+      <UsePromiseCond
+        response={res}
+        ifPending={() => <SimpleLoader />}
+        ifRejected={(error) => <div>{error?.toString()}</div>}
+        ifResolved={(data) => (
+          <Box sx={{ width: "100%", height: "100%", p: 2 }}>
+            <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+              <FileTable
+                title={<Title>{t("xpansion.capacities")}</Title>}
+                content={data?.map((item) => ({ id: item, name: item })) || []}
+                onDelete={deleteCapa}
+                onRead={getOneCapa}
+                uploadFile={addOneCapa}
+                allowImport
+                allowDelete
+              />
+            </Paper>
+          </Box>
+        )}
+      />
       {!!capacityViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}

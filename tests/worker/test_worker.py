@@ -14,7 +14,7 @@ class DummyWorker(AbstractWorker):
     def __init__(
         self, event_bus: IEventBus, accept: List[str], tmp_path: Path
     ):
-        super().__init__(event_bus, accept)
+        super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:

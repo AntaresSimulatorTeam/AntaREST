@@ -1,4 +1,4 @@
-import { AsyncThunk, EntitySelectors } from "@reduxjs/toolkit";
+import { AsyncThunk } from "@reduxjs/toolkit";
 import { useEffect } from "react";
 import { AppState } from "../ducks";
 import { AppAsyncThunkConfig } from "../store";
@@ -6,25 +6,20 @@ import { AsyncEntityState, FetchStatus } from "../utils";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 
-interface UseAsyncEntityStateParams<Entity, TSelected> {
+interface UseAsyncEntityStateParams<Entity, Selected> {
   entityStateSelector: (state: AppState) => AsyncEntityState<Entity>;
   fetchAction: AsyncThunk<Entity[], undefined, AppAsyncThunkConfig>;
-  valueSelector: (state: AppState) => TSelected;
+  valueSelector: (state: AppState) => Selected;
 }
 
-interface UseAsyncEntityStateResponse<Entity, TSelected>
+export interface UseAsyncEntityStateResponse<Entity, Selected>
   extends Pick<AsyncEntityState<Entity>, "status" | "error"> {
-  value: TSelected;
+  value: Selected;
 }
 
-type Selectors<Entity> = EntitySelectors<Entity, AppState>;
-
-function useAsyncAppSelector<
-  Entity,
-  TSelected = ReturnType<Selectors<Entity>[keyof Selectors<Entity>]>
->(
-  params: UseAsyncEntityStateParams<Entity, TSelected>
-): UseAsyncEntityStateResponse<Entity, TSelected> {
+function useAsyncAppSelector<Entity, Selected>(
+  params: UseAsyncEntityStateParams<Entity, Selected>
+): UseAsyncEntityStateResponse<Entity, Selected> {
   const { entityStateSelector, fetchAction, valueSelector } = params;
   const status = useAppSelector((state) => entityStateSelector(state).status);
   const error = useAppSelector((state) => entityStateSelector(state).error);

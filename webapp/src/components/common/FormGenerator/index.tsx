@@ -1,11 +1,6 @@
 import * as R from "ramda";
 import { v4 as uuidv4 } from "uuid";
-import {
-  DeepPartial,
-  FieldValues,
-  Path,
-  UnpackNestedValue,
-} from "react-hook-form";
+import { DeepPartial, FieldValues, Path } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SxProps, Theme } from "@mui/material";
 import { Fragment, useMemo } from "react";
@@ -35,7 +30,7 @@ export interface IGeneratorField<T> {
     name: IGeneratorField<T>["name"],
     path: string,
     required?: boolean | string,
-    defaultValues?: UnpackNestedValue<DeepPartial<T>> | undefined
+    defaultValues?: DeepPartial<T>
   ) =>
     | Omit<
         RegisterOptionsPlus<T, Path<T> & (string | undefined)>,

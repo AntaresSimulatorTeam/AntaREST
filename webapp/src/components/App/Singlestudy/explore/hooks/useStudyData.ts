@@ -37,6 +37,7 @@ export default function useStudyData<T>(props: Props<T>): {
         dispatch(createStudyData(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);
+      } finally {
         setIsLoading(false);
       }
     } else {

@@ -84,10 +84,18 @@ interface SettingsGeneralDataOutput {
   storenewset: boolean;
 }
 
+interface SettingsGeneralDataAdequacyPatch {
+  // Activation
+  "include-adq-patch": boolean;
+  "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": boolean;
+  "set-to-null-ntc-between-physical-out-for-first-step": boolean;
+}
+
 interface SettingsGeneralData {
   // For unknown reason, `general` and `output` may be empty
   general?: Partial<SettingsGeneralDataGeneral>;
   output?: Partial<SettingsGeneralDataOutput>;
+  "adequacy patch"?: Partial<SettingsGeneralDataAdequacyPatch>;
 }
 
 export interface FormValues {
@@ -109,6 +117,9 @@ export interface FormValues {
   thematicTrimming: SettingsGeneralDataGeneral["thematic-trimming"];
   thematicTrimmingConfig: ThematicTrimmingConfig;
   filtering: SettingsGeneralDataGeneral["filtering"];
+  adequacyPatchActive: SettingsGeneralDataAdequacyPatch["include-adq-patch"];
+  adequacyPatchSetToNullFromTo: SettingsGeneralDataAdequacyPatch["set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"];
+  adequacyPatchSetToNullBetween: SettingsGeneralDataAdequacyPatch["set-to-null-ntc-between-physical-out-for-first-step"];
 }
 
 ////////////////////////////////////////////////////////////////
@@ -162,6 +173,9 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   geographicTrimming: false,
   thematicTrimming: false,
   filtering: false,
+  adequacyPatchActive: false,
+  adequacyPatchSetToNullBetween: true,
+  adequacyPatchSetToNullFromTo: true,
 };
 
 ////////////////////////////////////////////////////////////////
@@ -171,7 +185,11 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
-  const { general = {}, output = {} } = await getStudyData<SettingsGeneralData>(
+  const {
+    general = {},
+    output = {},
+    "adequacy patch": adequacyPatchConfig = {},
+  } = await getStudyData<SettingsGeneralData>(
     studyId,
     "settings/generaldata",
     2
@@ -223,6 +241,16 @@ export async function getFormValues(
     buildingMode,
     thematicTrimmingConfig: formatThematicTrimmingConfigDTO(
       thematicTrimmingConfigDto
+    ),
+    ...RA.renameKeys(
+      {
+        "include-adq-patch": "adequacyPatchActivate",
+        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step":
+          "adequacyPatchSetToNullFromTo",
+        "set-to-null-ntc-between-physical-out-for-first-step":
+          "adequacyPatchSetToNullBetween",
+      },
+      adequacyPatchConfig
     ),
   };
 }

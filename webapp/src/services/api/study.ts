@@ -14,6 +14,7 @@ import {
   LaunchJobDTO,
   StudyMetadataPatchDTO,
   ThematicTrimmingConfigDTO,
+  LaunchOptions,
 } from "../../common/types";
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
@@ -257,26 +258,6 @@ export const importFile = async (
   );
   return res.data;
 };
-
-export interface LaunchOptions {
-  xpansion?: boolean;
-  // eslint-disable-next-line camelcase
-  xpansion_r_version?: boolean;
-  // eslint-disable-next-line camelcase
-  nb_cpu?: number;
-  // eslint-disable-next-line camelcase
-  time_limit?: number;
-  // eslint-disable-next-line camelcase
-  post_processing?: boolean;
-  // eslint-disable-next-line camelcase
-  adequacy_patch?: object;
-  // eslint-disable-next-line camelcase
-  output_suffix?: string;
-  // eslint-disable-next-line camelcase
-  other_options?: string;
-  // eslint-disable-next-line camelcase
-  auto_unzip?: boolean;
-}
 
 export const launchStudy = async (
   sid: string,

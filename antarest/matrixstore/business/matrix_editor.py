@@ -1,11 +1,10 @@
 import operator
 from enum import Enum
-from typing import Optional, Any, List, cast
+from typing import Optional, Any, List, cast, Tuple
 
-import xarray as xr
+import numpy as np
+import pandas as pd  # type:ignore
 from pydantic import BaseModel, validator
-
-from antarest.matrixstore.model import MatrixData
 
 
 class MatrixSlice(BaseModel):
@@ -19,13 +18,13 @@ class MatrixSlice(BaseModel):
     @validator("row_to", always=True)
     def set_row_to(cls, v: Optional[int], values: Any) -> int:
         if v is None:
-            return cast(int, values["row_from"] + 1)
+            return cast(int, values["row_from"])
         return v
 
     @validator("column_to", always=True)
     def set_column_to(cls, v: Optional[int], values: Any) -> int:
         if v is None:
-            return cast(int, values["column_from"] + 1)
+            return cast(int, values["column_from"])
         return v
 
 
@@ -42,45 +41,63 @@ class Operation(BaseModel):
     operation: Operator
     value: float
 
-    def compute(self, x: Any) -> Any:
+    def compute(self, x: Any, use_coords: bool = False) -> Any:
+        def set_series(x):  # type:ignore
+            x.loc[~x.isnull()] = self.value
+            return x
+
         operation_dict = {
             Operator.ADD: operator.add,
             Operator.SUB: operator.sub,
             Operator.MUL: operator.mul,
             Operator.DIV: operator.truediv,
             Operator.ABS: lambda x, y: abs(x),
-            Operator.EQ: lambda x, y: y,
+            Operator.EQ: lambda x, y: set_series(x),  # type:ignore
         }
+        if not use_coords:
+            operation_dict[Operator.EQ] = lambda x, y: set_series(
+                x
+            )  # type:ignore
+        else:
+            operation_dict[Operator.EQ] = lambda x, y: y
+
         return operation_dict[self.operation](x, self.value)  # type: ignore
 
 
 class MatrixEditInstructionDTO(BaseModel):
-    slices: List[MatrixSlice]
+    slices: Optional[List[MatrixSlice]] = None
+    coordinates: Optional[List[Tuple[int, int]]] = None
     operation: Operation
 
 
 class MatrixEditor:
     @staticmethod
     def update_matrix_content_with_slices(
-        matrix_data: List[List[MatrixData]],
+        matrix_data: pd.DataFrame,
         slices: List[MatrixSlice],
         operation: Operation,
-    ) -> List[List[MatrixData]]:
+    ) -> pd.DataFrame:
+        mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
 
-        data_array = xr.DataArray(matrix_data, dims=["row", "col"])
-
-        mask = xr.zeros_like(data_array, dtype=bool)
         for matrix_slice in slices:
-            mask |= (
-                (data_array.coords["row"] >= matrix_slice.row_from)
-                & (data_array.coords["row"] < matrix_slice.row_to)
-                & (data_array.coords["col"] >= matrix_slice.column_from)
-                & (data_array.coords["col"] < matrix_slice.column_to)
-            )
+            mask.loc[
+                matrix_slice.row_from : matrix_slice.row_to,
+                matrix_slice.column_from : matrix_slice.column_to,
+            ] = True
 
-        new_matrix_data = xr.where(
-            mask,
-            operation.compute(data_array),  # type:ignore
-            data_array,
-        ).data.tolist()
-        return new_matrix_data  # type:ignore
+        new_matrix_data = matrix_data.where(mask).apply(operation.compute)
+        new_matrix_data[new_matrix_data.isnull()] = matrix_data
+
+        return new_matrix_data.astype(matrix_data.dtypes)
+
+    @staticmethod
+    def update_matrix_content_with_coordinates(
+        df: pd.DataFrame,
+        coordinates: List[Tuple[int, int]],
+        operation: Operation,
+    ) -> pd.DataFrame:
+        for (row, column) in coordinates:
+            df.iat[row, column] = operation.compute(
+                df.iat[row, column], use_coords=True
+            )
+        return df.astype(df.dtypes)

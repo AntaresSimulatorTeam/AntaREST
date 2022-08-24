@@ -1,3 +1,4 @@
+import io
 import logging
 import shutil
 import time
@@ -40,6 +41,7 @@ from antarest.study.storage.utils import (
     is_managed,
     remove_from_cache,
     create_new_empty_study,
+    export_study_flat,
 )
 
 logger = logging.getLogger(__name__)
@@ -313,27 +315,25 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata: RawStudy,
         dest: Path,
         outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         path_study = Path(metadata.path)
-        start_time = time.time()
-        ignore_patterns = (
-            (
-                lambda directory, contents: ["output"]
-                if str(directory) == str(path_study)
-                else []
+
+        if metadata.archived:
+            self.unarchive(metadata)
+        try:
+            export_study_flat(
+                path_study,
+                dest,
+                self.study_factory,
+                outputs,
+                output_list_filter,
+                denormalize,
             )
-            if not outputs
-            else None
-        )
-        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
-        stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
-        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        study.tree.denormalize()
-        duration = "{:.3f}".format(time.time() - stop_time)
-        logger.info(f"Study {path_study} denormalized in {duration}s")
+        finally:
+            if metadata.archived:
+                shutil.rmtree(metadata.path)
 
     def check_errors(
         self,
@@ -364,6 +364,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)
         return new_study_path
+
+    def unarchive(self, study: RawStudy) -> None:
+        with open(
+            self.get_archive_path(study),
+            "rb",
+        ) as fh:
+            self.import_study(study, io.BytesIO(fh.read()))
 
     def get_archive_path(self, study: RawStudy) -> Path:
         return Path(self.config.storage.archive_dir / f"{study.id}.zip")

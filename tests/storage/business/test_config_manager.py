@@ -58,6 +58,7 @@ def test_thematic_trimming_config():
     file_tree_mock.get.side_effect = [
         {},
         {"variables selection": {"select_var -": ["AVL DTG"]}},
+        {"variables selection": {"select_var -": ["AVL DTG"]}},
         {
             "variables selection": {
                 "selected_vars_reset": False,
@@ -70,7 +71,14 @@ def test_thematic_trimming_config():
     study.version = "800"
     assert config_manager.get_thematic_trimming(study) == expected
 
+    output_variable_810 = [var.value for var in OutputVariableBase] + [
+        var.value for var in OutputVariable810
+    ]
     study.version = "820"
+    expected = {var: True for var in output_variable_810}
+    expected[OutputVariableBase.AVL_DTG] = False
+    assert config_manager.get_thematic_trimming(study) == expected
+    study.version = "840"
     expected = {var: True for var in OUTPUT_VARIABLE_LIST}
     expected[OutputVariableBase.AVL_DTG] = False
     assert config_manager.get_thematic_trimming(study) == expected
@@ -102,4 +110,4 @@ def test_thematic_trimming_config():
         )
     )
 
-    assert len(OUTPUT_VARIABLE_LIST) == 61
+    assert len(OUTPUT_VARIABLE_LIST) == 63

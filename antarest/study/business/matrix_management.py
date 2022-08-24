@@ -1,13 +1,20 @@
 from typing import List
 
+import pandas as pd  # type:ignore
+
+from antarest.core.exceptions import (
+    ShouldNotHappenException,
+    BadEditInstructionException,
+)
 from antarest.matrixstore.business.matrix_editor import (
-    Operation,
-    MatrixSlice,
     MatrixEditor,
     MatrixEditInstructionDTO,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import (
@@ -34,17 +41,39 @@ class MatrixManager:
             self.storage_service.variant_study_service.command_factory.command_context.matrix_service
         )
 
-        whole_matrix = storage_service.get(metadata=study, url=path)
-        updated_matrix_data = whole_matrix["data"]
+        matrix_node = file_study.tree.get_node(url=path.split("/"))
+
+        if not isinstance(matrix_node, InputSeriesMatrix):
+            raise ShouldNotHappenException()
+
+        matrix_dataframe: pd.DataFrame = matrix_node.parse(
+            return_dataframe=True
+        )
         for edit_instruction in edit_instructions:
-            updated_matrix_data = (
-                MatrixEditor.update_matrix_content_with_slices(
-                    matrix_data=updated_matrix_data,
-                    slices=edit_instruction.slices,
-                    operation=edit_instruction.operation,
+            if edit_instruction.slices:
+                matrix_dataframe = (
+                    MatrixEditor.update_matrix_content_with_slices(
+                        matrix_data=matrix_dataframe,
+                        slices=edit_instruction.slices,
+                        operation=edit_instruction.operation,
+                    )
                 )
-            )
-        new_matrix_id = matrix_service.create(updated_matrix_data)
+            elif edit_instruction.coordinates:
+                matrix_dataframe = (
+                    MatrixEditor.update_matrix_content_with_coordinates(
+                        df=matrix_dataframe,
+                        coordinates=edit_instruction.coordinates,
+                        operation=edit_instruction.operation,
+                    )
+                )
+            else:
+                raise BadEditInstructionException(
+                    "A matrix edition instruction must contain coordinates or slices"
+                )
+
+        new_matrix_id = matrix_service.create(
+            matrix_dataframe.to_numpy().tolist()
+        )
 
         command = [
             ReplaceMatrix(

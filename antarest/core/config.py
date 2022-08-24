@@ -49,8 +49,8 @@ class SecurityConfig:
     @staticmethod
     def from_dict(data: JSON) -> "SecurityConfig":
         return SecurityConfig(
-            jwt_key=data["jwt"]["key"],
-            admin_pwd=data["login"]["admin"]["pwd"],
+            jwt_key=data.get("jwt", {}).get("key", ""),
+            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", ""),
             disabled=data.get("disabled", False),
             external_auth=ExternalAuthConfig.from_dict(
                 data.get("external_auth", {})
@@ -89,6 +89,11 @@ class DbConfig:
     db_admin_url: Optional[str] = None
     db_connect_timeout: int = 10
     pool_recycle: Optional[int] = None
+    pool_pre_ping: bool = False
+    pool_use_null: bool = False
+    pool_max_overflow: int = 10
+    pool_size: int = 5
+    pool_use_lifo: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "DbConfig":
@@ -97,6 +102,11 @@ class DbConfig:
             db_url=data.get("url", ""),
             db_connect_timeout=data.get("db_connect_timeout", 10),
             pool_recycle=data.get("pool_recycle", None),
+            pool_pre_ping=data.get("pool_pre_ping", False),
+            pool_use_null=data.get("pool_use_null", False),
+            pool_max_overflow=data.get("pool_max_overflow", 10),
+            pool_size=data.get("pool_size", 5),
+            pool_use_lifo=data.get("pool_use_lifo", False),
         )
 
 
@@ -203,15 +213,14 @@ class LauncherConfig:
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
-        try:
+        local: Optional[LocalConfig] = None
+        if "local" in data:
             local = LocalConfig.from_dict(data["local"])
-        except KeyError as e:
-            logger.error("Could not load local launcher", exc_info=e)
-            local = None
 
         slurm: Optional[SlurmConfig] = None
         if "slurm" in data:
             slurm = SlurmConfig.from_dict(data["slurm"])
+
         return LauncherConfig(
             default=data.get("default", "local"),
             local=local,
@@ -289,19 +298,38 @@ class CacheConfig:
 
 
 @dataclass(frozen=True)
+class RemoteWorkerConfig:
+    name: str
+    queues: List[str] = field(default_factory=list)
+
+    @staticmethod
+    def from_dict(data: JSON) -> "RemoteWorkerConfig":
+        return RemoteWorkerConfig(
+            name=data["name"], queues=data.get("queues", [])
+        )
+
+
+@dataclass(frozen=True)
 class TaskConfig:
     """
     Sub config object dedicated to the task module
     """
 
     max_workers: int = 5
+    remote_workers: List[RemoteWorkerConfig] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: JSON) -> "TaskConfig":
         return TaskConfig(
             max_workers=int(data["max_workers"])
             if "max_workers" in data
-            else 5
+            else 5,
+            remote_workers=list(
+                map(
+                    lambda x: RemoteWorkerConfig.from_dict(x),
+                    data.get("remote_workers", []),
+                )
+            ),
         )
 
 
@@ -357,12 +385,12 @@ class Config:
 
         """
         return Config(
-            security=SecurityConfig.from_dict(data["security"]),
+            security=SecurityConfig.from_dict(data.get("security", {})),
             storage=StorageConfig.from_dict(data["storage"]),
-            launcher=LauncherConfig.from_dict(data["launcher"]),
+            launcher=LauncherConfig.from_dict(data.get("launcher", {})),
             db=DbConfig.from_dict(data["db"]) if "db" in data else DbConfig(),
             logging=LoggingConfig.from_dict(data.get("logging", {})),
-            debug=data["debug"],
+            debug=data.get("debug", False),
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
             redis=RedisConfig.from_dict(data["redis"])

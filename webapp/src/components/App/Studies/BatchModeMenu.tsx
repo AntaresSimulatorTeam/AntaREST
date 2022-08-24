@@ -43,13 +43,15 @@ function BatchModeMenu(props: Props) {
             disabled={selectedIds.length === 0}
             onClick={() => setOpenLaunchModal(true)}
           >
-            <BoltIcon
-              sx={{
-                width: "24px",
-                height: "24px",
-              }}
-            />
-            {t("global.launch")}
+            <>
+              <BoltIcon
+                sx={{
+                  width: "24px",
+                  height: "24px",
+                }}
+              />
+              {t("global.launch")}
+            </>
           </Button>
           {openLaunchModal && (
             <LauncherDialog

@@ -6,7 +6,7 @@ import FormDialog, {
   FormDialogProps,
 } from "../../../../../../../../common/dialogs/FormDialog";
 import AddClusterForm from "./AddClusterForm";
-import { SubmitHandlerData } from "../../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../../common/Form";
 import useEnqueueErrorSnackbar from "../../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { appendCommands } from "../../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../../Commands/Edition/commandTypes";
@@ -31,7 +31,7 @@ function AddClusterDialog(props: PropType) {
     group: "",
   };
 
-  const handleSubmit = async (data: SubmitHandlerData) => {
+  const handleSubmit = async (data: SubmitHandlerPlus) => {
     const { name, group } = data.dirtyValues;
     try {
       await appendCommands(studyId, [
