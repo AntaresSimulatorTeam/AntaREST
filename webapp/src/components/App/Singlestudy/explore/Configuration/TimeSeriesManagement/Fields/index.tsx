@@ -176,18 +176,13 @@ function Fields() {
                     ))}
                   </TableCell>
                   <TableCell align="center">
-                    <CheckBoxFE
-                      name={`${type}.intraModal`}
-                      control={control}
-                      disabled={isReadyMadeStatusEnable}
-                    />
+                    <CheckBoxFE name={`${type}.intraModal`} control={control} />
                   </TableCell>
                   <TableCell align="center">
                     {type !== TSType.NTC ? (
                       <CheckBoxFE
                         name={`${type}.interModal`}
                         control={control}
-                        disabled={isReadyMadeStatusEnable}
                       />
                     ) : (
                       emptyDisplay

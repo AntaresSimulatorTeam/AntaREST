@@ -142,10 +142,13 @@ class ConfigManager:
         )
         config_data: Dict[str, Any]
         if len(state_by_active[True]) > len(state_by_active[False]):
-            config_data = {"select_var -": state_by_active[False]}
-        else:
             config_data = {
                 "selected_vars_reset": True,
+                "select_var -": state_by_active[False],
+            }
+        else:
+            config_data = {
+                "selected_vars_reset": False,
                 "select_var +": state_by_active[True],
             }
         command = UpdateConfig(
