@@ -28,6 +28,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
+import usePrompt from "../../../hooks/usePrompt";
 
 export interface SubmitHandlerPlus<
   TFieldValues extends FieldValues = FieldValues
@@ -170,7 +171,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     const listener = (event: BeforeUnloadEvent) => {
       if (preventClose.current) {
         // eslint-disable-next-line no-param-reassign
-        event.returnValue = "Form not submitted yet. Sure you want to leave?"; // TODO i18n
+        event.returnValue = t("form.submit.inProgress");
       }
     };
 
@@ -179,7 +180,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
     return () => {
       window.removeEventListener("beforeunload", listener);
     };
-  }, []);
+  }, [t]);
+
+  usePrompt(t("form.submit.inProgress"), preventClose.current);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

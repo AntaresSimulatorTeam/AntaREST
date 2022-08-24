@@ -95,6 +95,7 @@
     "maintenance.error.messageInfoError": "Impossible de récupérer le message d'info",
     "maintenance.error.maintenanceError": "Impossible de récupérer le status de maintenance de l'application",
     "form.submit.error": "Erreur lors de la soumission",
+    "form.submit.inProgress": "Le formulaire est en cours de soumission. Etes-vous sûr de vouloir quitter la page ?",
     "form.field.required": "Champ requis",
     "form.field.minLength": "{{0}} caractère(s) minimum",
     "form.field.notAllowedValue": "Valeur non autorisée",

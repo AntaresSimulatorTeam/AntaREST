@@ -95,6 +95,7 @@
     "maintenance.error.messageInfoError": "Unable to retrieve message info",
     "maintenance.error.maintenanceError": "Unable to retrieve maintenance status",
     "form.submit.error": "Error while submitting",
+    "form.submit.inProgress": "The form is being submitted. Are you sure you want to leave the page?",
     "form.field.required": "Field required",
     "form.field.minLength": "{{0}} character(s) minimum",
     "form.field.notAllowedValue": "Not allowed value",
