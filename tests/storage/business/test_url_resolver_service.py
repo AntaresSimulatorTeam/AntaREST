@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 from antarest.matrixstore.model import MatrixDTO
-from antarest.study.common.uri_resolver_service import (
+from antarest.matrixstore.uri_resolver_service import (
     UriResolverService,
 )
 

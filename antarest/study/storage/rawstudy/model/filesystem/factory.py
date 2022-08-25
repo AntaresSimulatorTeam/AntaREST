@@ -2,11 +2,11 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
-from antarest.study.common.uri_resolver_service import (
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.uri_resolver_service import (
     UriResolverService,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (

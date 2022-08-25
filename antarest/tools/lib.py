@@ -23,7 +23,7 @@ from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import (
     SimpleMatrixService,
 )
-from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,

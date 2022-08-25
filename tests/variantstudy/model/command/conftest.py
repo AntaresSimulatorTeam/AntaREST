@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
-from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
