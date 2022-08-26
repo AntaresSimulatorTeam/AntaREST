@@ -123,6 +123,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const {
     register,
     unregister,
+    getValues,
     setValue,
     control,
     handleSubmit,
@@ -144,6 +145,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const [showLoader, setLoader] = useDebouncedState(false, 750);
   const lastSubmittedData = useRef<TFieldValues>();
   const preventClose = useRef(false);
+  const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
+    []
+  );
 
   useUpdateEffect(() => {
     setLoader(isSubmitting);
@@ -158,8 +162,20 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
       if (formState.isSubmitSuccessful) {
-        // TODO: find a way to keep dirty, fields that changed between submit and reset
+        const valuesToSetAfterReset = getValues(
+          fieldsChangeDuringAutoSubmitting.current
+        );
+
+        // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
+
+        fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {
+          setValue(fieldName, valuesToSetAfterReset[index], {
+            shouldDirty: true,
+          });
+        });
+
+        fieldsChangeDuringAutoSubmitting.current = [];
       }
     },
     // Entire `formState` must be put in the deps: https://react-hook-form.com/api/useform/formstate
@@ -254,6 +270,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
         onChange: (event: any) => {
           options?.onChange?.(event);
           if (autoSubmitConfig.enable) {
+            if (isSubmitting) {
+              fieldsChangeDuringAutoSubmitting.current.push(name);
+            }
             simulateSubmit();
           }
         },
@@ -261,7 +280,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       return register(name, newOptions);
     },
-    [autoSubmitConfig.enable, register, simulateSubmit]
+    [autoSubmitConfig.enable, register, simulateSubmit, isSubmitting]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
