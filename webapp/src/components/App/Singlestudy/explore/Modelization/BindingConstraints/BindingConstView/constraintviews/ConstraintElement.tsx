@@ -15,7 +15,7 @@ interface ElementProps {
   onToggleType?: () => void;
 }
 
-export function ConstraintElement(props: ElementProps) {
+export default function ConstraintElement(props: ElementProps) {
   const { title, isLink, left, right, operator, onToggleType } = props;
   return (
     <ConstraintElementRoot>

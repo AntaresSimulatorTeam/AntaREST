@@ -6,7 +6,7 @@ interface Props {
   onRemove: () => void;
 }
 
-export function OffsetInput(props: PropsWithChildren<Props>) {
+export default function OffsetInput(props: PropsWithChildren<Props>) {
   const { onRemove, children } = props;
   return (
     <Box

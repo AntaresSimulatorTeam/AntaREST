@@ -1494,3 +1494,203 @@ def test_edit_matrix(app: FastAPI):
     assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [
         [42] * 6
     ] * 2
+
+
+def test_binding_constraint_manager(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+    headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
+
+    created = client.post(
+        "/v1/studies?name=foo",
+        headers=headers,
+    )
+    study_id = created.json()
+
+    area1_name = "area1"
+    area2_name = "area2"
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers=headers,
+        json={
+            "name": area1_name,
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers=headers,
+        json={
+            "name": area2_name,
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "DE"},
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.post(
+        f"/v1/studies/{study_id}/links",
+        headers=headers,
+        json={
+            "area1": area1_name,
+            "area2": area2_name,
+        },
+    )
+    assert res.status_code == 200
+
+    # Create Variant
+    res = client.post(
+        f"/v1/studies/{study_id}/variants?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    variant_id = res.json()
+
+    # Create Binding constraints
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_binding_constraint",
+                "args": {
+                    "name": "binding_constraint_1",
+                    "enabled": True,
+                    "time_step": "hourly",
+                    "operator": "less",
+                    "coeffs": {},
+                    "comments": "",
+                },
+            }
+        ],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_binding_constraint",
+                "args": {
+                    "name": "binding_constraint_2",
+                    "enabled": True,
+                    "time_step": "hourly",
+                    "operator": "less",
+                    "coeffs": {},
+                    "comments": "",
+                },
+            }
+        ],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Get Binding Constraint list
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraints_list = res.json()
+    assert res.status_code == 200
+    assert len(binding_constraints_list) == 2
+    assert binding_constraints_list[0]["id"] == "binding_constraint_1"
+    assert binding_constraints_list[1]["id"] == "binding_constraint_2"
+
+    binding_constraint_id = binding_constraints_list[0]["id"]
+
+    # Add Constraint term
+    res = client.post(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        json={
+            "weight": 1,
+            "offset": 2,
+            "data": {"area1": area1_name, "area2": area2_name},
+        },
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Get Binding Constraint
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraint = res.json()
+    constraints = binding_constraint["constraints"]
+    assert res.status_code == 200
+    assert binding_constraint["id"] == binding_constraint_id
+    assert len(constraints) == 1
+    assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
+    assert constraints[0]["weight"] == 1
+    assert constraints[0]["offset"] == 2
+    assert constraints[0]["data"]["area1"] == area1_name
+    assert constraints[0]["data"]["area2"] == area2_name
+
+    # Update Constraint term
+    res = client.put(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        json={
+            "id": f"{area1_name}%{area2_name}",
+            "weight": 3,
+        },
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Get Binding Constraint
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraint = res.json()
+    constraints = binding_constraint["constraints"]
+    assert res.status_code == 200
+    assert binding_constraint["id"] == binding_constraint_id
+    assert len(constraints) == 1
+    assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
+    assert constraints[0]["weight"] == 3
+    assert constraints[0]["offset"] is None
+    assert constraints[0]["data"]["area1"] == area1_name
+    assert constraints[0]["data"]["area2"] == area2_name
+
+    # Remove Constraint term
+    res = client.delete(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term/{area1_name}%{area2_name}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Get Binding Constraint
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraint = res.json()
+    constraints = binding_constraint["constraints"]
+    assert res.status_code == 200
+    assert constraints is None

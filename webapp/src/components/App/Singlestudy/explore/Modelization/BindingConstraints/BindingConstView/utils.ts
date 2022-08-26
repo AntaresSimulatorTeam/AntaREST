@@ -1,4 +1,3 @@
-import { FieldValues } from "react-hook-form";
 import {
   ClusterElement,
   LinkClusterItem,
@@ -16,7 +15,7 @@ export interface ConstraintType {
   data: LinkCreationInfoDTO | ClusterElement;
 }
 
-export interface BindingConstType extends FieldValues {
+export interface BindingConstFields {
   name: string;
   id: string;
   enabled: boolean;
@@ -26,8 +25,6 @@ export interface BindingConstType extends FieldValues {
   constraints: Array<ConstraintType>;
 }
 
-export type BindingConstFields = BindingConstType;
-
 export type BindingConstPath = Record<keyof BindingConstFields, string>;
 
 export async function getDefaultValues(
@@ -35,25 +32,25 @@ export async function getDefaultValues(
   bindingConstId: string
 ): Promise<BindingConstFields> {
   // Fetch fields
-  const fields: BindingConstType = await getBindingConstraint(
+  const fields: BindingConstFields = await getBindingConstraint(
     studyId,
     bindingConstId
   );
-  return fields;
+  return { ...fields, comments: fields.comments || "" };
 }
 
 export function isDataLink(
   data: LinkCreationInfoDTO | ClusterElement
-): boolean {
+): data is LinkCreationInfoDTO {
   return (data as LinkCreationInfoDTO).area1 !== undefined;
 }
 
 export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
   if (isDataLink(data)) {
-    const link = data as LinkCreationInfoDTO;
+    const link = data;
     return `${link.area1}%${link.area2}`;
   }
-  const cluster = data as ClusterElement;
+  const cluster = data;
   return `${cluster.area}.${cluster.cluster}`;
 }
 
@@ -77,5 +74,3 @@ export const isTermExist = (
 ): boolean => {
   return list.findIndex((item) => item.id === termId) >= 0;
 };
-
-export default {};

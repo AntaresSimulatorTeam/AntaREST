@@ -4,26 +4,27 @@ import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddBindingConstDialog from "./AddBindingConstDialog";
-import { BindingConstType } from "./BindingConstView/utils";
+import { BindingConstFields } from "./BindingConstView/utils";
 
-interface PropsType {
+interface Props {
   onClick: (name: string) => void;
-  list: Array<BindingConstType>;
+  list: Array<BindingConstFields>;
   studyId: StudyMetadata["id"];
   currentBindingConst?: string;
 }
-function BindingConstPropsView(props: PropsType) {
+
+function BindingConstPropsView(props: Props) {
   const { onClick, currentBindingConst, studyId, list } = props;
   const [t] = useTranslation();
   const [bindingConstNameFilter, setBindingConstNameFilter] =
     useState<string>();
   const [addBindingConst, setAddBindingConst] = useState(false);
   const [filteredBindingConst, setFilteredBindingConst] = useState<
-    Array<BindingConstType>
+    Array<BindingConstFields>
   >(list || []);
 
   useEffect(() => {
-    const filter = (): Array<BindingConstType> => {
+    const filter = (): Array<BindingConstFields> => {
       if (list) {
         return list.filter(
           (s) =>

@@ -26,7 +26,7 @@ function BindingConstraints() {
   );
   const res = usePromise(
     () => getBindingConstraintList(study.id),
-    [study.id, JSON.stringify(bindingConstraints)]
+    [study.id, bindingConstraints]
   );
   const currentBindingConst = useAppSelector(getCurrentBindingConstId);
   const dispatch = useAppDispatch();

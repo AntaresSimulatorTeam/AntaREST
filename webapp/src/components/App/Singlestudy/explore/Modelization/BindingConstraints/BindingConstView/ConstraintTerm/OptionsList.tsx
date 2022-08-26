@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from "react";
-import _ from "lodash";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
 import { ConstraintType, dataToId, isTermExist } from "../utils";
 import { DEBOUNCE_DELAY } from ".";
+import useDebounce from "../../../../../../../../hooks/useDebounce";
 
 interface Props {
   list: AllClustersAndLinks;
@@ -31,12 +31,9 @@ export default function OptionsList(props: Props) {
     setValue2,
   } = props;
   const [t] = useTranslation();
-  const name1 = useMemo(() => (isLink ? "area1" : "area"), [isLink]);
-  const name2 = useMemo(() => (isLink ? "area2" : "cluster"), [isLink]);
-  const options = useMemo(
-    () => (isLink ? list.links : list.clusters),
-    [isLink, list.clusters, list.links]
-  );
+  const name1 = isLink ? "area1" : "area";
+  const name2 = isLink ? "area2" : "cluster";
+  const options = isLink ? list.links : list.clusters;
   const options1 = useMemo(() => {
     return options.map((elm) => ({
       name: elm.element.name,
@@ -69,7 +66,7 @@ export default function OptionsList(props: Props) {
         id: elm.id,
       }));
     return tmp;
-  }, [JSON.stringify(constraintsTerm), isLink, options, value1]);
+  }, [constraintsTerm, isLink, options, value1, value2]);
 
   const getFirstValue2 = useCallback(
     (value: string): string => {
@@ -80,7 +77,11 @@ export default function OptionsList(props: Props) {
     [options, options1]
   );
 
-  const handleValue1 = _.debounce((value: string) => {
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleValue1 = useDebounce((value: string) => {
     const v2 = getFirstValue2(value);
     saveValue({
       id: constraint.id,
@@ -98,7 +99,7 @@ export default function OptionsList(props: Props) {
     setValue2(v2);
   }, DEBOUNCE_DELAY);
 
-  const handleValue2 = _.debounce((value: string) => {
+  const handleValue2 = useDebounce((value: string) => {
     setValue2(value);
     saveValue({
       id: constraint.id,
@@ -114,6 +115,9 @@ export default function OptionsList(props: Props) {
     });
   }, DEBOUNCE_DELAY);
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
   return (
     <>
       <SelectSingle

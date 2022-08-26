@@ -16,11 +16,11 @@ import {
 } from "../../../../Commands/Edition/commandTypes";
 import { SubmitHandlerPlus } from "../../../../../../common/Form";
 
-interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
+interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
 }
 
-function AddBindingConstDialog(props: PropType) {
+function AddBindingConstDialog(props: Props) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -32,22 +32,19 @@ function AddBindingConstDialog(props: PropType) {
     time_step: TimeStep.HOURLY,
     operator: BindingConstraintOperator.LESS,
     coeffs: {},
+    comments: "",
   };
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleSubmit = async (data: SubmitHandlerPlus) => {
-    const { name, enabled, time_step, operator, comments } = data.dirtyValues;
     try {
       await appendCommands(studyId, [
         {
           action: CommandEnum.CREATE_BINDING_CONSTRAINT,
-          args: {
-            name,
-            enabled: enabled !== undefined ? enabled : true,
-            time_step: time_step || TimeStep.HOURLY,
-            operator: operator || BindingConstraintOperator.LESS,
-            coeffs: {},
-            comments,
-          },
+          args: data.values,
         },
       ]);
       enqueueSnackbar(t("study.success.addBindingConst"), {
@@ -59,6 +56,11 @@ function AddBindingConstDialog(props: PropType) {
       onCancel();
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <FormDialog
       maxWidth="sm"

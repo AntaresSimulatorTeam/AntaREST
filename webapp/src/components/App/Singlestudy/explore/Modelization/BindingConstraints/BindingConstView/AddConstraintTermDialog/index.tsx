@@ -9,7 +9,7 @@ import FormDialog, {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
-  BindingConstType,
+  BindingConstFields,
   ConstraintType,
   dataToId,
   isDataLink,
@@ -30,15 +30,15 @@ import {
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
 
-interface PropType extends Omit<FormDialogProps, "children" | "handleSubmit"> {
+interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
   bindingConstraint: string;
-  append: UseFieldArrayAppend<BindingConstType, "constraints">;
-  constraintsTerm: BindingConstType["constraints"];
+  append: UseFieldArrayAppend<BindingConstFields, "constraints">;
+  constraintsTerm: BindingConstFields["constraints"];
   options: AllClustersAndLinks;
 }
 
-function AddConstraintTermDialog(props: PropType) {
+function AddConstraintTermDialog(props: Props) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -61,6 +61,10 @@ function AddConstraintTermDialog(props: PropType) {
     },
   };
   const optionsRes = usePromise(() => getClustersAndLinks(studyId), [studyId]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (values: SubmitHandlerPlus) => {
     try {
@@ -120,6 +124,11 @@ function AddConstraintTermDialog(props: PropType) {
       onCancel();
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <FormDialog
       maxWidth="md"

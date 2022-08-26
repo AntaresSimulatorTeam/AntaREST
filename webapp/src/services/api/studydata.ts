@@ -6,7 +6,7 @@ import {
   UpdateAreaUi,
 } from "../../common/types";
 import {
-  BindingConstType,
+  BindingConstFields,
   ConstraintType,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import client from "./client";
@@ -104,7 +104,7 @@ export const deleteConstraintTerm = async (
 export const getBindingConstraint = async (
   uuid: string,
   bindingConst: string
-): Promise<BindingConstType> => {
+): Promise<BindingConstFields> => {
   const res = await client.get(
     `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`
   );
@@ -113,7 +113,7 @@ export const getBindingConstraint = async (
 
 export const getBindingConstraintList = async (
   uuid: string
-): Promise<Array<BindingConstType>> => {
+): Promise<Array<BindingConstFields>> => {
   const res = await client.get(`/v1/studies/${uuid}/bindingconstraints`);
   return res.data;
 };

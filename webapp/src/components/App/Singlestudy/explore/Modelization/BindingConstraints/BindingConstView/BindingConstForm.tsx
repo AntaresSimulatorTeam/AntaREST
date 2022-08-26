@@ -14,7 +14,7 @@ import {
 } from "../../../../../../../common/types";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
-import { ConstraintItem, ConstraintWithNullableOffset } from "./ConstraintTerm";
+import ConstraintItem, { ConstraintWithNullableOffset } from "./ConstraintTerm";
 import { useFormContext } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
@@ -52,13 +52,10 @@ export default function BindingConstForm(props: Props) {
 
   const constraintsTerm = useMemo(
     () => fields.map((elm) => ({ ...elm, id: dataToId(elm.data) })),
-    [JSON.stringify(fields)]
+    [fields]
   );
 
-  const pathPrefix = useMemo(
-    () => `input/bindingconstraints/bindingconstraints/${bcIndex}`,
-    [bcIndex]
-  );
+  const pathPrefix = `input/bindingconstraints/bindingconstraints/${bcIndex}`;
 
   const optionOperator = useMemo(
     () =>
@@ -72,7 +69,7 @@ export default function BindingConstForm(props: Props) {
   const typeOptions = useMemo(
     () =>
       ["hourly", "daily", "weekly"].map((item) => ({
-        label: t(`study.${item}`),
+        label: t(`global.time.${item}`),
         value: item,
       })),
     [t]
@@ -81,6 +78,54 @@ export default function BindingConstForm(props: Props) {
   const [addConstraintTermDialog, setAddConstraintTermDialog] = useState(false);
   const [termToDelete, setTermToDelete] = useState<number>();
   const [tabValue, setTabValue] = useState(0);
+  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
+    () => [
+      {
+        translationId: "global.general",
+        fields: [
+          {
+            type: "text",
+            name: "name",
+            path: `${pathPrefix}/name`,
+            label: t("global.name"),
+            disabled: true,
+            required: t("form.field.required") as string,
+          },
+          {
+            type: "text",
+            name: "comments",
+            path: `${pathPrefix}/comments`,
+            label: t("study.modelization.bindingConst.comments"),
+          },
+          {
+            type: "select",
+            name: "time_step",
+            path: `${pathPrefix}/type`,
+            label: t("study.modelization.bindingConst.type"),
+            options: typeOptions,
+          },
+          {
+            type: "select",
+            name: "operator",
+            path: `${pathPrefix}/operator`,
+            label: t("study.modelization.bindingConst.operator"),
+            options: optionOperator,
+          },
+          {
+            type: "switch",
+            name: "enabled",
+            path: `${pathPrefix}/enabled`,
+            label: t("study.modelization.bindingConst.enabled"),
+          },
+        ],
+      },
+    ],
+    [optionOperator, pathPrefix, t, typeOptions]
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveValue = useCallback(
@@ -146,51 +191,9 @@ export default function BindingConstForm(props: Props) {
     setTabValue(newValue);
   };
 
-  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
-    () => [
-      {
-        translationId: "global.general",
-        fields: [
-          {
-            type: "text",
-            name: "name",
-            path: `${pathPrefix}/name`,
-            label: t("global.name"),
-            disabled: true,
-            required: t("form.field.required") as string,
-          },
-          {
-            type: "text",
-            name: "comments",
-            path: `${pathPrefix}/comments`,
-            label: t("study.modelization.bindingConst.comments"),
-          },
-          {
-            type: "select",
-            name: "time_step",
-            path: `${pathPrefix}/type`,
-            label: t("study.modelization.bindingConst.type"),
-            options: typeOptions,
-          },
-          {
-            type: "select",
-            name: "operator",
-            path: `${pathPrefix}/operator`,
-            label: t("study.modelization.bindingConst.operator"),
-            options: optionOperator,
-          },
-          {
-            type: "switch",
-            name: "enabled",
-            path: `${pathPrefix}/enabled`,
-            label: t("study.modelization.bindingConst.enabled"),
-          },
-        ],
-      },
-    ],
-    [optionOperator, pathPrefix, t, typeOptions]
-  );
-
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
   return (
     <>
       <AutoSubmitGeneratorForm

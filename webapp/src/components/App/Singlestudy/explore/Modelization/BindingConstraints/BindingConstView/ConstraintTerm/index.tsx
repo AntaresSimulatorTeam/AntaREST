@@ -3,7 +3,6 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
 import { ConstraintType, isDataLink } from "../utils";
 import {
   AllClustersAndLinks,
@@ -12,15 +11,16 @@ import {
 } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import { ConstraintItemRoot } from "./style";
-import { ConstraintElement } from "../constraintviews/ConstraintElement";
-import { OffsetInput } from "../constraintviews/OffsetInput";
+import ConstraintElement from "../constraintviews/ConstraintElement";
+import OffsetInput from "../constraintviews/OffsetInput";
+import useDebounce from "../../../../../../../../hooks/useDebounce";
 
-export const DEBOUNCE_DELAY = 250;
+export const DEBOUNCE_DELAY = 200;
 export type ConstraintWithNullableOffset = Partial<
   Omit<ConstraintType, "offset"> & { offset: number | null | undefined }
 >;
 
-interface ItemProps {
+interface Props {
   options: AllClustersAndLinks;
   constraint: ConstraintType;
   constraintsTerm: Array<ConstraintType>;
@@ -28,60 +28,52 @@ interface ItemProps {
   deleteTerm: () => void;
 }
 
-export function ConstraintItem(props: ItemProps) {
+export default function ConstraintItem(props: Props) {
   const { options, constraint, constraintsTerm, saveValue, deleteTerm } = props;
   const [t] = useTranslation();
   const [weight, setWeight] = useState(constraint.weight);
   const [offset, setOffset] = useState(constraint.offset);
   const isLink = useMemo(() => isDataLink(constraint.data), [constraint.data]);
-  const initValue1 = useMemo(
-    () =>
-      isLink
-        ? (constraint.data as LinkCreationInfoDTO).area1
-        : (constraint.data as ClusterElement).area,
-    [constraint.data, isLink]
-  );
-  const initValue2 = useMemo(
-    () =>
-      isLink
-        ? (constraint.data as LinkCreationInfoDTO).area2
-        : (constraint.data as ClusterElement).cluster,
-    [constraint.data, isLink]
-  );
+  const initValue1 = isLink
+    ? (constraint.data as LinkCreationInfoDTO).area1
+    : (constraint.data as ClusterElement).area;
+  const initValue2 = isLink
+    ? (constraint.data as LinkCreationInfoDTO).area2
+    : (constraint.data as ClusterElement).cluster;
   const [value1, setValue1] = useState(initValue1);
   const [value2, setValue2] = useState(initValue2);
 
-  const handleOffset = _.debounce((value: string | number | null) => {
-    let pValue;
-    if (value !== null) {
-      try {
-        pValue = typeof value === "number" ? value : parseFloat(value);
-        pValue = Number.isNaN(pValue) ? 0 : pValue;
-      } catch (e) {
-        pValue = 0;
-      }
-    }
-    setOffset(pValue);
-    saveValue({
-      id: constraint.id,
-      offset: value === null ? value : pValue,
-    });
-  }, DEBOUNCE_DELAY);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
-  const handleWeight = _.debounce((value: string | number) => {
-    let pValue = 0;
-    try {
-      pValue = typeof value === "number" ? value : parseFloat(value);
-      pValue = Number.isNaN(pValue) ? 0 : pValue;
-    } catch (e) {
-      pValue = 0;
-    }
-    setWeight(pValue);
-    saveValue({
-      id: constraint.id,
-      weight: pValue,
-    });
-  }, DEBOUNCE_DELAY);
+  const handleChange = useDebounce(
+    (name: "weight" | "offset", value: string | number | null) => {
+      let pValue = 0;
+      if (value !== null) {
+        try {
+          pValue = typeof value === "number" ? value : parseFloat(value);
+          pValue = Number.isNaN(pValue) ? 0 : pValue;
+        } catch (e) {
+          pValue = 0;
+        }
+      }
+      if (name === "weight") {
+        setWeight(pValue);
+      } else {
+        setOffset(pValue);
+      }
+      saveValue({
+        id: constraint.id,
+        [name]: value === null ? value : pValue,
+      });
+    },
+    DEBOUNCE_DELAY
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  /// /////////////////////////////////////////////////////////////
 
   return (
     <ConstraintItemRoot>
@@ -93,7 +85,7 @@ export function ConstraintItem(props: ItemProps) {
             variant="filled"
             type="number"
             value={weight}
-            onChange={(e) => handleWeight(e.target.value)}
+            onChange={(e) => handleChange("weight", e.target.value)}
           />
         }
         right={
@@ -120,13 +112,13 @@ export function ConstraintItem(props: ItemProps) {
             operator="+"
             left={<Typography>t</Typography>}
             right={
-              <OffsetInput onRemove={() => handleOffset(null)}>
+              <OffsetInput onRemove={() => handleChange("offset", null)}>
                 <TextField
                   label={t("study.modelization.bindingConst.offset")}
                   variant="filled"
                   type="number"
                   value={offset}
-                  onChange={(e) => handleOffset(e.target.value)}
+                  onChange={(e) => handleChange("offset", e.target.value)}
                 />
               </OffsetInput>
             }
@@ -138,7 +130,7 @@ export function ConstraintItem(props: ItemProps) {
           color="secondary"
           startIcon={<AddCircleOutlineRoundedIcon />}
           sx={{ ml: 1 }}
-          onClick={() => handleOffset(0)}
+          onClick={() => handleChange("offset", 0)}
         >
           {t("study.modelization.bindingConst.offset")}
         </Button>

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { FieldPath, useFormContext } from "react-hook-form";
+import { useMemo } from "react";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { Root } from "../style";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
@@ -11,18 +12,26 @@ function AddClusterForm() {
   const { control } = useFormContext<CreateBindingConstraint>();
 
   const { t } = useTranslation();
-  const operatorOptions = ["less", "equal", "greater", "both"].map((item) => ({
-    label: t(`study.modelization.bindingConst.operator.${item}`),
-    value: item,
-  }));
+  const operatorOptions = useMemo(
+    () =>
+      ["less", "equal", "greater", "both"].map((item) => ({
+        label: t(`study.modelization.bindingConst.operator.${item}`),
+        value: item,
+      })),
+    [t]
+  );
 
-  const typeOptions = ["hourly", "daily", "weekly"].map((item) => ({
-    label: t(`study.${item}`),
-    value: item,
-  }));
+  const typeOptions = useMemo(
+    () =>
+      ["hourly", "daily", "weekly"].map((item) => ({
+        label: t(`global.time.${item}`),
+        value: item,
+      })),
+    [t]
+  );
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // JSX
   ////////////////////////////////////////////////////////////////
 
   const renderInput = (
@@ -72,10 +81,6 @@ function AddClusterForm() {
       />
     </Box>
   );
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
 
   return (
     <Root>
