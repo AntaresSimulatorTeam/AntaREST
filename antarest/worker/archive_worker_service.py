@@ -54,4 +54,4 @@ if __name__ == "__main__":
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
     worker = create_archive_worker(config, workspace, Path(local_root))
-    worker.start()
+    worker.start(threaded=False)
