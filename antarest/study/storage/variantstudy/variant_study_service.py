@@ -239,6 +239,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         ]
         study.commands.extend(new_commands)
         self.invalidate_cache(study)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
         return [c.id for c in new_commands]
 
     def replace_commands(
