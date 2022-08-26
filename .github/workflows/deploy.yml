@@ -61,15 +61,15 @@ jobs:
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller AntaresWebLinux.spec
       - name: Generate Windows worker binary
-          if: matrix.os == 'windows-latest'
-          run: |
-            git log -1 HEAD --format=%H > .\resources\commit_id
-            pyinstaller -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
+        if: matrix.os == 'windows-latest'
+        run: |
+          git log -1 HEAD --format=%H > .\resources\commit_id
+          pyinstaller -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
       - name: Generate Linux worker binary
-          if: matrix.os == 'windows-latest'
-          run: |
-            git log -1 HEAD --format=%H > .\resources\commit_id
-            pyinstaller -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          git log -1 HEAD --format=%H > .\resources\commit_id
+          pyinstaller -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources
       - name: Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
