@@ -12,6 +12,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import TabWrapper from "../TabWrapper";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -19,7 +20,7 @@ function Xpansion() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [exist, setExist] = useState<boolean>(false);
 
-  const { data: configExist } = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     () => xpansionConfigurationExist(study.id),
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
@@ -52,8 +53,10 @@ function Xpansion() {
   useEffect(() => {
     if (window.history.state.usr) {
       setExist(window.history.state.usr.exist);
+    } else {
+      setExist(!!res.data);
     }
-  }, [window.history.state.usr]);
+  }, [window.history.state.usr, res.data]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -89,27 +92,36 @@ function Xpansion() {
       boxSizing="border-box"
       overflow="hidden"
     >
-      {!configExist && !exist ? (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          width="100%"
-          flexGrow={1}
-        >
-          <Button
-            sx={{
-              width: "140px",
-            }}
-            variant="contained"
-            onClick={createXpansion}
-          >
-            {t("xpansion.newXpansionConfig")}
-          </Button>
-        </Box>
-      ) : (
-        <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
-      )}
+      <UsePromiseCond
+        response={res}
+        ifResolved={(data) =>
+          !data && !exist ? (
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              width="100%"
+              flexGrow={1}
+            >
+              <Button
+                sx={{
+                  width: "140px",
+                }}
+                variant="contained"
+                onClick={createXpansion}
+              >
+                {t("xpansion.newXpansionConfig")}
+              </Button>
+            </Box>
+          ) : (
+            <TabWrapper
+              study={study}
+              tabStyle="withoutBorder"
+              tabList={tabList}
+            />
+          )
+        }
+      />
     </Box>
   );
 }

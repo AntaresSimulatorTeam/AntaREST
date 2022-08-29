@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import NoContent from "../../../../../common/page/NoContent";
+import SimpleContent from "../../../../../common/page/SimpleContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
@@ -68,7 +68,7 @@ function Areas() {
             [() => isLoading, () => (<SimpleLoader />) as ReactNode],
             [
               () => error !== undefined,
-              () => (<NoContent title={error?.message} />) as ReactNode,
+              () => (<SimpleContent title={error?.message} />) as ReactNode,
             ],
             // Area list
             [
@@ -83,7 +83,7 @@ function Areas() {
                 ) as ReactNode,
             ],
             // No Areas
-            [R.T, () => (<NoContent title="No areas" />) as ReactNode],
+            [R.T, () => (<SimpleContent title="No areas" />) as ReactNode],
           ])()}
         </>
       }

@@ -19,7 +19,7 @@ import { Header, Root, Content } from "../style";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import { StyledButton } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import NoContent from "../../../../../../../common/page/NoContent";
+import SimpleContent from "../../../../../../../common/page/SimpleContent";
 import ImportDialog from "../../../../../../../common/dialogs/ImportDialog";
 import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import EditableMatrix from "../../../../../../../common/EditableMatrix";
@@ -186,7 +186,7 @@ function StudyMatrixView(props: PropTypes) {
           />
         ) : (
           loaded && (
-            <NoContent
+            <SimpleContent
               title="matrix.message.matrixEmpty"
               callToAction={
                 <Button

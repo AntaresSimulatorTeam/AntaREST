@@ -12,7 +12,6 @@ import {
 } from "../../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import FileTable from "../../../../../common/FileTable";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import { Title } from "../share/styles";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
@@ -88,8 +87,6 @@ function Files() {
     <>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
-        ifRejected={(error) => <div>{error?.toString()}</div>}
         ifResolved={(data) => (
           <Box sx={{ width: "100%", height: "100%", p: 2 }}>
             <Paper sx={{ width: "100%", height: "100%", p: 2 }}>

@@ -4,7 +4,6 @@ import { PropsWithChildren } from "react";
 import Form from "../../../../../../../common/Form";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
-import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface ClusterViewProps<T> {
@@ -44,7 +43,6 @@ export default function ClusterView<T extends FieldValues>(
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
         ifResolved={(data) => (
           <Form
             autoSubmit
