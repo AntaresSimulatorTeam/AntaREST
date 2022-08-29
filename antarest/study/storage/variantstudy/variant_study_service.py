@@ -417,6 +417,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         for child in self.repository.get_children(parent_id=variant_study.id):
             self.invalidate_cache(child, invalidate_self_snapshot=True)
 
+    def clear_snapshot(self, variant_study: Study) -> None:
+        logger.info(f"Clearing snapshot for study {variant_study.id}")
+        self.invalidate_cache(variant_study, invalidate_self_snapshot=True)
+        shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
+
     def has_children(self, study: VariantStudy) -> bool:
         return len(self.repository.get_children(parent_id=study.id)) > 0
 

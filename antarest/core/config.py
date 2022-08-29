@@ -126,6 +126,7 @@ class StorageConfig:
     download_default_expiration_timeout_minutes: int = 1440
     matrix_gc_sleeping_time: int = 3600
     matrix_gc_dry_run: bool = False
+    auto_archive_threshold_days: int = 60
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -145,6 +146,9 @@ class StorageConfig:
             ),
             matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", 3600),
             matrix_gc_dry_run=data.get("matrix_gc_dry_run", False),
+            auto_archive_threshold_days=data.get(
+                "auto_archive_threshold_days", 60
+            ),
         )
 
 

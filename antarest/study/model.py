@@ -98,6 +98,7 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    last_access = Column(DateTime)
     path = Column(String())
     folder = Column(String, nullable=True)
     parent_id = Column(
@@ -116,7 +117,7 @@ class Study(Base):  # type: ignore
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
-        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
+        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, last_access={self.last_access}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Study):

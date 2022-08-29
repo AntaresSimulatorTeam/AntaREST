@@ -793,7 +793,10 @@ def test_change_owner() -> None:
     user_service.get_user.assert_called_once_with(
         2, RequestParameters(JWTUser(id=2, impersonator=2, type="users"))
     )
-    repository.save.assert_called_once_with(RawStudy(id=uuid, owner=bob))
+    repository.save.assert_called_with(
+        RawStudy(id=uuid, owner=bob, last_access=ANY)
+    )
+    repository.save.assert_called_with(RawStudy(id=uuid, owner=bob))
 
     service._edit_study_using_command.assert_called_once_with(
         study=study, url="study/antares/author", data="Bob"
@@ -921,7 +924,7 @@ def test_set_public_mode() -> None:
             JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])
         ),
     )
-    repository.save.assert_called_once_with(
+    repository.save.assert_called_with(
         Study(id=uuid, public_mode=PublicMode.FULL)
     )
 
@@ -1113,6 +1116,7 @@ def test_delete_with_prefetch(tmp_path: Path):
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
+        last_access=datetime.utcnow(),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 
@@ -1138,6 +1142,7 @@ def test_delete_with_prefetch(tmp_path: Path):
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
+        last_access=datetime.utcnow(),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 

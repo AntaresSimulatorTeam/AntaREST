@@ -1819,6 +1819,7 @@ class StudyService:
         )
 
     def archive(self, uuid: str, params: RequestParameters) -> str:
+        logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
@@ -1981,6 +1982,9 @@ class StudyService:
                 sanitized,
             )
             raise StudyNotFoundError(uuid)
+        # todo debounce this with a "update_study_last_access" method updating only every some seconds
+        study.last_access = datetime.utcnow()
+        self.repository.save(study)
         return study
 
     def _assert_study_unarchived(
@@ -2209,6 +2213,19 @@ class StudyService:
             if isinstance(study, RawStudy) and not is_managed(study):
                 storage = self.storage_service.raw_study_service
                 storage.check_and_update_study_version_in_database(study)
+
+    def archive_outputs(
+        self, study_id: str, params: RequestParameters
+    ) -> None:
+        logger.info(f"Archiving all outputs for study {study_id}")
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        study = self.get_study(study_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        for output in file_study.config.outputs:
+            if not file_study.config.outputs[output].archived:
+                self.archive_output(study_id, output, True, params)
 
     def archive_output(
         self,
