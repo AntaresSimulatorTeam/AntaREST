@@ -23,6 +23,7 @@ function Xpansion() {
     () => xpansionConfigurationExist(study.id),
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
+      deps: [exist],
     }
   );
 
@@ -82,7 +83,7 @@ function Xpansion() {
       boxSizing="border-box"
       overflow="hidden"
     >
-      {!configExist || exist ? (
+      {!configExist && !exist ? (
         <Box
           display="flex"
           justifyContent="center"
