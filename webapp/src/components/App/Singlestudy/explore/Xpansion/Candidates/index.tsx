@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
@@ -65,6 +64,7 @@ function Candidates() {
             (item: { link: string }) =>
               item.link
                 .split(" - ")
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((index: any) => transformNameToId(index))
                 .join(" - ")
           )[i];
@@ -108,7 +108,7 @@ function Candidates() {
         e as AxiosError
       );
     } finally {
-      navigate("../../xpansion");
+      navigate("../../xpansion", { state: { exist: false } });
     }
   };
 
@@ -155,6 +155,7 @@ function Candidates() {
         await updateCandidate(
           study.id,
           name,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           removeEmptyFields(value as { [key: string]: any }, [
             "link-profile",
             "already-installed-link-profile",

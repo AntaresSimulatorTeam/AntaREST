@@ -44,7 +44,7 @@ import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import NoContent from "../../../../common/page/NoContent";
+import SimpleContent from "../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   addWsMessageListener,
@@ -461,7 +461,7 @@ function EditionView(props: Props) {
         loaded && (
           <Body sx={{ alignItems: "left" }}>
             <Box height="85%">
-              <NoContent
+              <SimpleContent
                 title="variants.error.noCommands"
                 callToAction={
                   <Button

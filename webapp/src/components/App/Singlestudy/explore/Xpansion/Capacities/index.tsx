@@ -11,7 +11,6 @@ import {
   addCapacity,
 } from "../../../../../../services/api/xpansion";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../../common/FileTable";
 import { Title } from "../share/styles";
@@ -88,8 +87,6 @@ function Capacities() {
     <>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
-        ifRejected={(error) => <div>{error?.toString()}</div>}
         ifResolved={(data) => (
           <Box sx={{ width: "100%", height: "100%", p: 2 }}>
             <Paper sx={{ width: "100%", height: "100%", p: 2 }}>

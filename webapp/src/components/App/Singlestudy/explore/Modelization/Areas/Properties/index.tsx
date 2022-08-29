@@ -8,7 +8,6 @@ import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import Form from "../../../../../../common/Form";
 import PropertiesForm from "./PropertiesForm";
 import { getDefaultValues } from "./utils";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Properties() {
@@ -24,7 +23,6 @@ function Properties() {
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
         ifResolved={(data) => (
           <Form autoSubmit config={{ defaultValues: data }}>
             {(formObj) =>

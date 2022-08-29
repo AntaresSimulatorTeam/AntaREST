@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import NoContent from "../../../../../common/page/NoContent";
+import SimpleContent from "../../../../../common/page/SimpleContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import LinkPropsView from "./LinkPropsView";
 import useStudyData from "../../hooks/useStudyData";
@@ -68,7 +68,7 @@ function Links() {
             [() => isLoading, () => (<SimpleLoader />) as ReactNode],
             [
               () => error !== undefined,
-              () => (<NoContent title={error?.message} />) as ReactNode,
+              () => (<SimpleContent title={error?.message} />) as ReactNode,
             ],
             // Link list
             [
@@ -85,7 +85,7 @@ function Links() {
                 ) as ReactNode,
             ],
             // No Areas
-            [R.T, () => (<NoContent title="No Links" />) as ReactNode],
+            [R.T, () => (<SimpleContent title="No Links" />) as ReactNode],
           ])()}
         </>
       }

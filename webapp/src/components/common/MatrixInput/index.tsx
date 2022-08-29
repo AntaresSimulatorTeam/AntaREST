@@ -26,7 +26,7 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
 import { Root, Content, Header, StyledButton } from "./style";
 import SimpleLoader from "../loaders/SimpleLoader";
-import NoContent from "../page/NoContent";
+import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
@@ -180,7 +180,7 @@ function MatrixInput(props: PropsType) {
           />
         ) : (
           !isLoading && (
-            <NoContent
+            <SimpleContent
               title="matrix.message.matrixEmpty"
               callToAction={
                 <Button
