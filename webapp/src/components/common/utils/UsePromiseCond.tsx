@@ -32,7 +32,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
           ),
           () => ifPending(),
         ],
-        [R.equals(PromiseStatus.Rejected), () => ifRejected?.(error)],
+        [R.equals(PromiseStatus.Rejected), () => ifRejected(error)],
         [R.equals(PromiseStatus.Resolved), () => ifResolved?.(data)],
       ])(status)}
     </>
