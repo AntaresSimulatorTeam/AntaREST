@@ -88,102 +88,9 @@ export default function BindingConstForm(props: Props) {
   );
 
   const [addConstraintTermDialog, setAddConstraintTermDialog] = useState(false);
+  const [deleteConstraint, setDeleteConstraint] = useState(false);
   const [termToDelete, setTermToDelete] = useState<number>();
   const [tabValue, setTabValue] = useState(0);
-
-  const handleConstraintDeletion = useCallback(async () => {
-    try {
-      await appendCommands(study.id, [
-        {
-          action: CommandEnum.REMOVE_BINDING_CONSTRAINT,
-          args: {
-            id: bindingConst,
-          },
-        },
-      ]);
-      enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
-      dispatch(setCurrentBindingConst(""));
-      navigate(`/studies/${study.id}/explore/modelization/bindingcontraint`);
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.deleteCluster"), e as AxiosError);
-    }
-  }, [
-    bindingConst,
-    dispatch,
-    enqueueErrorSnackbar,
-    enqueueSnackbar,
-    navigate,
-    study.id,
-    t,
-  ]);
-
-  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
-    () => [
-      {
-        legend: (
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
-            >
-              {t("global.general")}
-            </Typography>
-            <Button
-              variant="text"
-              color="error"
-              onClick={handleConstraintDeletion}
-            >
-              {t("global.delete")}
-            </Button>
-          </Box>
-        ),
-        fields: [
-          {
-            type: "text",
-            name: "name",
-            path: `${pathPrefix}/name`,
-            label: t("global.name"),
-            disabled: true,
-            required: t("form.field.required") as string,
-          },
-          {
-            type: "text",
-            name: "comments",
-            path: `${pathPrefix}/comments`,
-            label: t("study.modelization.bindingConst.comments"),
-          },
-          {
-            type: "select",
-            name: "time_step",
-            path: `${pathPrefix}/type`,
-            label: t("study.modelization.bindingConst.type"),
-            options: typeOptions,
-          },
-          {
-            type: "select",
-            name: "operator",
-            path: `${pathPrefix}/operator`,
-            label: t("study.modelization.bindingConst.operator"),
-            options: optionOperator,
-          },
-          {
-            type: "switch",
-            name: "enabled",
-            path: `${pathPrefix}/enabled`,
-            label: t("study.modelization.bindingConst.enabled"),
-          },
-        ],
-      },
-    ],
-    [optionOperator, pathPrefix, t, typeOptions]
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -249,6 +156,36 @@ export default function BindingConstForm(props: Props) {
     [bindingConst, enqueueErrorSnackbar, constraintsTerm, remove, study.id, t]
   );
 
+  const handleConstraintDeletion = useCallback(async () => {
+    try {
+      await appendCommands(study.id, [
+        {
+          action: CommandEnum.REMOVE_BINDING_CONSTRAINT,
+          args: {
+            id: bindingConst,
+          },
+        },
+      ]);
+      enqueueSnackbar(t("study.success.deleteConstraint"), {
+        variant: "success",
+      });
+      dispatch(setCurrentBindingConst(""));
+      navigate(`/studies/${study.id}/explore/modelization/bindingcontraint`);
+    } catch (e) {
+      enqueueErrorSnackbar(t("study.error.deleteConstraint"), e as AxiosError);
+    } finally {
+      setDeleteConstraint(false);
+    }
+  }, [
+    bindingConst,
+    dispatch,
+    enqueueErrorSnackbar,
+    enqueueSnackbar,
+    navigate,
+    study.id,
+    t,
+  ]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -256,6 +193,81 @@ export default function BindingConstForm(props: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
+    () => [
+      {
+        legend: (
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
+            >
+              {t("global.general")}
+            </Typography>
+            <Button
+              variant="text"
+              color="error"
+              onClick={() => setDeleteConstraint(true)}
+              sx={{
+                p: 0,
+                m: 0,
+                minWidth: 0,
+                minHeight: 0,
+              }}
+            >
+              <DeleteIcon />
+            </Button>
+          </Box>
+        ),
+        fields: [
+          {
+            type: "text",
+            name: "name",
+            path: `${pathPrefix}/name`,
+            label: t("global.name"),
+            disabled: true,
+            required: t("form.field.required") as string,
+          },
+          {
+            type: "text",
+            name: "comments",
+            path: `${pathPrefix}/comments`,
+            label: t("study.modelization.bindingConst.comments"),
+          },
+          {
+            type: "select",
+            name: "time_step",
+            path: `${pathPrefix}/type`,
+            label: t("study.modelization.bindingConst.type"),
+            options: typeOptions,
+          },
+          {
+            type: "select",
+            name: "operator",
+            path: `${pathPrefix}/operator`,
+            label: t("study.modelization.bindingConst.operator"),
+            options: optionOperator,
+          },
+          {
+            type: "switch",
+            name: "enabled",
+            path: `${pathPrefix}/enabled`,
+            label: t("study.modelization.bindingConst.enabled"),
+          },
+        ],
+      },
+    ],
+    [optionOperator, pathPrefix, t, typeOptions]
+  );
+
   return (
     <>
       <AutoSubmitGeneratorForm
@@ -353,6 +365,19 @@ export default function BindingConstForm(props: Props) {
                 >
                   {t(
                     "study.modelization.bindingConst.question.deleteConstraintTerm"
+                  )}
+                </ConfirmationDialog>
+              )}
+              {deleteConstraint && (
+                <ConfirmationDialog
+                  titleIcon={DeleteIcon}
+                  onCancel={() => setDeleteConstraint(false)}
+                  onConfirm={() => handleConstraintDeletion()}
+                  alert="warning"
+                  open
+                >
+                  {t(
+                    "study.modelization.bindingConst.question.deleteBindingConstraint"
                   )}
                 </ConfirmationDialog>
               )}

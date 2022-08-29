@@ -12,6 +12,7 @@ export const ConstraintHeader = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "flex-end",
   alignItems: "center",
+  marginBottom: theme.spacing(2),
 }));
 
 export const ConstraintTerm = styled(Box)(({ theme }) => ({
