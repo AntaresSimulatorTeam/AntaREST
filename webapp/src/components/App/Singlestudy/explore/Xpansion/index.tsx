@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
 import { Box, Button } from "@mui/material";
@@ -48,6 +48,12 @@ function Xpansion() {
     ],
     [study]
   );
+
+  useEffect(() => {
+    if (window.history.state.usr !== null) {
+      setExist(window.history.state.usr.exist);
+    }
+  }, [window.history.state.usr]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

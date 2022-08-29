@@ -108,8 +108,7 @@ function Candidates() {
         e as AxiosError
       );
     } finally {
-      navigate("../../xpansion");
-      reload();
+      navigate("../../xpansion", { state: { exist: false } });
     }
   };
 
