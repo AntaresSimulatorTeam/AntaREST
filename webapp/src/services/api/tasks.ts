@@ -39,4 +39,9 @@ export const getTask = async (
   return res.data;
 };
 
+export const getProgress = async (id: string): Promise<number> => {
+  const res = await client.get(`/v1/launcher/jobs/${id}/progress`);
+  return res.data;
+};
+
 export default {};

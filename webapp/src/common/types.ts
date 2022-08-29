@@ -158,6 +158,16 @@ export interface LaunchJobDTO {
   exit_code: number;
 }
 
+export interface LaunchJobProgressDTO {
+  id: string;
+  progress: number;
+  message: string;
+}
+
+export interface LaunchJobsProgress {
+  [key: string]: number;
+}
+
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
@@ -310,6 +320,7 @@ export enum WSEvent {
   DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
   MESSAGE_INFO = "MESSAGE_INFO",
   MAINTENANCE_MODE = "MAINTENANCE_MODE",
+  LAUNCH_PROGRESS = "LAUNCH_PROGRESS",
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

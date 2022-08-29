@@ -4,13 +4,17 @@ import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { StepIconProps, Tooltip, Typography } from "@mui/material";
+import { StepIconProps, Tooltip, Typography, Box } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { JobStatus, LaunchJob } from "../../../../../../common/types";
+import {
+  JobStatus,
+  LaunchJob,
+  LaunchJobsProgress,
+} from "../../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../../services/utils";
 import { killStudy } from "../../../../../../services/api/study";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
@@ -52,10 +56,11 @@ function QontoStepIcon(props: {
 
 interface Props {
   jobs: Array<LaunchJob>;
+  jobsProgress: LaunchJobsProgress;
 }
 
 export default function VerticalLinearStepper(props: Props) {
-  const { jobs } = props;
+  const { jobs, jobsProgress } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -146,20 +151,23 @@ export default function VerticalLinearStepper(props: Props) {
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
-                    <CancelContainer>
-                      <Tooltip title={t("study.killStudy") as string}>
-                        <BlockIcon
-                          onClick={() => openConfirmModal(job.id)}
-                          sx={{
-                            m: 0.5,
-                            height: "22px",
-                            cursor: "pointer",
-                            color: "error.light",
-                            "&:hover": { color: "error.dark" },
-                          }}
-                        />
-                      </Tooltip>
-                    </CancelContainer>
+                    <>
+                      <Box>{jobsProgress[job.id]} %</Box>
+                      <CancelContainer>
+                        <Tooltip title={t("study.killStudy") as string}>
+                          <BlockIcon
+                            onClick={() => openConfirmModal(job.id)}
+                            sx={{
+                              m: 0.5,
+                              height: "22px",
+                              cursor: "pointer",
+                              color: "error.light",
+                              "&:hover": { color: "error.dark" },
+                            }}
+                          />
+                        </Tooltip>
+                      </CancelContainer>
+                    </>
                   )}
                 </StepLabelRow>
               </StepLabelRoot>

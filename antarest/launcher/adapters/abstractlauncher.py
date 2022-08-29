@@ -89,10 +89,11 @@ class AbstractLauncher(ABC):
                     Event(
                         type=EventType.LAUNCH_PROGRESS,
                         payload={
+                            "id": job_id,
                             "progress": launch_progress_dto.progress,
                             "message": "",
                         },
-                        channel=EventChannelDirectory.JOB_LOGS + job_id,
+                        channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )
                 self.cache.put(
