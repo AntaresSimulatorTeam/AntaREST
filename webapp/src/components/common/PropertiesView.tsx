@@ -37,7 +37,7 @@ function PropertiesView(props: PropsType) {
           size="small"
           color="primary"
           aria-label="add"
-          sx={{ alignSelf: "flex-start", mb: 2, ml: 1 }}
+          sx={{ alignSelf: "flex-start", ml: 1 }}
         >
           <AddIcon onClick={onAdd} />
         </Fab>

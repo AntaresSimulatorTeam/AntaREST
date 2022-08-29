@@ -1,9 +1,11 @@
 import { AxiosError } from "axios";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Tab } from "@mui/material";
+import { Box, Button, Tab, Typography } from "@mui/material";
 import { useFieldArray } from "react-hook-form";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { BindingConstFields, ConstraintType, dataToId } from "./utils";
@@ -31,6 +33,13 @@ import {
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
+import useDebounce from "../../../../../../../hooks/useDebounce";
+import { appendCommands } from "../../../../../../../services/api/variant";
+import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studyDataSynthesis";
+
+const DEBOUNCE_DELAY = 200;
 
 interface Props {
   bcIndex: number;
@@ -42,8 +51,11 @@ interface Props {
 export default function BindingConstForm(props: Props) {
   const { study, options, bindingConst, bcIndex } = props;
   const studyId = study.id;
+  const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { control } = useFormContext<BindingConstFields>();
   const { fields, update, append, remove } = useFieldArray({
     control,
@@ -78,10 +90,60 @@ export default function BindingConstForm(props: Props) {
   const [addConstraintTermDialog, setAddConstraintTermDialog] = useState(false);
   const [termToDelete, setTermToDelete] = useState<number>();
   const [tabValue, setTabValue] = useState(0);
+
+  const handleConstraintDeletion = useCallback(async () => {
+    try {
+      await appendCommands(study.id, [
+        {
+          action: CommandEnum.REMOVE_BINDING_CONSTRAINT,
+          args: {
+            id: bindingConst,
+          },
+        },
+      ]);
+      enqueueSnackbar(t("study.success.deleteCluster"), { variant: "success" });
+      dispatch(setCurrentBindingConst(""));
+      navigate(`/studies/${study.id}/explore/modelization/bindingcontraint`);
+    } catch (e) {
+      enqueueErrorSnackbar(t("study.error.deleteCluster"), e as AxiosError);
+    }
+  }, [
+    bindingConst,
+    dispatch,
+    enqueueErrorSnackbar,
+    enqueueSnackbar,
+    navigate,
+    study.id,
+    t,
+  ]);
+
   const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
     () => [
       {
-        translationId: "global.general",
+        legend: (
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
+            >
+              {t("global.general")}
+            </Typography>
+            <Button
+              variant="text"
+              color="error"
+              onClick={handleConstraintDeletion}
+            >
+              {t("global.delete")}
+            </Button>
+          </Box>
+        ),
         fields: [
           {
             type: "text",
@@ -139,7 +201,7 @@ export default function BindingConstForm(props: Props) {
     [enqueueErrorSnackbar, studyId, t]
   );
 
-  const saveContraintValue = useCallback(
+  const saveContraintValue = useDebounce(
     async (
       index: number,
       prevConst: ConstraintType,
@@ -166,7 +228,7 @@ export default function BindingConstForm(props: Props) {
         );
       }
     },
-    [bindingConst, enqueueErrorSnackbar, study.id, t, update]
+    DEBOUNCE_DELAY
   );
 
   const deleteTerm = useCallback(

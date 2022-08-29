@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
@@ -13,9 +13,7 @@ import OptionsList from "./OptionsList";
 import { ConstraintItemRoot } from "./style";
 import ConstraintElement from "../constraintviews/ConstraintElement";
 import OffsetInput from "../constraintviews/OffsetInput";
-import useDebounce from "../../../../../../../../hooks/useDebounce";
 
-export const DEBOUNCE_DELAY = 200;
 export type ConstraintWithNullableOffset = Partial<
   Omit<ConstraintType, "offset"> & { offset: number | null | undefined }
 >;
@@ -47,7 +45,7 @@ export default function ConstraintItem(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = useDebounce(
+  const handleChange = useCallback(
     (name: "weight" | "offset", value: string | number | null) => {
       let pValue = 0;
       if (value !== null) {
@@ -68,7 +66,7 @@ export default function ConstraintItem(props: Props) {
         [name]: value === null ? value : pValue,
       });
     },
-    DEBOUNCE_DELAY
+    [constraint.id, saveValue]
   );
 
   ////////////////////////////////////////////////////////////////

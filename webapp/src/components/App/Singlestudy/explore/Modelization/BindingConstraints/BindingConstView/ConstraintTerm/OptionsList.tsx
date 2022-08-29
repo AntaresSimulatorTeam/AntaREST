@@ -3,8 +3,6 @@ import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
 import { ConstraintType, dataToId, isTermExist } from "../utils";
-import { DEBOUNCE_DELAY } from ".";
-import useDebounce from "../../../../../../../../hooks/useDebounce";
 
 interface Props {
   list: AllClustersAndLinks;
@@ -81,39 +79,45 @@ export default function OptionsList(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleValue1 = useDebounce((value: string) => {
-    const v2 = getFirstValue2(value);
-    saveValue({
-      id: constraint.id,
-      data: isLink
-        ? {
-            area1: value,
-            area2: v2,
-          }
-        : {
-            area: value,
-            cluster: v2,
-          },
-    });
-    setValue1(value);
-    setValue2(v2);
-  }, DEBOUNCE_DELAY);
+  const handleValue1 = useCallback(
+    (value: string) => {
+      const v2 = getFirstValue2(value);
+      saveValue({
+        id: constraint.id,
+        data: isLink
+          ? {
+              area1: value,
+              area2: v2,
+            }
+          : {
+              area: value,
+              cluster: v2,
+            },
+      });
+      setValue1(value);
+      setValue2(v2);
+    },
+    [constraint.id, getFirstValue2, isLink, saveValue, setValue1, setValue2]
+  );
 
-  const handleValue2 = useDebounce((value: string) => {
-    setValue2(value);
-    saveValue({
-      id: constraint.id,
-      data: isLink
-        ? {
-            area1: value1,
-            area2: value,
-          }
-        : {
-            area: value1,
-            cluster: value,
-          },
-    });
-  }, DEBOUNCE_DELAY);
+  const handleValue2 = useCallback(
+    (value: string) => {
+      setValue2(value);
+      saveValue({
+        id: constraint.id,
+        data: isLink
+          ? {
+              area1: value1,
+              area2: value,
+            }
+          : {
+              area: value1,
+              cluster: value,
+            },
+      });
+    },
+    [constraint.id, isLink, saveValue, setValue2, value1]
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX

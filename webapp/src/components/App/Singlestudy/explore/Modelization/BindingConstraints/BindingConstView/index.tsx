@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
@@ -28,31 +28,33 @@ function BindingConstView(props: Props) {
 
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
-      <UsePromiseCond
-        response={res}
-        ifPending={() => <SimpleLoader />}
-        ifResolved={(data) => (
-          <UsePromiseCond
-            response={optionsRes}
-            ifPending={() => <SimpleLoader />}
-            ifResolved={(options) => (
-              <Form
-                autoSubmit
-                config={{ defaultValues: data as BindingConstFields }}
-              >
-                {bindingConst && options && (
-                  <BindingConstForm
-                    study={study}
-                    bindingConst={bindingConst}
-                    bcIndex={bcIndex}
-                    options={options}
-                  />
-                )}
-              </Form>
-            )}
-          />
-        )}
-      />
+      <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
+        <UsePromiseCond
+          response={res}
+          ifPending={() => <SimpleLoader />}
+          ifResolved={(data) => (
+            <UsePromiseCond
+              response={optionsRes}
+              ifPending={() => <SimpleLoader />}
+              ifResolved={(options) => (
+                <Form
+                  autoSubmit
+                  config={{ defaultValues: data as BindingConstFields }}
+                >
+                  {bindingConst && options && (
+                    <BindingConstForm
+                      study={study}
+                      bindingConst={bindingConst}
+                      bcIndex={bcIndex}
+                      options={options}
+                    />
+                  )}
+                </Form>
+              )}
+            />
+          )}
+        />
+      </Paper>
     </Box>
   );
 }

@@ -1,9 +1,10 @@
 import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import { v4 as uuidv4 } from "uuid";
 import { DeepPartial, FieldValues, Path } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SxProps, Theme } from "@mui/material";
-import { Fragment, useMemo } from "react";
+import { Fragment, ReactNode, useMemo } from "react";
 import SelectFE, { SelectFEProps } from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
@@ -54,7 +55,7 @@ export type IGeneratorFieldType<T> =
   | BooleanField<T>;
 
 export interface IFieldsetType<T> {
-  translationId: string;
+  legend: string | ReactNode;
   fields: Array<IGeneratorFieldType<T>>;
 }
 
@@ -84,7 +85,12 @@ export default function FormGenerator<T extends FieldValues>(
   return (
     <>
       {formatedTemplate.map((fieldset) => (
-        <Fieldset key={fieldset.id} legend={t(fieldset.translationId)}>
+        <Fieldset
+          key={fieldset.id}
+          legend={
+            RA.isString(fieldset.legend) ? t(fieldset.legend) : fieldset.legend
+          }
+        >
           {fieldset.fields.map((field) => {
             const { id, path, rules, type, required, ...otherProps } = field;
             const vRules = rules
