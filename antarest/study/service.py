@@ -1819,6 +1819,7 @@ class StudyService:
         )
 
     def archive(self, uuid: str, params: RequestParameters) -> str:
+        logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
@@ -2216,6 +2217,7 @@ class StudyService:
     def archive_outputs(
         self, study_id: str, params: RequestParameters
     ) -> None:
+        logger.info(f"Archiving all outputs for study {study_id}")
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)

@@ -418,6 +418,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             self.invalidate_cache(child, invalidate_self_snapshot=True)
 
     def clear_snapshot(self, variant_study: Study) -> None:
+        logger.info(f"Clearing snapshot for study {variant_study.id}")
         self.invalidate_cache(variant_study, invalidate_self_snapshot=True)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
