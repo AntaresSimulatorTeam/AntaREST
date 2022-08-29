@@ -21,30 +21,33 @@ class AutoArchiveService(IService):
         self.study_service = study_service
         self.config = config
 
+    def _try_archive_studies(self):
+        now = datetime.datetime.utcnow()
+        studies: List[Study] = self.study_service.repository.get_all()
+        for study in studies:
+            if is_managed(
+                study
+            ) and study.updated_at < now - datetime.timedelta(
+                days=self.config.storage.auto_archive_threshold_days
+            ):
+                if isinstance(study, RawStudy) and not study.archived:
+                    self.study_service.archive(
+                        study.id,
+                        params=RequestParameters(DEFAULT_ADMIN_USER),
+                    )
+                elif isinstance(study, VariantStudy):
+                    self.study_service.storage_service.variant_study_service.clear_snapshot(
+                        study
+                    )
+                    self.study_service.archive_outputs(
+                        study.id,
+                        params=RequestParameters(DEFAULT_ADMIN_USER),
+                    )
+
     def _loop(self) -> None:
         while True:
             try:
-                now = datetime.datetime.utcnow()
-                studies: List[Study] = self.study_service.repository.get_all()
-                for study in studies:
-                    if is_managed(
-                        study
-                    ) and study.updated_at < now - datetime.timedelta(
-                        days=self.config.storage.auto_archive_threshold_days
-                    ):
-                        if isinstance(RawStudy, study) and not study.archived:
-                            self.study_service.archive(
-                                study.id,
-                                params=RequestParameters(DEFAULT_ADMIN_USER),
-                            )
-                        elif isinstance(VariantStudy, study):
-                            self.study_service.storage_service.variant_study_service.clear_snapshot(
-                                study
-                            )
-                            self.study_service.archive_outputs(
-                                study.id,
-                                params=RequestParameters(DEFAULT_ADMIN_USER),
-                            )
+                self._try_archive_studies()
             except Exception as e:
                 logger.error(
                     "Unexpected error happened when processing auto archive service loop",
