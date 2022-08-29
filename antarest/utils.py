@@ -1,12 +1,12 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Tuple, Any, Optional, Dict, cast
+from typing import Tuple, Any, Optional, Dict
 
 import redis
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
@@ -44,7 +44,6 @@ from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.watcher_blueprint import create_watcher_routes
-from antarest.tools.admin_lib import clean_locks
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -266,6 +265,7 @@ def create_services(
         event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,
+        cache=cache,
     )
 
     watcher = create_watcher(

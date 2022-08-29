@@ -14,6 +14,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
@@ -85,6 +86,7 @@ class LauncherService:
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
+        cache: ICache,
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
@@ -107,6 +109,7 @@ class LauncherService:
                 import_output=self._import_output,
             ),
             event_bus,
+            cache,
         )
         self.extensions = self._init_extensions()
 
@@ -735,3 +738,23 @@ class LauncherService:
             ] = self.config.launcher.slurm.antares_versions_on_remote_server
 
         return version_dict
+
+    def get_launch_progress(
+        self, job_id: str, params: RequestParameters
+    ) -> float:
+        job_result = self.job_result_repository.get(job_id)
+        if not job_result:
+            raise JobNotFound()
+        study_uuid = job_result.study_id
+        launcher = job_result.launcher
+        study = self.study_service.get_study(study_uuid)
+        assert_permission(
+            user=params.user,
+            study=study,
+            permission_type=StudyPermissionType.READ,
+        )
+
+        launch_progress_json = self.launchers[launcher].cache.get(
+            id=f"Launch_Progress_{job_id}"
+        ) or {"progress": 0}
+        return launch_progress_json.get("progress", 0)

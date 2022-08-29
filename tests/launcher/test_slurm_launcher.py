@@ -60,9 +60,7 @@ def test_init_slurm_launcher_arguments(tmp_path: Path):
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config,
-        callbacks=Mock(),
-        event_bus=Mock(),
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
     arguments = slurm_launcher._init_launcher_arguments()
@@ -110,9 +108,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config,
-        callbacks=Mock(),
-        event_bus=Mock(),
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
@@ -152,6 +148,7 @@ def test_slurm_launcher_delete_function(tmp_path: str):
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
+        cache=Mock(),
     )
     directory_path = Path(tmp_path) / "directory"
     directory_path.mkdir()
@@ -173,6 +170,7 @@ def test_extra_parameters(launcher_config: Config):
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
+        cache=Mock(),
     )
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
         LauncherParametersDTO()
@@ -244,6 +242,7 @@ def test_run_study(
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
+        cache=Mock(),
     )
 
     study_uuid = "study_uuid"
@@ -290,6 +289,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
         config=launcher_config,
         callbacks=Mock(),
         event_bus=Mock(),
+        cache=Mock(),
     )
     slurm_launcher._import_study_output = Mock()
     slurm_launcher._delete_workspace_file = Mock()
@@ -340,6 +340,7 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
+        cache=Mock(),
     )
 
     (launcher_config.launcher.slurm.local_workspace / "machin.txt").touch()
@@ -356,6 +357,7 @@ def test_import_study_output(launcher_config, tmp_path):
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
+        cache=Mock(),
     )
     slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1")
@@ -451,6 +453,7 @@ def test_kill_job(
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
+        cache=Mock(),
     )
     slurm_launcher.data_repo_tinydb = data_repo_tinydb_mock
 
@@ -505,6 +508,7 @@ def test_launcher_workspace_init(
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
+        cache=Mock(),
     )
     workspaces = list(
         filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())
@@ -528,6 +532,7 @@ def test_launcher_workspace_init(
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
+        cache=Mock(),
     )
     assert (
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
@@ -542,6 +547,7 @@ def test_launcher_workspace_init(
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
+        cache=Mock(),
     )
     assert (
         len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))

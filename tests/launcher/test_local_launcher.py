@@ -25,9 +25,7 @@ def test_compute(tmp_path: Path):
     )
     storage_service = Mock()
     local_launcher = LocalLauncher(
-        Config(),
-        callbacks=Mock(),
-        event_bus=Mock(),
+        Config(), callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
     uuid = uuid4()
@@ -62,6 +60,7 @@ def test_select_best_binary(tmp_path: Path):
         Config(launcher=LauncherConfig(local=LocalConfig(binaries=binaries))),
         callbacks=Mock(),
         event_bus=Mock(),
+        cache=Mock(),
     )
 
     assert local_launcher._select_best_binary("600") == binaries["700"]

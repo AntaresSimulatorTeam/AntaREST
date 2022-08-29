@@ -36,6 +36,7 @@ class EventType(str, Enum):
     WORKER_TASK = "WORKER_TASK"
     WORKER_TASK_STARTED = "WORKER_TASK_STARTED"
     WORKER_TASK_ENDED = "WORKER_TASK_ENDED"
+    LAUNCH_PROGRESS = "LAUNCH_PROGRESS"
 
 
 class EventChannelDirectory:

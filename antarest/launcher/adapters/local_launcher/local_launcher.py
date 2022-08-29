@@ -10,6 +10,7 @@ from typing import Dict, Optional, Tuple, Callable, cast, IO
 from uuid import UUID
 
 from antarest.core.config import Config
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import (
@@ -33,8 +34,9 @@ class LocalLauncher(AbstractLauncher):
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
+        cache: ICache,
     ) -> None:
-        super().__init__(config, callbacks, event_bus)
+        super().__init__(config, callbacks, event_bus, cache)
         self.tmpdir = config.storage.tmp_dir
         self.job_id_to_study_id: Dict[  # type: ignore
             str, Tuple[str, Path, subprocess.Popen]
