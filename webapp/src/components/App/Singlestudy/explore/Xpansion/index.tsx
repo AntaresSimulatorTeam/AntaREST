@@ -50,7 +50,7 @@ function Xpansion() {
   );
 
   useEffect(() => {
-    if (window.history.state.usr !== null) {
+    if (window.history.state.usr) {
       setExist(window.history.state.usr.exist);
     }
   }, [window.history.state.usr]);
