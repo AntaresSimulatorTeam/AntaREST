@@ -100,9 +100,3 @@ class AbstractLauncher(ABC):
                 )
 
         return update_log
-
-    def get_launch_progress(self, job_id: str) -> float:
-        launch_progress_json = self.cache.get(
-            id=f"Launch_Progress_{job_id}"
-        ) or {"progress": 0}
-        return launch_progress_json.get("progress", 0)

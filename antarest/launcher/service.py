@@ -754,4 +754,7 @@ class LauncherService:
             permission_type=StudyPermissionType.READ,
         )
 
-        return self.launchers[launcher].get_launch_progress(job_id)
+        launch_progress_json = self.launchers[launcher].cache.get(
+            id=f"Launch_Progress_{job_id}"
+        ) or {"progress": 0}
+        return launch_progress_json.get("progress", 0)
