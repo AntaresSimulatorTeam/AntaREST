@@ -651,3 +651,46 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     study_service.check_and_update_study_version_in_database(raw_study)
 
     assert raw_study.version == "100"
+
+
+@pytest.mark.unit_test
+def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    raw_study = RawStudy(
+        id=name,
+        name=name,
+        version="700",
+        workspace="foo",
+        path=str(study_path),
+    )
+    study_factory = Mock()
+    study_tree_mock = Mock()
+    study_factory.create_from_fs.return_value = FileStudy(
+        Mock(), study_tree_mock
+    )
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, workspace_name="foo"),
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    study_tree_mock.get.side_effect = [
+        {"caption": name, "version": "700"},
+        {"caption": "new_name", "version": "700"},
+        {"caption": "new_name", "version": "800"},
+    ]
+
+    assert not study_service.update_name_and_version_from_raw_meta(raw_study)
+
+    assert study_service.update_name_and_version_from_raw_meta(raw_study)
+    assert raw_study.name == "new_name"
+    assert study_service.update_name_and_version_from_raw_meta(raw_study)
+    assert raw_study.name == "new_name"
+    assert raw_study.version == "800"

@@ -650,6 +650,7 @@ class StudyService:
                 for raw_study in all_studies
                 if directory in Path(raw_study.path).parents
             ]
+        studies_by_path = {study.path: study for study in all_studies}
 
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
@@ -696,9 +697,10 @@ class StudyService:
             if study.missing is not None
         }
         for folder in folders:
-            if str(folder.path) not in study_paths:
+            study_path = str(folder.path)
+            if study_path not in study_paths:
                 try:
-                    if str(folder.path) not in missing_studies.keys():
+                    if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[
                             folder.workspace
                         ].path
@@ -706,7 +708,7 @@ class StudyService:
                         study = RawStudy(
                             id=str(uuid4()),
                             name=folder.path.name,
-                            path=str(folder.path),
+                            path=study_path,
                             folder=str(dir_name),
                             workspace=folder.workspace,
                             owner=None,
@@ -721,7 +723,7 @@ class StudyService:
                             study.id,
                         )
                     else:
-                        study = missing_studies[str(folder.path)]
+                        study = missing_studies[study_path]
                         study.missing = None
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
@@ -749,6 +751,12 @@ class StudyService:
                     logger.error(
                         f"Failed to add study {folder.path}", exc_info=e
                     )
+            elif directory and study_path in studies_by_path:
+                existing_study = studies_by_path[study_path]
+                if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(
+                    existing_study
+                ):
+                    self.repository.save(existing_study)
 
     def copy_study(
         self,

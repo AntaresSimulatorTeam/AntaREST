@@ -122,6 +122,39 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             else:
                 raise e
 
+    def update_name_and_version_from_raw_meta(
+        self, metadata: RawStudy
+    ) -> bool:
+        """
+        Update name from study raw metadata
+        Args:
+            metadata: study
+        Returns: a boolean indicating if the name or version has changed
+        """
+        path = self.get_study_path(metadata)
+        try:
+            study = self.study_factory.create_from_fs(path, study_id="")
+            raw_meta = study.tree.get(["study", "antares"])
+            version_as_string = str(raw_meta["version"])
+            if (
+                metadata.name != raw_meta["caption"]
+                or metadata.version != version_as_string
+            ):
+                logger.info(
+                    f"Updating name/version for study {metadata.id} ({metadata.name}) to {raw_meta['caption']}/{version_as_string}"
+                )
+                metadata.name = raw_meta["caption"]
+                metadata.version = version_as_string
+                return True
+            return False
+        except Exception as e:
+            logger.error(
+                "Failed to update study %s name and version from raw metadata!",
+                str(metadata.path),
+                exc_info=e,
+            )
+            return False
+
     def exists(self, study: RawStudy) -> bool:
         """
         Check study exist.
