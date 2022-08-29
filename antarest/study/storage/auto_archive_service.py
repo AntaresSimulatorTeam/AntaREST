@@ -21,7 +21,7 @@ class AutoArchiveService(IService):
         self.study_service = study_service
         self.config = config
 
-    def _try_archive_studies(self):
+    def _try_archive_studies(self) -> None:
         now = datetime.datetime.utcnow()
         studies: List[Study] = self.study_service.repository.get_all()
         for study in studies:
