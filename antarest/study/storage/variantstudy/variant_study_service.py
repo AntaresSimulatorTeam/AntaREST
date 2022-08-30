@@ -43,7 +43,9 @@ from antarest.core.tasks.service import (
     noop_notifier,
 )
 from antarest.core.utils.utils import assert_this
-from antarest.study.storage.variantstudy.business.utils import aggregate_commands
+from antarest.study.storage.variantstudy.business.utils import (
+    transform_command_to_dto,
+)
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -227,7 +229,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study_id, commands)
-        validated_commands = aggregate_commands(command_objs)
+        validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
         new_commands = [
             CommandBlock(
@@ -265,7 +267,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study_id, commands)
-        validated_commands = aggregate_commands(command_objs)
+        validated_commands = transform_command_to_dto(command_objs, commands)
         study.commands = []
         study.commands.extend(
             [
@@ -364,7 +366,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study_id, [command])
-        validated_commands = aggregate_commands(command_objs)
+        validated_commands = transform_command_to_dto(command_objs, [command])
         assert_this(len(validated_commands) == 1)
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:

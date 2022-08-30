@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Sequence
+from typing import Union, List, Any, Sequence, Optional
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -79,14 +79,31 @@ class AliasDecoder:
         raise NotImplementedError(f"Alias {alias} not implemented")
 
 
-def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
+def transform_command_to_dto(
+    commands: Sequence[ICommand],
+    ref_commands: Optional[Sequence[CommandDTO]] = None,
+    force_aggregate: bool = False,
+) -> List[CommandDTO]:
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
     commands_dto: List[CommandDTO] = []
+    ref_commands_dto = (
+        ref_commands
+        if ref_commands is not None
+        else [command.to_dto() for command in commands]
+    )
     prev_command = commands[0]
+    cur_dto_index = 0
+    cur_dto = ref_commands_dto[cur_dto_index]
+    cur_dto_arg_count = (
+        1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
+    )
     cur_command_args_batch = [prev_command.to_dto().args]
     for command in commands[1:]:
-        if command.command_name == prev_command.command_name:
+        cur_dto_arg_count -= 1
+        if command.command_name == prev_command.command_name and (
+            cur_dto_arg_count > 0 or force_aggregate
+        ):
             cur_command_args_batch.append(command.to_dto().args)
         else:
             commands_dto.append(
@@ -96,7 +113,12 @@ def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
                 )
             )
             cur_command_args_batch = [command.to_dto().args]
-        prev_command = command
+            cur_dto_index += 1
+            cur_dto = ref_commands_dto[cur_dto_index]
+            cur_dto_arg_count = (
+                1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
+            )
+            prev_command = command
     commands_dto.append(
         CommandDTO(
             action=prev_command.command_name.value, args=cur_command_args_batch

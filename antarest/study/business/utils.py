@@ -10,7 +10,9 @@ from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
-from antarest.study.storage.variantstudy.business.utils import aggregate_commands
+from antarest.study.storage.variantstudy.business.utils import (
+    transform_command_to_dto,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
@@ -33,7 +35,7 @@ def execute_or_add_commands(
     else:
         storage_service.variant_study_service.append_commands(
             study.id,
-            aggregate_commands(commands),
+            transform_command_to_dto(commands),
             RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 

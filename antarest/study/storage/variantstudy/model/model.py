@@ -16,7 +16,6 @@ class CommandDTO(BaseModel):
     action: str
     # if args is a list, this mean the command will be mapped to the list of args
     args: Union[List[JSON], JSON]
-    batch: bool = False
     version: int = 1
 
 
