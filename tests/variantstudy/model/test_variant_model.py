@@ -11,11 +11,13 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
     StudyAdditionalData,
 )
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -39,7 +41,9 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(tmp_path: Path) -> VariantStudyService:
+def test_commands_service(
+    tmp_path: Path, command_factory: CommandFactory
+) -> VariantStudyService:
     engine = create_engine(
         "sqlite:///:memory:",
         echo=True,
@@ -56,7 +60,7 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
         raw_study_service=Mock(),
         cache=Mock(),
         task_service=Mock(),
-        command_factory=Mock(),
+        command_factory=command_factory,
         study_factory=Mock(),
         config=Config(
             storage=StorageConfig(
@@ -89,16 +93,20 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
         assert study.parent_id == origin_id
 
         # Append command
-        command_1 = CommandDTO(action="My-action-1", args={"arg_1": "Yes"})
+        command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"})
         service.append_command(saved_id, command_1, SADMIN)
-        command_2 = CommandDTO(action="My-action-2", args={"arg_2": "No"})
+        command_2 = CommandDTO(action="create_area", args={"area_name": "No"})
         service.append_command(saved_id, command_2, SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 2
 
         # Append multiple commands
-        command_3 = CommandDTO(action="My-action-3", args={"arg_3": "No"})
-        command_4 = CommandDTO(action="My-action-4", args={"arg_4": "No"})
+        command_3 = CommandDTO(
+            action="create_area", args={"area_name": "Maybe"}
+        )
+        command_4 = CommandDTO(
+            action="create_link", args={"area1": "No", "area2": "Yes"}
+        )
         service.append_commands(saved_id, [command_3, command_4], SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 4
@@ -114,7 +122,10 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
         assert len(commands) == 3
 
         # Update command
-        command_5 = CommandDTO(action="My-action-5", args={"arg_5": "No"})
+        command_5 = CommandDTO(
+            action="replace_matrix",
+            args={"target": "some/matrix/path", "matrix": [[0]]},
+        )
         service.update_command(
             study_id=saved_id,
             command_id=commands[2].id,
@@ -122,7 +133,8 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
             params=SADMIN,
         )
         commands = service.get_commands(saved_id, SADMIN)
-        assert commands[2].action == "My-action-5"
+        assert commands[2].action == "replace_matrix"
+        assert commands[2].args["matrix"] == "matrix_id"
 
         # Move command
         service.move_command(
@@ -132,7 +144,7 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
             params=SADMIN,
         )
         commands = service.get_commands(saved_id, SADMIN)
-        assert commands[0].action == "My-action-5"
+        assert commands[0].action == "replace_matrix"
 
         # Generate
         service._generate_snapshot = Mock()
@@ -147,7 +159,9 @@ def test_commands_service(tmp_path: Path) -> VariantStudyService:
         assert study.snapshot.id == study.id
 
 
-def test_smart_generation(tmp_path: Path) -> None:
+def test_smart_generation(
+    tmp_path: Path, command_factory: CommandFactory
+) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
         echo=True,
@@ -164,7 +178,7 @@ def test_smart_generation(tmp_path: Path) -> None:
         raw_study_service=Mock(),
         cache=Mock(),
         task_service=Mock(),
-        command_factory=Mock(),
+        command_factory=command_factory,
         study_factory=Mock(),
         config=Config(
             storage=StorageConfig(
@@ -222,7 +236,7 @@ def test_smart_generation(tmp_path: Path) -> None:
 
         service.append_command(
             variant_id,
-            CommandDTO(action="some action", args={"some-args": "value"}),
+            CommandDTO(action="create_area", args={"area_name": "a"}),
             SADMIN,
         )
         service._read_additional_data_from_files = Mock()
@@ -241,9 +255,7 @@ def test_smart_generation(tmp_path: Path) -> None:
 
         service.append_command(
             variant_id,
-            CommandDTO(
-                action="some other action", args={"some-args": "value"}
-            ),
+            CommandDTO(action="create_area", args={"area_name": "b"}),
             SADMIN,
         )
         assert (
@@ -260,10 +272,8 @@ def test_smart_generation(tmp_path: Path) -> None:
         service.replace_commands(
             variant_id,
             [
-                CommandDTO(action="some action", args={"some-args": "value"}),
-                CommandDTO(
-                    action="some other action 2", args={"some-args": "value"}
-                ),
+                CommandDTO(action="create_area", args={"area_name": "c"}),
+                CommandDTO(action="create_area", args={"area_name": "d"}),
             ],
             SADMIN,
         )

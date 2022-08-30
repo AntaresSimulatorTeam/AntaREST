@@ -1443,10 +1443,10 @@ class StudyService:
 
     def apply_commands(
         self, uuid: str, commands: List[CommandDTO], params: RequestParameters
-    ) -> None:
+    ) -> Optional[List[str]]:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
-            self.storage_service.variant_study_service.append_commands(
+            return self.storage_service.variant_study_service.append_commands(
                 uuid, commands, params
             )
         else:
@@ -1478,6 +1478,7 @@ class StudyService:
             uuid,
             params.get_user_id(),
         )
+        return None
 
     def edit_study(
         self,

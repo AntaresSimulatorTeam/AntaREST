@@ -24,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -62,8 +63,19 @@ def command_context(matrix_service: MatrixService) -> CommandContext:
 
 
 @pytest.fixture
+def command_factory(matrix_service: MatrixService) -> MatrixService:
+    return CommandFactory(
+        generator_matrix_constants=GeneratorMatrixConstants(
+            matrix_service=matrix_service
+        ),
+        matrix_service=matrix_service,
+        patch_service=PatchService(),
+    )
+
+
+@pytest.fixture
 def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
-    project_dir: Path = Path(__file__).parent.parent.parent.parent.parent
+    project_dir: Path = Path(__file__).parent.parent.parent
     empty_study_path: Path = project_dir / "resources" / "empty_study_720.zip"
     empty_study_destination_path = Path(tmp_path) / "empty-study"
     with zipfile.ZipFile(empty_study_path, "r") as zip_empty_study:
