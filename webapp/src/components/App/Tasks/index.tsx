@@ -54,14 +54,21 @@ import {
   WSMessage,
   TaskType,
   TaskStatus,
+  LaunchJobsProgress,
+  LaunchJobProgressDTO,
 } from "../../../common/types";
-import { getAllMiscRunningTasks, getTask } from "../../../services/api/tasks";
+import {
+  getAllMiscRunningTasks,
+  getProgress,
+  getTask,
+} from "../../../services/api/tasks";
 import LaunchJobLogView from "./LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudies } from "../../../redux/selectors";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import LoadIndicator from "../../common/LoadIndicator";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -81,6 +88,8 @@ function JobsListing() {
   >();
   const studies = useAppSelector(getStudies);
   const dispatch = useAppDispatch();
+  const [studyJobsProgress, setStudyJobsProgress] =
+    useState<LaunchJobsProgress>({});
 
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
@@ -99,6 +108,23 @@ function JobsListing() {
           (task) =>
             !task.completion_date_utc ||
             moment.utc(task.completion_date_utc).isAfter(dateThreshold)
+        )
+      );
+
+      const initJobProgress: { [key: string]: number } = {};
+      const jobProgress = await Promise.all(
+        allJobs
+          .filter((o) => o.status === "running")
+          .map(async (item) => ({
+            id: item.id,
+            progress: await getProgress(item.id),
+          }))
+      );
+
+      setStudyJobsProgress(
+        jobProgress.reduce(
+          (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
+          initJobProgress
         )
       );
     } catch (e) {
@@ -229,6 +255,12 @@ function JobsListing() {
             return d.id !== fileDownload.id;
           })
         );
+      } else if (ev.type === WSEvent.LAUNCH_PROGRESS) {
+        const message = ev.payload as LaunchJobProgressDTO;
+        setStudyJobsProgress((studyJobsProgress) => ({
+          ...studyJobsProgress,
+          [message.id]: message.progress,
+        }));
       }
     };
 
@@ -243,6 +275,11 @@ function JobsListing() {
   }, [tasks]);
 
   useEffect(() => {
+    const channels = jobs.map((job) => WsChannel.JobStatus + job.id);
+    return sendWsSubscribeMessage(channels);
+  }, [jobs]);
+
+  useEffect(() => {
     init();
   }, []);
 
@@ -251,18 +288,27 @@ function JobsListing() {
       jobs.map((job) => ({
         id: job.id,
         name: (
-          <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
-            {renderStatus(job)}
-            <Link
-              style={{ textDecoration: "none" }}
-              to={`/studies/${encodeURI(job.studyId)}`}
-            >
-              <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
-                {studies.find((s) => s.id === job.studyId)?.name ||
-                  `${t("global.unknown")} (${job.id})`}
-              </Typography>
-            </Link>
-            {renderTags(job)}
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
+              {renderStatus(job)}
+              <Link
+                style={{ textDecoration: "none" }}
+                to={`/studies/${encodeURI(job.studyId)}`}
+              >
+                <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
+                  {studies.find((s) => s.id === job.studyId)?.name ||
+                    `${t("global.unknown")} (${job.id})`}
+                </Typography>
+              </Link>
+              {renderTags(job)}
+            </Box>
+            {job.status === "running" && (
+              <LoadIndicator
+                indicator={studyJobsProgress[job.id] as number}
+                size="20%"
+                tooltip="Progression"
+              />
+            )}
           </Box>
         ),
         dateView: (

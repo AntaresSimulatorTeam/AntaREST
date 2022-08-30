@@ -4,7 +4,7 @@ import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { StepIconProps, Tooltip, Typography, Box } from "@mui/material";
+import { StepIconProps, Tooltip, Typography } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,7 @@ import {
   StepLabelRow,
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import LoadIndicator from "../../../../../common/LoadIndicator";
 
 export const ColorStatus = {
   running: "warning.main",
@@ -152,7 +153,10 @@ export default function VerticalLinearStepper(props: Props) {
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
                     <>
-                      <Box>{jobsProgress[job.id]} %</Box>
+                      <LoadIndicator
+                        indicator={jobsProgress[job.id] as number}
+                        tooltip="Progression"
+                      />
                       <CancelContainer>
                         <Tooltip title={t("study.killStudy") as string}>
                           <BlockIcon
