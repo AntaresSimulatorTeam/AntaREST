@@ -16,16 +16,21 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import ArchiveIcon from "@mui/icons-material/Archive";
+import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import DownloadIcon from "@mui/icons-material/Download";
 import * as R from "ramda";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
 import moment from "moment";
+import { AxiosError } from "axios";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
+  archiveOutput,
   downloadJobOutput,
   getStudyJobs,
   getStudyOutputs,
+  unarchiveOutput,
 } from "../../../../../services/api/study";
 import {
   LaunchJob,
@@ -34,12 +39,14 @@ import {
 } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface OutputDetail {
   name: string;
   creationDate?: string;
   completionDate?: string;
   job?: LaunchJob;
+  archived?: boolean;
 }
 
 const combineJobsAndOutputs = (
@@ -59,6 +66,7 @@ const combineJobsAndOutputs = (
     const relatedJob = jobs.find((job) => job.outputId === output.name);
     const outputDetail: OutputDetail = {
       name: output.name,
+      archived: output.archived,
     };
     if (relatedJob) {
       outputDetail.completionDate = relatedJob.completionDate;
@@ -81,6 +89,7 @@ function Results() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const { data: studyJobs, isLoading: studyJobsLoading } =
     usePromiseWithSnackbarError(() => getStudyJobs(study.id), {
@@ -115,6 +124,42 @@ function Results() {
     }
     return [];
   }, [studyJobs, studyOutputs]);
+
+  const renderArchiveTool = (output: OutputDetail) => {
+    if (output.archived === undefined) {
+      return <div />;
+    }
+    const title = output.archived ? "global.unarchive" : "global.archive";
+    const errorMessage = output.archived
+      ? "studies.error.unarchiveOutput"
+      : "studies.error.archiveOutput";
+    const Component = output.archived ? UnarchiveIcon : ArchiveIcon;
+    const handler = output.archived
+      ? () => unarchiveOutput(study.id, output.name)
+      : () => archiveOutput(study.id, output.name);
+    return (
+      <Box sx={{ height: "24px", margin: 0.5 }}>
+        <Tooltip title={t(title) as string}>
+          <Component
+            sx={{
+              fontSize: 22,
+              color: "action.active",
+              cursor: "pointer",
+              "&:hover": { color: "action.hover" },
+            }}
+            onClick={async () => {
+              handler().catch((e) => {
+                enqueueErrorSnackbar(
+                  t(errorMessage, { outputname: output.name }),
+                  e as AxiosError
+                );
+              });
+            }}
+          />
+        </Tooltip>
+      </Box>
+    );
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -281,7 +326,8 @@ function Results() {
                             alignItems="center"
                             justifyContent="flex-end"
                           >
-                            <Box>
+                            {renderArchiveTool(row)}
+                            <Box sx={{ height: "24px", margin: 0.5 }}>
                               {row.completionDate && row.job ? (
                                 <Tooltip title={t("global.download") as string}>
                                   <DownloadIcon

@@ -388,6 +388,8 @@
     "studies.error.import": "L'import de l'étude a échoué ({{uploadFile}})",
     "studies.error.archive": "Erreur lors de l'archivage de l'étude {{studyname}}",
     "studies.error.unarchive": "Erreur lors du désarchivage de l'étude {{studyname}}",
+    "studies.error.archiveOutput": "Erreur lors de l'archivage du résultat {{outputname}}",
+    "studies.error.unarchiveOutput": "Erreur lors du désarchivage du résultat {{outputname}}",
     "studies.error.createStudy": "Study {{studyname}} not created",
     "studies.success.saveData": "Data saved with success",
     "studies.success.scanFolder": "Folder scan started",

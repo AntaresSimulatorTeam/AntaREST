@@ -1262,7 +1262,6 @@ def test_unarchive_output(tmp_path: Path):
     service.unarchive_output(
         study_id,
         output_id,
-        use_task=True,
         keep_src_zip=True,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
