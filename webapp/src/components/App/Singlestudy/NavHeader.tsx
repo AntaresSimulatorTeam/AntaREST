@@ -174,7 +174,7 @@ function NavHeader(props: Props) {
         });
     }
     setOpenDeleteDialog(false);
-    navigate("/studies");
+    navigate(parent ? `/studies/${parent?.id}` : "/studies");
   };
 
   const copyId = async (): Promise<void> => {
