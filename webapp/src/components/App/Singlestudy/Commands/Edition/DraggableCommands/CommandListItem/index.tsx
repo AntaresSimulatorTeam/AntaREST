@@ -28,6 +28,7 @@ import {
   JsonContainer,
   StyledDeleteIcon,
 } from "./style";
+import CommandMatrixViewer from "./CommandMatrixViewer";
 
 export const Item = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
@@ -210,6 +211,7 @@ function CommandListItem({
                   theme="monokai"
                 />
               </JsonContainer>
+              <CommandMatrixViewer command={item} />
             </Box>
           </AccordionDetails>
         </DraggableAccorderon>
