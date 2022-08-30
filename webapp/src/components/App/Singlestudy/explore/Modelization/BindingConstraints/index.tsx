@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import NoContent from "../../../../../common/page/NoContent";
+import SimpleContent from "../../../../../common/page/SimpleContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import BindingConstPropsView from "./BindingConstPropsView";
 import {
@@ -75,7 +75,8 @@ function BindingConstraints() {
             // No Areas
             [
               R.T,
-              () => (<NoContent title="No Binding Constraints" />) as ReactNode,
+              () =>
+                (<SimpleContent title="No Binding Constraints" />) as ReactNode,
             ],
           ])()}
         </>

@@ -73,7 +73,9 @@ export const updateConstraintTerm = async (
   constraint: Partial<ConstraintType>
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}/term`,
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term`,
     constraint
   );
   return res.data;
@@ -85,7 +87,9 @@ export const addConstraintTerm = async (
   constraint: ConstraintType
 ): Promise<ConstraintType | null> => {
   const res = await client.post(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}/term`,
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term`,
     constraint
   );
   return res.data;
@@ -97,7 +101,9 @@ export const deleteConstraintTerm = async (
   termId: ConstraintType["id"]
 ): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}/term/${termId}`
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term/${encodeURIComponent(termId)}`
   );
   return res.data;
 };
@@ -107,7 +113,7 @@ export const getBindingConstraint = async (
   bindingConst: string
 ): Promise<BindingConstFields> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(bindingConst)}`
   );
   return res.data;
 };
@@ -125,7 +131,9 @@ export const updateBindingConstraint = async (
   data: UpdateBindingConstraint
 ): Promise<Array<void>> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`,
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}`,
     data
   );
   return res.data;
