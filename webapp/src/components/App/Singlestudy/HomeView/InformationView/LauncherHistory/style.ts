@@ -57,8 +57,8 @@ export const CancelContainer = styled(Box)(({ theme }) => ({
   height: "30px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(1, 0),
+  justifyContent: "space-between",
+  padding: theme.spacing(1),
 }));
 
 export default {};

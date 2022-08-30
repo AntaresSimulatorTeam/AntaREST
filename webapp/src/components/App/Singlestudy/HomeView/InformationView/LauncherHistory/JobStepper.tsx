@@ -4,7 +4,7 @@ import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { StepIconProps, Tooltip, Typography } from "@mui/material";
+import { StepIconProps, Tooltip, Typography, Box } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -152,26 +152,25 @@ export default function VerticalLinearStepper(props: Props) {
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
-                    <>
+                    <CancelContainer>
                       <LoadIndicator
                         indicator={jobsProgress[job.id] as number}
                         tooltip="Progression"
+                        size="30%"
                       />
-                      <CancelContainer>
-                        <Tooltip title={t("study.killStudy") as string}>
-                          <BlockIcon
-                            onClick={() => openConfirmModal(job.id)}
-                            sx={{
-                              m: 0.5,
-                              height: "22px",
-                              cursor: "pointer",
-                              color: "error.light",
-                              "&:hover": { color: "error.dark" },
-                            }}
-                          />
-                        </Tooltip>
-                      </CancelContainer>
-                    </>
+                      <Tooltip title={t("study.killStudy") as string}>
+                        <BlockIcon
+                          onClick={() => openConfirmModal(job.id)}
+                          sx={{
+                            m: 0.5,
+                            height: "22px",
+                            cursor: "pointer",
+                            color: "error.light",
+                            "&:hover": { color: "error.dark" },
+                          }}
+                        />
+                      </Tooltip>
+                    </CancelContainer>
                   )}
                 </StepLabelRow>
               </StepLabelRoot>
