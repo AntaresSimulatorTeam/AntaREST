@@ -334,7 +334,7 @@ export const downloadJobOutput = async (jobId: string): Promise<any> => {
 export const unarchiveOutput = async (
   studyId: string,
   outputId: string
-): Promise<any> => {
+): Promise<string> => {
   const res = await client.post(
     `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`
   );
@@ -344,7 +344,7 @@ export const unarchiveOutput = async (
 export const archiveOutput = async (
   studyId: string,
   outputId: string
-): Promise<any> => {
+): Promise<string> => {
   const res = await client.post(
     `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`
   );
