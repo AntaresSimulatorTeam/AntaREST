@@ -499,6 +499,7 @@
     "xpansion.error.deleteFile": "Failed to delete the file",
     "xpansion.error.getFile": "Failed to retrieve the file",
     "data.matrixName": "Dataset name",
+    "data.viewMatrix": "View matrix",
     "data.newMatrixTitle": "Create new matrix dataset",
     "data.uploadingmatrix": "Uploading matrices",
     "data.analyzingmatrix": "Analyzing matrices",

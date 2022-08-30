@@ -499,6 +499,7 @@
     "xpansion.error.deleteFile": "Échec lors de la suppression du fichier",
     "xpansion.error.getFile": "Échec lors de la récupération du fichier",
     "data.matrixName": "Nom du jeu de données",
+    "data.viewMatrix": "Voir la matrice",
     "data.newMatrixTitle": "Créer un nouveau jeu de données",
     "data.uploadingmatrix": "Chargement des matrices",
     "data.analyzingmatrix": "Analyse des matrices",

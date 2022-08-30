@@ -140,7 +140,7 @@ function DataViewerDialog(props: Props) {
       okButtonText={t("button.close")}
       onOk={onClose}
     >
-      {!!loading && <SimpleLoader />}
+      {!!loading && !content && <SimpleLoader />}
       {!!content && renderContent(content)}
     </OkDialog>
   );
