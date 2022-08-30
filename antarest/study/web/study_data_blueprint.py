@@ -22,6 +22,7 @@ from antarest.study.business.area_management import (
 )
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
+    UpdateBindingConstProps,
 )
 from antarest.study.business.config_management import (
     OutputVariable,
@@ -427,8 +428,34 @@ def create_study_data_routes(
             study, binding_constraint_id
         )
 
-    @bp.post(
+    @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        tags=[APITag.study_data],
+        summary="Update binding constraint",
+        response_model=None,  # Dict[str, bool],
+    )
+    def update_binding_constraint(
+        uuid: str,
+        binding_constraint_id: str,
+        data: UpdateBindingConstProps,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Update binding constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return (
+            study_service.binding_constraint_manager.update_binding_constraint(
+                study, binding_constraint_id, data
+            )
+        )
+
+    @bp.post(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
         summary="update constraint term",
     )
@@ -453,7 +480,7 @@ def create_study_data_routes(
         )
 
     @bp.put(
-        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
         summary="update constraint term",
     )

@@ -42,6 +42,11 @@ class ConstraintTermDTO(BaseModel):
     data: Optional[Union[LinkInfoDTO, ClusterInfoDTO]]
 
 
+class UpdateBindingConstProps(BaseModel):
+    key: str
+    value: Any
+
+
 class BindingConstraintDTO(BaseModel):
     id: str
     name: str
@@ -151,6 +156,46 @@ class BindingConstraintManager:
             )
             binding_constraint.append(new_config)
         return binding_constraint
+
+    def update_binding_constraint(
+        self,
+        study: Study,
+        binding_constraint_id: str,
+        data: UpdateBindingConstProps,
+    ) -> None:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        if not isinstance(constraint, BindingConstraintDTO):
+            raise NoBindingConstraintError(study.id)
+
+        coeffs = {}
+        if constraint.constraints is not None:
+            for term in constraint.constraints:
+                coeffs[term.id] = [term.weight]
+                if term.offset is not None:
+                    coeffs[term.id].append(term.offset)
+
+        command = UpdateBindingConstraint(
+            id=constraint.id,
+            enabled=data.value
+            if data.key == "enabled"
+            else constraint.enabled,
+            time_step=data.value
+            if data.key == "time_step"
+            else constraint.time_step,
+            operator=data.value
+            if data.key == "operator"
+            else constraint.operator,
+            coeffs=coeffs,
+            values=constraint.values,
+            comments=data.value
+            if data.key == "comments"
+            else constraint.comments,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
 
     @staticmethod
     def find_constraint_term_id(

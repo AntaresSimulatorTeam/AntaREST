@@ -1611,9 +1611,32 @@ def test_binding_constraint_manager(app: FastAPI):
 
     binding_constraint_id = binding_constraints_list[0]["id"]
 
+    # Update element of Binding constraint
+    new_comment = "We made it !"
+    res = client.put(
+        f"v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        json={"key": "comments", "value": new_comment},
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Get Binding Constraint
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraint = res.json()
+    comments = binding_constraint["comments"]
+    assert res.status_code == 200
+    assert comments == new_comment
+
     # Add Constraint term
     res = client.post(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term",
         json={
             "weight": 1,
             "offset": 2,
@@ -1645,7 +1668,7 @@ def test_binding_constraint_manager(app: FastAPI):
 
     # Update Constraint term
     res = client.put(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term",
         json={
             "id": f"{area1_name}%{area2_name}",
             "weight": 3,

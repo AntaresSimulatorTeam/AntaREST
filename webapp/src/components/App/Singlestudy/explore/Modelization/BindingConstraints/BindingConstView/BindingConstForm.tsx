@@ -6,7 +6,6 @@ import { useFieldArray } from "react-hook-form";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
-import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { BindingConstFields, ConstraintType, dataToId } from "./utils";
 import {
@@ -20,6 +19,7 @@ import ConstraintItem, { ConstraintWithNullableOffset } from "./ConstraintTerm";
 import { useFormContext } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
+  updateBindingConstraint,
   updateConstraintTerm,
 } from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
@@ -42,14 +42,13 @@ import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studyDa
 const DEBOUNCE_DELAY = 200;
 
 interface Props {
-  bcIndex: number;
   study: StudyMetadata;
   bindingConst: string;
   options: AllClustersAndLinks;
 }
 
 export default function BindingConstForm(props: Props) {
-  const { study, options, bindingConst, bcIndex } = props;
+  const { study, options, bindingConst } = props;
   const studyId = study.id;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -67,7 +66,7 @@ export default function BindingConstForm(props: Props) {
     [fields]
   );
 
-  const pathPrefix = `input/bindingconstraints/bindingconstraints/${bcIndex}`;
+  const pathPrefix = `input/bindingconstraints/bindingconstraints`;
 
   const optionOperator = useMemo(
     () =>
@@ -100,12 +99,16 @@ export default function BindingConstForm(props: Props) {
   const saveValue = useCallback(
     async (name: string, path: string, defaultValues: any, data: any) => {
       try {
-        await editStudy(data, studyId, path);
+        // await editStudy(data, studyId, path);
+        await updateBindingConstraint(studyId, bindingConst, {
+          key: name,
+          value: data,
+        });
       } catch (error) {
         enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
       }
     },
-    [enqueueErrorSnackbar, studyId, t]
+    [bindingConst, enqueueErrorSnackbar, studyId, t]
   );
 
   const saveContraintValue = useDebounce(

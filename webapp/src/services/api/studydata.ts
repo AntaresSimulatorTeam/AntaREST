@@ -8,6 +8,7 @@ import {
 import {
   BindingConstFields,
   ConstraintType,
+  UpdateBindingConstraint,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import client from "./client";
 
@@ -72,7 +73,7 @@ export const updateConstraintTerm = async (
   constraint: Partial<ConstraintType>
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`,
+    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}/term`,
     constraint
   );
   return res.data;
@@ -84,7 +85,7 @@ export const addConstraintTerm = async (
   constraint: ConstraintType
 ): Promise<ConstraintType | null> => {
   const res = await client.post(
-    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`,
+    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}/term`,
     constraint
   );
   return res.data;
@@ -115,6 +116,18 @@ export const getBindingConstraintList = async (
   uuid: string
 ): Promise<Array<BindingConstFields>> => {
   const res = await client.get(`/v1/studies/${uuid}/bindingconstraints`);
+  return res.data;
+};
+
+export const updateBindingConstraint = async (
+  uuid: string,
+  bindingConst: string,
+  data: UpdateBindingConstraint
+): Promise<Array<void>> => {
+  const res = await client.put(
+    `/v1/studies/${uuid}/bindingconstraints/${bindingConst}`,
+    data
+  );
   return res.data;
 };
 

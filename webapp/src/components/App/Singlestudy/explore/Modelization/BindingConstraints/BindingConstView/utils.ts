@@ -15,6 +15,11 @@ export interface ConstraintType {
   data: LinkCreationInfoDTO | ClusterElement;
 }
 
+export interface UpdateBindingConstraint {
+  key: string;
+  value: any;
+}
+
 export interface BindingConstFields {
   name: string;
   id: string;

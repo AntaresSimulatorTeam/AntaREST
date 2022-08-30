@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import * as R from "ramda";
-import { ReactNode, useMemo } from "react";
+import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
@@ -30,12 +30,6 @@ function BindingConstraints() {
   );
   const currentBindingConst = useAppSelector(getCurrentBindingConstId);
   const dispatch = useAppDispatch();
-
-  const bcIndex = useMemo(() => {
-    if (res.data)
-      return res.data.findIndex((elm) => elm.id === currentBindingConst);
-    return -1;
-  }, [res.data, currentBindingConst]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -75,10 +69,7 @@ function BindingConstraints() {
               () => currentBindingConst !== undefined && res.data !== undefined,
               () =>
                 (
-                  <BindingConstView
-                    bindingConst={currentBindingConst}
-                    bcIndex={bcIndex}
-                  />
+                  <BindingConstView bindingConst={currentBindingConst} />
                 ) as ReactNode,
             ],
             // No Areas

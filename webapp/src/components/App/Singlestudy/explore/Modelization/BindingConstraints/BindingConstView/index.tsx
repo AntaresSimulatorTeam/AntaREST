@@ -10,13 +10,12 @@ import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import { getClustersAndLinks } from "../../../../../../../services/api/studydata";
 
 interface Props {
-  bcIndex: number;
   bindingConst: string;
 }
 
 function BindingConstView(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { bindingConst, bcIndex } = props;
+  const { bindingConst } = props;
   const res = usePromise(
     () => getDefaultValues(study.id, bindingConst),
     [study.id, bindingConst]
@@ -45,7 +44,6 @@ function BindingConstView(props: Props) {
                     <BindingConstForm
                       study={study}
                       bindingConst={bindingConst}
-                      bcIndex={bcIndex}
                       options={options}
                     />
                   )}
