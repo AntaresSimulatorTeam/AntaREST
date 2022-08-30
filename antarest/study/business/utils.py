@@ -35,7 +35,7 @@ def execute_or_add_commands(
     else:
         storage_service.variant_study_service.append_commands(
             study.id,
-            transform_command_to_dto(commands),
+            transform_command_to_dto(commands, force_aggregate=True),
             RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 

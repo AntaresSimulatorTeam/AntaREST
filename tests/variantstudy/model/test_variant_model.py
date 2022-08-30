@@ -282,6 +282,6 @@ def test_smart_generation(
         unmanaged_user_config_path.write_text("hello")
         service._generate(variant_id, SADMIN, False)
         service.generator.generate.assert_called_with(
-            [ANY], ANY, ANY, notifier=ANY
+            [ANY, ANY], ANY, ANY, notifier=ANY
         )
         assert unmanaged_user_config_path.read_text() == "hello"
