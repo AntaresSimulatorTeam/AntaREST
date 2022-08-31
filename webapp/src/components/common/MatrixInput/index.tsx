@@ -184,7 +184,12 @@ function MatrixInput(props: PropsType) {
                 variant="outlined"
                 color="primary"
                 startIcon={<DownloadOutlinedIcon />}
-                onClick={() => handleDownload(data, `matrix-${study.id}`)}
+                onClick={() =>
+                  handleDownload(
+                    data,
+                    `matrix_${study.id}_${url.replace("/", "_")}`
+                  )
+                }
               >
                 {t("global.download")}
               </Button>
