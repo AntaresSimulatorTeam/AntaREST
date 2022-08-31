@@ -5,7 +5,7 @@ import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Box, Button } from "@mui/material";
-import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import {
   getStudyData,
   importFile,
@@ -90,7 +90,7 @@ function StudyFileView(props: PropTypes) {
               <Button
                 variant="outlined"
                 color="primary"
-                startIcon={<GetAppOutlinedIcon />}
+                startIcon={<UploadOutlinedIcon />}
                 onClick={() => setOpenImportDialog(true)}
                 sx={{ mb: 1 }}
               >
