@@ -165,8 +165,13 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
   await client.put(`/v1/studies/${sid}/unarchive`);
 };
 
-export const deleteStudy = async (sid: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${sid}`);
+export const deleteStudy = async (
+  sid: string,
+  deleteAllChildren?: boolean
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${sid}?children=${deleteAllChildren || false}`
+  );
   return res.data;
 };
 

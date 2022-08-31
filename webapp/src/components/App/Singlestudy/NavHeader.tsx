@@ -56,6 +56,7 @@ import StarToggle from "../../common/StarToggle";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -93,6 +94,7 @@ function NavHeader(props: Props) {
   const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
   const [openPropertiesDialog, setOpenPropertiesDialog] =
     useState<boolean>(false);
+  const [deleteChildren, setDeleteChildren] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -163,7 +165,7 @@ function NavHeader(props: Props) {
 
   const onDeleteStudy = () => {
     if (study) {
-      dispatch(deleteStudy(study.id))
+      dispatch(deleteStudy({ id: study.id, deleteChildren }))
         .unwrap()
         .catch((err) => {
           enqueueErrorSnackbar(
@@ -172,6 +174,7 @@ function NavHeader(props: Props) {
           );
           logError("Failed to delete study", study, err);
         });
+      setDeleteChildren(false);
     }
     setOpenDeleteDialog(false);
     navigate(parent ? `/studies/${parent?.id}` : "/studies");
@@ -547,7 +550,23 @@ function NavHeader(props: Props) {
           alert="warning"
           open
         >
-          {t("studies.question.delete")}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              width: "100%",
+              height: "auto",
+              gap: 1,
+            }}
+          >
+            <Typography>{t("studies.question.delete")}</Typography>
+            <CheckBoxFE
+              value={deleteChildren}
+              label="Delete all children"
+              onChange={(e, checked) => setDeleteChildren(checked)}
+            />
+          </Box>
         </ConfirmationDialog>
       )}
       {study && openExportDialog && (

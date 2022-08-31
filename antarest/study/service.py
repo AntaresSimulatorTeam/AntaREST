@@ -997,7 +997,7 @@ class StudyService:
             study, dest, len(output_list or []) > 0, output_list
         )
 
-    def delete_study(self, uuid: str, params: RequestParameters) -> None:
+    def delete_study(self, uuid: str, children: bool, params: RequestParameters) -> None:
         """
         Delete study
         Args:
@@ -1019,6 +1019,7 @@ class StudyService:
         elif isinstance(
             study, VariantStudy
         ) and self.storage_service.variant_study_service.has_children(study):
+
             raise StudyDeletionNotAllowed(
                 study.id, "Study has variant children"
             )
