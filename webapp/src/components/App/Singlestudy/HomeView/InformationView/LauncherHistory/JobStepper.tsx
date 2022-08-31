@@ -4,7 +4,7 @@ import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { StepIconProps, Tooltip, Typography, Box } from "@mui/material";
+import { StepIconProps, Tooltip, Typography } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
