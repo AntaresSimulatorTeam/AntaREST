@@ -232,6 +232,12 @@ export const getStudyLinks = createSelector(getStudyData, (data) => {
   return [];
 });
 
+export const getCurrentBindingConstId = (
+  state: AppState
+): StudyDataState["currentBindingConst"] => {
+  return getStudyDataState(state).currentBindingConst;
+};
+
 export const getCurrentClusters = (
   type: "thermals" | "renewables",
   studyId: string,
@@ -243,6 +249,10 @@ export const getCurrentClusters = (
     currentStudyState.entities[studyId]?.areas[currentArea][type];
   return clusters || [];
 };
+
+export const getBindingConst = createSelector(getStudyData, (studyData) =>
+  studyData ? studyData.bindings || [] : []
+);
 
 ////////////////////////////////////////////////////////////////
 // UI

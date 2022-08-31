@@ -26,7 +26,7 @@ export default function PropertiesForm(
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
     (item) => ({
-      label: t(`study.${item}`),
+      label: t(`global.time.${item}`),
       value: item,
     })
   );

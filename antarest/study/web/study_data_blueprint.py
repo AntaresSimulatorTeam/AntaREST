@@ -20,10 +20,17 @@ from antarest.study.business.area_management import (
     AreaInfoDTO,
     AreaUI,
 )
+from antarest.study.business.binding_constraint_management import (
+    ConstraintTermDTO,
+    UpdateBindingConstProps,
+)
 from antarest.study.business.config_management import (
     OutputVariable,
 )
-from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.link_management import (
+    LinkInfoDTO,
+    AllCLustersAndLinks,
+)
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
@@ -375,5 +382,167 @@ def create_study_data_routes(
     ) -> Any:
         params = RequestParameters(user=current_user)
         study_service.check_and_update_all_study_versions_in_database(params)
+
+    @bp.get(
+        "/studies/{uuid}/bindingconstraints",
+        tags=[APITag.study_data],
+        summary="Get binding constraint list",
+        response_model=None,  # Dict[str, bool],
+    )
+    def get_binding_constraint_list(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching binding constraint list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.binding_constraint_manager.get_binding_constraint(
+            study, None
+        )
+
+    @bp.get(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        tags=[APITag.study_data],
+        summary="Get binding constraint list",
+        response_model=None,  # Dict[str, bool],
+    )
+    def get_binding_constraint(
+        uuid: str,
+        binding_constraint_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.binding_constraint_manager.get_binding_constraint(
+            study, binding_constraint_id
+        )
+
+    @bp.put(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        tags=[APITag.study_data],
+        summary="Update binding constraint",
+        response_model=None,  # Dict[str, bool],
+    )
+    def update_binding_constraint(
+        uuid: str,
+        binding_constraint_id: str,
+        data: UpdateBindingConstProps,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Update binding constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return (
+            study_service.binding_constraint_manager.update_binding_constraint(
+                study, binding_constraint_id, data
+            )
+        )
+
+    @bp.post(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
+        tags=[APITag.study_data],
+        summary="update constraint term",
+    )
+    def add_constraint_term(
+        uuid: str,
+        binding_constraint_id: str,
+        data: ConstraintTermDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"add constraint term from {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        return (
+            study_service.binding_constraint_manager.add_new_constraint_term(
+                study, binding_constraint_id, data
+            )
+        )
+
+    @bp.put(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
+        tags=[APITag.study_data],
+        summary="update constraint term",
+    )
+    def update_constraint_term(
+        uuid: str,
+        binding_constraint_id: str,
+        data: ConstraintTermDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"update constraint term from {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        return study_service.binding_constraint_manager.update_constraint_term(
+            study, binding_constraint_id, data
+        )
+
+    @bp.delete(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term/{term_id}",
+        tags=[APITag.study_data],
+        summary="update constraint term",
+    )
+    def remove_constraint_term(
+        uuid: str,
+        binding_constraint_id: str,
+        term_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"delete constraint term {term_id} from {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        return study_service.binding_constraint_manager.remove_constraint_term(
+            study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        "/studies/{uuid}/linksandclusters",
+        tags=[APITag.study_data],
+        summary="Get all links and clusters",
+        response_model=AllCLustersAndLinks,
+    )
+    def get_clusters_and_links(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching all links and clusters for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.links.get_clusters_and_links(study)
 
     return bp

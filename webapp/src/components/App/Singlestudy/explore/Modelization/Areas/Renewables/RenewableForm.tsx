@@ -39,7 +39,7 @@ export default function RenewableForm(props: Props) {
   const jsonGenerator: IFormGenerator<RenewableType> = useMemo(
     () => [
       {
-        translationId: "global.general",
+        legend: "global.general",
         fields: [
           {
             type: "text",
@@ -65,7 +65,7 @@ export default function RenewableForm(props: Props) {
         ],
       },
       {
-        translationId: "study.modelization.clusters.operatingParameters",
+        legend: "study.modelization.clusters.operatingParameters",
         fields: [
           {
             type: "switch",
