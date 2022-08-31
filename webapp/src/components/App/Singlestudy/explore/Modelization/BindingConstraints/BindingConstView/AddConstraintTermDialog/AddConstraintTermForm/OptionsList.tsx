@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { UseFormSetValue, UseFormWatch } from "react-hook-form";
+import {
+  UseFormSetValue,
+  UseFormUnregister,
+  UseFormWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
@@ -18,10 +22,19 @@ interface Props {
   watch: UseFormWatch<ConstraintType>;
   constraintsTerm: BindingConstFields["constraints"];
   setValue: UseFormSetValue<ConstraintType>;
+  unregister: UseFormUnregister<ConstraintType>;
 }
 
 export default function OptionsList(props: Props) {
-  const { list, isLink, control, constraintsTerm, watch, setValue } = props;
+  const {
+    list,
+    isLink,
+    control,
+    constraintsTerm,
+    watch,
+    setValue,
+    unregister,
+  } = props;
   const [t] = useTranslation();
   const name1 = isLink ? "area1" : "area";
   const name2 = isLink ? "area2" : "cluster";
@@ -40,6 +53,9 @@ export default function OptionsList(props: Props) {
   const watchSelect1 = watch(`data.${name1}`);
 
   useEffect(() => {
+    unregister(
+      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"]
+    );
     setValue(`data.${name1}`, "");
     setValue(`data.${name2}`, "");
     // eslint-disable-next-line react-hooks/exhaustive-deps

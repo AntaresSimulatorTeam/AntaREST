@@ -18,7 +18,8 @@ interface Props {
 
 export default function AddConstraintTermForm(props: Props) {
   const { options, constraintsTerm } = props;
-  const { control, watch, setValue } = useFormContext<ConstraintType>();
+  const { control, watch, unregister, setValue } =
+    useFormContext<ConstraintType>();
 
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(true);
@@ -58,6 +59,7 @@ export default function AddConstraintTermForm(props: Props) {
                 control={control}
                 watch={watch}
                 setValue={setValue}
+                unregister={unregister}
               />
             </Box>
           }

@@ -129,7 +129,7 @@ export const updateBindingConstraint = async (
   uuid: string,
   bindingConst: string,
   data: UpdateBindingConstraint
-): Promise<Array<void>> => {
+): Promise<void> => {
   const res = await client.put(
     `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
       bindingConst
