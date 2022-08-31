@@ -18,7 +18,7 @@ import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -93,7 +93,7 @@ function FileTable(props: PropType) {
           <Button
             variant="outlined"
             color="primary"
-            startIcon={<GetAppOutlinedIcon />}
+            startIcon={<UploadOutlinedIcon />}
             onClick={() => setOpenImportDialog(true)}
           >
             {t("global.import")}
