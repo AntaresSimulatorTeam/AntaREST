@@ -38,7 +38,7 @@ import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy, getStudyVersionsFormatted } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import LoadIndicator from "../../common/LoadIndicator";
+import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
 import { fetchStudyVersions } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
@@ -332,10 +332,11 @@ function LauncherDialog(props: Props) {
           >
             <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
             {load && (
-              <LoadIndicator
-                indicator={load.slurm}
+              <LinearProgressWithLabel
+                indicator={load.slurm * 100}
                 size="30%"
                 tooltip={t("study.clusterLoad")}
+                gradiant
               />
             )}
           </Box>

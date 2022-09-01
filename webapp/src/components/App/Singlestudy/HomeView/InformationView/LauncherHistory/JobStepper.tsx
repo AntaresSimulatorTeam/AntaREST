@@ -28,7 +28,7 @@ import {
   StepLabelRow,
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import LoadIndicator from "../../../../../common/LoadIndicator";
+import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
 
 export const ColorStatus = {
   running: "warning.main",
@@ -153,7 +153,7 @@ export default function VerticalLinearStepper(props: Props) {
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
                     <CancelContainer>
-                      <LoadIndicator
+                      <LinearProgressWithLabel
                         indicator={jobsProgress[job.id] as number}
                         tooltip="Progression"
                         size="30%"

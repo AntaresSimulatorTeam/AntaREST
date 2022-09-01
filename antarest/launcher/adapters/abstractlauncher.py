@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, NamedTuple, Optional, Dict, List
@@ -83,8 +84,19 @@ class AbstractLauncher(ABC):
             launch_progress_dto = LaunchProgressDTO.parse_obj(
                 launch_progress_json
             )
-
-            if LogParser.update_progress(log_line, launch_progress_dto):
+            progress_updated = False
+            for line in log_line.split("\n"):
+                progress_updated = (
+                    LogParser.update_progress(line, launch_progress_dto)
+                    or progress_updated
+                )
+            if progress_updated:
+                logging.getLogger(__name__).info(
+                    f"handled line is : {log_line}"
+                )
+                logging.getLogger(__name__).info(
+                    f"prev launch progress is : {launch_progress_dto}"
+                )
                 self.event_bus.push(
                     Event(
                         type=EventType.LAUNCH_PROGRESS,

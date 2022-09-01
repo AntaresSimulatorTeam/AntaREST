@@ -68,7 +68,7 @@ import { getStudies } from "../../../redux/selectors";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import LoadIndicator from "../../common/LoadIndicator";
+import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -303,7 +303,7 @@ function JobsListing() {
               {renderTags(job)}
             </Box>
             {job.status === "running" && (
-              <LoadIndicator
+              <LinearProgressWithLabel
                 indicator={studyJobsProgress[job.id] as number}
                 size="20%"
                 tooltip="Progression"
