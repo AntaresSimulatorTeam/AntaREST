@@ -28,7 +28,7 @@ import { grey } from "@mui/material/colors";
 import { TaskView, TaskType } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getLauncherLoad } from "../../../services/api/study";
-import LoadIndicator from "../../common/LoadIndicator";
+import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 
 interface PropType {
   content: Array<TaskView>;
@@ -116,10 +116,11 @@ function JobTableView(props: PropType) {
         >
           <Typography sx={{ mr: 2 }}>{t("study.clusterLoad")}</Typography>
           {load && (
-            <LoadIndicator
-              indicator={load.slurm}
+            <LinearProgressWithLabel
+              indicator={load.slurm * 100}
               size="60%"
               tooltip={t("study.clusterLoad")}
+              gradiant
             />
           )}
         </Box>

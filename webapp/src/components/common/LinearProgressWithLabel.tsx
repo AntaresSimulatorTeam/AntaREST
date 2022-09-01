@@ -11,15 +11,16 @@ interface PropsType {
   indicator: number;
   size?: string;
   tooltip: string;
+  gradiant?: boolean;
 }
 
-function LoadIndicator(props: PropsType) {
-  const { indicator, size, tooltip } = props;
+function LinearProgressWithLabel(props: PropsType) {
+  const { indicator, size, tooltip, gradiant } = props;
 
   const renderLoadColor = (val: number): LinearProgressProps["color"] =>
     R.cond([
-      [R.lt(0.9), () => "error"],
-      [R.lt(0.75), () => "primary"],
+      [R.lt(90), () => "error"],
+      [R.lt(75), () => "primary"],
       [R.T, () => "success"],
     ])(val) as LinearProgressProps["color"];
 
@@ -28,14 +29,14 @@ function LoadIndicator(props: PropsType) {
       <Box sx={{ display: "flex", alignItems: "center", width: size }}>
         <Box sx={{ width: "100%", mr: 1 }}>
           <LinearProgress
-            color={renderLoadColor(indicator)}
+            color={gradiant ? renderLoadColor(indicator) : "inherit"}
             variant="determinate"
-            value={indicator * 100 > 100 ? 100 : indicator * 100}
+            value={indicator > 100 ? 100 : indicator}
           />
         </Box>
         <Box sx={{ minWidth: 35 }}>
           <Typography variant="body2" color="text.secondary">{`${Math.round(
-            indicator * 100
+            indicator
           )}%`}</Typography>
         </Box>
       </Box>
@@ -43,8 +44,9 @@ function LoadIndicator(props: PropsType) {
   );
 }
 
-LoadIndicator.defaultProps = {
+LinearProgressWithLabel.defaultProps = {
   size: "100%",
+  gradiant: false,
 };
 
-export default LoadIndicator;
+export default LinearProgressWithLabel;
