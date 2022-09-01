@@ -91,12 +91,6 @@ class AbstractLauncher(ABC):
                     or progress_updated
                 )
             if progress_updated:
-                logging.getLogger(__name__).info(
-                    f"handled line is : {log_line}"
-                )
-                logging.getLogger(__name__).info(
-                    f"prev launch progress is : {launch_progress_dto}"
-                )
                 self.event_bus.push(
                     Event(
                         type=EventType.LAUNCH_PROGRESS,
