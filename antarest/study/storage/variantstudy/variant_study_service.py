@@ -450,6 +450,25 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return children_tree
 
+    def walk_children(
+        self,
+        parent_id: str,
+        fun: Callable[[VariantStudy], None],
+        bottom_first: bool,
+    ) -> None:
+        study = self._get_variant_study(
+            parent_id,
+            RequestParameters(DEFAULT_ADMIN_USER),
+            raw_study_accepted=True,
+        )
+        children = self.repository.get_children(parent_id=parent_id)
+        if not bottom_first:
+            fun(study)
+        for child in children:
+            self.walk_children(child.id, fun, bottom_first)
+        if bottom_first:
+            fun(study)
+
     def get_variants_parents(
         self, id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:

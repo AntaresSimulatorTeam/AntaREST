@@ -1161,6 +1161,89 @@ def test_delete_with_prefetch(tmp_path: Path):
     )
 
 
+def test_delete_recursively(tmp_path: Path):
+    study_uuid = "my_study"
+
+    study_metadata_repository = Mock()
+    raw_study_service = RawStudyService(
+        Config(), Mock(), Mock(), Mock(), Mock()
+    )
+    variant_study_repository = Mock()
+    variant_study_service = VariantStudyService(
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        Mock(),
+        variant_study_repository,
+        Mock(),
+        Mock(),
+    )
+    service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        Mock(),
+        variant_study_service=variant_study_service,
+    )
+
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        last_access=datetime.utcnow(),
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+
+    # if this fails, it may means the study metadata mock is missing some attribute definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    # test for variant studies
+    study_mock = Mock(
+        spec=VariantStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        last_access=datetime.utcnow(),
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+    variant_study_repository.get_children.return_value = []
+
+    # if this fails, it may means the study metadata mock is missing some definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
 @pytest.mark.unit_test
 def test_edit_study_with_command():
     study_id = "study_id"
