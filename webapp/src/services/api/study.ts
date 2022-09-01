@@ -351,6 +351,15 @@ export const archiveOutput = async (
   return res.data;
 };
 
+export const deleteOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<void> => {
+  await client.delete(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`
+  );
+};
+
 export const changeStudyOwner = async (
   studyId: string,
   newOwner: number

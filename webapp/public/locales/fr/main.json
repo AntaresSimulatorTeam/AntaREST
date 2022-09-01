@@ -523,5 +523,6 @@
     "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices",
     "results.error.jobs": "Erreur lors de la récupération des tâches de lancement",
     "results.error.outputs": "Erreur lors de la récupération des sorties de l'étude",
-    "results.noOutputs": "Aucune sorties"
+    "results.noOutputs": "Aucune sorties",
+    "results.question.deleteOutput": "Êtes-vous sûr de vouloir supprimer le résultat de simulation {{outputname}} ?"
 }

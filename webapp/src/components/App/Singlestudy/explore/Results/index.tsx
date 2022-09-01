@@ -12,13 +12,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import DownloadIcon from "@mui/icons-material/Download";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import * as R from "ramda";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
@@ -27,6 +28,7 @@ import { AxiosError } from "axios";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
+  deleteOutput,
   downloadJobOutput,
   getStudyJobs,
   getStudyOutputs,
@@ -40,6 +42,7 @@ import {
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 
 interface OutputDetail {
   name: string;
@@ -90,6 +93,7 @@ function Results() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [outputToDelete, setOutputToDelete] = useState<string>();
 
   const { data: studyJobs, isLoading: studyJobsLoading } =
     usePromiseWithSnackbarError(() => getStudyJobs(study.id), {
@@ -97,11 +101,14 @@ function Results() {
       deps: [study.id],
     });
 
-  const { data: studyOutputs, isLoading: studyOutputsLoading } =
-    usePromiseWithSnackbarError(() => getStudyOutputs(study.id), {
-      errorMessage: t("results.error.outputs"),
-      deps: [study.id],
-    });
+  const {
+    data: studyOutputs,
+    isLoading: studyOutputsLoading,
+    reload: reloadOutputs,
+  } = usePromiseWithSnackbarError(() => getStudyOutputs(study.id), {
+    errorMessage: t("results.error.outputs"),
+    deps: [study.id],
+  });
 
   const outputs = useMemo(() => {
     if (studyJobs && studyOutputs) {
@@ -167,6 +174,14 @@ function Results() {
 
   const handleOutputNameClick = (outputName: string) => () => {
     navigate(`/studies/${study.id}/explore/results/${outputName}`);
+  };
+
+  const handleDeleteOutput = async () => {
+    if (outputToDelete) {
+      await deleteOutput(study.id, outputToDelete);
+      setOutputToDelete(undefined);
+      reloadOutputs();
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -327,8 +342,8 @@ function Results() {
                             justifyContent="flex-end"
                           >
                             {renderArchiveTool(row)}
-                            <Box sx={{ height: "24px", margin: 0.5 }}>
-                              {row.completionDate && row.job ? (
+                            {row.completionDate && row.job && (
+                              <Box sx={{ height: "24px", margin: 0.5 }}>
                                 <Tooltip title={t("global.download") as string}>
                                   <DownloadIcon
                                     sx={{
@@ -344,10 +359,8 @@ function Results() {
                                     }}
                                   />
                                 </Tooltip>
-                              ) : (
-                                <Box />
-                              )}
-                            </Box>
+                              </Box>
+                            )}
                             {row.job && (
                               <LaunchJobLogView
                                 job={row.job}
@@ -355,6 +368,21 @@ function Results() {
                                 logErrorButton
                               />
                             )}
+                            <Box sx={{ height: "24px", margin: 0.5 }}>
+                              <Tooltip title={t("global.delete") as string}>
+                                <DeleteForeverIcon
+                                  sx={{
+                                    fontSize: 22,
+                                    color: "action.active",
+                                    cursor: "pointer",
+                                    "&:hover": { color: "error.light" },
+                                  }}
+                                  onClick={() => {
+                                    setOutputToDelete(row.name);
+                                  }}
+                                />
+                              </Tooltip>
+                            </Box>
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -388,6 +416,13 @@ function Results() {
           </TableBody>
         </Table>
       </TableContainer>
+      <ConfirmationDialog
+        open={!!outputToDelete}
+        onConfirm={handleDeleteOutput}
+        onCancel={() => setOutputToDelete(undefined)}
+      >
+        {t("results.question.deleteOutput", { outputname: outputToDelete })}
+      </ConfirmationDialog>
     </Box>
   );
 }

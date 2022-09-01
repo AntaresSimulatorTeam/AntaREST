@@ -523,5 +523,6 @@
     "data.message.uploadHelp": "The file must be a single matrix file or a zip containing a list of matrix files",
     "results.error.jobs": "Failed to retrieve study launch jobs",
     "results.error.outputs": "Failed to retrieve study ouptut list",
-    "results.noOutputs": "No outputs"
+    "results.noOutputs": "No outputs",
+    "results.question.deleteOutput": "Are you sure you want to delete the output {{outputname}} ?"
     }
