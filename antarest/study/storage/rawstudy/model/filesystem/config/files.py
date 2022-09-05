@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Tuple, Optional, cast
 from zipfile import ZipFile
 
 from antarest.core.model import JSON
-from antarest.study.common.utils import extract_file_to_tmp_dir
+from antarest.core.utils.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     MultipleSameKeysIniReader,
@@ -92,14 +92,14 @@ class ConfigPathBuilder:
         multi_ini_keys: Optional[List[str]] = None,
     ) -> Any:
         tmp_dir = None
-        if root.suffix == ".zip":
-            output_data_path, tmp_dir = extract_file_to_tmp_dir(
-                root, inside_root_path
-            )
-        else:
-            output_data_path = root / inside_root_path
-
         try:
+            if root.suffix == ".zip":
+                output_data_path, tmp_dir = extract_file_to_tmp_dir(
+                    root, inside_root_path
+                )
+            else:
+                output_data_path = root / inside_root_path
+
             if file_type == FileType.TXT:
                 output_data: Any = output_data_path.read_text().split("\n")
             elif file_type == FileType.MULTI_INI:

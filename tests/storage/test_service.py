@@ -57,6 +57,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
@@ -66,6 +69,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 )
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
+    FileStudyTree,
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, study_matcher
@@ -1377,4 +1383,95 @@ def test_unarchive_output(tmp_path: Path):
         ref_id=study_id,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
+def test_get_save_logs(tmp_path: Path):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        name="my_study",
+        path=tmp_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+
+    study_mock.name = "my_study"
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    service.repository.get.return_value = study_mock
+    file_study_config = FileStudyTreeConfig(
+        tmp_path, tmp_path, "study_id", 0, zip_path=None
+    )
+    output_config = Mock()
+    file_study_config.outputs = {"output_id": output_config}
+    output_config.get_file.return_value = "output_id"
+    output_config.archived = False
+    context = Mock()
+    context.resolver.resolve.return_value = None
+    service.storage_service.raw_study_service.get_raw.return_value = FileStudy(
+        config=file_study_config,
+        tree=FileStudyTree(context, file_study_config),
+    )
+
+    output_path = tmp_path / "output"
+    output_path.mkdir()
+    (output_path / "output_id").mkdir()
+    (output_path / "logs").mkdir()
+
+    assert (
+        service.get_logs(
+            "my_study",
+            "output_id",
+            "job_id",
+            True,
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        == ""
+    )
+
+    (output_path / "output_id" / "antares-out.log").write_text("some log 2")
+    assert (
+        service.get_logs(
+            "my_study",
+            "output_id",
+            "job_id",
+            False,
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        == "some log 2"
+    )
+
+    service.save_logs("my_study", "job_id", "out.log", "some log")
+
+    assert (
+        service.get_logs(
+            "my_study",
+            "output_id",
+            "job_id",
+            False,
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        == "some log"
+    )
+
+    service.save_logs("my_study", "job_id", "err.log", "some log 3")
+
+    assert (
+        service.get_logs(
+            "my_study",
+            "output_id",
+            "job_id",
+            True,
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        == "some log 3"
     )

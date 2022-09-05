@@ -19,7 +19,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 logger = logging.getLogger(__name__)
 

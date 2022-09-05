@@ -13,7 +13,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
-from antarest.launcher.model import JobStatus, LogType, LauncherParametersDTO
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 
 class LauncherInitException(Exception):

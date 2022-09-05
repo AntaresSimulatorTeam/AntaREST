@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch, call
 from uuid import uuid4
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
 from sqlalchemy import create_engine
@@ -31,9 +32,9 @@ from antarest.dbmodel import Base
 from antarest.launcher.model import (
     JobResult,
     JobStatus,
-    LogType,
     JobLog,
     JobLogType,
+    LogType,
 )
 from antarest.launcher.service import (
     LauncherService,
@@ -460,10 +461,6 @@ def test_append_logs(tmp_path: Path):
 
 def test_get_logs(tmp_path: Path):
     study_service = Mock()
-    study_service.get_study.return_value = Mock(
-        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
-    )
-
     launcher_service = LauncherService(
         config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
         study_service=study_service,
@@ -502,7 +499,8 @@ def test_get_logs(tmp_path: Path):
     )
     assert logs == "launcher logs"
 
-    study_service.get.side_effect = [b"", b"some sim log", b"error log"]
+    study_service.get_logs.side_effect = ["some sim log", "error log"]
+
     job_result_mock.output_id = "some id"
     logs = launcher_service.get_log(
         job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
@@ -514,27 +512,20 @@ def test_get_logs(tmp_path: Path):
     )
     assert logs == "error log"
 
-    study_service.get.assert_has_calls(
+    study_service.get_logs.assert_has_calls(
         [
             call(
                 "study_id",
-                f"/output/some id/antares-out",
-                depth=1,
-                formatted=True,
+                "some id",
+                job_id,
+                False,
                 params=RequestParameters(DEFAULT_ADMIN_USER),
             ),
             call(
                 "study_id",
-                f"/output/some id/simulation",
-                depth=1,
-                formatted=True,
-                params=RequestParameters(DEFAULT_ADMIN_USER),
-            ),
-            call(
-                "study_id",
-                f"/output/some id/antares-err",
-                depth=1,
-                formatted=True,
+                "some id",
+                job_id,
+                True,
                 params=RequestParameters(DEFAULT_ADMIN_USER),
             ),
         ]
@@ -567,19 +558,26 @@ def test_manage_output(tmp_path: Path):
     )
 
     output_path = tmp_path / "output"
+    zipped_output_path = tmp_path / "zipped_output"
     os.mkdir(output_path)
+    os.mkdir(zipped_output_path)
     new_output_path = output_path / "new_output"
     os.mkdir(new_output_path)
     (new_output_path / "log").touch()
     (new_output_path / "data").touch()
     additional_log = tmp_path / "output.log"
     additional_log.write_text("some log")
+    new_output_zipped_path = zipped_output_path / "test.zip"
+    with ZipFile(new_output_zipped_path, "w", ZIP_DEFLATED) as output_data:
+        output_data.writestr("some output", "0\n1")
     job_id = "job_id"
+    zipped_job_id = "zipped_job_id"
     study_id = "study_id"
     launcher_service.job_result_repository.get.side_effect = [
         None,
         JobResult(id=job_id, study_id=study_id),
         JobResult(id=job_id, study_id=study_id, output_id="some id"),
+        JobResult(id=zipped_job_id, study_id=study_id),
         JobResult(
             id=job_id,
             study_id=study_id,
@@ -610,6 +608,23 @@ def test_manage_output(tmp_path: Path):
         "job_id", RequestParameters(DEFAULT_ADMIN_USER)
     )
     launcher_service.study_service.export_output.assert_called()
+
+    launcher_service._import_output(
+        zipped_job_id,
+        zipped_output_path,
+        {
+            "out.log": [additional_log],
+            "antares-out": [additional_log],
+            "antares-err": [additional_log],
+        },
+    )
+    launcher_service.study_service.save_logs.has_calls(
+        [
+            call(study_id, zipped_job_id, "out.log", "some log"),
+            call(study_id, zipped_job_id, "out", "some log"),
+            call(study_id, zipped_job_id, "err", "some log"),
+        ]
+    )
 
     launcher_service.study_service.import_output.side_effect = [
         StudyNotFoundError(""),
@@ -716,6 +731,20 @@ tsgen_wind	2500	1
             study_id=study_id,
             job_status=JobStatus.SUCCESS,
             solver_stats=expected_saved_stats,
+        )
+    )
+
+    zip_file = tmp_path / "test.zip"
+    with ZipFile(zip_file, "w", ZIP_DEFLATED) as output_data:
+        output_data.writestr(EXECUTION_INFO_FILE, "0\n1")
+
+    launcher_service._save_solver_stats(job_result, zip_file)
+    launcher_service.job_result_repository.save.assert_called_with(
+        JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats="0\n1",
         )
     )
 

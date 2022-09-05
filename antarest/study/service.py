@@ -30,7 +30,12 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PublicMode, StudyPermissionType, SUB_JSON
+from antarest.core.model import (
+    JSON,
+    PublicMode,
+    StudyPermissionType,
+    SUB_JSON,
+)
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -105,6 +110,9 @@ from antarest.study.model import (
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
+)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
@@ -239,6 +247,68 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(
             study, url, depth, formatted
+        )
+
+    def get_logs(
+        self,
+        study_id: str,
+        output_id: str,
+        job_id: str,
+        err_log: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        log_locations = {
+            False: [
+                ["output", "logs", f"{job_id}-out.log"],
+                ["output", "logs", f"{output_id}-out.log"],
+                ["output", output_id, "antares-out"],
+                ["output", output_id, "simulation"],
+            ],
+            True: [
+                ["output", "logs", f"{job_id}-err.log"],
+                ["output", "logs", f"{output_id}-err.log"],
+                ["output", output_id, "antares-err"],
+            ],
+        }
+        empty_log = False
+        for log_location in log_locations[err_log]:
+            try:
+                log = cast(
+                    bytes,
+                    file_study.tree.get(log_location, depth=1, formatted=True),
+                ).decode(encoding="utf-8")
+                # when missing file, RawFileNode return empty bytes
+                if log:
+                    return log
+                else:
+                    empty_log = True
+            except ChildNotFoundError:
+                pass
+        if empty_log:
+            return ""
+        raise ChildNotFoundError(
+            f"Logs for {output_id} of study {study_id} were not found"
+        )
+
+    def save_logs(
+        self,
+        study_id: str,
+        job_id: str,
+        log_suffix: str,
+        log_data: str,
+    ) -> None:
+        study = self.get_study(study_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study.tree.save(
+            bytes(log_data, encoding="utf-8"),
+            [
+                "output",
+                "logs",
+                f"{job_id}-{log_suffix}",
+            ],
         )
 
     def get_comments(
