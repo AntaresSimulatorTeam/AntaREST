@@ -404,6 +404,7 @@
     "study.success.jobIdCopy": "Job id copied !",
     "study.success.modifiedStudy": "Study {{studyname}} updated successfully",
     "studies.question.delete": "Are you sure you want to delete this study ?",
+    "studies.deleteSubvariants": "Delete all children variants",
     "studies.error.retrieveData": "Failed to retrieve data",
     "studies.error.retrieveStudies": "Failed to retrieve studies",
     "studies.error.deleteStudy": "Failed to delete study",

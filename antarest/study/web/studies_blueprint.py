@@ -279,13 +279,15 @@ def create_study_routes(
         summary="Delete Study",
     )
     def delete_study(
-        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str,
+        children: bool = False,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Deleting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        study_service.delete_study(uuid_sanitized, params)
+        study_service.delete_study(uuid_sanitized, children, params)
 
         return ""
 

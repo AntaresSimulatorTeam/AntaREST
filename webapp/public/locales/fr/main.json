@@ -404,6 +404,7 @@
     "study.success.jobIdCopy": "Identifiant de la tâche copié !",
     "study.success.modifiedStudy": "L'étude {{studyname}} a été modifié avec succès",
     "studies.question.delete": "Êtes-vous sûr de vouloir supprimer cette étude ?",
+    "studies.deleteSubvariants": "Supprimer toutes les sous variantes",
     "studies.error.retrieveData": "Échec de la récupération des données",
     "studies.error.retrieveStudies": "Échec de la récupération des études",
     "studies.error.deleteStudy": "Échec de la suppression de l'étude",

@@ -1068,9 +1068,13 @@ def test_delete_study_calls_callback(tmp_path: Path):
     service = build_study_service(Mock(), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
+    service.storage_service.variant_study_service.has_children.return_value = (
+        False
+    )
 
     service.delete_study(
         study_uuid,
+        children=False,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
@@ -1124,12 +1128,14 @@ def test_delete_with_prefetch(tmp_path: Path):
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
+    variant_study_repository.get_children.return_value = []
 
     # if this fails, it may means the study metadata mock is missing some attribute definition
     # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
     # see the comment in the delete method for more information
     service.delete_study(
         study_uuid,
+        children=False,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
@@ -1157,6 +1163,91 @@ def test_delete_with_prefetch(tmp_path: Path):
     # see the comment in the delete method for more information
     service.delete_study(
         study_uuid,
+        children=False,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
+def test_delete_recursively(tmp_path: Path):
+    study_metadata_repository = Mock()
+    raw_study_service = RawStudyService(
+        Config(), Mock(), Mock(), Mock(), Mock()
+    )
+    variant_study_repository = Mock()
+    variant_study_service = VariantStudyService(
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        Mock(),
+        variant_study_repository,
+        Mock(),
+        Mock(),
+    )
+    service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        Mock(),
+        variant_study_service=variant_study_service,
+    )
+
+    def create_study_fs_mock(variant: bool = False) -> str:
+        study_uuid = str(uuid4())
+        study_path = tmp_path / study_uuid
+        study_path.mkdir()
+        study_data = study_path
+        if variant:
+            study_data = study_path / "snapshot"
+            study_data.mkdir()
+        (study_data / "study.antares").touch()
+        return str(study_path)
+
+    study_path = create_study_fs_mock()
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        last_access=datetime.utcnow(),
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    v1 = VariantStudy(id="variant_1", path=create_study_fs_mock(variant=True))
+    v2 = VariantStudy(id="variant_2", path=create_study_fs_mock(variant=True))
+    v3 = VariantStudy(
+        id="sub_variant_1", path=create_study_fs_mock(variant=True)
+    )
+
+    study_metadata_repository.get.side_effect = [study_mock, v3, v1, v2]
+    variant_study_repository.get_children.side_effect = [
+        [
+            v1,
+            v2,
+        ],
+        [v3],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ]
+    variant_study_repository.get.side_effect = [
+        VariantStudy(id="variant_1"),
+        VariantStudy(id="sub_variant_1"),
+        VariantStudy(id="variant_2"),
+    ]
+
+    service.delete_study(
+        "my_study",
+        children=True,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 

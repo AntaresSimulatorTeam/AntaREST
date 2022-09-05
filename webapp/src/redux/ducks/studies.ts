@@ -5,7 +5,6 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
 import { O } from "ts-toolbelt";
 import {
   GroupDTO,
@@ -181,22 +180,27 @@ export const setStudy = createAsyncThunk<
   return api.getStudyMetadata(id);
 });
 
+interface StudyDeleteInfo {
+  id: StudyMetadata["id"];
+  deleteChildren?: boolean;
+}
+
 export const deleteStudy = createAsyncThunk<
   StudyMetadata["id"],
-  StudyMetadata["id"] | WSMessage<StudySummary>,
+  StudyDeleteInfo | WSMessage<StudySummary>,
   AppAsyncThunkConfig
 >(n("DELETE_STUDY"), async (arg, { dispatch, getState, rejectWithValue }) => {
   let studyId: string;
-
-  if (RA.isString(arg)) {
-    studyId = arg;
+  if ((arg as StudyDeleteInfo)?.id) {
+    const { id, deleteChildren } = arg as StudyDeleteInfo;
+    studyId = id;
     try {
-      await api.deleteStudy(studyId);
+      await api.deleteStudy(studyId, deleteChildren);
     } catch (err) {
       return rejectWithValue(err);
     }
   } else {
-    studyId = arg.payload.id;
+    studyId = (arg as WSMessage<StudySummary>).payload.id;
   }
 
   const state = getState();

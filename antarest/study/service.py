@@ -997,7 +997,9 @@ class StudyService:
             study, dest, len(output_list or []) > 0, output_list
         )
 
-    def delete_study(self, uuid: str, params: RequestParameters) -> None:
+    def delete_study(
+        self, uuid: str, children: bool, params: RequestParameters
+    ) -> None:
         """
         Delete study
         Args:
@@ -1016,12 +1018,19 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
-        elif isinstance(
-            study, VariantStudy
-        ) and self.storage_service.variant_study_service.has_children(study):
-            raise StudyDeletionNotAllowed(
-                study.id, "Study has variant children"
-            )
+
+        if self.storage_service.variant_study_service.has_children(study):
+            if children:
+                self.storage_service.variant_study_service.walk_children(
+                    study.id,
+                    lambda v: self.delete_study(v.id, True, params),
+                    bottom_first=True,
+                )
+                return
+            else:
+                raise StudyDeletionNotAllowed(
+                    study.id, "Study has variant children"
+                )
 
         self.repository.delete(study.id)
 

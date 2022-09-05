@@ -437,7 +437,9 @@ def test_delete_study() -> None:
     client = TestClient(app)
     client.delete("/v1/studies/name")
 
-    mock_storage_service.delete_study.assert_called_once_with("name", PARAMS)
+    mock_storage_service.delete_study.assert_called_once_with(
+        "name", False, PARAMS
+    )
 
 
 @pytest.mark.unit_test
