@@ -1026,6 +1026,7 @@ class StudyService:
                     lambda v: self.delete_study(v.id, True, params),
                     bottom_first=True,
                 )
+                return
             else:
                 raise StudyDeletionNotAllowed(
                     study.id, "Study has variant children"
