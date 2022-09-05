@@ -163,9 +163,9 @@ function NavHeader(props: Props) {
     }
   };
 
-  const onDeleteStudy = () => {
+  const onDeleteStudy = async () => {
     if (study) {
-      dispatch(deleteStudy({ id: study.id, deleteChildren }))
+      await dispatch(deleteStudy({ id: study.id, deleteChildren }))
         .unwrap()
         .catch((err) => {
           enqueueErrorSnackbar(
@@ -175,9 +175,9 @@ function NavHeader(props: Props) {
           logError("Failed to delete study", study, err);
         });
       setDeleteChildren(false);
+      setOpenDeleteDialog(false);
+      navigate(parent ? `/studies/${parent?.id}` : "/studies");
     }
-    setOpenDeleteDialog(false);
-    navigate(parent ? `/studies/${parent?.id}` : "/studies");
   };
 
   const copyId = async (): Promise<void> => {

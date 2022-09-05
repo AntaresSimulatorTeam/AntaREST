@@ -205,7 +205,6 @@ export const deleteStudy = createAsyncThunk<
 
   const state = getState();
   const currentFavorites = getFavoriteStudyIds(state);
-  // WARNING: FILTER WITH ALL VARIANTS CHILDRENS
   const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
   dispatch(setFavoriteStudies(newFavorites));
 
