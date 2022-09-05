@@ -280,7 +280,7 @@ def create_study_routes(
     )
     def delete_study(
         uuid: str,
-        children: bool,
+        children: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Deleting study {uuid}", extra={"user": current_user.id})
