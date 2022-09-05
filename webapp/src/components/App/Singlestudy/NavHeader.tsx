@@ -165,18 +165,16 @@ function NavHeader(props: Props) {
 
   const onDeleteStudy = async () => {
     if (study) {
-      await dispatch(deleteStudy({ id: study.id, deleteChildren }))
-        .unwrap()
-        .catch((err) => {
-          enqueueErrorSnackbar(
-            t("studies.error.deleteStudy"),
-            err as AxiosError
-          );
-          logError("Failed to delete study", study, err);
-        });
-      setDeleteChildren(false);
-      setOpenDeleteDialog(false);
-      navigate(parent ? `/studies/${parent?.id}` : "/studies");
+      try {
+        await dispatch(deleteStudy({ id: study.id, deleteChildren })).unwrap();
+        navigate(parent ? `/studies/${parent?.id}` : "/studies");
+      } catch (err) {
+        enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
+        logError("Failed to delete study", study, err);
+      } finally {
+        setDeleteChildren(false);
+        setOpenDeleteDialog(false);
+      }
     }
   };
 
@@ -563,7 +561,7 @@ function NavHeader(props: Props) {
             <Typography>{t("studies.question.delete")}</Typography>
             <CheckBoxFE
               value={deleteChildren}
-              label="Delete all children"
+              label={t("studies.deleteSubvariants")}
               onChange={(e, checked) => setDeleteChildren(checked)}
             />
           </Box>
