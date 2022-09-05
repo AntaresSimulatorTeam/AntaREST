@@ -1,6 +1,5 @@
 import _ from "lodash";
 import moment, { DurationInputArg2 } from "moment";
-// eslint-disable-next-line import/no-unresolved
 import { CellChange } from "handsontable/common";
 import {
   MatrixEditDTO,

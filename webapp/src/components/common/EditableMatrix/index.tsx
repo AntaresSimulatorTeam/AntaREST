@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import _ from "lodash";
 import HotTable, { HotColumn } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
-// eslint-disable-next-line import/no-unresolved
 import { CellChange } from "handsontable/common";
 import {
   MatrixIndex,
