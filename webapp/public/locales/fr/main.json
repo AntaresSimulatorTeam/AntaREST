@@ -416,6 +416,8 @@
     "studies.error.import": "L'import de l'étude a échoué ({{uploadFile}})",
     "studies.error.archive": "Erreur lors de l'archivage de l'étude {{studyname}}",
     "studies.error.unarchive": "Erreur lors du désarchivage de l'étude {{studyname}}",
+    "studies.error.archiveOutput": "Erreur lors de l'archivage du résultat {{outputname}}",
+    "studies.error.unarchiveOutput": "Erreur lors du désarchivage du résultat {{outputname}}",
     "studies.error.createStudy": "Study {{studyname}} not created",
     "studies.success.saveData": "Data saved with success",
     "studies.success.scanFolder": "Folder scan started",
@@ -549,5 +551,6 @@
     "data.message.uploadHelp": "Le fichier doit être une matrice simple ou un zip contenant à plat des fichiers de matrices",
     "results.error.jobs": "Erreur lors de la récupération des tâches de lancement",
     "results.error.outputs": "Erreur lors de la récupération des sorties de l'étude",
-    "results.noOutputs": "Aucune sorties"
+    "results.noOutputs": "Aucune sorties",
+    "results.question.deleteOutput": "Êtes-vous sûr de vouloir supprimer le résultat de simulation {{outputname}} ?"
 }

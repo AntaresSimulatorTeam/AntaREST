@@ -1259,10 +1259,10 @@ def test_unarchive_output(tmp_path: Path):
     study_id = "my_study"
     output_id = "some-output"
     service.task_service.add_worker_task.return_value = None
+    service.task_service.list_tasks.return_value = []
     service.unarchive_output(
         study_id,
         output_id,
-        use_task=True,
         keep_src_zip=True,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )

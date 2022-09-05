@@ -416,6 +416,8 @@
     "studies.error.import": "Study import has failed ({{uploadFile}})",
     "studies.error.archive": "Failed to archive study {{studyname}}",
     "studies.error.unarchive": "Failed to unarchive study {{studyname}}",
+    "studies.error.archiveOutput": "Failed to archive study output {{outputname}}",
+    "studies.error.unarchiveOutput": "Failed to unarchive study output {{outputname}}",
     "studies.error.createStudy": "Study {{studyname}} not created",
     "studies.success.saveData": "Data saved with success",
     "studies.success.scanFolder": "Folder scan started",
@@ -549,5 +551,6 @@
     "data.message.uploadHelp": "The file must be a single matrix file or a zip containing a list of matrix files",
     "results.error.jobs": "Failed to retrieve study launch jobs",
     "results.error.outputs": "Failed to retrieve study ouptut list",
-    "results.noOutputs": "No outputs"
+    "results.noOutputs": "No outputs",
+    "results.question.deleteOutput": "Are you sure you want to delete the output {{outputname}} ?"
     }

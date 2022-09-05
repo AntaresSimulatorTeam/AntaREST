@@ -1355,7 +1355,7 @@ class StudyService:
             and auto_unzip
         ):
             self.unarchive_output(
-                uuid, output_id, True, not is_managed(study), params
+                uuid, output_id, not is_managed(study), params
             )
 
         return output_id
@@ -1841,7 +1841,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=[TaskType.ARCHIVE],
+                type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1885,7 +1885,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=[TaskType.UNARCHIVE],
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -2232,67 +2232,73 @@ class StudyService:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         for output in file_study.config.outputs:
             if not file_study.config.outputs[output].archived:
-                self.archive_output(study_id, output, True, params)
+                self.archive_output(study_id, output, params)
 
     def archive_output(
         self,
         study_id: str,
         output_id: str,
-        use_task: bool,
         params: RequestParameters,
+        force: bool = False,
     ) -> Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        if not use_task:
-            self.storage_service.get_storage(study).archive_study_output(
-                study, output_id
-            )
-            return None
-        else:
-            task_name = f"Archive output {study_id}/{output_id}"
 
-            def archive_output_task(
-                notifier: TaskUpdateNotifier,
-            ) -> TaskResult:
-                try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    self.storage_service.get_storage(
-                        study
-                    ).archive_study_output(study, output_id)
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Output {output_id} of study {study_id} archived in {x}s"
-                        )
-                    )
-                    return TaskResult(
-                        success=True,
-                        message=f"Study output {study_id}/{output_id} successfully archived",
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Could not archive the output {study_id}/{output_id}",
-                        exc_info=e,
-                    )
-                    raise e
-
-            task_id = self.task_service.add_task(
-                archive_output_task,
-                task_name,
-                task_type=TaskType.ARCHIVE,
-                ref_id=study.id,
-                custom_event_messages=None,
-                request_params=params,
+        if not force and self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
             )
 
-            return task_id
+        task_name = f"Archive output {study_id}/{output_id}"
+
+        def archive_output_task(
+            notifier: TaskUpdateNotifier,
+        ) -> TaskResult:
+            try:
+                study = self.get_study(study_id)
+                stopwatch = StopWatch()
+                self.storage_service.get_storage(study).archive_study_output(
+                    study, output_id
+                )
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Output {output_id} of study {study_id} archived in {x}s"
+                    )
+                )
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_id}/{output_id} successfully archived",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not archive the output {study_id}/{output_id}",
+                    exc_info=e,
+                )
+                raise e
+
+        task_id = self.task_service.add_task(
+            archive_output_task,
+            task_name,
+            task_type=TaskType.ARCHIVE,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return task_id
 
     def unarchive_output(
         self,
         study_id: str,
         output_id: str,
-        use_task: bool,
         keep_src_zip: bool,
         params: RequestParameters,
     ) -> Optional[str]:
@@ -2300,74 +2306,71 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if not use_task:
-            stopwatch = StopWatch()
-            self.storage_service.get_storage(study).unarchive_study_output(
-                study, output_id, keep_src_zip
-            )
-            stopwatch.log_elapsed(
-                lambda x: logger.info(
-                    f"Output {output_id} of study {study_id} unarchived in {x}s"
-                )
-            )
-            return None
-
-        else:
-            task_name = (
-                f"Unarchive output {study.name}/{output_id} ({study_id})"
+        if self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
             )
 
-            def unarchive_output_task(
-                notifier: TaskUpdateNotifier,
-            ) -> TaskResult:
-                try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    self.storage_service.get_storage(
-                        study
-                    ).unarchive_study_output(study, output_id, keep_src_zip)
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Output {output_id} of study {study_id} unarchived in {x}s"
-                        )
-                    )
-                    return TaskResult(
-                        success=True,
-                        message=f"Study output {study_id}/{output_id} successfully unarchived",
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Could not unarchive the output {study_id}/{output_id}",
-                        exc_info=e,
-                    )
-                    raise e
+        task_name = f"Unarchive output {study.name}/{output_id} ({study_id})"
 
-            task_id: Optional[str] = None
-            workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-            if workspace != DEFAULT_WORKSPACE_NAME:
-                dest = Path(study.path) / "output" / output_id
-                src = Path(study.path) / "output" / f"{output_id}.zip"
-                task_id = self.task_service.add_worker_task(
-                    TaskType.UNARCHIVE,
-                    f"unarchive_{workspace}",
-                    ArchiveTaskArgs(
-                        src=str(src),
-                        dest=str(dest),
-                        remove_src=not keep_src_zip,
-                    ).dict(),
-                    name=task_name,
-                    ref_id=study.id,
-                    request_params=params,
+        def unarchive_output_task(
+            notifier: TaskUpdateNotifier,
+        ) -> TaskResult:
+            try:
+                study = self.get_study(study_id)
+                stopwatch = StopWatch()
+                self.storage_service.get_storage(study).unarchive_study_output(
+                    study, output_id, keep_src_zip
                 )
-
-            if not task_id:
-                task_id = self.task_service.add_task(
-                    unarchive_output_task,
-                    task_name,
-                    task_type=TaskType.UNARCHIVE,
-                    ref_id=study.id,
-                    custom_event_messages=None,
-                    request_params=params,
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Output {output_id} of study {study_id} unarchived in {x}s"
+                    )
                 )
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_id}/{output_id} successfully unarchived",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not unarchive the output {study_id}/{output_id}",
+                    exc_info=e,
+                )
+                raise e
 
-            return task_id
+        task_id: Optional[str] = None
+        workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
+        if workspace != DEFAULT_WORKSPACE_NAME:
+            dest = Path(study.path) / "output" / output_id
+            src = Path(study.path) / "output" / f"{output_id}.zip"
+            task_id = self.task_service.add_worker_task(
+                TaskType.UNARCHIVE,
+                f"unarchive_{workspace}",
+                ArchiveTaskArgs(
+                    src=str(src),
+                    dest=str(dest),
+                    remove_src=not keep_src_zip,
+                ).dict(),
+                name=task_name,
+                ref_id=study.id,
+                request_params=params,
+            )
+
+        if not task_id:
+            task_id = self.task_service.add_task(
+                unarchive_output_task,
+                task_name,
+                task_type=TaskType.UNARCHIVE,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+        return task_id

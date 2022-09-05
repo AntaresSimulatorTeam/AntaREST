@@ -90,6 +90,7 @@ export interface StudyOutput {
   referenceStatus: boolean;
   synchronized: boolean;
   status: string;
+  archived: boolean;
 }
 
 export interface VariantTreeDTO {

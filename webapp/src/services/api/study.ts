@@ -331,6 +331,35 @@ export const downloadJobOutput = async (jobId: string): Promise<any> => {
   return res.data;
 };
 
+export const unarchiveOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<string> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`
+  );
+  return res.data;
+};
+
+export const archiveOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<string> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`
+  );
+  return res.data;
+};
+
+export const deleteOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<void> => {
+  await client.delete(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`
+  );
+};
+
 export const changeStudyOwner = async (
   studyId: string,
   newOwner: number

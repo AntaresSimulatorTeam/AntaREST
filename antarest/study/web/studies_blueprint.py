@@ -558,7 +558,6 @@ def create_study_routes(
     def archive_output(
         study_id: str,
         output_id: str,
-        use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -572,7 +571,6 @@ def create_study_routes(
         content = study_service.archive_output(
             study_id,
             output_id,
-            use_task,
             params,
         )
         return content
@@ -585,7 +583,6 @@ def create_study_routes(
     def unarchive_output(
         study_id: str,
         output_id: str,
-        use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -599,7 +596,6 @@ def create_study_routes(
         content = study_service.unarchive_output(
             study_id,
             output_id,
-            use_task,
             False,
             params,
         )
