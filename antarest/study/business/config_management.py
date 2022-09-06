@@ -1,14 +1,18 @@
 from enum import Enum
 from functools import reduce
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Optional
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     Study,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command.update_playlist import (
+    UpdatePlaylist,
 )
 
 
@@ -154,6 +158,29 @@ class ConfigManager:
         command = UpdateConfig(
             target="settings/generaldata/variables selection",
             data=config_data,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
+
+    def get_playlist(self, study: Study) -> Optional[List[int]]:
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        return FileStudyHelpers.get_playlist(file_study)
+
+    def set_playlist(
+        self,
+        study: Study,
+        playlist: Optional[List[int]],
+        reverse: bool,
+        active: bool,
+    ) -> None:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        command = UpdatePlaylist(
+            items=playlist,
+            reverse=reverse,
+            active=active,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(

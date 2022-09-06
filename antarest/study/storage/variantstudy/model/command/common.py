@@ -45,3 +45,4 @@ class CommandName(Enum):
     UPDATE_COMMENTS = "update_comments"
     UPDATE_FILE = "update_file"
     UPDATE_DISTRICT = "update_district"
+    UPDATE_PLAYLIST = "update_playlist"

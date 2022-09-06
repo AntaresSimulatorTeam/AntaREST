@@ -35,31 +35,39 @@ class FileStudyHelpers:
         return ConfigPathBuilder.get_playlist(config)
 
     @staticmethod
-    def set_playlist(study: FileStudy, playlist: List[int]) -> None:
+    def set_playlist(
+        study: FileStudy,
+        playlist: List[int],
+        reverse: bool = False,
+        active: bool = True,
+    ) -> None:
         playlist_without_offset = [year - 1 for year in playlist]
         config = FileStudyHelpers.get_config(study)
         general_config: Optional[JSON] = config.get("general", None)
         assert_this(general_config is not None)
         general_config = cast(JSON, general_config)
         nb_years = cast(int, general_config.get("nbyears"))
-        if len(playlist) == nb_years:
-            general_config["user-playlist"] = False
+        playlist_config = config.get("playlist", {})
+        if reverse:
+            playlist_without_offset = [
+                year
+                for year in range(0, nb_years)
+                if year not in playlist_without_offset
+            ]
+        general_config["user-playlist"] = active
+        if len(playlist_without_offset) > nb_years / 2:
+            playlist_config["playlist_reset"] = True
+            if "playlist_year +" in playlist_config:
+                del playlist_config["playlist_year +"]
+            playlist_config["playlist_year -"] = [
+                year
+                for year in range(0, nb_years)
+                if year not in playlist_without_offset
+            ]
         else:
-            playlist_config = config.get("playlist", {})
-            general_config["user-playlist"] = True
-            if len(playlist) > nb_years / 2:
-                playlist_config["playlist_reset"] = True
-                if "playlist_year +" in playlist_config:
-                    del playlist_config["playlist_year +"]
-                playlist_config["playlist_year -"] = [
-                    year
-                    for year in range(0, nb_years)
-                    if year not in playlist_without_offset
-                ]
-            else:
-                playlist_config["playlist_reset"] = False
-                if "playlist_year -" in playlist_config:
-                    del playlist_config["playlist_year -"]
-                playlist_config["playlist_year +"] = playlist_without_offset
-            config["playlist"] = playlist_config
+            playlist_config["playlist_reset"] = False
+            if "playlist_year -" in playlist_config:
+                del playlist_config["playlist_year -"]
+            playlist_config["playlist_year +"] = playlist_without_offset
+        config["playlist"] = playlist_config
         FileStudyHelpers.save_config(study, config)

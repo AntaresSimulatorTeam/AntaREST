@@ -285,6 +285,50 @@ def create_study_data_routes(
         )
 
     @bp.get(
+        "/studies/{uuid}/config/playlist",
+        tags=[APITag.study_data],
+        summary="Get playlist config",
+        response_model=List[int],
+    )
+    def get_playlist_config(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching playlist config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.config_manager.get_playlist(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/playlist",
+        tags=[APITag.study_data],
+        summary="Set playlist config",
+    )
+    def set_playlist_config(
+        uuid: str,
+        active: bool = True,
+        reverse: bool = False,
+        playlist: Optional[List[int]] = Body(default=None),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Updating playlist confi for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.config_manager.set_playlist(
+            study, playlist, reverse, active
+        )
+
+    @bp.get(
         path="/studies/{uuid}/config/optimization_form_fields",
         tags=[APITag.study_data],
         summary="Get Optimization config values for form",
