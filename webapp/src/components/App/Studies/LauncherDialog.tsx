@@ -13,6 +13,8 @@ import {
   List,
   ListItem,
   Slider,
+  Stack,
+  Switch,
   TextField,
   Typography,
   useTheme,
@@ -377,18 +379,6 @@ function LauncherDialog(props: Props) {
               }
               label={t("study.xpansionMode") as string}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.xpansion && !!options.xpansion_r_version}
-                  disabled={!options.xpansion}
-                  onChange={(e, checked) =>
-                    handleChange("xpansion_r_version", checked)
-                  }
-                />
-              }
-              label={t("study.useXpansionVersionR") as string}
-            />
           </Box>
           {outputList && outputList.length === 1 && (
             <Box sx={{ display: "flex" }}>
@@ -423,6 +413,19 @@ function LauncherDialog(props: Props) {
               />
             </Box>
           )}
+          <Box>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography>{t("launcher.xpansion.versionR")}</Typography>
+              <Switch
+                checked={!options.xpansion_r_version}
+                disabled={!options.xpansion}
+                onChange={(e, checked) =>
+                  handleChange("xpansion_r_version", !checked)
+                }
+              />
+              <Typography>{t("launcher.xpansion.versionCpp")}</Typography>
+            </Stack>
+          </Box>
         </FormGroup>
         <Typography sx={{ mt: 1 }}>Adequacy Patch</Typography>
         <FormGroup

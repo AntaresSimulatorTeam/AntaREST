@@ -7,7 +7,7 @@ from typing import Optional, Union, List, cast
 from zipfile import ZipFile, BadZipFile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, validator
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
@@ -56,15 +56,15 @@ class MaxIteration(str, Enum):
 
 
 class XpansionSettingsDTO(BaseModel):
-    optimality_gap: Optional[float] = None
-    max_iteration: Optional[Union[int, MaxIteration]] = None
+    optimality_gap: Optional[float] = 1
+    max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
     yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
     additional_constraints: Optional[str] = Field(
         None, alias="additional-constraints"
     )
-    relaxed_optimality_gap: Optional[float] = Field(
+    relaxed_optimality_gap: Optional[Union[float, str]] = Field(
         None, alias="relaxed-optimality-gap"
     )
     cut_type: Optional[CutType] = Field(None, alias="cut-type")
@@ -75,6 +75,23 @@ class XpansionSettingsDTO(BaseModel):
     )
     relative_gap: Optional[float] = None
     solver: Optional[Solver] = None
+    timelimit: Optional[float] = 1e12
+    log_level: Optional[int] = 0
+
+    @validator("relaxed_optimality_gap")
+    def relaxed_optimality_gap_validation(
+        cls, v: Optional[Union[float, str]]
+    ) -> Optional[Union[float, str]]:
+        if isinstance(v, float):
+            return v
+        if isinstance(v, str):
+            stripped_v = v.strip()
+            if stripped_v.endswith("%") and float(stripped_v[:-1]):
+                return v
+            raise ValueError(
+                "season_correlation is not allowed for 'thermal' type"
+            )
+        return v
 
 
 class XpansionCandidateDTO(BaseModel):
@@ -213,7 +230,7 @@ class XpansionManager:
                 xpansion_settings["ampl.solve_bounds_frequency"] = 1000000
             else:
                 xpansion_settings["relative_gap"] = 1e-12
-                xpansion_settings["solver"] = "Cbc"
+                xpansion_settings["solver"] = Solver.CBC.value
 
             xpansion_configuration_data = {
                 "user": {

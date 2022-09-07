@@ -5,13 +5,15 @@ export interface XpansionSettings {
   max_iteration?: number;
   "yearly-weights": string;
   "additional-constraints"?: string;
-  "relaxed-optimality-gap"?: number;
+  "relaxed-optimality-gap"?: number | string;
   "cut-type"?: string;
   "ampl.solver"?: string;
   "ampl.presolve"?: number;
   "ampl.solve_bounds_frequency"?: number;
   relative_gap?: number;
   solver?: string;
+  log_level?: number;
+  timelimit?: number;
 }
 
 export interface XpansionCandidate {
