@@ -101,6 +101,8 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "solver": "Cbc",
         "uc_type": "expansion_fast",
         "yearly-weights": None,
+        "timelimit": 1e12,
+        "log_level": 0,
     }
 
     res = client.put(
@@ -116,13 +118,15 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "ampl.solver": None,
         "cut-type": None,
         "master": "integer",
-        "max_iteration": None,
+        "max_iteration": "inf",
         "optimality_gap": 42.0,
         "relative_gap": None,
         "relaxed-optimality-gap": None,
         "solver": None,
         "uc_type": "expansion_fast",
         "yearly-weights": None,
+        "timelimit": 1e12,
+        "log_level": 0,
     }
 
     res = client.put(
