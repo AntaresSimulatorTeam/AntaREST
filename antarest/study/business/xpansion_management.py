@@ -75,7 +75,7 @@ class XpansionSettingsDTO(BaseModel):
     )
     relative_gap: Optional[float] = 1e-12
     solver: Optional[Solver] = Solver.CBC
-    timelimit: Optional[int] = 1e12
+    timelimit: Optional[float] = 1e12
     log_level: Optional[int] = 0
 
     @validator("relaxed_optimality_gap")
