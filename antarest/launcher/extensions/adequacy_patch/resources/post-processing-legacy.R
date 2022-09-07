@@ -27,7 +27,8 @@ run_adq(opts = opts,
 					antaresfbzone = antaresfbzone,
 					ext = extension,
 					nbcl = nbcore, thresholdFilter = thresholdFilter,
-					core_ahc = core_ahc)
+					core_ahc = core_ahc,
+					calculate_mc_all = calculate_mc_all)
 
 areas <- read_yaml("user/adequacypatch/hourly-areas.yml", fileEncoding = "UTF-8", text)
 links <- read_yaml("user/adequacypatch/hourly-links.yml", fileEncoding = "UTF-8", text)
