@@ -17,18 +17,14 @@ import {
   isTermExist,
 } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
-import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
-import {
-  addConstraintTerm,
-  getClustersAndLinks,
-} from "../../../../../../../../services/api/studydata";
-import usePromise from "../../../../../../../../hooks/usePromise";
+import { addConstraintTerm } from "../../../../../../../../services/api/studydata";
 import {
   AllClustersAndLinks,
   ClusterElement,
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
+import { selectLinksAndClusters } from "../../../../../../../../redux/selectors";
+import useStudyData from "../../../../hooks/useStudyData";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
@@ -60,7 +56,10 @@ function AddConstraintTermDialog(props: Props) {
       area2: "",
     },
   };
-  const optionsRes = usePromise(() => getClustersAndLinks(studyId), [studyId]);
+  const { value: optionsItems } = useStudyData({
+    studyId,
+    selector: selectLinksAndClusters,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -71,7 +70,6 @@ function AddConstraintTermDialog(props: Props) {
       const tmpValues = values.dirtyValues as ConstraintType;
       const isLink = isDataLink(tmpValues.data);
       if (tmpValues.weight === undefined) tmpValues.weight = 0.0;
-      console.log("IS LINK: ", isLink, "; PRINT: ", tmpValues.data);
       let data: LinkCreationInfoDTO | ClusterElement;
       // Verify if this link/cluster combination is allowed
       if (isLink) {
@@ -136,18 +134,12 @@ function AddConstraintTermDialog(props: Props) {
       onSubmit={handleSubmit}
       {...dialogProps}
     >
-      <UsePromiseCond
-        response={optionsRes}
-        ifPending={() => <SimpleLoader />}
-        ifResolved={(options) =>
-          options && (
-            <AddConstraintTermForm
-              options={options}
-              constraintsTerm={constraintsTerm}
-            />
-          )
-        }
-      />
+      {optionsItems && (
+        <AddConstraintTermForm
+          options={optionsItems}
+          constraintsTerm={constraintsTerm}
+        />
+      )}
     </FormDialog>
   );
 }
