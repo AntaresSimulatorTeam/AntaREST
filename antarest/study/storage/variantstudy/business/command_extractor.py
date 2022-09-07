@@ -7,10 +7,14 @@ from antarest.core.utils.utils import StopWatch, assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    ConfigPathBuilder,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -52,6 +56,9 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 from antarest.study.storage.variantstudy.model.command.update_district import (
     UpdateDistrict,
+)
+from antarest.study.storage.variantstudy.model.command.update_playlist import (
+    UpdatePlaylist,
 )
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
@@ -554,6 +561,19 @@ class CommandExtractor(ICommandExtractor):
         comments = study_tree.get(url)
         return UpdateComments(
             comments=comments,
+            command_context=self.command_context,
+        )
+
+    def generate_update_playlist(
+        self,
+        study_tree: FileStudyTree,
+    ) -> ICommand:
+        config = study_tree.get(["settings", "generaldata"])
+        playlist = ConfigPathBuilder.get_playlist(config)
+        return UpdatePlaylist(
+            items=playlist,
+            active=True if playlist and len(playlist) > 0 else False,
+            reverse=False,
             command_context=self.command_context,
         )
 

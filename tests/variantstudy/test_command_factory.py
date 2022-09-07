@@ -275,6 +275,14 @@ class TestCommandFactory:
                 action=CommandName.UPDATE_DISTRICT.value,
                 args=[{"id": "id", "base_filter": "add-all"}],
             ),
+            CommandDTO(
+                action=CommandName.UPDATE_PLAYLIST.value,
+                args=[{"active": True, "items": [1, 3], "reverse": False}],
+            ),
+            CommandDTO(
+                action=CommandName.UPDATE_PLAYLIST.value,
+                args={"active": True, "items": [1, 3], "reverse": False},
+            ),
         ],
     )
     @pytest.mark.unit_test

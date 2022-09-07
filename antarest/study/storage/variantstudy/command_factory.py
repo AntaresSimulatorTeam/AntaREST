@@ -62,6 +62,9 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from antarest.study.storage.variantstudy.model.command.update_district import (
     UpdateDistrict,
 )
+from antarest.study.storage.variantstudy.model.command.update_playlist import (
+    UpdatePlaylist,
+)
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
@@ -193,6 +196,11 @@ class CommandFactory:
             )
         elif action == CommandName.UPDATE_DISTRICT.value:
             return UpdateDistrict(
+                **args,
+                command_context=self.command_context,
+            )
+        elif action == CommandName.UPDATE_PLAYLIST.value:
+            return UpdatePlaylist(
                 **args,
                 command_context=self.command_context,
             )
