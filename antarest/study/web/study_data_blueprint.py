@@ -525,24 +525,4 @@ def create_study_data_routes(
             study, binding_constraint_id, term_id
         )
 
-    @bp.get(
-        "/studies/{uuid}/linksandclusters",
-        tags=[APITag.study_data],
-        summary="Get all links and clusters",
-        response_model=AllCLustersAndLinks,
-    )
-    def get_clusters_and_links(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Fetching all links and clusters for study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
-        )
-        return study_service.links.get_clusters_and_links(study)
-
     return bp

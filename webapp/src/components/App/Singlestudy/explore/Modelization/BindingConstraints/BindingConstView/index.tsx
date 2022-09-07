@@ -7,7 +7,8 @@ import BindingConstForm from "./BindingConstForm";
 import { getDefaultValues, BindingConstFields } from "./utils";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import { getClustersAndLinks } from "../../../../../../../services/api/studydata";
+import { selectLinksAndClusters } from "../../../../../../../redux/selectors";
+import useStudyData from "../../../hooks/useStudyData";
 
 interface Props {
   bindingConst: string;
@@ -20,10 +21,10 @@ function BindingConstView(props: Props) {
     () => getDefaultValues(study.id, bindingConst),
     [study.id, bindingConst]
   );
-  const optionsRes = usePromise(
-    () => getClustersAndLinks(study.id),
-    [study.id]
-  );
+  const { value: options } = useStudyData({
+    studyId: study.id,
+    selector: selectLinksAndClusters,
+  });
 
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
@@ -32,24 +33,18 @@ function BindingConstView(props: Props) {
           response={res}
           ifPending={() => <SimpleLoader />}
           ifResolved={(data) => (
-            <UsePromiseCond
-              response={optionsRes}
-              ifPending={() => <SimpleLoader />}
-              ifResolved={(options) => (
-                <Form
-                  autoSubmit
-                  config={{ defaultValues: data as BindingConstFields }}
-                >
-                  {bindingConst && options && (
-                    <BindingConstForm
-                      study={study}
-                      bindingConst={bindingConst}
-                      options={options}
-                    />
-                  )}
-                </Form>
+            <Form
+              autoSubmit
+              config={{ defaultValues: data as BindingConstFields }}
+            >
+              {bindingConst && options && (
+                <BindingConstForm
+                  study={study}
+                  bindingConst={bindingConst}
+                  options={options}
+                />
               )}
-            />
+            </Form>
           )}
         />
       </Paper>
