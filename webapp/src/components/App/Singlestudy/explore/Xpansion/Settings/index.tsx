@@ -102,8 +102,8 @@ function Settings() {
   return (
     <>
       {!settingsLoading && !constraintsLoading && settings ? (
-        <Box sx={{ width: "100%", height: "100%", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
+        <Box sx={{ width: "100%", flexGrow: 1, overflow: "hidden", p: 2 }}>
+          <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
             <SettingsForm
               settings={settings}
               constraints={constraints || []}

@@ -12,6 +12,8 @@ export interface XpansionSettings {
   "ampl.solve_bounds_frequency"?: number;
   relative_gap?: number;
   solver?: string;
+  log_level?: number;
+  timelimit?: number;
 }
 
 export interface XpansionCandidate {

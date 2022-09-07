@@ -509,6 +509,8 @@
     "xpansion.amplSolverBoundsFrequency": "Ampl solve bounds frequency",
     "xpansion.relativeGap": "Gap d'optimalité relatif",
     "xpansion.solver": "Solveur",
+    "xpansion.timeLimit": "Limite de temps (en heures)",
+    "xpansion.logLevel": "Niveau de log",
     "xpansion.constraints": "Contraintes",
     "xpansion.capacities": "Capacitiés",
     "xpansion.fileName": "Nom du fichier",

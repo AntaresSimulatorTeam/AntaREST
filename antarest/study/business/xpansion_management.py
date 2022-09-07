@@ -56,8 +56,8 @@ class MaxIteration(str, Enum):
 
 
 class XpansionSettingsDTO(BaseModel):
-    optimality_gap: Optional[float] = None
-    max_iteration: Optional[Union[int, MaxIteration]] = None
+    optimality_gap: Optional[float] = 1
+    max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
     yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
@@ -73,8 +73,10 @@ class XpansionSettingsDTO(BaseModel):
     ampl_solve_bounds_frequency: Optional[int] = Field(
         None, alias="ampl.solve_bounds_frequency"
     )
-    relative_gap: Optional[float] = None
-    solver: Optional[Solver] = None
+    relative_gap: Optional[float] = 1e-12
+    solver: Optional[Solver] = Solver.CBC
+    timelimit: Optional[int] = 1e12
+    log_level: Optional[int] = 0
 
     @validator("relaxed_optimality_gap")
     def relaxed_optimality_gap_validation(
