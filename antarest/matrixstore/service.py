@@ -409,7 +409,9 @@ class MatrixService(ISimpleMatrixService):
         )
 
         return self.download_matrix_list(
-            [mtx_info.matrix_id for mtx_info in dataset.matrices], dataset.id, params
+            [mtx_info.matrix_id for mtx_info in dataset.matrices],
+            dataset.id,
+            params,
         )
 
     def download_matrix_list(
