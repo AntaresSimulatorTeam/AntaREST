@@ -46,7 +46,7 @@ export const headerIconStyle = {
   height: "auto",
   cursor: "pointer",
   color: "primary.main",
-  mx: 3,
+  mx: 2,
   "&:hover": {
     color: "primary.dark",
   },
