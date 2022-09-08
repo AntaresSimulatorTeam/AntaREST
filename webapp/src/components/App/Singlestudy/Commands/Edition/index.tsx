@@ -55,6 +55,7 @@ import {
   WsChannel,
 } from "../../../../../services/webSockets";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 
 const logError = debug("antares:variantedition:error");
 
@@ -72,6 +73,9 @@ function EditionView(props: Props) {
     useState<boolean>(false);
   const [openClearCommandsDialog, setOpenClearCommandsDialog] =
     useState<boolean>(false);
+  const [openExportCommandsDialog, setOpenExportCommandsDialog] =
+    useState<boolean>(false);
+  const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
@@ -190,13 +194,20 @@ function EditionView(props: Props) {
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
-      await exportCommandsMatrices(studyId);
+      if (exportMatrices) {
+        await exportCommandsMatrices(studyId);
+      }
       exportJson(
         fromCommandDTOToJsonCommand(items),
         `${studyId}_commands.json`
       );
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
+    } finally {
+      if (isMounted()) {
+        setExportMatrices(false);
+        setOpenExportCommandsDialog(false);
+      }
     }
   };
 
@@ -448,7 +459,7 @@ function EditionView(props: Props) {
             <Tooltip title={t("variants.commands.export")}>
               <CloudDownloadOutlinedIcon
                 sx={{ ...headerIconStyle }}
-                onClick={onGlobalExport}
+                onClick={() => setOpenExportCommandsDialog(true)}
               />
             </Tooltip>
             <Tooltip title={t("variants.commands.add")}>
@@ -546,6 +557,20 @@ function EditionView(props: Props) {
           onCancel={() => setOpenClearCommandsDialog(false)}
         >
           {t("variants.commands.question.deleteAll")}
+        </ConfirmationDialog>
+      )}
+      {openExportCommandsDialog && (
+        <ConfirmationDialog
+          title={t("variants.commands.export")}
+          open={openExportCommandsDialog}
+          onConfirm={onGlobalExport}
+          onCancel={() => setOpenExportCommandsDialog(false)}
+        >
+          <CheckBoxFE
+            value={exportMatrices}
+            label={t("variants.commands.exportMatrices")}
+            onChange={() => setExportMatrices(!exportMatrices)}
+          />
         </ConfirmationDialog>
       )}
     </Root>
