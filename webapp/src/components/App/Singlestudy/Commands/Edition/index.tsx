@@ -32,6 +32,7 @@ import {
   replaceCommands,
   applyCommands,
   getStudyTask,
+  exportCommandsMatrices,
 } from "../../../../../services/api/variant";
 import AddCommandDialog from "./AddCommandDialog";
 import {
@@ -189,6 +190,7 @@ function EditionView(props: Props) {
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
+      await exportCommandsMatrices(studyId);
       exportJson(
         fromCommandDTOToJsonCommand(items),
         `${studyId}_commands.json`
