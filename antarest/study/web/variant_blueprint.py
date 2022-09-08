@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -147,6 +148,26 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_commands(sanitized_uuid, params)
+
+    @bp.get(
+        "/studies/{uuid}/commands/_matrices",
+        tags=[APITag.study_variant_management],
+        summary="Export a variant's commands matrices",
+        response_model=FileDownloadTaskDTO,
+    )
+    def export_matrices(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileDownloadTaskDTO:
+        logger.info(
+            f"Exporting commands matrices for variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.export_commands_matrices(
+            sanitized_uuid, params
+        )
 
     @bp.post(
         "/studies/{uuid}/commands",

@@ -3,6 +3,7 @@ import logging
 import shutil
 import tempfile
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
 from typing import List, Optional, cast, Tuple, Callable
 from uuid import uuid4
@@ -20,6 +21,10 @@ from antarest.core.exceptions import (
     VariantStudyParentNotValid,
     CommandNotValid,
     CommandUpdateAuthorizationError,
+)
+from antarest.core.filetransfer.model import (
+    FileDownloadDTO,
+    FileDownloadTaskDTO,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
@@ -42,7 +47,8 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.utils import (
     transform_command_to_dto,
 )
@@ -373,6 +379,31 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = json.dumps(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
+
+    def export_commands_matrices(
+        self, study_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
+        study = self._get_variant_study(study_id, params)
+        matrices = {
+            matrix
+            for command in study.commands
+            for matrix in suppress_exception(
+                lambda: reduce(
+                    lambda m, c: m + c.get_inner_matrices(),
+                    self.command_factory.to_icommand(command.to_dto()),
+                    cast(List[str], []),
+                ),
+                lambda e: logger.warning(
+                    f"Failed to parse command {command}", exc_info=e
+                ),
+            )
+            or []
+        }
+        return cast(
+            MatrixService, self.command_factory.command_context.matrix_service
+        ).download_matrix_list(
+            list(matrices), f"{study.name}_{study.id}_matrices", params
+        )
 
     def _get_variant_study(
         self,

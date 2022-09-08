@@ -491,6 +491,7 @@
     "variants.commands.add": "Add a command",
     "variants.commands.import": "Replace all commands",
     "variants.commands.export": "Export all commands",
+    "variants.commands.exportMatrices": "Export matrices",
     "variants.commands.question.deleteAll": "Are you sure you want to delete all commands ?",
     "xpansion.timeSeries": "Time series",
     "xpansion.link": "Link",
