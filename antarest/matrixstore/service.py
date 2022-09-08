@@ -7,7 +7,7 @@ from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Sequence
 from zipfile import ZipFile
 
 from fastapi import UploadFile
@@ -364,15 +364,15 @@ class MatrixService(ISimpleMatrixService):
         return access
 
     def create_matrix_files(
-        self, dataset: MatrixDataSet, export_path: Path
+        self, matrix_ids: Sequence[str], export_path: Path
     ) -> str:
         assert_this(export_path.name.endswith(".zip"))
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
             stopwatch = StopWatch()
-            for mtx_info in dataset.matrices:
-                mtx = self.get(mtx_info.matrix.id)
+            for mid in matrix_ids:
+                mtx = self.get(mid)
                 if not mtx:
                     continue
                 write_tsv_matrix(mtx, tmpdir)
@@ -383,7 +383,7 @@ class MatrixService(ISimpleMatrixService):
             )
             stopwatch.log_elapsed(
                 lambda x: logger.info(
-                    f"Matrix dataset {dataset.id} exported (zipped mode) in {x}s"
+                    f"Matrix dataset exported (zipped mode) in {x}s"
                 )
             )
         return filename if filename else ""
@@ -408,10 +408,20 @@ class MatrixService(ISimpleMatrixService):
             dataset, params.user, raise_error=True
         )
 
-        logger.info(f"Exporting matrix dataset {dataset_id}")
-        export_name = f"Exporting matrix dataset {dataset_id}"
+        return self.download_matrix_list(
+            [matrix.id for matrix in dataset.matrices], dataset.id, params
+        )
+
+    def download_matrix_list(
+        self,
+        matrix_list: Sequence[str],
+        dataset_name: str,
+        params: RequestParameters,
+    ) -> FileDownloadTaskDTO:
+        logger.info(f"Exporting matrix dataset {dataset_name}")
+        export_name = f"Exporting matrix dataset {dataset_name}"
         export_file_download = self.file_transfer_manager.request_download(
-            f"matrixdataset-{dataset_id}.zip",
+            f"matrixdataset-{dataset_name}.zip",
             export_name,
             params.user,
         )
@@ -420,19 +430,13 @@ class MatrixService(ISimpleMatrixService):
 
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
-                matrix_dataset = self.repo_dataset.get(dataset_id)
-                if matrix_dataset is None:
-                    return TaskResult(
-                        success=False,
-                        message=f"Matrix dataset {dataset_id} not found",
-                    )
                 self.create_matrix_files(
-                    dataset=matrix_dataset, export_path=export_path
+                    matrix_ids=matrix_list, export_path=export_path
                 )
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(
                     success=True,
-                    message=f"Matrix dataset {dataset_id} successfully exported",
+                    message=f"Matrix dataset {dataset_name} successfully exported",
                 )
             except Exception as e:
                 self.file_transfer_manager.fail(export_id, str(e))
