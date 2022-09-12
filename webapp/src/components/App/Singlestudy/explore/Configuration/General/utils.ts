@@ -63,7 +63,7 @@ interface SettingsGeneralDataGeneral {
   nbyears: number;
   // Building mode
   "custom-ts-numbers": boolean;
-  "custom-scenarios": boolean; // For study versions >= 8
+  "custom-scenario": boolean; // For study versions >= 8
   derated: boolean;
   // Selection mode
   "user-playlist": boolean;
@@ -179,7 +179,7 @@ export async function getFormValues(
 
   const {
     "custom-ts-numbers": customTsNumbers,
-    "custom-scenarios": customScenarios,
+    "custom-scenario": customScenarios,
     derated,
     ...generalRest
   } = general;
@@ -188,7 +188,7 @@ export async function getFormValues(
   if (derated) {
     buildingMode = "Derated";
   }
-  // 'custom-scenarios' replaces 'custom-ts-numbers' in study versions >= 8
+  // 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 8
   else if (customScenarios || customTsNumbers) {
     buildingMode = "Custom";
   }
