@@ -212,7 +212,7 @@ function Fields(props: Props) {
                 return Promise.all([
                   saveValue(
                     studyVersion >= 800
-                      ? "general/custom-scenarios"
+                      ? "general/custom-scenario"
                       : "general/custom-ts-numbers",
                     v === "Custom"
                   ),
