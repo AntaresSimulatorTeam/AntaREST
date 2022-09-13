@@ -140,8 +140,8 @@ function FilterDrawer(props: Props) {
             options={versions}
             getOptionLabel={displayVersionName}
             defaultValue={filters.versions}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.versions = value;
+            onChange={(event) => {
+              filterNewValuesRef.current.versions = event.target.value;
             }}
           />
         </ListItem>
@@ -153,8 +153,10 @@ function FilterDrawer(props: Props) {
             defaultValue={users.filter((user) =>
               filters.users.includes(user.id)
             )}
-            onChange={(event, value) => {
-              filterNewValuesRef.current.users = value.map((val) => val.id);
+            onChange={(event) => {
+              filterNewValuesRef.current.users = event.target.value.map(
+                (val) => val.id
+              );
             }}
           />
         </ListItem>
@@ -166,8 +168,10 @@ function FilterDrawer(props: Props) {
             defaultValue={groups.filter((group) =>
               filters.groups.includes(group.id)
             )}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.groups = value.map((val) => val.id);
+            onChange={(event) => {
+              filterNewValuesRef.current.groups = event.target.value.map(
+                (val) => val.id
+              );
             }}
           />
         </ListItem>
@@ -176,8 +180,8 @@ function FilterDrawer(props: Props) {
             label={t("global.tags")}
             options={[]}
             defaultValue={filters.tags}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.tags = value;
+            onChange={(event) => {
+              filterNewValuesRef.current.tags = event.target.value;
             }}
             freeSolo
           />

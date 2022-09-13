@@ -44,6 +44,7 @@ function SelectFE(props: SelectFEProps) {
     label,
     className,
     sx,
+    fullWidth,
     ...selectProps
   } = props;
 
@@ -62,6 +63,7 @@ function SelectFE(props: SelectFEProps) {
       hiddenLabel={!label}
       error={error}
       sx={sx}
+      fullWidth={fullWidth}
     >
       <InputLabel id={labelId}>{label}</InputLabel>
       <Select {...selectProps} label={label} labelId={labelId}>

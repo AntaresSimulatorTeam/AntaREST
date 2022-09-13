@@ -6,10 +6,18 @@ interface FieldsetProps extends Omit<BoxProps, "component"> {
   legend?: string | React.ReactNode;
   children: React.ReactNode;
   contentProps?: BoxProps;
+  fullFieldWith?: boolean;
 }
 
 function Fieldset(props: FieldsetProps) {
-  const { legend, children, sx, contentProps, ...rest } = props;
+  const {
+    legend,
+    children,
+    sx,
+    contentProps,
+    fullFieldWith = false,
+    ...rest
+  } = props;
 
   return (
     <Box
@@ -26,7 +34,7 @@ function Fieldset(props: FieldsetProps) {
             flexWrap: "wrap",
             gap: 2,
             ".MuiFormControl-root": {
-              width: 220,
+              width: fullFieldWith ? "100%" : 220,
             },
           },
         },

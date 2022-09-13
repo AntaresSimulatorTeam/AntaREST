@@ -49,6 +49,10 @@ function SelectSingle(props: Props) {
     }
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <FormControl variant={variant} sx={sx} required={required}>
       <InputLabel id={`single-checkbox-label-${name}`}>{label}</InputLabel>
@@ -71,7 +75,7 @@ function SelectSingle(props: Props) {
         )}
         {list.map(({ id, name }) => (
           <MenuItem key={id} value={id}>
-            {name}
+            {t(name)}
           </MenuItem>
         ))}
       </Select>

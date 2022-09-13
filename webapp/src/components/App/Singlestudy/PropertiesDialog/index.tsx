@@ -8,8 +8,6 @@ import { useSnackbar } from "notistack";
 import SingleSelect from "../../../common/SelectSingle";
 import MultiSelect from "../../../common/SelectMulti";
 import {
-  GenericInfo,
-  GroupDTO,
   StudyMetadata,
   StudyMetadataPatchDTO,
   StudyPublicMode,
@@ -26,6 +24,8 @@ import TagTextInput from "../../../common/TagTextInput";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../../common/dialogs/BasicDialog";
 import { ElementContainer, InputElement, Root } from "./style";
+import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
+import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -53,7 +53,6 @@ function PropertiesModal(props: Props) {
   );
   const [tags, setTags] = useState<Array<string>>(study.tags ? study.tags : []);
   const [dataChanged, setDataChanged] = useState<boolean>(false);
-  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
 
   const initStudyName = useMemo(() => study.name, [study]);
   const initPublicMode = useMemo(() => study.publicMode, [study]);
@@ -70,7 +69,42 @@ function PropertiesModal(props: Props) {
     return tpmTagsChanged;
   }, [initTags, tags]);
 
-  const onSubmit = async () => {
+  const { data: groupList = [] } = usePromiseWithSnackbarError(getGroups, {
+    errorMessage: t("settings.error.groupsError"),
+  });
+
+  useEffect(() => {
+    if (study) {
+      setStudyName(study.name);
+      setPublicMode(study.publicMode);
+      setGroup(study.groups.map((elm) => elm.id));
+      setTags(study.tags ? study.tags : []);
+    }
+  }, [study]);
+
+  useEffect(() => {
+    setDataChanged(
+      initStudyName !== studyName ||
+        initPublicMode !== publicMode ||
+        !isEqual(initGroup, group) ||
+        tagChanged
+    );
+  }, [
+    studyName,
+    publicMode,
+    group,
+    tags,
+    initStudyName,
+    initPublicMode,
+    initGroup,
+    tagChanged,
+  ]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = async () => {
     if (studyName && studyName.replace(/\s+/g, "") !== "") {
       try {
         const sid = study.id;
@@ -124,53 +158,9 @@ function PropertiesModal(props: Props) {
     }
   };
 
-  const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("study.nonePublicMode") },
-    { id: "READ", name: t("study.readPublicMode") },
-    { id: "EXECUTE", name: t("study.executePublicMode") },
-    { id: "EDIT", name: t("global.edit") },
-    { id: "FULL", name: t("study.fullPublicMode") },
-  ];
-
-  const init = async () => {
-    try {
-      const groupRes = await getGroups();
-      setGroupList(groupRes);
-    } catch (error) {
-      logErr(error);
-    }
-  };
-
-  useEffect(() => {
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (study) {
-      setStudyName(study.name);
-      setPublicMode(study.publicMode);
-      setGroup(study.groups.map((elm) => elm.id));
-      setTags(study.tags ? study.tags : []);
-    }
-  }, [study]);
-
-  useEffect(() => {
-    setDataChanged(
-      initStudyName !== studyName ||
-        initPublicMode !== publicMode ||
-        !isEqual(initGroup, group) ||
-        tagChanged
-    );
-  }, [
-    studyName,
-    publicMode,
-    group,
-    tags,
-    initStudyName,
-    initPublicMode,
-    initGroup,
-    tagChanged,
-  ]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <BasicDialog
@@ -189,7 +179,7 @@ function PropertiesModal(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            onClick={onSubmit}
+            onClick={handleSubmit}
             disabled={!dataChanged}
           >
             {t("study.validate")}
@@ -213,7 +203,7 @@ function PropertiesModal(props: Props) {
           <InputElement>
             <SingleSelect
               name={t("study.publicMode")}
-              list={publicModeList}
+              list={PUBLIC_MODE_LIST}
               data={publicMode}
               setValue={(value: string) =>
                 setPublicMode(value as StudyPublicMode)
