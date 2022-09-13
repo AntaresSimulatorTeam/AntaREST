@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { Button, TextField } from "@mui/material";
@@ -8,13 +8,9 @@ import { usePromise } from "react-use";
 import * as R from "ramda";
 import SingleSelect from "../../../common/SelectSingle";
 import MultiSelect from "../../../common/SelectMulti";
-import {
-  GenericInfo,
-  GroupDTO,
-  StudyPublicMode,
-} from "../../../../common/types";
+import { GenericInfo, StudyPublicMode } from "../../../../common/types";
 import TextSeparator from "../../../common/TextSeparator";
-import { getGroups } from "../../../../services/api/user";
+// import { getGroups } from "../../../../services/api/user";
 import TagTextInput from "../../../common/TagTextInput";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog, {
@@ -22,7 +18,10 @@ import BasicDialog, {
 } from "../../../common/dialogs/BasicDialog";
 import { Root, ElementContainer, InputElement } from "./style";
 import { createStudy } from "../../../../redux/ducks/studies";
-import { getStudyVersionsFormatted } from "../../../../redux/selectors";
+import {
+  getStudyVersionsFormatted,
+  getGroups,
+} from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 
@@ -50,7 +49,7 @@ function CreateStudyModal(props: Props) {
   const [publicMode, setPublicMode] = useState<StudyPublicMode>("NONE");
   const [groups, setGroups] = useState<Array<string>>([]);
   const [tags, setTags] = useState<Array<string>>([]);
-  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
+  const groupList = useAppSelector(getGroups);
   const [actionButtonDisabled, setActionButtonDisabled] =
     useState<boolean>(false);
 
@@ -95,19 +94,6 @@ function CreateStudyModal(props: Props) {
     { id: "EDIT", name: t("global.edit") },
     { id: "FULL", name: t("study.fullPublicMode") },
   ];
-
-  const init = async () => {
-    try {
-      const groupRes = await getGroups();
-      setGroupList(groupRes);
-    } catch (error) {
-      logErr(error);
-    }
-  };
-
-  useEffect(() => {
-    init();
-  }, []);
 
   return (
     <BasicDialog
