@@ -66,7 +66,7 @@ function BindingConstraints() {
           {R.cond([
             // Binding constraints list
             [
-              () => currentBindingConst !== undefined && res.data !== undefined,
+              () => !!currentBindingConst && res.data !== undefined,
               () =>
                 (
                   <BindingConstView bindingConst={currentBindingConst} />
