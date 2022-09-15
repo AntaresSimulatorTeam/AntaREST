@@ -61,7 +61,7 @@ export default function PropertiesForm(
             ? (value as Array<string>).filter((val) => val !== "")
             : [];
           return selection.length > 0
-            ? selection.map((elm) => t(`study.${elm}`)).join(", ")
+            ? selection.map((elm) => t(`global.time.${elm}`)).join(", ")
             : t("global.none");
         }}
         defaultValue={(defaultValues || {})[filterName] || []}
