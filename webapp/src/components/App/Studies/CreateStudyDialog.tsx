@@ -107,6 +107,7 @@ function CreateStudyModal(props: Props) {
             sx={{ mx: 0 }}
             fullWidth
           />
+
           <SelectFE
             label={t("global.version")}
             options={versionList.map((ver) => ({
@@ -115,6 +116,7 @@ function CreateStudyModal(props: Props) {
             }))}
             name="version"
             control={control}
+            sx={{ mt: 1, mb: 5 }}
             fullWidth
           />
 
@@ -146,49 +148,11 @@ function CreateStudyModal(props: Props) {
               label={t("studies.enterTag")}
               freeSolo
               fullWidth
+              sx={{ px: 0 }}
             />
           </Fieldset>
         </>
       )}
-
-      {/* <Root>
-        
-        </InputElement>
-        <ElementContainer>
-          <TextSeparator text={t("global.permission")} />
-          <InputElement>
-            <SingleSelect
-              name={t("study.publicMode")}
-              list={publicModeList}
-              data={publicMode}
-              setValue={(value: string) =>
-                setPublicMode(value as StudyPublicMode)
-              }
-              sx={{ flexGrow: 1, mr: 1 }}
-            />
-            <MultiSelect
-              name={t("global.group")}
-              list={groupList}
-              data={groups}
-              setValue={setGroups}
-              sx={{ flexGrow: 1, ml: 1 }}
-            />
-          </InputElement>
-        </ElementContainer>
-        <ElementContainer>
-          <TextSeparator text="Metadata" />
-          <InputElement>
-            <TagTextInput
-              label={t("studies.enterTag")}
-              sx={{ flexGrow: 1 }}
-              value={tags}
-              onChange={setTags}
-              tagList={tagList}
-              required
-            />
-          </InputElement>
-        </ElementContainer>
-      </Root> */}
     </FormDialog>
   );
 }
