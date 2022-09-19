@@ -66,7 +66,9 @@ function StudyMatrixView(props: PropTypes) {
     try {
       const res = await getStudyData(study, url);
       if (typeof res === "string") {
-        const fixed = res.replace(/NaN/g, '"NaN"');
+        const fixed = res
+          .replace(/NaN/g, '"NaN"')
+          .replace(/Infinity/g, '"Infinity"');
         setData(JSON.parse(fixed));
       } else {
         setData(res);
