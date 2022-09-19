@@ -26,6 +26,10 @@ export interface XpansionCandidate {
   "already-installed-capacity"?: number;
   "link-profile"?: string;
   "already-installed-link-profile"?: string;
+  "direct-link-profile"?: string;
+  "direct-already-installed-link-profile"?: string;
+  "indirect-link-profile"?: string;
+  "indirect-already-installed-link-profile"?: string;
 }
 
 export enum XpansionRenderView {

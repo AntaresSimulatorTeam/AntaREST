@@ -106,9 +106,23 @@ class XpansionCandidateDTO(BaseModel):
     already_installed_capacity: Optional[int] = Field(
         None, alias="already-installed-capacity"
     )
+    # this is obsolete (replaced by direct/indirect)
     link_profile: Optional[str] = Field(None, alias="link-profile")
+    # this is obsolete (replaced by direct/indirect)
     already_installed_link_profile: Optional[str] = Field(
         None, alias="already-installed-link-profile"
+    )
+    direct_link_profile: Optional[str] = Field(
+        None, alias="direct-link-profile"
+    )
+    indirect_direct_link_profile: Optional[str] = Field(
+        None, alias="indirect-direct-link-profile"
+    )
+    already_installed_direct_link_profile: Optional[str] = Field(
+        None, alias="already-installed-direct-link-profile"
+    )
+    already_installed_indirect_link_profile: Optional[str] = Field(
+        None, alias="already-installed-indirect-link-profile"
     )
 
 
@@ -337,26 +351,28 @@ class XpansionManager:
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
-        if xpansion_candidate_dto.link_profile and not file_study.tree.get(
-            ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
-        ):
-            raise XpansionFileNotFoundError(
-                f"The 'link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
-            )
-        if (
-            xpansion_candidate_dto.already_installed_link_profile
-            and not file_study.tree.get(
+        for fieldname, filename in [
+            ("link-profile", xpansion_candidate_dto.link_profile),
+            (
+                "already-installed-link-profile",
+                xpansion_candidate_dto.already_installed_link_profile,
+            ),
+            ("direct-link-profile", xpansion_candidate_dto.direct_link_profile),
+            ("indirect-direct-link-profile", xpansion_candidate_dto.indirect_direct_link_profile),
+            ("already-installed-direct-link-profile", xpansion_candidate_dto.already_installed_direct_link_profile),
+            ("already-installed-indirect-link-profile", xpansion_candidate_dto.already_installed_indirect_link_profile),
+        ]:
+            if filename and not file_study.tree.get(
                 [
                     "user",
                     "expansion",
                     "capa",
-                    xpansion_candidate_dto.already_installed_link_profile,
+                    filename,
                 ]
-            )
-        ):
-            raise XpansionFileNotFoundError(
-                f"The 'already-installed-link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
-            )
+            ):
+                raise XpansionFileNotFoundError(
+                    f"The '{fieldname}' file '{filename}' does not exist"
+                )
 
     def _assert_link_exist(
         self,
