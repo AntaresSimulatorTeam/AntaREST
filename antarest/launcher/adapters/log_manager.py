@@ -67,7 +67,12 @@ class LogTailManager:
             if not tmp:
                 if line:
                     logger.debug(f"Calling handler for {log_file}")
-                    handler(line)
+                    try:
+                        handler(line)
+                    except Exception as e:
+                        logger.error(
+                            "Could not handle this log line", exc_info=e
+                        )
                     line = ""
                     line_count = 0
                 time.sleep(0.1)
@@ -77,7 +82,12 @@ class LogTailManager:
                     line_count += 1
                 if line_count >= LogTailManager.BATCH_SIZE:
                     logger.debug(f"Calling handler for {log_file}")
-                    handler(line)
+                    try:
+                        handler(line)
+                    except Exception as e:
+                        logger.error(
+                            "Could not handle this log line", exc_info=e
+                        )
                     line = ""
                     line_count = 0
 

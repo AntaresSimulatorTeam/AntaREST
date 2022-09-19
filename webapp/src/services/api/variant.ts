@@ -8,6 +8,7 @@ import {
   VariantTree,
 } from "../../common/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
+import { FileDownloadTask } from "./downloads";
 
 export const getVariantChildren = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
@@ -119,6 +120,13 @@ export const getCommands = async (
   studyId: string
 ): Promise<Array<CommandDTO>> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
+  return res.data;
+};
+
+export const exportCommandsMatrices = async (
+  studyId: string
+): Promise<FileDownloadTask> => {
+  const res = await client.get(`/v1/studies/${studyId}/commands/_matrices`);
   return res.data;
 };
 

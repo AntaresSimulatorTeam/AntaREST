@@ -13,11 +13,13 @@ import {
 } from "@mui/material";
 import TableViewIcon from "@mui/icons-material/TableView";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import {
   MatrixEditDTO,
   MatrixStats,
+  MatrixType,
   StudyMetadata,
 } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -26,7 +28,7 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
 import { Root, Content, Header, StyledButton } from "./style";
 import SimpleLoader from "../loaders/SimpleLoader";
-import NoContent from "../page/NoContent";
+import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
@@ -113,6 +115,17 @@ function MatrixInput(props: PropsType) {
     }
   };
 
+  const handleDownload = (data: MatrixType, filename: string): void => {
+    const fileData = data.data.map((row) => row.join("\t")).join("\n");
+    const blob = new Blob([fileData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
+    link.remove();
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -158,11 +171,29 @@ function MatrixInput(props: PropsType) {
             <Button
               variant="outlined"
               color="primary"
-              startIcon={<GetAppOutlinedIcon />}
+              startIcon={<UploadOutlinedIcon />}
               onClick={() => setOpenImportDialog(true)}
             >
               {t("global.import")}
             </Button>
+            {data?.columns?.length >= 1 && (
+              <Button
+                sx={{
+                  ml: 2,
+                }}
+                variant="outlined"
+                color="primary"
+                startIcon={<DownloadOutlinedIcon />}
+                onClick={() =>
+                  handleDownload(
+                    data,
+                    `matrix_${study.id}_${url.replace("/", "_")}`
+                  )
+                }
+              >
+                {t("global.download")}
+              </Button>
+            )}
           </Box>
         </Header>
         <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
@@ -180,13 +211,13 @@ function MatrixInput(props: PropsType) {
           />
         ) : (
           !isLoading && (
-            <NoContent
+            <SimpleContent
               title="matrix.message.matrixEmpty"
               callToAction={
                 <Button
                   variant="outlined"
                   color="primary"
-                  startIcon={<GetAppOutlinedIcon />}
+                  startIcon={<UploadOutlinedIcon />}
                   onClick={() => setOpenImportDialog(true)}
                 >
                   {t("global.import")}

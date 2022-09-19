@@ -279,13 +279,15 @@ def create_study_routes(
         summary="Delete Study",
     )
     def delete_study(
-        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str,
+        children: bool = False,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Deleting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        study_service.delete_study(uuid_sanitized, params)
+        study_service.delete_study(uuid_sanitized, children, params)
 
         return ""
 
@@ -558,7 +560,6 @@ def create_study_routes(
     def archive_output(
         study_id: str,
         output_id: str,
-        use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -572,7 +573,6 @@ def create_study_routes(
         content = study_service.archive_output(
             study_id,
             output_id,
-            use_task,
             params,
         )
         return content
@@ -585,7 +585,6 @@ def create_study_routes(
     def unarchive_output(
         study_id: str,
         output_id: str,
-        use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -599,7 +598,6 @@ def create_study_routes(
         content = study_service.unarchive_output(
             study_id,
             output_id,
-            use_task,
             False,
             params,
         )

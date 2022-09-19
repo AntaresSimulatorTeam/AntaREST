@@ -42,7 +42,6 @@ type ReactHookFormSupportProps<
         // cf. UseControllerProps#rules
         | "valueAsNumber"
         | "valueAsDate"
-        | "setValueAs"
         | "disabled"
         // Not necessary
         | "onChange"
@@ -74,7 +73,11 @@ function reactHookFormSupport<TValue>(
         TProps
     ) {
       const { control, rules = {}, shouldUnregister, ...feProps } = props;
-      const { validate } = rules;
+      const {
+        validate,
+        setValueAs: setValueAsFromRules = R.identity,
+        ...restRules
+      } = rules;
 
       const validateWrapper = useMemo<
         RegisterOptionsPlus<TFieldValues, TFieldName>["validate"]
@@ -104,7 +107,7 @@ function reactHookFormSupport<TValue>(
             // useForm's defaultValues take precedence
             defaultValue={(feProps.defaultValue ?? options.defaultValue) as any}
             rules={{
-              ...rules,
+              ...restRules,
               validate: validateWrapper,
             }}
             shouldUnregister={shouldUnregister}
@@ -122,10 +125,12 @@ function reactHookFormSupport<TValue>(
                   // https://github.com/react-hook-form/react-hook-form/discussions/8068#discussioncomment-2415789
                   // Data send back to hook form
                   onChange(
-                    setValueAs(
-                      event.target.type === "checkbox"
-                        ? event.target.checked
-                        : event.target.value
+                    setValueAsFromRules(
+                      setValueAs(
+                        event.target.type === "checkbox"
+                          ? event.target.checked
+                          : event.target.value
+                      )
                     )
                   );
                 }}

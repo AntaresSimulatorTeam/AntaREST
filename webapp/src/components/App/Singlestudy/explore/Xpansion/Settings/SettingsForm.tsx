@@ -126,38 +126,6 @@ function SettingsForm(props: PropType) {
           />
           <TextField
             type="number"
-            label={t("xpansion.relaxedOptimalityGap")}
-            variant="filled"
-            value={currentSettings["relaxed-optimality-gap"] || ""}
-            onChange={(e) =>
-              handleChange("relaxed-optimality-gap", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <SelectFields sx={{ mb: 1 }}>
-            <SelectSingle
-              name="cut-type"
-              list={cutType.map((item) => {
-                return { id: item, name: item };
-              })}
-              label={t("xpansion.cutType")}
-              data={currentSettings["cut-type"] || ""}
-              sx={{
-                minWidth: "100%",
-              }}
-              handleChange={handleChange}
-              optional
-            />
-          </SelectFields>
-          <TextField
-            label={t("xpansion.amplSolver")}
-            variant="filled"
-            value={currentSettings["ampl.solver"] || ""}
-            onChange={(e) => handleChange("ampl.solver", e.target.value)}
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
             label={t("xpansion.amplPresolve")}
             variant="filled"
             value={currentSettings["ampl.presolve"] || ""}
@@ -179,6 +147,23 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
+        </Fields>
+      </Box>
+      <Box>
+        <Title>{t("launcher.xpansion.versionCpp")}</Title>
+        <Divider sx={{ mt: 1, mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
           <TextField
             type="number"
             label={t("xpansion.relativeGap")}
@@ -204,7 +189,75 @@ function SettingsForm(props: PropType) {
               optional
             />
           </SelectFields>
-        </Fields>
+          <TextField
+            type="number"
+            label={t("xpansion.timeLimit")}
+            variant="filled"
+            value={(currentSettings.timelimit || 1e12) / 3600}
+            onChange={(e) =>
+              handleChange("timelimit", parseFloat(e.target.value) * 3600)
+            }
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.logLevel")}
+            variant="filled"
+            value={currentSettings.log_level || ""}
+            onChange={(e) =>
+              handleChange("log_level", parseInt(e.target.value, 10))
+            }
+            sx={{ mb: 1 }}
+          />
+        </Box>
+      </Box>
+      <Box>
+        <Title>{t("launcher.xpansion.versionR")}</Title>
+        <Divider sx={{ mt: 1, mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
+          <TextField
+            label={t("xpansion.relaxedOptimalityGap")}
+            variant="filled"
+            value={currentSettings["relaxed-optimality-gap"] || ""}
+            onChange={(e) =>
+              handleChange("relaxed-optimality-gap", e.target.value)
+            }
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            label={t("xpansion.amplSolver")}
+            variant="filled"
+            value={currentSettings["ampl.solver"] || ""}
+            onChange={(e) => handleChange("ampl.solver", e.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <SelectFields sx={{ mb: 1 }}>
+            <SelectSingle
+              name="cut-type"
+              list={cutType.map((item) => {
+                return { id: item, name: item };
+              })}
+              label={t("xpansion.cutType")}
+              data={currentSettings["cut-type"] || ""}
+              sx={{
+                minWidth: "100%",
+              }}
+              handleChange={handleChange}
+              optional
+            />
+          </SelectFields>
+        </Box>
       </Box>
       <Box>
         <Title>{t("xpansion.extra")}</Title>

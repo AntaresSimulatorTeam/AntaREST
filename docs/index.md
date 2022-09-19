@@ -47,5 +47,5 @@ This brings:
 
 [antares-github]: https://github.com/AntaresSimulatorTeam/Antares_Simulator
 [readthedocs]: https://antares-web.readthedocs.io/
-[readthedocs-antares]: https://antares.readthedocs.io/
+[readthedocs-antares]: https://antares-simulator.readthedocs.io/
 [antareswebsite]: https://antares-simulator.org

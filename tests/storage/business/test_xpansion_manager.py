@@ -269,7 +269,7 @@ def test_update_xpansion_settings(tmp_path: Path):
             "master": "integer",
             "yearly_weight": None,
             "additional-constraints": None,
-            "relaxed-optimality-gap": None,
+            "relaxed-optimality-gap": "1.2%",
             "cut-type": None,
             "ampl.solver": None,
             "ampl.presolve": None,

@@ -73,7 +73,7 @@ def test_ts_field_values(file_study_820: FileStudy, file_study_720: FileStudy):
 
     study = VariantStudy()
 
-    assert config_manager.get_ts_field_values(study) == TSFormFields(
+    assert config_manager.get_field_values(study) == TSFormFields(
         load=TSFormFieldsForType(
             stochasticTsStatus=False,
             number=1,
@@ -135,7 +135,7 @@ def test_ts_field_values(file_study_820: FileStudy, file_study_720: FileStudy):
 
     variant_study_service.get_raw.return_value = file_study_720
 
-    assert config_manager.get_ts_field_values(study) == TSFormFields(
+    assert config_manager.get_field_values(study) == TSFormFields(
         load=TSFormFieldsForType(
             stochasticTsStatus=False,
             number=1,

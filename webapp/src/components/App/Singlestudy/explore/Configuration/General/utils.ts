@@ -63,7 +63,7 @@ interface SettingsGeneralDataGeneral {
   nbyears: number;
   // Building mode
   "custom-ts-numbers": boolean;
-  "custom-scenarios": boolean; // For study versions >= 8
+  "custom-scenario": boolean; // For study versions >= 8
   derated: boolean;
   // Selection mode
   "user-playlist": boolean;
@@ -84,18 +84,10 @@ interface SettingsGeneralDataOutput {
   storenewset: boolean;
 }
 
-interface SettingsGeneralDataAdequacyPatch {
-  // Activation
-  "include-adq-patch": boolean;
-  "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": boolean;
-  "set-to-null-ntc-between-physical-out-for-first-step": boolean;
-}
-
 interface SettingsGeneralData {
   // For unknown reason, `general` and `output` may be empty
   general?: Partial<SettingsGeneralDataGeneral>;
   output?: Partial<SettingsGeneralDataOutput>;
-  "adequacy patch"?: Partial<SettingsGeneralDataAdequacyPatch>;
 }
 
 export interface FormValues {
@@ -117,9 +109,6 @@ export interface FormValues {
   thematicTrimming: SettingsGeneralDataGeneral["thematic-trimming"];
   thematicTrimmingConfig: ThematicTrimmingConfig;
   filtering: SettingsGeneralDataGeneral["filtering"];
-  adequacyPatchActive: SettingsGeneralDataAdequacyPatch["include-adq-patch"];
-  adequacyPatchSetToNullFromTo: SettingsGeneralDataAdequacyPatch["set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"];
-  adequacyPatchSetToNullBetween: SettingsGeneralDataAdequacyPatch["set-to-null-ntc-between-physical-out-for-first-step"];
 }
 
 ////////////////////////////////////////////////////////////////
@@ -173,9 +162,6 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
   geographicTrimming: false,
   thematicTrimming: false,
   filtering: false,
-  adequacyPatchActive: false,
-  adequacyPatchSetToNullBetween: true,
-  adequacyPatchSetToNullFromTo: true,
 };
 
 ////////////////////////////////////////////////////////////////
@@ -185,11 +171,7 @@ const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
 export async function getFormValues(
   studyId: StudyMetadata["id"]
 ): Promise<FormValues> {
-  const {
-    general = {},
-    output = {},
-    "adequacy patch": adequacyPatchConfig = {},
-  } = await getStudyData<SettingsGeneralData>(
+  const { general = {}, output = {} } = await getStudyData<SettingsGeneralData>(
     studyId,
     "settings/generaldata",
     2
@@ -197,7 +179,7 @@ export async function getFormValues(
 
   const {
     "custom-ts-numbers": customTsNumbers,
-    "custom-scenarios": customScenarios,
+    "custom-scenario": customScenarios,
     derated,
     ...generalRest
   } = general;
@@ -206,7 +188,7 @@ export async function getFormValues(
   if (derated) {
     buildingMode = "Derated";
   }
-  // 'custom-scenarios' replaces 'custom-ts-numbers' in study versions >= 8
+  // 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 8
   else if (customScenarios || customTsNumbers) {
     buildingMode = "Custom";
   }
@@ -241,16 +223,6 @@ export async function getFormValues(
     buildingMode,
     thematicTrimmingConfig: formatThematicTrimmingConfigDTO(
       thematicTrimmingConfigDto
-    ),
-    ...RA.renameKeys(
-      {
-        "include-adq-patch": "adequacyPatchActivate",
-        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step":
-          "adequacyPatchSetToNullFromTo",
-        "set-to-null-ntc-between-physical-out-for-first-step":
-          "adequacyPatchSetToNullBetween",
-      },
-      adequacyPatchConfig
     ),
   };
 }

@@ -56,6 +56,7 @@ import StarToggle from "../../common/StarToggle";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -93,6 +94,7 @@ function NavHeader(props: Props) {
   const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
   const [openPropertiesDialog, setOpenPropertiesDialog] =
     useState<boolean>(false);
+  const [deleteChildren, setDeleteChildren] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -161,20 +163,19 @@ function NavHeader(props: Props) {
     }
   };
 
-  const onDeleteStudy = () => {
+  const onDeleteStudy = async () => {
     if (study) {
-      dispatch(deleteStudy(study.id))
-        .unwrap()
-        .catch((err) => {
-          enqueueErrorSnackbar(
-            t("studies.error.deleteStudy"),
-            err as AxiosError
-          );
-          logError("Failed to delete study", study, err);
-        });
+      try {
+        await dispatch(deleteStudy({ id: study.id, deleteChildren })).unwrap();
+        navigate(parent ? `/studies/${parent?.id}` : "/studies");
+      } catch (err) {
+        enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
+        logError("Failed to delete study", study, err);
+      } finally {
+        setDeleteChildren(false);
+        setOpenDeleteDialog(false);
+      }
     }
-    setOpenDeleteDialog(false);
-    navigate("/studies");
   };
 
   const copyId = async (): Promise<void> => {
@@ -547,7 +548,23 @@ function NavHeader(props: Props) {
           alert="warning"
           open
         >
-          {t("studies.question.delete")}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              width: "100%",
+              height: "auto",
+              gap: 1,
+            }}
+          >
+            <Typography>{t("studies.question.delete")}</Typography>
+            <CheckBoxFE
+              value={deleteChildren}
+              label={t("studies.deleteSubvariants")}
+              onChange={(e, checked) => setDeleteChildren(checked)}
+            />
+          </Box>
         </ConfirmationDialog>
       )}
       {study && openExportDialog && (

@@ -1,5 +1,4 @@
 import { SxProps, Theme } from "@mui/material";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { SystemStyleObject } from "@mui/system";
 
 export function mergeSxProp(

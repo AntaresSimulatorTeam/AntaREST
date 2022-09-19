@@ -354,7 +354,7 @@ function Map() {
             true
           );
           prevselectedItemId.current = (selectedItem as NodeProperties).id;
-        }, 0);
+        }, 20);
       }
     }
   }, [selectedItem, linkData]);

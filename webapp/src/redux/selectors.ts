@@ -1,5 +1,6 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import {
+  AllClustersAndLinks,
   Cluster,
   FileStudyTreeConfigDTO,
   GroupDetailsDTO,
@@ -232,6 +233,12 @@ export const getStudyLinks = createSelector(getStudyData, (data) => {
   return [];
 });
 
+export const getCurrentBindingConstId = (
+  state: AppState
+): StudyDataState["currentBindingConst"] => {
+  return getStudyDataState(state).currentBindingConst;
+};
+
 export const getCurrentClusters = (
   type: "thermals" | "renewables",
   studyId: string,
@@ -243,6 +250,46 @@ export const getCurrentClusters = (
     currentStudyState.entities[studyId]?.areas[currentArea][type];
   return clusters || [];
 };
+
+export const getBindingConst = createSelector(getStudyData, (studyData) =>
+  studyData ? studyData.bindings || [] : []
+);
+
+export const selectLinksAndClusters = (
+  studydata: FileStudyTreeConfigDTO | undefined
+): AllClustersAndLinks => {
+  const linksAndClusters: AllClustersAndLinks = {
+    links: [],
+    clusters: [],
+  };
+  if (studydata) {
+    const res = Object.keys(studydata.areas).reduce((acc, areaId) => {
+      const area = { id: areaId, name: studydata.areas[areaId].name };
+      acc.links.push({
+        element: area,
+        item_list: Object.keys(studydata.areas[areaId].links).map((area2) => ({
+          id: area2,
+          name: studydata.areas[area2].name,
+        })),
+      });
+      acc.clusters.push({
+        element: area,
+        item_list: studydata.areas[areaId].thermals.map((thermal) => ({
+          id: thermal.id,
+          name: thermal.name,
+        })),
+      });
+      return acc;
+    }, linksAndClusters);
+    return res;
+  }
+  return linksAndClusters;
+};
+
+export const getLinksAndClusters = createSelector(
+  getStudyData,
+  selectLinksAndClusters
+);
 
 ////////////////////////////////////////////////////////////////
 // UI

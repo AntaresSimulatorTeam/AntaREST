@@ -165,8 +165,13 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
   await client.put(`/v1/studies/${sid}/unarchive`);
 };
 
-export const deleteStudy = async (sid: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${sid}`);
+export const deleteStudy = async (
+  sid: string,
+  deleteAllChildren?: boolean
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${sid}?children=${deleteAllChildren || false}`
+  );
   return res.data;
 };
 
@@ -329,6 +334,35 @@ export const getStudyJobLog = async (
 export const downloadJobOutput = async (jobId: string): Promise<any> => {
   const res = await client.get(`/v1/launcher/jobs/${jobId}/output`);
   return res.data;
+};
+
+export const unarchiveOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<string> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`
+  );
+  return res.data;
+};
+
+export const archiveOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<string> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`
+  );
+  return res.data;
+};
+
+export const deleteOutput = async (
+  studyId: string,
+  outputId: string
+): Promise<void> => {
+  await client.delete(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`
+  );
 };
 
 export const changeStudyOwner = async (

@@ -1,9 +1,15 @@
 import {
+  AllClustersAndLinks,
   AreaInfoDTO,
   LinkCreationInfoDTO,
   LinkInfoWithUI,
   UpdateAreaUi,
 } from "../../common/types";
+import {
+  BindingConstFields,
+  ConstraintType,
+  UpdateBindingConstraint,
+} from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import client from "./client";
 
 export const createArea = async (
@@ -58,6 +64,85 @@ export const deleteLink = async (
   const res = await client.delete(
     `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}?uuid=${uuid}&area_from=${areaIdFrom}&area_to=${areaIdTo}`
   );
+  return res.data;
+};
+
+export const updateConstraintTerm = async (
+  uuid: string,
+  bindingConst: string,
+  constraint: Partial<ConstraintType>
+): Promise<string> => {
+  const res = await client.put(
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term`,
+    constraint
+  );
+  return res.data;
+};
+
+export const addConstraintTerm = async (
+  uuid: string,
+  bindingConst: string,
+  constraint: ConstraintType
+): Promise<ConstraintType | null> => {
+  const res = await client.post(
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term`,
+    constraint
+  );
+  return res.data;
+};
+
+export const deleteConstraintTerm = async (
+  uuid: string,
+  bindingConst: string,
+  termId: ConstraintType["id"]
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}/term/${encodeURIComponent(termId)}`
+  );
+  return res.data;
+};
+
+export const getBindingConstraint = async (
+  uuid: string,
+  bindingConst: string
+): Promise<BindingConstFields> => {
+  const res = await client.get(
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(bindingConst)}`
+  );
+  return res.data;
+};
+
+export const getBindingConstraintList = async (
+  uuid: string
+): Promise<Array<BindingConstFields>> => {
+  const res = await client.get(`/v1/studies/${uuid}/bindingconstraints`);
+  return res.data;
+};
+
+export const updateBindingConstraint = async (
+  uuid: string,
+  bindingConst: string,
+  data: UpdateBindingConstraint
+): Promise<void> => {
+  const res = await client.put(
+    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
+      bindingConst
+    )}`,
+    data
+  );
+  return res.data;
+};
+
+export const getClustersAndLinks = async (
+  uuid: string
+): Promise<AllClustersAndLinks> => {
+  const res = await client.get(`/v1/studies/${uuid}/linksandclusters`);
   return res.data;
 };
 

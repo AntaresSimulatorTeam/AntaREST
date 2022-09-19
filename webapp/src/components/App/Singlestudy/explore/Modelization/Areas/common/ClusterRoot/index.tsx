@@ -27,7 +27,6 @@ import {
   ClusterButton,
 } from "./style";
 import usePromise from "../../../../../../../../hooks/usePromise";
-import SimpleLoader from "../../../../../../../common/loaders/SimpleLoader";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
 import {
@@ -197,7 +196,6 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
       <ListContainer>
         <UsePromiseCond
           response={res}
-          ifPending={() => <SimpleLoader />}
           ifResolved={(data) => (
             <List
               sx={{

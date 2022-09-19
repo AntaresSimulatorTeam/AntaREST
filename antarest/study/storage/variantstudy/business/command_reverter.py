@@ -67,6 +67,9 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from antarest.study.storage.variantstudy.model.command.update_district import (
     UpdateDistrict,
 )
+from antarest.study.storage.variantstudy.model.command.update_playlist import (
+    UpdatePlaylist,
+)
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
@@ -324,6 +327,25 @@ class CommandReverter:
         try:
             return [
                 base_command.get_command_extractor().generate_update_comments(
+                    base.tree
+                )
+            ]
+        except ChildNotFoundError:
+            return []  # if the file does not exist, there is nothing to revert
+
+    @staticmethod
+    def _revert_update_playlist(
+        base_command: UpdatePlaylist,
+        history: List["ICommand"],
+        base: FileStudy,
+    ) -> List[ICommand]:
+        for command in reversed(history):
+            if isinstance(command, UpdatePlaylist):
+                return [command]
+
+        try:
+            return [
+                base_command.get_command_extractor().generate_update_playlist(
                     base.tree
                 )
             ]

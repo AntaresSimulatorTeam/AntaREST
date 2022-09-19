@@ -1,9 +1,8 @@
 import re
 from typing import Union, Optional, Tuple
 
-from antarest.core.config import Config
 from antarest.core.model import JSON, SUB_JSON
-from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 
 
 class UriResolverService:

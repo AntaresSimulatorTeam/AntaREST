@@ -26,7 +26,7 @@ interface Props {
   callToAction?: ReactNode;
 }
 
-function NoContent(props: Props) {
+function SimpleContent(props: Props) {
   const { title = "common.nocontent", icon, callToAction } = props;
   const [t] = useTranslation();
 
@@ -39,8 +39,7 @@ function NoContent(props: Props) {
   );
 }
 
-NoContent.defaultProps = {
-  title: "common.nocontent",
+SimpleContent.defaultProps = {
   icon: (
     <LiveHelpRoundedIcon
       sx={{ height: "100px", width: "100%", color: "text.primary" }}
@@ -49,4 +48,4 @@ NoContent.defaultProps = {
   callToAction: <div />,
 };
 
-export default NoContent;
+export default SimpleContent;

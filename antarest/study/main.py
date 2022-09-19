@@ -9,7 +9,7 @@ from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.common.uri_resolver_service import (
+from antarest.matrixstore.uri_resolver_service import (
     UriResolverService,
 )
 from antarest.study.repository import (
@@ -23,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )

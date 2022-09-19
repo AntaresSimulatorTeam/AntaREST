@@ -3,6 +3,7 @@ import logging
 import shutil
 import tempfile
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
 from typing import List, Optional, cast, Tuple, Callable
 from uuid import uuid4
@@ -20,6 +21,10 @@ from antarest.core.exceptions import (
     VariantStudyParentNotValid,
     CommandNotValid,
     CommandUpdateAuthorizationError,
+)
+from antarest.core.filetransfer.model import (
+    FileDownloadDTO,
+    FileDownloadTaskDTO,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
@@ -41,6 +46,11 @@ from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
     noop_notifier,
+)
+from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.variantstudy.business.utils import (
+    transform_command_to_dto,
 )
 from antarest.study.model import (
     Study,
@@ -162,10 +172,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def _check_commands_validity(
         self, study_id: str, commands: List[CommandDTO]
-    ) -> None:
+    ) -> List[ICommand]:
+        command_objects: List[ICommand] = []
         for i, command in enumerate(commands):
             try:
-                self.command_factory.to_icommand(command)
+                command_objects.extend(
+                    self.command_factory.to_icommand(command)
+                )
             except Exception as e:
                 logger.error(
                     f"Command at index {i} for study {study_id}", exc_info=e
@@ -173,6 +186,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 raise CommandNotValid(
                     f"Command at index {i} for study {study_id}"
                 )
+        return command_objects
 
     def _check_update_authorization(self, metadata: VariantStudy) -> None:
         if metadata.generation_task:
@@ -201,34 +215,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        study = self._get_variant_study(study_id, params)
-        self._check_update_authorization(study)
-        index = len(study.commands)
-        new_id = str(uuid4())
-        command_block = CommandBlock(
-            id=new_id,
-            command=command.action,
-            study_id=study.id,
-            args=json.dumps(command.args),
-            index=index,
-        )
-        study.commands.append(command_block)
-        self.invalidate_cache(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
-            )
-        )
-        return new_id
+        command_ids = self.append_commands(study_id, [command], params)
+        return command_ids[0]
 
     def append_commands(
         self,
         study_id: str,
         commands: List[CommandDTO],
         params: RequestParameters,
-    ) -> None:
+    ) -> List[str]:
         """
         Add command to list of commands (at the end)
         Args:
@@ -239,19 +234,27 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study_id, commands)
+        validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
-        study.commands.extend(
-            [
-                CommandBlock(
-                    command=command.action,
-                    args=json.dumps(command.args),
-                    index=(first_index + i),
-                )
-                for i, command in enumerate(commands)
-            ]
-        )
+        new_commands = [
+            CommandBlock(
+                command=command.action,
+                args=json.dumps(command.args),
+                index=(first_index + i),
+            )
+            for i, command in enumerate(validated_commands)
+        ]
+        study.commands.extend(new_commands)
         self.invalidate_cache(study)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
+        )
+        return [c.id for c in new_commands]
 
     def replace_commands(
         self,
@@ -269,7 +272,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study_id, commands)
+        validated_commands = transform_command_to_dto(command_objs, commands)
         study.commands = []
         study.commands.extend(
             [
@@ -278,7 +282,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     args=json.dumps(command.args),
                     index=i,
                 )
-                for i, command in enumerate(commands)
+                for i, command in enumerate(validated_commands)
             ]
         )
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -367,13 +371,39 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
-        self._check_commands_validity(study_id, [command])
-
+        command_objs = self._check_commands_validity(study_id, [command])
+        validated_commands = transform_command_to_dto(command_objs, [command])
+        assert_this(len(validated_commands) == 1)
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
-            study.commands[index].command = command.action
-            study.commands[index].args = json.dumps(command.args)
+            study.commands[index].command = validated_commands[0].action
+            study.commands[index].args = json.dumps(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
+
+    def export_commands_matrices(
+        self, study_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
+        study = self._get_variant_study(study_id, params)
+        matrices = {
+            matrix
+            for command in study.commands
+            for matrix in suppress_exception(
+                lambda: reduce(
+                    lambda m, c: m + c.get_inner_matrices(),
+                    self.command_factory.to_icommand(command.to_dto()),
+                    cast(List[str], []),
+                ),
+                lambda e: logger.warning(
+                    f"Failed to parse command {command}", exc_info=e
+                ),
+            )
+            or []
+        }
+        return cast(
+            MatrixService, self.command_factory.command_context.matrix_service
+        ).download_matrix_list(
+            list(matrices), f"{study.name}_{study.id}_matrices", params
+        )
 
     def _get_variant_study(
         self,
@@ -417,6 +447,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         for child in self.repository.get_children(parent_id=variant_study.id):
             self.invalidate_cache(child, invalidate_self_snapshot=True)
 
+    def clear_snapshot(self, variant_study: Study) -> None:
+        logger.info(f"Clearing snapshot for study {variant_study.id}")
+        self.invalidate_cache(variant_study, invalidate_self_snapshot=True)
+        shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
+
     def has_children(self, study: VariantStudy) -> bool:
         return len(self.repository.get_children(parent_id=study.id)) > 0
 
@@ -445,6 +480,25 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
 
         return children_tree
+
+    def walk_children(
+        self,
+        parent_id: str,
+        fun: Callable[[VariantStudy], None],
+        bottom_first: bool,
+    ) -> None:
+        study = self._get_variant_study(
+            parent_id,
+            RequestParameters(DEFAULT_ADMIN_USER),
+            raw_study_accepted=True,
+        )
+        children = self.repository.get_children(parent_id=parent_id)
+        if not bottom_first:
+            fun(study)
+        for child in children:
+            self.walk_children(child.id, fun, bottom_first)
+        if bottom_first:
+            fun(study)
 
     def get_variants_parents(
         self, id: str, params: RequestParameters

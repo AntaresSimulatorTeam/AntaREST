@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import GetAppOutlinedIcon from "@mui/icons-material/GetAppOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import { useSnackbar } from "notistack";
 import { createStudy } from "../../../redux/ducks/studies";
 import ImportDialog from "../../common/dialogs/ImportDialog";
@@ -58,7 +58,7 @@ function HeaderRight() {
       <Button
         variant="outlined"
         color="primary"
-        startIcon={<GetAppOutlinedIcon />}
+        startIcon={<UploadOutlinedIcon />}
         onClick={() => setOpenImportDialog(true)}
       >
         {t("global.import")}

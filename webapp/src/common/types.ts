@@ -90,6 +90,7 @@ export interface StudyOutput {
   referenceStatus: boolean;
   synchronized: boolean;
   status: string;
+  archived: boolean;
 }
 
 export interface VariantTreeDTO {
@@ -156,6 +157,16 @@ export interface LaunchJobDTO {
   msg: string;
   output_id: string;
   exit_code: number;
+}
+
+export interface LaunchJobProgressDTO {
+  id: string;
+  progress: number;
+  message: string;
+}
+
+export interface LaunchJobsProgress {
+  [key: string]: number;
 }
 
 export enum RoleType {
@@ -310,6 +321,7 @@ export enum WSEvent {
   DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
   MESSAGE_INFO = "MESSAGE_INFO",
   MAINTENANCE_MODE = "MAINTENANCE_MODE",
+  LAUNCH_PROGRESS = "LAUNCH_PROGRESS",
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -443,6 +455,27 @@ export interface LinkElement {
   area1: string;
   area2: string;
 }
+
+export interface ClusterElement {
+  area: string;
+  cluster: string;
+}
+
+export interface LinkClusterElement {
+  id: string;
+  name: string;
+}
+
+export interface LinkClusterItem {
+  element: LinkClusterElement;
+  item_list: Array<LinkClusterElement>;
+}
+
+export interface AllClustersAndLinks {
+  links: Array<LinkClusterItem>;
+  clusters: Array<LinkClusterItem>;
+}
+
 export type LinkListElement = { [elm: string]: LinkElement };
 
 export enum StudyOutputDownloadType {

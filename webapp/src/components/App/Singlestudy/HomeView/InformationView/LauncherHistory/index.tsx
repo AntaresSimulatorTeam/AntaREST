@@ -7,6 +7,8 @@ import moment from "moment";
 import {
   LaunchJob,
   LaunchJobDTO,
+  LaunchJobProgressDTO,
+  LaunchJobsProgress,
   StudyMetadata,
   WSEvent,
   WSMessage,
@@ -22,6 +24,7 @@ import {
 } from "../../../../../../services/webSockets";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { getProgress } from "../../../../../../services/api/tasks";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -40,6 +43,8 @@ function LauncherHistory(props: Props) {
   const { study } = props;
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<Array<LaunchJob>>([]);
+  const [studyJobsProgress, setStudyJobsProgress] =
+    useState<LaunchJobsProgress>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const handleEvents = useCallback(
@@ -75,6 +80,12 @@ function LauncherHistory(props: Props) {
         // TODO
       } else if (msg.type === WSEvent.STUDY_EDITED) {
         // TODO
+      } else if (msg.type === WSEvent.LAUNCH_PROGRESS) {
+        const message = msg.payload as LaunchJobProgressDTO;
+        setStudyJobsProgress((studyJobsProgress) => ({
+          ...studyJobsProgress,
+          [message.id]: message.progress,
+        }));
       }
     },
     [study, studyJobs]
@@ -85,6 +96,24 @@ function LauncherHistory(props: Props) {
       const fetchStudyJob = async (sid: string) => {
         try {
           const data = await getStudyJobs(sid);
+
+          const initJobProgress: { [key: string]: number } = {};
+          const jobProgress = await Promise.all(
+            data
+              .filter((o) => o.status === "running")
+              .map(async (item) => ({
+                id: item.id,
+                progress: await getProgress(item.id),
+              }))
+          );
+
+          setStudyJobsProgress(
+            jobProgress.reduce(
+              (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
+              initJobProgress
+            )
+          );
+
           setStudyJobs(
             data.sort((j1, j2) => {
               const defaultCompletionDate = moment();
@@ -142,7 +171,7 @@ function LauncherHistory(props: Props) {
         <HistoryIcon sx={{ color: "text.secondary", mr: 1 }} />
         <Typography color="text.secondary">{t("global.jobs")}</Typography>
       </TitleHeader>
-      <JobStepper jobs={studyJobs} />
+      <JobStepper jobs={studyJobs} jobsProgress={studyJobsProgress} />
     </Paper>
   );
 }

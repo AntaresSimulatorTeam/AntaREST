@@ -23,11 +23,13 @@ export interface StudyDataState
   extends ReturnType<typeof studyDataAdapter.getInitialState> {
   currentArea: string;
   currentLink: string;
+  currentBindingConst: string;
 }
 
 const initialState = studyDataAdapter.getInitialState({
   currentArea: "",
   currentLink: "",
+  currentBindingConst: "",
 }) as StudyDataState;
 
 const n = makeActionName("studyDataSynthesis");
@@ -43,6 +45,10 @@ export const setCurrentArea = createAction<
 export const setCurrentLink = createAction<
   NonNullable<StudyDataState["currentLink"]>
 >(n("SET_CURRENT_LINK"));
+
+export const setCurrentBindingConst = createAction<
+  NonNullable<StudyDataState["currentBindingConst"]>
+>(n("SET_CURRENT_BINDING_CONST"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -72,6 +78,7 @@ const initDefaultAreaLinkSelection = (
   } else {
     dispatch(setCurrentArea(""));
     dispatch(setCurrentLink(""));
+    dispatch(setCurrentBindingConst(""));
   }
 };
 
@@ -92,7 +99,9 @@ export const createStudyData = createAsyncThunk<
   async (studyId, { dispatch, getState, rejectWithValue }) => {
     try {
       // Fetch study synthesis data
-      const studyData = await api.getStudySynthesis(studyId);
+      const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(
+        studyId
+      );
       initDefaultAreaLinkSelection(dispatch, studyData);
       return studyData;
     } catch (err) {
@@ -145,5 +154,8 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(setCurrentLink, (draftState, action) => {
       draftState.currentLink = action.payload;
+    })
+    .addCase(setCurrentBindingConst, (draftState, action) => {
+      draftState.currentBindingConst = action.payload;
     });
 });

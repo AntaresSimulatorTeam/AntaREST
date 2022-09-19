@@ -1,10 +1,8 @@
-import contextlib
 import logging
-import threading
 import time
 from os import listdir
 from pathlib import Path
-from typing import Set, List, Optional
+from typing import Set, List
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -12,7 +10,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

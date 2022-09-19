@@ -38,7 +38,7 @@ export default function ThermalForm(props: Props) {
   const jsonGenerator: IFormGenerator<ThermalType> = useMemo(
     () => [
       {
-        translationId: "global.general",
+        legend: "global.general",
         fields: [
           {
             type: "text",
@@ -57,7 +57,7 @@ export default function ThermalForm(props: Props) {
         ],
       },
       {
-        translationId: "study.modelization.clusters.operatingParameters",
+        legend: "study.modelization.clusters.operatingParameters",
         fields: [
           {
             type: "switch",
@@ -116,7 +116,7 @@ export default function ThermalForm(props: Props) {
         ],
       },
       {
-        translationId: "study.modelization.clusters.operatingCosts",
+        legend: "study.modelization.clusters.operatingCosts",
         fields: [
           {
             type: "number",
@@ -152,7 +152,7 @@ export default function ThermalForm(props: Props) {
       },
 
       {
-        translationId: "study.modelization.clusters.timeSeriesGen",
+        legend: "study.modelization.clusters.timeSeriesGen",
         fields: [
           {
             type: "select",

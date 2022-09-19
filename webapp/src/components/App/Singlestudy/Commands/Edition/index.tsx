@@ -5,11 +5,13 @@ import { DropResult } from "react-beautiful-dnd";
 import _ from "lodash";
 import QueueIcon from "@mui/icons-material/Queue";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import BoltIcon from "@mui/icons-material/Bolt";
 import debug from "debug";
 import { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Tooltip, Typography } from "@mui/material";
+import { useMountedState } from "react-use";
 import { CommandItem, JsonCommandItem } from "./commandTypes";
 import CommandListView from "./DraggableCommands/CommandListView";
 import {
@@ -30,6 +32,7 @@ import {
   replaceCommands,
   applyCommands,
   getStudyTask,
+  exportCommandsMatrices,
 } from "../../../../../services/api/variant";
 import AddCommandDialog from "./AddCommandDialog";
 import {
@@ -44,13 +47,15 @@ import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import NoContent from "../../../../common/page/NoContent";
+import SimpleContent from "../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
 } from "../../../../../services/webSockets";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 
 const logError = debug("antares:variantedition:error");
 
@@ -60,11 +65,17 @@ interface Props {
 
 function EditionView(props: Props) {
   const [t] = useTranslation();
+  const isMounted = useMountedState();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { studyId } = props;
   const [openAddCommandDialog, setOpenAddCommandDialog] =
     useState<boolean>(false);
+  const [openClearCommandsDialog, setOpenClearCommandsDialog] =
+    useState<boolean>(false);
+  const [openExportCommandsDialog, setOpenExportCommandsDialog] =
+    useState<boolean>(false);
+  const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
@@ -183,12 +194,20 @@ function EditionView(props: Props) {
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
+      if (exportMatrices) {
+        await exportCommandsMatrices(studyId);
+      }
       exportJson(
         fromCommandDTOToJsonCommand(items),
         `${studyId}_commands.json`
       );
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
+    } finally {
+      if (isMounted()) {
+        setExportMatrices(false);
+        setOpenExportCommandsDialog(false);
+      }
     }
   };
 
@@ -399,6 +418,32 @@ function EditionView(props: Props) {
     };
   }, [fetchTask, generationTaskId]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClearCommands = async () => {
+    setLoaded(false);
+    try {
+      await replaceCommands(studyId, []);
+      const dtoItems = await getCommands(studyId);
+      if (isMounted()) {
+        setCommands(fromCommandDTOToCommandItem(dtoItems));
+      }
+    } catch (e) {
+      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
+    } finally {
+      if (isMounted()) {
+        setLoaded(true);
+        setOpenClearCommandsDialog(false);
+      }
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Root>
       {!generationStatus ? (
@@ -408,15 +453,31 @@ function EditionView(props: Props) {
             <Typography>Generate</Typography>
           </Button>
           <EditHeader>
-            <CommandImportButton onImport={onGlobalImport} />
-            <CloudDownloadOutlinedIcon
-              sx={{ ...headerIconStyle }}
-              onClick={onGlobalExport}
-            />
-            <QueueIcon
-              sx={{ ...headerIconStyle }}
-              onClick={() => setOpenAddCommandDialog(true)}
-            />
+            <Tooltip title={t("variants.commands.import")}>
+              <CommandImportButton onImport={onGlobalImport} />
+            </Tooltip>
+            <Tooltip title={t("variants.commands.export")}>
+              <CloudDownloadOutlinedIcon
+                sx={{ ...headerIconStyle }}
+                onClick={() => setOpenExportCommandsDialog(true)}
+              />
+            </Tooltip>
+            <Tooltip title={t("variants.commands.add")}>
+              <QueueIcon
+                sx={{ ...headerIconStyle }}
+                onClick={() => setOpenAddCommandDialog(true)}
+              />
+            </Tooltip>
+            <Tooltip title={t("variants.commands.clear")}>
+              <DeleteForeverIcon
+                sx={{
+                  ...headerIconStyle,
+                  color: "error.light",
+                  "&:hover": { color: "error.main" },
+                }}
+                onClick={() => setOpenClearCommandsDialog(true)}
+              />
+            </Tooltip>
             <a
               href="https://antares-web.readthedocs.io/en/latest/user-guide/2-variant_manager/"
               target="_blank"
@@ -461,7 +522,7 @@ function EditionView(props: Props) {
         loaded && (
           <Body sx={{ alignItems: "left" }}>
             <Box height="85%">
-              <NoContent
+              <SimpleContent
                 title="variants.error.noCommands"
                 callToAction={
                   <Button
@@ -488,6 +549,29 @@ function EditionView(props: Props) {
           onClose={() => setOpenAddCommandDialog(false)}
           onNewCommand={onNewCommand}
         />
+      )}
+      {openClearCommandsDialog && (
+        <ConfirmationDialog
+          open={openClearCommandsDialog}
+          onConfirm={handleClearCommands}
+          onCancel={() => setOpenClearCommandsDialog(false)}
+        >
+          {t("variants.commands.question.deleteAll")}
+        </ConfirmationDialog>
+      )}
+      {openExportCommandsDialog && (
+        <ConfirmationDialog
+          title={t("variants.commands.export")}
+          open={openExportCommandsDialog}
+          onConfirm={onGlobalExport}
+          onCancel={() => setOpenExportCommandsDialog(false)}
+        >
+          <CheckBoxFE
+            value={exportMatrices}
+            label={t("variants.commands.exportMatrices")}
+            onChange={() => setExportMatrices(!exportMatrices)}
+          />
+        </ConfirmationDialog>
       )}
     </Root>
   );

@@ -7,6 +7,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.utils import (
     Module,
     init_db,
@@ -62,6 +63,10 @@ class SingletonServices:
         if Module.ARCHIVE_WORKER in services_list:
             worker = create_archive_worker(config, "test", event_bus=event_bus)
             services[Module.ARCHIVE_WORKER] = worker
+
+        if Module.AUTO_ARCHIVER in services_list:
+            auto_archive_service = AutoArchiveService(study_service, config)
+            services[Module.AUTO_ARCHIVER] = auto_archive_service
 
         return services
 

@@ -14,7 +14,6 @@ import ButtonBack from "../ButtonBack";
 import BasicDialog, { BasicDialogProps } from "../dialogs/BasicDialog";
 import EditableMatrix from "../EditableMatrix";
 import FileTable from "../FileTable";
-import SimpleLoader from "../loaders/SimpleLoader";
 import SplitLayoutView from "../SplitLayoutView";
 import UsePromiseCond from "../utils/UsePromiseCond";
 
@@ -110,8 +109,6 @@ function MatrixAssignDialog(props: Props) {
     >
       <UsePromiseCond
         response={resList}
-        ifPending={() => <SimpleLoader />}
-        ifRejected={(error) => <div>{error?.toString()}</div>}
         ifResolved={(dataset) =>
           dataset && (
             <SplitLayoutView
@@ -153,8 +150,6 @@ function MatrixAssignDialog(props: Props) {
                   )}
                   <UsePromiseCond
                     response={resMatrix}
-                    ifPending={() => <SimpleLoader />}
-                    ifRejected={(error) => <div>{error?.toString()}</div>}
                     ifResolved={(matrix) =>
                       matrix && (
                         <>

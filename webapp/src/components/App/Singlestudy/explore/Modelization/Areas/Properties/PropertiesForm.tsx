@@ -26,7 +26,7 @@ export default function PropertiesForm(
   const [t] = useTranslation();
   const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
     (item) => ({
-      label: t(`study.${item}`),
+      label: t(`global.time.${item}`),
       value: item,
     })
   );
@@ -61,7 +61,7 @@ export default function PropertiesForm(
             ? (value as Array<string>).filter((val) => val !== "")
             : [];
           return selection.length > 0
-            ? selection.map((elm) => t(`study.${elm}`)).join(", ")
+            ? selection.map((elm) => t(`global.time.${elm}`)).join(", ")
             : t("global.none");
         }}
         defaultValue={(defaultValues || {})[filterName] || []}

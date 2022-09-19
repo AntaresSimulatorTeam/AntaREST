@@ -120,7 +120,7 @@ function MenuWrapper(props: Props) {
     { id: "api.title", link: "/apidoc", icon: ApiIcon },
     {
       id: "documentation.title",
-      link: "https://antares-web.readthedocs.io/en/latest",
+      link: "https://antares-doc.readthedocs.io/en/latest",
       newTab: true,
       icon: ClassOutlinedIcon,
     },

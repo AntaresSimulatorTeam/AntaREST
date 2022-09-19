@@ -6,7 +6,6 @@ import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithS
 import { getFormValues } from "./utils";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
@@ -47,8 +46,6 @@ function GeneralParameters() {
   return (
     <UsePromiseCond
       response={res}
-      ifPending={() => <SimpleLoader />}
-      ifRejected={(error) => <div>{error?.toString()}</div>}
       ifResolved={(data) => (
         <Form autoSubmit config={{ defaultValues: data }}>
           <Fields study={study} setDialog={setDialog} />

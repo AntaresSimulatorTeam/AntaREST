@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository
@@ -18,6 +19,7 @@ def build_launcher(
     study_service: StudyService,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
+    cache: ICache,
     event_bus: IEventBus = DummyEventBusService(),
     service_launcher: Optional[LauncherService] = None,
 ) -> Optional[LauncherService]:
@@ -32,6 +34,7 @@ def build_launcher(
             event_bus=event_bus,
             file_transfer_manager=file_transfer_manager,
             task_service=task_service,
+            cache=cache,
         )
 
     if service_launcher and application:

@@ -61,9 +61,13 @@ from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaUI,
 )
+from antarest.study.business.binding_constraint_management import (
+    BindingConstraintManager,
+)
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -181,9 +185,13 @@ class StudyService:
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
+        self.optimization_manager = OptimizationManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
+        self.binding_constraint_manager = BindingConstraintManager(
+            self.storage_service
+        )
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -648,6 +656,7 @@ class StudyService:
                 for raw_study in all_studies
                 if directory in Path(raw_study.path).parents
             ]
+        studies_by_path = {study.path: study for study in all_studies}
 
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
@@ -694,9 +703,10 @@ class StudyService:
             if study.missing is not None
         }
         for folder in folders:
-            if str(folder.path) not in study_paths:
+            study_path = str(folder.path)
+            if study_path not in study_paths:
                 try:
-                    if str(folder.path) not in missing_studies.keys():
+                    if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[
                             folder.workspace
                         ].path
@@ -704,7 +714,7 @@ class StudyService:
                         study = RawStudy(
                             id=str(uuid4()),
                             name=folder.path.name,
-                            path=str(folder.path),
+                            path=study_path,
                             folder=str(dir_name),
                             workspace=folder.workspace,
                             owner=None,
@@ -719,7 +729,7 @@ class StudyService:
                             study.id,
                         )
                     else:
-                        study = missing_studies[str(folder.path)]
+                        study = missing_studies[study_path]
                         study.missing = None
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
@@ -747,6 +757,12 @@ class StudyService:
                     logger.error(
                         f"Failed to add study {folder.path}", exc_info=e
                     )
+            elif directory and study_path in studies_by_path:
+                existing_study = studies_by_path[study_path]
+                if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(
+                    existing_study
+                ):
+                    self.repository.save(existing_study)
 
     def copy_study(
         self,
@@ -981,7 +997,9 @@ class StudyService:
             study, dest, len(output_list or []) > 0, output_list
         )
 
-    def delete_study(self, uuid: str, params: RequestParameters) -> None:
+    def delete_study(
+        self, uuid: str, children: bool, params: RequestParameters
+    ) -> None:
         """
         Delete study
         Args:
@@ -1000,12 +1018,19 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
-        elif isinstance(
-            study, VariantStudy
-        ) and self.storage_service.variant_study_service.has_children(study):
-            raise StudyDeletionNotAllowed(
-                study.id, "Study has variant children"
-            )
+
+        if self.storage_service.variant_study_service.has_children(study):
+            if children:
+                self.storage_service.variant_study_service.walk_children(
+                    study.id,
+                    lambda v: self.delete_study(v.id, True, params),
+                    bottom_first=True,
+                )
+                return
+            else:
+                raise StudyDeletionNotAllowed(
+                    study.id, "Study has variant children"
+                )
 
         self.repository.delete(study.id)
 
@@ -1339,7 +1364,7 @@ class StudyService:
             and auto_unzip
         ):
             self.unarchive_output(
-                uuid, output_id, True, not is_managed(study), params
+                uuid, output_id, not is_managed(study), params
             )
 
         return output_id
@@ -1433,10 +1458,10 @@ class StudyService:
 
     def apply_commands(
         self, uuid: str, commands: List[CommandDTO], params: RequestParameters
-    ) -> None:
+    ) -> Optional[List[str]]:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
-            self.storage_service.variant_study_service.append_commands(
+            return self.storage_service.variant_study_service.append_commands(
                 uuid, commands, params
             )
         else:
@@ -1468,6 +1493,7 @@ class StudyService:
             uuid,
             params.get_user_id(),
         )
+        return None
 
     def edit_study(
         self,
@@ -1809,6 +1835,7 @@ class StudyService:
         )
 
     def archive(self, uuid: str, params: RequestParameters) -> str:
+        logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
@@ -1823,7 +1850,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=[TaskType.ARCHIVE],
+                type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1867,7 +1894,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=[TaskType.UNARCHIVE],
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1971,6 +1998,9 @@ class StudyService:
                 sanitized,
             )
             raise StudyNotFoundError(uuid)
+        # todo debounce this with a "update_study_last_access" method updating only every some seconds
+        study.last_access = datetime.utcnow()
+        self.repository.save(study)
         return study
 
     def _assert_study_unarchived(
@@ -2200,65 +2230,84 @@ class StudyService:
                 storage = self.storage_service.raw_study_service
                 storage.check_and_update_study_version_in_database(study)
 
+    def archive_outputs(
+        self, study_id: str, params: RequestParameters
+    ) -> None:
+        logger.info(f"Archiving all outputs for study {study_id}")
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        study = self.get_study(study_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        for output in file_study.config.outputs:
+            if not file_study.config.outputs[output].archived:
+                self.archive_output(study_id, output, params)
+
     def archive_output(
         self,
         study_id: str,
         output_id: str,
-        use_task: bool,
         params: RequestParameters,
+        force: bool = False,
     ) -> Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        if not use_task:
-            self.storage_service.get_storage(study).archive_study_output(
-                study, output_id
-            )
-            return None
-        else:
-            task_name = f"Archive output {study_id}/{output_id}"
 
-            def archive_output_task(
-                notifier: TaskUpdateNotifier,
-            ) -> TaskResult:
-                try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    self.storage_service.get_storage(
-                        study
-                    ).archive_study_output(study, output_id)
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Output {output_id} of study {study_id} archived in {x}s"
-                        )
-                    )
-                    return TaskResult(
-                        success=True,
-                        message=f"Study output {study_id}/{output_id} successfully archived",
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Could not archive the output {study_id}/{output_id}",
-                        exc_info=e,
-                    )
-                    raise e
-
-            task_id = self.task_service.add_task(
-                archive_output_task,
-                task_name,
-                task_type=TaskType.ARCHIVE,
-                ref_id=study.id,
-                custom_event_messages=None,
-                request_params=params,
+        if not force and self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
             )
 
-            return task_id
+        task_name = f"Archive output {study_id}/{output_id}"
+
+        def archive_output_task(
+            notifier: TaskUpdateNotifier,
+        ) -> TaskResult:
+            try:
+                study = self.get_study(study_id)
+                stopwatch = StopWatch()
+                self.storage_service.get_storage(study).archive_study_output(
+                    study, output_id
+                )
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Output {output_id} of study {study_id} archived in {x}s"
+                    )
+                )
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_id}/{output_id} successfully archived",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not archive the output {study_id}/{output_id}",
+                    exc_info=e,
+                )
+                raise e
+
+        task_id = self.task_service.add_task(
+            archive_output_task,
+            task_name,
+            task_type=TaskType.ARCHIVE,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return task_id
 
     def unarchive_output(
         self,
         study_id: str,
         output_id: str,
-        use_task: bool,
         keep_src_zip: bool,
         params: RequestParameters,
     ) -> Optional[str]:
@@ -2266,74 +2315,71 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if not use_task:
-            stopwatch = StopWatch()
-            self.storage_service.get_storage(study).unarchive_study_output(
-                study, output_id, keep_src_zip
-            )
-            stopwatch.log_elapsed(
-                lambda x: logger.info(
-                    f"Output {output_id} of study {study_id} unarchived in {x}s"
-                )
-            )
-            return None
-
-        else:
-            task_name = (
-                f"Unarchive output {study.name}/{output_id} ({study_id})"
+        if self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
             )
 
-            def unarchive_output_task(
-                notifier: TaskUpdateNotifier,
-            ) -> TaskResult:
-                try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    self.storage_service.get_storage(
-                        study
-                    ).unarchive_study_output(study, output_id, keep_src_zip)
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Output {output_id} of study {study_id} unarchived in {x}s"
-                        )
-                    )
-                    return TaskResult(
-                        success=True,
-                        message=f"Study output {study_id}/{output_id} successfully unarchived",
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Could not unarchive the output {study_id}/{output_id}",
-                        exc_info=e,
-                    )
-                    raise e
+        task_name = f"Unarchive output {study.name}/{output_id} ({study_id})"
 
-            task_id: Optional[str] = None
-            workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-            if workspace != DEFAULT_WORKSPACE_NAME:
-                dest = Path(study.path) / "output" / output_id
-                src = Path(study.path) / "output" / f"{output_id}.zip"
-                task_id = self.task_service.add_worker_task(
-                    TaskType.UNARCHIVE,
-                    f"unarchive_{workspace}",
-                    ArchiveTaskArgs(
-                        src=str(src),
-                        dest=str(dest),
-                        remove_src=not keep_src_zip,
-                    ).dict(),
-                    name=task_name,
-                    ref_id=study.id,
-                    request_params=params,
+        def unarchive_output_task(
+            notifier: TaskUpdateNotifier,
+        ) -> TaskResult:
+            try:
+                study = self.get_study(study_id)
+                stopwatch = StopWatch()
+                self.storage_service.get_storage(study).unarchive_study_output(
+                    study, output_id, keep_src_zip
                 )
-
-            if not task_id:
-                task_id = self.task_service.add_task(
-                    unarchive_output_task,
-                    task_name,
-                    task_type=TaskType.UNARCHIVE,
-                    ref_id=study.id,
-                    custom_event_messages=None,
-                    request_params=params,
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Output {output_id} of study {study_id} unarchived in {x}s"
+                    )
                 )
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_id}/{output_id} successfully unarchived",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not unarchive the output {study_id}/{output_id}",
+                    exc_info=e,
+                )
+                raise e
 
-            return task_id
+        task_id: Optional[str] = None
+        workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
+        if workspace != DEFAULT_WORKSPACE_NAME:
+            dest = Path(study.path) / "output" / output_id
+            src = Path(study.path) / "output" / f"{output_id}.zip"
+            task_id = self.task_service.add_worker_task(
+                TaskType.UNARCHIVE,
+                f"unarchive_{workspace}",
+                ArchiveTaskArgs(
+                    src=str(src),
+                    dest=str(dest),
+                    remove_src=not keep_src_zip,
+                ).dict(),
+                name=task_name,
+                ref_id=study.id,
+                request_params=params,
+            )
+
+        if not task_id:
+            task_id = self.task_service.add_task(
+                unarchive_output_task,
+                task_name,
+                task_type=TaskType.UNARCHIVE,
+                ref_id=study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+        return task_id

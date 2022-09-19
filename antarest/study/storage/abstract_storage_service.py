@@ -373,6 +373,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         return study_additional_data
 
     def archive_study_output(self, study: T, output_id: str) -> bool:
+        if not (Path(study.path) / "output" / output_id).exists():
+            logger.warning(
+                f"Failed to archive study {study.name} output {output_id}. Maybe it's already archived",
+            )
+            return False
         try:
             zip_dir(
                 Path(study.path) / "output" / output_id,
@@ -391,6 +396,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def unarchive_study_output(
         self, study: T, output_id: str, keep_src_zip: bool
     ) -> bool:
+        if not (Path(study.path) / "output" / f"{output_id}.zip").exists():
+            logger.warning(
+                f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
+            )
+            return False
         try:
             unzip(
                 Path(study.path) / "output" / output_id,

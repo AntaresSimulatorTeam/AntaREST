@@ -45,7 +45,6 @@ from antarest.launcher.service import (
 from antarest.login.auth import Auth
 from antarest.login.model import User
 from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
-from tests.conftest import with_db_context
 
 
 @pytest.mark.unit_test
@@ -95,6 +94,7 @@ def test_service_run_study(get_current_user_mock):
         event_bus=event_bus,
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
     launcher_service._generate_new_id = lambda: str(uuid)
 
@@ -154,6 +154,7 @@ def test_service_get_result_from_launcher():
         event_bus=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     job_id = uuid4()
@@ -197,6 +198,7 @@ def test_service_get_result_from_database():
         event_bus=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     assert (
@@ -282,6 +284,7 @@ def test_service_get_jobs_from_database():
         event_bus=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     study_id = uuid4()
@@ -366,6 +369,7 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
         event_bus=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     assert expected_output == launcher_service.get_versions(params=Mock())
@@ -386,6 +390,7 @@ def test_service_kill_job(tmp_path: Path):
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -425,6 +430,7 @@ def test_append_logs(tmp_path: Path):
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -466,6 +472,7 @@ def test_get_logs(tmp_path: Path):
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -556,6 +563,7 @@ def test_manage_output(tmp_path: Path):
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     output_path = tmp_path / "output"
@@ -673,6 +681,7 @@ def test_save_stats(tmp_path: Path) -> None:
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     job_id = "job_id"
@@ -728,6 +737,7 @@ def test_get_load(tmp_path: Path):
         factory_launcher=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
+        cache=Mock(),
     )
 
     job_repository.get_running.side_effect = [

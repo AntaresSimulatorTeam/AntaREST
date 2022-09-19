@@ -5,7 +5,6 @@ import usePromise from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";
 import { getDefaultValues } from "./utils";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
@@ -25,7 +24,6 @@ function LinkView(props: Props) {
       <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
         <UsePromiseCond
           response={res}
-          ifPending={() => <SimpleLoader />}
           ifResolved={(data) => (
             <Form autoSubmit config={{ defaultValues: data }}>
               <LinkForm link={link} study={study} />

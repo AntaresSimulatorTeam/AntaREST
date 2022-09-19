@@ -10,7 +10,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { JobStatus, LaunchJob } from "../../../../../../common/types";
+import {
+  JobStatus,
+  LaunchJob,
+  LaunchJobsProgress,
+} from "../../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../../services/utils";
 import { killStudy } from "../../../../../../services/api/study";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
@@ -24,6 +28,7 @@ import {
   StepLabelRow,
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
 
 export const ColorStatus = {
   running: "warning.main",
@@ -52,10 +57,11 @@ function QontoStepIcon(props: {
 
 interface Props {
   jobs: Array<LaunchJob>;
+  jobsProgress: LaunchJobsProgress;
 }
 
 export default function VerticalLinearStepper(props: Props) {
-  const { jobs } = props;
+  const { jobs, jobsProgress } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -147,6 +153,11 @@ export default function VerticalLinearStepper(props: Props) {
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "running" && (
                     <CancelContainer>
+                      <LinearProgressWithLabel
+                        indicator={jobsProgress[job.id] as number}
+                        tooltip="Progression"
+                        size="30%"
+                      />
                       <Tooltip title={t("study.killStudy") as string}>
                         <BlockIcon
                           onClick={() => openConfirmModal(job.id)}

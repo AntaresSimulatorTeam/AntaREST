@@ -13,6 +13,8 @@ import {
   List,
   ListItem,
   Slider,
+  Stack,
+  Switch,
   TextField,
   Typography,
   useTheme,
@@ -38,7 +40,7 @@ import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy, getStudyVersionsFormatted } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import LoadIndicator from "../../common/LoadIndicator";
+import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
 import { fetchStudyVersions } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
@@ -332,10 +334,11 @@ function LauncherDialog(props: Props) {
           >
             <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
             {load && (
-              <LoadIndicator
-                indicator={load.slurm}
+              <LinearProgressWithLabel
+                indicator={load.slurm * 100}
                 size="30%"
                 tooltip={t("study.clusterLoad")}
+                gradiant
               />
             )}
           </Box>
@@ -376,18 +379,6 @@ function LauncherDialog(props: Props) {
               }
               label={t("study.xpansionMode") as string}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.xpansion && !!options.xpansion_r_version}
-                  disabled={!options.xpansion}
-                  onChange={(e, checked) =>
-                    handleChange("xpansion_r_version", checked)
-                  }
-                />
-              }
-              label={t("study.useXpansionVersionR") as string}
-            />
           </Box>
           {outputList && outputList.length === 1 && (
             <Box sx={{ display: "flex" }}>
@@ -422,6 +413,19 @@ function LauncherDialog(props: Props) {
               />
             </Box>
           )}
+          <Box>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography>{t("launcher.xpansion.versionR")}</Typography>
+              <Switch
+                checked={!options.xpansion_r_version}
+                disabled={!options.xpansion}
+                onChange={(e, checked) =>
+                  handleChange("xpansion_r_version", !checked)
+                }
+              />
+              <Typography>{t("launcher.xpansion.versionCpp")}</Typography>
+            </Stack>
+          </Box>
         </FormGroup>
         <Typography sx={{ mt: 1 }}>Adequacy Patch</Typography>
         <FormGroup

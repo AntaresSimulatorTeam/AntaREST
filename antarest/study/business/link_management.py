@@ -25,6 +25,21 @@ class LinkInfoDTO(BaseModel):
     ui: Optional[LinkUIDTO] = None
 
 
+class GenericElement(BaseModel):
+    id: str
+    name: str
+
+
+class GenericItem(BaseModel):
+    element: GenericElement
+    item_list: List[GenericElement]
+
+
+class AllCLustersAndLinks(BaseModel):
+    links: List[GenericItem]
+    clusters: List[GenericItem]
+
+
 class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service

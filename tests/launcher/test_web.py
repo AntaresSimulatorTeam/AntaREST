@@ -36,6 +36,7 @@ def create_app(service: Mock) -> FastAPI:
         task_service=Mock(),
         service_launcher=service,
         config=Config(security=SecurityConfig(disabled=True)),
+        cache=Mock(),
     )
     return app
 

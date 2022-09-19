@@ -1,12 +1,12 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Tuple, Any, Optional, Dict, cast
+from typing import Tuple, Any, Optional, Dict
 
 import redis
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
@@ -42,9 +42,9 @@ from antarest.matrixstore.matrix_garbage_collector import (
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.watcher_blueprint import create_watcher_routes
-from antarest.tools.admin_lib import clean_locks
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -56,6 +56,7 @@ class Module(str, Enum):
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
+    AUTO_ARCHIVER = "auto_archiver"
 
 
 def get_default_config_path_or_raise() -> Path:
@@ -266,10 +267,7 @@ def create_services(
         event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,
-    )
-
-    watcher = create_watcher(
-        config=config, application=application, study_service=study_service
+        cache=cache,
     )
 
     if (
@@ -277,6 +275,9 @@ def create_services(
         and Module.WATCHER.value in config.server.services
         or create_all
     ):
+        watcher = create_watcher(
+            config=config, application=application, study_service=study_service
+        )
         services["watcher"] = watcher
 
     if (
@@ -291,6 +292,14 @@ def create_services(
             matrix_service=matrix_service,
         )
         services["matrix_gc"] = matrix_garbage_collector
+
+    if (
+        config.server.services
+        and Module.AUTO_ARCHIVER.value in config.server.services
+        or create_all
+    ):
+        auto_archiver = AutoArchiveService(study_service, config)
+        services["auto_archiver"] = auto_archiver
 
     services["event_bus"] = event_bus
     services["study"] = study_service

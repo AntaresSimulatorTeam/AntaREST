@@ -114,7 +114,7 @@ const StudyCard = memo((props: Props) => {
   };
 
   const handleDelete = () => {
-    dispatch(deleteStudy(id))
+    dispatch(deleteStudy({ id }))
       .unwrap()
       .catch((err) => {
         enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);

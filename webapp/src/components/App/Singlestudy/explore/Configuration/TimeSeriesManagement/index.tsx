@@ -2,7 +2,6 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import Fields from "./Fields";
 import {
@@ -35,8 +34,6 @@ function TimeSeriesManagement() {
   return (
     <UsePromiseCond
       response={res}
-      ifPending={() => <SimpleLoader />}
-      ifRejected={(error) => <div>{error?.toString()}</div>}
       ifResolved={(defaultValues) => (
         <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
           <Fields />
