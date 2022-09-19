@@ -9,6 +9,7 @@
 
 The project has multiple entrypoints corresponding to different application module or 
 method of launching the main application :
+
 - main.py : define the main application and is used to run the server in a standalone development mode (single worker)
 - wsgy.py : define the wsgi app (using main.py) that will be run via gunicorn server on a multi worker production server
 - gui.py : define the application run as a desktop application
@@ -19,6 +20,7 @@ method of launching the main application :
 ## Main packages and services
 
 Each package/module is structured in the following way :
+
 - service.py : define the main service or service facade of the package
 - web.py : define the api rest endpoints (can be a directory containing split blueprints)  
 - main.py : contains a method build_<service_name> that construct the service and blueprint, declaring the necessary dependencies
