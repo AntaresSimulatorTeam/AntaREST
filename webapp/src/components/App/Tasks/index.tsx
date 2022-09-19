@@ -391,7 +391,7 @@ function JobsListing() {
         type: TaskType.LAUNCH,
         status: job.status === "running" ? "running" : "",
       })),
-    [jobs]
+    [jobs, studyJobsProgress]
   );
 
   const downloadsMemo = useMemo(
