@@ -150,7 +150,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         )
     }
     res = client.post(
-        f"{xpansion_base_url}/constraints",
+        f"{xpansion_base_url}/resources/constraints",
         headers=headers,
         files=files,
     )
@@ -161,6 +161,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         / study_id
         / "user"
         / "expansion"
+        / "constraints"
         / filename_constraints1
     ).open().read() == content_constraints1
 
@@ -173,7 +174,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     }
 
     res = client.post(
-        f"{xpansion_base_url}/constraints",
+        f"{xpansion_base_url}/resources/constraints",
         headers=headers,
         files=files,
     )
@@ -187,7 +188,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         ),
     }
     res = client.post(
-        f"{xpansion_base_url}/constraints",
+        f"{xpansion_base_url}/resources/constraints",
         headers=headers,
         files=files,
     )
@@ -200,21 +201,21 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         ),
     }
     res = client.post(
-        f"{xpansion_base_url}/constraints",
+        f"{xpansion_base_url}/resources/constraints",
         headers=headers,
         files=files,
     )
     assert res.status_code == 200
 
     res = client.get(
-        f"{xpansion_base_url}/constraints/{filename_constraints1}",
+        f"{xpansion_base_url}/resources/constraints/{filename_constraints1}",
         headers=headers,
     )
     assert res.status_code == 200
     assert res.json() == content_constraints1
 
     res = client.get(
-        f"{xpansion_base_url}/constraints/",
+        f"{xpansion_base_url}/resources/constraints/",
         headers=headers,
     )
     assert res.status_code == 200
@@ -231,7 +232,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 200
 
     res = client.delete(
-        f"{xpansion_base_url}/constraints/{filename_constraints1}",
+        f"{xpansion_base_url}/resources/constraints/{filename_constraints1}",
         headers=headers,
     )
     assert res.status_code == 409
@@ -243,7 +244,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 200
 
     res = client.delete(
-        f"{xpansion_base_url}/constraints/{filename_constraints1}",
+        f"{xpansion_base_url}/resources/constraints/{filename_constraints1}",
         headers=headers,
     )
     assert res.status_code == 200
@@ -295,7 +296,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         )
     }
     res = client.post(
-        f"{xpansion_base_url}/capacities",
+        f"{xpansion_base_url}/resources/capacities",
         headers=headers,
         files=files,
     )
@@ -311,7 +312,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     ).open().read() == content_capa1
 
     res = client.post(
-        f"{xpansion_base_url}/capacities",
+        f"{xpansion_base_url}/resources/capacities",
         headers=headers,
         files=files,
     )
@@ -325,7 +326,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         )
     }
     res = client.post(
-        f"{xpansion_base_url}/capacities",
+        f"{xpansion_base_url}/resources/capacities",
         headers=headers,
         files=files,
     )
@@ -339,7 +340,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         )
     }
     res = client.post(
-        f"{xpansion_base_url}/capacities",
+        f"{xpansion_base_url}/resources/capacities",
         headers=headers,
         files=files,
     )
@@ -347,7 +348,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
 
     # get single capa
     res = client.get(
-        f"{xpansion_base_url}/capacities/{filename_capa1}",
+        f"{xpansion_base_url}/resources/capacities/{filename_capa1}",
         headers=headers,
     )
     assert res.status_code == 200
@@ -358,7 +359,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     }
 
     res = client.get(
-        f"{xpansion_base_url}/capacities",
+        f"{xpansion_base_url}/resources/capacities",
         headers=headers,
     )
     assert res.status_code == 200
@@ -396,7 +397,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     ]
 
     res = client.delete(
-        f"{xpansion_base_url}/capacities/{filename_capa1}",
+        f"{xpansion_base_url}/resources/capacities/{filename_capa1}",
         headers=headers,
     )
     assert res.status_code == 409
@@ -415,7 +416,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 200
 
     res = client.delete(
-        f"{xpansion_base_url}/capacities/{filename_capa1}",
+        f"{xpansion_base_url}/resources/capacities/{filename_capa1}",
         headers=headers,
     )
     assert res.status_code == 200

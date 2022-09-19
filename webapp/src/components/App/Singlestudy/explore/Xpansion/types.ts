@@ -35,4 +35,10 @@ export enum XpansionRenderView {
   capacities = "capacities",
 }
 
+export enum XpansionResourceType {
+  constraints = "constraints",
+  weights = "weights",
+  capacitites = "capacitites",
+}
+
 export default {};
