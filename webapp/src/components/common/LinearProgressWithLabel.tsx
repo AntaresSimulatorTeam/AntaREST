@@ -36,7 +36,7 @@ function LinearProgressWithLabel(props: PropsType) {
         </Box>
         <Box sx={{ minWidth: 35 }}>
           <Typography variant="body2" color="text.secondary">{`${Math.round(
-            indicator
+            indicator || 0
           )}%`}</Typography>
         </Box>
       </Box>
