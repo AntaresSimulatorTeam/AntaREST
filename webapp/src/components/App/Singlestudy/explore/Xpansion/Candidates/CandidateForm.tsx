@@ -24,6 +24,7 @@ import {
 import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../../common/SelectSingle";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;
@@ -54,6 +55,7 @@ function CandidateForm(props: PropType) {
   >(candidate);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [toggleView, setToggleView] = useState<boolean>(true);
+  const [useV8LinkProfile, setUseV8LinkProfile] = useState<boolean>(true);
 
   const tabLinks = links.map((item) => {
     return {
@@ -84,7 +86,7 @@ function CandidateForm(props: PropType) {
   }, [candidate]);
 
   return (
-    <Paper sx={{ p: 2 }}>
+    <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
       <Box>
         <Box
           display="flex"
@@ -258,50 +260,172 @@ function CandidateForm(props: PropType) {
             },
           }}
         >
-          <SelectFields>
-            <SelectSingle
-              name="link-profile"
-              label={t("xpansion.linkProfile")}
-              list={capacities.map((item) => {
-                return { id: item, name: item };
-              })}
-              data={currentCandidate?.["link-profile"] || ""}
-              handleChange={handleChange}
-              sx={{
-                minWidth: "100%",
-              }}
-              optional
-            />
-            <StyledVisibilityIcon
-              onClick={() =>
-                currentCandidate?.["link-profile"] &&
-                onRead(currentCandidate?.["link-profile"] || "")
-              }
-            />
-          </SelectFields>
-          <SelectFields>
-            <SelectSingle
-              name="already-installed-link-profile"
-              label={t("xpansion.alreadyILinkProfile")}
-              list={capacities.map((item) => {
-                return { id: item, name: item };
-              })}
-              data={currentCandidate?.["already-installed-link-profile"] || ""}
-              handleChange={handleChange}
-              sx={{
-                minWidth: "100%",
-              }}
-              optional
-            />
-            <StyledVisibilityIcon
-              onClick={() =>
-                currentCandidate?.["already-installed-link-profile"] &&
-                onRead(
-                  currentCandidate?.["already-installed-link-profile"] || ""
-                )
-              }
-            />
-          </SelectFields>
+          <SwitchFE
+            value={useV8LinkProfile}
+            onChange={() => setUseV8LinkProfile((before) => !before)}
+            label="v8"
+          />
+          {useV8LinkProfile ? (
+            <>
+              <Box sx={{ display: "flex", width: "100%" }}>
+                <SelectFields>
+                  <SelectSingle
+                    name="direct-link-profile"
+                    label={t("xpansion.directLinkProfile")}
+                    list={capacities.map((item) => {
+                      return { id: item, name: item };
+                    })}
+                    data={currentCandidate?.["direct-link-profile"] || ""}
+                    handleChange={handleChange}
+                    sx={{
+                      minWidth: "100%",
+                    }}
+                    optional
+                  />
+                  <StyledVisibilityIcon
+                    onClick={() =>
+                      currentCandidate?.["direct-link-profile"] &&
+                      onRead(currentCandidate?.["direct-link-profile"] || "")
+                    }
+                  />
+                </SelectFields>
+                <SelectFields>
+                  <SelectSingle
+                    name="indirect-link-profile"
+                    label={t("xpansion.indirectLinkProfile")}
+                    list={capacities.map((item) => {
+                      return { id: item, name: item };
+                    })}
+                    data={currentCandidate?.["indirect-link-profile"] || ""}
+                    handleChange={handleChange}
+                    sx={{
+                      minWidth: "100%",
+                    }}
+                    optional
+                  />
+                  <StyledVisibilityIcon
+                    onClick={() =>
+                      currentCandidate?.["indirect-link-profile"] &&
+                      onRead(currentCandidate?.["indirect-link-profile"] || "")
+                    }
+                  />
+                </SelectFields>
+              </Box>
+              <Box sx={{ display: "flex", width: "100%" }}>
+                <SelectFields>
+                  <SelectSingle
+                    name="direct-already-installed-link-profile"
+                    label={t("xpansion.directAlreadyLinkProfile")}
+                    list={capacities.map((item) => {
+                      return { id: item, name: item };
+                    })}
+                    data={
+                      currentCandidate?.[
+                        "direct-already-installed-link-profile"
+                      ] || ""
+                    }
+                    handleChange={handleChange}
+                    sx={{
+                      minWidth: "100%",
+                    }}
+                    optional
+                  />
+                  <StyledVisibilityIcon
+                    onClick={() =>
+                      currentCandidate?.[
+                        "direct-already-installed-link-profile"
+                      ] &&
+                      onRead(
+                        currentCandidate?.[
+                          "direct-already-installed-link-profile"
+                        ] || ""
+                      )
+                    }
+                  />
+                </SelectFields>
+                <SelectFields>
+                  <SelectSingle
+                    name="indirect-already-installed-link-profile"
+                    label={t("xpansion.indirectAlreadyLinkProfile")}
+                    list={capacities.map((item) => {
+                      return { id: item, name: item };
+                    })}
+                    data={
+                      currentCandidate?.[
+                        "indirect-already-installed-link-profile"
+                      ] || ""
+                    }
+                    handleChange={handleChange}
+                    sx={{
+                      minWidth: "100%",
+                    }}
+                    optional
+                  />
+                  <StyledVisibilityIcon
+                    onClick={() =>
+                      currentCandidate?.[
+                        "indirect-already-installed-link-profile"
+                      ] &&
+                      onRead(
+                        currentCandidate?.[
+                          "indirect-already-installed-link-profile"
+                        ] || ""
+                      )
+                    }
+                  />
+                </SelectFields>
+              </Box>
+            </>
+          ) : (
+            <>
+              <SelectFields>
+                <SelectSingle
+                  name="link-profile"
+                  label={t("xpansion.linkProfile")}
+                  list={capacities.map((item) => {
+                    return { id: item, name: item };
+                  })}
+                  data={currentCandidate?.["link-profile"] || ""}
+                  handleChange={handleChange}
+                  sx={{
+                    minWidth: "100%",
+                  }}
+                  optional
+                />
+                <StyledVisibilityIcon
+                  onClick={() =>
+                    currentCandidate?.["link-profile"] &&
+                    onRead(currentCandidate?.["link-profile"] || "")
+                  }
+                />
+              </SelectFields>
+              <SelectFields>
+                <SelectSingle
+                  name="already-installed-link-profile"
+                  label={t("xpansion.alreadyILinkProfile")}
+                  list={capacities.map((item) => {
+                    return { id: item, name: item };
+                  })}
+                  data={
+                    currentCandidate?.["already-installed-link-profile"] || ""
+                  }
+                  handleChange={handleChange}
+                  sx={{
+                    minWidth: "100%",
+                  }}
+                  optional
+                />
+                <StyledVisibilityIcon
+                  onClick={() =>
+                    currentCandidate?.["already-installed-link-profile"] &&
+                    onRead(
+                      currentCandidate?.["already-installed-link-profile"] || ""
+                    )
+                  }
+                />
+              </SelectFields>
+            </>
+          )}
         </Box>
       </Box>
       {openConfirmationModal && candidate && (
