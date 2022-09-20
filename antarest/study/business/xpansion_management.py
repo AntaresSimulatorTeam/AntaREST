@@ -264,7 +264,7 @@ class XpansionManager:
                 "user": {
                     "expansion": {
                         "settings": xpansion_settings,
-                        "sensitivity": {},
+                        "sensitivity": {"sensitivity_in": {}},
                         "candidates": {},
                         "capa": {},
                         "weights": {},
