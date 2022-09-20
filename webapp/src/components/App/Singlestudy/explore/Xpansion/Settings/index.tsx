@@ -13,6 +13,7 @@ import {
   updateXpansionSettings,
   getAllWeights,
   getWeight,
+  getAllCandidates,
 } from "../../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -53,6 +54,21 @@ function Settings() {
     },
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
+    }
+  );
+
+  const { data: candidates } = usePromiseWithSnackbarError(
+    async () => {
+      if (!study) {
+        return [];
+      }
+      const tempCandidates = await getAllCandidates(study.id);
+      return tempCandidates.map((c) => c.name);
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
+      resetDataOnReload: false,
+      deps: [study],
     }
   );
 
@@ -135,6 +151,7 @@ function Settings() {
           <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
             <SettingsForm
               settings={settings}
+              candidates={candidates || []}
               constraints={constraints || []}
               weights={weights || []}
               updateSettings={updateSettings}

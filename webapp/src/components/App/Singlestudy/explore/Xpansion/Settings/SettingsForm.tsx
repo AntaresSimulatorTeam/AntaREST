@@ -10,18 +10,23 @@ import {
   StyledVisibilityIcon,
 } from "../share/styles";
 import SelectSingle from "../../../../../common/SelectSingle";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   settings: XpansionSettings;
   constraints: Array<string>;
   weights: Array<string>;
+  candidates: Array<string>;
   updateSettings: (value: XpansionSettings) => Promise<void>;
   onRead: (resourceType: string, filename: string) => Promise<void>;
 }
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, weights, updateSettings, onRead } = props;
+  const { settings, constraints, weights, candidates, updateSettings, onRead } =
+    props;
   const [currentSettings, setCurrentSettings] =
     useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
@@ -34,6 +39,21 @@ function SettingsForm(props: PropType) {
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
     setCurrentSettings({ ...currentSettings, [key]: value });
+  };
+
+  const handleObjectChange = (
+    objectKey: keyof XpansionSettings,
+    key: string,
+    value: string | number | boolean | string[]
+  ) => {
+    setSaveAllowed(true);
+    setCurrentSettings((prevSettings) => ({
+      ...prevSettings,
+      [objectKey]: {
+        ...(prevSettings[objectKey] as Record<string, any>),
+        [key]: value,
+      },
+    }));
   };
 
   useEffect(() => {
@@ -324,6 +344,57 @@ function SettingsForm(props: PropType) {
               }
             />
           </SelectFields>
+        </Box>
+      </Box>
+      <Box>
+        <Title>{t("xpansion.sensitivity")}</Title>
+        <Divider sx={{ mt: 1, mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
+          <NumberFE
+            value={currentSettings.sensitivity_config?.epsilon}
+            label={t("xpansion.epsilon")}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "epsilon",
+                parseFloat(e.target.value)
+              )
+            }
+          />
+          <SwitchFE
+            value={currentSettings.sensitivity_config?.capex}
+            label={t("xpansion.capex")}
+            onChange={(e, checked) =>
+              handleObjectChange("sensitivity_config", "capex", checked)
+            }
+          />
+          <SelectFE
+            sx={{ minWidth: "200px" }}
+            label={t("xpansion.projection")}
+            multiple
+            value={currentSettings.sensitivity_config?.projection || []}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "projection",
+                e.target.value as string[]
+              )
+            }
+            variant="filled"
+            options={candidates}
+          />
         </Box>
       </Box>
     </Box>
