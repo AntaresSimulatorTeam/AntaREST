@@ -1,16 +1,20 @@
+import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, UploadFile, File
+from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.model import StudyPermissionType, JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
     XpansionSettingsDTO,
     XpansionCandidateDTO,
+    XpansionResourceFileType,
 )
 from antarest.study.service import StudyService
 
@@ -212,142 +216,118 @@ def create_xpansion_routes(
         )
 
     @bp.post(
-        "/studies/{uuid}/extensions/xpansion/constraints",
+        "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
         tags=[APITag.xpansion_study_management],
-        summary="Add Xpansion Constraints Files",
+        summary="Add Xpansion resource file",
     )
-    def add_constraints(
+    def add_resource(
         uuid: str,
+        resource_type: XpansionResourceFileType,
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Add xpansion constraints files in the study {uuid}",
+            f"Add xpansion {resource_type} files in the study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
-        return study_service.add_xpansion_constraints(uuid, file, params)
+        study = study_service.check_study_access(
+            uuid,
+            StudyPermissionType.WRITE,
+            RequestParameters(user=current_user),
+        )
+        return study_service.xpansion_manager.add_resource(
+            study, resource_type, [file]
+        )
 
     @bp.delete(
-        "/studies/{uuid}/extensions/xpansion/constraints/{filename}",
+        "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
         tags=[APITag.xpansion_study_management],
-        summary="Delete Xpansion Constraints File",
+        summary="Delete Xpansion resource file",
     )
-    def delete_constraints(
+    def delete_resource(
         uuid: str,
+        resource_type: XpansionResourceFileType,
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Deleting xpansion constraints file from the study{uuid}",
+            f"Deleting xpansion {resource_type} file from the study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
-        return study_service.delete_xpansion_constraints(
-            uuid, filename, params
+        study = study_service.check_study_access(
+            uuid,
+            StudyPermissionType.WRITE,
+            RequestParameters(user=current_user),
+        )
+        return study_service.xpansion_manager.delete_resource(
+            study, resource_type, filename
         )
 
     @bp.get(
-        "/studies/{uuid}/extensions/xpansion/constraints/{filename}",
+        "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
         tags=[APITag.xpansion_study_management],
-        summary="Getting Xpansion Constraints File",
-        response_model=bytes,
+        summary="Getting Xpansion resource file content",
     )
-    def get_constraints(
+    def get_resource_content(
         uuid: str,
+        resource_type: XpansionResourceFileType,
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Getting xpansion constraints file {filename} from the study {uuid}",
+            f"Getting xpansion {resource_type} file {filename} from the study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
-        return study_service.get_single_xpansion_constraints(
-            uuid, filename, params
+        study = study_service.check_study_access(
+            uuid,
+            StudyPermissionType.READ,
+            RequestParameters(user=current_user),
         )
+        output: Union[
+            JSON, bytes, str
+        ] = study_service.xpansion_manager.get_resource_content(
+            study, resource_type, filename
+        )
+
+        if isinstance(output, bytes):
+            try:
+                # try to decode string
+                output = output.decode("utf-8")
+            except (AttributeError, UnicodeDecodeError):
+                pass
+
+        json_response = json.dumps(
+            output,
+            ensure_ascii=False,
+            allow_nan=True,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return Response(content=json_response, media_type="application/json")
 
     @bp.get(
-        "/studies/{uuid}/extensions/xpansion/constraints",
+        "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
         tags=[APITag.xpansion_study_management],
-        summary="Getting all Xpansion Constraints Files",
+        summary="Getting all Xpansion resources files",
     )
-    def get_all_constraints(
+    def list_resources(
         uuid: str,
+        resource_type: Optional[XpansionResourceFileType] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Getting xpansion constraints file from the study {uuid}",
+            f"Getting xpansion {resource_type} resources files from the study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
-        return study_service.get_all_xpansion_constraints(uuid, params)
-
-    @bp.post(
-        "/studies/{uuid}/extensions/xpansion/capacities",
-        tags=[APITag.xpansion_study_management],
-        summary="Adding New Capa Files",
-    )
-    def add_capa(
-        uuid: str,
-        file: UploadFile = File(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Adding new capa files to the study {uuid}",
-            extra={"user": current_user.id},
+        study = study_service.check_study_access(
+            uuid,
+            StudyPermissionType.READ,
+            RequestParameters(user=current_user),
         )
-        params = RequestParameters(user=current_user)
-        return study_service.add_capa(uuid, file, params)
-
-    @bp.delete(
-        "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
-        tags=[APITag.xpansion_study_management],
-        summary="Deleting Capa File",
-    )
-    def delete_capa(
-        uuid: str,
-        filename: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Deleting capa file {filename} from the study {uuid}",
-            extra={"user": current_user.id},
+        if resource_type is None:
+            return study_service.xpansion_manager.list_root_files(study)
+        return study_service.xpansion_manager.list_resources(
+            study, resource_type
         )
-        params = RequestParameters(user=current_user)
-        return study_service.delete_capa(uuid, filename, params)
-
-    @bp.get(
-        "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
-        tags=[APITag.xpansion_study_management],
-        summary="Getting Capa File",
-    )
-    def get_single_capa(
-        uuid: str,
-        filename: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Getting capa file {filename} from the study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        return study_service.get_single_capa(uuid, filename, params)
-
-    @bp.get(
-        "/studies/{uuid}/extensions/xpansion/capacities",
-        tags=[APITag.xpansion_study_management],
-        summary="Getting All Capa File",
-    )
-    def get_all_capa(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Getting all capacities files from the study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        return study_service.get_all_capa(uuid, params)
 
     return bp

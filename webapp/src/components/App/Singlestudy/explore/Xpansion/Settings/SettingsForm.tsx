@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionSettings } from "../types";
+import { XpansionResourceType, XpansionSettings } from "../types";
 import {
   Fields,
   SelectFields,
@@ -14,13 +14,14 @@ import SelectSingle from "../../../../../common/SelectSingle";
 interface PropType {
   settings: XpansionSettings;
   constraints: Array<string>;
+  weights: Array<string>;
   updateSettings: (value: XpansionSettings) => Promise<void>;
-  onRead: (filename: string) => Promise<void>;
+  onRead: (resourceType: string, filename: string) => Promise<void>;
 }
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, updateSettings, onRead } = props;
+  const { settings, constraints, weights, updateSettings, onRead } = props;
   const [currentSettings, setCurrentSettings] =
     useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
@@ -278,7 +279,7 @@ function SettingsForm(props: PropType) {
           <SelectFields>
             <SelectSingle
               name="yearly-weights"
-              list={constraints.map((item) => {
+              list={weights.map((item) => {
                 return { id: item, name: item };
               })}
               label={t("xpansion.yearlyWeight")}
@@ -292,7 +293,10 @@ function SettingsForm(props: PropType) {
             <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["yearly-weights"] &&
-                onRead(currentSettings["yearly-weights"] || "")
+                onRead(
+                  XpansionResourceType.weights,
+                  currentSettings["yearly-weights"] || ""
+                )
               }
             />
           </SelectFields>
@@ -313,7 +317,10 @@ function SettingsForm(props: PropType) {
             <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["additional-constraints"] &&
-                onRead(currentSettings["additional-constraints"] || "")
+                onRead(
+                  XpansionResourceType.constraints,
+                  currentSettings["additional-constraints"] || ""
+                )
               }
             />
           </SelectFields>

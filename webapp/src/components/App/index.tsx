@@ -29,7 +29,6 @@ import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
-import Files from "./Singlestudy/explore/Xpansion/Files";
 import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
 import Load from "./Singlestudy/explore/Modelization/Areas/Load";
 import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
@@ -40,6 +39,8 @@ import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
+import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
+import Weights from "./Singlestudy/explore/Xpansion/Weights";
 
 function App() {
   return (
@@ -93,7 +94,8 @@ function App() {
                             path="settings"
                             element={<XpansionSettings />}
                           />
-                          <Route path="files" element={<Files />} />
+                          <Route path="constraints" element={<Constraints />} />
+                          <Route path="weights" element={<Weights />} />
                           <Route path="capacities" element={<Capacities />} />
                           <Route index element={<Candidates />} />
                           <Route path="*" element={<Candidates />} />

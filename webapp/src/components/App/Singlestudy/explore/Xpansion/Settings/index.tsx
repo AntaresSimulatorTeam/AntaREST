@@ -5,12 +5,14 @@ import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionSettings } from "../types";
+import { XpansionResourceType, XpansionSettings } from "../types";
 import {
   getXpansionSettings,
   getAllConstraints,
   getConstraint,
   updateXpansionSettings,
+  getAllWeights,
+  getWeight,
 } from "../../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -19,12 +21,22 @@ import { removeEmptyFields } from "../../../../../../services/utils/index";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 
+const resourceContentFetcher = (
+  resourceType: string
+): ((uuid: string, filename: string) => Promise<string>) => {
+  if (resourceType === XpansionResourceType.constraints) {
+    return getConstraint;
+  }
+  return getWeight;
+};
+
 function Settings() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
-  const [constraintViewDialog, setConstraintViewDialog] = useState<{
+  const [resourceViewDialog, setResourceViewDialog] = useState<{
     filename: string;
     content: string;
+    isMatrix: boolean;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -44,17 +56,27 @@ function Settings() {
     }
   );
 
-  const { data: constraints, isLoading: constraintsLoading } =
-    usePromiseWithSnackbarError(
-      async () => {
-        if (study) {
-          return getAllConstraints(study.id);
-        }
-      },
-      {
-        errorMessage: t("xpansion.error.loadConfiguration"),
+  const { data: constraints } = usePromiseWithSnackbarError(
+    async () => {
+      if (study) {
+        return getAllConstraints(study.id);
       }
-    );
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
+    }
+  );
+
+  const { data: weights } = usePromiseWithSnackbarError(
+    async () => {
+      if (study) {
+        return getAllWeights(study.id);
+      }
+    },
+    {
+      errorMessage: t("xpansion.error.loadConfiguration"),
+    }
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -84,11 +106,18 @@ function Settings() {
     }
   };
 
-  const getOneConstraint = async (filename: string) => {
+  const getResourceContent = async (resourceType: string, filename: string) => {
     try {
       if (study) {
-        const content = await getConstraint(study.id, filename);
-        setConstraintViewDialog({ filename, content });
+        const content = await resourceContentFetcher(resourceType)(
+          study.id,
+          filename
+        );
+        setResourceViewDialog({
+          filename,
+          content,
+          isMatrix: resourceType === XpansionResourceType.weights,
+        });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
@@ -101,26 +130,28 @@ function Settings() {
 
   return (
     <>
-      {!settingsLoading && !constraintsLoading && settings ? (
+      {!settingsLoading && settings ? (
         <Box sx={{ width: "100%", flexGrow: 1, overflow: "hidden", p: 2 }}>
           <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
             <SettingsForm
               settings={settings}
               constraints={constraints || []}
+              weights={weights || []}
               updateSettings={updateSettings}
-              onRead={getOneConstraint}
+              onRead={getResourceContent}
             />
           </Paper>
         </Box>
       ) : (
         <SimpleLoader />
       )}
-      {!!constraintViewDialog && (
+      {!!resourceViewDialog && (
         <DataViewerDialog
           studyId={study?.id || ""}
-          filename={constraintViewDialog.filename}
-          content={constraintViewDialog.content}
-          onClose={() => setConstraintViewDialog(undefined)}
+          filename={resourceViewDialog.filename}
+          content={resourceViewDialog.content}
+          onClose={() => setResourceViewDialog(undefined)}
+          isMatrix={resourceViewDialog.isMatrix}
         />
       )}
     </>

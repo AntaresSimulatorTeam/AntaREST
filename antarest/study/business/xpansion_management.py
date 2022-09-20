@@ -29,6 +29,12 @@ from antarest.study.storage.utils import fix_study_root
 logger = logging.getLogger(__name__)
 
 
+class XpansionResourceFileType(str, Enum):
+    CAPACITIES = "capacities"
+    WEIGHTS = "weights"
+    CONSTRAINTS = "constraints"
+
+
 class UcType(str, Enum):
     EXPANSION_FAST = "expansion_fast"
     EXPANSION_ACCURATE = "expansion_accurate"
@@ -252,6 +258,8 @@ class XpansionManager:
                         "settings": xpansion_settings,
                         "candidates": {},
                         "capa": {},
+                        "weights": {},
+                        "constraints": {},
                     }
                 }
             }
@@ -284,6 +292,7 @@ class XpansionManager:
                     [
                         "user",
                         "expansion",
+                        "constraints",
                         additional_constraints,
                     ]
                 )
@@ -633,28 +642,38 @@ class XpansionManager:
             ),
         )
 
+    def _raw_file_dir(
+        self, raw_file_type: XpansionResourceFileType
+    ) -> List[str]:
+        if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
+            return ["user", "expansion", "constraints"]
+        elif raw_file_type == XpansionResourceFileType.CAPACITIES:
+            return ["user", "expansion", "capa"]
+        elif raw_file_type == XpansionResourceFileType.WEIGHTS:
+            return ["user", "expansion", "weights"]
+        raise NotImplementedError(
+            f"raw_file_type '{raw_file_type}' not implemented"
+        )
+
     def _add_raw_files(
         self,
         file_study: FileStudy,
         files: List[UploadFile],
-        raw_file_type: str,
+        raw_file_type: XpansionResourceFileType,
     ) -> None:
-        if raw_file_type == "constraints":
-            keys = ["user", "expansion"]
-        elif raw_file_type == "capacities":
-            keys = ["user", "expansion", "capa"]
-        else:
-            raise NotImplementedError(
-                f"raw_file_type '{raw_file_type}' not implemented"
-            )
-
+        keys = self._raw_file_dir(raw_file_type)
         data: JSON = {}
         buffer = data
 
         list_names = [file.filename for file in files]
         for name in list_names:
-            if name in file_study.tree.get(keys):
-                raise FileAlreadyExistsError(f"File '{name}' already exists")
+            try:
+                if name in file_study.tree.get(keys):
+                    raise FileAlreadyExistsError(
+                        f"File '{name}' already exists"
+                    )
+            except ChildNotFoundError:
+                logger.warning(f"Failed to list existing files for {keys}")
 
         if len(list_names) != len(set(list_names)):
             raise FileAlreadyExistsError(
@@ -673,16 +692,111 @@ class XpansionManager:
 
         file_study.tree.save(data)
 
-    def add_xpansion_constraints(
-        self, study: Study, files: List[UploadFile]
+    def add_resource(
+        self,
+        study: Study,
+        resource_type: XpansionResourceFileType,
+        files: List[UploadFile],
     ) -> None:
         logger.info(
-            f"Adding xpansion constraints file list to study '{study.id}'"
+            f"Adding xpansion {resource_type} resource file list to study '{study.id}'"
         )
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        self._add_raw_files(file_study, files, "constraints")
+        self._add_raw_files(file_study, files, resource_type)
+
+    def delete_resource(
+        self,
+        study: Study,
+        resource_type: XpansionResourceFileType,
+        filename: str,
+    ) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        logger.info(
+            f"Checking if xpansion {resource_type} resource file '{filename}' is not used in study '{study.id}'"
+        )
+        if (
+            resource_type == XpansionResourceFileType.CONSTRAINTS
+            and self._is_constraints_file_used(file_study, filename)
+        ):
+            raise FileCurrentlyUsedInSettings(
+                f"The constraints file '{filename}' is still used in the xpansion settings and cannot be deleted"
+            )
+        elif (
+            resource_type == XpansionResourceFileType.CAPACITIES
+            and self._is_capa_file_used(file_study, filename)
+        ):
+            raise FileCurrentlyUsedInSettings(
+                f"The capacities file '{filename}' is still used in the xpansion settings and cannot be deleted"
+            )
+        elif (
+            resource_type == XpansionResourceFileType.WEIGHTS
+            and self._is_weights_file_used(file_study, filename)
+        ):
+            raise FileCurrentlyUsedInSettings(
+                f"The weight file '{filename}' is still used in the xpansion settings and cannot be deleted"
+            )
+        file_study.tree.delete(self._raw_file_dir(resource_type) + [filename])
+
+    def get_resource_content(
+        self,
+        study: Study,
+        resource_type: XpansionResourceFileType,
+        filename: str,
+    ) -> Union[JSON, bytes]:
+        logger.info(
+            f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'"
+        )
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        return file_study.tree.get(
+            self._raw_file_dir(resource_type) + [filename]
+        )
+
+    def list_resources(
+        self, study: Study, resource_type: XpansionResourceFileType
+    ) -> List[str]:
+        logger.info(
+            f"Getting all xpansion {resource_type} files from study '{study.id}'"
+        )
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        try:
+            return [
+                filename
+                for filename in file_study.tree.get(
+                    self._raw_file_dir(resource_type)
+                ).keys()
+            ]
+        except ChildNotFoundError:
+            return []
+
+    def list_root_files(self, study: Study) -> List[str]:
+        logger.info(
+            f"Getting xpansion root resources file from study '{study.id}'"
+        )
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        registered_filenames = [
+            registered_file.key
+            for registered_file in Expansion.registered_files
+        ]
+        root_files = [
+            key
+            for key, node in cast(
+                FolderNode, file_study.tree.get_node(["user", "expansion"])
+            )
+            .build()
+            .items()
+            if key not in registered_filenames and type(node) != BucketNode
+        ]
+        return root_files
 
     def _is_constraints_file_used(
         self, file_study: FileStudy, filename: str
@@ -704,65 +818,25 @@ class XpansionManager:
         except KeyError:
             return False
 
-    def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-
-        logger.info(
-            f"Checking xpansion constraints file '{filename}' is not used in study '{study.id}'"
-        )
-        if self._is_constraints_file_used(file_study, filename):
-            raise FileCurrentlyUsedInSettings(
-                f"The constraints file '{filename}' is still used in the xpansion settings and cannot be deleted"
+    def _is_weights_file_used(
+        self, file_study: FileStudy, filename: str
+    ) -> bool:
+        try:
+            return (
+                str(
+                    file_study.tree.get(
+                        [
+                            "user",
+                            "expansion",
+                            "settings",
+                            "yearly-weights",
+                        ]
+                    )
+                )
+                == filename
             )
-
-        file_study.tree.delete(["user", "expansion", filename])
-
-    def get_single_xpansion_constraints(
-        self, study: Study, filename: str
-    ) -> bytes:
-        logger.info(
-            f"Getting xpansion constraints file '{filename}' from study '{study.id}'"
-        )
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        return cast(
-            bytes, file_study.tree.get(["user", "expansion", filename])
-        )
-
-    def get_all_xpansion_constraints(self, study: Study) -> List[str]:
-        logger.info(
-            f"Getting all xpansion constraints files from study '{study.id}'"
-        )
-
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        registered_filenames = [
-            registered_file.key
-            for registered_file in Expansion.registered_files
-        ]
-        constraints_filenames = [
-            key
-            for key, node in cast(
-                FolderNode, file_study.tree.get_node(["user", "expansion"])
-            )
-            .build()
-            .items()
-            if key not in registered_filenames and type(node) != BucketNode
-        ]
-        return constraints_filenames
-
-    def add_capa(self, study: Study, files: List[UploadFile]) -> None:
-        logger.info(
-            f"Adding xpansion capacities file list to study '{study.id}'"
-        )
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        self._add_raw_files(file_study, files, "capacities")
+        except KeyError:
+            return False
 
     def _is_capa_file_used(self, file_study: FileStudy, filename: str) -> bool:
         logger.info(
@@ -779,41 +853,3 @@ class XpansionManager:
             for candidate in candidates.values()
         ]
         return filename in all_link_profiles
-
-    def delete_capa(self, study: Study, filename: str) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-
-        if self._is_capa_file_used(file_study, filename):
-            raise FileCurrentlyUsedInSettings(
-                f"The capacities file '{filename}' is still used in the xpansion settings and cannot be deleted"
-            )
-
-        logger.info(
-            f"Delete xpansion capacities file '{filename}' from study '{study.id}'"
-        )
-        file_study.tree.delete(["user", "expansion", "capa", filename])
-
-    def get_single_capa(self, study: Study, filename: str) -> JSON:
-        logger.info(
-            f"Getting xpansion capacities file '{filename}' from study '{study.id}'"
-        )
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        return file_study.tree.get(["user", "expansion", "capa", filename])
-
-    def get_all_capa(self, study: Study) -> List[str]:
-        logger.info(
-            f"Getting all xpansion capacities files from study '{study.id}'"
-        )
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        return [
-            filename
-            for filename in file_study.tree.get(
-                ["user", "expansion", "capa"]
-            ).keys()
-        ]

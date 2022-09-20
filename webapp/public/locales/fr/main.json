@@ -523,6 +523,7 @@
     "xpansion.logLevel": "Niveau de log",
     "xpansion.constraints": "Contraintes",
     "xpansion.capacities": "Capacitiés",
+    "xpansion.weights": "Poids",
     "xpansion.fileName": "Nom du fichier",
     "xpansion.options": "Options",
     "xpansion.extra": "Extra",
