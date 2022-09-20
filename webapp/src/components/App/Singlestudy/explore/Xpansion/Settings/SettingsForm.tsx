@@ -12,6 +12,7 @@ import {
 import SelectSingle from "../../../../../common/SelectSingle";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   settings: XpansionSettings;
@@ -24,7 +25,8 @@ interface PropType {
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, weights, candidates, updateSettings, onRead } = props;
+  const { settings, constraints, weights, candidates, updateSettings, onRead } =
+    props;
   const [currentSettings, setCurrentSettings] =
     useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
@@ -37,6 +39,21 @@ function SettingsForm(props: PropType) {
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
     setCurrentSettings({ ...currentSettings, [key]: value });
+  };
+
+  const handleObjectChange = (
+    objectKey: keyof XpansionSettings,
+    key: string,
+    value: string | number | boolean | string[]
+  ) => {
+    setSaveAllowed(true);
+    setCurrentSettings((prevSettings) => ({
+      ...prevSettings,
+      [objectKey]: {
+        ...(prevSettings[objectKey] as Record<string, any>),
+        [key]: value,
+      },
+    }));
   };
 
   useEffect(() => {
@@ -345,32 +362,38 @@ function SettingsForm(props: PropType) {
             },
           }}
         >
-          <NumberFE />
+          <NumberFE
+            value={currentSettings.sensitivity_config?.epsilon}
+            label={t("xpansion.epsilon")}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "epsilon",
+                parseFloat(e.target.value)
+              )
+            }
+          />
+          <SwitchFE
+            value={currentSettings.sensitivity_config?.capex}
+            label={t("xpansion.capex")}
+            onChange={(e, checked) =>
+              handleObjectChange("sensitivity_config", "capex", checked)
+            }
+          />
           <SelectFE
-            name={filterName}
             sx={{ minWidth: "200px" }}
-            label={t(`study.modelization.nodeProperties.${filterName}`)}
+            label={t("xpansion.projection")}
             multiple
-            renderValue={(value: unknown) => {
-              const selection = value
-                ? (value as Array<string>).filter((val) => val !== "")
-                : [];
-              return selection.length > 0
-                ? selection.map((elm) => t(`global.time.${elm}`)).join(", ")
-                : t("global.none");
-            }}
-            defaultValue={(defaultValues || {})[filterName] || []}
+            value={currentSettings.sensitivity_config?.projection || []}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "projection",
+                e.target.value as string[]
+              )
+            }
             variant="filled"
-            options={filterOptions}
-            control={control}
-            rules={{
-              onAutoSubmit: (value) => {
-                const selection = value
-                  ? (value as Array<string>).filter((val) => val !== "")
-                  : [];
-                handleAutoSubmit(path[filterName], selection.join(", "));
-              },
-            }}
+            options={candidates}
           />
         </Box>
       </Box>
