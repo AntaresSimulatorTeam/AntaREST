@@ -103,6 +103,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "yearly-weights": None,
         "timelimit": 1e12,
         "log_level": 0,
+        "sensitivity_config": None,
     }
 
     res = client.put(
@@ -127,6 +128,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "yearly-weights": None,
         "timelimit": 1e12,
         "log_level": 0,
+        "sensitivity_config": None,
     }
 
     res = client.put(

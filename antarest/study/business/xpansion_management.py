@@ -288,13 +288,16 @@ class XpansionManager:
             study
         )
         json = file_study.tree.get(["user", "expansion", "settings"])
-        json["sensitivity_config"] = suppress_exception(
-            lambda x: file_study.tree.get(
-                ["user", "expansion", "sensitivity", "sensitivity_in"]
-            ),
-            lambda e: logger.warning(
-                "Failed to read sensitivity config", exc_info=e
-            ),
+        json["sensitivity_config"] = (
+            suppress_exception(
+                lambda: file_study.tree.get(
+                    ["user", "expansion", "sensitivity", "sensitivity_in"]
+                ),
+                lambda e: logger.warning(
+                    "Failed to read sensitivity config", exc_info=e
+                ),
+            )
+            or None
         )
         return XpansionSettingsDTO.parse_obj(json)
 
@@ -368,7 +371,7 @@ class XpansionManager:
 
         file_study.tree.save(
             new_xpansion_settings_dto.dict(
-                by_alias=True, exclude="sensitivity_config"
+                by_alias=True, exclude={"sensitivity_config"}
             ),
             ["user", "expansion", "settings"],
         )
