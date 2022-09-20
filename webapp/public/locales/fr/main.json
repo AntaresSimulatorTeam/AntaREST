@@ -527,6 +527,7 @@
     "xpansion.fileName": "Nom du fichier",
     "xpansion.options": "Options",
     "xpansion.extra": "Extra",
+    "xpansion.sensitivity": "Calcul de sensibilité",
     "xpansion.newXpansionConfig": "Nouvelle configuration d'Xpansion",
     "xpansion.candidates": "Candidats",
     "xpansion.newCandidate": "Nouveau candidat",

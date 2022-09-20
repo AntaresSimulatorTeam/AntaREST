@@ -10,18 +10,21 @@ import {
   StyledVisibilityIcon,
 } from "../share/styles";
 import SelectSingle from "../../../../../common/SelectSingle";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 
 interface PropType {
   settings: XpansionSettings;
   constraints: Array<string>;
   weights: Array<string>;
+  candidates: Array<string>;
   updateSettings: (value: XpansionSettings) => Promise<void>;
   onRead: (resourceType: string, filename: string) => Promise<void>;
 }
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, weights, updateSettings, onRead } = props;
+  const { settings, constraints, weights, candidates, updateSettings, onRead } = props;
   const [currentSettings, setCurrentSettings] =
     useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
@@ -324,6 +327,51 @@ function SettingsForm(props: PropType) {
               }
             />
           </SelectFields>
+        </Box>
+      </Box>
+      <Box>
+        <Title>{t("xpansion.sensitivity")}</Title>
+        <Divider sx={{ mt: 1, mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
+          <NumberFE />
+          <SelectFE
+            name={filterName}
+            sx={{ minWidth: "200px" }}
+            label={t(`study.modelization.nodeProperties.${filterName}`)}
+            multiple
+            renderValue={(value: unknown) => {
+              const selection = value
+                ? (value as Array<string>).filter((val) => val !== "")
+                : [];
+              return selection.length > 0
+                ? selection.map((elm) => t(`global.time.${elm}`)).join(", ")
+                : t("global.none");
+            }}
+            defaultValue={(defaultValues || {})[filterName] || []}
+            variant="filled"
+            options={filterOptions}
+            control={control}
+            rules={{
+              onAutoSubmit: (value) => {
+                const selection = value
+                  ? (value as Array<string>).filter((val) => val !== "")
+                  : [];
+                handleAutoSubmit(path[filterName], selection.join(", "));
+              },
+            }}
+          />
         </Box>
       </Box>
     </Box>

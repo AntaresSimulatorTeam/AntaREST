@@ -1,3 +1,9 @@
+export interface XpansionSensitivitySettings {
+  epsilon: number;
+  capex: boolean;
+  projection: string[];
+}
+
 export interface XpansionSettings {
   uc_type: string;
   master: string;
@@ -14,6 +20,7 @@ export interface XpansionSettings {
   solver?: string;
   log_level?: number;
   timelimit?: number;
+  sensitivity_config?: XpansionSensitivitySettings;
 }
 
 export interface XpansionCandidate {
