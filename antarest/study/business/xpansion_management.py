@@ -646,7 +646,6 @@ class XpansionManager:
                     )
             except ChildNotFoundError:
                 logger.warning(f"Failed to list existing files for {keys}")
-                pass
 
         if len(list_names) != len(set(list_names)):
             raise FileAlreadyExistsError(

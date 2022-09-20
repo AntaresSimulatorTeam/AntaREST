@@ -18,6 +18,7 @@ from antarest.study.business.xpansion_management import (
     ConstraintsNotFoundError,
     XpansionFileNotFoundError,
     XpansionResourceFileType,
+    FileCurrentlyUsedInSettings,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -511,6 +512,11 @@ def test_update_constraints(tmp_path: Path):
             study=study, constraints_file_name="non_existent_file"
         )
 
+    with pytest.raises(XpansionFileNotFoundError):
+        xpansion_manager.update_xpansion_constraints_settings(
+            study=study, constraints_file_name="non_existent_file"
+        )
+
     empty_study.tree.save(
         {"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}}
     )
@@ -534,7 +540,7 @@ def test_update_constraints(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_add_constraints(tmp_path: Path):
+def test_add_resources(tmp_path: Path):
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -542,8 +548,10 @@ def test_add_constraints(tmp_path: Path):
 
     filename1 = "constraints1.txt"
     filename2 = "constraints2.txt"
+    filename3 = "weight.txt"
     content1 = "0"
     content2 = "1"
+    content3 = "2"
 
     upload_file_list = [
         UploadFile(filename=filename1, file=StringIO(content1)),
@@ -552,6 +560,12 @@ def test_add_constraints(tmp_path: Path):
 
     xpansion_manager.add_resource(
         study, XpansionResourceFileType.CONSTRAINTS, upload_file_list
+    )
+
+    xpansion_manager.add_resource(
+        study,
+        XpansionResourceFileType.WEIGHTS,
+        [UploadFile(filename=filename3, file=StringIO(content3))],
     )
 
     assert filename1 in empty_study.tree.get(
@@ -567,6 +581,45 @@ def test_add_constraints(tmp_path: Path):
     assert content2.encode() == empty_study.tree.get(
         ["user", "expansion", "constraints", filename2]
     )
+
+    assert filename3 in empty_study.tree.get(["user", "expansion", "weights"])
+    assert {
+        "columns": [0],
+        "data": [[2.0]],
+        "index": [0],
+    } == empty_study.tree.get(["user", "expansion", "weights", filename3])
+
+    settings = xpansion_manager.get_xpansion_settings(study)
+    settings.yearly_weights = filename3
+    xpansion_manager.update_xpansion_settings(study, settings)
+    with pytest.raises(FileCurrentlyUsedInSettings):
+        xpansion_manager.delete_resource(
+            study, XpansionResourceFileType.WEIGHTS, filename3
+        )
+    settings.yearly_weights = None
+    xpansion_manager.update_xpansion_settings(study, settings)
+    xpansion_manager.delete_resource(
+        study, XpansionResourceFileType.WEIGHTS, filename3
+    )
+
+
+@pytest.mark.unit_test
+def test_list_root_resources(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+    constraints_file_content = b"0"
+    constraints_file_name = "unknownfile.txt"
+
+    empty_study.tree.save(
+        {
+            "user": {
+                "expansion": {constraints_file_name: constraints_file_content}
+            }
+        }
+    )
+    assert [constraints_file_name] == xpansion_manager.list_root_files(study)
 
 
 @pytest.mark.unit_test
