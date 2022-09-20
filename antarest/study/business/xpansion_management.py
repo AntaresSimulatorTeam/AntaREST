@@ -11,6 +11,7 @@ from pydantic import Field, BaseModel, validator
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
+from antarest.core.utils.utils import suppress_exception
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
     BucketNode,
@@ -61,6 +62,12 @@ class MaxIteration(str, Enum):
     INF = "inf"
 
 
+class XpansionSensitivitySettingsDTO(BaseModel):
+    epsilon: float
+    capex: bool
+    projection: List[str]
+
+
 class XpansionSettingsDTO(BaseModel):
     optimality_gap: Optional[float] = 1
     max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
@@ -83,6 +90,7 @@ class XpansionSettingsDTO(BaseModel):
     solver: Optional[Solver] = None
     timelimit: Optional[float] = 1e12
     log_level: Optional[int] = 0
+    sensitivity_config: Optional[XpansionSensitivitySettingsDTO] = None
 
     @validator("relaxed_optimality_gap")
     def relaxed_optimality_gap_validation(
@@ -256,6 +264,7 @@ class XpansionManager:
                 "user": {
                     "expansion": {
                         "settings": xpansion_settings,
+                        "sensitivity": {},
                         "candidates": {},
                         "capa": {},
                         "weights": {},
@@ -279,6 +288,14 @@ class XpansionManager:
             study
         )
         json = file_study.tree.get(["user", "expansion", "settings"])
+        json["sensitivity_config"] = suppress_exception(
+            lambda x: file_study.tree.get(
+                ["user", "expansion", "sensitivity", "sensitivity_in"]
+            ),
+            lambda e: logger.warning(
+                "Failed to read sensitivity config", exc_info=e
+            ),
+        )
         return XpansionSettingsDTO.parse_obj(json)
 
     def _assert_xpansion_settings_additional_constraints_is_valid(
@@ -350,9 +367,22 @@ class XpansionManager:
             )
 
         file_study.tree.save(
-            new_xpansion_settings_dto.dict(by_alias=True),
+            new_xpansion_settings_dto.dict(
+                by_alias=True, exclude="sensitivity_config"
+            ),
             ["user", "expansion", "settings"],
         )
+        if new_xpansion_settings_dto.sensitivity_config:
+            file_study.tree.save(
+                new_xpansion_settings_dto.sensitivity_config.dict(),
+                [
+                    "user",
+                    "expansion",
+                    "settings",
+                    "sensitivity",
+                    "sensitivity_in",
+                ],
+            )
         return new_xpansion_settings_dto
 
     def _assert_link_profile_are_files(
