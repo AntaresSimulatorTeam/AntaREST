@@ -357,10 +357,22 @@ class XpansionManager:
                 "already-installed-link-profile",
                 xpansion_candidate_dto.already_installed_link_profile,
             ),
-            ("direct-link-profile", xpansion_candidate_dto.direct_link_profile),
-            ("indirect-direct-link-profile", xpansion_candidate_dto.indirect_direct_link_profile),
-            ("already-installed-direct-link-profile", xpansion_candidate_dto.already_installed_direct_link_profile),
-            ("already-installed-indirect-link-profile", xpansion_candidate_dto.already_installed_indirect_link_profile),
+            (
+                "direct-link-profile",
+                xpansion_candidate_dto.direct_link_profile,
+            ),
+            (
+                "indirect-direct-link-profile",
+                xpansion_candidate_dto.indirect_direct_link_profile,
+            ),
+            (
+                "already-installed-direct-link-profile",
+                xpansion_candidate_dto.already_installed_direct_link_profile,
+            ),
+            (
+                "already-installed-indirect-link-profile",
+                xpansion_candidate_dto.already_installed_indirect_link_profile,
+            ),
         ]:
             if filename and not file_study.tree.get(
                 [
