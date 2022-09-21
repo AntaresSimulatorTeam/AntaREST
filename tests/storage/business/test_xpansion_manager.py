@@ -111,7 +111,7 @@ def make_link_and_areas(empty_study):
             {
                 "settings": {
                     "optimality_gap": 1,
-                    "max_iteration": "inf",
+                    "max_iteration": "+Inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "relaxed-optimality-gap": 1e6,
@@ -132,7 +132,7 @@ def make_link_and_areas(empty_study):
             {
                 "settings": {
                     "optimality_gap": 1,
-                    "max_iteration": "inf",
+                    "max_iteration": "+Inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "relative_gap": 1e-12,
@@ -201,7 +201,7 @@ def test_delete_xpansion_configuration(tmp_path: Path):
             XpansionSettingsDTO.parse_obj(
                 {
                     "optimality_gap": 1,
-                    "max_iteration": "inf",
+                    "max_iteration": "+Inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "yearly_weight": None,
@@ -221,7 +221,7 @@ def test_delete_xpansion_configuration(tmp_path: Path):
             XpansionSettingsDTO.parse_obj(
                 {
                     "optimality_gap": 1,
-                    "max_iteration": "inf",
+                    "max_iteration": "+Inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "yearly_weight": None,

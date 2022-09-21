@@ -8,7 +8,7 @@ export interface XpansionSettings {
   uc_type: string;
   master: string;
   optimality_gap: number;
-  max_iteration?: number;
+  max_iteration?: number | string;
   "yearly-weights": string;
   "additional-constraints"?: string;
   "relaxed-optimality-gap"?: number | string;

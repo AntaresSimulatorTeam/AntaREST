@@ -59,7 +59,7 @@ class Solver(str, Enum):
 
 
 class MaxIteration(str, Enum):
-    INF = "inf"
+    INF = "+Inf"
 
 
 class XpansionSensitivitySettingsDTO(BaseModel):
@@ -129,8 +129,8 @@ class XpansionCandidateDTO(BaseModel):
     direct_link_profile: Optional[str] = Field(
         None, alias="direct-link-profile"
     )
-    indirect_direct_link_profile: Optional[str] = Field(
-        None, alias="indirect-direct-link-profile"
+    indirect_link_profile: Optional[str] = Field(
+        None, alias="indirect-link-profile"
     )
     already_installed_direct_link_profile: Optional[str] = Field(
         None, alias="already-installed-direct-link-profile"
@@ -243,7 +243,7 @@ class XpansionManager:
 
             xpansion_settings = {
                 "optimality_gap": 1,
-                "max_iteration": "inf",
+                "max_iteration": "+Inf",
                 "uc_type": "expansion_fast",
                 "master": "integer",
                 "yearly-weights": None,
@@ -404,7 +404,7 @@ class XpansionManager:
             ),
             (
                 "indirect-direct-link-profile",
-                xpansion_candidate_dto.indirect_direct_link_profile,
+                xpansion_candidate_dto.indirect_link_profile,
             ),
             (
                 "already-installed-direct-link-profile",

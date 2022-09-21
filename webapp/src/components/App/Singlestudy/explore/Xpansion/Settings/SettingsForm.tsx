@@ -140,32 +140,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.maxIteration")}
             variant="filled"
             value={currentSettings.max_iteration || ""}
-            onChange={(e) =>
-              handleChange("max_iteration", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplPresolve")}
-            variant="filled"
-            value={currentSettings["ampl.presolve"] || ""}
-            onChange={(e) =>
-              handleChange("ampl.presolve", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplSolverBoundsFrequency")}
-            variant="filled"
-            value={currentSettings["ampl.solve_bounds_frequency"] || ""}
-            onChange={(e) =>
-              handleChange(
-                "ampl.solve_bounds_frequency",
-                parseFloat(e.target.value)
-              )
-            }
+            onChange={(e) => handleChange("max_iteration", e.target.value)}
             sx={{ mb: 1 }}
           />
         </Fields>
@@ -261,6 +236,29 @@ function SettingsForm(props: PropType) {
             variant="filled"
             value={currentSettings["ampl.solver"] || ""}
             onChange={(e) => handleChange("ampl.solver", e.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.amplPresolve")}
+            variant="filled"
+            value={currentSettings["ampl.presolve"] || ""}
+            onChange={(e) =>
+              handleChange("ampl.presolve", parseFloat(e.target.value))
+            }
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.amplSolverBoundsFrequency")}
+            variant="filled"
+            value={currentSettings["ampl.solve_bounds_frequency"] || ""}
+            onChange={(e) =>
+              handleChange(
+                "ampl.solve_bounds_frequency",
+                parseFloat(e.target.value)
+              )
+            }
             sx={{ mb: 1 }}
           />
           <SelectFields sx={{ mb: 1 }}>

@@ -20,7 +20,7 @@ class ExpansionSettings(IniFileNode):
     """
     Common:
         optimality_gap:float = 1
-        max_iteration:int = inf
+        max_iteration:int = +Inf
         uc_type:str = "expansion_fast" or "expansion_accurate". default="expansion_fast"
         master:str = "integer" or "relaxed". default="integer"
         yearly-weights:str = filename. default = None

@@ -85,7 +85,7 @@ class SimpleKeyValueReader(IReader):
     @staticmethod
     def _parse_inf(value: str) -> Optional[str]:
         try:
-            return "inf" if float(value) == float("inf") else None
+            return "+Inf" if float(value) == float("inf") else None
         except ValueError:
             return None
 
