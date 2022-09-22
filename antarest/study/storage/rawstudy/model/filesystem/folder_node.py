@@ -135,16 +135,17 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         data: SUB_JSON,
         url: Optional[List[str]] = None,
     ) -> None:
+        self._assert_not_in_zipped_file()
         children = self.build()
         url = url or []
+
+        if not self.config.path.exists():
+            self.config.path.mkdir()
 
         if url:
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
-            self._assert_not_in_zipped_file()
-            if not self.config.path.exists():
-                self.config.path.mkdir()
             assert isinstance(data, Dict)
             for key in data:
                 children[key].save(data[key])
