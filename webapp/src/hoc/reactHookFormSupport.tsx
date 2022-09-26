@@ -30,7 +30,7 @@ interface FieldEditorProps<TValue> {
   name?: string;
 }
 
-type ReactHookFormSupportProps<
+export type ReactHookFormSupportProps<
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   TContext = any
