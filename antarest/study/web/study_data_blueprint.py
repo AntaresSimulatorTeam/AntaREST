@@ -809,4 +809,24 @@ def create_study_data_routes(
             study, field_values
         )
 
+    @bp.put(
+        "/studies/{uuid}/timeseries/generate",
+        tags=[APITag.study_data],
+        summary="Generate timeseries",
+    )
+    def generate_timeseries(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Generating timeseries for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        return study_service.generate_timeseries(study, params)
+
     return bp

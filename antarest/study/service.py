@@ -173,6 +173,7 @@ from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -2417,3 +2418,21 @@ class StudyService:
             )
 
         return task_id
+
+    def generate_timeseries(
+        self, study: Study, params: RequestParameters
+    ) -> None:
+        self._assert_study_unarchived(study)
+        self.task_service.add_worker_task(
+            TaskType.WORKER_TASK,
+            "generate-timeseries",
+            GenerateTimeseriesTaskArgs(
+                study_id=study.id,
+                managed=is_managed(study),
+                study_path=str(study.path),
+                study_version=str(study.version),
+            ).dict(),
+            name=f"Generate timeseries for study {study.id}",
+            ref_id=study.id,
+            request_params=params,
+        )

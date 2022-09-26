@@ -51,8 +51,18 @@ class AbstractWorker(IService):
             Event(type=EventType.WORKER_TASK_STARTED, payload=task_info)
         )
         self.futures[task_info.task_id] = self.threadpool.submit(
-            self.execute_task, task_info
+            self.safe_execute_task, task_info
         )
+
+    def safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        try:
+            return self.execute_task(task_info)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error occured when executing task {task_info.json()}",
+                exc_info=e,
+            )
+            return TaskResult(success=False, message=repr(e))
 
     @abstractmethod
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:

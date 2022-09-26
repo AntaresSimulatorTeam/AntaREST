@@ -1,5 +1,6 @@
-#FROM python:3.8-slim-buster
-FROM brunneis/python:3.8.3-ubuntu-20.04
+FROM python:3.8-slim-bullseye
+
+# RUN apt update && apt install -y procps gdb
 
 ENV ANTAREST_CONF /resources/application.yaml
 
