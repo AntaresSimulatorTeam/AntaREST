@@ -32,7 +32,7 @@ interface Props {
   onClose: VoidFunction;
 }
 
-function CreateStudyModal(props: Props) {
+function CreateStudyDialog(props: Props) {
   const [t] = useTranslation();
   const { open, onClose } = props;
   const { enqueueSnackbar } = useSnackbar();
@@ -149,6 +149,8 @@ function CreateStudyModal(props: Props) {
               freeSolo
               fullWidth
               sx={{ px: 0 }}
+              name="tags"
+              control={control}
             />
           </Fieldset>
         </>
@@ -157,4 +159,4 @@ function CreateStudyModal(props: Props) {
   );
 }
 
-export default CreateStudyModal;
+export default CreateStudyDialog;
