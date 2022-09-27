@@ -57,6 +57,7 @@ import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+import { PUBLIC_MODE_LIST } from "../../common/utils/contants";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -102,24 +103,17 @@ function NavHeader(props: Props) {
   const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
   const dispatch = useAppDispatch();
 
-  const publicModeList = useMemo(
-    () => [
-      { id: "NONE", name: t("study.nonePublicModeText") },
-      { id: "READ", name: t("study.readPublicModeText") },
-      { id: "EXECUTE", name: t("study.executePublicModeText") },
-      { id: "EDIT", name: t("study.editPublicModeText") },
-      { id: "FULL", name: t("study.fullPublicModeText") },
-    ],
-    [t]
-  );
-
   const getPublicModeLabel = useMemo((): string => {
-    const publicModeLabel = publicModeList.find(
+    const publicModeLabel = PUBLIC_MODE_LIST.find(
       (elm) => elm.id === study?.publicMode
     );
-    if (publicModeLabel) return publicModeLabel.name;
+    if (publicModeLabel) return t(publicModeLabel.name);
     return "";
-  }, [publicModeList, study?.publicMode]);
+  }, [study?.publicMode, t]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -190,6 +184,10 @@ function NavHeader(props: Props) {
       }
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box

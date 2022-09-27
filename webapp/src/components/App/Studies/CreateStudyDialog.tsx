@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { usePromise } from "react-use";
 import * as R from "ramda";
-import { GenericInfo, StudyPublicMode } from "../../../common/types";
+import { StudyPublicMode } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { createStudy } from "../../../redux/ducks/studies";
 import { getStudyVersionsFormatted, getGroups } from "../../../redux/selectors";
@@ -16,6 +16,7 @@ import SelectFE from "../../common/fieldEditors/SelectFE";
 import Fieldset from "../../common/Fieldset";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import { SubmitHandlerPlus } from "../../common/Form";
+import { PUBLIC_MODE_LIST } from "../../common/utils/contants";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -38,10 +39,13 @@ function CreateStudyDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const versionList = useAppSelector(getStudyVersionsFormatted);
+  const groupList = useAppSelector(getGroups);
   const mounted = usePromise();
   const dispatch = useAppDispatch();
 
-  const groupList = useAppSelector(getGroups);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<FieldValues>) => {
     const { name, ...rest } = data.values;
@@ -73,13 +77,9 @@ function CreateStudyDialog(props: Props) {
     }
   };
 
-  const publicModeList: Array<GenericInfo> = [
-    { id: "NONE", name: t("study.nonePublicMode") },
-    { id: "READ", name: t("study.readPublicMode") },
-    { id: "EXECUTE", name: t("study.executePublicMode") },
-    { id: "EDIT", name: t("global.edit") },
-    { id: "FULL", name: t("study.fullPublicMode") },
-  ];
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <FormDialog
@@ -123,8 +123,8 @@ function CreateStudyDialog(props: Props) {
           <Fieldset legend={t("global.permission")}>
             <SelectFE
               label={t("study.publicMode")}
-              options={publicModeList.map((mode) => ({
-                label: mode.name,
+              options={PUBLIC_MODE_LIST.map((mode) => ({
+                label: t(mode.name),
                 value: mode.id,
               }))}
               name="publicMode"
