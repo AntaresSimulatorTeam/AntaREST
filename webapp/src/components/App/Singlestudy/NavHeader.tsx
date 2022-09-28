@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import * as React from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
@@ -103,13 +103,8 @@ function NavHeader(props: Props) {
   const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
   const dispatch = useAppDispatch();
 
-  const getPublicModeLabel = useMemo((): string => {
-    const publicModeLabel = PUBLIC_MODE_LIST.find(
-      (elm) => elm.id === study?.publicMode
-    );
-    if (publicModeLabel) return t(publicModeLabel.name);
-    return "";
-  }, [study?.publicMode, t]);
+  const publicModeLabel =
+    PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -520,7 +515,7 @@ function NavHeader(props: Props) {
             alignItems="center"
           >
             <SecurityOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText>{getPublicModeLabel}</TinyText>
+            <TinyText>{publicModeLabel}</TinyText>
           </Box>
         </Box>
       )}

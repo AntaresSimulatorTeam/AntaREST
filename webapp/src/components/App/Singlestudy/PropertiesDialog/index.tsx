@@ -8,7 +8,6 @@ import { useSnackbar } from "notistack";
 import SingleSelect from "../../../common/SelectSingle";
 import MultiSelect from "../../../common/SelectMulti";
 import {
-  GroupDTO,
   StudyMetadata,
   StudyMetadataPatchDTO,
   StudyPublicMode,
@@ -54,7 +53,6 @@ function PropertiesModal(props: Props) {
   );
   const [tags, setTags] = useState<Array<string>>(study.tags ? study.tags : []);
   const [dataChanged, setDataChanged] = useState<boolean>(false);
-  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
 
   const initStudyName = useMemo(() => study.name, [study]);
   const initPublicMode = useMemo(() => study.publicMode, [study]);
@@ -71,13 +69,9 @@ function PropertiesModal(props: Props) {
     return tpmTagsChanged;
   }, [initTags, tags]);
 
-  usePromiseWithSnackbarError(
-    async () => {
-      const groupRes = await getGroups();
-      setGroupList(groupRes);
-    },
-    { errorMessage: t("settings.error.groupsError") }
-  );
+  const { data: groupList = [] } = usePromiseWithSnackbarError(getGroups, {
+    errorMessage: t("settings.error.groupsError"),
+  });
 
   useEffect(() => {
     if (study) {
