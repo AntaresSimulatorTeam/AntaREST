@@ -25,7 +25,7 @@ import TagTextInput from "../../../common/TagTextInput";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../../common/dialogs/BasicDialog";
 import { ElementContainer, InputElement, Root } from "./style";
-import { PUBLIC_MODE_LIST } from "../../../common/utils/contants";
+import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 
 const logErr = debug("antares:createstudyform:error");

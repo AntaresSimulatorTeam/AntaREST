@@ -57,7 +57,7 @@ import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
-import { PUBLIC_MODE_LIST } from "../../common/utils/contants";
+import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
