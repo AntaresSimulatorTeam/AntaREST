@@ -515,7 +515,7 @@ function NavHeader(props: Props) {
             alignItems="center"
           >
             <SecurityOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText>{publicModeLabel}</TinyText>
+            <TinyText>{t(publicModeLabel)}</TinyText>
           </Box>
         </Box>
       )}
