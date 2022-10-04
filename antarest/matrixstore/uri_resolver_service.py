@@ -1,5 +1,7 @@
 import re
-from typing import Union, Optional, Tuple
+from typing import Optional, Tuple
+
+import pandas as pd  # type: ignore
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -9,7 +11,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str) -> Union[bytes, SUB_JSON]:
+    def resolve(self, uri: str, formatted: bool = True) -> Optional[SUB_JSON]:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -17,7 +19,7 @@ class UriResolverService:
             return None
 
         if protocol == "matrix":
-            return self._resolve_matrix(uuid)
+            return self._resolve_matrix(uuid, formatted)
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
     @staticmethod
@@ -35,14 +37,31 @@ class UriResolverService:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str) -> JSON:
+    def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
         data = self.matrix_service.get(id)
         if data:
-            return {
+            formatted_data = {
                 "data": data.data,
                 "index": data.index,
                 "columns": data.columns,
             }
+            if formatted:
+                return formatted_data
+            else:
+                df = pd.DataFrame(**formatted_data)
+                if not df.empty:
+                    return (
+                        df.to_csv(
+                            None,
+                            sep="\t",
+                            header=False,
+                            index=False,
+                            float_format="%.6f",
+                        )
+                        or ""
+                    )
+                else:
+                    return ""
         raise ValueError(f"id matrix {id} not found")
 
     def build_matrix_uri(self, id: str) -> str:

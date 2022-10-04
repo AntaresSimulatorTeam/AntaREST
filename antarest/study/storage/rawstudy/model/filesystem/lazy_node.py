@@ -58,7 +58,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             if expanded:
                 return link
             else:
-                return cast(G, self.context.resolver.resolve(link))
+                return cast(G, self.context.resolver.resolve(link, formatted))
 
         if expanded:
             return self.get_lazy_content()
