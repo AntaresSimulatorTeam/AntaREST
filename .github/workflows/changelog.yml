@@ -17,8 +17,9 @@ jobs:
         fetch-depth: 0
     - uses: BobAnkh/auto-generate-changelog@v1
       with:
-        REPO_NAME: 'makdeuneuv/AntaRest'
+        REPO_NAME: 'AntaRest'
         ACCESS_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        PATH: 'CHANGELOG.md'
+        PATH: '../../CHANGELOG.md'
+        BRANCH: 'changelog'
         COMMIT_MESSAGE: 'docs(CHANGELOG): update release notes'
-        TYPE: 'feat:Feature,fix:Bug Fixes,docs:Documentation,refactor:Refactor,perf:Performance Improvements'
+        TYPE: 'feat:Feature,fix:Bug Fixes,docs:Documentation'
