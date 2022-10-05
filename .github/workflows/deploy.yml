@@ -2,6 +2,7 @@ name: deploy
 on:
   push:
     branches:
+      - 'master' 
       - 'changelog'
 
 
@@ -73,6 +74,12 @@ jobs:
       - name: Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
+      - name: install changelog requirements
+        run : nmp install -g auto-changelog
+      - name: generate changelog file
+        run: auto-changelog -l 10
+      - name : move changelog on archive
+        run: cp CHANGELOG.md dist/CHANGELOG.md
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
