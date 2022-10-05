@@ -77,7 +77,7 @@ jobs:
       - name: install changelog requirements
         run : npm install -g auto-changelog
       - name: generate changelog file
-        run: auto-changelog -l 10
+        run: auto-changelog
       - name : move changelog on archive
         run: cp CHANGELOG.md dist/CHANGELOG.md
       - name: Archive binaries
