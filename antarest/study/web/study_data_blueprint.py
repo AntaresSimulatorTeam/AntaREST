@@ -14,6 +14,9 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsFormFields,
+)
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
@@ -567,6 +570,54 @@ def create_study_data_routes(
         )
         return study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/advanced_parameters",
+        tags=[APITag.study_data],
+        summary="Get Advanced parameters form values",
+        response_model=AdvancedParamsFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_advanced_parameters(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AdvancedParamsFormFields:
+        logger.info(
+            msg=f"Getting Advanced Parameters for study {uuid}",
+            extra={"user": current_user.id},
+        )
+
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.advanced_parameters_manager.get_field_values(
+            study
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/config/advanced_parameters",
+        tags=[APITag.study_data],
+        summary="Set Advanced parameters new values",
+    )
+    def set_advanced_params(
+        uuid: str,
+        field_values: AdvancedParamsFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating Advanced parameters values for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.advanced_parameters_manager.set_field_values(
+            study, field_values
         )
 
     return bp
