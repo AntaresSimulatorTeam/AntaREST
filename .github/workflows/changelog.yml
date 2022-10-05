@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - uses: BobAnkh/auto-generate-changelog@v1
+    - uses: BobAnkh/auto-generate-changelog@v1.2.0
       with:
         REPO_NAME: 'AntaRest'
         ACCESS_TOKEN: ${{secrets.GITHUB_TOKEN}}
