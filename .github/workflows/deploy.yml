@@ -75,7 +75,7 @@ jobs:
         run: bash ./package_antares_web.sh
         working-directory: scripts
       - name: install changelog requirements
-        run : nmp install -g auto-changelog
+        run : npm install -g auto-changelog
       - name: generate changelog file
         run: auto-changelog -l 10
       - name : move changelog on archive
