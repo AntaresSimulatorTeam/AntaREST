@@ -76,9 +76,8 @@ jobs:
         working-directory: scripts
       - name: generate changelog file
         run: bash ./generate-changelog.sh > CHANGELOG.md
-        working-directory: scripts
       - name : move changelog file on archive
-        run: mv ../scripts/CHANGELOG.md dist/
+        run: mv CHANGELOG.md dist/
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
