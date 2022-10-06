@@ -84,10 +84,18 @@ interface Props {
   childrenTree: VariantTree | undefined;
   isExplorer?: boolean;
   openCommands?: VoidFunction;
+  updateStudyData: VoidFunction;
 }
 
 function NavHeader(props: Props) {
-  const { study, parent, childrenTree, isExplorer, openCommands } = props;
+  const {
+    study,
+    parent,
+    childrenTree,
+    isExplorer,
+    openCommands,
+    updateStudyData,
+  } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -531,6 +539,7 @@ function NavHeader(props: Props) {
           open={openPropertiesDialog}
           onClose={() => setOpenPropertiesDialog(false)}
           study={study as StudyMetadata}
+          updateStudyData={updateStudyData}
         />
       )}
       {openDeleteDialog && (

@@ -28,11 +28,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   study: StudyMetadata;
+  updateStudyData: VoidFunction;
 }
 
 function PropertiesDialog(props: Props) {
   const [t] = useTranslation();
-  const { open, onClose, study } = props;
+  const { open, onClose, study, updateStudyData } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -88,6 +89,7 @@ function PropertiesDialog(props: Props) {
         );
       }
 
+      updateStudyData();
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
