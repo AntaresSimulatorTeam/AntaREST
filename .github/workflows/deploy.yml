@@ -74,12 +74,11 @@ jobs:
       - name: Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
-      - name: install changelog requirements
-        run : npm install -g auto-changelog
       - name: generate changelog file
-        run: auto-changelog -l 15 --starting-version 2.0.0 --ending-version 2.8.0
-      - name : move changelog on archive
-        run: cp CHANGELOG.md dist/CHANGELOG.md
+        run: bash ./generate-changelog.sh > CHANGELOG.md
+        working-directory: scripts
+      - name : move changelog file on archive
+        run: mv ../scripts/CHANGELOG.md dist/
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
