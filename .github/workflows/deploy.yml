@@ -75,12 +75,14 @@ jobs:
       - name: Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
+      - name: install changelog requirements
+        run : npm install -g auto-changelog
       - name: generate changelog file
-        run: bash ./generate-changelog.sh > CHANGELOG.md
-      - name : move changelog file on archive
-        run: mv CHANGELOG.md dist/
+        run: |
+          auto-changelog -l false -u --hide-empty-releases
+          cp CHANGELOG.md dist/CHANGELOG.md
       - name: Archive binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: AntaresWeb-${{ matrix.os }}
           path: dist/*
