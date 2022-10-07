@@ -139,6 +139,7 @@ function SingleStudy(props: Props) {
     >
       <NavHeader
         study={study}
+        updateStudyData={updateStudyData}
         parent={parent}
         isExplorer={isExplorer}
         openCommands={() => setOpenCommands(true)}
