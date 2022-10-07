@@ -1,6 +1,10 @@
 autoCloseIssue: true
+gitReplaceChars: '/'
 
 branches:
   - label: '*'
     name: dev
+    prefix: feature/
+  - label: bug
+    prefix: bugfix/
 
