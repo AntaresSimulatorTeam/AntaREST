@@ -8,8 +8,10 @@ The front end is a [React](https://reactjs.org/) web application. A local build 
 Requirements : 
 - python : 3.8.x
 - node : 14.x
+- C++ : 1.12.4
 
 1. First clone the projet:
+(*use gitbash if you're on Windows environment and install git on linux*)
 
 ```
 git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
@@ -17,7 +19,6 @@ cd AntaREST
 git submodule init
 git submodule update
 ```
-
 2. Install back dependencies
 
 ```
@@ -25,7 +26,6 @@ python -m pip install --upgrade pip
 pip install pydantic --no-binary pydantic
 pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
 ```
-
 3. Build front (for local mode use `cd ..; ./scripts/build-front.sh` instead of `npm run build`)
 
 ```
@@ -33,7 +33,6 @@ cd webapp
 npm install
 npm run build 
 ```
-
 4. Run the application
 
 ```

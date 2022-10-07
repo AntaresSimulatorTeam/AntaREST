@@ -28,10 +28,43 @@ This brings:
 >
 > - **user accounts** : add user management and permission system
 
+## Local installation
+
+The local installation of this application use a bundled build of the web server to ease its launch as a kind of desktop application.
+
+### For Windows
+
+1. Download the lastest version [here](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.8.0/AntaresWeb-windows-v2.8.0.zip)
+2. Unzip the package
+3. Go into the directory **AntaresWeb-windows-vX.X.X** (vX.X.X for the latest version)
+4. Launch this file **AntaresWebServerShortcut** . You'll have this pop up
+![](assets/media/img/deployment_windows.png)
+5. Then go to [http://localhost:8080](http://localhost:8080), you can now use it.
+
+
+When started, the application will be shown as a systray application (icon in the bottom right corner of the Windows bar)
+![](assets/media/img/deployment_windows_lancher.png)
+
+
+### For Linux
+
+1. Download the lastest version [here](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.8.0/AntaresWeb-ubuntu-v2.8.0.zip)
+2. Open a terminal where the zip was downloaded, unzip the package and go into the directory **AntaresWeb-ubuntu-vX.X.X** (vX.X.X for the latest version)
+```
+unzip AntaresWeb-ubuntu-vX.X.X.zip
+cd AntaresWeb-ubuntu-vX.X.X
+```
+3. Run this command to launch antaresWeb
+```
+./AntaresWeb/AntaresWebServer
+```
+4. Then go to [http://localhost:8080](http://localhost:8080), you can now use it.
+
+
 ## Documentation
 
-- [Building the application](./install/0-INSTALL.md)
 - [Using the application](./user-guide/0-introduction.md)
+- [Building the application (for developers)](./install/0-INSTALL.md)
 - [Contributing to the application code](./architecture/0-introduction.md)
 
 

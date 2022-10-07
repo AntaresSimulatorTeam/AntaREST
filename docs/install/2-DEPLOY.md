@@ -68,3 +68,7 @@ The build is directly available in the [release](https://github.com/AntaresSimul
 You can download the latest version here :
 - [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-windows-latest.zip)
 - [For Ubuntu](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-ubuntu-latest.zip)
+
+You can find the bluid steps here
+- Local application for [windows](../index.md#for-windows)
+- Local application for [linux](../index.md#for-linux)
