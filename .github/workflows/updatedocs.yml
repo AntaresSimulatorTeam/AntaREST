@@ -29,4 +29,5 @@ jobs:
       - name: update package version on 2-deploy.md
         run: sed -E -i 's/v[0-7].[0-9].[0-9]/v${{VERSION}}/g' 2-DEPLOY.md   
       - name: update changelog docs files
-        run: bash ./../../scripts/generate-changelogdocs.sh > ../../docs/CHANGELOG.md
+        run: |
+          bash ./../../scripts/generate-changelogdocs.sh > ../../docs/CHANGELOG.md
