@@ -20,9 +20,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-        run: |
-          git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
       - name: Update package version
         run: bash ./update_version.sh
         working-directory: scripts
