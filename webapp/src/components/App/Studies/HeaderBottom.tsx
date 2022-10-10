@@ -104,6 +104,14 @@ function HeaderBottom(props: PropTypes) {
             sx={{ mx: 1 }}
           />
         )}
+        {filters.variant && (
+          <Chip
+            label={t("studies.variant")}
+            color="secondary"
+            onDelete={() => setFilterValue("variant", false)}
+            sx={{ mx: 1 }}
+          />
+        )}
         {filters.versions.map((version) => (
           <Chip
             key={version}

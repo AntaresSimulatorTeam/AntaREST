@@ -485,6 +485,7 @@
     "studies.exportOutput": "Exporter une sortie",
     "studies.exportOutputFilter": "Exporter une sortie filtrée",
     "studies.selectOutput": "Selectionnez une sortie",
+    "studies.variant": "Variante",
     "variants.createNewVariant": "Créer une nouvelle variante",
     "variants.newVariant": "Nouvelle variante",
     "variants.error.variantCreation": "Erreur lors de la création du variant",

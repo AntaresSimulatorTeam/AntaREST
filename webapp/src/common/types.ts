@@ -31,7 +31,10 @@ export interface StudyMetadataOwner {
   name: string;
 }
 
-export type StudyType = "variantstudy" | "rawstudy";
+export enum StudyType {
+  VARIANT = "variantstudy",
+  RAW = "rawstudy",
+}
 
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;

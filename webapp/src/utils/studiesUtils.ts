@@ -1,7 +1,7 @@
 import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { StudyMetadata } from "../common/types";
+import { StudyMetadata, StudyType } from "../common/types";
 import { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
 
 ////////////////////////////////////////////////////////////////
@@ -105,6 +105,12 @@ const archivedPredicate = R.curry(
   }
 );
 
+const variantPredicate = R.curry(
+  (variant: StudyFilters["variant"], study: StudyMetadata) => {
+    return variant ? study.type === StudyType.VARIANT : true;
+  }
+);
+
 ////////////////////////////////////////////////////////////////
 // Filter
 ////////////////////////////////////////////////////////////////
@@ -122,6 +128,7 @@ export function filterStudies(
     groupsPredicate(filters.groups),
     managedPredicate(filters.managed),
     archivedPredicate(filters.archived),
+    variantPredicate(filters.variant),
   ];
   return R.filter(R.allPass(predicates), studies);
 }
