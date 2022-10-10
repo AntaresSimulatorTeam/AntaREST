@@ -4,6 +4,7 @@ CURDIR=$(cd `dirname $0` && pwd)
 PROJECT_DIR=`dirname $CURDIR`
 
 VERSION=$1
+echo "Test affichate version $VERSION"
 
 cd $PROJECT_DIR
 

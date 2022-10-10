@@ -21,10 +21,12 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - name: Update package version
-        run: bash ./update_version.sh
+        run: |
+          bash ./update_version.sh
+          echo "Test affichate version $VERSION"
         working-directory: scripts
       - name: update package version on 2-deploy.md
-        run: sed -E -i 's/v[0-7].[0-9].[0-9]/v${{matrix.version}}/g' 2-DEPLOY.md   
+        run: sed -E -i 's/v[0-7].[0-9].[0-9]/v${{matrix.version}}/g' ../../docs/install/2-DEPLOY.md   
       - name: update changelog docs files
         run: |
           bash ./../../scripts/generate-changelogdocs.sh > ../../docs/CHANGELOG.md
