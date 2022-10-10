@@ -189,9 +189,12 @@ function SettingsForm(props: PropType) {
             type="number"
             label={t("xpansion.timeLimit")}
             variant="filled"
-            value={(currentSettings.timelimit || 1e12) / 3600}
+            value={Math.round((currentSettings.timelimit || 1e12) / 3600)}
             onChange={(e) =>
-              handleChange("timelimit", parseFloat(e.target.value) * 3600)
+              handleChange(
+                "timelimit",
+                Math.round(parseFloat(e.target.value) * 3600)
+              )
             }
             sx={{ mb: 1 }}
           />

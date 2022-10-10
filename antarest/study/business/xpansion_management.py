@@ -88,7 +88,7 @@ class XpansionSettingsDTO(BaseModel):
     )
     relative_gap: Optional[float] = None
     solver: Optional[Solver] = None
-    timelimit: Optional[float] = 1e12
+    timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
     sensitivity_config: Optional[XpansionSensitivitySettingsDTO] = None
 
