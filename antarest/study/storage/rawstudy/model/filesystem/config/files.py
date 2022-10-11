@@ -244,8 +244,10 @@ class ConfigPathBuilder:
             if path.suffix == ".zip":
                 zf = ZipFile(path, "r")
                 error = str("checkIntegrity.txt") not in zf.namelist()
+                xpansion = str("lp/lp_namer.log") in zf.namelist()
             else:
                 error = not (path / "checkIntegrity.txt").exists()
+                xpansion = (path / "lp" / "lp_namer.log").exists()
             (
                 nbyears,
                 by_year,
@@ -262,6 +264,7 @@ class ConfigPathBuilder:
                 error=error,
                 playlist=playlist,
                 archived=path.suffix == ".zip",
+                xpansion=xpansion,
             )
         except Exception as e:
             logger.warning(

@@ -1,4 +1,4 @@
-from typing import Optional, List, cast
+from typing import Optional, List, cast, Dict
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -40,6 +40,7 @@ class FileStudyHelpers:
         playlist: List[int],
         reverse: bool = False,
         active: bool = True,
+        weights: Optional[Dict[int, int]] = None,
     ) -> None:
         playlist_without_offset = [year - 1 for year in playlist]
         config = FileStudyHelpers.get_config(study)

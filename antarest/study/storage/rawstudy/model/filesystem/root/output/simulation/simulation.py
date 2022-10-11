@@ -1,3 +1,5 @@
+from functools import reduce
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Simulation,
@@ -26,6 +28,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
     OutputSimulationTsNumbers,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.lp import (
+    Lp,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.sensitivity import (
+    Sensitivity,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.xpansion import (
+    Xpansion,
 )
 
 
@@ -92,6 +103,15 @@ class OutputSimulation(FolderNode):
                     self.context,
                     self.config.next_file("adequacy"),
                     self.simulation,
+                )
+
+            if self.simulation.xpansion:
+                children["lp"] = Lp(self.context, self.config.next_file("lp"))
+                children["expansion"] = Xpansion(
+                    self.context, self.config.next_file("expansion")
+                )
+                children["sensitivity"] = Sensitivity(
+                    self.context, self.config.next_file("sensitivity")
                 )
 
         return children
