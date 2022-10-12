@@ -15,9 +15,10 @@ jobs:
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Install wget for windows
         if: matrix.os == 'windows-latest'
         run: choco install wget --no-progress
@@ -73,6 +74,12 @@ jobs:
       - name: Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
+      - name: install changelog requirements
+        run : npm install -g auto-changelog
+      - name: generate changelog file
+        run: |
+          auto-changelog -l false --hide-empty-releases
+          cp CHANGELOG.md dist/CHANGELOG.md
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:
