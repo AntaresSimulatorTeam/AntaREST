@@ -1,6 +1,8 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import { updateStudyData } from "../../../../../../redux/ducks/studyDataSynthesis";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import Fields from "./Fields";
@@ -12,6 +14,7 @@ import {
 
 function AdvancedParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const dispatch = useAppDispatch();
 
   const res = usePromiseWithSnackbarError(
     () => getAdvancedParamsFormFields(study.id),
@@ -30,7 +33,16 @@ function AdvancedParameters() {
       ).join(", ");
     }
 
-    return setAdvancedParamsFormFields(study.id, values);
+    return setAdvancedParamsFormFields(study.id, values).then(() => {
+      if (values.renewableGenerationModelling) {
+        dispatch(
+          updateStudyData({
+            id: study.id,
+            changes: { enr_modelling: values.renewableGenerationModelling },
+          })
+        );
+      }
+    });
   };
 
   ////////////////////////////////////////////////////////////////
