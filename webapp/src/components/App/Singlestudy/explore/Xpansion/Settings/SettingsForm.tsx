@@ -50,6 +50,7 @@ function SettingsForm(props: PropType) {
     setCurrentSettings((prevSettings) => ({
       ...prevSettings,
       [objectKey]: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(prevSettings[objectKey] as Record<string, any>),
         [key]: value,
       },
