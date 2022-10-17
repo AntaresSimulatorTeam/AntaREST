@@ -210,6 +210,10 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             if names[0] == "*"
             else names
         )
+
+        if len(names) == 0:
+            return [], sub_url
+
         if names[0] not in children:
             raise ChildNotFoundError(
                 f"{names[0]} not a child of {self.__class__.__name__}"
