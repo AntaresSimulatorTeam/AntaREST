@@ -1,5 +1,6 @@
 import configparser
 
+from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -90,48 +91,56 @@ class TestCreateLink:
             study_path / "input" / "links" / area1_id / f"{area2_id}.txt.link"
         ).exists()
 
-        link = configparser.ConfigParser()
-        link.read(study_path / "input" / "links" / area1_id / "properties.ini")
+        link = IniReader()
+        link_data = link.read(
+            study_path / "input" / "links" / area1_id / "properties.ini"
+        )
         assert (
-            str(link[area2_id]["hurdles-cost"])
+            link_data[area2_id]["hurdles-cost"]
             == LinkProperties.HURDLES_COST.value
         )
         assert (
-            str(link[area2_id]["loop-flow"]) == LinkProperties.LOOP_FLOW.value
+            link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW.value
         )
         assert (
-            str(link[area2_id]["use-phase-shifter"])
+            link_data[area2_id]["use-phase-shifter"]
             == LinkProperties.USE_PHASE_SHIFTER.value
         )
         assert (
-            str(link[area2_id]["transmission-capacities"])
+            str(link_data[area2_id]["transmission-capacities"])
             == LinkProperties.TRANSMISSION_CAPACITIES.value
         )
         assert (
-            str(link[area2_id]["asset-type"])
+            str(link_data[area2_id]["asset-type"])
             == LinkProperties.ASSET_TYPE.value
         )
         assert (
-            str(link[area2_id]["link-style"])
+            str(link_data[area2_id]["link-style"])
             == LinkProperties.LINK_STYLE.value
         )
         assert (
-            int(link[area2_id]["link-width"])
+            int(link_data[area2_id]["link-width"])
             == LinkProperties.LINK_WIDTH.value
         )
-        assert int(link[area2_id]["colorr"]) == LinkProperties.COLORR.value
-        assert int(link[area2_id]["colorg"]) == LinkProperties.COLORG.value
-        assert int(link[area2_id]["colorb"]) == LinkProperties.COLORB.value
         assert (
-            str(link[area2_id]["display-comments"])
+            int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR.value
+        )
+        assert (
+            int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG.value
+        )
+        assert (
+            int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB.value
+        )
+        assert (
+            link_data[area2_id]["display-comments"]
             == LinkProperties.DISPLAY_COMMENTS.value
         )
         assert (
-            str(link[area2_id]["filter-synthesis"])
+            str(link_data[area2_id]["filter-synthesis"])
             == FilteringOptions.FILTER_SYNTHESIS.value
         )
         assert (
-            str(link[area2_id]["filter-year-by-year"])
+            str(link_data[area2_id]["filter-year-by-year"])
             == FilteringOptions.FILTER_YEAR_BY_YEAR.value
         )
 

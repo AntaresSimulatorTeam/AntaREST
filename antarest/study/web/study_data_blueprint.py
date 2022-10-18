@@ -32,10 +32,13 @@ from antarest.study.business.config_management import (
 )
 from antarest.study.business.link_management import (
     LinkInfoDTO,
-    AllCLustersAndLinks,
 )
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
+)
+from antarest.study.business.table_mode_management import (
+    TableTemplateType,
+    ColumnModelTypes,
 )
 from antarest.study.business.timeseries_config_management import (
     TSFormFields,
@@ -418,6 +421,57 @@ def create_study_data_routes(
         )
 
         study_service.ts_config_manager.set_field_values(study, field_values)
+
+    @bp.get(
+        path="/studies/{uuid}/table_mode",
+        tags=[APITag.study_data],
+        summary="Get table data for table form",
+        # `Any` because `Union[AreaColumns, LinkColumns]` not working
+        response_model=Dict[str, Dict[str, Any]],
+        response_model_exclude_none=True,
+    )
+    def get_table_data(
+        uuid: str,
+        table_type: TableTemplateType,
+        columns: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[str, ColumnModelTypes]:
+        logger.info(
+            f"Getting template table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.table_mode_manager.get_table_data(
+            study, table_type, columns.split(",")
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/table_mode",
+        tags=[APITag.study_data],
+        summary="Set table data with values from table form",
+    )
+    def set_table_data(
+        uuid: str,
+        table_type: TableTemplateType,
+        data: Dict[str, ColumnModelTypes],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.table_mode_manager.set_table_data(
+            study, table_type, data
+        )
 
     @bp.post(
         "/studies/_update_version",
