@@ -2,6 +2,7 @@ import { HTMLInputTypeAttribute } from "react";
 
 export interface FakeHTMLInputElement {
   value: unknown;
+  checked?: boolean;
   type?: HTMLInputTypeAttribute;
   name?: string;
 }
