@@ -1,6 +1,7 @@
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
 import { UserInfo } from "../../common/types";
+import { TableTemplate } from "../../components/App/Singlestudy/explore/Modelization/TableMode/utils";
 import {
   StudiesSortConf,
   StudiesState,
@@ -14,8 +15,10 @@ export enum StorageKey {
   StudiesFavorites = "studies.favorites",
   StudiesFilters = "studies.filters",
   StudiesSort = "studies.sort",
+  StudiesModelTableModeTemplates = "studies.model.tableMode.templates",
 }
 
+const APP_NAME = packages.name;
 const SHARED_KEYS = [StorageKey.Version, StorageKey.AuthUser];
 
 interface TypeFromKey {
@@ -24,18 +27,19 @@ interface TypeFromKey {
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
+  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
 }
 
 function formalizeKey(key: StorageKey): string {
   if (SHARED_KEYS.includes(key)) {
-    return `${packages.name}.${key}`;
+    return `${APP_NAME}.${key}`;
   }
   const authUser = getItem(StorageKey.AuthUser);
   // Authentication may not be required
   if (authUser === null) {
-    return `${packages.name}.${key}`;
+    return `${APP_NAME}.${key}`;
   }
-  return `${packages.name}.${authUser.id}.${key}`;
+  return `${APP_NAME}.${authUser.id}.${key}`;
 }
 
 function getItem<T extends StorageKey>(key: T): TypeFromKey[T] | null {
