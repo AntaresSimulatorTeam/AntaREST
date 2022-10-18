@@ -73,7 +73,7 @@ function CreateVariantModal(props: Props) {
       config={{ defaultValues }}
     >
       {({ control }) => (
-        <Fieldset fullFieldWith>
+        <Fieldset fullFieldWidth>
           <StringFE
             label={t("variants.newVariant")}
             name="name"
