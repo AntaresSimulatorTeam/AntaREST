@@ -1,8 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import _ from "lodash";
-import HotTable, { HotColumn } from "@handsontable/react";
-import { registerAllModules } from "handsontable/registry";
-// eslint-disable-next-line import/no-unresolved
+import HotTable from "@handsontable/react";
 import { CellChange } from "handsontable/common";
 import {
   MatrixIndex,
@@ -12,9 +10,10 @@ import {
 } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
-import { Root, StyledHotTable } from "./style";
+import { Root } from "./style";
 import "./style.css";
 import { computeStats, createDateFromIndex, slice } from "./utils";
+import Handsontable from "../Handsontable";
 
 interface PropTypes {
   matrix: MatrixType;
@@ -29,9 +28,6 @@ interface PropTypes {
 
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
-
-// TODO https://handsontable.com/docs/react-modules/#step-1-import-the-handsontable-base-module
-registerAllModules();
 
 function EditableMatrix(props: PropTypes) {
   const {
@@ -142,10 +138,9 @@ function EditableMatrix(props: PropTypes) {
   return (
     <Root>
       {toggleView ? (
-        <StyledHotTable
+        <Handsontable
           ref={hotTableComponent}
           data={grid}
-          licenseKey="non-commercial-and-evaluation"
           width="100%"
           height="100%"
           stretchH="all"
@@ -160,12 +155,9 @@ function EditableMatrix(props: PropTypes) {
               ? [220].concat(_.fill(Array(formatedColumns.length), 100))
               : _.fill(Array(formatedColumns.length), 100)
           }
+          columns={formatedColumns}
           manualColumnResize
-        >
-          {formatedColumns.map((column) => (
-            <HotColumn key={column.title} settings={column} />
-          ))}
-        </StyledHotTable>
+        />
       ) : (
         <MatrixGraphView matrix={matrix} />
       )}

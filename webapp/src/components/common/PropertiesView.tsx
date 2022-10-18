@@ -38,8 +38,9 @@ function PropertiesView(props: PropsType) {
           color="primary"
           aria-label="add"
           sx={{ alignSelf: "flex-start", mb: 2, ml: 1 }}
+          onClick={onAdd}
         >
-          <AddIcon onClick={onAdd} />
+          <AddIcon />
         </Fab>
       )}
     </Box>

@@ -43,6 +43,7 @@ function SelectFE(props: SelectFEProps) {
     error,
     label,
     className,
+    size,
     sx,
     fullWidth,
     ...selectProps
@@ -62,6 +63,7 @@ function SelectFE(props: SelectFEProps) {
       variant={variant}
       hiddenLabel={!label}
       error={error}
+      size={size}
       sx={sx}
       fullWidth={fullWidth}
     >

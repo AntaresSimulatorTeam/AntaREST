@@ -71,6 +71,7 @@ from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
 )
+from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -193,6 +194,7 @@ class StudyService:
             self.storage_service
         )
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
+        self.table_mode_manager = TableModeManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(

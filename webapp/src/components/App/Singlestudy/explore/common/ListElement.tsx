@@ -1,16 +1,67 @@
-import { Box, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import {
+  Box,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  PopoverPosition,
+} from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
+import { useState } from "react";
 
 interface PropsType<T> {
   list: Array<T>;
   currentElement?: string;
   setSelectedItem: (item: T, index: number) => void;
+  contextMenuContent?: (props: {
+    element: T;
+    close: VoidFunction;
+  }) => React.ReactElement;
 }
 
 function ListElement<T extends { name: string; label?: string }>(
   props: PropsType<T>
 ) {
-  const { list, currentElement, setSelectedItem } = props;
+  const {
+    list,
+    currentElement,
+    setSelectedItem,
+    contextMenuContent: ContextMenuContent,
+  } = props;
+
+  const [contextMenuPosition, setContextMenuPosition] =
+    useState<PopoverPosition | null>(null);
+  const [elementForContext, setElementForContext] = useState<T>();
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleContextMenu = (element: T) => (event: React.MouseEvent) => {
+    event.preventDefault();
+
+    if (!ContextMenuContent) {
+      return;
+    }
+
+    setElementForContext(element);
+
+    setContextMenuPosition(
+      contextMenuPosition === null
+        ? {
+            left: event.clientX + 2,
+            top: event.clientY - 6,
+          }
+        : // Repeated context menu when it is already open closes it with Chrome 84 on Ubuntu
+          // Other native context menus might behave different.
+          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+          null
+    );
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
@@ -29,6 +80,7 @@ function ListElement<T extends { name: string; label?: string }>(
             display: "flex",
             justifyContent: "space-between",
           }}
+          onContextMenu={handleContextMenu(element)}
         >
           <ListItemText
             sx={{ "&> span": { textOverflow: "ellipsis", overflow: "hidden" } }}
@@ -45,6 +97,21 @@ function ListElement<T extends { name: string; label?: string }>(
           >
             <ArrowRightOutlinedIcon color="primary" />
           </ListItemIcon>
+          {ContextMenuContent && elementForContext && (
+            <Menu
+              open={contextMenuPosition !== null}
+              onClose={() => setContextMenuPosition(null)}
+              anchorReference="anchorPosition"
+              anchorPosition={
+                contextMenuPosition !== null ? contextMenuPosition : undefined
+              }
+            >
+              <ContextMenuContent
+                element={elementForContext}
+                close={() => setContextMenuPosition(null)}
+              />
+            </Menu>
+          )}
         </ListItemButton>
       ))}
     </Box>

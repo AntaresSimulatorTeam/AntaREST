@@ -39,7 +39,7 @@ export function getLinkPath(area1: string, area2: string): LinkPath {
     hurdleCost: `${pathPrefix}/hurdles-cost`,
     loopFlows: `${pathPrefix}/loop-flow`,
     pst: `${pathPrefix}/use-phase-shifter`,
-    type: pathPrefix,
+    type: pathPrefix, // TODO `${pathPrefix}/asset-type`? (cf. create_link.py)
     transmissionCapa: `${pathPrefix}/transmission-capacities`,
     filterSynthesis: `${pathPrefix}/filter-synthesis`,
     filterByYear: `${pathPrefix}/filter-year-by-year`,

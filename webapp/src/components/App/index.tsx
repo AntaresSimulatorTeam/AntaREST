@@ -41,6 +41,7 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
+import TableMode from "./Singlestudy/explore/Modelization/TableMode";
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
                             element={<BindingConstraints />}
                           />
                           <Route path="debug" element={<DebugView />} />
+                          <Route path="tablemode" element={<TableMode />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>

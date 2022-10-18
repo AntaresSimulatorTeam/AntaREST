@@ -99,6 +99,13 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
     >
       <Form
         {...formProps}
+        sx={{
+          ".Form__Loader": {
+            position: "absolute",
+            top: "10px",
+            right: "3px",
+          },
+        }}
         id={formId}
         onStateChange={handleFormStateChange}
         hideSubmitButton

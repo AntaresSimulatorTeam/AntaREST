@@ -8,7 +8,7 @@ export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
 
-const secondaryMainColor = "#00B2FF";
+export const SECONDARY_MAIN_COLOR = "#00B2FF";
 export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
 export const scrollbarStyle = {
@@ -20,7 +20,7 @@ export const scrollbarStyle = {
     boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
   },
   "&::-webkit-scrollbar-thumb": {
-    backgroundColor: secondaryMainColor,
+    backgroundColor: SECONDARY_MAIN_COLOR,
   },
 };
 
@@ -164,11 +164,10 @@ const theme = createTheme({
     },
     secondary: {
       dark: "#0092D0",
-      main: secondaryMainColor,
+      main: SECONDARY_MAIN_COLOR,
       light: "#77CFF5",
       contrast: "rgba(30, 30, 30, 0.87)",
-      containedHoverBackground:
-        "linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), #00B2FF",
+      containedHoverBackground: `linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), ${SECONDARY_MAIN_COLOR}`,
       outlinedHoverBackground: "rgba(0, 178, 255, 0.08)",
       outlinedRestingBackground: "rgba(0, 178, 255, 0.5)",
     },
