@@ -571,7 +571,10 @@ class CommandExtractor(ICommandExtractor):
         config = study_tree.get(["settings", "generaldata"])
         playlist = ConfigPathBuilder.get_playlist(config)
         return UpdatePlaylist(
-            items=playlist,
+            items=playlist.keys() if playlist else None,
+            weights={year for year, weight in playlist.items() if weight != 1}
+            if playlist
+            else None,
             active=True if playlist and len(playlist) > 0 else False,
             reverse=False,
             command_context=self.command_context,

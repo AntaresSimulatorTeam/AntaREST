@@ -186,6 +186,34 @@ def test_main(app: FastAPI):
     )
     assert res.status_code == 200
 
+    # playlist
+    res = client.post(
+        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/nbyears",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json=5,
+    )
+    assert res.status_code == 204
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/playlist",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json={"playlist": [1, 2], "weights": {1: 8.0, 3: 9.0}},
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/config/playlist",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {"1": 8.0, "2": 1.0}
+
     # config / thematic trimming
     res = client.get(
         f"/v1/studies/{study_id}/config/thematic_trimming",

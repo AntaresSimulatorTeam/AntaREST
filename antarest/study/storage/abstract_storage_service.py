@@ -212,7 +212,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                         seedsMersenneTwister=file_metadata[
                             "seeds - Mersenne Twister"
                         ],
-                        playlist=ConfigPathBuilder.get_playlist(file_metadata),
+                        playlist=[
+                            year
+                            for year in (
+                                ConfigPathBuilder.get_playlist(file_metadata)
+                                or {}
+                            ).keys()
+                        ],
                     )
 
                     results.append(

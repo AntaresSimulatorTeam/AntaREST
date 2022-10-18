@@ -294,7 +294,7 @@ def create_study_data_routes(
         "/studies/{uuid}/config/playlist",
         tags=[APITag.study_data],
         summary="Get playlist config",
-        response_model=List[int],
+        response_model=Dict[int, float],
     )
     def get_playlist_config(
         uuid: str,
@@ -320,6 +320,7 @@ def create_study_data_routes(
         active: bool = True,
         reverse: bool = False,
         playlist: Optional[List[int]] = Body(default=None),
+        weights: Optional[Dict[int, int]] = Body(default=None),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -331,7 +332,7 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
         study_service.config_manager.set_playlist(
-            study, playlist, reverse, active
+            study, playlist, weights, reverse, active
         )
 
     @bp.get(
