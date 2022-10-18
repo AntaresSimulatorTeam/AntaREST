@@ -177,7 +177,7 @@ function StudyMatrixView(props: PropTypes) {
         </Header>
         <Divider sx={{ width: "100%", mt: 2, mb: 3 }} />
         {!loaded && <SimpleLoader />}
-        {loaded && data && data.columns?.length > 1 ? (
+        {loaded && data && data.columns?.length >= 1 ? (
           <EditableMatrix
             matrix={data}
             matrixTime
