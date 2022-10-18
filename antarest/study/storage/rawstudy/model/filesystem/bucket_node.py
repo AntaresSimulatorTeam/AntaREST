@@ -56,6 +56,14 @@ class BucketNode(FolderNode):
                 return registered_file
         return None
 
+    def _get_registered_file_from_filename(
+        self, filename: str
+    ) -> Optional[RegisteredFile]:
+        for registered_file in self.registered_files:
+            if registered_file.filename == filename:
+                return registered_file
+        return None
+
     def save(
         self,
         data: SUB_JSON,
@@ -107,11 +115,12 @@ class BucketNode(FolderNode):
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            key = item.name.split(".")[0]
-            registered_file = self._get_registered_file(key)
+            registered_file = self._get_registered_file_from_filename(
+                item.name
+            )
             if registered_file:
                 node = registered_file.node or self.default_file_node
-                children[key] = node(
+                children[registered_file.key] = node(
                     self.context, self.config.next_file(item.name)
                 )
             elif item.is_file():
