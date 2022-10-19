@@ -14,13 +14,14 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_zip, suppress_exception
 from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     Study,
     Patch,
     StudyAdditionalData,
+    PatchStudy,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -136,6 +137,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             study = self.study_factory.create_from_fs(path, study_id="")
             raw_meta = study.tree.get(["study", "antares"])
             version_as_string = str(raw_meta["version"])
+            metadata_changed = False
             if (
                 metadata.name != raw_meta["caption"]
                 or metadata.version != version_as_string
@@ -145,8 +147,29 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 )
                 metadata.name = raw_meta["caption"]
                 metadata.version = version_as_string
-                return True
-            return False
+                metadata_changed = True
+
+            additional_data = metadata.additional_data or StudyAdditionalData()
+            patch = Patch.parse_raw(additional_data.patch or "{}")
+            patch_study = patch.study or PatchStudy()
+            if suppress_exception(
+                lambda: study.tree.get(["user", "expansion"]), lambda e: None
+            ):
+                if "xpansion" not in patch_study.tags:
+                    patch_study.tags = [
+                        tag for tag in patch_study.tags if tag != "xpansion"
+                    ] + ["xpansion"]
+                    metadata_changed = True
+            else:
+                if "xpansion" in patch_study.tags:
+                    patch_study.tags = [
+                        tag for tag in patch_study.tags if tag != "xpansion"
+                    ]
+                    metadata_changed = True
+            patch.study = patch_study
+            additional_data.patch = patch
+            metadata.additional_data = additional_data
+            return metadata_changed
         except Exception as e:
             logger.error(
                 "Failed to update study %s name and version from raw metadata!",

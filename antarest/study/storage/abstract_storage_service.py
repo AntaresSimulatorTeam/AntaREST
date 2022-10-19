@@ -17,6 +17,7 @@ from antarest.core.utils.utils import (
     assert_this,
     zip_dir,
     unzip,
+    suppress_exception,
 )
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -328,9 +329,15 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             url=["settings", "generaldata", "general", "horizon"]
         )
         author = file_study.tree.get(url=["study", "antares", "author"])
+        tags = []
+        if suppress_exception(
+            lambda: file_study.tree.get(["user", "expansion"]), lambda e: None
+        ):
+            tags.append("xpansion")
+
         patch = self.patch_service.get_from_filestudy(file_study)
         study_additional_data = StudyAdditionalData(
-            horizon=horizon, author=author, patch=patch.json()
+            horizon=horizon, author=author, patch=patch.json(), tags=tags
         )
         return study_additional_data
 

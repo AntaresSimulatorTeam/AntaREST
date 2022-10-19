@@ -12,7 +12,7 @@ from pydantic import Field, BaseModel, validator
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
 from antarest.core.utils.utils import suppress_exception
-from antarest.study.model import Study
+from antarest.study.model import Study, StudyMetadataPatchDTO
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
     BucketNode,
 )
@@ -210,8 +210,11 @@ class XpansionManager:
         logger.info(
             f"Initiating xpansion configuration for study '{study.id}'"
         )
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
+        storage_service = self.study_storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        metadata = storage_service.get_study_information(study)
+        storage_service.patch_update_study_metadata(
+            study, StudyMetadataPatchDTO(tags=metadata.tags + ["xpansion"])
         )
         try:
             file_study.tree.get(["user", "expansion"])
@@ -277,10 +280,16 @@ class XpansionManager:
 
     def delete_xpansion_configuration(self, study: Study) -> None:
         logger.info(f"Deleting xpansion configuration for study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
+        storage_service = self.study_storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
         file_study.tree.delete(["user", "expansion"])
+        metadata = storage_service.get_study_information(study)
+        storage_service.patch_update_study_metadata(
+            study,
+            StudyMetadataPatchDTO(
+                tags=[tag for tag in metadata.tags if tag != "xpansion"]
+            ),
+        )
 
     def get_xpansion_settings(self, study: Study) -> XpansionSettingsDTO:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
