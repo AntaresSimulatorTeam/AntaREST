@@ -68,6 +68,10 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.matrix_management import MatrixManager
 from antarest.study.business.optimization_management import OptimizationManager
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsManager,
+)
+from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -186,7 +190,11 @@ class StudyService:
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.optimization_manager = OptimizationManager(self.storage_service)
+        self.advanced_parameters_manager = AdvancedParamsManager(
+            self.storage_service
+        )
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
+        self.table_mode_manager = TableModeManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(
@@ -2139,72 +2147,6 @@ class StudyService:
         return self.xpansion_manager.update_xpansion_constraints_settings(
             study, constraints_file_name
         )
-
-    def add_xpansion_constraints(
-        self,
-        uuid: str,
-        file: UploadFile,
-        params: RequestParameters,
-    ) -> None:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_xpansion_constraints(study, [file])
-
-    def delete_xpansion_constraints(
-        self, uuid: str, filename: str, params: RequestParameters
-    ) -> None:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_xpansion_constraints(
-            study, filename
-        )
-
-    def get_single_xpansion_constraints(
-        self, uuid: str, filename: str, params: RequestParameters
-    ) -> bytes:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_single_xpansion_constraints(
-            study, filename
-        )
-
-    def get_all_xpansion_constraints(
-        self, uuid: str, params: RequestParameters
-    ) -> List[str]:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_all_xpansion_constraints(study)
-
-    def add_capa(
-        self, uuid: str, file: UploadFile, params: RequestParameters
-    ) -> None:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_capa(study, [file])
-
-    def delete_capa(
-        self, uuid: str, filename: str, params: RequestParameters
-    ) -> None:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_capa(study, filename)
-
-    def get_single_capa(
-        self, uuid: str, filename: str, params: RequestParameters
-    ) -> JSON:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_single_capa(study, filename)
-
-    def get_all_capa(self, uuid: str, params: RequestParameters) -> List[str]:
-
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_all_capa(study)
 
     def update_matrix(
         self,

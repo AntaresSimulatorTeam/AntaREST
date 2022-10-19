@@ -1,8 +1,14 @@
+export interface XpansionSensitivitySettings {
+  epsilon: number;
+  capex: boolean;
+  projection: string[];
+}
+
 export interface XpansionSettings {
   uc_type: string;
   master: string;
   optimality_gap: number;
-  max_iteration?: number;
+  max_iteration?: number | string;
   "yearly-weights": string;
   "additional-constraints"?: string;
   "relaxed-optimality-gap"?: number | string;
@@ -14,6 +20,7 @@ export interface XpansionSettings {
   solver?: string;
   log_level?: number;
   timelimit?: number;
+  sensitivity_config?: XpansionSensitivitySettings;
 }
 
 export interface XpansionCandidate {
@@ -26,6 +33,10 @@ export interface XpansionCandidate {
   "already-installed-capacity"?: number;
   "link-profile"?: string;
   "already-installed-link-profile"?: string;
+  "direct-link-profile"?: string;
+  "direct-already-installed-link-profile"?: string;
+  "indirect-link-profile"?: string;
+  "indirect-already-installed-link-profile"?: string;
 }
 
 export enum XpansionRenderView {
@@ -33,6 +44,12 @@ export enum XpansionRenderView {
   settings = "settings",
   files = "files",
   capacities = "capacities",
+}
+
+export enum XpansionResourceType {
+  constraints = "constraints",
+  weights = "weights",
+  capacitites = "capacitites",
 }
 
 export default {};

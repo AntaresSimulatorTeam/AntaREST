@@ -33,6 +33,7 @@ export interface StudyFilters {
   strictFolder: boolean;
   managed: boolean;
   archived: boolean;
+  variant: boolean;
   versions: string[];
   users: Array<UserDTO["id"]>;
   groups: Array<GroupDTO["id"]>;
@@ -81,6 +82,7 @@ const initialState = studiesAdapter.getInitialState({
     strictFolder: false,
     managed: false,
     archived: false,
+    variant: false,
     versions: [],
     users: [],
     groups: [],

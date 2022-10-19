@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Box } from "@mui/material";
@@ -32,8 +31,12 @@ function Modelization() {
         label: t("study.debug"),
         path: `/studies/${study?.id}/explore/modelization/debug`,
       },
+      {
+        label: t("study.tableMode"),
+        path: `/studies/${study?.id}/explore/modelization/tablemode`,
+      },
     ],
-    [study]
+    [study?.id, t]
   );
 
   return (

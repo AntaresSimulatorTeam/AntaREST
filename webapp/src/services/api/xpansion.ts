@@ -141,7 +141,10 @@ export const addConstraints = async (
   uuid: string,
   file: File
 ): Promise<void> => {
-  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/constraints`, file);
+  await uploadFile(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints`,
+    file
+  );
 };
 
 export const deleteConstraints = async (
@@ -149,7 +152,7 @@ export const deleteConstraints = async (
   filename: string
 ): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/constraints/${encodeURIComponent(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints/${encodeURIComponent(
       filename
     )}`
   );
@@ -161,7 +164,7 @@ export const getConstraint = async (
   filename: string
 ): Promise<string> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/constraints/${filename}`
+    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints/${filename}`
   );
   return res.data;
 };
@@ -170,13 +173,52 @@ export const getAllConstraints = async (
   uuid: string
 ): Promise<Array<string>> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/constraints`
+    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints`
+  );
+  return res.data;
+};
+
+export const addWeight = async (uuid: string, file: File): Promise<void> => {
+  await uploadFile(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/weights`,
+    file
+  );
+};
+
+export const deleteWeight = async (
+  uuid: string,
+  filename: string
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/weights/${encodeURIComponent(
+      filename
+    )}`
+  );
+  return res.data;
+};
+
+export const getWeight = async (
+  uuid: string,
+  filename: string
+): Promise<string> => {
+  const res = await client.get(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/weights/${filename}`
+  );
+  return res.data;
+};
+
+export const getAllWeights = async (uuid: string): Promise<Array<string>> => {
+  const res = await client.get(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/weights`
   );
   return res.data;
 };
 
 export const addCapacity = async (uuid: string, file: File): Promise<void> => {
-  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/capacities`, file);
+  await uploadFile(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities`,
+    file
+  );
 };
 
 export const deleteCapacity = async (
@@ -184,7 +226,7 @@ export const deleteCapacity = async (
   filename: string
 ): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/capacities/${encodeURIComponent(
+    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${encodeURIComponent(
       filename
     )}`
   );
@@ -196,7 +238,7 @@ export const getCapacity = async (
   filename: string
 ): Promise<MatrixType> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/capacities/${filename}`
+    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${filename}`
   );
   return res.data;
 };
@@ -205,7 +247,7 @@ export const getAllCapacities = async (
   uuid: string
 ): Promise<Array<string>> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/capacities`
+    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities`
   );
   return res.data;
 };

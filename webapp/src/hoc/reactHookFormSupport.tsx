@@ -3,6 +3,7 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import React, { useMemo } from "react";
 import {
   Controller,
+  ControllerRenderProps,
   FieldPath,
   FieldPathValue,
   FieldValues,
@@ -12,6 +13,7 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { ControlPlus, RegisterOptionsPlus } from "../components/common/Form";
 import { getComponentDisplayName } from "../utils/reactUtils";
+import { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue>;
@@ -20,7 +22,7 @@ interface ReactHookFormSupport<TValue> {
 }
 
 // `...args: any` allows to be compatible with all field editors
-type EventHandler = (...args: any) => void;
+type EventHandler = (...args: any[]) => void;
 
 interface FieldEditorProps<TValue> {
   value?: TValue;
@@ -28,9 +30,13 @@ interface FieldEditorProps<TValue> {
   onChange?: EventHandler;
   onBlur?: EventHandler;
   name?: string;
+  disabled?: boolean;
+  // inputRef?: any;
+  // error?: boolean;
+  // helperText?: string;
 }
 
-type ReactHookFormSupportProps<
+export type ReactHookFormSupportProps<
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   TContext = any
@@ -42,7 +48,6 @@ type ReactHookFormSupportProps<
         // cf. UseControllerProps#rules
         | "valueAsNumber"
         | "valueAsDate"
-        | "disabled"
         // Not necessary
         | "onChange"
         | "onBlur"
@@ -76,8 +81,54 @@ function reactHookFormSupport<TValue>(
       const {
         validate,
         setValueAs: setValueAsFromRules = R.identity,
+        disabled,
         ...restRules
       } = rules;
+
+      ////////////////////////////////////////////////////////////////
+      // Event Handlers
+      ////////////////////////////////////////////////////////////////
+
+      const handleChange =
+        (internalOnChange: ControllerRenderProps["onChange"]) =>
+        (event: FakeChangeEventHandler) => {
+          if (disabled) {
+            return;
+          }
+
+          // Called here instead of Controller's rules, to keep original event
+          feProps.onChange?.(event);
+
+          // https://github.com/react-hook-form/react-hook-form/discussions/8068#discussioncomment-2415789
+          // Data send back to hook form
+          internalOnChange(
+            setValueAsFromRules(
+              setValueAs(
+                event.target.type === "checkbox"
+                  ? event.target.checked
+                  : event.target.value
+              )
+            )
+          );
+        };
+
+      const handleBlur =
+        (internalOnBlur: ControllerRenderProps["onBlur"]) =>
+        (event: FakeBlurEventHandler) => {
+          if (disabled) {
+            return;
+          }
+
+          // Called here instead of Controller's rules, to keep original event
+          feProps.onBlur?.(event);
+
+          // Report input has been interacted (focus and blur)
+          internalOnBlur();
+        };
+
+      ////////////////////////////////////////////////////////////////
+      // Utils
+      ////////////////////////////////////////////////////////////////
 
       const validateWrapper = useMemo<
         RegisterOptionsPlus<TFieldValues, TFieldName>["validate"]
@@ -99,6 +150,10 @@ function reactHookFormSupport<TValue>(
         return validate;
       }, [validate]);
 
+      ////////////////////////////////////////////////////////////////
+      // JSX
+      ////////////////////////////////////////////////////////////////
+
       if (control && feProps.name) {
         return (
           <Controller
@@ -106,10 +161,7 @@ function reactHookFormSupport<TValue>(
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
             defaultValue={(feProps.defaultValue ?? options.defaultValue) as any}
-            rules={{
-              ...restRules,
-              validate: validateWrapper,
-            }}
+            rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
             render={({
               field: { ref, onChange, onBlur, ...fieldProps },
@@ -118,32 +170,12 @@ function reactHookFormSupport<TValue>(
               <FieldEditor
                 {...(feProps as TProps)}
                 {...fieldProps}
-                onChange={(event) => {
-                  // Called here instead of Controller's rules, to keep original event
-                  feProps.onChange?.(event);
-
-                  // https://github.com/react-hook-form/react-hook-form/discussions/8068#discussioncomment-2415789
-                  // Data send back to hook form
-                  onChange(
-                    setValueAsFromRules(
-                      setValueAs(
-                        event.target.type === "checkbox"
-                          ? event.target.checked
-                          : event.target.value
-                      )
-                    )
-                  );
-                }}
-                onBlur={(event) => {
-                  // Called here instead of Controller's rules, to keep original event
-                  feProps.onBlur?.(event);
-
-                  // Report input has been interacted (focus and blur)
-                  onBlur();
-                }}
+                onChange={handleChange(onChange)}
+                onBlur={handleBlur(onBlur)}
                 inputRef={ref}
                 error={!!error}
                 helperText={error?.message}
+                disabled={disabled}
               />
             )}
           />

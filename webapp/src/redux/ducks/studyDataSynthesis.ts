@@ -50,6 +50,11 @@ export const setCurrentBindingConst = createAction<
   NonNullable<StudyDataState["currentBindingConst"]>
 >(n("SET_CURRENT_BINDING_CONST"));
 
+export const updateStudyData = createAction<{
+  id: FileStudyTreeConfigDTO["study_id"];
+  changes: Partial<Omit<FileStudyTreeConfigDTO, "study_id">>;
+}>(n("SET_STUDY_DATA"));
+
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
@@ -148,6 +153,7 @@ export default createReducer(initialState, (builder) => {
   builder
     .addCase(createStudyData.fulfilled, studyDataAdapter.addOne)
     .addCase(setStudyData.fulfilled, studyDataAdapter.setOne)
+    .addCase(updateStudyData, studyDataAdapter.updateOne)
     .addCase(deleteStudyData.fulfilled, studyDataAdapter.removeOne)
     .addCase(setCurrentArea, (draftState, action) => {
       draftState.currentArea = action.payload;

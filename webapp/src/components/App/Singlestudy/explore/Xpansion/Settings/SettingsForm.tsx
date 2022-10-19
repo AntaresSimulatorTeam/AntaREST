@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionSettings } from "../types";
+import { XpansionResourceType, XpansionSettings } from "../types";
 import {
   Fields,
   SelectFields,
@@ -10,17 +10,23 @@ import {
   StyledVisibilityIcon,
 } from "../share/styles";
 import SelectSingle from "../../../../../common/SelectSingle";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   settings: XpansionSettings;
   constraints: Array<string>;
+  weights: Array<string>;
+  candidates: Array<string>;
   updateSettings: (value: XpansionSettings) => Promise<void>;
-  onRead: (filename: string) => Promise<void>;
+  onRead: (resourceType: string, filename: string) => Promise<void>;
 }
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, updateSettings, onRead } = props;
+  const { settings, constraints, weights, candidates, updateSettings, onRead } =
+    props;
   const [currentSettings, setCurrentSettings] =
     useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
@@ -33,6 +39,22 @@ function SettingsForm(props: PropType) {
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
     setCurrentSettings({ ...currentSettings, [key]: value });
+  };
+
+  const handleObjectChange = (
+    objectKey: keyof XpansionSettings,
+    key: string,
+    value: string | number | boolean | string[]
+  ) => {
+    setSaveAllowed(true);
+    setCurrentSettings((prevSettings) => ({
+      ...prevSettings,
+      [objectKey]: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(prevSettings[objectKey] as Record<string, any>),
+        [key]: value,
+      },
+    }));
   };
 
   useEffect(() => {
@@ -119,32 +141,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.maxIteration")}
             variant="filled"
             value={currentSettings.max_iteration || ""}
-            onChange={(e) =>
-              handleChange("max_iteration", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplPresolve")}
-            variant="filled"
-            value={currentSettings["ampl.presolve"] || ""}
-            onChange={(e) =>
-              handleChange("ampl.presolve", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplSolverBoundsFrequency")}
-            variant="filled"
-            value={currentSettings["ampl.solve_bounds_frequency"] || ""}
-            onChange={(e) =>
-              handleChange(
-                "ampl.solve_bounds_frequency",
-                parseFloat(e.target.value)
-              )
-            }
+            onChange={(e) => handleChange("max_iteration", e.target.value)}
             sx={{ mb: 1 }}
           />
         </Fields>
@@ -193,9 +190,12 @@ function SettingsForm(props: PropType) {
             type="number"
             label={t("xpansion.timeLimit")}
             variant="filled"
-            value={(currentSettings.timelimit || 1e12) / 3600}
+            value={Math.round((currentSettings.timelimit || 1e12) / 3600)}
             onChange={(e) =>
-              handleChange("timelimit", parseFloat(e.target.value) * 3600)
+              handleChange(
+                "timelimit",
+                Math.round(parseFloat(e.target.value) * 3600)
+              )
             }
             sx={{ mb: 1 }}
           />
@@ -242,6 +242,29 @@ function SettingsForm(props: PropType) {
             onChange={(e) => handleChange("ampl.solver", e.target.value)}
             sx={{ mb: 1 }}
           />
+          <TextField
+            type="number"
+            label={t("xpansion.amplPresolve")}
+            variant="filled"
+            value={currentSettings["ampl.presolve"] || ""}
+            onChange={(e) =>
+              handleChange("ampl.presolve", parseFloat(e.target.value))
+            }
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.amplSolverBoundsFrequency")}
+            variant="filled"
+            value={currentSettings["ampl.solve_bounds_frequency"] || ""}
+            onChange={(e) =>
+              handleChange(
+                "ampl.solve_bounds_frequency",
+                parseFloat(e.target.value)
+              )
+            }
+            sx={{ mb: 1 }}
+          />
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
               name="cut-type"
@@ -278,7 +301,7 @@ function SettingsForm(props: PropType) {
           <SelectFields>
             <SelectSingle
               name="yearly-weights"
-              list={constraints.map((item) => {
+              list={weights.map((item) => {
                 return { id: item, name: item };
               })}
               label={t("xpansion.yearlyWeight")}
@@ -292,7 +315,10 @@ function SettingsForm(props: PropType) {
             <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["yearly-weights"] &&
-                onRead(currentSettings["yearly-weights"] || "")
+                onRead(
+                  XpansionResourceType.weights,
+                  currentSettings["yearly-weights"] || ""
+                )
               }
             />
           </SelectFields>
@@ -313,10 +339,64 @@ function SettingsForm(props: PropType) {
             <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["additional-constraints"] &&
-                onRead(currentSettings["additional-constraints"] || "")
+                onRead(
+                  XpansionResourceType.constraints,
+                  currentSettings["additional-constraints"] || ""
+                )
               }
             />
           </SelectFields>
+        </Box>
+      </Box>
+      <Box>
+        <Title>{t("xpansion.sensitivity")}</Title>
+        <Divider sx={{ mt: 1, mb: 2 }} />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
+          <NumberFE
+            value={currentSettings.sensitivity_config?.epsilon}
+            label={t("xpansion.epsilon")}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "epsilon",
+                parseFloat(e.target.value)
+              )
+            }
+          />
+          <SwitchFE
+            value={currentSettings.sensitivity_config?.capex}
+            label={t("xpansion.capex")}
+            onChange={(e, checked) =>
+              handleObjectChange("sensitivity_config", "capex", checked)
+            }
+          />
+          <SelectFE
+            sx={{ minWidth: "200px" }}
+            label={t("xpansion.projection")}
+            multiple
+            value={currentSettings.sensitivity_config?.projection || []}
+            onChange={(e) =>
+              handleObjectChange(
+                "sensitivity_config",
+                "projection",
+                e.target.value as string[]
+              )
+            }
+            variant="filled"
+            options={candidates}
+          />
         </Box>
       </Box>
     </Box>

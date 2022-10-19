@@ -17,6 +17,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 class UpdatePlaylist(ICommand):
     active: bool
     items: Optional[List[int]] = None
+    weights: Optional[Dict[int, int]] = None
     reverse: bool = False
 
     def __init__(self, **data: Any) -> None:
@@ -28,6 +29,7 @@ class UpdatePlaylist(ICommand):
         FileStudyHelpers.set_playlist(
             study_data,
             self.items or [],
+            self.weights,
             reverse=self.reverse,
             active=self.active,
         )
@@ -59,6 +61,7 @@ class UpdatePlaylist(ICommand):
                 self.active == other.active
                 and self.reverse == other.reverse
                 and self.items == other.items
+                and self.weights == other.weights
             )
         return True
 

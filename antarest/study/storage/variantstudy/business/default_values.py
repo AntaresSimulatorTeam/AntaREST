@@ -7,9 +7,9 @@ class FilteringOptions(Enum):
 
 
 class NodalOptimization(Enum):
-    NON_DISPATCHABLE_POWER: str = "true"
-    DISPATCHABLE_HYDRO_POWER: str = "true"
-    OTHER_DISPATCHABLE_POWER: str = "true"
+    NON_DISPATCHABLE_POWER: bool = True
+    DISPATCHABLE_HYDRO_POWER: bool = True
+    OTHER_DISPATCHABLE_POWER: bool = True
     SPREAD_UNSUPPLIED_ENERGY_COST: float = 0.000000
     SPREAD_SPILLED_ENERGY_COST: float = 0.000000
     UNSERVERDDENERGYCOST: float = 0.000000
@@ -17,9 +17,10 @@ class NodalOptimization(Enum):
 
 
 class LinkProperties(Enum):
-    HURDLES_COST: str = "false"
-    LOOP_FLOW: str = "false"
-    USE_PHASE_SHIFTER: str = "false"
+    HURDLES_COST: bool = False
+    LOOP_FLOW: bool = False
+    USE_PHASE_SHIFTER: bool = False
+    DISPLAY_COMMENTS: bool = True
     TRANSMISSION_CAPACITIES: str = "enabled"
     ASSET_TYPE: str = "ac"
     LINK_STYLE: str = "plain"
@@ -27,4 +28,3 @@ class LinkProperties(Enum):
     COLORR: int = 112
     COLORG: int = 112
     COLORB: int = 112
-    DISPLAY_COMMENTS: str = "true"

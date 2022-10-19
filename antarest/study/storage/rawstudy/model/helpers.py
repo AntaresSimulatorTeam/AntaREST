@@ -1,4 +1,4 @@
-from typing import Optional, List, cast
+from typing import Optional, List, cast, Dict
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -30,7 +30,7 @@ class FileStudyHelpers:
     @staticmethod
     def get_playlist(
         study: FileStudy, output_id: Optional[str] = None
-    ) -> Optional[List[int]]:
+    ) -> Optional[Dict[int, float]]:
         config = FileStudyHelpers.get_config(study, output_id)
         return ConfigPathBuilder.get_playlist(config)
 
@@ -38,6 +38,7 @@ class FileStudyHelpers:
     def set_playlist(
         study: FileStudy,
         playlist: List[int],
+        weights: Optional[Dict[int, int]] = None,
         reverse: bool = False,
         active: bool = True,
     ) -> None:
@@ -69,5 +70,12 @@ class FileStudyHelpers:
             if "playlist_year -" in playlist_config:
                 del playlist_config["playlist_year -"]
             playlist_config["playlist_year +"] = playlist_without_offset
+
+        if "playlist_year_weight" in playlist_config:
+            del playlist_config["playlist_year_weight"]
+        if weights:
+            playlist_config["playlist_year_weight"] = [
+                f"{year - 1},{weight}" for year, weight in weights.items()
+            ]
         config["playlist"] = playlist_config
         FileStudyHelpers.save_config(study, config)

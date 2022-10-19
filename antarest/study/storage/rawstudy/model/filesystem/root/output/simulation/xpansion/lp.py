@@ -7,13 +7,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
 
 
-class ExpansionCapa(BucketNode):
+class Lp(BucketNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        super().__init__(
-            context, config, None, default_file_node=InputSeriesMatrix
-        )
+        super().__init__(context, config)

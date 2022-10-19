@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import * as React from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
@@ -57,6 +57,7 @@ import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -83,10 +84,18 @@ interface Props {
   childrenTree: VariantTree | undefined;
   isExplorer?: boolean;
   openCommands?: VoidFunction;
+  updateStudyData: VoidFunction;
 }
 
 function NavHeader(props: Props) {
-  const { study, parent, childrenTree, isExplorer, openCommands } = props;
+  const {
+    study,
+    parent,
+    childrenTree,
+    isExplorer,
+    openCommands,
+    updateStudyData,
+  } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -102,24 +111,12 @@ function NavHeader(props: Props) {
   const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
   const dispatch = useAppDispatch();
 
-  const publicModeList = useMemo(
-    () => [
-      { id: "NONE", name: t("study.nonePublicModeText") },
-      { id: "READ", name: t("study.readPublicModeText") },
-      { id: "EXECUTE", name: t("study.executePublicModeText") },
-      { id: "EDIT", name: t("study.editPublicModeText") },
-      { id: "FULL", name: t("study.fullPublicModeText") },
-    ],
-    [t]
-  );
+  const publicModeLabel =
+    PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
 
-  const getPublicModeLabel = useMemo((): string => {
-    const publicModeLabel = publicModeList.find(
-      (elm) => elm.id === study?.publicMode
-    );
-    if (publicModeLabel) return publicModeLabel.name;
-    return "";
-  }, [publicModeList, study?.publicMode]);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -190,6 +187,10 @@ function NavHeader(props: Props) {
       }
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
@@ -522,7 +523,7 @@ function NavHeader(props: Props) {
             alignItems="center"
           >
             <SecurityOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText>{getPublicModeLabel}</TinyText>
+            <TinyText>{t(publicModeLabel)}</TinyText>
           </Box>
         </Box>
       )}
@@ -538,6 +539,7 @@ function NavHeader(props: Props) {
           open={openPropertiesDialog}
           onClose={() => setOpenPropertiesDialog(false)}
           study={study as StudyMetadata}
+          updateStudyData={updateStudyData}
         />
       )}
       {openDeleteDialog && (

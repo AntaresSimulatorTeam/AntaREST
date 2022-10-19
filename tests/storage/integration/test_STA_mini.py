@@ -403,7 +403,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
             "/v1/studies/STA-mini/raw?path=user/expansion/settings",
             {
                 "optimality_gap": 1,
-                "max_iteration": "inf",
+                "max_iteration": "+Inf",
                 "uc_type": '"expansion_fast"',
                 "master": '"integer"',
                 "yearly-weights": "None",

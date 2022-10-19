@@ -8,7 +8,19 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType
+from antarest.study.business.table_mode_management import (
+    TableTemplateType,
+    FIELDS_INFO_BY_TYPE,
+    AdequacyPatchMode,
+    TransmissionCapacity,
+    AssetType,
+    TimeSeriesGenerationOption,
+    LawOption,
+)
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+)
 
 
 def wait_for(predicate: Callable[[], bool], timeout=10):
@@ -173,6 +185,34 @@ def test_main(app: FastAPI):
         },
     )
     assert res.status_code == 200
+
+    # playlist
+    res = client.post(
+        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/nbyears",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json=5,
+    )
+    assert res.status_code == 204
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/playlist",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json={"playlist": [1, 2], "weights": {1: 8.0, 3: 9.0}},
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/config/playlist",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {"1": 8.0, "2": 1.0}
 
     # config / thematic trimming
     res = client.get(
@@ -581,6 +621,40 @@ def test_area_management(app: FastAPI):
         },
     )
 
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_CLUSTER.value,
+                "args": {
+                    "area_id": "area 1",
+                    "cluster_name": "cluster 1",
+                    "parameters": {},
+                },
+            }
+        ],
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_CLUSTER.value,
+                "args": {
+                    "area_id": "area 2",
+                    "cluster_name": "cluster 2",
+                    "parameters": {},
+                },
+            }
+        ],
+    )
+
     res_areas = client.get(
         f"/v1/studies/{study_id}/areas",
         headers={
@@ -593,7 +667,25 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
-            "thermals": [],
+            "thermals": [
+                {
+                    "code-oi": None,
+                    "enabled": True,
+                    "group": None,
+                    "id": "cluster 1",
+                    "marginal-cost": None,
+                    "market-bid-cost": None,
+                    "min-down-time": None,
+                    "min-stable-power": None,
+                    "min-up-time": None,
+                    "name": "cluster 1",
+                    "nominalcapacity": 0,
+                    "spinning": None,
+                    "spread-cost": None,
+                    "type": None,
+                    "unitcount": 0,
+                }
+            ],
             "type": "AREA",
         },
         {
@@ -601,7 +693,25 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
-            "thermals": [],
+            "thermals": [
+                {
+                    "code-oi": None,
+                    "enabled": True,
+                    "group": None,
+                    "id": "cluster 2",
+                    "marginal-cost": None,
+                    "market-bid-cost": None,
+                    "min-down-time": None,
+                    "min-stable-power": None,
+                    "min-up-time": None,
+                    "name": "cluster 2",
+                    "nominalcapacity": 0,
+                    "spinning": None,
+                    "spread-cost": None,
+                    "type": None,
+                    "unitcount": 0,
+                }
+            ],
             "type": "AREA",
         },
         {
@@ -812,6 +922,326 @@ def test_area_management(app: FastAPI):
         "ntc": {"stochasticTsStatus": False, "intraModal": False},
     }
 
+    # --- TableMode START ---
+
+    table_mode_url = f"/v1/studies/{study_id}/table_mode"
+
+    # Table Mode - Area
+
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.AREA,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1": {
+            "nonDispatchablePower": True,
+            "dispatchableHydroPower": True,
+            "otherDispatchablePower": True,
+            "spreadUnsuppliedEnergyCost": 0.0,
+            "spreadSpilledEnergyCost": 0.0,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "adequacyPatchMode": "outside",
+        },
+        "area 2": {
+            "nonDispatchablePower": True,
+            "dispatchableHydroPower": True,
+            "otherDispatchablePower": True,
+            "spreadUnsuppliedEnergyCost": 0.0,
+            "spreadSpilledEnergyCost": 0.0,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "adequacyPatchMode": "outside",
+        },
+    }
+
+    client.put(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.AREA,
+        },
+        json={
+            "area 1": {
+                "nonDispatchablePower": False,
+                "spreadSpilledEnergyCost": 1.1,
+                "filterYearByYear": "monthly, annual",
+            },
+            "area 2": {
+                "nonDispatchablePower": True,
+                "spreadSpilledEnergyCost": 3.0,
+                "filterSynthesis": "hourly",
+                "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+            },
+        },
+    )
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.AREA,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1": {
+            "nonDispatchablePower": False,
+            "dispatchableHydroPower": True,
+            "otherDispatchablePower": True,
+            "spreadUnsuppliedEnergyCost": 0.0,
+            "spreadSpilledEnergyCost": 1.1,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "monthly, annual",
+            "adequacyPatchMode": "outside",
+        },
+        "area 2": {
+            "nonDispatchablePower": True,
+            "dispatchableHydroPower": True,
+            "otherDispatchablePower": True,
+            "spreadUnsuppliedEnergyCost": 0.0,
+            "spreadSpilledEnergyCost": 3.0,
+            "filterSynthesis": "hourly",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "adequacyPatchMode": "outside",
+        },
+    }
+
+    # Table Mode - Link
+
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.LINK,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / area 2": {
+            "hurdlesCost": False,
+            "loopFlow": False,
+            "usePhaseShifter": False,
+            "transmissionCapacities": "enabled",
+            "assetType": "ac",
+            "linkStyle": "plain",
+            "linkWidth": True,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+        }
+    }
+
+    client.put(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.LINK,
+        },
+        json={
+            "area 1 / area 2": {
+                "hurdlesCost": True,
+                "transmissionCapacities": TransmissionCapacity.IGNORE.value,
+                "assetType": AssetType.GAZ.value,
+                "filterSynthesis": "daily,annual",
+            }
+        },
+    )
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.LINK,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / area 2": {
+            "hurdlesCost": True,
+            "loopFlow": False,
+            "usePhaseShifter": False,
+            "transmissionCapacities": "ignore",
+            "assetType": "gaz",
+            "linkStyle": "plain",
+            "linkWidth": True,
+            "displayComments": True,
+            "filterSynthesis": "daily,annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+        }
+    }
+
+    # Table Mode - Cluster
+
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.CLUSTER,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / cluster 1": {
+            "group": "",
+            "enabled": True,
+            "mustRun": False,
+            "unitCount": 0,
+            "nominalCapacity": 0,
+            "minStablePower": 0,
+            "spinning": 0,
+            "minUpTime": 1,
+            "minDownTime": 1,
+            "co2": 0,
+            "marginalCost": 0,
+            "fixedCost": 0,
+            "startupCost": 0,
+            "marketBidCost": 0,
+            "spreadCost": 0,
+            "tsGen": "use global parameter",
+            "volatilityForced": 0,
+            "volatilityPlanned": 0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+        },
+        "area 2 / cluster 2": {
+            "group": "",
+            "enabled": True,
+            "mustRun": False,
+            "unitCount": 0,
+            "nominalCapacity": 0,
+            "minStablePower": 0,
+            "spinning": 0,
+            "minUpTime": 1,
+            "minDownTime": 1,
+            "co2": 0,
+            "marginalCost": 0,
+            "fixedCost": 0,
+            "startupCost": 0,
+            "marketBidCost": 0,
+            "spreadCost": 0,
+            "tsGen": "use global parameter",
+            "volatilityForced": 0,
+            "volatilityPlanned": 0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+        },
+    }
+
+    client.put(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.CLUSTER,
+        },
+        json={
+            "area 1 / cluster 1": {
+                "enabled": False,
+                "unitCount": 3,
+                "spinning": 8,
+                "tsGen": TimeSeriesGenerationOption.FORCE_GENERATION.value,
+                "lawPlanned": LawOption.GEOMETRIC.value,
+            },
+            "area 2 / cluster 2": {
+                "nominalCapacity": 2,
+            },
+        },
+    )
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.CLUSTER,
+            "columns": ",".join(
+                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / cluster 1": {
+            "group": "",
+            "enabled": False,
+            "mustRun": False,
+            "unitCount": 3,
+            "nominalCapacity": 0,
+            "minStablePower": 0,
+            "spinning": 8,
+            "minUpTime": 1,
+            "minDownTime": 1,
+            "co2": 0,
+            "marginalCost": 0,
+            "fixedCost": 0,
+            "startupCost": 0,
+            "marketBidCost": 0,
+            "spreadCost": 0,
+            "tsGen": "force generation",
+            "volatilityForced": 0,
+            "volatilityPlanned": 0,
+            "lawForced": "uniform",
+            "lawPlanned": "geometric",
+        },
+        "area 2 / cluster 2": {
+            "group": "",
+            "enabled": True,
+            "mustRun": False,
+            "unitCount": 0,
+            "nominalCapacity": 2,
+            "minStablePower": 0,
+            "spinning": 0,
+            "minUpTime": 1,
+            "minDownTime": 1,
+            "co2": 0,
+            "marginalCost": 0,
+            "fixedCost": 0,
+            "startupCost": 0,
+            "marketBidCost": 0,
+            "spreadCost": 0,
+            "tsGen": "use global parameter",
+            "volatilityForced": 0,
+            "volatilityPlanned": 0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+        },
+    }
+
+    # --- TableMode END ---
+
     client.delete(
         f"/v1/studies/{study_id}/links/area%201/area%202",
         headers={
@@ -888,7 +1318,25 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
-            "thermals": [],
+            "thermals": [
+                {
+                    "code-oi": None,
+                    "enabled": True,
+                    "group": None,
+                    "id": "cluster 2",
+                    "marginal-cost": None,
+                    "market-bid-cost": None,
+                    "min-down-time": None,
+                    "min-stable-power": None,
+                    "min-up-time": None,
+                    "name": "cluster 2",
+                    "nominalcapacity": 2,
+                    "spinning": None,
+                    "spread-cost": None,
+                    "type": None,
+                    "unitcount": 0,
+                }
+            ],
             "type": "AREA",
         },
         {

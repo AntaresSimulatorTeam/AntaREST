@@ -35,10 +35,14 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     """
 
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        children_glob_exceptions: Optional[List[str]] = None,
     ) -> None:
         super().__init__(config)
         self.context = context
+        self.children_glob_exceptions = children_glob_exceptions or []
 
     @abstractmethod
     def build(self) -> TREE:
@@ -135,16 +139,17 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         data: SUB_JSON,
         url: Optional[List[str]] = None,
     ) -> None:
+        self._assert_not_in_zipped_file()
         children = self.build()
         url = url or []
+
+        if not self.config.path.exists():
+            self.config.path.mkdir()
 
         if url:
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
-            self._assert_not_in_zipped_file()
-            if not self.config.path.exists():
-                self.config.path.mkdir()
             assert isinstance(data, Dict)
             for key in data:
                 children[key].save(data[key])
@@ -195,7 +200,20 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self, children: TREE, url: List[str]
     ) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]
-        names = list(children.keys()) if names[0] == "*" else names
+        names = (
+            list(
+                filter(
+                    lambda c: c not in self.children_glob_exceptions,
+                    children.keys(),
+                )
+            )
+            if names[0] == "*"
+            else names
+        )
+
+        if len(names) == 0:
+            return [], sub_url
+
         if names[0] not in children:
             raise ChildNotFoundError(
                 f"{names[0]} not a child of {self.__class__.__name__}"

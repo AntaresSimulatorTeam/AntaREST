@@ -60,7 +60,9 @@ function MatrixInput(props: PropsType) {
     async () => {
       const res = await getStudyData(study.id, url);
       if (typeof res === "string") {
-        const fixed = res.replace(/NaN/g, '"NaN"');
+        const fixed = res
+          .replace(/NaN/g, '"NaN"')
+          .replace(/Infinity/g, '"Infinity"');
         return JSON.parse(fixed);
       }
       return res;

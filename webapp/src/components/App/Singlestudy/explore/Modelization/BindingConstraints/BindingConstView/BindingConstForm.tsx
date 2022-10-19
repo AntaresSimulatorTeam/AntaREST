@@ -95,8 +95,8 @@ export default function BindingConstForm(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveValue = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (name: string, path: string, defaultValues: any, data: any) => {
       try {
         // await editStudy(data, studyId, path);

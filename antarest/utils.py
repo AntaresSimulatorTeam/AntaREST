@@ -270,15 +270,10 @@ def create_services(
         cache=cache,
     )
 
-    if (
-        config.server.services
-        and Module.WATCHER.value in config.server.services
-        or create_all
-    ):
-        watcher = create_watcher(
-            config=config, application=application, study_service=study_service
-        )
-        services["watcher"] = watcher
+    watcher = create_watcher(
+        config=config, application=application, study_service=study_service
+    )
+    services["watcher"] = watcher
 
     if (
         config.server.services

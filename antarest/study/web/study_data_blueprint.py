@@ -14,6 +14,9 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsFormFields,
+)
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
@@ -29,10 +32,13 @@ from antarest.study.business.config_management import (
 )
 from antarest.study.business.link_management import (
     LinkInfoDTO,
-    AllCLustersAndLinks,
 )
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
+)
+from antarest.study.business.table_mode_management import (
+    TableTemplateType,
+    ColumnModelTypes,
 )
 from antarest.study.business.timeseries_config_management import (
     TSFormFields,
@@ -288,7 +294,7 @@ def create_study_data_routes(
         "/studies/{uuid}/config/playlist",
         tags=[APITag.study_data],
         summary="Get playlist config",
-        response_model=List[int],
+        response_model=Dict[int, float],
     )
     def get_playlist_config(
         uuid: str,
@@ -314,6 +320,7 @@ def create_study_data_routes(
         active: bool = True,
         reverse: bool = False,
         playlist: Optional[List[int]] = Body(default=None),
+        weights: Optional[Dict[int, int]] = Body(default=None),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -325,7 +332,7 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
         study_service.config_manager.set_playlist(
-            study, playlist, reverse, active
+            study, playlist, weights, reverse, active
         )
 
     @bp.get(
@@ -415,6 +422,57 @@ def create_study_data_routes(
         )
 
         study_service.ts_config_manager.set_field_values(study, field_values)
+
+    @bp.get(
+        path="/studies/{uuid}/table_mode",
+        tags=[APITag.study_data],
+        summary="Get table data for table form",
+        # `Any` because `Union[AreaColumns, LinkColumns]` not working
+        response_model=Dict[str, Dict[str, Any]],
+        response_model_exclude_none=True,
+    )
+    def get_table_data(
+        uuid: str,
+        table_type: TableTemplateType,
+        columns: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[str, ColumnModelTypes]:
+        logger.info(
+            f"Getting template table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.table_mode_manager.get_table_data(
+            study, table_type, columns.split(",")
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/table_mode",
+        tags=[APITag.study_data],
+        summary="Set table data with values from table form",
+    )
+    def set_table_data(
+        uuid: str,
+        table_type: TableTemplateType,
+        data: Dict[str, ColumnModelTypes],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.table_mode_manager.set_table_data(
+            study, table_type, data
+        )
 
     @bp.post(
         "/studies/_update_version",
@@ -567,6 +625,54 @@ def create_study_data_routes(
         )
         return study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/advanced_parameters",
+        tags=[APITag.study_data],
+        summary="Get Advanced parameters form values",
+        response_model=AdvancedParamsFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_advanced_parameters(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AdvancedParamsFormFields:
+        logger.info(
+            msg=f"Getting Advanced Parameters for study {uuid}",
+            extra={"user": current_user.id},
+        )
+
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.advanced_parameters_manager.get_field_values(
+            study
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/config/advanced_parameters",
+        tags=[APITag.study_data],
+        summary="Set Advanced parameters new values",
+    )
+    def set_advanced_params(
+        uuid: str,
+        field_values: AdvancedParamsFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating Advanced parameters values for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.advanced_parameters_manager.set_field_values(
+            study, field_values
         )
 
     return bp

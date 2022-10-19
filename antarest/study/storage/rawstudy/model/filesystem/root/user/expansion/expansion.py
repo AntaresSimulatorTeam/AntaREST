@@ -11,8 +11,14 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import (
     ExpansionCandidates,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.capa import (
-    ExpansionCapa,
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.constraint_resources import (
+    ExpansionConstraintResources,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.matrix_resources import (
+    ExpansionMatrixResources,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.sensitivity import (
+    SensitivityConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settings import (
     ExpansionSettings,
@@ -29,7 +35,10 @@ class Expansion(BucketNode):
         RegisteredFile(
             key="settings", node=ExpansionSettings, filename="settings.ini"
         ),
-        RegisteredFile(key="capa", node=ExpansionCapa),
+        RegisteredFile(key="capa", node=ExpansionMatrixResources),
+        RegisteredFile(key="weights", node=ExpansionMatrixResources),
+        RegisteredFile(key="constraints", node=ExpansionConstraintResources),
+        RegisteredFile(key="sensitivity", node=SensitivityConfig),
     ]
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):

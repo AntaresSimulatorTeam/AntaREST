@@ -39,8 +39,12 @@ function Xpansion() {
         path: `/studies/${study?.id}/explore/xpansion/settings`,
       },
       {
-        label: t("global.files"),
-        path: `/studies/${study?.id}/explore/xpansion/files`,
+        label: t("xpansion.constraints"),
+        path: `/studies/${study?.id}/explore/xpansion/constraints`,
+      },
+      {
+        label: t("xpansion.weights"),
+        path: `/studies/${study?.id}/explore/xpansion/weights`,
       },
       {
         label: t("xpansion.capacities"),

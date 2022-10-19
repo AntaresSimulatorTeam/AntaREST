@@ -2,15 +2,7 @@ import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Divider from "@mui/material/Divider";
-import {
-  Button,
-  Checkbox,
-  Drawer,
-  FormControlLabel,
-  List,
-  ListItem,
-  Typography,
-} from "@mui/material";
+import { Button, Drawer, List, ListItem, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
 import { STUDIES_FILTER_WIDTH } from "../../../theme";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
@@ -24,6 +16,7 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import { displayVersionName } from "../../../services/utils";
+import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
 interface Props {
   open: boolean;
@@ -58,6 +51,7 @@ function FilterDrawer(props: Props) {
       updateStudyFilters({
         managed: false,
         archived: false,
+        variant: false,
         versions: [],
         users: [],
         groups: [],
@@ -104,31 +98,26 @@ function FilterDrawer(props: Props) {
           <Typography sx={{ color: "grey.500", fontSize: "0.9em", mb: 2 }}>
             {t("global.filter").toUpperCase()}
           </Typography>
-          <FormControlLabel
-            control={
-              <Checkbox
-                sx={{ color: "white" }}
-                name="managed"
-                defaultChecked={filters.managed}
-                onChange={(_, checked) => {
-                  filterNewValuesRef.current.managed = checked;
-                }}
-              />
-            }
-            label={t("studies.managedStudiesFilter") as string}
+          <CheckBoxFE
+            defaultValue={filters.managed}
+            onChange={(_, checked) => {
+              filterNewValuesRef.current.managed = checked;
+            }}
+            label={t("studies.managedStudiesFilter")}
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                sx={{ color: "white" }}
-                name="archived"
-                defaultChecked={filters.archived}
-                onChange={(_, checked) => {
-                  filterNewValuesRef.current.archived = checked;
-                }}
-              />
-            }
-            label={t("studies.archivedStudiesFilter") as string}
+          <CheckBoxFE
+            defaultValue={filters.archived}
+            onChange={(_, checked) => {
+              filterNewValuesRef.current.archived = checked;
+            }}
+            label={t("studies.archivedStudiesFilter")}
+          />
+          <CheckBoxFE
+            defaultValue={filters.variant}
+            onChange={(_, checked) => {
+              filterNewValuesRef.current.variant = checked;
+            }}
+            label={t("studies.variant")}
           />
         </Box>
       </Toolbar>
@@ -140,9 +129,10 @@ function FilterDrawer(props: Props) {
             options={versions}
             getOptionLabel={displayVersionName}
             defaultValue={filters.versions}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.versions = value;
+            onChange={(event) => {
+              filterNewValuesRef.current.versions = event.target.value;
             }}
+            fullWidth
           />
         </ListItem>
         <ListItem>
@@ -153,9 +143,12 @@ function FilterDrawer(props: Props) {
             defaultValue={users.filter((user) =>
               filters.users.includes(user.id)
             )}
-            onChange={(event, value) => {
-              filterNewValuesRef.current.users = value.map((val) => val.id);
+            onChange={(event) => {
+              filterNewValuesRef.current.users = event.target.value.map(
+                (val) => val.id
+              );
             }}
+            fullWidth
           />
         </ListItem>
         <ListItem>
@@ -166,9 +159,12 @@ function FilterDrawer(props: Props) {
             defaultValue={groups.filter((group) =>
               filters.groups.includes(group.id)
             )}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.groups = value.map((val) => val.id);
+            onChange={(event) => {
+              filterNewValuesRef.current.groups = event.target.value.map(
+                (val) => val.id
+              );
             }}
+            fullWidth
           />
         </ListItem>
         <ListItem>
@@ -176,10 +172,11 @@ function FilterDrawer(props: Props) {
             label={t("global.tags")}
             options={[]}
             defaultValue={filters.tags}
-            onChange={(_, value) => {
-              filterNewValuesRef.current.tags = value;
+            onChange={(event) => {
+              filterNewValuesRef.current.tags = event.target.value;
             }}
             freeSolo
+            fullWidth
           />
         </ListItem>
       </List>

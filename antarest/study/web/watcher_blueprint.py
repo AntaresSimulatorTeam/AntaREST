@@ -1,8 +1,7 @@
 import logging
 from http import HTTPStatus
 from http.client import HTTPException
-from pathlib import Path
-from typing import List, Any, Optional
+from typing import List, Any
 
 from fastapi import APIRouter, Depends
 

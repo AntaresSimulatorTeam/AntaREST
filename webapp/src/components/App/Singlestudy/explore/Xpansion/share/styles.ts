@@ -18,7 +18,8 @@ export const Fields = styled(Box)(({ theme }) => ({
 export const SelectFields = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  width: "270px",
+  width: "300px",
+  marginRight: "50px",
 }));
 
 export const Title = styled(Typography)(({ theme }) => ({

@@ -32,9 +32,10 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import BoltIcon from "@mui/icons-material/Bolt";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
+import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
-import { StudyMetadata } from "../../../common/types";
+import { StudyMetadata, StudyType } from "../../../common/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
@@ -335,25 +336,34 @@ const StudyCard = memo((props: Props) => {
           <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
         </Box>
         <Box
-          my={1}
-          width="100%"
-          height="38px"
-          display="flex"
-          flexDirection="row"
-          flexWrap="wrap"
-          justifyContent="flex-start"
-          alignItems="center"
           sx={{
+            my: 1,
+            width: 1,
+            height: "38px",
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "flex-start",
+            alignItems: "center",
             overflowX: "hidden",
             overflowY: "auto",
+            gap: 0.5,
+            ".MuiChip-root": {
+              color: "black",
+            },
           }}
         >
+          {study.type === StudyType.VARIANT && (
+            <Chip
+              icon={<AltRouteOutlinedIcon />}
+              label={t("studies.variant").toLowerCase()}
+              color="primary"
+            />
+          )}
           <Chip
             label={study.workspace}
             variant="filled"
             sx={{
-              m: 0.25,
-              color: "black",
               bgcolor: study.managed ? "secondary.main" : "gray",
             }}
           />
@@ -363,7 +373,7 @@ const StudyCard = memo((props: Props) => {
                 key={elm}
                 label={elm}
                 variant="filled"
-                sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+                sx={{ bgcolor: indigo[300] }}
               />
             ))}
         </Box>

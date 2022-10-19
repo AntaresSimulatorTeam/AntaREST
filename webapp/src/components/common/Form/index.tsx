@@ -21,7 +21,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Box, Button, CircularProgress } from "@mui/material";
+import { Box, Button, CircularProgress, SxProps, Theme } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -29,6 +29,7 @@ import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
+import { mergeSxProp } from "../../../utils/muiUtils";
 
 export interface SubmitHandlerPlus<
   TFieldValues extends FieldValues = FieldValues
@@ -92,6 +93,7 @@ export interface FormProps<
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
   disableLoader?: boolean;
+  sx?: SxProps<Theme>;
 }
 
 export function useFormContext<TFieldValues extends FieldValues>() {
@@ -111,6 +113,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onStateChange,
     autoSubmit,
     disableLoader,
+    sx,
     ...formProps
   } = props;
 
@@ -304,12 +307,15 @@ function Form<TFieldValues extends FieldValues, TContext>(
       };
 
       if (autoSubmitConfig.enable && newOptions.shouldDirty) {
+        if (isSubmitting) {
+          fieldsChangeDuringAutoSubmitting.current.push(name);
+        }
         simulateSubmit();
       }
 
       setValue(name, value, newOptions);
     },
-    [autoSubmitConfig.enable, setValue, simulateSubmit]
+    [autoSubmitConfig.enable, setValue, simulateSubmit, isSubmitting]
   );
 
   const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
@@ -334,7 +340,12 @@ function Form<TFieldValues extends FieldValues, TContext>(
   };
 
   return (
-    <form {...formProps} onSubmit={handleFormSubmit}>
+    <Box
+      {...formProps}
+      sx={mergeSxProp({ pt: 1 }, sx)}
+      component="form"
+      onSubmit={handleFormSubmit}
+    >
       {showLoader && !disableLoader && (
         <Box
           sx={{
@@ -344,6 +355,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             height: 0,
             textAlign: "right",
           }}
+          className="Form__Loader"
         >
           <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
         </Box>
@@ -366,7 +378,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       >
         {submitButtonText || t("global.save")}
       </Button>
-    </form>
+    </Box>
   );
 }
 
