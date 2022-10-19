@@ -164,7 +164,7 @@ class ConfigManager:
             study, file_study, [command], self.storage_service
         )
 
-    def get_playlist(self, study: Study) -> Optional[List[int]]:
+    def get_playlist(self, study: Study) -> Optional[Dict[int, float]]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         return FileStudyHelpers.get_playlist(file_study)
@@ -173,12 +173,14 @@ class ConfigManager:
         self,
         study: Study,
         playlist: Optional[List[int]],
+        weights: Optional[Dict[int, int]],
         reverse: bool,
         active: bool,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdatePlaylist(
             items=playlist,
+            weights=weights,
             reverse=reverse,
             active=active,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,

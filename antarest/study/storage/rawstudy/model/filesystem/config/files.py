@@ -273,7 +273,7 @@ class ConfigPathBuilder:
         return None
 
     @staticmethod
-    def get_playlist(config: JSON) -> Optional[List[int]]:
+    def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
         general_config = config.get("general", {})
         nb_years = cast(int, general_config.get("nbyears"))
         playlist_activated = cast(
@@ -285,11 +285,23 @@ class ConfigPathBuilder:
         playlist_reset = playlist_config.get("playlist_reset", True)
         added = playlist_config.get("playlist_year +", [])
         removed = playlist_config.get("playlist_year -", [])
+        weights = {}
+        for year_weight in playlist_config.get("playlist_year_weight", []):
+            year_weight_elements = year_weight.split(",")
+            weights[int(year_weight_elements[0])] = float(
+                year_weight_elements[1]
+            )
         if playlist_reset:
-            return [
-                year + 1 for year in range(0, nb_years) if year not in removed
-            ]
-        return [year + 1 for year in added if year not in removed]
+            return {
+                year + 1: weights.get(year, 1)
+                for year in range(0, nb_years)
+                if year not in removed
+            }
+        return {
+            year + 1: weights.get(year, 1)
+            for year in added
+            if year not in removed
+        }
 
     @staticmethod
     def _parse_outputs_parameters(
@@ -318,7 +330,10 @@ class ConfigPathBuilder:
             par["general"]["nbyears"],
             par["general"]["year-by-year"],
             par["output"]["synthesis"],
-            ConfigPathBuilder.get_playlist(par),
+            [
+                year
+                for year in (ConfigPathBuilder.get_playlist(par) or {}).keys()
+            ],
         )
 
     @staticmethod

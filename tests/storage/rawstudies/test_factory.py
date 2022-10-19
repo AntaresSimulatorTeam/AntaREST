@@ -5,6 +5,9 @@ from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
@@ -62,8 +65,12 @@ def test_factory_cache():
     cache.get.return_value = None
     study = factory.create_from_fs(path, study_id)
     assert study.config == config
-    cache.put.assert_called_once_with(cache_id, config.dict())
+    cache.put.assert_called_once_with(
+        cache_id, FileStudyTreeConfigDTO.from_build_config(config).dict()
+    )
 
-    cache.get.return_value = config.dict()
+    cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(
+        config
+    ).dict()
     study = factory.create_from_fs(path, study_id)
     assert study.config == config
