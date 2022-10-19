@@ -356,7 +356,7 @@ const StudyCard = memo((props: Props) => {
           {study.type === StudyType.VARIANT && (
             <Chip
               icon={<AltRouteOutlinedIcon />}
-              label={t("studies.variant")}
+              label={t("studies.variant").toLowerCase()}
               color="primary"
             />
           )}

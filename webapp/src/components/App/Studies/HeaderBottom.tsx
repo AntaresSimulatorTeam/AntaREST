@@ -106,7 +106,7 @@ function HeaderBottom(props: PropTypes) {
         )}
         {filters.variant && (
           <Chip
-            label={t("studies.variant")}
+            label={t("studies.variant").toLowerCase()}
             color="secondary"
             onDelete={() => setFilterValue("variant", false)}
             sx={{ mx: 1 }}
