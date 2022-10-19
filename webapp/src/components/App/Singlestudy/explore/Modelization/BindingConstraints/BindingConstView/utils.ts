@@ -66,10 +66,14 @@ export const isOptionExist = (
   value2: string
 ): boolean => {
   const index1 = list.findIndex((item) => item.element.id === value1);
-  if (index1 < 0) return false;
+  if (index1 < 0) {
+    return false;
+  }
 
   const index2 = list[index1].item_list.findIndex((item) => item.id === value2);
-  if (index2 < 0) return false;
+  if (index2 < 0) {
+    return false;
+  }
 
   return true;
 };

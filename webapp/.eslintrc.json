@@ -36,6 +36,7 @@
       }
     ],
     "consistent-return": "off",
+    "curly": ["error", "all"],
     "default-case": "off",
     "import/extensions": [
       "error",

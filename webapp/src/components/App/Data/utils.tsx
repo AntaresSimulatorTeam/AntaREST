@@ -60,7 +60,9 @@ export const saveMatrix = async (
   json?: boolean,
   onProgress?: (progress: number) => void
 ): Promise<string> => {
-  if (!name.replace(/\s/g, "")) throw Error("global.error.emptyName");
+  if (!name.replace(/\s/g, "")) {
+    throw Error("global.error.emptyName");
+  }
 
   if (data === undefined) {
     if (file) {
@@ -76,7 +78,9 @@ export const saveMatrix = async (
         matrixInfos,
         onNewDataUpdate
       );
-    } else throw Error("data.error.fileNotUploaded");
+    } else {
+      throw Error("data.error.fileNotUploaded");
+    }
   } else {
     await updateMatrix(
       data,

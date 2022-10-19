@@ -101,13 +101,19 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   };
 
   const onExportClick = (): void => {
-    if (onClose) onClose({}, "backdropClick");
+    if (onClose) {
+      onClose({}, "backdropClick");
+    }
     if (optionSelection === "exportOutput") {
-      if (currentOutput) exportOutput(currentOutput);
+      if (currentOutput) {
+        exportOutput(currentOutput);
+      }
       return;
     }
     if (optionSelection === "exportOutputFilter") {
-      if (currentOutput) onExportFiltered(currentOutput, filter);
+      if (currentOutput) {
+        onExportFiltered(currentOutput, filter);
+      }
       return;
     }
     exportStudy(study.id, optionSelection === "exportWithout");

@@ -119,13 +119,17 @@ export default function BindingConstForm(props: Props) {
     ) => {
       try {
         const tmpConst = prevConst;
-        if (constraint.weight !== undefined)
+        if (constraint.weight !== undefined) {
           tmpConst.weight = constraint.weight;
-        if (constraint.data) tmpConst.data = constraint.data;
+        }
+        if (constraint.data) {
+          tmpConst.data = constraint.data;
+        }
         tmpConst.id = dataToId(tmpConst.data);
-        if (constraint.offset !== undefined)
+        if (constraint.offset !== undefined) {
           tmpConst.offset =
             constraint.offset !== null ? constraint.offset : undefined;
+        }
         await updateConstraintTerm(study.id, bindingConst, {
           ...constraint,
           offset: tmpConst.offset,

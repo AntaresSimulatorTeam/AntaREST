@@ -16,7 +16,9 @@ function AppLoader() {
       setValue((val) => (val + 1) % maxValue);
     }, timeDelay);
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, []);
 

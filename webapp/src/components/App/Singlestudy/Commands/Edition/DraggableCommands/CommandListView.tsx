@@ -81,9 +81,10 @@ function CommandListView({
 
   useEffect(() => {
     if (listRef && listRef !== null && listRef.current) {
-      if (generationIndex >= 0)
+      if (generationIndex >= 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (listRef.current as any).scrollToItem(generationIndex, "smart");
+      }
     }
   }, [generationIndex]);
 

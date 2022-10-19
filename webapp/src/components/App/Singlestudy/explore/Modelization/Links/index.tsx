@@ -37,7 +37,9 @@ function Links() {
   ////////////////////////////////////////////////////////////////
 
   const handleLinkClick = (linkName: string): void => {
-    if (studyData === undefined) return;
+    if (studyData === undefined) {
+      return;
+    }
     const elm = studyData[linkName];
     if (elm) {
       dispatch(setCurrentLink(linkName));

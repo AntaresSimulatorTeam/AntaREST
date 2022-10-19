@@ -45,7 +45,9 @@ function TabWrapper(props: Props) {
       const index = tabList.findIndex(
         (elm) => location.pathname.substring(0, elm.path.length) === elm.path
       );
-      if (index >= 0) return index;
+      if (index >= 0) {
+        return index;
+      }
       return 0;
     };
     if (study) {

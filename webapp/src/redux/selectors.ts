@@ -228,7 +228,9 @@ export const selectLinks = (
 export const getStudyLinks = createSelector(getStudyData, (data) => {
   if (data) {
     const tmp = selectLinks(data);
-    if (tmp) return Object.values(tmp) || [];
+    if (tmp) {
+      return Object.values(tmp) || [];
+    }
   }
   return [];
 });

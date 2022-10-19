@@ -41,7 +41,9 @@ export default function OptionsList(props: Props) {
 
   const options2 = useMemo(() => {
     const index = options.findIndex((elm) => elm.element.id === value1);
-    if (index < 0) return [];
+    if (index < 0) {
+      return [];
+    }
 
     const tmp = options[index].item_list
       .filter(
@@ -69,7 +71,9 @@ export default function OptionsList(props: Props) {
   const getFirstValue2 = useCallback(
     (value: string): string => {
       const index = options1.findIndex((elm) => elm.id === value);
-      if (index >= 0) return options[index].item_list[0].id;
+      if (index >= 0) {
+        return options[index].item_list[0].id;
+      }
       return "";
     },
     [options, options1]

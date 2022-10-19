@@ -22,6 +22,8 @@ export function stringToRGB(color: string): ColorResult["rgb"] | undefined {
 
 export function rgbToString(color: Partial<ColorResult["rgb"]>): string {
   const { r, g, b } = color;
-  if (r === undefined || g === undefined || b === undefined) return "";
+  if (r === undefined || g === undefined || b === undefined) {
+    return "";
+  }
   return `${r},${g},${b}`;
 }

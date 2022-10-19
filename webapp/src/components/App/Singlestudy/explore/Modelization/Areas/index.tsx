@@ -37,7 +37,9 @@ function Areas() {
   ////////////////////////////////////////////////////////////////
 
   const handleAreaClick = (areaId: string): void => {
-    if (studyData?.areas === undefined) return;
+    if (studyData?.areas === undefined) {
+      return;
+    }
     const elm = studyData?.areas[areaId];
     if (elm) {
       dispatch(setCurrentArea(areaId));

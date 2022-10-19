@@ -69,7 +69,9 @@ function AddConstraintTermDialog(props: Props) {
     try {
       const tmpValues = values.dirtyValues as ConstraintType;
       const isLink = isDataLink(tmpValues.data);
-      if (tmpValues.weight === undefined) tmpValues.weight = 0.0;
+      if (tmpValues.weight === undefined) {
+        tmpValues.weight = 0.0;
+      }
       let data: LinkCreationInfoDTO | ClusterElement;
       // Verify if this link/cluster combination is allowed
       if (isLink) {
