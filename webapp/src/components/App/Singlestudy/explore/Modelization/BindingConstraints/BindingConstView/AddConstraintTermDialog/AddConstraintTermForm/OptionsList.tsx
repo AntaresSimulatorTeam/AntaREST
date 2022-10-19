@@ -65,7 +65,7 @@ export default function OptionsList(props: Props) {
     const index = linksOrClusters.findIndex(
       (elm) => elm.element.id === watchSelect1
     );
-    if (index >= 0)
+    if (index >= 0) {
       setOptions2(
         linksOrClusters[index].item_list
           .filter(
@@ -87,6 +87,7 @@ export default function OptionsList(props: Props) {
             value: elm.id,
           }))
       );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchSelect1]);
 

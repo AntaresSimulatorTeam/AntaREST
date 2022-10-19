@@ -80,12 +80,15 @@ function DatasetCreationDialog(props: PropTypes) {
         if (
           error.message === "data.error.fileNotUploaded" ||
           error.message === "global.error.emptyName"
-        )
+        ) {
           closeModal = false;
+        }
       }
     } finally {
       setImporting(false);
-      if (closeModal) onClose();
+      if (closeModal) {
+        onClose();
+      }
     }
   };
 

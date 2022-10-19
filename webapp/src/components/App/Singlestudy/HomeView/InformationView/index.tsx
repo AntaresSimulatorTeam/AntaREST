@@ -97,7 +97,9 @@ function InformationView(props: Props) {
             variant="contained"
             color="primary"
             onClick={() => {
-              if (study) navigate(`/studies/${study.id}/explore`);
+              if (study) {
+                navigate(`/studies/${study.id}/explore`);
+              }
             }}
           >
             {t("global.open")}

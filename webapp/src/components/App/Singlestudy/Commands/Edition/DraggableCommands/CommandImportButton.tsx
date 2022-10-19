@@ -43,7 +43,9 @@ function CommandImportButton(props: PropTypes) {
         });
       }
     };
-    if (e.target && e.target.files) reader.readAsText(e.target.files[0]);
+    if (e.target && e.target.files) {
+      reader.readAsText(e.target.files[0]);
+    }
   };
 
   return (

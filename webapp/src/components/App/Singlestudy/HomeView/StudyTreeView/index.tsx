@@ -49,7 +49,9 @@ export default function CustomizedTreeView(props: Props) {
   const [hoverId, setHoverId] = useState<string>("");
 
   const rectWidth = useMemo(() => {
-    if (studyTree === undefined) return 0;
+    if (studyTree === undefined) {
+      return 0;
+    }
     const { drawOptions } = studyTree;
     const { depth } = drawOptions;
     return Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
@@ -58,7 +60,9 @@ export default function CustomizedTreeView(props: Props) {
   const treeWidth = rectWidth + RECT_TEXT_WIDTH + RECT_X_SPACING;
 
   const treeHeight = useMemo(() => {
-    if (studyTree === undefined) return 0;
+    if (studyTree === undefined) {
+      return 0;
+    }
     const { drawOptions } = studyTree;
     const { nbAllChildrens } = drawOptions;
     return TILE_SIZE_Y * (nbAllChildrens + 1) + TILE_SIZE_Y_2;
@@ -178,12 +182,14 @@ export default function CustomizedTreeView(props: Props) {
     let recursiveHeight = 1;
     res = res.concat(
       children.map((elm, index) => {
-        if (index === 0) recursiveHeight = j + 1;
-        else
+        if (index === 0) {
+          recursiveHeight = j + 1;
+        } else {
           recursiveHeight =
             recursiveHeight +
             children[index - 1].drawOptions.nbAllChildrens +
             1;
+        }
         return buildRecursiveTree(elm, i + 1, recursiveHeight);
       })
     );

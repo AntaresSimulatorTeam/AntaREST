@@ -64,13 +64,17 @@ function SingleStudy(props: Props) {
   );
 
   const updateStudyData = useCallback(async () => {
-    if (!studyId) return;
+    if (!studyId) {
+      return;
+    }
     try {
       const tmpStudy = await mounted(getStudyMetadata(studyId));
       if (tmpStudy) {
         const tmpParents = await mounted(getVariantParents(tmpStudy.id));
         let root: StudyMetadata = tmpStudy;
-        if (tmpParents.length > 0) root = tmpParents[tmpParents.length - 1];
+        if (tmpParents.length > 0) {
+          root = tmpParents[tmpParents.length - 1];
+        }
         const tmpTree = await mounted(getVariantChildren(root.id));
         setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
         setStudy(tmpStudy);
@@ -124,7 +128,9 @@ function SingleStudy(props: Props) {
     return addWsMessageListener(listener);
   }, [listener]);
 
-  if (study === undefined) return <SimpleLoader />;
+  if (study === undefined) {
+    return <SimpleLoader />;
+  }
 
   return (
     <Box
