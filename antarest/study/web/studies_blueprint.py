@@ -676,19 +676,18 @@ def create_study_routes(
         return study_service.unarchive(study_id, params)
 
     @bp.post(
-        "/studies/_initialize_additional_data_in_db",
-        summary="Initialize additional data in db",
+        "/studies/_invalidate_cache_listing",
+        summary="Invalidate the study listing cache",
         tags=[APITag.study_management],
     )
-    def initialize_additional_data_in_db(
+    def invalidate_study_listing_cache(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        # TODO: remove this method once used
         logger.info(
-            f"Initializing additional data in db",
+            f"Invalidating the study listing cache",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.initialize_additional_data_in_db(params)
+        return study_service.invalidate_cache_listing(params)
 
     return bp

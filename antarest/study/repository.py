@@ -6,6 +6,7 @@ from sqlalchemy.orm import with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.common.utils import get_study_information
 from antarest.study.model import Study, RawStudy, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class StudyMetadataRepository:
         db.session.add(metadata)
         db.session.commit()
 
-        self._invalidate_study_listing_cache()
+        self._update_study_from_cache_listing(metadata)
         return metadata
 
     def refresh(self, metadata: Study) -> None:
@@ -70,10 +71,43 @@ class StudyMetadataRepository:
         u: Study = db.session.query(Study).get(id)
         db.session.delete(u)
         db.session.commit()
-        self._invalidate_study_listing_cache()
+        self._remove_study_from_cache_listing(id)
 
-    def _invalidate_study_listing_cache(self) -> None:
-        self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
-        self.cache_service.invalidate(
-            CacheConstants.STUDY_LISTING_MANAGED.value
-        )
+    def _remove_study_from_cache_listing(self, study_id: str) -> None:
+        try:
+            cached_studies = self.cache_service.get(
+                CacheConstants.STUDY_LISTING.value
+            )
+            if cached_studies:
+                if study_id in cached_studies:
+                    del cached_studies[study_id]
+                self.cache_service.put(
+                    CacheConstants.STUDY_LISTING.value, cached_studies
+                )
+        except Exception as e:
+            logger.error("Failed to update study listing cache", exc_info=e)
+            try:
+                self.cache_service.invalidate(
+                    CacheConstants.STUDY_LISTING.value
+                )
+            except Exception as e:
+                logger.error("Failed to invalidate listing cache", exc_info=e)
+
+    def _update_study_from_cache_listing(self, study: Study) -> None:
+        try:
+            cached_studies = self.cache_service.get(
+                CacheConstants.STUDY_LISTING.value
+            )
+            if cached_studies:
+                cached_studies[study.id] = get_study_information(study)
+                self.cache_service.put(
+                    CacheConstants.STUDY_LISTING.value, cached_studies
+                )
+        except Exception as e:
+            logger.error("Failed to update study listing cache", exc_info=e)
+            try:
+                self.cache_service.invalidate(
+                    CacheConstants.STUDY_LISTING.value
+                )
+            except Exception as e:
+                logger.error("Failed to invalidate listing cache", exc_info=e)

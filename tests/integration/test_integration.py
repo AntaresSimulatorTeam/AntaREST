@@ -319,12 +319,12 @@ def test_main(app: FastAPI):
     )
 
     res = client.post(
-        "/v1/studies/_initialize_additional_data_in_db",
+        "/v1/studies/_invalidate_cache_listing",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.json() == []
+    assert res.status_code == 200
 
     # Study delete
     client.delete(
