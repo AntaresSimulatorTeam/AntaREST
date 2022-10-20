@@ -318,7 +318,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
     slurm_launcher._check_studies_state()
 
     assert slurm_launcher.callbacks.update_status.call_count == 2
-    assert slurm_launcher._import_study_output.call_count == 1
+    assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_workspace_file.call_count == 4
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()

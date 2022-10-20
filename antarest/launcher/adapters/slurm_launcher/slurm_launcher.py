@@ -335,12 +335,11 @@ class SlurmLauncher(AbstractLauncher):
                     )
                     output_id: Optional[str] = None
                     try:
-                        if not study.with_error:
-                            output_id = self._import_study_output(
-                                study.name,
-                                study.xpansion_mode,
-                                study.job_log_dir,
-                            )
+                        output_id = self._import_study_output(
+                            study.name,
+                            study.xpansion_mode,
+                            study.job_log_dir,
+                        )
                     except Exception as e:
                         self.callbacks.append_after_log(
                             study.name,
