@@ -1,6 +1,10 @@
+import logging
 import re
 
 from pydantic import BaseModel
+
+
+logger = logging.getLogger(__name__)
 
 
 class LaunchProgressDTO(BaseModel):
@@ -26,11 +30,17 @@ class LogParser:
             )
             return True
         elif "parallel batch size : " in line:
-            K = int(line.split(" ")[-1])
-            launch_progress_dto.progress += (
-                launch_progress_dto.coef * 90 * K / launch_progress_dto.N_K
-            )
-            return True
+            mk = re.search(r"parallel batch size : (\d+)", line)
+            if mk:
+                K = int(mk.group(1))
+                launch_progress_dto.progress += (
+                    launch_progress_dto.coef * 90 * K / launch_progress_dto.N_K
+                )
+                return True
+            else:
+                logger.warning(
+                    f"Failed to extract log progress batch size on line : {line}"
+                )
         elif "Exporting the annual results" in line:
             launch_progress_dto.progress += (
                 launch_progress_dto.coef
