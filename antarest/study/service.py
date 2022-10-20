@@ -355,11 +355,7 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = (
-            CacheConstants.STUDY_LISTING_MANAGED.value
-            if managed
-            else CacheConstants.STUDY_LISTING.value
-        )
+        cache_key = CacheConstants.STUDY_LISTING.value
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
@@ -383,7 +379,8 @@ class StudyService:
                     StudyPermissionType.READ,
                     raising=False,
                 )
-                and study_matcher(name, workspace, folder)(study_dto),
+                and study_matcher(name, workspace, folder)(study_dto)
+                and (not managed or study_dto.managed),
                 studies.values(),
             )
         }
@@ -425,22 +422,9 @@ class StudyService:
             study
         )
 
-    def initialize_additional_data_in_db(
-        self, params: RequestParameters
-    ) -> List[str]:
-        # TODO: remove this method once used
-        logger.info("Initializing additional data of studies")
+    def invalidate_cache_listing(self, params: RequestParameters) -> None:
         if params.user and params.user.is_site_admin():
-            studies = self.repository.get_all()
-            studies_not_updated: List[str] = []
-            for study in studies:
-                if self.storage_service.get_storage(
-                    study
-                ).initialize_additional_data(study):
-                    self.repository.save(study)
-                else:
-                    studies_not_updated.append(f"{study.id} : {study.name}")
-            return studies_not_updated
+            self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
         else:
             logger.error(f"User {params.user} is not site admin")
             raise UserHasNotPermissionError()
