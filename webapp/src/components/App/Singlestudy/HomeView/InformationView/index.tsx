@@ -135,10 +135,10 @@ function InformationView(props: Props) {
       </Box>
       {study && tree && openVariantModal && (
         <CreateVariantModal
+          parentId={study.id}
           open={openVariantModal}
           onClose={() => setOpenVariantModal(false)}
           tree={tree}
-          parentId={study.id}
         />
       )}
       {study && openLauncherModal && (

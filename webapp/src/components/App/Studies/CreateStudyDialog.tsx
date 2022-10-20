@@ -120,7 +120,7 @@ function CreateStudyDialog(props: Props) {
             fullWidth
           />
 
-          <Fieldset legend={t("global.permission")} fullFieldWith>
+          <Fieldset legend={t("global.permission")} fullFieldWidth>
             <SelectFE
               label={t("study.publicMode")}
               options={PUBLIC_MODE_LIST.map((mode) => ({
@@ -142,7 +142,7 @@ function CreateStudyDialog(props: Props) {
             />
           </Fieldset>
 
-          <Fieldset legend="Metadata" fullFieldWith>
+          <Fieldset legend="Metadata" fullFieldWidth>
             <CheckboxesTagsFE
               options={[]}
               label={t("studies.enterTag")}
