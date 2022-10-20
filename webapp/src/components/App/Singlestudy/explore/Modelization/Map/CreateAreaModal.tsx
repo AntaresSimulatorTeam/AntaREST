@@ -1,76 +1,61 @@
-import { useState } from "react";
-import { Box, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import { isStringEmpty } from "../../../../../../services/utils";
-import BasicDialog from "../../../../../common/dialogs/BasicDialog";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import FormDialog from "../../../../../common/dialogs/FormDialog";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import { SubmitHandlerPlus } from "../../../../../common/Form";
 
-interface PropType {
+interface Props {
   open: boolean;
   onClose: () => void;
-  onSave: (name: string, posX: number, posY: number, color: string) => void;
+  onSave: (name: string) => void;
 }
 
-const DEFAULT_COLOR = "rgb(230, 108, 44)";
-const DEFAULT_X = 0;
-const DEFAULT_Y = 0;
-
-function CreateAreaModal(props: PropType) {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+function CreateAreaModal(props: Props) {
   const { open, onClose, onSave } = props;
-  const [name, setName] = useState<string>("");
+  const [t] = useTranslation();
 
-  const handleSave = (
-    id: string,
-    posX: number,
-    posY: number,
-    color: string
-  ) => {
-    if (!isStringEmpty(id)) {
-      onSave(id, posX, posY, color);
-    } else {
-      enqueueSnackbar(t("study.error.createArea"), { variant: "error" });
-    }
+  const defaultValues = {
+    name: "",
   };
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
+    const { name } = data.values;
+
+    onSave(name);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <BasicDialog
+    <FormDialog
       title={t("study.modelization.map.newArea")}
+      titleIcon={AddCircleIcon}
       open={open}
-      onClose={onClose}
-      contentProps={{
-        sx: { width: "auto", height: "120px", p: 2 },
+      onCancel={onClose}
+      onSubmit={handleSubmit}
+      config={{
+        defaultValues,
       }}
-      actions={
-        <>
-          <Button variant="text" color="primary" onClick={onClose}>
-            {t("global.cancel")}
-          </Button>
-          <Button
-            sx={{ mx: 2 }}
-            color="primary"
-            variant="contained"
-            onClick={() =>
-              handleSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)
-            }
-          >
-            {t("global.save")}
-          </Button>
-        </>
-      }
     >
-      <Box sx={{ m: 2 }}>
-        <TextField
-          sx={{ height: "40px" }}
+      {({ control }) => (
+        <StringFE
           label={t("global.name")}
-          variant="outlined"
-          onChange={(event) => setName(event.target.value as string)}
-          value={name}
-          size="small"
+          name="name"
+          control={control}
+          fullWidth
+          rules={{
+            required: true,
+            validate: (val) => val.trim().length > 0,
+          }}
         />
-      </Box>
-    </BasicDialog>
+      )}
+    </FormDialog>
   );
 }
 

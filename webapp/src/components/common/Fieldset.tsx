@@ -36,6 +36,9 @@ function Fieldset(props: FieldsetProps) {
             ".MuiFormControl-root": {
               width: fullFieldWith ? "100%" : 220,
             },
+            ".MuiFormControl-root, .MuiTextField-root": {
+              margin: 0,
+            },
           },
         },
         sx

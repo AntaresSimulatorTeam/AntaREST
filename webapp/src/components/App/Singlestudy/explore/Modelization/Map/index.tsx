@@ -128,9 +128,9 @@ function Map() {
 
   const onSave = async (
     name: string,
-    posX: number,
-    posY: number,
-    color: string
+    posX = 0,
+    posY = 0,
+    color = "rgb(230, 108, 44)"
   ) => {
     setOpenModal(false);
     try {
