@@ -1,10 +1,9 @@
 autoCloseIssue: true
-gitReplaceChars: '/'
 
 branches:
   - label: '*'
     name: dev
-    prefix: feature/
+    prefix: feature/${issue.user.login}/
   - label: bug
-    prefix: bugfix/
+    prefix: bugfix/${issue.user.login}/
 
