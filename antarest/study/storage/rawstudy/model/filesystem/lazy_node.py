@@ -40,6 +40,17 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             path = self.config.path
         return path, tmp_dir
 
+    def file_exists(self) -> bool:
+        tmp_dir = None
+        try:
+            path, tmp_dir = self._get_real_file_path()
+            return path.exists()
+        except Exception:
+            return False
+        finally:
+            if tmp_dir:
+                tmp_dir.cleanup()
+
     def _get(
         self,
         url: Optional[List[str]] = None,
