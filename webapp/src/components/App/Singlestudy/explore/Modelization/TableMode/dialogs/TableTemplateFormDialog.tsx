@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { startCase } from "lodash";
+import { FieldPathValue, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { ReactHookFormSupportProps } from "../../../../../../../hoc/reactHookFormSupport";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../../../common/dialogs/FormDialog";
@@ -19,12 +19,21 @@ export interface TableTemplateFormDialogProps
     FormDialogProps<TableTemplate>,
     "open" | "title" | "titleIcon" | "onSubmit" | "onCancel" | "config"
   > {
-  rulesForName?: ReactHookFormSupportProps<TableTemplate, "name">["rules"];
+  validateName?: Validate<FieldPathValue<TableTemplate, "name">>;
+  disableName?: boolean;
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const { open, title, titleIcon, config, onSubmit, onCancel, rulesForName } =
-    props;
+  const {
+    open,
+    title,
+    titleIcon,
+    config,
+    onSubmit,
+    onCancel,
+    validateName,
+    disableName,
+  } = props;
   const { t } = useTranslation();
 
   return (
@@ -50,10 +59,8 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             name="name"
             autoFocus
             control={control}
-            rules={{
-              ...rulesForName,
-              required: true,
-            }}
+            rules={{ validate: validateName, required: true }}
+            disabled={disableName}
           />
           <SelectFE
             label={t("study.type")}

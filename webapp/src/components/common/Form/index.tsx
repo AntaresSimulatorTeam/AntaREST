@@ -151,12 +151,16 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
+  // To use it in wrapper functions without need to add the value in `useCallback`'s deps
+  const isSubmittingRef = useRef(isSubmitting);
 
   useUpdateEffect(() => {
     setLoader(isSubmitting);
     if (isSubmitting) {
       setLoader.flush();
     }
+
+    isSubmittingRef.current = isSubmitting;
   }, [isSubmitting]);
 
   useUpdateEffect(
@@ -204,13 +208,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
   usePrompt(t("form.submit.inProgress"), preventClose.current);
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Submit
   ////////////////////////////////////////////////////////////////
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    handleSubmit(function onValid(data, e) {
+  const submit = () => {
+    const callback = handleSubmit(function onValid(data, e) {
       lastSubmittedData.current = data;
 
       const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
@@ -236,7 +238,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    }, onSubmitError)()
+    }, onSubmitError);
+
+    return callback()
       .catch((error) => {
         enqueueErrorSnackbar(t("form.submit.error"), error);
       })
@@ -245,18 +249,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
       });
   };
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
+  const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
-  const simulateSubmitClick = useDebounce(() => {
-    submitRef.current?.click();
-  }, autoSubmitConfig.wait);
-
-  const simulateSubmit = useCallback(() => {
+  const requestSubmit = useCallback(() => {
     preventClose.current = true;
-    simulateSubmitClick();
-  }, [simulateSubmitClick]);
+    submitDebounced();
+  }, [submitDebounced]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submit();
+  };
 
   ////////////////////////////////////////////////////////////////
   // API
@@ -273,17 +280,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
         onChange: (event: any) => {
           options?.onChange?.(event);
           if (autoSubmitConfig.enable) {
-            if (isSubmitting) {
+            if (
+              isSubmittingRef.current &&
+              !fieldsChangeDuringAutoSubmitting.current.includes(name)
+            ) {
               fieldsChangeDuringAutoSubmitting.current.push(name);
             }
-            simulateSubmit();
+
+            requestSubmit();
           }
         },
       };
 
       return register(name, newOptions);
     },
-    [autoSubmitConfig.enable, register, simulateSubmit, isSubmitting]
+    [autoSubmitConfig.enable, register, requestSubmit]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
@@ -307,15 +318,18 @@ function Form<TFieldValues extends FieldValues, TContext>(
       };
 
       if (autoSubmitConfig.enable && newOptions.shouldDirty) {
-        if (isSubmitting) {
+        if (isSubmittingRef.current) {
           fieldsChangeDuringAutoSubmitting.current.push(name);
         }
-        simulateSubmit();
+        // If it's a new value
+        if (value !== getValues(name)) {
+          requestSubmit();
+        }
       }
 
       setValue(name, value, newOptions);
     },
-    [autoSubmitConfig.enable, setValue, simulateSubmit, isSubmitting]
+    [autoSubmitConfig.enable, setValue, getValues, requestSubmit]
   );
 
   const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
