@@ -40,7 +40,7 @@ function UpdateTemplateTableDialog(props: Props) {
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       onCancel={onCancel}
-      rulesForName={{ disabled: true }}
+      disableName
     />
   );
 }

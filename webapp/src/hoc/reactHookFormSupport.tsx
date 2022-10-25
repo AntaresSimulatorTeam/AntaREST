@@ -48,6 +48,7 @@ export type ReactHookFormSupportProps<
         // cf. UseControllerProps#rules
         | "valueAsNumber"
         | "valueAsDate"
+        | "disabled"
         // Not necessary
         | "onChange"
         | "onBlur"
@@ -77,11 +78,16 @@ function reactHookFormSupport<TValue>(
       props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
         TProps
     ) {
-      const { control, rules = {}, shouldUnregister, ...feProps } = props;
+      const {
+        control,
+        rules = {},
+        shouldUnregister,
+        disabled,
+        ...feProps
+      } = props;
       const {
         validate,
         setValueAs: setValueAsFromRules = R.identity,
-        disabled,
         ...restRules
       } = rules;
 
