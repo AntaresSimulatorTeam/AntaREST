@@ -10,11 +10,11 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
-    LogType,
     JobCreationDTO,
     JobResultDTO,
     LauncherEnginesDTO,
     LauncherParametersDTO,
+    LogType,
 )
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth

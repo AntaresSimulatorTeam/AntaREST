@@ -27,7 +27,7 @@ from antarest.core.interfaces.eventbus import (
     EventType,
 )
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -36,9 +36,9 @@ from antarest.launcher.adapters.abstractlauncher import (
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import (
     JobStatus,
-    LogType,
     LauncherParametersDTO,
     XpansionParametersDTO,
+    LogType,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
@@ -284,6 +284,20 @@ class SlurmLauncher(AbstractLauncher):
         )
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
+            if output_path.name.endswith(".zip"):
+                logger.info(
+                    "Unzipping zipped output for xpansion result storage"
+                )
+                unzip(
+                    self.local_workspace
+                    / STUDIES_OUTPUT_DIR_NAME
+                    / job_id
+                    / "output"
+                    / output_path.name[:-4],
+                    output_path,
+                    remove_source_zip=True,
+                )
+
             if (output_path / "updated_links").exists():
                 logger.warning("Skipping updated links")
                 self.callbacks.append_after_log(
@@ -512,11 +526,9 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args = deepcopy(self.launcher_args)
             other_options = []
             if launcher_params.other_options:
-                other_options.append(
-                    re.sub(
-                        "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
-                    )
-                )
+                options = re.split("\\s+", launcher_params.other_options)
+                for opt in options:
+                    other_options.append(re.sub("[^a-zA-Z0-9_,-]", "", opt))
             if launcher_params.xpansion is not None:
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"

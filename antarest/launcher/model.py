@@ -37,6 +37,23 @@ class LogType(str, enum.Enum):
     STDOUT = "STDOUT"
     STDERR = "STDERR"
 
+    @staticmethod
+    def from_filename(filename: str) -> Optional["LogType"]:
+        if filename == "antares-err.log":
+            return LogType.STDERR
+        elif filename == "antares-out.log":
+            return LogType.STDOUT
+        else:
+            return None
+
+    def to_suffix(self) -> str:
+        if self == LogType.STDOUT:
+            return "out.log"
+        elif self == LogType.STDERR:
+            return "err.log"
+        else:
+            return "out.log"
+
 
 class JobStatus(str, enum.Enum):
     PENDING = "pending"
