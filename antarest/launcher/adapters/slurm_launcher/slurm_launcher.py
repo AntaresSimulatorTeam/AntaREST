@@ -327,10 +327,9 @@ class SlurmLauncher(AbstractLauncher):
     def _check_studies_state(self) -> None:
         try:
             with self.antares_launcher_lock:
-                run_with(
+                self._call_launcher(
                     arguments=self.launcher_args,
                     parameters=self.launcher_params,
-                    show_banner=False,
                 )
         except Exception as e:
             logger.info("Could not get data on remote server", exc_info=e)
@@ -490,16 +489,31 @@ class SlurmLauncher(AbstractLauncher):
                 self.callbacks.append_before_log(
                     launch_uuid, f"Submitting study to slurm launcher"
                 )
-                run_with(
-                    launcher_args, self.launcher_params, show_banner=False
+
+                self._call_launcher(launcher_args, self.launcher_params)
+
+                launch_success = self._check_if_study_is_in_launcher_db(
+                    launch_uuid
                 )
-                self.callbacks.append_before_log(
-                    launch_uuid, f"Study submitted"
-                )
-                logger.info("Study exported and run with launcher")
+                if launch_success:
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Study submitted"
+                    )
+                    logger.info("Study exported and run with launcher")
+                else:
+                    self.callbacks.append_after_log(
+                        launch_uuid,
+                        f"Study not submitted. The study configuration may be incorrect",
+                    )
+                    logger.warning(
+                        f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
+                    )
 
                 self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.RUNNING, None, None
+                    str(launch_uuid),
+                    JobStatus.RUNNING if launch_success else JobStatus.FAILED,
+                    None,
+                    None,
                 )
             except Exception as e:
                 logger.error(
@@ -518,6 +532,18 @@ class SlurmLauncher(AbstractLauncher):
 
         if not self.thread:
             self.start()
+
+    def _call_launcher(
+        self, arguments: argparse.Namespace, parameters: MainParameters
+    ) -> None:
+        run_with(arguments, parameters, show_banner=False)
+
+    def _check_if_study_is_in_launcher_db(self, job_id: str) -> bool:
+        studies = self.data_repo_tinydb.get_list_of_studies()
+        for s in studies:
+            if s.name == job_id:
+                return True
+        return False
 
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO
@@ -621,9 +647,7 @@ class SlurmLauncher(AbstractLauncher):
                     f"Cancelling job {job_id} (dispatched={not dispatch})"
                 )
                 with self.antares_launcher_lock:
-                    run_with(
-                        launcher_args, self.launcher_params, show_banner=False
-                    )
+                    self._call_launcher(launcher_args, self.launcher_params)
                 return
         if dispatch:
             self.event_bus.push(
