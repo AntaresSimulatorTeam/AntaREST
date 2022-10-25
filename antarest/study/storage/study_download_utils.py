@@ -476,19 +476,45 @@ class BadOutputFormat(HTTPException):
 
 
 def find_first_child(
-    folder_node: INode[Any, Any, Any], filter_name: str = ".*"
+    folder_node: INode[Any, Any, Any], filter_name: str = ".*", depth: int = 0
 ) -> INode[Any, Any, Any]:
     children: Dict[str, INode[Any, Any, Any]] = cast(
         FolderNode, folder_node
     ).build()
-    try:
-        first_child = filter(
-            lambda el: re.search(filter_name, el) is not None,
-            children.keys(),
-        ).__next__()
-    except StopIteration:
-        raise BadOutputFormat("Couldn't find an output sample")
-    return children[first_child]
+    filtered_children = filter(
+        lambda el: re.search(".*" if depth > 0 else filter_name, el)
+        is not None,
+        children.keys(),
+    )
+    if depth > 0:
+        for child in filtered_children:
+            try:
+                return find_first_child(
+                    children[child], filter_name, depth - 1
+                )
+            except BadOutputFormat:
+                pass
+    else:
+        try:
+            first_child = filtered_children.__next__()
+            return children[first_child]
+        except StopIteration:
+            raise BadOutputFormat("Couldn't find an output sample")
+
+    raise BadOutputFormat("Couldn't find an output sample")
+
+
+def get_output_variables(
+    base_node: INode[Any, Any, Any], depth_search: int
+) -> List[str]:
+    return (
+        cast(
+            OutputSeriesMatrix,
+            find_first_child(base_node, "values-", depth_search),
+        )
+        .parse_dataframe()
+        .columns.to_list()
+    )
 
 
 def get_output_variables_information(
@@ -513,45 +539,62 @@ def get_output_variables_information(
             ),
         ),
     ).build()
+    mc_all_result = cast(
+        FolderNode,
+        study.tree.get_node(
+            [
+                "output",
+                output_name,
+                study.config.outputs[output_name].mode,
+                "mc-all",
+            ]
+        ),
+    ).build()
 
     output_variables = {
-        "area": (
-            cast(
-                OutputSeriesMatrix,
-                find_first_child(
-                    find_first_child(first_year_result["areas"]), "values-"
-                ),
-            )
-            .parse_dataframe()
-            .columns.to_list()
-        ),
+        "area": [],
         "link": [],
     }
 
-    first_area_with_link: Optional[str] = None
-    for area_id, area in study.config.areas.items():
-        if area.links.keys():
-            first_area_with_link = area_id
-            break
-    if first_area_with_link:
-        output_variables["link"] = (
-            cast(
-                OutputSeriesMatrix,
-                find_first_child(
-                    find_first_child(
-                        find_first_child(
-                            first_year_result["links"],
-                            f"^{first_area_with_link}$",
-                        ),
-                    ),
-                    "values-",
-                ),
-            )
-            .parse_dataframe()
-            .columns.to_list()
+    try:
+        output_variables["area"] = get_output_variables(
+            first_year_result["areas"], 1
+        )
+    except BadOutputFormat:
+        logger.warning(
+            f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas"
         )
 
+    if len(output_variables["area"]) == 0 and "areas" in mc_all_result:
+        try:
+            output_variables["area"] = get_output_variables(
+                mc_all_result["areas"], 1
+            )
+        except BadOutputFormat:
+            logger.warning(
+                f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas"
+            )
+
+    try:
+        output_variables["link"] = get_output_variables(
+            first_year_result["links"], 2
+        )
+    except BadOutputFormat:
+        logger.warning(
+            f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links"
+        )
+
+    if len(output_variables["link"]) == 0 and "links" in mc_all_result:
+        try:
+            output_variables["link"] = get_output_variables(
+                mc_all_result["links"], 2
+            )
+        except BadOutputFormat:
+            logger.warning(
+                f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links"
+            )
+
     return {
-        "area": [col[0] for col in output_variables["area"]],
-        "link": [col[0] for col in output_variables["link"]],
+        "area": list({col[0] for col in output_variables["area"]}),
+        "link": list({col[0] for col in output_variables["link"]}),
     }
