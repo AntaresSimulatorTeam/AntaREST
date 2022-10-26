@@ -506,14 +506,15 @@ def find_first_child(
 
 def get_output_variables(
     base_node: INode[Any, Any, Any], depth_search: int
-) -> List[str]:
-    return (
+) -> List[List[str]]:
+    return cast(
+        List[List[str]],
         cast(
             OutputSeriesMatrix,
             find_first_child(base_node, "values-", depth_search),
         )
         .parse_dataframe()
-        .columns.to_list()
+        .columns.to_list(),
     )
 
 
@@ -551,7 +552,7 @@ def get_output_variables_information(
         ),
     ).build()
 
-    output_variables = {
+    output_variables: Dict[str, List[List[str]]] = {
         "area": [],
         "link": [],
     }
@@ -594,7 +595,16 @@ def get_output_variables_information(
                 f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links"
             )
 
+    # don't know how to preserve order if using list({col[0] for col in ...})
+    area_cols: List[str] = []
+    for col in output_variables["area"]:
+        if col[0] not in area_cols:
+            area_cols.append(col[0])
+    link_cols: List[str] = []
+    for col in output_variables["link"]:
+        if col[0] not in link_cols:
+            link_cols.append(col[0])
     return {
-        "area": list({col[0] for col in output_variables["area"]}),
-        "link": list({col[0] for col in output_variables["link"]}),
+        "area": area_cols,
+        "link": link_cols,
     }
