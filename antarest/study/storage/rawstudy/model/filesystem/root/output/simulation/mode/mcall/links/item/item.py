@@ -1,3 +1,5 @@
+from typing import cast
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -27,7 +29,12 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {}
-        for timing in self.config.get_filters_synthesis(self.area, self.link):
+
+        # filters = self.config.get_filters_synthesis(self.area, self.link)
+        # todo get the config related to this output (now this may fail if input has changed since the launch)
+        filters = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+        for timing in filters:
             children[f"values-{timing}"] = LinkOutputSeriesMatrix(
                 self.context,
                 self.config.next_file(f"values-{timing}.txt"),
@@ -42,4 +49,9 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
                 self.area,
                 self.link,
             )
-        return children
+
+        return {
+            child: children[child]
+            for child in children
+            if cast(LinkOutputSeriesMatrix, children[child]).file_exists()
+        }
