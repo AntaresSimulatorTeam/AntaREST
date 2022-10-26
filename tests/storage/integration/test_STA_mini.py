@@ -265,11 +265,19 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
-            {},
+            {
+                "columns": [0, 1, 2, 3, 4, 5, 6, 7],
+                "index": list(range(8760)),
+                "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/reserves/fr",
-            {},
+            {
+                "columns": [0],
+                "index": list(range(8760)),
+                "data": [[0.0]] * 8760,
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
@@ -277,7 +285,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
-            {},
+            {
+                "columns": [0],
+                "index": list(range(8760)),
+                "data": [[0.0]] * 8760,
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
@@ -285,7 +297,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
-            {},
+            {
+                "columns": [0],
+                "index": list(range(8760)),
+                "data": [[0.0]] * 8760,
+            },
         ),
     ],
 )

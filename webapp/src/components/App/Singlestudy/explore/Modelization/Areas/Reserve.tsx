@@ -12,6 +12,7 @@ function Reserve() {
   const colmunsNames = [
     "Primary Res. (draft)",
     "Strategic Res. (draft)",
+    "DSM",
     "Day Ahead",
   ];
 
