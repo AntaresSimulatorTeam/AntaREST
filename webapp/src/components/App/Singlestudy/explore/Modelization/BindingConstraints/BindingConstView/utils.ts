@@ -4,9 +4,9 @@ import {
   LinkCreationInfoDTO,
 } from "../../../../../../../common/types";
 import { getBindingConstraint } from "../../../../../../../services/api/studydata";
+import { FilteringType } from "../../../common/types";
 
 type OperatorType = "less" | "equal" | "greater" | "both";
-type FilteringType = "hourly" | "daily" | "weekly";
 
 export interface ConstraintType {
   id: string;
@@ -25,7 +25,7 @@ export interface BindingConstFields {
   name: string;
   id: string;
   enabled: boolean;
-  time_step: FilteringType;
+  time_step: Exclude<FilteringType, "monthly" | "annual">;
   operator: OperatorType;
   comments?: string;
   constraints: Array<ConstraintType>;

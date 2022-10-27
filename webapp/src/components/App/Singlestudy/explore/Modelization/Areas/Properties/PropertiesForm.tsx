@@ -12,6 +12,7 @@ import { stringToRGB } from "../../../../../../common/fieldEditors/ColorPickerFE
 import { getPropertiesPath, PropertiesFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
+import OutputFilters from "../../../common/OutputFilters";
 
 export default function PropertiesForm(
   props: UseFormReturnPlus<PropertiesFields, unknown> & {
@@ -24,12 +25,6 @@ export default function PropertiesForm(
     props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
-    (item) => ({
-      label: t(`global.time.${item}`),
-      value: item,
-    })
-  );
   const adequacyPatchModeOptions = ["inside", "outside", "virtual"].map(
     (item) => ({
       label: item,
@@ -48,37 +43,6 @@ export default function PropertiesForm(
       enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
     }
   };
-
-  const renderFilter = (filterName: string) => (
-    <Box sx={{ mb: 2 }}>
-      <SelectFE
-        name={filterName}
-        sx={{ minWidth: "200px" }}
-        label={t(`study.modelization.nodeProperties.${filterName}`)}
-        multiple
-        renderValue={(value: unknown) => {
-          const selection = value
-            ? (value as Array<string>).filter((val) => val !== "")
-            : [];
-          return selection.length > 0
-            ? selection.map((elm) => t(`global.time.${elm}`)).join(", ")
-            : t("global.none");
-        }}
-        defaultValue={(defaultValues || {})[filterName] || []}
-        variant="filled"
-        options={filterOptions}
-        control={control}
-        rules={{
-          onAutoSubmit: (value) => {
-            const selection = value
-              ? (value as Array<string>).filter((val) => val !== "")
-              : [];
-            handleAutoSubmit(path[filterName], selection.join(", "));
-          },
-        }}
-      />
-    </Box>
-  );
 
   return (
     <Box
@@ -281,10 +245,12 @@ export default function PropertiesForm(
             />
           </Fieldset>
         )}
-        <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
-          {renderFilter("filterSynthesis")}
-          {renderFilter("filterByYear")}
-        </Fieldset>
+        <OutputFilters
+          control={control}
+          onAutoSubmit={(filter, value) =>
+            handleAutoSubmit(path[filter], value)
+          }
+        />
       </Box>
     </Box>
   );
