@@ -1,12 +1,13 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useEffect } from "react";
 import * as React from "react";
-import { styled } from "@mui/material";
+import { styled, SxProps, Theme } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { StudyMetadata } from "../../../../common/types";
+import { mergeSxProp } from "../../../../utils/muiUtils";
 
 export const StyledTab = styled(Tabs, {
   shouldForwardProp: (prop) => prop !== "border" && prop !== "tabStyle",
@@ -32,48 +33,65 @@ interface Props {
   tabList: Array<{ label: string; path: string }>;
   border?: boolean;
   tabStyle?: "normal" | "withoutBorder";
+  sx?: SxProps<Theme>;
 }
 
 function TabWrapper(props: Props) {
-  const { study, tabList, border, tabStyle } = props;
+  const { study, tabList, border, tabStyle, sx } = props;
   const location = useLocation();
   const navigate = useNavigate();
-  const [value, setValue] = React.useState(0);
+  const [selectedTab, setSelectedTab] = React.useState(0);
 
   useEffect(() => {
-    const getDefaultIndex = (): number => {
+    const getTabIndex = (): number => {
       const index = tabList.findIndex(
-        (elm) => location.pathname.substring(0, elm.path.length) === elm.path
+        (tab) => location.pathname.substring(0, tab.path.length) === tab.path
       );
+
       if (index >= 0) {
         return index;
       }
       return 0;
     };
+
     if (study) {
-      setValue(getDefaultIndex);
+      setSelectedTab(getTabIndex);
     }
   }, [location.pathname, study, tabList]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
+    setSelectedTab(newValue);
     navigate(tabList[newValue].path);
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Box
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
+      sx={mergeSxProp(
+        {
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          alignItems: "center",
+        },
+        sx
+      )}
     >
       <StyledTab
         border={border === true}
         tabStyle={tabStyle}
-        value={value}
+        value={selectedTab}
         onChange={handleChange}
-        aria-label="basic tabs example"
+        variant="scrollable"
         sx={{
           width: "98%",
           ...(border === true
@@ -81,8 +99,8 @@ function TabWrapper(props: Props) {
             : {}),
         }}
       >
-        {tabList.map((elm) => (
-          <Tab key={elm.path} label={elm.label} />
+        {tabList.map((tab) => (
+          <Tab key={tab.path} label={tab.label} />
         ))}
       </StyledTab>
       <Outlet context={{ study }} />
