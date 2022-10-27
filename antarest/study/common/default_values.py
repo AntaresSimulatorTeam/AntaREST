@@ -1,12 +1,9 @@
-from enum import Enum
-
-
-class FilteringOptions(Enum):
+class FilteringOptions:
     FILTER_SYNTHESIS: str = "hourly, daily, weekly, monthly, annual"
     FILTER_YEAR_BY_YEAR: str = "hourly, daily, weekly, monthly, annual"
 
 
-class NodalOptimization(Enum):
+class NodalOptimization:
     NON_DISPATCHABLE_POWER: bool = True
     DISPATCHABLE_HYDRO_POWER: bool = True
     OTHER_DISPATCHABLE_POWER: bool = True
@@ -16,7 +13,7 @@ class NodalOptimization(Enum):
     SPILLEDENERGYCOST: float = 0.000000
 
 
-class LinkProperties(Enum):
+class LinkProperties:
     HURDLES_COST: bool = False
     LOOP_FLOW: bool = False
     USE_PHASE_SHIFTER: bool = False

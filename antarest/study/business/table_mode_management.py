@@ -18,7 +18,7 @@ from antarest.study.business.utils import (
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.business.default_values import (
+from antarest.study.common.default_values import (
     NodalOptimization,
     FilteringOptions,
     LinkProperties,
@@ -139,31 +139,31 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     TableTemplateType.AREA: {
         "non_dispatchable_power": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/non-dispatchable-power",
-            "default_value": NodalOptimization.NON_DISPATCHABLE_POWER.value,
+            "default_value": NodalOptimization.NON_DISPATCHABLE_POWER,
         },
         "dispatchable_hydro_power": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/dispatchable-hydro-power",
-            "default_value": NodalOptimization.DISPATCHABLE_HYDRO_POWER.value,
+            "default_value": NodalOptimization.DISPATCHABLE_HYDRO_POWER,
         },
         "other_dispatchable_power": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/other-dispatchable-power",
-            "default_value": NodalOptimization.OTHER_DISPATCHABLE_POWER.value,
+            "default_value": NodalOptimization.OTHER_DISPATCHABLE_POWER,
         },
         "spread_unsupplied_energy_cost": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/spread-unsupplied-energy-cost",
-            "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST.value,
+            "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
         },
         "spread_spilled_energy_cost": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/spread-spilled-energy-cost",
-            "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST.value,
+            "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
         },
         "filter_synthesis": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/filtering/filter-synthesis",
-            "default_value": FilteringOptions.FILTER_SYNTHESIS.value,
+            "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
             "path": f"{AREA_FIELD_PATH_PREFIX}/filtering/filter-year-by-year",
-            "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+            "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
         "adequacy_patch_mode": {
             "path": "input/areas/{id}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
@@ -173,43 +173,43 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     TableTemplateType.LINK: {
         "hurdles_cost": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/hurdles-cost",
-            "default_value": LinkProperties.HURDLES_COST.value,
+            "default_value": LinkProperties.HURDLES_COST,
         },
         "loop_flow": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/loop-flow",
-            "default_value": LinkProperties.LOOP_FLOW.value,
+            "default_value": LinkProperties.LOOP_FLOW,
         },
         "use_phase_shifter": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/use-phase-shifter",
-            "default_value": LinkProperties.USE_PHASE_SHIFTER.value,
+            "default_value": LinkProperties.USE_PHASE_SHIFTER,
         },
         "transmission_capacities": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/transmission-capacities",
-            "default_value": LinkProperties.TRANSMISSION_CAPACITIES.value,
+            "default_value": LinkProperties.TRANSMISSION_CAPACITIES,
         },
         "asset_type": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/asset-type",
-            "default_value": LinkProperties.ASSET_TYPE.value,
+            "default_value": LinkProperties.ASSET_TYPE,
         },
         "link_style": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/link-style",
-            "default_value": LinkProperties.LINK_STYLE.value,
+            "default_value": LinkProperties.LINK_STYLE,
         },
         "link_width": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/link-width",
-            "default_value": LinkProperties.LINK_WIDTH.value,
+            "default_value": LinkProperties.LINK_WIDTH,
         },
         "display_comments": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/display-comments",
-            "default_value": LinkProperties.DISPLAY_COMMENTS.value,
+            "default_value": LinkProperties.DISPLAY_COMMENTS,
         },
         "filter_synthesis": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/filter-synthesis",
-            "default_value": FilteringOptions.FILTER_SYNTHESIS.value,
+            "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
             "path": f"{LINK_FIELD_PATH_PREFIX}/filter-year-by-year",
-            "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+            "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
     },
     TableTemplateType.CLUSTER: {
