@@ -5,25 +5,19 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.areas import (
     OutputSimulationAreas,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid import (
-    OutputSimulationModeMcAllGrid,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.links import (
     OutputSimulationLinks,
 )
 
 
-class OutputSimulationModeMcAll(FolderNode):
+class OutputSimulationModeMcIndScn(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "areas": OutputSimulationAreas(
-                self.context, self.config.next_file("areas")
-            ),
-            "grid": OutputSimulationModeMcAllGrid(
-                self.context, self.config.next_file("grid")
+                self.context, self.config.next_file("areas"), mc_all=False
             ),
             "links": OutputSimulationLinks(
-                self.context, self.config.next_file("links")
+                self.context, self.config.next_file("links"), mc_all=False
             ),
         }
         return children

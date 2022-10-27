@@ -15,15 +15,17 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 )
 
 
-class OutputSimulationModeMcAllAreasSet(FolderNode):
+class OutputSimulationSet(FolderNode):
     def __init__(
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
         set: str,
+        mc_all: bool = True,
     ):
         FolderNode.__init__(self, context, config)
         self.set = set
+        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = dict()
@@ -33,12 +35,13 @@ class OutputSimulationModeMcAllAreasSet(FolderNode):
         filters = ["hourly", "daily", "weekly", "monthly", "annual"]
 
         for timing in filters:
-            children[f"id-{timing}"] = AreaOutputSeriesMatrix(
-                self.context,
-                self.config.next_file(f"id-{timing}.txt"),
-                timing,
-                self.set,
-            )
+            if self.mc_all:
+                children[f"id-{timing}"] = AreaOutputSeriesMatrix(
+                    self.context,
+                    self.config.next_file(f"id-{timing}.txt"),
+                    timing,
+                    self.set,
+                )
 
             children[f"values-{timing}"] = AreaOutputSeriesMatrix(
                 self.context,
