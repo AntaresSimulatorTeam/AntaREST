@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Callable, Any, Optional, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -21,18 +21,20 @@ class AreaMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         prefix: str = "",
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ] = InputSeriesMatrix,
+        matrix_class: Callable[..., INode[Any, Any, Any]] = InputSeriesMatrix,
+        additional_matrix_params: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(context, config)
         self.prefix = prefix
         self.matrix_class = matrix_class
+        self.additional_matrix_params = additional_matrix_params
 
     def build(self) -> TREE:
         children: TREE = {
             f"{self.prefix}{area}": self.matrix_class(
-                self.context, self.config.next_file(f"{self.prefix}{area}.txt")
+                self.context,
+                self.config.next_file(f"{self.prefix}{area}.txt"),
+                **(self.additional_matrix_params or {}),
             )
             for area in self.config.area_names()
         }

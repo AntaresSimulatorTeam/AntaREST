@@ -179,14 +179,14 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"load_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix(),
+                        f"load_{area_id}": self.command_context.generator_matrix_constants.get_null_scenario_matrix(),
                     },
                 },
                 "misc-gen": {
-                    f"miscgen-{area_id}": self.command_context.generator_matrix_constants.get_null_matrix()
+                    f"miscgen-{area_id}": self.command_context.generator_matrix_constants.get_default_miscgen()
                 },
                 "reserves": {
-                    area_id: self.command_context.generator_matrix_constants.get_null_matrix()
+                    area_id: self.command_context.generator_matrix_constants.get_default_reserves()
                 },
                 "solar": {
                     "prepro": {
@@ -199,7 +199,7 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"solar_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix(),
+                        f"solar_{area_id}": self.command_context.generator_matrix_constants.get_null_scenario_matrix(),
                     },
                 },
                 "thermal": {
@@ -222,7 +222,7 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"wind_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix()
+                        f"wind_{area_id}": self.command_context.generator_matrix_constants.get_null_scenario_matrix()
                     },
                 },
             }

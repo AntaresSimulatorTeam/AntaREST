@@ -8,6 +8,9 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
     NULL_MATRIX,
+    NULL_SCENARIO_MATRIX,
+    FIXED_4_COLUMNS,
+    FIXED_8_COLUMNS,
 )
 
 # TODO: put index into variable
@@ -18,6 +21,8 @@ HYDRO_COMMON_CAPACITY_INFLOW_PATTERN = "hydro/common/capacity/inflow_pattern"
 HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = (
     "hydro/common/capacity/credit_modulations"
 )
+RESERVES_TS = "reserves"
+MISCGEN_TS = "miscgen"
 PREPRO_CONVERSION = "prepro/conversion"
 PREPRO_DATA = "prepro/data"
 THERMAL_PREPRO_DATA = "thermals/prepro/data"
@@ -27,6 +32,7 @@ LINK_V8 = "link_v8"
 LINK_DIRECT = "link_direct"
 LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
+EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
@@ -86,6 +92,11 @@ class GeneratorMatrixConstants:
         )
 
         self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
+        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(
+            NULL_SCENARIO_MATRIX
+        )
+        self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
+        self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
@@ -144,3 +155,12 @@ class GeneratorMatrixConstants:
 
     def get_null_matrix(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
+
+    def get_null_scenario_matrix(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[EMPTY_SCENARIO_MATRIX]
+
+    def get_default_reserves(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVES_TS]
+
+    def get_default_miscgen(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]

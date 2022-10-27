@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Any, Union, cast
+from typing import List, Optional, Any, Union, cast, Dict
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -31,9 +31,11 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         nb_columns: Optional[int] = None,
         freq: str = "hourly",
+        default_empty: Optional[List[List[float]]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
+        self.default_empty = default_empty
 
     def parse(
         self,
@@ -76,7 +78,10 @@ class InputSeriesMatrix(MatrixNode):
             return data
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            return {}
+            default = self._format_default_matrix()
+            if return_dataframe:
+                return pd.DataFrame(default)
+            return default
 
     def _dump_json(self, data: JSON) -> None:
         df = pd.DataFrame(**data)
@@ -109,3 +114,17 @@ class InputSeriesMatrix(MatrixNode):
                 f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
             )
         return errors
+
+    def _format_default_matrix(self) -> Dict[str, Any]:
+        if self.default_empty:
+            index_count = len(self.default_empty)
+            if index_count > 0:
+                column_count = len(self.default_empty[0])
+                if column_count > 0:
+                    logger.info("Using preset default matrix")
+                    return {
+                        "index": list(range(0, index_count)),
+                        "columns": list(range(0, column_count)),
+                        "data": self.default_empty,
+                    }
+        return {}

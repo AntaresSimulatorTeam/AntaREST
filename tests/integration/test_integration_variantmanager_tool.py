@@ -9,6 +9,11 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    default_scenario_hourly,
+    default_4_fixed_hourly,
+    default_8_fixed_hourly,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
@@ -30,6 +35,13 @@ from antarest.tools.lib import (
 )
 
 test_dir: Path = Path(__file__).parent
+
+
+def generate_csv_string(data: List[List[float]]) -> str:
+    csv_str = ""
+    for row in data:
+        csv_str += "\t".join(["{:.6f}".format(v) for v in row]) + "\n"
+    return csv_str
 
 
 def generate_study_with_server(
@@ -102,6 +114,60 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         Path(tmp_path) / "internal_workspace" / study_id / "snapshot"
     )
     assert generated_study_path.exists() and generated_study_path.is_dir()
+
+    single_column_empty_items = [
+        f"input{os.sep}load{os.sep}series{os.sep}load_hub w.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_south.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_hub n.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_west.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_north.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_hub s.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_hub e.txt",
+        f"input{os.sep}load{os.sep}series{os.sep}load_east.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_east.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_north.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_hub n.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_south.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_hub w.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_west.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_hub e.txt",
+        f"input{os.sep}wind{os.sep}series{os.sep}wind_hub s.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_east.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_hub n.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_south.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_hub s.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_north.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_hub w.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_hub e.txt",
+        f"input{os.sep}solar{os.sep}series{os.sep}solar_west.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}west{os.sep}semi base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}west{os.sep}peak{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}west{os.sep}base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}north{os.sep}semi base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}north{os.sep}peak{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}north{os.sep}base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}east{os.sep}semi base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}east{os.sep}peak{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}east{os.sep}base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}semi base{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}peak{os.sep}series.txt",
+        f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}base{os.sep}series.txt",
+    ]
+    fixed_4_cols_empty_items = [
+        f"input{os.sep}reserves{os.sep}hub s.txt",
+        f"input{os.sep}reserves{os.sep}hub n.txt",
+        f"input{os.sep}reserves{os.sep}hub w.txt",
+        f"input{os.sep}reserves{os.sep}hub e.txt",
+    ]
+    fixed_8_cols_empty_items = [
+        f"input{os.sep}misc-gen{os.sep}miscgen-hub w.txt",
+        f"input{os.sep}misc-gen{os.sep}miscgen-hub e.txt",
+        f"input{os.sep}misc-gen{os.sep}miscgen-hub s.txt",
+        f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
+    ]
+    single_column_empty_data = generate_csv_string(default_scenario_hourly)
+    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
+    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
     for root, dirs, files in os.walk(study_path):
         rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
@@ -112,9 +178,22 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
                 "study.ico",
             ]:
                 continue
-            assert (study_path / rel_path / item).read_text() == (
-                generated_study_path / rel_path / item
-            ).read_text()
+            elif f"{rel_path}{os.sep}{item}" in single_column_empty_items:
+                assert (
+                    generated_study_path / rel_path / item
+                ).read_text() == single_column_empty_data
+            elif f"{rel_path}{os.sep}{item}" in fixed_4_cols_empty_items:
+                assert (
+                    generated_study_path / rel_path / item
+                ).read_text() == fixed_4_columns_empty_data
+            elif f"{rel_path}{os.sep}{item}" in fixed_8_cols_empty_items:
+                assert (
+                    generated_study_path / rel_path / item
+                ).read_text() == fixed_8_columns_empty_data
+            else:
+                assert (study_path / rel_path / item).read_text() == (
+                    generated_study_path / rel_path / item
+                ).read_text()
 
 
 def test_diff_local(tmp_path: Path):
