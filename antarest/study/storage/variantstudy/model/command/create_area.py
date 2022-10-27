@@ -7,7 +7,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.default_values import (
+from antarest.study.common.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
@@ -111,15 +111,15 @@ class CreateArea(ICommand):
                     area_id: {
                         "optimization": {
                             "nodal optimization": {
-                                "non-dispatchable-power": NodalOptimization.NON_DISPATCHABLE_POWER.value,
-                                "dispatchable-hydro-power": NodalOptimization.DISPATCHABLE_HYDRO_POWER.value,
-                                "other-dispatchable-power": NodalOptimization.OTHER_DISPATCHABLE_POWER.value,
-                                "spread-unsupplied-energy-cost": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST.value,
-                                "spread-spilled-energy-cost": NodalOptimization.SPREAD_SPILLED_ENERGY_COST.value,
+                                "non-dispatchable-power": NodalOptimization.NON_DISPATCHABLE_POWER,
+                                "dispatchable-hydro-power": NodalOptimization.DISPATCHABLE_HYDRO_POWER,
+                                "other-dispatchable-power": NodalOptimization.OTHER_DISPATCHABLE_POWER,
+                                "spread-unsupplied-energy-cost": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
+                                "spread-spilled-energy-cost": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
                             },
                             "filtering": {
-                                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS.value,
-                                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+                                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
+                                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
                             },
                         },
                         "ui": {
@@ -207,8 +207,8 @@ class CreateArea(ICommand):
                     "areas": self._generate_new_thermal_areas_ini(
                         study_data,
                         area_id,
-                        unservedenergycost=NodalOptimization.UNSERVERDDENERGYCOST.value,
-                        spilledenergycost=NodalOptimization.SPILLEDENERGYCOST.value,
+                        unservedenergycost=NodalOptimization.UNSERVERDDENERGYCOST,
+                        spilledenergycost=NodalOptimization.SPILLEDENERGYCOST,
                     ),
                 },
                 "wind": {
