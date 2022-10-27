@@ -15,17 +15,19 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 )
 
 
-class OutputSimulationModeMcAllLinksItem(FolderNode):
+class OutputSimulationLinkItem(FolderNode):
     def __init__(
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
         link: str,
+        mc_all: bool = True,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area
         self.link = link
+        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
@@ -42,13 +44,14 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
                 self.area,
                 self.link,
             )
-            children[f"id-{timing}"] = LinkOutputSeriesMatrix(
-                self.context,
-                self.config.next_file(f"id-{timing}.txt"),
-                timing,
-                self.area,
-                self.link,
-            )
+            if self.mc_all:
+                children[f"id-{timing}"] = LinkOutputSeriesMatrix(
+                    self.context,
+                    self.config.next_file(f"id-{timing}.txt"),
+                    timing,
+                    self.area,
+                    self.link,
+                )
 
         return {
             child: children[child]
