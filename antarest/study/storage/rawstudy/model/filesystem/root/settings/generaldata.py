@@ -131,6 +131,9 @@ class GeneralData(IniFileNode):
                 "set-to-null-ntc-between-physical-out-for-first-step": bool,
             }
             types["optimization"]["include-split-exported-mps"] = bool
+            types["optimization"][
+                "include-exportmps"
+            ] = str  # none, optim-1, optim-2, both-optims
 
         IniFileNode.__init__(
             self,

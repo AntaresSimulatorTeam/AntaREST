@@ -55,6 +55,8 @@ class BindingConstraintDTO(BaseModel):
     operator: BindingConstraintOperator
     values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
     constraints: Optional[List[ConstraintTermDTO]]
 
 
@@ -114,6 +116,10 @@ class BindingConstraintManager:
             time_step=constraint_value["type"],
             operator=constraint_value["operator"],
             comments=constraint_value.get("comments", None),
+            filter_year_by_year=constraint_value.get(
+                "filter-year-by-year", ""
+            ),
+            filter_synthesis=constraint_value.get("filter-synthesis", ""),
             constraints=None,
         )
         for key, value in constraint_value.items():
@@ -142,7 +148,6 @@ class BindingConstraintManager:
                     constraint_id
                 )
                 config_value = config_values[index]
-                print(config_value)
                 return BindingConstraintManager.process_constraint(
                     config_value
                 )
@@ -188,6 +193,12 @@ class BindingConstraintManager:
             else constraint.operator,
             coeffs=coeffs,
             values=constraint.values,
+            filter_year_by_year=data.value
+            if data.key == "filterByYear"
+            else constraint.filter_year_by_year,
+            filter_synthesis=data.value
+            if data.key == "filterSynthesis"
+            else constraint.filter_synthesis,
             comments=data.value
             if data.key == "comments"
             else constraint.comments,
@@ -208,7 +219,6 @@ class BindingConstraintManager:
             return index
         except ValueError:
             return -1
-        return -1
 
     @staticmethod
     def get_constraint_id(data: Union[LinkInfoDTO, ClusterInfoDTO]) -> str:
@@ -270,6 +280,8 @@ class BindingConstraintManager:
             coeffs=coeffs,
             values=constraint.values,
             comments=constraint.comments,
+            filter_year_by_year=constraint.filter_year_by_year,
+            filter_synthesis=constraint.filter_synthesis,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(
@@ -337,6 +349,8 @@ class BindingConstraintManager:
             operator=constraint.operator,
             coeffs=coeffs,
             values=constraint.values,
+            filter_year_by_year=constraint.filter_year_by_year,
+            filter_synthesis=constraint.filter_synthesis,
             comments=constraint.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )

@@ -44,7 +44,7 @@ class OptimizationFormFields(FormFieldsBaseModel):
     primary_reserve: Optional[StrictBool]
     strategic_reserve: Optional[StrictBool]
     spinning_reserve: Optional[StrictBool]
-    export_mps: Optional[StrictBool]
+    export_mps: Optional[Union[bool, str]]
     unfeasible_problem_behavior: Optional[UnfeasibleProblemBehavior]
     simplex_optimization_range: Optional[SimplexOptimizationRange]
     # version 830
