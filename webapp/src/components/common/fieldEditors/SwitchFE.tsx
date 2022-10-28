@@ -7,6 +7,7 @@ import {
   SwitchProps,
 } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import { mergeSxProp } from "../../../utils/muiUtils";
 
 export interface SwitchFEProps
   extends Omit<SwitchProps, "checked" | "defaultChecked" | "defaultValue"> {
@@ -36,7 +37,11 @@ function SwitchFE(props: SwitchFEProps) {
   );
 
   return (
-    <FormControl className={className} sx={sx} error={error}>
+    <FormControl
+      className={className}
+      sx={mergeSxProp({ alignSelf: "center" }, sx)}
+      error={error}
+    >
       {label ? (
         <FormControlLabel
           control={fieldEditor}

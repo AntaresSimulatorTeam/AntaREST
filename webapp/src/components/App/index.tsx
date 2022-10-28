@@ -42,6 +42,15 @@ import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import TableMode from "./Singlestudy/explore/Modelization/TableMode";
+import TimeSeries from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries";
+import HydroStorage from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries/HydroStorage";
+import RunOfRiver from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries/RunOfRiver";
+import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
+import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
+import DailyPower from "./Singlestudy/explore/Modelization/Areas/Hydro/DailyPower";
+import ReservoirLevels from "./Singlestudy/explore/Modelization/Areas/Hydro/ReservoirLevels";
+import WaterValues from "./Singlestudy/explore/Modelization/Areas/Hydro/WaterValues";
+import EnergyCredits from "./Singlestudy/explore/Modelization/Areas/Hydro/EnergyCredits";
 
 function App() {
   return (
@@ -67,7 +76,47 @@ function App() {
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
                             <Route path="thermal" element={<Thermal />} />
-                            <Route path="hydro" element={<Hydro />} />
+                            <Route
+                              path="hydro"
+                              element={<Navigate to="management" replace />}
+                            />
+                            <Route path="hydro" element={<Hydro />}>
+                              <Route
+                                path="management"
+                                element={<ManagementOptions />}
+                              />
+                              <Route
+                                path="allocation"
+                                element={<Allocation />}
+                              />
+                              <Route
+                                path="dailypower"
+                                element={<DailyPower />}
+                              />
+                              <Route
+                                path="energycredits"
+                                element={<EnergyCredits />}
+                              />
+                              <Route
+                                path="reservoirlevels"
+                                element={<ReservoirLevels />}
+                              />
+                              <Route
+                                path="watervalues"
+                                element={<WaterValues />}
+                              />
+                              <Route
+                                path="timeseries"
+                                element={<Navigate to="hydrostorage" replace />}
+                              />
+                              <Route path="timeseries" element={<TimeSeries />}>
+                                <Route
+                                  path="hydrostorage"
+                                  element={<HydroStorage />}
+                                />
+                                <Route path="ror" element={<RunOfRiver />} />
+                              </Route>
+                            </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
                             <Route path="renewables" element={<Renewables />} />

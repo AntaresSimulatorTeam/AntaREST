@@ -30,6 +30,9 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.config_management import (
     OutputVariable,
 )
+from antarest.study.business.hydro_management import (
+    ManagementOptionsFormFields,
+)
 from antarest.study.business.link_management import (
     LinkInfoDTO,
 )
@@ -225,6 +228,53 @@ def create_study_data_routes(
         params = RequestParameters(user=current_user)
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
+
+    @bp.get(
+        "/studies/{uuid}/areas/{area_id}/hydro/config",
+        tags=[APITag.study_data],
+        summary="Get management options form fields for a given area",
+        response_model=ManagementOptionsFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_management_options(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ManagementOptionsFormFields:
+        logger.info(
+            msg=f"Getting management options for area {area_id}  of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.hydro_manager.get_field_values(study, area_id)
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/hydro/config",
+        tags=[APITag.study_data],
+        summary="Set management options form fields for a given area",
+    )
+    def set_management_options(
+        uuid: str,
+        area_id: str,
+        data: ManagementOptionsFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            msg=f"Setting management options for area {area_id}  of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        return study_service.hydro_manager.set_field_values(
+            study, data, area_id
+        )
 
     @bp.put(
         "/studies/{uuid}/matrix",

@@ -13,6 +13,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_hourly,
     default_4_fixed_hourly,
     default_8_fixed_hourly,
+    default_scenario_daily,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -152,6 +153,24 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}semi base{os.sep}series.txt",
         f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}peak{os.sep}series.txt",
         f"input{os.sep}thermal{os.sep}series{os.sep}south{os.sep}base{os.sep}series.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub e{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}south{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub w{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub s{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}west{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub n{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}north{os.sep}ror.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}east{os.sep}ror.txt",
+    ]
+    single_column_daily_empty_items = [
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub e{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}south{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub w{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub s{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}west{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}hub n{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}north{os.sep}mod.txt",
+        f"input{os.sep}hydro{os.sep}series{os.sep}east{os.sep}mod.txt",
     ]
     fixed_4_cols_empty_items = [
         f"input{os.sep}reserves{os.sep}hub s.txt",
@@ -166,6 +185,9 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
     ]
     single_column_empty_data = generate_csv_string(default_scenario_hourly)
+    single_column_daily_empty_data = generate_csv_string(
+        default_scenario_daily
+    )
     fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
     fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
     for root, dirs, files in os.walk(study_path):
@@ -182,6 +204,12 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
                 assert (
                     generated_study_path / rel_path / item
                 ).read_text() == single_column_empty_data
+            elif (
+                f"{rel_path}{os.sep}{item}" in single_column_daily_empty_items
+            ):
+                assert (
+                    generated_study_path / rel_path / item
+                ).read_text() == single_column_daily_empty_data
             elif f"{rel_path}{os.sep}{item}" in fixed_4_cols_empty_items:
                 assert (
                     generated_study_path / rel_path / item

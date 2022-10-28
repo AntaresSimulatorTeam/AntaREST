@@ -1,4 +1,5 @@
 import io
+import os
 import shutil
 from datetime import datetime
 from http import HTTPStatus
@@ -171,7 +172,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/series/de/mod",
-            {},
+            {
+                "columns": [0, 1, 2],
+                "index": list(range(365)),
+                "data": [[0.0]] * 365,
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/list",
@@ -554,7 +559,6 @@ def notest_sta_mini_with_wrong_output_folder(
 
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
-
     params = RequestParameters(user=ADMIN)
     path_study = storage_service.get_study_path("STA-mini", params)
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
