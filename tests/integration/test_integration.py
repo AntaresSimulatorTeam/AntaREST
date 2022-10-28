@@ -813,6 +813,45 @@ def test_area_management(app: FastAPI):
         "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
     }
 
+    res_hydro_config = client.put(
+        f"/v1/studies/{study_id}/areas/area1/hydro/config",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "interDailyBreakdown": 8,
+            "intraDailyModulation": 7,
+            "interMonthlyBreakdown": 5,
+            "reservoir": True,
+        },
+    )
+    assert res_hydro_config.status_code == 200
+
+    res_hydro_config = client.get(
+        f"/v1/studies/{study_id}/areas/area1/hydro/config",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_hydro_config_json = res_hydro_config.json()
+
+    assert res_hydro_config_json == {
+        "interDailyBreakdown": 8,
+        "intraDailyModulation": 7,
+        "interMonthlyBreakdown": 5,
+        "reservoir": True,
+        "reservoirCapacity": 0,
+        "followLoad": True,
+        "useWater": False,
+        "hardBounds": False,
+        "initializeReservoirDate": 0,
+        "useHeuristic": True,
+        "powerToLevel": False,
+        "leewayLow": 1,
+        "leewayUp": 1,
+        "pumpingEfficiency": 1,
+    }
+
     res_ts_config = client.get(
         f"/v1/studies/{study_id}/config/timeseries_form_fields",
         headers={

@@ -5,6 +5,11 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    default_scenario_hourly,
+    default_scenario_daily,
+    default_scenario_monthly,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
 )
@@ -15,10 +20,16 @@ class InputHydroSeriesArea(FolderNode):
         children: TREE = {
             # TODO mod is monthly on version < 650, then daily afterward
             "mod": InputSeriesMatrix(
-                self.context, self.config.next_file("mod.txt")
+                self.context,
+                self.config.next_file("mod.txt"),
+                default_empty=default_scenario_daily
+                if self.config.version >= 650
+                else default_scenario_monthly,
             ),
             "ror": InputSeriesMatrix(
-                self.context, self.config.next_file("ror.txt")
+                self.context,
+                self.config.next_file("ror.txt"),
+                default_empty=default_scenario_hourly,
             ),
         }
         return children
