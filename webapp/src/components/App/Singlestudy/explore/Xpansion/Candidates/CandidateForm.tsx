@@ -179,30 +179,22 @@ function CandidateForm(props: PropType) {
             display="flex"
             justifyContent="flex-start"
           >
-            <ButtonGroup sx={{ width: "270px", mb: 2 }} variant="outlined">
+            <ButtonGroup sx={{ mb: 2 }} size="small">
               {toggleView ? (
-                <ActiveButton size="small" variant="outlined" disabled>
+                <ActiveButton variant="outlined" disabled>
                   {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
                 </ActiveButton>
               ) : (
-                <HoverButton
-                  size="small"
-                  variant="outlined"
-                  onClick={changeView}
-                >
+                <HoverButton variant="outlined" onClick={changeView}>
                   {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
                 </HoverButton>
               )}
               {toggleView ? (
-                <HoverButton
-                  size="small"
-                  variant="outlined"
-                  onClick={changeView}
-                >
+                <HoverButton variant="outlined" onClick={changeView}>
                   {t("xpansion.maxInvestments")}
                 </HoverButton>
               ) : (
-                <ActiveButton size="small" variant="outlined" disabled>
+                <ActiveButton variant="outlined" disabled>
                   {t("xpansion.maxInvestments")}
                 </ActiveButton>
               )}
