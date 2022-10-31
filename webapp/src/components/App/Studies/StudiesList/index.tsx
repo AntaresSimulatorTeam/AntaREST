@@ -20,8 +20,10 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import FolderOffIcon from "@mui/icons-material/FolderOff";
+import RadarIcon from "@mui/icons-material/Radar";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
+import { AxiosError } from "axios";
 import { StudyMetadata } from "../../../../common/types";
 import {
   STUDIES_HEIGHT_HEADER,
@@ -45,6 +47,9 @@ import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
 import BatchModeMenu from "../BatchModeMenu";
 import RefreshButton from "../RefreshButton";
+import { scanFolder } from "../../../../services/api/study";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -55,6 +60,7 @@ export interface StudiesListProps {
 
 function StudiesList(props: StudiesListProps) {
   const { studyIds } = props;
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const [studyToLaunch, setStudyToLaunch] = useState<
     StudyMetadata["id"] | null
@@ -70,6 +76,7 @@ function StudiesList(props: StudiesListProps) {
   const sortLabelId = useRef(uuidv4()).current;
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -133,6 +140,17 @@ function StudiesList(props: StudiesListProps) {
       return newSelectedStudies.concat([sid]);
     });
   }, []);
+
+  const handleFolderScan = async (): Promise<void> => {
+    try {
+      // Remove "/root" from the path
+      const folder = folderList.slice(1).join("/");
+      await scanFolder(folder);
+      setConfirmFolderScan(false);
+    } catch (e) {
+      enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
+    }
+  };
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -227,6 +245,24 @@ function StudiesList(props: StudiesListProps) {
               />
             </IconButton>
           </Tooltip>
+          {folder !== "root" && (
+            <Tooltip title={t("studies.scanFolder") as string}>
+              <IconButton onClick={() => setConfirmFolderScan(true)}>
+                <RadarIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {folder !== "root" && confirmFolderScan && (
+            <ConfirmationDialog
+              titleIcon={RadarIcon}
+              onCancel={() => setConfirmFolderScan(false)}
+              onConfirm={handleFolderScan}
+              alert="warning"
+              open
+            >
+              {`${t("studies.scanFolder")} ${folder}?`}
+            </ConfirmationDialog>
+          )}
         </Box>
         <Box
           display="flex"
