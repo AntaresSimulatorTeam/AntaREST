@@ -70,6 +70,7 @@ from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.hydro_management import (
     HydroManager,
@@ -200,6 +201,7 @@ class StudyService:
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
+        self.general_manager = GeneralManager(self.storage_service)
         self.optimization_manager = OptimizationManager(self.storage_service)
         self.advanced_parameters_manager = AdvancedParamsManager(
             self.storage_service

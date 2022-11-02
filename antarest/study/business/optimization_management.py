@@ -6,6 +6,8 @@ from pydantic.types import StrictBool
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
+    FieldInfo,
+    GENERAL_DATA_PATH,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -54,15 +56,8 @@ class OptimizationFormFields(FormFieldsBaseModel):
     ntc_between_physical_areas_out_adequacy_patch: Optional[StrictBool]
 
 
-GENERAL_DATA_PATH = "settings/generaldata"
 OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"
-
-
-class FieldInfo(TypedDict, total=False):
-    path: str
-    default_value: Any
-    version: Optional[int]
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -121,22 +116,22 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "split_exported_mps": {
         "path": f"{OPTIMIZATION_PATH}/include-split-exported-mps",
         "default_value": False,
-        "version": 830,
+        "start_version": 830,
     },
     "enable_adequacy_patch": {
         "path": f"{ADEQUACY_PATCH_PATH}/include-adq-patch",
         "default_value": False,
-        "version": 830,
+        "start_version": 830,
     },
     "ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch": {
         "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-from-physical-out-to-physical-in-for-first-step",
         "default_value": True,
-        "version": 830,
+        "start_version": 830,
     },
     "ntc_between_physical_areas_out_adequacy_patch": {
         "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-between-physical-out-for-first-step",
         "default_value": True,
-        "version": 830,
+        "start_version": 830,
     },
 }
 
@@ -156,11 +151,9 @@ class OptimizationManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
-            ver = field_info.get("version", None)
+            start_version = field_info.get("start_version", -1)
             target_name = path.split("/")[-1]
-            is_in_version = (
-                True if not ver else file_study.config.version >= ver
-            )
+            is_in_version = file_study.config.version >= start_version  # type: ignore
             parent = (
                 optimization if OPTIMIZATION_PATH in path else adequacy_patch
             )

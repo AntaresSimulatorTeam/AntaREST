@@ -33,6 +33,7 @@ from antarest.study.business.config_management import (
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
 )
+from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import (
     LinkInfoDTO,
 )
@@ -384,6 +385,49 @@ def create_study_data_routes(
         study_service.config_manager.set_playlist(
             study, playlist, weights, reverse, active
         )
+
+    @bp.get(
+        path="/studies/{uuid}/config/general_form_fields",
+        tags=[APITag.study_data],
+        summary="Get General config values for form",
+        response_model=GeneralFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_general_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> GeneralFormFields:
+        logger.info(
+            msg=f"Getting General management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.general_manager.get_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/general_form_fields",
+        tags=[APITag.study_data],
+        summary="Set General config with values from form",
+    )
+    def set_general_form_values(
+        uuid: str,
+        field_values: GeneralFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating General management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.general_manager.set_field_values(study, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/optimization_form_fields",
