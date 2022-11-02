@@ -8,7 +8,6 @@ import { setThematicTrimmingConfig } from "../../../../../../../../services/api/
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContext } from "../../../../../../../common/Form";
-import { FormValues } from "../../utils";
 import {
   getFieldNames,
   ThematicTrimmingConfig,
@@ -27,8 +26,7 @@ function ThematicTrimmingDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const { control, register, getValues, setValue } =
-    useFormContext<FormValues>();
+  const { control, register, getValues, setValue } = useFormContext<any>();
 
   ////////////////////////////////////////////////////////////////
   // Utils

@@ -1,15 +1,13 @@
-import * as R from "ramda";
 import { Box, Button, Divider } from "@mui/material";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
+import { useEffect } from "react";
+import * as RA from "ramda-adjunct";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import { StudyMetadata } from "../../../../../../common/types";
-import { editStudy } from "../../../../../../services/api/study";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   FIRST_JANUARY_OPTIONS,
-  FormValues,
+  GeneralFormFields,
   WEEK_OPTIONS,
   YEAR_OPTIONS,
 } from "./utils";
@@ -21,15 +19,14 @@ import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
 
 interface Props {
-  study: StudyMetadata;
   setDialog: React.Dispatch<React.SetStateAction<"thematicTrimming" | "">>;
 }
 
 function Fields(props: Props) {
-  const { study, setDialog } = props;
-  const studyVersion = Number(study.version);
+  const { setDialog } = props;
   const [t] = useTranslation();
-  const { control, setValue, watch, getValues } = useFormContext<FormValues>();
+  const { control, setValue, watch, getValues } =
+    useFormContext<GeneralFormFields>();
   const [buildingMode, firstDay, lastDay] = watch([
     "buildingMode",
     "firstDay",
@@ -78,14 +75,6 @@ function Fields(props: Props) {
   };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const saveValue = R.curry((path: string, value) => {
-    return editStudy(value, study.id, `settings/generaldata/${path}`);
-  });
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -97,9 +86,6 @@ function Fields(props: Props) {
           label={t("study.configuration.general.mode")}
           options={["Economy", "Adequacy", "draft"]}
           control={control}
-          rules={{
-            onAutoSubmit: saveValue("general/mode"),
-          }}
         />
         <NumberFE
           name="firstDay"
@@ -109,7 +95,6 @@ function Fields(props: Props) {
           rules={{
             deps: "lastDay",
             validate: handleDayValidation,
-            onAutoSubmit: saveValue("general/simulation.start"),
           }}
         />
         <NumberFE
@@ -120,7 +105,6 @@ function Fields(props: Props) {
           rules={{
             deps: "firstDay",
             validate: handleDayValidation,
-            onAutoSubmit: saveValue("general/simulation.end"),
           }}
         />
       </Fieldset>
@@ -130,32 +114,24 @@ function Fields(props: Props) {
           label="Horizon"
           variant="filled"
           control={control}
-          rules={{ onAutoSubmit: saveValue("general/horizon") }}
         />
         <SelectFE
           name="firstMonth"
           label={t("study.configuration.general.year")}
           options={YEAR_OPTIONS}
           control={control}
-          rules={{
-            onAutoSubmit: saveValue("general/first-month-in-year"),
-          }}
         />
         <SelectFE
           name="firstWeekDay"
           label={t("study.configuration.general.week")}
           options={WEEK_OPTIONS}
           control={control}
-          rules={{
-            onAutoSubmit: saveValue("general/first.weekday"),
-          }}
         />
         <SelectFE
           name="firstJanuary"
           label={t("study.configuration.general.firstDayOfYear")}
           options={FIRST_JANUARY_OPTIONS}
           control={control}
-          rules={{ onAutoSubmit: saveValue("general/january.1st") }}
         />
         <SwitchFE
           name="leapYear"
@@ -164,7 +140,6 @@ function Fields(props: Props) {
           control={control}
           rules={{
             deps: ["firstDay", "lastDay"],
-            onAutoSubmit: saveValue("general/leapyear"),
           }}
         />
       </Fieldset>
@@ -195,7 +170,6 @@ function Fields(props: Props) {
                 }
                 return v <= 50000 ? true : "Maximum is 50000";
               },
-              onAutoSubmit: saveValue("general/nbyears"),
             }}
           />
           <SelectFE
@@ -203,23 +177,7 @@ function Fields(props: Props) {
             label={t("study.configuration.general.buildingMode")}
             options={["Automatic", "Custom", "Derated"]}
             control={control}
-            rules={{
-              deps: "nbYears",
-              onAutoSubmit: (v) => {
-                if (v === "Derated") {
-                  return saveValue("general/derated", true);
-                }
-                return Promise.all([
-                  saveValue(
-                    studyVersion >= 800
-                      ? "general/custom-scenario"
-                      : "general/custom-ts-numbers",
-                    v === "Custom"
-                  ),
-                  saveValue("general/derated", false),
-                ]);
-              },
-            }}
+            rules={{ deps: "nbYears" }}
           />
           <BooleanFE
             name="selectionMode"
@@ -227,7 +185,6 @@ function Fields(props: Props) {
             trueText="Custom"
             falseText="Automatic"
             control={control}
-            rules={{ onAutoSubmit: saveValue("general/user-playlist") }}
           />
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
@@ -244,21 +201,24 @@ function Fields(props: Props) {
             name="simulationSynthesis"
             label={t("study.configuration.general.simulationSynthesis")}
             control={control}
-            rules={{ onAutoSubmit: saveValue("output/synthesis") }}
           />
           <SwitchFE
             name="yearByYear"
             label={t("study.configuration.general.yearByYear")}
             control={control}
-            rules={{ onAutoSubmit: saveValue("general/year-by-year") }}
           />
           <SwitchFE
             name="mcScenario"
             label={t("study.configuration.general.mcScenario")}
             control={control}
-            rules={{ onAutoSubmit: saveValue("output/storenewset") }}
           />
-          {studyVersion >= 710 ? (
+          {RA.isBoolean(getValues("filtering")) ? (
+            <SwitchFE
+              name="filtering"
+              label={t("study.configuration.general.filtering")}
+              control={control}
+            />
+          ) : (
             <>
               <BooleanFE
                 name="geographicTrimming"
@@ -266,9 +226,6 @@ function Fields(props: Props) {
                 trueText="Custom"
                 falseText="None"
                 control={control}
-                rules={{
-                  onAutoSubmit: saveValue("general/geographic-trimming"),
-                }}
               />
               <Box>
                 <BooleanFE
@@ -277,9 +234,6 @@ function Fields(props: Props) {
                   trueText="Custom"
                   falseText="None"
                   control={control}
-                  rules={{
-                    onAutoSubmit: saveValue("general/thematic-trimming"),
-                  }}
                 />
                 <Button
                   startIcon={<SettingsIcon />}
@@ -290,13 +244,6 @@ function Fields(props: Props) {
                 </Button>
               </Box>
             </>
-          ) : (
-            <SwitchFE
-              name="filtering"
-              label={t("study.configuration.general.filtering")}
-              control={control}
-              rules={{ onAutoSubmit: saveValue("general/filtering") }}
-            />
           )}
         </Fieldset>
       </Box>
