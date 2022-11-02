@@ -24,6 +24,7 @@ import * as RA from "ramda-adjunct";
 import { Box, Button, CircularProgress, SxProps, Theme } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
+import clsx from "clsx";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
@@ -113,6 +114,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onStateChange,
     autoSubmit,
     disableLoader,
+    className,
     sx,
     ...formProps
   } = props;
@@ -359,6 +361,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       sx={mergeSxProp({ pt: 1 }, sx)}
       component="form"
       onSubmit={handleFormSubmit}
+      className={clsx("Form", className)}
     >
       {showLoader && !disableLoader && (
         <Box
