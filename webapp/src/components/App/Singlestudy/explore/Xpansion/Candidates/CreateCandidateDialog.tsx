@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Chip } from "@mui/material";
+import { Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import * as R from "ramda";
@@ -91,21 +91,30 @@ function CreateCandidateDialog(props: PropType) {
           <Fieldset
             fullFieldWidth
             legend={
-              isToggled ? t("xpansion.unitSize") : t("xpansion.maxInvestments")
+              isToggled
+                ? `${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`
+                : t("xpansion.maxInvestments")
             }
           >
-            <Chip
-              label={`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
-              color="secondary"
-              variant={!isToggled ? "outlined" : "filled"}
-              onClick={handleToggle}
-            />
-            <Chip
-              label={t("xpansion.maxInvestments")}
-              color="secondary"
-              variant={isToggled ? "outlined" : "filled"}
-              onClick={handleToggle}
-            />
+            <ButtonGroup
+              disableElevation
+              size="small"
+              color="info"
+              sx={{ py: 2 }}
+            >
+              <Button
+                onClick={handleToggle}
+                variant={!isToggled ? "outlined" : "contained"}
+              >
+                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
+              </Button>
+              <Button
+                onClick={handleToggle}
+                variant={isToggled ? "outlined" : "contained"}
+              >
+                {t("xpansion.maxInvestments")}
+              </Button>
+            </ButtonGroup>
             {isToggled ? (
               <>
                 <NumberFE
