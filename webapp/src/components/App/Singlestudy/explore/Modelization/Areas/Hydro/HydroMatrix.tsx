@@ -1,14 +1,20 @@
 import { useOutletContext } from "react-router";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
+import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import { Root } from "./style";
+import { MATRICES, MatrixType } from "./utils";
 
-function Allocation() {
+interface Props {
+  type: MatrixType;
+}
+
+function HydroMatrix({ type }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
-  const allocationUrl = `input/hydro/allocation/${areaId}`;
+
+  const hydroMatrix = MATRICES[type];
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -17,13 +23,14 @@ function Allocation() {
   return (
     <Root>
       <MatrixInput
-        title="Allocation"
+        title={hydroMatrix.title}
+        columnsNames={hydroMatrix.cols}
         study={study}
-        url={allocationUrl}
-        computStats={MatrixStats.STATS}
+        url={hydroMatrix.url.replace("{areaId}", areaId)}
+        computStats={hydroMatrix.stats}
       />
     </Root>
   );
 }
 
-export default Allocation;
+export default HydroMatrix;

@@ -1,6 +1,6 @@
-from typing import Optional, Dict, Tuple, Any, TypedDict, List
+from typing import Optional, Dict, Tuple, Any, TypedDict, List, Union
 
-from pydantic.types import StrictInt, StrictBool
+from pydantic.types import StrictInt, StrictBool, StrictFloat
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -14,26 +14,25 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 
 
 class ManagementOptionsFormFields(FormFieldsBaseModel):
-    inter_daily_breakdown: Optional[StrictInt]
-    intra_daily_modulation: Optional[StrictInt]
-    inter_monthly_breakdown: Optional[StrictInt]
+    inter_daily_breakdown: Optional[Union[StrictFloat, StrictInt]]
+    intra_daily_modulation: Optional[Union[StrictFloat, StrictInt]]
+    inter_monthly_breakdown: Optional[Union[StrictFloat, StrictInt]]
     reservoir: Optional[StrictBool]
-    reservoir_capacity: Optional[StrictInt]
+    reservoir_capacity: Optional[Union[StrictFloat, StrictInt]]
     follow_load: Optional[StrictBool]
     use_water: Optional[StrictBool]
     hard_bounds: Optional[StrictBool]
-    initialize_reservoir_date: Optional[StrictInt]
+    initialize_reservoir_date: Optional[Union[StrictFloat, StrictInt]]
     use_heuristic: Optional[StrictBool]
     power_to_level: Optional[StrictBool]
-    leeway_low: Optional[StrictInt]
-    leeway_up: Optional[StrictInt]
-    pumping_efficiency: Optional[StrictInt]
+    leeway_low: Optional[Union[StrictFloat, StrictInt]]
+    leeway_up: Optional[Union[StrictFloat, StrictInt]]
+    pumping_efficiency: Optional[Union[StrictFloat, StrictInt]]
 
 
 class FieldInfo(TypedDict, total=False):
     path: str
     default_value: Any
-    version: Optional[int]
 
 
 HYDRO_PATH = "input/hydro/hydro"

@@ -42,15 +42,12 @@ import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import TableMode from "./Singlestudy/explore/Modelization/TableMode";
-import TimeSeries from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries";
-import HydroStorage from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries/HydroStorage";
-import RunOfRiver from "./Singlestudy/explore/Modelization/Areas/Hydro/TimeSeries/RunOfRiver";
-import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import DailyPower from "./Singlestudy/explore/Modelization/Areas/Hydro/DailyPower";
-import ReservoirLevels from "./Singlestudy/explore/Modelization/Areas/Hydro/ReservoirLevels";
-import WaterValues from "./Singlestudy/explore/Modelization/Areas/Hydro/WaterValues";
-import EnergyCredits from "./Singlestudy/explore/Modelization/Areas/Hydro/EnergyCredits";
+import {
+  HYDRO_ROUTES,
+  HydroRoute,
+} from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 
 function App() {
   return (
@@ -85,37 +82,13 @@ function App() {
                                 path="management"
                                 element={<ManagementOptions />}
                               />
-                              <Route
-                                path="allocation"
-                                element={<Allocation />}
-                              />
-                              <Route
-                                path="dailypower"
-                                element={<DailyPower />}
-                              />
-                              <Route
-                                path="energycredits"
-                                element={<EnergyCredits />}
-                              />
-                              <Route
-                                path="reservoirlevels"
-                                element={<ReservoirLevels />}
-                              />
-                              <Route
-                                path="watervalues"
-                                element={<WaterValues />}
-                              />
-                              <Route
-                                path="timeseries"
-                                element={<Navigate to="hydrostorage" replace />}
-                              />
-                              <Route path="timeseries" element={<TimeSeries />}>
+                              {HYDRO_ROUTES.map((route: HydroRoute) => (
                                 <Route
-                                  path="hydrostorage"
-                                  element={<HydroStorage />}
+                                  key={route.path}
+                                  path={route.path}
+                                  element={<HydroMatrix type={route.type} />}
                                 />
-                                <Route path="ror" element={<RunOfRiver />} />
-                              </Route>
+                              ))}
                             </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
