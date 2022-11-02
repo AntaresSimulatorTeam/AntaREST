@@ -216,7 +216,7 @@ def test_main(app: FastAPI):
 
     # config / thematic trimming
     res = client.get(
-        f"/v1/studies/{study_id}/config/thematic_trimming",
+        f"/v1/studies/{study_id}/config/thematic_trimming_form_fields",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },

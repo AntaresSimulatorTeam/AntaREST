@@ -27,9 +27,6 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
-from antarest.study.business.config_management import (
-    OutputVariable,
-)
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
 )
@@ -43,6 +40,9 @@ from antarest.study.business.optimization_management import (
 from antarest.study.business.table_mode_management import (
     TableTemplateType,
     ColumnModelTypes,
+)
+from antarest.study.business.thematic_trimming_management import (
+    ThematicTrimmingFormFields,
 )
 from antarest.study.business.timeseries_config_management import (
     TSFormFields,
@@ -294,15 +294,16 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        "/studies/{uuid}/config/thematic_trimming",
+        "/studies/{uuid}/config/thematic_trimming_form_fields",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=Dict[str, bool],
+        response_model=ThematicTrimmingFormFields,
+        response_model_exclude_none=True,
     )
     def get_thematic_trimming(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> ThematicTrimmingFormFields:
         logger.info(
             f"Fetching thematic trimming config for study {uuid}",
             extra={"user": current_user.id},
@@ -311,18 +312,18 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.config_manager.get_thematic_trimming(study)
+        return study_service.thematic_trimming_manager.get_field_values(study)
 
     @bp.put(
-        path="/studies/{uuid}/config/thematic_trimming",
+        path="/studies/{uuid}/config/thematic_trimming_form_fields",
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
     def set_thematic_trimming(
         uuid: str,
-        thematic_trimming_config: Dict[OutputVariable, bool] = Body(...),
+        field_values: ThematicTrimmingFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"Updating thematic trimming config for study {uuid}",
             extra={"user": current_user.id},
@@ -331,14 +332,8 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        study_service.config_manager.set_thematic_trimming(
-            study,
-            {
-                output_variable.value: thematic_trimming_config[
-                    output_variable
-                ]
-                for output_variable in thematic_trimming_config
-            },
+        study_service.thematic_trimming_manager.set_field_values(
+            study, field_values
         )
 
     @bp.get(
