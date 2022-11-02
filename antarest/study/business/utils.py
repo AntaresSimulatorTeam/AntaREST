@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Sequence, TypedDict, Any, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -14,6 +14,8 @@ from antarest.study.storage.variantstudy.business.utils import (
     transform_command_to_dto,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+
+GENERAL_DATA_PATH = "settings/generaldata"
 
 
 def execute_or_add_commands(
@@ -48,3 +50,10 @@ class FormFieldsBaseModel(BaseModel):
     class Config:
         alias_generator = to_camel_case
         extra = Extra.forbid
+
+
+class FieldInfo(TypedDict, total=False):
+    path: str
+    default_value: Any
+    start_version: Optional[int]
+    end_version: Optional[int]

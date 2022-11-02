@@ -7,6 +7,8 @@ from pydantic.types import StrictInt, StrictStr
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
+    GENERAL_DATA_PATH,
+    FieldInfo,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -107,16 +109,9 @@ class AdvancedParamsFormFields(FormFieldsBaseModel):
         return v
 
 
-GENERAL_DATA_PATH = "settings/generaldata"
 ADVANCED_PARAMS_PATH = f"{GENERAL_DATA_PATH}/advanced parameters"
 OTHER_PREFERENCES_PATH = f"{GENERAL_DATA_PATH}/other preferences"
 SEEDS_PATH = f"{GENERAL_DATA_PATH}/seeds - Mersenne Twister"
-
-
-class FieldInfo(TypedDict, total=False):
-    path: str
-    default_value: Any
-    version: Optional[int]
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -227,7 +222,6 @@ class AdvancedParamsManager:
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             target_name = path.split("/")[-1]
-            parent = dict()
             if ADVANCED_PARAMS_PATH in path:
                 parent = advanced_params
             elif OTHER_PREFERENCES_PATH in path:

@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import topRightBackground from "../../../assets/top-right-background.png";
 
-function AppLoader() {
+function GlobalPageLoadingError() {
   return (
     <Box
       display="flex"
@@ -58,4 +58,4 @@ function AppLoader() {
   );
 }
 
-export default AppLoader;
+export default GlobalPageLoadingError;

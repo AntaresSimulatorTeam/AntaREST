@@ -12,6 +12,7 @@ from antarest.core.model import JSON
 from antarest.study.business.utils import (
     execute_or_add_commands,
     FormFieldsBaseModel,
+    GENERAL_DATA_PATH,
 )
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -83,8 +84,6 @@ class TSFormFields(FormFieldsBaseModel):
             )
         return v
 
-
-GENERAL_DATA_PATH = "settings/generaldata"
 
 PATH_BY_TS_STR_FIELD = {
     "stochastic_ts_status": f"{GENERAL_DATA_PATH}/general/generate",

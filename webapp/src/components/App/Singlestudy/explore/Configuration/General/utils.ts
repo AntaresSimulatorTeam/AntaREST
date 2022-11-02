@@ -1,17 +1,21 @@
-import * as RA from "ramda-adjunct";
 import { StudyMetadata } from "../../../../../../common/types";
-import {
-  getStudyData,
-  getThematicTrimmingConfig,
-} from "../../../../../../services/api/study";
-import {
-  ThematicTrimmingConfig,
-  formatThematicTrimmingConfigDTO,
-} from "./dialogs/ThematicTrimmingDialog/utils";
+import client from "../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
+
+enum Mode {
+  Economy = "Economy",
+  Adequacy = "Adequacy",
+  Draft = "draft",
+}
+
+enum BuildingMode {
+  Automatic = "Automatic",
+  Custom = "Custom",
+  Derated = "Derated",
+}
 
 enum Month {
   January = "january",
@@ -42,73 +46,27 @@ enum WeekDay {
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface SettingsGeneralDataGeneral {
-  // Mode
-  mode: "Economy" | "Adequacy" | "draft";
-  // First day
-  "simulation.start": number;
-  // Last day
-  "simulation.end": number;
-  // Horizon
+export interface GeneralFormFields {
+  mode: Mode;
+  firstDay: number;
+  lastDay: number;
   horizon: string;
-  // Year
-  "first-month-in-year": Month;
-  // Week
-  "first.weekday": WeekDay;
-  // 1st January
-  "january.1st": WeekDay;
-  // Leap year
-  leapyear: boolean;
-  // Number
-  nbyears: number;
-  // Building mode
-  "custom-ts-numbers": boolean;
-  "custom-scenario": boolean; // For study versions >= 8
-  derated: boolean;
-  // Selection mode
-  "user-playlist": boolean;
-  // Year-by-year
-  "year-by-year": boolean;
-  // Geographic trimming
-  "geographic-trimming": boolean;
-  // Thematic trimming
-  "thematic-trimming": boolean;
-  // Geographic trimming + Thematic trimming
-  filtering: boolean; // For study versions >= 710
-}
-
-interface SettingsGeneralDataOutput {
-  // Simulation synthesis
-  synthesis: boolean;
-  // MC Scenario
-  storenewset: boolean;
-}
-
-interface SettingsGeneralData {
-  // For unknown reason, `general` and `output` may be empty
-  general?: Partial<SettingsGeneralDataGeneral>;
-  output?: Partial<SettingsGeneralDataOutput>;
-}
-
-export interface FormValues {
-  mode: SettingsGeneralDataGeneral["mode"];
-  firstDay: SettingsGeneralDataGeneral["simulation.start"];
-  lastDay: SettingsGeneralDataGeneral["simulation.end"];
-  horizon: SettingsGeneralDataGeneral["horizon"];
-  firstMonth: SettingsGeneralDataGeneral["first-month-in-year"];
-  firstWeekDay: SettingsGeneralDataGeneral["first.weekday"];
-  firstJanuary: SettingsGeneralDataGeneral["january.1st"];
-  leapYear: SettingsGeneralDataGeneral["leapyear"];
-  nbYears: SettingsGeneralDataGeneral["nbyears"];
-  buildingMode: "Automatic" | "Custom" | "Derated";
-  selectionMode: SettingsGeneralDataGeneral["user-playlist"];
-  simulationSynthesis: SettingsGeneralDataOutput["synthesis"];
-  yearByYear: SettingsGeneralDataGeneral["year-by-year"];
-  mcScenario: SettingsGeneralDataOutput["storenewset"];
-  geographicTrimming: SettingsGeneralDataGeneral["geographic-trimming"];
-  thematicTrimming: SettingsGeneralDataGeneral["thematic-trimming"];
-  thematicTrimmingConfig: ThematicTrimmingConfig;
-  filtering: SettingsGeneralDataGeneral["filtering"];
+  firstMonth: Month;
+  firstWeekDay: WeekDay;
+  firstJanuary: WeekDay;
+  leapYear: boolean;
+  nbYears: number;
+  buildingMode: BuildingMode;
+  selectionMode: boolean;
+  yearByYear: boolean;
+  simulationSynthesis: boolean;
+  mcScenario: boolean;
+  // Geographic trimming + Thematic trimming.
+  // For study versions < 710
+  filtering?: boolean;
+  // For study versions >= 710
+  geographicTrimming?: boolean;
+  thematicTrimming?: boolean;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -144,85 +102,24 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
 
 export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 
-const DEFAULT_VALUES: Omit<FormValues, "thematicTrimmingConfig"> = {
-  mode: "Economy",
-  firstDay: 1,
-  lastDay: 365,
-  horizon: "",
-  firstMonth: Month.January,
-  firstWeekDay: WeekDay.Monday,
-  firstJanuary: WeekDay.Monday,
-  leapYear: false,
-  nbYears: 1,
-  buildingMode: "Automatic",
-  selectionMode: false,
-  simulationSynthesis: true,
-  yearByYear: false,
-  mcScenario: false,
-  geographicTrimming: false,
-  thematicTrimming: false,
-  filtering: false,
-};
-
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
 
-export async function getFormValues(
+function makeRequestURL(studyId: StudyMetadata["id"]): string {
+  return `v1/studies/${studyId}/config/general_form_fields`;
+}
+
+export async function getGeneralFormFields(
   studyId: StudyMetadata["id"]
-): Promise<FormValues> {
-  const { general = {}, output = {} } = await getStudyData<SettingsGeneralData>(
-    studyId,
-    "settings/generaldata",
-    2
-  );
+): Promise<GeneralFormFields> {
+  const res = await client.get(makeRequestURL(studyId));
+  return res.data;
+}
 
-  const {
-    "custom-ts-numbers": customTsNumbers,
-    "custom-scenario": customScenarios,
-    derated,
-    ...generalRest
-  } = general;
-
-  let buildingMode: FormValues["buildingMode"] = "Automatic";
-  if (derated) {
-    buildingMode = "Derated";
-  }
-  // 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 8
-  else if (customScenarios || customTsNumbers) {
-    buildingMode = "Custom";
-  }
-
-  const thematicTrimmingConfigDto = await getThematicTrimmingConfig(studyId);
-
-  return {
-    ...DEFAULT_VALUES,
-    ...RA.renameKeys(
-      {
-        "simulation.start": "firstDay",
-        "simulation.end": "lastDay",
-        "first-month-in-year": "firstMonth",
-        "first.weekday": "firstWeekDay",
-        "january.1st": "firstJanuary",
-        leapyear: "leapYear",
-        nbyears: "nbYears",
-        "user-playlist": "selectionMode",
-        "year-by-year": "yearByYear",
-        "geographic-trimming": "geographicTrimming",
-        "thematic-trimming": "thematicTrimming",
-      },
-      generalRest
-    ),
-    ...RA.renameKeys(
-      {
-        synthesis: "simulationSynthesis",
-        storenewset: "mcScenario",
-      },
-      output
-    ),
-    buildingMode,
-    thematicTrimmingConfig: formatThematicTrimmingConfigDTO(
-      thematicTrimmingConfigDto
-    ),
-  };
+export function setGeneralFormFields(
+  studyId: StudyMetadata["id"],
+  values: Partial<GeneralFormFields>
+): Promise<void> {
+  return client.put(makeRequestURL(studyId), values);
 }

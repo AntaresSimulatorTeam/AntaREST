@@ -24,6 +24,7 @@ import * as RA from "ramda-adjunct";
 import { Box, Button, CircularProgress, SxProps, Theme } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
+import clsx from "clsx";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
@@ -113,6 +114,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onStateChange,
     autoSubmit,
     disableLoader,
+    className,
     sx,
     ...formProps
   } = props;
@@ -145,7 +147,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const [showLoader, setLoader] = useDebouncedState(false, 750);
+  const [showLoader, setShowLoader] = useDebouncedState(false, 750);
   const lastSubmittedData = useRef<TFieldValues>();
   const preventClose = useRef(false);
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
@@ -155,9 +157,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const isSubmittingRef = useRef(isSubmitting);
 
   useUpdateEffect(() => {
-    setLoader(isSubmitting);
+    setShowLoader(isSubmitting);
     if (isSubmitting) {
-      setLoader.flush();
+      setShowLoader.flush();
     }
 
     isSubmittingRef.current = isSubmitting;
@@ -359,6 +361,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       sx={mergeSxProp({ pt: 1 }, sx)}
       component="form"
       onSubmit={handleFormSubmit}
+      className={clsx("Form", className)}
     >
       {showLoader && !disableLoader && (
         <Box
@@ -379,19 +382,16 @@ function Form<TFieldValues extends FieldValues, TContext>(
       ) : (
         <FormProvider {...sharedProps}>{children}</FormProvider>
       )}
-      <Button
-        sx={[
-          (hideSubmitButton || autoSubmitConfig.enable) && {
-            display: "none",
-          },
-        ]}
-        type="submit"
-        variant="contained"
-        disabled={!isSubmitAllowed}
-        ref={submitRef}
-      >
-        {submitButtonText || t("global.save")}
-      </Button>
+      {!hideSubmitButton && !autoSubmitConfig.enable && (
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={!isSubmitAllowed}
+          ref={submitRef}
+        >
+          {submitButtonText || t("global.save")}
+        </Button>
+      )}
     </Box>
   );
 }

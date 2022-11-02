@@ -1,21 +1,25 @@
 import { Box, Button, Divider } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import { Pred } from "ramda";
 import { useState } from "react";
 import { StudyMetadata } from "../../../../../../../../common/types";
-import { setThematicTrimmingConfig } from "../../../../../../../../services/api/study";
-import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import { useFormContext } from "../../../../../../../common/Form";
-import { FormValues } from "../../utils";
 import {
-  getFieldNames,
-  ThematicTrimmingConfig,
-  thematicTrimmingConfigToDTO,
-} from "./utils";
+  SubmitHandlerPlus,
+  UseFormReturnPlus,
+} from "../../../../../../../common/Form";
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
 import { isSearchMatching } from "../../../../../../../../utils/textUtils";
+import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import {
+  getFieldNames,
+  getThematicTrimmingFormFields,
+  setThematicTrimmingConfig,
+  ThematicTrimmingFormFields,
+} from "./utils";
+import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import BackdropLoading from "../../../../../../../common/loaders/BackdropLoading";
 
 interface Props {
   study: StudyMetadata;
@@ -25,108 +29,137 @@ interface Props {
 
 function ThematicTrimmingDialog(props: Props) {
   const { study, open, onClose } = props;
-  const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const { control, register, getValues, setValue } =
-    useFormContext<FormValues>();
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const getCurrentConfig = () => {
-    return getValues("thematicTrimmingConfig");
-  };
+  const res = usePromiseWithSnackbarError(
+    () => getThematicTrimmingFormFields(study.id),
+    {
+      errorMessage: "Cannot get thematic trimming form fields", // TODO i18n
+      deps: [study.id],
+    }
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleUpdateConfig = (fn: Pred) => () => {
-    setSearch("");
+  const handleUpdateConfig =
+    (api: UseFormReturnPlus<ThematicTrimmingFormFields>, fn: Pred) => () => {
+      setSearch("");
 
-    const config = getCurrentConfig();
-    const newConfig: ThematicTrimmingConfig = R.map(fn, config);
+      const newValues: ThematicTrimmingFormFields = R.map(fn, api.getValues());
 
-    // More performant than `setValue('thematicTrimmingConfig', newConfig);`
-    Object.entries(newConfig).forEach(([key, value]) => {
-      setValue(
-        `thematicTrimmingConfig.${key as keyof ThematicTrimmingConfig}`,
-        value
-      );
-    });
+      Object.entries(newValues).forEach(([key, val]) => {
+        api.setValue(key as keyof ThematicTrimmingFormFields, val);
+      });
+    };
+
+  const handleSubmit = (
+    data: SubmitHandlerPlus<ThematicTrimmingFormFields>
+  ) => {
+    setThematicTrimmingConfig(study.id, data.values);
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  register("thematicTrimmingConfig", {
-    onAutoSubmit: () => {
-      const config = getCurrentConfig();
-      const configDTO = thematicTrimmingConfigToDTO(config);
-      return setThematicTrimmingConfig(study.id, configDTO);
-    },
-  });
-
   return (
-    <BasicDialog
-      open={open}
-      onClose={onClose}
-      title="Thematic Trimming"
-      maxWidth="md"
-      fullWidth
-      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
-      contentProps={{
-        sx: { pb: 0 },
-      }}
-      // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
-      PaperProps={{ sx: { height: "calc(100% - 64px)", maxHeight: "900px" } }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          pb: 2,
-        }}
-      >
-        <SearchFE
-          sx={{ m: 0 }}
-          value={search}
-          setSearchValue={setSearch}
-          size="small"
-        />
-        <Box
-          sx={{
-            display: "flex",
+    <UsePromiseCond
+      response={res}
+      ifPending={() => <BackdropLoading open />}
+      ifResolved={(defaultValues) => (
+        <FormDialog
+          open={open}
+          title="Thematic Trimming"
+          config={{ defaultValues }}
+          autoSubmit
+          onSubmit={handleSubmit}
+          onCancel={onClose}
+          PaperProps={{
+            // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
+            sx: { height: "calc(100% - 64px)", maxHeight: "900px" },
           }}
+          sx={{
+            ".Form": {
+              display: "flex",
+              flexDirection: "column",
+              overflow: "auto",
+            },
+          }}
+          maxWidth="md"
+          fullWidth
         >
-          <Button color="secondary" onClick={handleUpdateConfig(R.T)}>
-            Enable all
-          </Button>
-          <Button color="secondary" onClick={handleUpdateConfig(R.F)}>
-            Disable all
-          </Button>
-          <Divider orientation="vertical" flexItem sx={{ margin: "0 5px" }} />
-          <Button color="secondary" onClick={handleUpdateConfig(R.not)}>
-            Reverse
-          </Button>
-        </Box>
-      </Box>
-      <Box sx={{ display: "flex", flexWrap: "wrap" }}>
-        {getFieldNames(getCurrentConfig())
-          .filter(([, label]) => isSearchMatching(search, label))
-          .map(([name, label]) => (
-            <SwitchFE
-              key={name}
-              name={`thematicTrimmingConfig.${name}`}
-              sx={{ width: 1 / 3, m: "0 0 5px" }}
-              label={label}
-              control={control}
-            />
-          ))}
-      </Box>
-    </BasicDialog>
+          {(api) => (
+            <>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  pb: 2,
+                }}
+              >
+                <SearchFE
+                  sx={{ m: 0 }}
+                  value={search}
+                  setSearchValue={setSearch}
+                  size="small"
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                  }}
+                >
+                  <Button
+                    color="secondary"
+                    onClick={handleUpdateConfig(api, R.T)}
+                  >
+                    Enable all
+                  </Button>
+                  <Button
+                    color="secondary"
+                    onClick={handleUpdateConfig(api, R.F)}
+                  >
+                    Disable all
+                  </Button>
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={{ margin: "0 5px" }}
+                  />
+                  <Button
+                    color="secondary"
+                    onClick={handleUpdateConfig(api, R.not)}
+                  >
+                    Reverse
+                  </Button>
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  overflow: "auto",
+                  p: 1,
+                }}
+              >
+                {getFieldNames(api.getValues())
+                  .filter(([, label]) => isSearchMatching(search, label))
+                  .map(([name, label]) => (
+                    <SwitchFE
+                      key={name}
+                      name={name}
+                      label={label}
+                      control={api.control}
+                      sx={{ width: 1 / 3, m: "0 0 5px" }}
+                    />
+                  ))}
+              </Box>
+            </>
+          )}
+        </FormDialog>
+      )}
+    />
   );
 }
 
