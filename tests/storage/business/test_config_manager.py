@@ -1,11 +1,10 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.business.config_management import (
-    ConfigManager,
-    OutputVariableBase,
-    OutputVariable810,
-    OUTPUT_VARIABLE_LIST,
+from antarest.study.business.thematic_trimming_management import (
+    FIELDS_INFO,
+    ThematicTrimmingManager,
+    ThematicTrimmingFormFields,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -36,7 +35,7 @@ def test_thematic_trimming_config():
     variant_study_service = Mock(
         spec=VariantStudyService, command_factory=command_factory_mock
     )
-    config_manager = ConfigManager(
+    thematic_trimming_manager = ThematicTrimmingManager(
         storage_service=StudyStorageService(
             raw_study_service, variant_study_service
         ),
@@ -67,47 +66,53 @@ def test_thematic_trimming_config():
         },
     ]
 
-    expected = {var: True for var in [var for var in OutputVariableBase]}
-    study.version = "800"
-    assert config_manager.get_thematic_trimming(study) == expected
+    def get_expected(value=True) -> ThematicTrimmingFormFields:
+        return ThematicTrimmingFormFields.construct(
+            **{
+                field_name: value
+                for field_name in [
+                    name
+                    for name, info in FIELDS_INFO.items()
+                    if info.get("start_version", -1) <= config.version  # type: ignore
+                ]
+            }
+        )
 
-    output_variable_810 = [var.value for var in OutputVariableBase] + [
-        var.value for var in OutputVariable810
-    ]
-    study.version = "820"
-    expected = {var: True for var in output_variable_810}
-    expected[OutputVariableBase.AVL_DTG] = False
-    assert config_manager.get_thematic_trimming(study) == expected
-    study.version = "840"
-    expected = {var: True for var in OUTPUT_VARIABLE_LIST}
-    expected[OutputVariableBase.AVL_DTG] = False
-    assert config_manager.get_thematic_trimming(study) == expected
-    expected = {var: False for var in OUTPUT_VARIABLE_LIST}
-    expected[OutputVariableBase.CONG_FEE_ALG] = True
-    assert config_manager.get_thematic_trimming(study) == expected
+    assert thematic_trimming_manager.get_field_values(study) == get_expected()
 
-    new_config = {var: True for var in OUTPUT_VARIABLE_LIST}
-    new_config[OutputVariableBase.COAL] = False
-    config_manager.set_thematic_trimming(study, new_config)
+    config.version = 800
+    expected = get_expected().copy(update={"avl_dtg": False})
+    assert thematic_trimming_manager.get_field_values(study) == expected
+
+    config.version = 820
+    expected = get_expected().copy(update={"avl_dtg": False})
+    assert thematic_trimming_manager.get_field_values(study) == expected
+
+    config.version = 840
+    expected = get_expected(False).copy(update={"cong_fee_alg": True})
+    assert thematic_trimming_manager.get_field_values(study) == expected
+
+    new_config = get_expected().copy(update={"coal": False})
+    thematic_trimming_manager.set_field_values(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variables selection",
-            data={"select_var -": [OutputVariableBase.COAL.value]},
+            data={"select_var -": [FIELDS_INFO["coal"]["path"]]},
             command_context=command_context,
         )
     )
-    new_config = {var: False for var in OUTPUT_VARIABLE_LIST}
-    new_config[OutputVariable810.RENW_1] = True
-    config_manager.set_thematic_trimming(study, new_config)
+
+    new_config = get_expected(False).copy(update={"renw_1": True})
+    thematic_trimming_manager.set_field_values(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variables selection",
             data={
                 "selected_vars_reset": False,
-                "select_var +": [OutputVariable810.RENW_1.value],
+                "select_var +": [FIELDS_INFO["renw_1"]["path"]],
             },
             command_context=command_context,
         )
     )
 
-    assert len(OUTPUT_VARIABLE_LIST) == 63
+    assert len(FIELDS_INFO) == 63
