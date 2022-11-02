@@ -1,7 +1,6 @@
 import { Button } from "@mui/material";
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import { FieldValues, FormState } from "react-hook-form";
-import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 import Form, { FormProps } from "../Form";
@@ -20,6 +19,8 @@ export interface FormDialogProps<
   cancelButtonText?: string;
   onCancel: VoidFunction;
 }
+
+// TODO: `formState.isSubmitting` doesn't update when auto submit enabled
 
 function FormDialog<TFieldValues extends FieldValues, TContext>(
   props: FormDialogProps<TFieldValues, TContext>
@@ -47,7 +48,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
   };
 
   const { t } = useTranslation();
-  const formId = useRef(uuidv4()).current;
+  const formId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitAllowed, setIsSubmitAllowed] = useState(false);
 
@@ -86,14 +87,16 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
           <Button onClick={onCancel} disabled={isSubmitting}>
             {cancelButtonText || t("button.close")}
           </Button>
-          <Button
-            type="submit"
-            form={formId}
-            variant="contained"
-            disabled={!isSubmitAllowed}
-          >
-            {submitButtonText || t("global.save")}
-          </Button>
+          {!autoSubmit && (
+            <Button
+              type="submit"
+              form={formId}
+              variant="contained"
+              disabled={!isSubmitAllowed}
+            >
+              {submitButtonText || t("global.save")}
+            </Button>
+          )}
         </>
       }
     >
