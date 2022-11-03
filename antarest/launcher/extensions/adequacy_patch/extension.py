@@ -83,6 +83,12 @@ class AdequacyPatchExtension(ILauncherExtension):
         ]
         original_area_enabled: Dict[str, bool] = {}
         original_link_enabled: Dict[str, bool] = {}
+        study.tree.save(
+            True, ["settings", "generaldata", "general", "year-by-year"]
+        )
+        study.tree.save(
+            True, ["settings", "generaldata", "output", "synthesis"]
+        )
         for area_id, area in study.config.areas.items():
             # areas
             original_area_enabled[area_id] = "hourly" in area.filters_year
