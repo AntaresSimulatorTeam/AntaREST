@@ -25,6 +25,7 @@ function Fields() {
           name="followLoad"
           label="Follow load modulations"
           control={control}
+          sx={{ alignSelf: "center" }}
         />
         <NumberFE
           name="interDailyBreakdown"

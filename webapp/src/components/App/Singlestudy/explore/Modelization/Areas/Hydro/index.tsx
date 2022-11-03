@@ -13,10 +13,6 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/management`,
       },
       {
-        label: "Allocation",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/allocation`,
-      },
-      {
         label: "Daily Power",
         path: `/studies/${study?.id}/explore/modelization/area/hydro/dailypower`,
       },
@@ -33,8 +29,12 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/watervalues`,
       },
       {
-        label: "Time-series",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/timeseries`,
+        label: "Hydro Storage",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/hydrostorage`,
+      },
+      {
+        label: "Run of river",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/ror`,
       },
     ],
     [study]
