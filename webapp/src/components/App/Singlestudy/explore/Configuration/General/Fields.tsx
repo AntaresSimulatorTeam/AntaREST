@@ -27,11 +27,14 @@ function Fields(props: Props) {
   const [t] = useTranslation();
   const { control, setValue, watch, getValues } =
     useFormContext<GeneralFormFields>();
-  const [buildingMode, firstDay, lastDay] = watch([
+  const [buildingMode, firstDay, lastDay, filtering] = watch([
     "buildingMode",
     "firstDay",
     "lastDay",
+    "filtering",
   ]);
+  // Only present on study versions < 710
+  const hasFiltering = RA.isBoolean(filtering);
 
   useEffect(() => {
     if (buildingMode === "Derated") {
@@ -77,6 +80,16 @@ function Fields(props: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  const thematicTrimmingButton = (
+    <Button
+      startIcon={<SettingsIcon />}
+      onClick={() => setDialog("thematicTrimming")}
+      disabled={!getValues(hasFiltering ? "filtering" : "thematicTrimming")}
+    >
+      {t("global.settings")}
+    </Button>
+  );
 
   return (
     <>
@@ -212,12 +225,15 @@ function Fields(props: Props) {
             label={t("study.configuration.general.mcScenario")}
             control={control}
           />
-          {RA.isBoolean(getValues("filtering")) ? (
-            <SwitchFE
-              name="filtering"
-              label={t("study.configuration.general.filtering")}
-              control={control}
-            />
+          {hasFiltering ? (
+            <Box>
+              <SwitchFE
+                name="filtering"
+                label={t("study.configuration.general.filtering")}
+                control={control}
+              />
+              {thematicTrimmingButton}
+            </Box>
           ) : (
             <>
               <BooleanFE
@@ -235,13 +251,7 @@ function Fields(props: Props) {
                   falseText="None"
                   control={control}
                 />
-                <Button
-                  startIcon={<SettingsIcon />}
-                  onClick={() => setDialog("thematicTrimming")}
-                  disabled={!getValues("thematicTrimming")}
-                >
-                  {t("global.settings")}
-                </Button>
+                {thematicTrimmingButton}
               </Box>
             </>
           )}
