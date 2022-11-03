@@ -1,19 +1,10 @@
-import {
-  useCallback,
-  useState,
-  MouseEvent as ReactMouseEvent,
-  Fragment,
-} from "react";
-import { Menu, MenuItem, Typography } from "@mui/material";
+import { useCallback, Fragment } from "react";
+import { Typography } from "@mui/material";
 import TreeView from "@mui/lab/TreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import TreeItem from "@mui/lab/TreeItem";
-import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { StudyTreeNode } from "./utils";
-import { scanFolder } from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
@@ -23,47 +14,6 @@ function StudyTree() {
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
   const studiesTree = useAppSelector(getStudiesTree);
   const dispatch = useAppDispatch();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [t] = useTranslation();
-  const [menuId, setMenuId] = useState<string>("");
-  const [contextMenu, setContextMenu] = useState<{
-    mouseX: number;
-    mouseY: number;
-  } | null>(null);
-
-  const onContextMenu = (
-    event: ReactMouseEvent<HTMLSpanElement, MouseEvent>,
-    id: string
-  ) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (event as any).preventDefault();
-    setContextMenu(
-      contextMenu === null
-        ? {
-            mouseX: event.clientX - 2,
-            mouseY: event.clientY - 4,
-          }
-        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
-          // Other native context menus might behave different.
-          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
-          null
-    );
-    setMenuId(id);
-  };
-
-  const handleClose = () => {
-    setContextMenu(null);
-  };
-
-  const orderFolderScan = async (folderPath: string): Promise<void> => {
-    try {
-      await scanFolder(folderPath);
-    } catch (e) {
-      enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
-    } finally {
-      setContextMenu(null);
-    }
-  };
 
   const getExpandedTab = (nodeId: string): Array<string> => {
     const expandedTab: Array<string> = [];
@@ -91,7 +41,6 @@ function StudyTree() {
                   e.stopPropagation();
                   dispatch(updateStudyFilters({ folder: newId }));
                 }}
-                onContextMenu={(e) => onContextMenu(e, elm.path)}
               >
                 {elm.name}
               </Typography>
@@ -105,23 +54,6 @@ function StudyTree() {
           >
             {buildTree((elm as StudyTreeNode).children, newId)}
           </TreeItem>
-          <Menu
-            key={`menu-${newId}`}
-            open={contextMenu !== null && menuId === elm.path}
-            onClose={handleClose}
-            anchorReference="anchorPosition"
-            anchorPosition={
-              contextMenu !== null
-                ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-                : undefined
-            }
-          >
-            <MenuItem
-              onClick={() => orderFolderScan((elm as StudyTreeNode).path)}
-            >
-              {t("studies.scanFolder")}
-            </MenuItem>
-          </Menu>
         </Fragment>
       );
     });
