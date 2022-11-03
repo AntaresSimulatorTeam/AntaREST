@@ -28,6 +28,20 @@ export interface BindingConstFields {
   time_step: Exclude<FilteringType, "monthly" | "annual">;
   operator: OperatorType;
   comments?: string;
+  filterByYear: Array<FilteringType>;
+  filterSynthesis: Array<FilteringType>;
+  constraints: Array<ConstraintType>;
+}
+
+export interface BindingConstFieldsDTO {
+  name: string;
+  id: string;
+  enabled: boolean;
+  time_step: Exclude<FilteringType, "monthly" | "annual">;
+  operator: OperatorType;
+  comments?: string;
+  filter_year_by_year?: string;
+  filter_synthesis?: string;
   constraints: Array<ConstraintType>;
 }
 
@@ -38,11 +52,22 @@ export async function getDefaultValues(
   bindingConstId: string
 ): Promise<BindingConstFields> {
   // Fetch fields
-  const fields: BindingConstFields = await getBindingConstraint(
+  const fields: BindingConstFieldsDTO = await getBindingConstraint(
     studyId,
     bindingConstId
   );
-  return { ...fields, comments: fields.comments || "" };
+  return {
+    ...fields,
+    comments: fields.comments || "",
+    filterByYear: (fields.filter_year_by_year || "").split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
+    filterSynthesis: (fields.filter_synthesis || "").split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
+  };
 }
 
 export function isDataLink(
