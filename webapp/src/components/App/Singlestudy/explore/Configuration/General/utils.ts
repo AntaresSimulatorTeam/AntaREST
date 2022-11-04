@@ -11,7 +11,7 @@ enum Mode {
   Draft = "draft",
 }
 
-enum BuildingMode {
+export enum BuildingMode {
   Automatic = "Automatic",
   Custom = "Custom",
   Derated = "Derated",
@@ -100,6 +100,8 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
   { label: "SUN - SAT", value: WeekDay.Sunday },
 ];
 
+export const MODE_OPTIONS = Object.values(Mode);
+export const BUILDING_MODE_OPTIONS = Object.values(BuildingMode);
 export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 
 ////////////////////////////////////////////////////////////////

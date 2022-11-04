@@ -6,8 +6,11 @@ import * as RA from "ramda-adjunct";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
+  BuildingMode,
+  BUILDING_MODE_OPTIONS,
   FIRST_JANUARY_OPTIONS,
   GeneralFormFields,
+  MODE_OPTIONS,
   WEEK_OPTIONS,
   YEAR_OPTIONS,
 } from "./utils";
@@ -37,7 +40,7 @@ function Fields(props: Props) {
   const hasFiltering = RA.isBoolean(filtering);
 
   useEffect(() => {
-    if (buildingMode === "Derated") {
+    if (buildingMode === BuildingMode.Derated) {
       setValue("nbYears", 1);
     }
   }, [buildingMode, setValue]);
@@ -97,7 +100,7 @@ function Fields(props: Props) {
         <SelectFE
           name="mode"
           label={t("study.configuration.general.mode")}
-          options={["Economy", "Adequacy", "draft"]}
+          options={MODE_OPTIONS}
           control={control}
         />
         <NumberFE
@@ -173,7 +176,7 @@ function Fields(props: Props) {
             control={control}
             rules={{
               validate: (v) => {
-                if (buildingMode === "Derated") {
+                if (buildingMode === BuildingMode.Derated) {
                   return v === 1
                     ? true
                     : "Value must be 1 when building mode is derated";
@@ -188,7 +191,7 @@ function Fields(props: Props) {
           <SelectFE
             name="buildingMode"
             label={t("study.configuration.general.buildingMode")}
-            options={["Automatic", "Custom", "Derated"]}
+            options={BUILDING_MODE_OPTIONS}
             control={control}
             rules={{ deps: "nbYears" }}
           />
