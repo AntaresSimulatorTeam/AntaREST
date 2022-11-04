@@ -62,11 +62,15 @@
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
     "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
-    "react/jsx-props-no-spreading": "off",
-    "react/no-unstable-nested-components": [
+    "react/jsx-no-bind": [
       "error",
-      { "allowAsProps": true }
+      {
+        "allowArrowFunctions": true,
+        "allowFunctions": true
+      }
     ],
+    "react/jsx-props-no-spreading": "off",
+    "react/no-unstable-nested-components": ["error", { "allowAsProps": true }],
     "react/prop-types": "off",
     "react/require-default-props": "off",
     "react-hooks/exhaustive-deps": "warn",
