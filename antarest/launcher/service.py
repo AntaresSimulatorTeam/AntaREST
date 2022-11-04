@@ -546,58 +546,62 @@ class LauncherService:
         additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(f"Importing output for job {job_id}")
+        study_id: Optional[str] = None
         with db():
             job_result = self.job_result_repository.get(job_id)
-            if job_result:
+            if not job_result:
+                raise JobNotFound()
 
-                job_launch_params = LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params or "{}"
-                )
+            study_id = job_result.study_id
+            job_launch_params = LauncherParametersDTO.parse_raw(
+                job_result.launcher_params or "{}"
+            )
 
-                # this now can be a zip file instead of a directory !
-                output_true_path = find_single_output_path(output_path)
-                output_is_zipped = is_zip(output_true_path)
-                output_suffix = cast(
-                    Optional[str],
-                    getattr(
-                        job_launch_params,
-                        LAUNCHER_PARAM_NAME_SUFFIX,
-                        None,
-                    ),
-                )
-
-                self._before_import_hooks(
-                    job_id,
-                    job_result.study_id,
-                    output_true_path,
+            # this now can be a zip file instead of a directory !
+            output_true_path = find_single_output_path(output_path)
+            output_is_zipped = is_zip(output_true_path)
+            output_suffix = cast(
+                Optional[str],
+                getattr(
                     job_launch_params,
+                    LAUNCHER_PARAM_NAME_SUFFIX,
+                    None,
+                ),
+            )
+
+            self._before_import_hooks(
+                job_id,
+                job_result.study_id,
+                output_true_path,
+                job_launch_params,
+            )
+            self._save_solver_stats(job_result, output_true_path)
+            if additional_logs and not output_is_zipped:
+                for log_name, log_paths in additional_logs.items():
+                    concat_files(
+                        log_paths,
+                        output_true_path / log_name,
+                    )
+
+        if study_id:
+            zip_path: Optional[Path] = None
+            stopwatch = StopWatch()
+            if not output_is_zipped and job_launch_params.archive_output:
+                logger.info("Re zipping output for transfer")
+                zip_path = (
+                    output_true_path.parent / f"{output_true_path.name}.zip"
                 )
-                self._save_solver_stats(job_result, output_true_path)
-                if additional_logs and not output_is_zipped:
-                    for log_name, log_paths in additional_logs.items():
-                        concat_files(
-                            log_paths,
-                            output_true_path / log_name,
-                        )
-
-                zip_path: Optional[Path] = None
-                stopwatch = StopWatch()
-                if not output_is_zipped and job_launch_params.archive_output:
-                    logger.info("Re zipping output for transfer")
-                    zip_path = (
-                        output_true_path.parent
-                        / f"{output_true_path.name}.zip"
+                zip_dir(
+                    output_true_path, zip_path=zip_path
+                )  # TODO: remove source dir ?
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Zipped output for job {job_id} in {x}s"
                     )
-                    zip_dir(
-                        output_true_path, zip_path=zip_path
-                    )  # TODO: remove source dir ?
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Zipped output for job {job_id} in {x}s"
-                        )
-                    )
+                )
 
-                final_output_path = zip_path or output_true_path
+            final_output_path = zip_path or output_true_path
+            with db():
                 try:
                     if additional_logs and output_is_zipped:
                         for log_name, log_paths in additional_logs.items():
@@ -606,13 +610,13 @@ class LauncherService:
                             if log_type:
                                 log_suffix = log_type.to_suffix()
                             self.study_service.save_logs(
-                                job_result.study_id,
+                                study_id,
                                 job_id,
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
                     return self.study_service.import_output(
-                        job_result.study_id,
+                        study_id,
                         final_output_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
                         output_suffix,
