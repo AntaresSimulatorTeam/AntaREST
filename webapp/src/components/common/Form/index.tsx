@@ -21,7 +21,14 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Box, Button, CircularProgress, SxProps, Theme } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  setRef,
+  SxProps,
+  Theme,
+} from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
@@ -87,7 +94,7 @@ export interface FormProps<
   ) => any | Promise<any>;
   onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
-    | ((formObj: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
+    | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
   hideSubmitButton?: boolean;
@@ -95,6 +102,7 @@ export interface FormProps<
   autoSubmit?: boolean | AutoSubmitConfig;
   disableLoader?: boolean;
   sx?: SxProps<Theme>;
+  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
 }
 
 export function useFormContext<TFieldValues extends FieldValues>() {
@@ -116,10 +124,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
     disableLoader,
     className,
     sx,
+    apiRef,
     ...formProps
   } = props;
 
-  const formObj = useForm<TFieldValues, TContext>({
+  const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
     ...config,
@@ -134,7 +143,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     handleSubmit,
     formState,
     reset,
-  } = formObj;
+  } = formApi;
   // * /!\ `formState` is a proxy
   const { isSubmitting, isDirty, dirtyFields } = formState;
   // Don't add `isValid` because we need to trigger fields validation.
@@ -155,6 +164,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   );
   // To use it in wrapper functions without need to add the value in `useCallback`'s deps
   const isSubmittingRef = useRef(isSubmitting);
+
+  useEffect(() => setRef(apiRef, formApi));
 
   useUpdateEffect(() => {
     setShowLoader(isSubmitting);
@@ -345,8 +356,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  const sharedProps = {
-    ...formObj,
+  const formApiPlus: UseFormReturnPlus<TFieldValues, TContext> = {
+    ...formApi,
     formState,
     defaultValues: config?.defaultValues,
     register: registerWrapper,
@@ -378,9 +389,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
         </Box>
       )}
       {RA.isFunction(children) ? (
-        children(sharedProps)
+        children(formApiPlus)
       ) : (
-        <FormProvider {...sharedProps}>{children}</FormProvider>
+        <FormProvider {...formApiPlus}>{children}</FormProvider>
       )}
       {!hideSubmitButton && !autoSubmitConfig.enable && (
         <Button
