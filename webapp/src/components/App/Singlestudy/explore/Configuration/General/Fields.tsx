@@ -22,7 +22,9 @@ import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
 
 interface Props {
-  setDialog: React.Dispatch<React.SetStateAction<"thematicTrimming" | "">>;
+  setDialog: React.Dispatch<
+    React.SetStateAction<"thematicTrimming" | "playlist" | "">
+  >;
 }
 
 function Fields(props: Props) {
@@ -195,13 +197,22 @@ function Fields(props: Props) {
             control={control}
             rules={{ deps: "nbYears" }}
           />
-          <BooleanFE
-            name="selectionMode"
-            label={t("study.configuration.general.selectionMode")}
-            trueText="Custom"
-            falseText="Automatic"
-            control={control}
-          />
+          <Box>
+            <BooleanFE
+              name="selectionMode"
+              label={t("study.configuration.general.selectionMode")}
+              trueText="Custom"
+              falseText="Automatic"
+              control={control}
+            />
+            <Button
+              startIcon={<SettingsIcon />}
+              onClick={() => setDialog("playlist")}
+              disabled={!getValues("selectionMode")}
+            >
+              {t("global.settings")}
+            </Button>
+          </Box>
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
         <Fieldset
