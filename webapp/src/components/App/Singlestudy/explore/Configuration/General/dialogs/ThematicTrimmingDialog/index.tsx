@@ -47,11 +47,9 @@ function ThematicTrimmingDialog(props: Props) {
     (api: UseFormReturnPlus<ThematicTrimmingFormFields>, fn: Pred) => () => {
       setSearch("");
 
-      const newValues: ThematicTrimmingFormFields = R.map(fn, api.getValues());
-
-      Object.entries(newValues).forEach(([key, val]) => {
-        api.setValue(key as keyof ThematicTrimmingFormFields, val);
-      });
+      R.forEach(([key, val]) => {
+        api.setValue(key, fn(val));
+      }, R.toPairs(api.getValues()));
     };
 
   const handleSubmit = (
@@ -105,11 +103,7 @@ function ThematicTrimmingDialog(props: Props) {
                   setSearchValue={setSearch}
                   size="small"
                 />
-                <Box
-                  sx={{
-                    display: "flex",
-                  }}
-                >
+                <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
                     color="secondary"
                     onClick={handleUpdateConfig(api, R.T)}
@@ -122,11 +116,7 @@ function ThematicTrimmingDialog(props: Props) {
                   >
                     Disable all
                   </Button>
-                  <Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={{ margin: "0 5px" }}
-                  />
+                  <Divider orientation="vertical" flexItem />
                   <Button
                     color="secondary"
                     onClick={handleUpdateConfig(api, R.not)}
