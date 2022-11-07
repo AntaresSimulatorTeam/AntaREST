@@ -53,13 +53,7 @@ function CreateTemplateTableDialog(props: Props) {
       }}
       onSubmit={handleSubmit}
       onCancel={onCancel}
-      rulesForName={{
-        validate: (value) => {
-          if (templates.find((t) => t.name === value)) {
-            return t("form.field.notAllowedValue") as string;
-          }
-        },
-      }}
+      templates={templates}
     />
   );
 }

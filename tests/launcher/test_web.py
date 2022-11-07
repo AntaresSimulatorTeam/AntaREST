@@ -14,8 +14,8 @@ from antarest.launcher.model import (
     JobResult,
     JobStatus,
     JobResultDTO,
-    LogType,
     LauncherParametersDTO,
+    LogType,
 )
 
 ADMIN = JWTUser(

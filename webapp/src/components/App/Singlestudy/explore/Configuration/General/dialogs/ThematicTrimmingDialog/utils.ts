@@ -1,9 +1,8 @@
-import { camelCase } from "lodash";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
-import { ThematicTrimmingConfigDTO } from "../../../../../../../../common/types";
+import { StudyMetadata } from "../../../../../../../../common/types";
+import client from "../../../../../../../../services/api/client";
 
-export interface ThematicTrimmingConfig {
+export interface ThematicTrimmingFormFields {
   ovCost: boolean;
   opCost: boolean;
   mrgPrice: boolean;
@@ -52,7 +51,7 @@ export interface ThematicTrimmingConfig {
   congProdPlus: boolean;
   congProdMinus: boolean;
   hurdleCost: boolean;
-  // Study version >= 810
+  // For study versions >= 810
   resGenerationByPlant?: boolean;
   miscDtg2?: boolean;
   miscDtg3?: boolean;
@@ -66,12 +65,12 @@ export interface ThematicTrimmingConfig {
   renw2?: boolean;
   renw3?: boolean;
   renw4?: boolean;
-  // Study version >= 830
+  // For study versions >= 830
   dens?: boolean;
   profit?: boolean;
 }
 
-const keysMap: Record<keyof ThematicTrimmingConfig, string> = {
+const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   ovCost: "OV. COST",
   opCost: "OP. COST",
   mrgPrice: "MRG. PRICE",
@@ -139,31 +138,27 @@ const keysMap: Record<keyof ThematicTrimmingConfig, string> = {
   profit: "Profit",
 };
 
-// Allow to support all study versions
-// by using directly the server config
+// Allow to support all study versions by using directly the server config
 export function getFieldNames(
-  config: ThematicTrimmingConfig
-): Array<[keyof ThematicTrimmingConfig, string]> {
-  return R.toPairs(R.pick(R.keys(config), keysMap));
+  fields: ThematicTrimmingFormFields
+): Array<[keyof ThematicTrimmingFormFields, string]> {
+  return R.toPairs(R.pick(R.keys(fields), keysMap));
 }
 
-export function formatThematicTrimmingConfigDTO(
-  configDTO: ThematicTrimmingConfigDTO
-): ThematicTrimmingConfig {
-  return Object.entries(configDTO).reduce((acc, [key, value]) => {
-    const newKey = R.cond([
-      [R.equals("CONG. PROD +"), R.always("congProdPlus")],
-      [R.equals("CONG. PROD -"), R.always("congProdMinus")],
-      [R.T, camelCase],
-    ])(key) as keyof ThematicTrimmingConfig;
-
-    acc[newKey] = value;
-    return acc;
-  }, {} as ThematicTrimmingConfig);
+function makeRequestURL(studyId: StudyMetadata["id"]): string {
+  return `/v1/studies/${studyId}/config/thematictrimming/form`;
 }
 
-export function thematicTrimmingConfigToDTO(
-  config: ThematicTrimmingConfig
-): ThematicTrimmingConfigDTO {
-  return RA.renameKeys(keysMap, config) as ThematicTrimmingConfigDTO;
-}
+export const getThematicTrimmingFormFields = async (
+  studyId: StudyMetadata["id"]
+): Promise<ThematicTrimmingFormFields> => {
+  const res = await client.get(makeRequestURL(studyId));
+  return res.data;
+};
+
+export const setThematicTrimmingConfig = async (
+  studyId: StudyMetadata["id"],
+  config: ThematicTrimmingFormFields
+): Promise<void> => {
+  await client.put(makeRequestURL(studyId), config);
+};

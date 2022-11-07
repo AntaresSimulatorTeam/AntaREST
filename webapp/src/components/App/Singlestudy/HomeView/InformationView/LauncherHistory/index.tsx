@@ -49,7 +49,9 @@ function LauncherHistory(props: Props) {
 
   const handleEvents = useCallback(
     (msg: WSMessage): void => {
-      if (study === undefined) return;
+      if (study === undefined) {
+        return;
+      }
       if (msg.type === WSEvent.STUDY_JOB_STARTED) {
         const newJob = mapLaunchJobDTO(msg.payload as LaunchJobDTO);
         if (newJob.studyId === study.id) {

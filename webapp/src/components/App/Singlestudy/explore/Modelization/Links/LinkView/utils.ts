@@ -1,10 +1,10 @@
 import { FieldValues } from "react-hook-form";
 import { getStudyData } from "../../../../../../../services/api/study";
+import { FilteringType } from "../../../common/types";
 
 type TransCapacitiesType = "infinite" | "ignore" | "enabled";
 type AssetType = "ac" | "dc" | "gaz" | "virt";
 type LinkStyleType = "plain" | "dash" | "dot" | "dotdash";
-type FilteringType = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 
 export interface LinkType {
   "hurdles-cost": boolean;

@@ -18,9 +18,14 @@ import {
   RENEWABLE_GENERATION_OPTIONS,
 } from "./utils";
 
-function Fields() {
+interface Props {
+  version: number;
+}
+
+function Fields(props: Props) {
   const [t] = useTranslation();
   const { control } = useFormContext<AdvancedParamsFormFields>();
+  const { version } = props;
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -183,14 +188,16 @@ function Fields() {
           name="numberOfCoresMode"
           control={control}
         />
-        <SelectFE
-          label={t(
-            "study.configuration.advancedParameters.renewableGenerationModeling"
-          )}
-          options={RENEWABLE_GENERATION_OPTIONS}
-          name="renewableGenerationModelling"
-          control={control}
-        />
+        {version >= 810 && (
+          <SelectFE
+            label={t(
+              "study.configuration.advancedParameters.renewableGenerationModeling"
+            )}
+            options={RENEWABLE_GENERATION_OPTIONS}
+            name="renewableGenerationModelling"
+            control={control}
+          />
+        )}
       </Fieldset>
     </Box>
   );

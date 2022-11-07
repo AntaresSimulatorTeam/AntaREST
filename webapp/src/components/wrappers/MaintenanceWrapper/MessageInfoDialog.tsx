@@ -47,8 +47,9 @@ function MessageInfoDialog() {
   }, [dispatch, enqueueErrorSnackbar, t]);
 
   useEffect(() => {
-    if (messageInfo && (user === undefined || !isUserAdmin(user)))
+    if (messageInfo && (user === undefined || !isUserAdmin(user))) {
       setOpen(true);
+    }
   }, [messageInfo, user]);
 
   return (

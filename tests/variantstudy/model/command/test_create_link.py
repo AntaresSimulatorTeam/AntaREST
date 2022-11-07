@@ -8,7 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import (
     CommandReverter,
 )
-from antarest.study.storage.variantstudy.business.default_values import (
+from antarest.study.common.default_values import (
     FilteringOptions,
     LinkProperties,
 )
@@ -96,52 +96,40 @@ class TestCreateLink:
             study_path / "input" / "links" / area1_id / "properties.ini"
         )
         assert (
-            link_data[area2_id]["hurdles-cost"]
-            == LinkProperties.HURDLES_COST.value
+            link_data[area2_id]["hurdles-cost"] == LinkProperties.HURDLES_COST
         )
-        assert (
-            link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW.value
-        )
+        assert link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW
         assert (
             link_data[area2_id]["use-phase-shifter"]
-            == LinkProperties.USE_PHASE_SHIFTER.value
+            == LinkProperties.USE_PHASE_SHIFTER
         )
         assert (
             str(link_data[area2_id]["transmission-capacities"])
-            == LinkProperties.TRANSMISSION_CAPACITIES.value
+            == LinkProperties.TRANSMISSION_CAPACITIES
         )
         assert (
-            str(link_data[area2_id]["asset-type"])
-            == LinkProperties.ASSET_TYPE.value
+            str(link_data[area2_id]["asset-type"]) == LinkProperties.ASSET_TYPE
         )
         assert (
-            str(link_data[area2_id]["link-style"])
-            == LinkProperties.LINK_STYLE.value
+            str(link_data[area2_id]["link-style"]) == LinkProperties.LINK_STYLE
         )
         assert (
-            int(link_data[area2_id]["link-width"])
-            == LinkProperties.LINK_WIDTH.value
+            int(link_data[area2_id]["link-width"]) == LinkProperties.LINK_WIDTH
         )
-        assert (
-            int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR.value
-        )
-        assert (
-            int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG.value
-        )
-        assert (
-            int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB.value
-        )
+        assert int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR
+        assert int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG
+        assert int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB
         assert (
             link_data[area2_id]["display-comments"]
-            == LinkProperties.DISPLAY_COMMENTS.value
+            == LinkProperties.DISPLAY_COMMENTS
         )
         assert (
             str(link_data[area2_id]["filter-synthesis"])
-            == FilteringOptions.FILTER_SYNTHESIS.value
+            == FilteringOptions.FILTER_SYNTHESIS
         )
         assert (
             str(link_data[area2_id]["filter-year-by-year"])
-            == FilteringOptions.FILTER_YEAR_BY_YEAR.value
+            == FilteringOptions.FILTER_YEAR_BY_YEAR
         )
 
         empty_study.config.version = 820

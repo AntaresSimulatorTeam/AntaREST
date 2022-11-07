@@ -206,10 +206,14 @@ export const findNodeInTree = (
   studyId: string,
   tree: VariantTree
 ): VariantTree | undefined => {
-  if (studyId === tree.node.id) return tree;
+  if (studyId === tree.node.id) {
+    return tree;
+  }
   for (let i = 0; i < tree.children.length; i += 1) {
     const elm = findNodeInTree(studyId, tree.children[i]);
-    if (elm !== undefined) return elm;
+    if (elm !== undefined) {
+      return elm;
+    }
   }
   return undefined;
 };

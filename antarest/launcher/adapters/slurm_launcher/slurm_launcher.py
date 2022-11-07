@@ -27,7 +27,7 @@ from antarest.core.interfaces.eventbus import (
     EventType,
 )
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import assert_this
+from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,
@@ -36,9 +36,9 @@ from antarest.launcher.adapters.abstractlauncher import (
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import (
     JobStatus,
-    LogType,
     LauncherParametersDTO,
     XpansionParametersDTO,
+    LogType,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
@@ -284,6 +284,20 @@ class SlurmLauncher(AbstractLauncher):
         )
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
+            if output_path.name.endswith(".zip"):
+                logger.info(
+                    "Unzipping zipped output for xpansion result storage"
+                )
+                unzip(
+                    self.local_workspace
+                    / STUDIES_OUTPUT_DIR_NAME
+                    / job_id
+                    / "output"
+                    / output_path.name[:-4],
+                    output_path,
+                    remove_source_zip=True,
+                )
+
             if (output_path / "updated_links").exists():
                 logger.warning("Skipping updated links")
                 self.callbacks.append_after_log(
@@ -313,10 +327,9 @@ class SlurmLauncher(AbstractLauncher):
     def _check_studies_state(self) -> None:
         try:
             with self.antares_launcher_lock:
-                run_with(
+                self._call_launcher(
                     arguments=self.launcher_args,
                     parameters=self.launcher_params,
-                    show_banner=False,
                 )
         except Exception as e:
             logger.info("Could not get data on remote server", exc_info=e)
@@ -335,12 +348,11 @@ class SlurmLauncher(AbstractLauncher):
                     )
                     output_id: Optional[str] = None
                     try:
-                        if not study.with_error:
-                            output_id = self._import_study_output(
-                                study.name,
-                                study.xpansion_mode,
-                                study.job_log_dir,
-                            )
+                        output_id = self._import_study_output(
+                            study.name,
+                            study.xpansion_mode,
+                            study.job_log_dir,
+                        )
                     except Exception as e:
                         self.callbacks.append_after_log(
                             study.name,
@@ -477,16 +489,31 @@ class SlurmLauncher(AbstractLauncher):
                 self.callbacks.append_before_log(
                     launch_uuid, f"Submitting study to slurm launcher"
                 )
-                run_with(
-                    launcher_args, self.launcher_params, show_banner=False
+
+                self._call_launcher(launcher_args, self.launcher_params)
+
+                launch_success = self._check_if_study_is_in_launcher_db(
+                    launch_uuid
                 )
-                self.callbacks.append_before_log(
-                    launch_uuid, f"Study submitted"
-                )
-                logger.info("Study exported and run with launcher")
+                if launch_success:
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Study submitted"
+                    )
+                    logger.info("Study exported and run with launcher")
+                else:
+                    self.callbacks.append_after_log(
+                        launch_uuid,
+                        f"Study not submitted. The study configuration may be incorrect",
+                    )
+                    logger.warning(
+                        f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
+                    )
 
                 self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.RUNNING, None, None
+                    str(launch_uuid),
+                    JobStatus.RUNNING if launch_success else JobStatus.FAILED,
+                    None,
+                    None,
                 )
             except Exception as e:
                 logger.error(
@@ -506,6 +533,18 @@ class SlurmLauncher(AbstractLauncher):
         if not self.thread:
             self.start()
 
+    def _call_launcher(
+        self, arguments: argparse.Namespace, parameters: MainParameters
+    ) -> None:
+        run_with(arguments, parameters, show_banner=False)
+
+    def _check_if_study_is_in_launcher_db(self, job_id: str) -> bool:
+        studies = self.data_repo_tinydb.get_list_of_studies()
+        for s in studies:
+            if s.name == job_id:
+                return True
+        return False
+
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO
     ) -> argparse.Namespace:
@@ -513,11 +552,9 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args = deepcopy(self.launcher_args)
             other_options = []
             if launcher_params.other_options:
-                other_options.append(
-                    re.sub(
-                        "[^a-zA-Z0-9_,-]", "", launcher_params.other_options
-                    )
-                )
+                options = re.split("\\s+", launcher_params.other_options)
+                for opt in options:
+                    other_options.append(re.sub("[^a-zA-Z0-9_,-]", "", opt))
             if launcher_params.xpansion is not None:
                 launcher_args.xpansion_mode = (
                     "r" if launcher_params.xpansion_r_version else "cpp"
@@ -610,9 +647,7 @@ class SlurmLauncher(AbstractLauncher):
                     f"Cancelling job {job_id} (dispatched={not dispatch})"
                 )
                 with self.antares_launcher_lock:
-                    run_with(
-                        launcher_args, self.launcher_params, show_banner=False
-                    )
+                    self._call_launcher(launcher_args, self.launcher_params)
                 return
         if dispatch:
             self.event_bus.push(

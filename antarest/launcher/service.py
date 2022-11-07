@@ -32,7 +32,14 @@ from antarest.core.requests import (
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import concat_files, zip_dir, StopWatch
+from antarest.core.utils.utils import (
+    concat_files,
+    zip_dir,
+    StopWatch,
+    is_zip,
+    read_in_zip,
+    concat_files_to_str,
+)
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
@@ -42,11 +49,11 @@ from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
     JobResult,
     JobStatus,
-    LogType,
     JobLog,
     JobLogType,
     LauncherParametersDTO,
     XpansionParametersDTO,
+    LogType,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -405,41 +412,18 @@ class LauncherService:
         self, job_id: str, log_type: LogType, params: RequestParameters
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
-
         if job_result:
-            launcher_parameters = LauncherParametersDTO.parse_raw(
-                job_result.launcher_params or "{}"
-            )
             if job_result.output_id:
-                if log_type == LogType.STDOUT:
-                    launcher_logs = cast(
-                        bytes,
-                        self.study_service.get(
-                            job_result.study_id,
-                            f"/output/{job_result.output_id}/antares-out",
-                            depth=1,
-                            formatted=True,
-                            params=params,
-                        )
-                        or self.study_service.get(
-                            job_result.study_id,
-                            f"/output/{job_result.output_id}/simulation",
-                            depth=1,
-                            formatted=True,
-                            params=params,
-                        ),
-                    ).decode("utf-8")
-                else:
-                    launcher_logs = cast(
-                        bytes,
-                        self.study_service.get(
-                            job_result.study_id,
-                            f"/output/{job_result.output_id}/antares-err",
-                            depth=1,
-                            formatted=True,
-                            params=params,
-                        ),
-                    ).decode("utf-8")
+                launcher_logs = (
+                    self.study_service.get_logs(
+                        job_result.study_id,
+                        job_result.output_id,
+                        job_id,
+                        log_type == LogType.STDERR,
+                        params=params,
+                    )
+                    or ""
+                )
             else:
                 self._assert_launcher_is_initialized(job_result.launcher)
                 launcher_logs = str(
@@ -525,16 +509,31 @@ class LauncherService:
             shutil.rmtree(job_output_path, ignore_errors=True)
         return output_name
 
+    def _save_solver_stats_file(
+        self, job_result: JobResult, measurement_file: Optional[Path]
+    ) -> None:
+        if measurement_file and measurement_file.exists():
+            job_result.solver_stats = measurement_file.read_text(
+                encoding="utf-8"
+            )
+            self.job_result_repository.save(job_result)
+
     def _save_solver_stats(
         self, job_result: JobResult, output_path: Path
     ) -> None:
         try:
-            measurement_file = output_path / EXECUTION_INFO_FILE
-            if measurement_file.exists():
-                job_result.solver_stats = measurement_file.read_text(
-                    encoding="utf-8"
+            if is_zip(output_path):
+                read_in_zip(
+                    output_path,
+                    Path(EXECUTION_INFO_FILE),
+                    lambda stat_file: self._save_solver_stats_file(
+                        job_result, stat_file
+                    ),
                 )
-                self.job_result_repository.save(job_result)
+            else:
+                self._save_solver_stats_file(
+                    job_result, output_path / EXECUTION_INFO_FILE
+                )
         except Exception as e:
             logger.error(
                 "Failed to save solver performance measurements", exc_info=e
@@ -547,74 +546,87 @@ class LauncherService:
         additional_logs: Dict[str, List[Path]],
     ) -> Optional[str]:
         logger.info(f"Importing output for job {job_id}")
+        study_id: Optional[str] = None
         with db():
             job_result = self.job_result_repository.get(job_id)
-            if job_result:
+            if not job_result:
+                raise JobNotFound()
 
-                job_launch_params = LauncherParametersDTO.parse_raw(
-                    job_result.launcher_params or "{}"
-                )
-                output_true_path = find_single_output_path(output_path)
-                self._before_import_hooks(
-                    job_id,
-                    job_result.study_id,
-                    output_true_path,
+            study_id = job_result.study_id
+            job_launch_params = LauncherParametersDTO.parse_raw(
+                job_result.launcher_params or "{}"
+            )
+
+            # this now can be a zip file instead of a directory !
+            output_true_path = find_single_output_path(output_path)
+            output_is_zipped = is_zip(output_true_path)
+            output_suffix = cast(
+                Optional[str],
+                getattr(
                     job_launch_params,
+                    LAUNCHER_PARAM_NAME_SUFFIX,
+                    None,
+                ),
+            )
+
+            self._before_import_hooks(
+                job_id,
+                job_result.study_id,
+                output_true_path,
+                job_launch_params,
+            )
+            self._save_solver_stats(job_result, output_true_path)
+            if additional_logs and not output_is_zipped:
+                for log_name, log_paths in additional_logs.items():
+                    concat_files(
+                        log_paths,
+                        output_true_path / log_name,
+                    )
+
+        if study_id:
+            zip_path: Optional[Path] = None
+            stopwatch = StopWatch()
+            if not output_is_zipped and job_launch_params.archive_output:
+                logger.info("Re zipping output for transfer")
+                zip_path = (
+                    output_true_path.parent / f"{output_true_path.name}.zip"
                 )
-                self._save_solver_stats(job_result, output_true_path)
-
-                if additional_logs:
-                    for log_name, log_paths in additional_logs.items():
-                        concat_files(
-                            log_paths,
-                            output_true_path / log_name,
-                        )
-
-                zip_path: Optional[Path] = None
-                stopwatch = StopWatch()
-                if job_launch_params.archive_output:
-                    logger.info("Re zipping output for transfer")
-                    zip_path = (
-                        output_true_path.parent
-                        / f"{output_true_path.name}.zip"
+                zip_dir(
+                    output_true_path, zip_path=zip_path
+                )  # TODO: remove source dir ?
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(
+                        f"Zipped output for job {job_id} in {x}s"
                     )
-                    zip_dir(
-                        output_true_path, zip_path=zip_path
-                    )  # TODO: remove source dir ?
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Zipped output for job {job_id} in {x}s"
-                        )
-                    )
+                )
 
-                final_output_path = zip_path or output_true_path
+            final_output_path = zip_path or output_true_path
+            with db():
                 try:
+                    if additional_logs and output_is_zipped:
+                        for log_name, log_paths in additional_logs.items():
+                            log_type = LogType.from_filename(log_name)
+                            log_suffix = log_name
+                            if log_type:
+                                log_suffix = log_type.to_suffix()
+                            self.study_service.save_logs(
+                                study_id,
+                                job_id,
+                                log_suffix,
+                                concat_files_to_str(log_paths),
+                            )
                     return self.study_service.import_output(
-                        job_result.study_id,
+                        study_id,
                         final_output_path,
                         RequestParameters(DEFAULT_ADMIN_USER),
-                        cast(
-                            Optional[str],
-                            getattr(
-                                job_launch_params,
-                                LAUNCHER_PARAM_NAME_SUFFIX,
-                                None,
-                            ),
-                        ),
+                        output_suffix,
                         job_launch_params.auto_unzip,
                     )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
                         job_id,
                         final_output_path,
-                        cast(
-                            Optional[str],
-                            getattr(
-                                job_launch_params,
-                                LAUNCHER_PARAM_NAME_SUFFIX,
-                                None,
-                            ),
-                        ),
+                        output_suffix,
                     )
                 finally:
                     if zip_path:

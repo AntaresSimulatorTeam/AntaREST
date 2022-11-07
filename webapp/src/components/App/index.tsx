@@ -42,6 +42,12 @@ import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import TableMode from "./Singlestudy/explore/Modelization/TableMode";
+import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
+import {
+  HYDRO_ROUTES,
+  HydroRoute,
+} from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 
 function App() {
   return (
@@ -67,7 +73,23 @@ function App() {
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
                             <Route path="thermal" element={<Thermal />} />
-                            <Route path="hydro" element={<Hydro />} />
+                            <Route
+                              path="hydro"
+                              element={<Navigate to="management" replace />}
+                            />
+                            <Route path="hydro" element={<Hydro />}>
+                              <Route
+                                path="management"
+                                element={<ManagementOptions />}
+                              />
+                              {HYDRO_ROUTES.map((route: HydroRoute) => (
+                                <Route
+                                  key={route.path}
+                                  path={route.path}
+                                  element={<HydroMatrix type={route.type} />}
+                                />
+                              ))}
+                            </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
                             <Route path="renewables" element={<Renewables />} />

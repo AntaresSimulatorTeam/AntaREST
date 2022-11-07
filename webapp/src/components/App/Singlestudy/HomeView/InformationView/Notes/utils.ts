@@ -145,9 +145,10 @@ const parseXMLToHTMLNode = (
               attributesUtils.openBalise = `<li>${attributesUtils.openBalise}`;
             }
             attributesUtils.closeBalise += "</li>";
-            if (isLastSon)
+            if (isLastSon) {
               attributesUtils.closeBalise +=
                 attributesUtils.list === "Numbered List" ? "</ol>" : "</ul>";
+            }
           } else if (prevListSeq !== undefined) {
             const closePrevBalise =
               prevListSeq === "Numbered List" ? "</ol>" : "</ul>"; // Close previous list
@@ -188,8 +189,9 @@ const parseXMLToHTMLNode = (
         }
       }
     } else if (node.type === "text") {
-      if (node.text !== undefined)
+      if (node.text !== undefined) {
         return { result: replaceAll(node.text as string, '"', "") };
+      }
     }
   } else if (node.elements !== undefined) {
     let completeResult: NodeProcessResult = { result: "" };
@@ -428,11 +430,12 @@ const parseHTMLToXMLNode = (
                 liststyle:
                   parent.name === "ol" ? "Numbered List" : "Bullet List",
               };
-              if (parent.name === "ul")
+              if (parent.name === "ul") {
                 node.attributes = {
                   ...node.attributes,
                   bulletname: "standard/circle",
                 };
+              }
               node.name = "paragraph";
               parseChild(node);
             }

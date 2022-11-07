@@ -27,11 +27,15 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
-from antarest.study.business.config_management import (
-    OutputVariable,
+from antarest.study.business.hydro_management import (
+    ManagementOptionsFormFields,
 )
+from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import (
     LinkInfoDTO,
+)
+from antarest.study.business.playlist_management import (
+    PlaylistColumns,
 )
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
@@ -39,6 +43,9 @@ from antarest.study.business.optimization_management import (
 from antarest.study.business.table_mode_management import (
     TableTemplateType,
     ColumnModelTypes,
+)
+from antarest.study.business.thematic_trimming_management import (
+    ThematicTrimmingFormFields,
 )
 from antarest.study.business.timeseries_config_management import (
     TSFormFields,
@@ -226,6 +233,53 @@ def create_study_data_routes(
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
 
+    @bp.get(
+        "/studies/{uuid}/areas/{area_id}/hydro/form",
+        tags=[APITag.study_data],
+        summary="Get Hydro config values for form",
+        response_model=ManagementOptionsFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_hydro_form_values(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ManagementOptionsFormFields:
+        logger.info(
+            msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.hydro_manager.get_field_values(study, area_id)
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/hydro/form",
+        tags=[APITag.study_data],
+        summary="Set Hydro config with values from form",
+    )
+    def set_hydro_form_values(
+        uuid: str,
+        area_id: str,
+        data: ManagementOptionsFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        return study_service.hydro_manager.set_field_values(
+            study, data, area_id
+        )
+
     @bp.put(
         "/studies/{uuid}/matrix",
         tags=[APITag.study_data],
@@ -243,15 +297,16 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        "/studies/{uuid}/config/thematic_trimming",
+        "/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=Dict[str, bool],
+        response_model=ThematicTrimmingFormFields,
+        response_model_exclude_none=True,
     )
     def get_thematic_trimming(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> ThematicTrimmingFormFields:
         logger.info(
             f"Fetching thematic trimming config for study {uuid}",
             extra={"user": current_user.id},
@@ -260,18 +315,18 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.config_manager.get_thematic_trimming(study)
+        return study_service.thematic_trimming_manager.get_field_values(study)
 
     @bp.put(
-        path="/studies/{uuid}/config/thematic_trimming",
+        path="/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
     def set_thematic_trimming(
         uuid: str,
-        thematic_trimming_config: Dict[OutputVariable, bool] = Body(...),
+        field_values: ThematicTrimmingFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"Updating thematic trimming config for study {uuid}",
             extra={"user": current_user.id},
@@ -280,15 +335,51 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        study_service.config_manager.set_thematic_trimming(
-            study,
-            {
-                output_variable.value: thematic_trimming_config[
-                    output_variable
-                ]
-                for output_variable in thematic_trimming_config
-            },
+        study_service.thematic_trimming_manager.set_field_values(
+            study, field_values
         )
+
+    @bp.get(
+        path="/studies/{uuid}/config/playlist/form",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario playlist data for table form",
+        response_model=Dict[int, PlaylistColumns],
+        response_model_exclude_none=True,
+    )
+    def get_playlist(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[int, PlaylistColumns]:
+        logger.info(
+            f"Getting MC Scenario playlist data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.playlist_manager.get_table_data(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/playlist/form",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario playlist data with values from table form",
+    )
+    def set_playlist(
+        uuid: str,
+        data: Dict[int, PlaylistColumns],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating MC Scenario playlist table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.playlist_manager.set_table_data(study, data)
 
     @bp.get(
         "/studies/{uuid}/config/playlist",
@@ -336,7 +427,50 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/config/optimization_form_fields",
+        path="/studies/{uuid}/config/general/form",
+        tags=[APITag.study_data],
+        summary="Get General config values for form",
+        response_model=GeneralFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_general_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> GeneralFormFields:
+        logger.info(
+            msg=f"Getting General management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.general_manager.get_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/general/form",
+        tags=[APITag.study_data],
+        summary="Set General config with values from form",
+    )
+    def set_general_form_values(
+        uuid: str,
+        field_values: GeneralFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating General management config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.general_manager.set_field_values(study, field_values)
+
+    @bp.get(
+        path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Get Optimization config values for form",
         response_model=OptimizationFormFields,
@@ -358,7 +492,7 @@ def create_study_data_routes(
         return study_service.optimization_manager.get_field_values(study)
 
     @bp.put(
-        path="/studies/{uuid}/config/optimization_form_fields",
+        path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Set Optimization config with values from form",
     )
@@ -381,7 +515,7 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/config/timeseries_form_fields",
+        path="/studies/{uuid}/config/timeseries/form",
         tags=[APITag.study_data],
         summary="Get Time Series config values for form",
         response_model=TSFormFields,
@@ -403,7 +537,7 @@ def create_study_data_routes(
         return study_service.ts_config_manager.get_field_values(study)
 
     @bp.put(
-        path="/studies/{uuid}/config/timeseries_form_fields",
+        path="/studies/{uuid}/config/timeseries/form",
         tags=[APITag.study_data],
         summary="Set Time Series config with values from form",
     )
@@ -424,7 +558,7 @@ def create_study_data_routes(
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/table_mode",
+        path="/studies/{uuid}/tablemode/form",
         tags=[APITag.study_data],
         summary="Get table data for table form",
         # `Any` because `Union[AreaColumns, LinkColumns]` not working
@@ -451,7 +585,7 @@ def create_study_data_routes(
         )
 
     @bp.put(
-        path="/studies/{uuid}/table_mode",
+        path="/studies/{uuid}/tablemode/form",
         tags=[APITag.study_data],
         summary="Set table data with values from table form",
     )
@@ -628,7 +762,7 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/config/advanced_parameters",
+        path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Get Advanced parameters form values",
         response_model=AdvancedParamsFormFields,
@@ -653,7 +787,7 @@ def create_study_data_routes(
         )
 
     @bp.put(
-        path="/studies/{uuid}/config/advanced_parameters",
+        path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )

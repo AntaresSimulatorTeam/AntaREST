@@ -97,7 +97,9 @@ function InformationView(props: Props) {
             variant="contained"
             color="primary"
             onClick={() => {
-              if (study) navigate(`/studies/${study.id}/explore`);
+              if (study) {
+                navigate(`/studies/${study.id}/explore`);
+              }
             }}
           >
             {t("global.open")}
@@ -133,10 +135,10 @@ function InformationView(props: Props) {
       </Box>
       {study && tree && openVariantModal && (
         <CreateVariantModal
+          parentId={study.id}
           open={openVariantModal}
           onClose={() => setOpenVariantModal(false)}
           tree={tree}
-          parentId={study.id}
         />
       )}
       {study && openLauncherModal && (

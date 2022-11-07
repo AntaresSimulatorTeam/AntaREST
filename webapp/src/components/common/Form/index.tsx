@@ -21,9 +21,17 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Box, Button, CircularProgress, SxProps, Theme } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  setRef,
+  SxProps,
+  Theme,
+} from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
+import clsx from "clsx";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
@@ -86,7 +94,7 @@ export interface FormProps<
   ) => any | Promise<any>;
   onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
-    | ((formObj: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
+    | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
   hideSubmitButton?: boolean;
@@ -94,6 +102,7 @@ export interface FormProps<
   autoSubmit?: boolean | AutoSubmitConfig;
   disableLoader?: boolean;
   sx?: SxProps<Theme>;
+  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
 }
 
 export function useFormContext<TFieldValues extends FieldValues>() {
@@ -113,11 +122,13 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onStateChange,
     autoSubmit,
     disableLoader,
+    className,
     sx,
+    apiRef,
     ...formProps
   } = props;
 
-  const formObj = useForm<TFieldValues, TContext>({
+  const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
     ...config,
@@ -132,7 +143,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     handleSubmit,
     formState,
     reset,
-  } = formObj;
+  } = formApi;
   // * /!\ `formState` is a proxy
   const { isSubmitting, isDirty, dirtyFields } = formState;
   // Don't add `isValid` because we need to trigger fields validation.
@@ -145,18 +156,24 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const [showLoader, setLoader] = useDebouncedState(false, 750);
+  const [showLoader, setShowLoader] = useDebouncedState(false, 750);
   const lastSubmittedData = useRef<TFieldValues>();
   const preventClose = useRef(false);
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
+  // To use it in wrapper functions without need to add the value in `useCallback`'s deps
+  const isSubmittingRef = useRef(isSubmitting);
+
+  useEffect(() => setRef(apiRef, formApi));
 
   useUpdateEffect(() => {
-    setLoader(isSubmitting);
+    setShowLoader(isSubmitting);
     if (isSubmitting) {
-      setLoader.flush();
+      setShowLoader.flush();
     }
+
+    isSubmittingRef.current = isSubmitting;
   }, [isSubmitting]);
 
   useUpdateEffect(
@@ -204,13 +221,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
   usePrompt(t("form.submit.inProgress"), preventClose.current);
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Submit
   ////////////////////////////////////////////////////////////////
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    handleSubmit(function onValid(data, e) {
+  const submit = () => {
+    const callback = handleSubmit(function onValid(data, e) {
       lastSubmittedData.current = data;
 
       const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
@@ -236,7 +251,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res);
-    }, onSubmitError)()
+    }, onSubmitError);
+
+    return callback()
       .catch((error) => {
         enqueueErrorSnackbar(t("form.submit.error"), error);
       })
@@ -245,18 +262,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
       });
   };
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
+  const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
-  const simulateSubmitClick = useDebounce(() => {
-    submitRef.current?.click();
-  }, autoSubmitConfig.wait);
-
-  const simulateSubmit = useCallback(() => {
+  const requestSubmit = useCallback(() => {
     preventClose.current = true;
-    simulateSubmitClick();
-  }, [simulateSubmitClick]);
+    submitDebounced();
+  }, [submitDebounced]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submit();
+  };
 
   ////////////////////////////////////////////////////////////////
   // API
@@ -273,17 +293,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
         onChange: (event: any) => {
           options?.onChange?.(event);
           if (autoSubmitConfig.enable) {
-            if (isSubmitting) {
+            if (
+              isSubmittingRef.current &&
+              !fieldsChangeDuringAutoSubmitting.current.includes(name)
+            ) {
               fieldsChangeDuringAutoSubmitting.current.push(name);
             }
-            simulateSubmit();
+
+            requestSubmit();
           }
         },
       };
 
       return register(name, newOptions);
     },
-    [autoSubmitConfig.enable, register, simulateSubmit, isSubmitting]
+    [autoSubmitConfig.enable, register, requestSubmit]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
@@ -307,15 +331,18 @@ function Form<TFieldValues extends FieldValues, TContext>(
       };
 
       if (autoSubmitConfig.enable && newOptions.shouldDirty) {
-        if (isSubmitting) {
+        if (isSubmittingRef.current) {
           fieldsChangeDuringAutoSubmitting.current.push(name);
         }
-        simulateSubmit();
+        // If it's a new value
+        if (value !== getValues(name)) {
+          requestSubmit();
+        }
       }
 
       setValue(name, value, newOptions);
     },
-    [autoSubmitConfig.enable, setValue, simulateSubmit, isSubmitting]
+    [autoSubmitConfig.enable, setValue, getValues, requestSubmit]
   );
 
   const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
@@ -329,8 +356,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  const sharedProps = {
-    ...formObj,
+  const formApiPlus: UseFormReturnPlus<TFieldValues, TContext> = {
+    ...formApi,
     formState,
     defaultValues: config?.defaultValues,
     register: registerWrapper,
@@ -345,6 +372,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       sx={mergeSxProp({ pt: 1 }, sx)}
       component="form"
       onSubmit={handleFormSubmit}
+      className={clsx("Form", className)}
     >
       {showLoader && !disableLoader && (
         <Box
@@ -361,23 +389,20 @@ function Form<TFieldValues extends FieldValues, TContext>(
         </Box>
       )}
       {RA.isFunction(children) ? (
-        children(sharedProps)
+        children(formApiPlus)
       ) : (
-        <FormProvider {...sharedProps}>{children}</FormProvider>
+        <FormProvider {...formApiPlus}>{children}</FormProvider>
       )}
-      <Button
-        sx={[
-          (hideSubmitButton || autoSubmitConfig.enable) && {
-            display: "none",
-          },
-        ]}
-        type="submit"
-        variant="contained"
-        disabled={!isSubmitAllowed}
-        ref={submitRef}
-      >
-        {submitButtonText || t("global.save")}
-      </Button>
+      {!hideSubmitButton && !autoSubmitConfig.enable && (
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={!isSubmitAllowed}
+          ref={submitRef}
+        >
+          {submitButtonText || t("global.save")}
+        </Button>
+      )}
     </Box>
   );
 }

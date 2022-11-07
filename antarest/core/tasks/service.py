@@ -362,15 +362,17 @@ class TaskJobService(ITaskService):
             )
         )
 
+        logger.info(f"Starting task {task_id}")
         with db():
-            logger.info(f"Starting task {task_id}")
             task = retry(lambda: self.repo.get_or_raise(task_id))
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
             logger.info(f"Task {task_id} set to RUNNING")
-            try:
+        try:
+            with db():
                 result = callback(self._task_logger(task_id))
-                logger.info(f"Task {task_id} ended")
+            logger.info(f"Task {task_id} ended")
+            with db():
                 self._update_task_status(
                     task_id,
                     TaskStatus.COMPLETED
@@ -380,39 +382,38 @@ class TaskJobService(ITaskService):
                     result.message,
                     result.return_value,
                 )
-                self.event_bus.push(
-                    Event(
-                        type=EventType.TASK_COMPLETED
-                        if result.success
-                        else EventType.TASK_FAILED,
-                        payload=TaskEventPayload(
-                            id=task_id,
-                            message=custom_event_messages.end
-                            if custom_event_messages is not None
-                            else f'Task {task_id} {"completed" if result.success else "failed"}',
-                        ).dict(),
-                        channel=EventChannelDirectory.TASK + task_id,
-                    )
+            self.event_bus.push(
+                Event(
+                    type=EventType.TASK_COMPLETED
+                    if result.success
+                    else EventType.TASK_FAILED,
+                    payload=TaskEventPayload(
+                        id=task_id,
+                        message=custom_event_messages.end
+                        if custom_event_messages is not None
+                        else f'Task {task_id} {"completed" if result.success else "failed"}',
+                    ).dict(),
+                    channel=EventChannelDirectory.TASK + task_id,
                 )
-            except Exception as e:
-                logger.error(
-                    f"Exception when running task {task_id}", exc_info=e
-                )
+            )
+        except Exception as e:
+            logger.error(f"Exception when running task {task_id}", exc_info=e)
+            with db():
                 self._update_task_status(
                     task_id, TaskStatus.FAILED, False, str(e)
                 )
-                self.event_bus.push(
-                    Event(
-                        type=EventType.TASK_FAILED,
-                        payload=TaskEventPayload(
-                            id=task_id,
-                            message=custom_event_messages.end
-                            if custom_event_messages is not None
-                            else f"Task {task_id} failed",
-                        ).dict(),
-                        channel=EventChannelDirectory.TASK + task_id,
-                    )
+            self.event_bus.push(
+                Event(
+                    type=EventType.TASK_FAILED,
+                    payload=TaskEventPayload(
+                        id=task_id,
+                        message=custom_event_messages.end
+                        if custom_event_messages is not None
+                        else f"Task {task_id} failed",
+                    ).dict(),
+                    channel=EventChannelDirectory.TASK + task_id,
                 )
+            )
 
     def _task_logger(self, task_id: str) -> Callable[[str], None]:
         def log_msg(message: str) -> None:

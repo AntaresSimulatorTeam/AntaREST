@@ -4,9 +4,9 @@ import {
   LinkCreationInfoDTO,
 } from "../../../../../../../common/types";
 import { getBindingConstraint } from "../../../../../../../services/api/studydata";
+import { FilteringType } from "../../../common/types";
 
 type OperatorType = "less" | "equal" | "greater" | "both";
-type FilteringType = "hourly" | "daily" | "weekly";
 
 export interface ConstraintType {
   id: string;
@@ -25,9 +25,23 @@ export interface BindingConstFields {
   name: string;
   id: string;
   enabled: boolean;
-  time_step: FilteringType;
+  time_step: Exclude<FilteringType, "monthly" | "annual">;
   operator: OperatorType;
   comments?: string;
+  filterByYear: Array<FilteringType>;
+  filterSynthesis: Array<FilteringType>;
+  constraints: Array<ConstraintType>;
+}
+
+export interface BindingConstFieldsDTO {
+  name: string;
+  id: string;
+  enabled: boolean;
+  time_step: Exclude<FilteringType, "monthly" | "annual">;
+  operator: OperatorType;
+  comments?: string;
+  filter_year_by_year?: string;
+  filter_synthesis?: string;
   constraints: Array<ConstraintType>;
 }
 
@@ -38,11 +52,22 @@ export async function getDefaultValues(
   bindingConstId: string
 ): Promise<BindingConstFields> {
   // Fetch fields
-  const fields: BindingConstFields = await getBindingConstraint(
+  const fields: BindingConstFieldsDTO = await getBindingConstraint(
     studyId,
     bindingConstId
   );
-  return { ...fields, comments: fields.comments || "" };
+  return {
+    ...fields,
+    comments: fields.comments || "",
+    filterByYear: (fields.filter_year_by_year || "").split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
+    filterSynthesis: (fields.filter_synthesis || "").split(",").map((elm) => {
+      const sElm = elm.replace(/\s+/g, "");
+      return sElm as FilteringType;
+    }),
+  };
 }
 
 export function isDataLink(
@@ -66,10 +91,14 @@ export const isOptionExist = (
   value2: string
 ): boolean => {
   const index1 = list.findIndex((item) => item.element.id === value1);
-  if (index1 < 0) return false;
+  if (index1 < 0) {
+    return false;
+  }
 
   const index2 = list[index1].item_list.findIndex((item) => item.id === value2);
-  if (index2 < 0) return false;
+  if (index2 < 0) {
+    return false;
+  }
 
   return true;
 };

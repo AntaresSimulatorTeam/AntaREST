@@ -281,7 +281,12 @@ class TestCommandFactory:
             ),
             CommandDTO(
                 action=CommandName.UPDATE_PLAYLIST.value,
-                args={"active": True, "items": [1, 3], "reverse": False},
+                args={
+                    "active": True,
+                    "items": [1, 3],
+                    "weights": {1: 5.0},
+                    "reverse": False,
+                },
             ),
         ],
     )

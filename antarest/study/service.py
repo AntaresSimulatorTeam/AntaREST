@@ -1,5 +1,4 @@
 import base64
-import io
 import json
 import logging
 import os
@@ -30,7 +29,12 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PublicMode, StudyPermissionType, SUB_JSON
+from antarest.core.model import (
+    JSON,
+    PublicMode,
+    StudyPermissionType,
+    SUB_JSON,
+)
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -65,13 +69,23 @@ from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.hydro_management import (
+    HydroManager,
+)
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.playlist_management import (
+    PlaylistManager,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
 )
 from antarest.study.business.table_mode_management import TableModeManager
+from antarest.study.business.thematic_trimming_management import (
+    ThematicTrimmingManager,
+)
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -105,6 +119,9 @@ from antarest.study.model import (
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
+)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
@@ -189,12 +206,18 @@ class StudyService:
         self.areas = AreaManager(self.storage_service, self.repository)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
+        self.general_manager = GeneralManager(self.storage_service)
+        self.thematic_trimming_manager = ThematicTrimmingManager(
+            self.storage_service
+        )
         self.optimization_manager = OptimizationManager(self.storage_service)
         self.advanced_parameters_manager = AdvancedParamsManager(
             self.storage_service
         )
+        self.hydro_manager = HydroManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
+        self.playlist_manager = PlaylistManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(
@@ -239,6 +262,70 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(
             study, url, depth, formatted
+        )
+
+    def get_logs(
+        self,
+        study_id: str,
+        output_id: str,
+        job_id: str,
+        err_log: bool,
+        params: RequestParameters,
+    ) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        log_locations = {
+            False: [
+                ["output", "logs", f"{job_id}-out.log"],
+                ["output", "logs", f"{output_id}-out.log"],
+                ["output", output_id, "antares-out"],
+                ["output", output_id, "simulation"],
+            ],
+            True: [
+                ["output", "logs", f"{job_id}-err.log"],
+                ["output", "logs", f"{output_id}-err.log"],
+                ["output", output_id, "antares-err"],
+            ],
+        }
+        empty_log = False
+        for log_location in log_locations[err_log]:
+            try:
+                log = cast(
+                    bytes,
+                    file_study.tree.get(log_location, depth=1, formatted=True),
+                ).decode(encoding="utf-8")
+                # when missing file, RawFileNode return empty bytes
+                if log:
+                    return log
+                else:
+                    empty_log = True
+            except ChildNotFoundError:
+                pass
+            except KeyError:
+                pass
+        if empty_log:
+            return ""
+        raise ChildNotFoundError(
+            f"Logs for {output_id} of study {study_id} were not found"
+        )
+
+    def save_logs(
+        self,
+        study_id: str,
+        job_id: str,
+        log_suffix: str,
+        log_data: str,
+    ) -> None:
+        study = self.get_study(study_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study.tree.save(
+            bytes(log_data, encoding="utf-8"),
+            [
+                "output",
+                "logs",
+                f"{job_id}-{log_suffix}",
+            ],
         )
 
     def get_comments(
@@ -355,11 +442,7 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = (
-            CacheConstants.STUDY_LISTING_MANAGED.value
-            if managed
-            else CacheConstants.STUDY_LISTING.value
-        )
+        cache_key = CacheConstants.STUDY_LISTING.value
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
@@ -383,7 +466,8 @@ class StudyService:
                     StudyPermissionType.READ,
                     raising=False,
                 )
-                and study_matcher(name, workspace, folder)(study_dto),
+                and study_matcher(name, workspace, folder)(study_dto)
+                and (not managed or study_dto.managed),
                 studies.values(),
             )
         }
@@ -425,22 +509,9 @@ class StudyService:
             study
         )
 
-    def initialize_additional_data_in_db(
-        self, params: RequestParameters
-    ) -> List[str]:
-        # TODO: remove this method once used
-        logger.info("Initializing additional data of studies")
+    def invalidate_cache_listing(self, params: RequestParameters) -> None:
         if params.user and params.user.is_site_admin():
-            studies = self.repository.get_all()
-            studies_not_updated: List[str] = []
-            for study in studies:
-                if self.storage_service.get_storage(
-                    study
-                ).initialize_additional_data(study):
-                    self.repository.save(study)
-                else:
-                    studies_not_updated.append(f"{study.id} : {study.name}")
-            return studies_not_updated
+            self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
         else:
             logger.error(f"User {params.user} is not site admin")
             raise UserHasNotPermissionError()

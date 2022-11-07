@@ -1,8 +1,9 @@
+import { v4 as uuidv4 } from "uuid";
+
 export enum TableTemplateType {
   Area = "area",
   Link = "link",
   Cluster = "cluster",
-  BindingConstraint = "bindingConstraint",
 }
 
 export const TABLE_TEMPLATE_TYPE_OPTIONS = Object.values(TableTemplateType);
@@ -55,7 +56,6 @@ const TABLE_TEMPLATE_COLUMNS_BY_TYPE = {
     "lawForced",
     "lawPlanned",
   ],
-  [TableTemplateType.BindingConstraint]: [],
 } as const;
 
 export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
@@ -65,6 +65,7 @@ export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
 export interface TableTemplate<
   T extends TableTemplateType = TableTemplateType
 > {
+  id: string;
   name: string;
   type: T;
   columns: TableTemplateColumnsForType<T>;
@@ -78,21 +79,29 @@ export function createTableTemplate<T extends TableTemplateType>(
   type: T,
   columns: TableTemplateColumnsForType<T>
 ): TableTemplate<T> {
-  return { name, type, columns };
+  return { id: uuidv4(), name, type, columns };
 }
 
 export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
-  createTableTemplate("Economic Opt.", TableTemplateType.Area, [
+  createTableTemplate("economicOpt", TableTemplateType.Area, [
     "spreadUnsuppliedEnergyCost",
     "spreadSpilledEnergyCost",
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
   ]),
+  createTableTemplate("geographicTrimmingAreas", TableTemplateType.Area, [
+    "filterYearByYear",
+    "filterSynthesis",
+  ]),
+  createTableTemplate("geographicTrimmingLinks", TableTemplateType.Link, [
+    "filterYearByYear",
+    "filterSynthesis",
+  ]),
 ];
 
-export const DEFAULT_TABLE_TEMPLATE_NAMES = DEFAULT_TABLE_TEMPLATES.map(
-  (t) => t.name
+export const DEFAULT_TABLE_TEMPLATE_IDS = DEFAULT_TABLE_TEMPLATES.map(
+  (t) => t.id
 );
 
 export function getTableColumnsForType(type: TableTemplateType): string[] {

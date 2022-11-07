@@ -1,10 +1,22 @@
+import logging
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional, Callable, TypeVar, List, Union, Awaitable
+from typing import (
+    IO,
+    Any,
+    Optional,
+    Callable,
+    TypeVar,
+    List,
+    Union,
+    Awaitable,
+    Tuple,
+)
 from zipfile import (
     ZipFile,
     BadZipFile,
@@ -18,6 +30,9 @@ import redis
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
+
+
+logger = logging.getLogger(__name__)
 
 
 class DTO:
@@ -169,6 +184,15 @@ def concat_files(files: List[Path], target: Path) -> None:
                     fh.write(line)
 
 
+def concat_files_to_str(files: List[Path]) -> str:
+    concat_str = ""
+    for item in files:
+        with open(item, "r") as infile:
+            for line in infile:
+                concat_str += line
+    return concat_str
+
+
 def zip_dir(
     dir_path: Path, zip_path: Path, remove_source_dir: bool = False
 ) -> None:
@@ -191,6 +215,46 @@ def unzip(
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
+
+
+def is_zip(path: Path) -> bool:
+    return path.name.endswith(".zip")
+
+
+def extract_file_to_tmp_dir(
+    zip_path: Path, inside_zip_path: Path
+) -> Tuple[Path, Any]:
+    str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
+    tmp_dir = tempfile.TemporaryDirectory()
+    try:
+        with ZipFile(zip_path) as zip_obj:
+            zip_obj.extract(str_inside_zip_path, tmp_dir.name)
+    except Exception as e:
+        logger.warning(
+            f"Failed to extract {str_inside_zip_path} in zip {zip_path}",
+            exc_info=e,
+        )
+        tmp_dir.cleanup()
+        raise e
+    path = Path(tmp_dir.name) / inside_zip_path
+    return path, tmp_dir
+
+
+def read_in_zip(
+    zip_path: Path,
+    inside_zip_path: Path,
+    read: Callable[[Optional[Path]], None],
+) -> None:
+    tmp_dir = None
+    try:
+        path, tmp_dir = extract_file_to_tmp_dir(zip_path, inside_zip_path)
+        read(path)
+    except KeyError:
+        logger.warning(f"{inside_zip_path} not found in {zip_path}")
+        read(None)
+    finally:
+        if tmp_dir is not None:
+            tmp_dir.cleanup()
 
 
 def suppress_exception(

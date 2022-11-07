@@ -89,7 +89,9 @@ function EditionView(props: Props) {
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
     // dropped outside the list or same place
-    if (!destination || source.index === destination.index) return;
+    if (!destination || source.index === destination.index) {
+      return;
+    }
     const oldCommands = commands.concat([]);
     try {
       const elm = commands[source.index];
@@ -271,7 +273,9 @@ function EditionView(props: Props) {
     (ev: WSMessage) => {
       const taskStart = (taskPayload: TaskEventPayload) => {
         if (taskPayload.message === studyId) {
-          if (commands.length > 0) setCurrentCommandGenerationIndex(0);
+          if (commands.length > 0) {
+            setCurrentCommandGenerationIndex(0);
+          }
           setGenerationStatus(true);
         }
       };
@@ -279,14 +283,15 @@ function EditionView(props: Props) {
       const taskEnd = (taskPayload: TaskEventPayload, event: WSEvent) => {
         if (taskPayload.message === studyId) {
           setCurrentCommandGenerationIndex(-1);
-          if (event === WSEvent.TASK_COMPLETED)
+          if (event === WSEvent.TASK_COMPLETED) {
             enqueueSnackbar(t("variants.taskCompleted"), {
               variant: "success",
             });
-          else
+          } else {
             enqueueSnackbar(t("variants.error.taskFailed"), {
               variant: "error",
             });
+          }
           setGenerationStatus(false);
           setGenerationTaskId(undefined);
         }

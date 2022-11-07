@@ -9,7 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.scn.scn import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.scn import (
     OutputSimulationModeMcIndScn,
 )
 

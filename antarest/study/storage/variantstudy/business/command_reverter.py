@@ -186,6 +186,8 @@ class CommandReverter:
                         operator=command.operator,
                         coeffs=command.coeffs,
                         values=strip_matrix_protocol(command.values),
+                        filter_year_by_year=command.filter_year_by_year,
+                        filter_synthesis=command.filter_synthesis,
                         comments=command.comments,
                         command_context=command.command_context,
                     )

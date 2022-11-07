@@ -53,7 +53,7 @@ class RemoveCluster(ICommand):
                     for cluster in study_data_config.areas[
                         self.area_id
                     ].thermals
-                    if cluster.id == self.cluster_id
+                    if cluster.id == self.cluster_id.lower()
                 ]
             )
             == 0
@@ -67,7 +67,7 @@ class RemoveCluster(ICommand):
             )
         self._remove_cluster(study_data_config)
         remove_area_cluster_from_binding_constraints(
-            study_data_config, self.area_id, self.cluster_id
+            study_data_config, self.area_id, self.cluster_id.lower()
         )
 
         return (
@@ -85,22 +85,26 @@ class RemoveCluster(ICommand):
                 message=f"Area '{self.area_id}' does not exist",
             )
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data.config.areas[
-                        self.area_id
-                    ].thermals
-                    if cluster.id == self.cluster_id
-                ]
-            )
-            == 0
-        ):
+        cluster_query_result = [
+            cluster
+            for cluster in study_data.config.areas[self.area_id].thermals
+            if cluster.id == self.cluster_id.lower()
+        ]
+
+        if len(cluster_query_result) == 0:
             return CommandOutput(
                 status=False,
                 message=f"Cluster '{self.cluster_id}' does not exist",
             )
+        cluster = cluster_query_result[0]
+
+        cluster_list = study_data.tree.get(
+            ["input", "thermal", "clusters", self.area_id, "list"]
+        )
+
+        cluster_list_id = self.cluster_id
+        if cluster_list.get(cluster.name, None):
+            cluster_list_id = cluster.name
 
         study_data.tree.delete(
             [
@@ -109,7 +113,7 @@ class RemoveCluster(ICommand):
                 "clusters",
                 self.area_id,
                 "list",
-                self.cluster_id,
+                cluster_list_id,
             ]
         )
         study_data.tree.delete(
@@ -118,7 +122,7 @@ class RemoveCluster(ICommand):
                 "thermal",
                 "prepro",
                 self.area_id,
-                self.cluster_id,
+                self.cluster_id.lower(),
             ]
         )
         study_data.tree.delete(
@@ -127,7 +131,7 @@ class RemoveCluster(ICommand):
                 "thermal",
                 "series",
                 self.area_id,
-                self.cluster_id,
+                self.cluster_id.lower(),
             ]
         )
 
@@ -179,7 +183,7 @@ class RemoveCluster(ICommand):
         id_to_remove = []
 
         for id, bc in binding_constraints.items():
-            if f"{self.area_id}.{self.cluster_id}" in bc.keys():
+            if f"{self.area_id}.{self.cluster_id.lower()}" in bc.keys():
                 id_to_remove.append(id)
 
         for id in id_to_remove:

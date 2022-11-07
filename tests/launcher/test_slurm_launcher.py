@@ -33,7 +33,7 @@ def launcher_config(tmp_path: Path) -> Config:
                 local_workspace=tmp_path,
                 default_json_db_name="default_json_db_name",
                 slurm_script_path="slurm_script_path",
-                antares_versions_on_remote_server=["42"],
+                antares_versions_on_remote_server=["42", "45"],
                 username="username",
                 hostname="hostname",
                 port=42,
@@ -222,7 +222,8 @@ def test_extra_parameters(launcher_config: Config):
 
 
 @pytest.mark.parametrize(
-    "version,job_status", [(42, JobStatus.RUNNING), (99, JobStatus.FAILED)]
+    "version,job_status",
+    [(42, JobStatus.RUNNING), (99, JobStatus.FAILED), (45, JobStatus.FAILED)],
 )
 @pytest.mark.unit_test
 def test_run_study(
@@ -265,7 +266,14 @@ version=1
     """
     )
 
-    slurm_launcher._run_study(study_uuid, job_id, None, str(version))
+    def call_launcher_mock(arguments: Namespace, parameters: MainParameters):
+        if version != 45:
+            slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
+
+    slurm_launcher._call_launcher = call_launcher_mock
+    slurm_launcher._run_study(
+        study_uuid, job_id, LauncherParametersDTO(), str(version)
+    )
 
     assert (
         version
@@ -318,7 +326,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
     slurm_launcher._check_studies_state()
 
     assert slurm_launcher.callbacks.update_status.call_count == 2
-    assert slurm_launcher._import_study_output.call_count == 1
+    assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_workspace_file.call_count == 4
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
@@ -479,7 +487,7 @@ def test_kill_job(
         json_dir=Path(tmp_path),
         default_json_db_name="default_json_db_name",
         slurm_script_path="slurm_script_path",
-        antares_versions_on_remote_server=["42"],
+        antares_versions_on_remote_server=["42", "45"],
         default_ssh_dict={
             "username": "username",
             "hostname": "hostname",

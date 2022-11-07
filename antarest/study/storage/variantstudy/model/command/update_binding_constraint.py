@@ -36,6 +36,8 @@ class UpdateBindingConstraint(ICommand):
     operator: BindingConstraintOperator
     coeffs: Dict[str, List[float]]
     values: Optional[Union[List[List[MatrixData]], str]] = None
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
     comments: Optional[str] = None
 
     def __init__(self, **data: Any) -> None:
@@ -88,6 +90,8 @@ class UpdateBindingConstraint(ICommand):
             self.operator,
             self.coeffs,
             self.values,
+            self.filter_year_by_year,
+            self.filter_synthesis,
         )
 
     def to_dto(self) -> CommandDTO:
@@ -98,6 +102,8 @@ class UpdateBindingConstraint(ICommand):
             "operator": self.operator.value,
             "coeffs": self.coeffs,
             "comments": self.comments,
+            "filter_year_by_year": self.filter_year_by_year,
+            "filter_synthesis": self.filter_synthesis,
         }
         if self.values is not None:
             args["values"] = strip_matrix_protocol(self.values)

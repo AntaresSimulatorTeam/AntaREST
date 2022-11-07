@@ -8,6 +8,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType
+from antarest.study.business.general_management import Mode
 from antarest.study.business.table_mode_management import (
     TableTemplateType,
     FIELDS_INFO_BY_TYPE,
@@ -216,7 +217,7 @@ def test_main(app: FastAPI):
 
     # config / thematic trimming
     res = client.get(
-        f"/v1/studies/{study_id}/config/thematic_trimming",
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -319,12 +320,12 @@ def test_main(app: FastAPI):
     )
 
     res = client.post(
-        "/v1/studies/_initialize_additional_data_in_db",
+        "/v1/studies/_invalidate_cache_listing",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.json() == []
+    assert res.status_code == 200
 
     # Study delete
     client.delete(
@@ -749,7 +750,7 @@ def test_area_management(app: FastAPI):
     ]
 
     res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -775,8 +776,8 @@ def test_area_management(app: FastAPI):
         "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
     }
 
-    res_optimization_config = client.put(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+    client.put(
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -787,7 +788,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -813,8 +814,327 @@ def test_area_management(app: FastAPI):
         "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
     }
 
+    res_general_config = client.get(
+        f"/v1/studies/{study_id}/config/general/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_general_config_json = res_general_config.json()
+    assert res_general_config_json == {
+        "mode": "Economy",
+        "firstDay": 1,
+        "lastDay": 365,
+        "horizon": "",
+        "firstMonth": "january",
+        "firstWeekDay": "Monday",
+        "firstJanuary": "Monday",
+        "leapYear": False,
+        "nbYears": 1,
+        "buildingMode": "Automatic",
+        "selectionMode": False,
+        "yearByYear": False,
+        "simulationSynthesis": True,
+        "mcScenario": False,
+        "geographicTrimming": False,
+        "thematicTrimming": False,
+    }
+
+    client.put(
+        f"/v1/studies/{study_id}/config/general/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "mode": Mode.ADEQUACY.value,
+            "lastDay": 299,
+            "leapYear": True,
+        },
+    )
+    res_general_config = client.get(
+        f"/v1/studies/{study_id}/config/general/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_general_config_json = res_general_config.json()
+    assert res_general_config_json == {
+        "mode": Mode.ADEQUACY.value,
+        "firstDay": 1,
+        "lastDay": 299,
+        "horizon": "",
+        "firstMonth": "january",
+        "firstWeekDay": "Monday",
+        "firstJanuary": "Monday",
+        "leapYear": True,
+        "nbYears": 1,
+        "buildingMode": "Automatic",
+        "selectionMode": False,
+        "yearByYear": False,
+        "simulationSynthesis": True,
+        "mcScenario": False,
+        "geographicTrimming": False,
+        "thematicTrimming": False,
+    }
+
+    res_thematic_trimming_config = client.get(
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_thematic_trimming_config_json = res_thematic_trimming_config.json()
+    assert res_thematic_trimming_config_json == {
+        "ovCost": True,
+        "opCost": True,
+        "mrgPrice": True,
+        "co2Emis": True,
+        "dtgByPlant": True,
+        "balance": True,
+        "rowBal": True,
+        "psp": True,
+        "miscNdg": True,
+        "load": True,
+        "hRor": True,
+        "wind": True,
+        "solar": True,
+        "nuclear": True,
+        "lignite": True,
+        "coal": True,
+        "gas": True,
+        "oil": True,
+        "mixFuel": True,
+        "miscDtg": True,
+        "hStor": True,
+        "hPump": True,
+        "hLev": True,
+        "hInfl": True,
+        "hOvfl": True,
+        "hVal": True,
+        "hCost": True,
+        "unspEnrg": True,
+        "spilEnrg": True,
+        "lold": True,
+        "lolp": True,
+        "avlDtg": True,
+        "dtgMrg": True,
+        "maxMrg": True,
+        "npCost": True,
+        "npCostByPlant": True,
+        "nodu": True,
+        "noduByPlant": True,
+        "flowLin": True,
+        "ucapLin": True,
+        "loopFlow": True,
+        "flowQuad": True,
+        "congFeeAlg": True,
+        "congFeeAbs": True,
+        "margCost": True,
+        "congProdPlus": True,
+        "congProdMinus": True,
+        "hurdleCost": True,
+        "resGenerationByPlant": True,
+        "miscDtg2": True,
+        "miscDtg3": True,
+        "miscDtg4": True,
+        "windOffshore": True,
+        "windOnshore": True,
+        "solarConcrt": True,
+        "solarPv": True,
+        "solarRooft": True,
+        "renw1": True,
+        "renw2": True,
+        "renw3": True,
+        "renw4": True,
+        "dens": True,
+        "profit": True,
+    }
+
+    client.put(
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "ovCost": False,
+            "opCost": True,
+            "mrgPrice": True,
+            "co2Emis": True,
+            "dtgByPlant": True,
+            "balance": True,
+            "rowBal": True,
+            "psp": True,
+            "miscNdg": True,
+            "load": True,
+            "hRor": True,
+            "wind": True,
+            "solar": True,
+            "nuclear": True,
+            "lignite": True,
+            "coal": True,
+            "gas": True,
+            "oil": True,
+            "mixFuel": True,
+            "miscDtg": True,
+            "hStor": True,
+            "hPump": True,
+            "hLev": True,
+            "hInfl": True,
+            "hOvfl": True,
+            "hVal": False,
+            "hCost": True,
+            "unspEnrg": True,
+            "spilEnrg": True,
+            "lold": True,
+            "lolp": True,
+            "avlDtg": True,
+            "dtgMrg": True,
+            "maxMrg": True,
+            "npCost": True,
+            "npCostByPlant": True,
+            "nodu": True,
+            "noduByPlant": True,
+            "flowLin": True,
+            "ucapLin": True,
+            "loopFlow": True,
+            "flowQuad": True,
+            "congFeeAlg": True,
+            "congFeeAbs": True,
+            "margCost": True,
+            "congProdPlus": True,
+            "congProdMinus": True,
+            "hurdleCost": True,
+            "resGenerationByPlant": True,
+            "miscDtg2": True,
+            "miscDtg3": True,
+            "miscDtg4": True,
+            "windOffshore": True,
+            "windOnshore": True,
+            "solarConcrt": True,
+            "solarPv": True,
+            "solarRooft": True,
+            "renw1": True,
+            "renw2": False,
+            "renw3": True,
+            "renw4": True,
+            "dens": True,
+            "profit": True,
+        },
+    )
+    res_thematic_trimming_config = client.get(
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_thematic_trimming_config_json = res_thematic_trimming_config.json()
+    assert res_thematic_trimming_config_json == {
+        "ovCost": False,
+        "opCost": True,
+        "mrgPrice": True,
+        "co2Emis": True,
+        "dtgByPlant": True,
+        "balance": True,
+        "rowBal": True,
+        "psp": True,
+        "miscNdg": True,
+        "load": True,
+        "hRor": True,
+        "wind": True,
+        "solar": True,
+        "nuclear": True,
+        "lignite": True,
+        "coal": True,
+        "gas": True,
+        "oil": True,
+        "mixFuel": True,
+        "miscDtg": True,
+        "hStor": True,
+        "hPump": True,
+        "hLev": True,
+        "hInfl": True,
+        "hOvfl": True,
+        "hVal": False,
+        "hCost": True,
+        "unspEnrg": True,
+        "spilEnrg": True,
+        "lold": True,
+        "lolp": True,
+        "avlDtg": True,
+        "dtgMrg": True,
+        "maxMrg": True,
+        "npCost": True,
+        "npCostByPlant": True,
+        "nodu": True,
+        "noduByPlant": True,
+        "flowLin": True,
+        "ucapLin": True,
+        "loopFlow": True,
+        "flowQuad": True,
+        "congFeeAlg": True,
+        "congFeeAbs": True,
+        "margCost": True,
+        "congProdPlus": True,
+        "congProdMinus": True,
+        "hurdleCost": True,
+        "resGenerationByPlant": True,
+        "miscDtg2": True,
+        "miscDtg3": True,
+        "miscDtg4": True,
+        "windOffshore": True,
+        "windOnshore": True,
+        "solarConcrt": True,
+        "solarPv": True,
+        "solarRooft": True,
+        "renw1": True,
+        "renw2": False,
+        "renw3": True,
+        "renw4": True,
+        "dens": True,
+        "profit": True,
+    }
+
+    res_hydro_config = client.put(
+        f"/v1/studies/{study_id}/areas/area1/hydro/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "interDailyBreakdown": 8,
+            "intraDailyModulation": 7,
+            "interMonthlyBreakdown": 5,
+            "reservoir": True,
+        },
+    )
+    assert res_hydro_config.status_code == 200
+
+    res_hydro_config = client.get(
+        f"/v1/studies/{study_id}/areas/area1/hydro/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_hydro_config_json = res_hydro_config.json()
+
+    assert res_hydro_config_json == {
+        "interDailyBreakdown": 8,
+        "intraDailyModulation": 7,
+        "interMonthlyBreakdown": 5,
+        "reservoir": True,
+        "reservoirCapacity": 0,
+        "followLoad": True,
+        "useWater": False,
+        "hardBounds": False,
+        "initializeReservoirDate": 0,
+        "useHeuristic": True,
+        "powerToLevel": False,
+        "leewayLow": 1,
+        "leewayUp": 1,
+        "pumpingEfficiency": 1,
+    }
+
     res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -861,7 +1181,7 @@ def test_area_management(app: FastAPI):
         "ntc": {"stochasticTsStatus": False, "intraModal": False},
     }
     res_ts_config = client.put(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -875,7 +1195,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -924,7 +1244,7 @@ def test_area_management(app: FastAPI):
 
     # --- TableMode START ---
 
-    table_mode_url = f"/v1/studies/{study_id}/table_mode"
+    table_mode_url = f"/v1/studies/{study_id}/tablemode/form"
 
     # Table Mode - Area
 

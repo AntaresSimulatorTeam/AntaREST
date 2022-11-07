@@ -131,7 +131,9 @@ function NavHeader(props: Props) {
   const onBackClick = () => {
     if (isExplorer) {
       navigate(`/studies/${study?.id}`);
-    } else navigate("/studies");
+    } else {
+      navigate("/studies");
+    }
   };
 
   const onLaunchClick = (): void => {

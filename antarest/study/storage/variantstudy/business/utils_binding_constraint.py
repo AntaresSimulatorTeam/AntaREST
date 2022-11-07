@@ -43,6 +43,8 @@ def apply_binding_constraint(
     operator: BindingConstraintOperator,
     coeffs: Dict[str, List[float]],
     values: Optional[Union[List[List[MatrixData]], str]],
+    filter_year_by_year: Optional[str] = None,
+    filter_synthesis: Optional[str] = None,
 ) -> CommandOutput:
     binding_constraints[str(new_key)] = {
         "name": name,
@@ -51,6 +53,15 @@ def apply_binding_constraint(
         "type": time_step.value,
         "operator": operator.value,
     }
+    if study_data.config.version >= 840:
+        if filter_year_by_year:
+            binding_constraints[str(new_key)][
+                "filter-year-by-year"
+            ] = filter_year_by_year
+        if filter_synthesis:
+            binding_constraints[str(new_key)][
+                "filter-synthesis"
+            ] = filter_synthesis
     if comments is not None:
         binding_constraints[str(new_key)]["comments"] = comments
 

@@ -19,6 +19,7 @@ import {
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
+import OutputFilters from "../../../common/OutputFilters";
 
 interface Props {
   link: LinkElement;
@@ -56,13 +57,6 @@ function LinkForm(props: Props) {
     label: t(`study.modelization.links.type.${item}`),
     value: item.toLowerCase(),
   }));
-
-  const filterOptions = ["hourly", "daily", "weekly", "monthly", "annual"].map(
-    (item) => ({
-      label: t(`global.time.${item}`),
-      value: item,
-    })
-  );
 
   const columnsNames = [
     t("study.modelization.links.matrix.columns.transCapaDirect"),
@@ -185,23 +179,6 @@ function LinkForm(props: Props) {
       }}
     />
   );
-  const renderFilter = (filterName: string) => (
-    <SelectFE
-      name={filterName}
-      multiple
-      options={filterOptions}
-      label={t(`study.modelization.nodeProperties.${filterName}`)}
-      control={control}
-      rules={{
-        onAutoSubmit: (value) => {
-          const selection = value
-            ? (value as Array<string>).filter((val) => val !== "")
-            : [];
-          handleAutoSubmit(path[filterName], selection.join(", "));
-        },
-      }}
-    />
-  );
 
   return (
     <Box
@@ -244,10 +221,12 @@ function LinkForm(props: Props) {
           {renderSelect("transmissionCapa", optionTransCap)}
           {renderSelect("type", optionType, handleTypeAutoSubmit)}
         </Fieldset>
-        <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
-          {renderFilter("filterSynthesis")}
-          {renderFilter("filterByYear")}
-        </Fieldset>
+        <OutputFilters
+          control={control}
+          onAutoSubmit={(filterName, value) =>
+            handleAutoSubmit(path[filterName], value)
+          }
+        />
         <Box
           sx={{
             width: "100%",

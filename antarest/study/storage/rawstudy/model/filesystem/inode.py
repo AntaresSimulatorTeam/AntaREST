@@ -6,7 +6,7 @@ from antarest.core.exceptions import (
     ShouldNotHappenException,
     WritingInsideZippedFileException,
 )
-from antarest.study.common.utils import extract_file_to_tmp_dir
+from antarest.core.utils.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

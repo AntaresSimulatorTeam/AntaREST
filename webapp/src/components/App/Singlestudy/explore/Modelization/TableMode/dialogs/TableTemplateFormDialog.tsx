@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import { startCase } from "lodash";
 import { useTranslation } from "react-i18next";
-import { ReactHookFormSupportProps } from "../../../../../../../hoc/reactHookFormSupport";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../../../common/dialogs/FormDialog";
@@ -19,11 +18,11 @@ export interface TableTemplateFormDialogProps
     FormDialogProps<TableTemplate>,
     "open" | "title" | "titleIcon" | "onSubmit" | "onCancel" | "config"
   > {
-  rulesForName?: ReactHookFormSupportProps<TableTemplate, "name">["rules"];
+  templates: TableTemplate[];
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const { open, title, titleIcon, config, onSubmit, onCancel, rulesForName } =
+  const { open, title, titleIcon, config, onSubmit, onCancel, templates } =
     props;
   const { t } = useTranslation();
 
@@ -51,7 +50,15 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             autoFocus
             control={control}
             rules={{
-              ...rulesForName,
+              validate: (value) => {
+                const id = getValues("id");
+                const hasDuplicate = templates.find(
+                  (tp) => tp.id !== id && tp.name.trim() === value.trim()
+                );
+                if (hasDuplicate) {
+                  return t("form.field.notAllowedValue") as string;
+                }
+              },
               required: true,
             }}
           />

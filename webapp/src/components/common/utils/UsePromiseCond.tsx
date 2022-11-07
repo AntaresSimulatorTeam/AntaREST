@@ -10,7 +10,7 @@ export interface UsePromiseCondProps<
   response: Response;
   ifPending?: () => React.ReactNode;
   ifRejected?: (error: Response["error"]) => React.ReactNode;
-  ifResolved?: (data: Response["data"]) => React.ReactNode;
+  ifResolved?: (data: T) => React.ReactNode;
 }
 
 function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
@@ -33,7 +33,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
           () => ifPending(),
         ],
         [R.equals(PromiseStatus.Rejected), () => ifRejected(error)],
-        [R.equals(PromiseStatus.Resolved), () => ifResolved?.(data)],
+        [R.equals(PromiseStatus.Resolved), () => ifResolved?.(data as T)],
       ])(status)}
     </>
   );

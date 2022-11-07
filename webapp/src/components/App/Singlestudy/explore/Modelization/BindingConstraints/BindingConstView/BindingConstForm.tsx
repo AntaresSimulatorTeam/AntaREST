@@ -38,6 +38,7 @@ import { appendCommands } from "../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studyDataSynthesis";
+import OutputFilters from "../../../common/OutputFilters";
 
 const DEBOUNCE_DELAY = 200;
 
@@ -97,9 +98,8 @@ export default function BindingConstForm(props: Props) {
 
   const saveValue = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (name: string, path: string, defaultValues: any, data: any) => {
+    async (name: string, data: any) => {
       try {
-        // await editStudy(data, studyId, path);
         await updateBindingConstraint(studyId, bindingConst, {
           key: name,
           value: data,
@@ -111,6 +111,13 @@ export default function BindingConstForm(props: Props) {
     [bindingConst, enqueueErrorSnackbar, studyId, t]
   );
 
+  const saveValueFormGenerator = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (name: string, path: string, defaultValues: any, data: any) =>
+      saveValue(name, data),
+    [saveValue]
+  );
+
   const saveContraintValue = useDebounce(
     async (
       index: number,
@@ -119,13 +126,17 @@ export default function BindingConstForm(props: Props) {
     ) => {
       try {
         const tmpConst = prevConst;
-        if (constraint.weight !== undefined)
+        if (constraint.weight !== undefined) {
           tmpConst.weight = constraint.weight;
-        if (constraint.data) tmpConst.data = constraint.data;
+        }
+        if (constraint.data) {
+          tmpConst.data = constraint.data;
+        }
         tmpConst.id = dataToId(tmpConst.data);
-        if (constraint.offset !== undefined)
+        if (constraint.offset !== undefined) {
           tmpConst.offset =
             constraint.offset !== null ? constraint.offset : undefined;
+        }
         await updateConstraintTerm(study.id, bindingConst, {
           ...constraint,
           offset: tmpConst.offset,
@@ -275,8 +286,11 @@ export default function BindingConstForm(props: Props) {
     <>
       <AutoSubmitGeneratorForm
         jsonTemplate={jsonGenerator}
-        saveField={saveValue}
+        saveField={saveValueFormGenerator}
       />
+      {Number(study.version) >= 840 && (
+        <OutputFilters control={control} onAutoSubmit={saveValue} />
+      )}
       <Box
         width="100%"
         height="100%"

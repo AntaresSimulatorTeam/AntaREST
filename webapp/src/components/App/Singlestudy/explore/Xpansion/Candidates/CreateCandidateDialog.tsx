@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { TextField, Button, Box, Divider, ButtonGroup } from "@mui/material";
+import { Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import * as R from "ramda";
 import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
-import SelectSingle from "../../../../../common/SelectSingle";
-import { HoverButton, ActiveButton } from "../share/styles";
-import BasicDialog from "../../../../../common/dialogs/BasicDialog";
+import FormDialog from "../../../../../common/dialogs/FormDialog";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import Fieldset from "../../../../../common/Fieldset";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import { SubmitHandlerPlus } from "../../../../../common/Form";
 
 interface PropType {
   open: boolean;
@@ -15,153 +20,128 @@ interface PropType {
 }
 
 function CreateCandidateDialog(props: PropType) {
-  const [t] = useTranslation();
   const { open, links, onClose, onSave } = props;
-  const [candidate, setCandidate] = useState<XpansionCandidate>({
-    name: "",
-    link: "",
-    "annual-cost-per-mw": 0,
-  });
-  const [toggleView, setToggleView] = useState<boolean>(true);
-  const tabLinks = links.map((item) => `${item.area1} - ${item.area2}`);
+  const [t] = useTranslation();
+  const [isToggled, setToggle] = useState(true);
 
-  const handleChange = (key: string, value: string | number) => {
-    setCandidate({ ...candidate, [key]: value });
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleToggle = () => {
+    setToggle(!isToggled);
   };
 
-  const changeView = () => setToggleView(!toggleView);
+  const handleSubmit = (data: SubmitHandlerPlus<XpansionCandidate>) => {
+    const values = R.omit(
+      isToggled ? ["max-investment"] : ["unit-size", "max-units"],
+      data.values
+    );
+
+    onSave(values);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
-    <BasicDialog
+    <FormDialog
       open={open}
-      onClose={onClose}
+      onCancel={onClose}
       title={t("xpansion.newCandidate")}
-      contentProps={{
-        sx: { width: "auto", height: "480px", p: 2 },
+      titleIcon={AddCircleIcon}
+      onSubmit={handleSubmit}
+      config={{
+        defaultValues: {
+          name: "",
+          link: "",
+          "annual-cost-per-mw": 0,
+          "unit-size": 0,
+          "max-units": 0,
+          "max-investment": 0,
+        },
       }}
-      actions={
-        <>
-          <Button variant="text" color="primary" onClick={onClose}>
-            {t("global.cancel")}
-          </Button>
-          <Button
-            sx={{ mx: 2 }}
-            color="primary"
-            variant="contained"
-            onClick={() => onSave(candidate)}
-          >
-            {t("global.save")}
-          </Button>
-        </>
-      }
     >
-      <Box
-        sx={{
-          width: "280px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          "& > div": {
-            mb: 1,
-          },
-          "&> svg": {
-            mb: 1,
-          },
-        }}
-      >
-        <TextField
-          label={t("global.name")}
-          variant="outlined"
-          onChange={(e) => handleChange("name", e.target.value)}
-          value={candidate.name}
-        />
-        <SelectSingle
-          name="link"
-          label={t("xpansion.link")}
-          list={tabLinks.map((item) => {
-            return { id: item, name: item };
-          })}
-          data={candidate.link}
-          handleChange={handleChange}
-          variant="outlined"
-          sx={{ m: 1, width: "234px" }}
-        />
-        <TextField
-          type="number"
-          label={t("xpansion.annualCost")}
-          variant="outlined"
-          value={candidate["annual-cost-per-mw"] || ""}
-          onChange={(e) =>
-            handleChange("annual-cost-per-mw", parseFloat(e.target.value))
-          }
-        />
-        <Divider
-          sx={{
-            width: "100%",
-            mt: 1,
-            mb: 2,
-          }}
-        />
-        <Box width="100%" display="flex" justifyContent="center">
-          <ButtonGroup
-            sx={{ width: "234px", display: "flex", justifyContent: "center" }}
-            variant="outlined"
-          >
-            {toggleView ? (
-              <ActiveButton size="small" variant="outlined" disabled>
-                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
-              </ActiveButton>
-            ) : (
-              <HoverButton size="small" variant="outlined" onClick={changeView}>
-                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
-              </HoverButton>
-            )}
-            {toggleView ? (
-              <HoverButton size="small" variant="outlined" onClick={changeView}>
-                {t("xpansion.maxInvestments")}
-              </HoverButton>
-            ) : (
-              <ActiveButton size="small" variant="outlined" disabled>
-                {t("xpansion.maxInvestments")}
-              </ActiveButton>
-            )}
-          </ButtonGroup>
-        </Box>
-        {toggleView && (
-          <>
-            <TextField
-              type="number"
-              label={t("xpansion.unitSize")}
-              variant="outlined"
-              value={candidate["unit-size"] || ""}
-              onChange={(e) =>
-                handleChange("unit-size", parseFloat(e.target.value))
-              }
+      {({ control }) => (
+        <>
+          <Fieldset fullFieldWidth>
+            <StringFE
+              label={t("global.name")}
+              name="name"
+              control={control}
+              sx={{ mx: 0 }}
             />
-            <TextField
-              type="number"
-              label={t("xpansion.maxUnits")}
-              variant="outlined"
-              value={candidate["max-units"] || ""}
-              onChange={(e) =>
-                handleChange("max-units", parseFloat(e.target.value))
-              }
+            <SelectFE
+              label={t("xpansion.link")}
+              options={links.map((link) => `${link.area1} - ${link.area2}`)}
+              name="link"
+              required
+              control={control}
+              fullWidth
             />
-          </>
-        )}
-        {!toggleView && (
-          <TextField
-            type="number"
-            label={t("xpansion.maxInvestments")}
-            variant="outlined"
-            value={candidate["max-investment"] || ""}
-            onChange={(e) =>
-              handleChange("max-investment", parseFloat(e.target.value))
+            <NumberFE
+              label={t("xpansion.annualCost")}
+              name="annual-cost-per-mw"
+              control={control}
+              sx={{ mx: 0 }}
+            />
+          </Fieldset>
+
+          <Fieldset
+            fullFieldWidth
+            legend={
+              isToggled
+                ? `${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`
+                : t("xpansion.maxInvestments")
             }
-          />
-        )}
-      </Box>
-    </BasicDialog>
+          >
+            <ButtonGroup
+              disableElevation
+              size="small"
+              color="info"
+              sx={{ py: 2 }}
+            >
+              <Button
+                onClick={handleToggle}
+                variant={!isToggled ? "outlined" : "contained"}
+              >
+                {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
+              </Button>
+              <Button
+                onClick={handleToggle}
+                variant={isToggled ? "outlined" : "contained"}
+              >
+                {t("xpansion.maxInvestments")}
+              </Button>
+            </ButtonGroup>
+            {isToggled ? (
+              <>
+                <NumberFE
+                  label={t("xpansion.unitSize")}
+                  name="unit-size"
+                  control={control}
+                  sx={{ mx: 0 }}
+                />
+                <NumberFE
+                  label={t("xpansion.maxUnits")}
+                  name="max-units"
+                  control={control}
+                  sx={{ mx: 0 }}
+                />
+              </>
+            ) : (
+              <NumberFE
+                label={t("xpansion.maxInvestments")}
+                name="max-investment"
+                control={control}
+                sx={{ mx: 0 }}
+              />
+            )}
+          </Fieldset>
+        </>
+      )}
+    </FormDialog>
   );
 }
 

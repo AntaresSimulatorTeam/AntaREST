@@ -10,7 +10,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.default_values import (
+from antarest.study.common.default_values import (
     LinkProperties,
     FilteringOptions,
 )
@@ -63,14 +63,14 @@ class CreateLink(ICommand):
                 step.strip()
                 for step in self.parameters.get(
                     "filter-synthesis",
-                    FilteringOptions.FILTER_SYNTHESIS.value,
+                    FilteringOptions.FILTER_SYNTHESIS,
                 ).split(",")
             ],
             filters_year=[
                 step.strip()
                 for step in self.parameters.get(
                     "filter-year-by-year",
-                    FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+                    FilteringOptions.FILTER_YEAR_BY_YEAR,
                 ).split(",")
             ],
         )
@@ -80,45 +80,43 @@ class CreateLink(ICommand):
         return {
             "hurdles-cost": parameters.get(
                 "hurdles-cost",
-                LinkProperties.HURDLES_COST.value,
+                LinkProperties.HURDLES_COST,
             ),
-            "loop-flow": parameters.get(
-                "loop-flow", LinkProperties.LOOP_FLOW.value
-            ),
+            "loop-flow": parameters.get("loop-flow", LinkProperties.LOOP_FLOW),
             "use-phase-shifter": parameters.get(
                 "use-phase-shifter",
-                LinkProperties.USE_PHASE_SHIFTER.value,
+                LinkProperties.USE_PHASE_SHIFTER,
             ),
             "transmission-capacities": parameters.get(
                 "transmission-capacities",
-                LinkProperties.TRANSMISSION_CAPACITIES.value,
+                LinkProperties.TRANSMISSION_CAPACITIES,
             ),
             "asset-type": parameters.get(
                 "asset-type",
-                LinkProperties.ASSET_TYPE.value,
+                LinkProperties.ASSET_TYPE,
             ),
             "link-style": parameters.get(
                 "link-style",
-                LinkProperties.LINK_STYLE.value,
+                LinkProperties.LINK_STYLE,
             ),
             "link-width": parameters.get(
                 "link-width",
-                LinkProperties.LINK_WIDTH.value,
+                LinkProperties.LINK_WIDTH,
             ),
-            "colorr": parameters.get("colorr", LinkProperties.COLORR.value),
-            "colorg": parameters.get("colorg", LinkProperties.COLORG.value),
-            "colorb": parameters.get("colorb", LinkProperties.COLORB.value),
+            "colorr": parameters.get("colorr", LinkProperties.COLORR),
+            "colorg": parameters.get("colorg", LinkProperties.COLORG),
+            "colorb": parameters.get("colorb", LinkProperties.COLORB),
             "display-comments": parameters.get(
                 "display-comments",
-                LinkProperties.DISPLAY_COMMENTS.value,
+                LinkProperties.DISPLAY_COMMENTS,
             ),
             "filter-synthesis": parameters.get(
                 "filter-synthesis",
-                FilteringOptions.FILTER_SYNTHESIS.value,
+                FilteringOptions.FILTER_SYNTHESIS,
             ),
             "filter-year-by-year": parameters.get(
                 "filter-year-by-year",
-                FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+                FilteringOptions.FILTER_YEAR_BY_YEAR,
             ),
         }
 
