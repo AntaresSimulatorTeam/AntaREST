@@ -226,8 +226,16 @@ def extract_file_to_tmp_dir(
 ) -> Tuple[Path, Any]:
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
-    with ZipFile(zip_path) as zip_obj:
-        zip_obj.extract(str_inside_zip_path, tmp_dir.name)
+    try:
+        with ZipFile(zip_path) as zip_obj:
+            zip_obj.extract(str_inside_zip_path, tmp_dir.name)
+    except Exception as e:
+        logger.warning(
+            f"Failed to extract {str_inside_zip_path} in zip {zip_path}",
+            exc_info=e,
+        )
+        tmp_dir.cleanup()
+        raise e
     path = Path(tmp_dir.name) / inside_zip_path
     return path, tmp_dir
 

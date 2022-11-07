@@ -302,6 +302,8 @@ class StudyService:
                     empty_log = True
             except ChildNotFoundError:
                 pass
+            except KeyError:
+                pass
         if empty_log:
             return ""
         raise ChildNotFoundError(
