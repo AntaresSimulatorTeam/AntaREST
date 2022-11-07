@@ -54,7 +54,7 @@ function AdvancedParameters() {
       response={res}
       ifResolved={(defaultValues) => (
         <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
-          <Fields />
+          <Fields version={Number(study.version)} />
         </Form>
       )}
     />
