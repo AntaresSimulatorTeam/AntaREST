@@ -34,6 +34,9 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import (
     LinkInfoDTO,
 )
+from antarest.study.business.playlist_management import (
+    PlaylistColumns,
+)
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
@@ -335,6 +338,48 @@ def create_study_data_routes(
         study_service.thematic_trimming_manager.set_field_values(
             study, field_values
         )
+
+    @bp.get(
+        path="/studies/{uuid}/config/playlist_form_data",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario playlist data for table form",
+        response_model=Dict[int, PlaylistColumns],
+        response_model_exclude_none=True,
+    )
+    def get_playlist(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[int, PlaylistColumns]:
+        logger.info(
+            f"Getting MC Scenario playlist data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.playlist_manager.get_table_data(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/playlist_form_data",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario playlist data with values from table form",
+    )
+    def set_playlist(
+        uuid: str,
+        data: Dict[int, PlaylistColumns],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating MC Scenario playlist table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.playlist_manager.set_table_data(study, data)
 
     @bp.get(
         "/studies/{uuid}/config/playlist",

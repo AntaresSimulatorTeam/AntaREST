@@ -7,6 +7,7 @@ import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
 import Fields from "./Fields";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import PlaylistDialog from "./dialogs/PlaylistDialog";
 import {
   GeneralFormFields,
   getGeneralFormFields,
@@ -15,7 +16,9 @@ import {
 
 function GeneralParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [dialog, setDialog] = useState<"thematicTrimming" | "">("");
+  const [dialog, setDialog] = useState<"thematicTrimming" | "playlist" | "">(
+    ""
+  );
 
   const res = usePromiseWithSnackbarError(
     () => getGeneralFormFields(study.id),
@@ -53,6 +56,16 @@ function GeneralParameters() {
               R.equals("thematicTrimming"),
               () => (
                 <ThematicTrimmingDialog
+                  open
+                  study={study}
+                  onClose={handleCloseDialog}
+                />
+              ),
+            ],
+            [
+              R.equals("playlist"),
+              () => (
+                <PlaylistDialog
                   open
                   study={study}
                   onClose={handleCloseDialog}

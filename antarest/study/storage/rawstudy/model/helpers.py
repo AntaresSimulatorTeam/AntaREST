@@ -38,7 +38,7 @@ class FileStudyHelpers:
     def set_playlist(
         study: FileStudy,
         playlist: List[int],
-        weights: Optional[Dict[int, int]] = None,
+        weights: Optional[Dict[int, float]] = None,
         reverse: bool = False,
         active: bool = True,
     ) -> None:

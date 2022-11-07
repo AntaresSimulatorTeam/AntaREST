@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, MenuItem } from "@mui/material";
+import { MenuItem } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
@@ -136,17 +136,17 @@ function TableMode() {
           <UsePromiseCond
             response={res}
             ifPending={() => <SimpleLoader />}
-            ifResolved={(data) =>
-              data && (
-                <Box sx={{ width: 1, height: 1 }}>
-                  <FormTable
-                    defaultValues={data}
-                    columns={selectedTemplate.columns}
-                    onSubmit={handleSubmit}
-                  />
-                </Box>
-              )
-            }
+            ifResolved={(data) => (
+              <FormTable
+                defaultValues={data}
+                onSubmit={handleSubmit}
+                tableProps={{
+                  columns: selectedTemplate.columns,
+                  height: "100%",
+                  width: "100%",
+                }}
+              />
+            )}
           />
         }
       />

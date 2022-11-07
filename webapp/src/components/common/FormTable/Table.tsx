@@ -1,38 +1,78 @@
+import HotTable from "@handsontable/react";
 import type { RowObject } from "handsontable/common";
+import * as RA from "ramda-adjunct";
+import { useMemo } from "react";
 import type { IdType } from "../../../common/types";
 import { useFormContext } from "../Form";
 import Handsontable, { HandsontableProps } from "../Handsontable";
 
-interface Props {
-  data: Array<{ id: IdType } & RowObject>;
+type Row = { id: IdType } & RowObject;
+
+export interface TableProps extends Omit<HandsontableProps, "rowHeaders"> {
+  data: Row[];
   columns: NonNullable<HandsontableProps["columns"]>;
+  rowHeaders?: boolean | ((row: Row) => string);
+  tableRef?: React.ForwardedRef<HotTable>;
 }
 
-function Table(props: Props) {
-  const { data, columns } = props;
+function Table(props: TableProps) {
+  const {
+    data,
+    rowHeaders = (row: Row) => String(row.id),
+    tableRef,
+    ...restProps
+  } = props;
   const { setValue } = useFormContext();
-  const rowHeaderWidth =
-    data.reduce((longestIdLength, row) => {
-      const idLength = row.id.toString().length;
-      return longestIdLength > idLength ? longestIdLength : idLength;
-    }, 0) * 7.5;
+
+  const rowHeaderWidth = useMemo(
+    () =>
+      RA.isBoolean(rowHeaders)
+        ? undefined
+        : data.reduce(
+            (longestHeaderLength, row) => {
+              const headerLength = rowHeaders(row).length;
+
+              return longestHeaderLength > headerLength
+                ? longestHeaderLength
+                : headerLength;
+            },
+            3 // To force minimum size
+          ) * 8,
+    [data, rowHeaders]
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleAfterChange: HandsontableProps["afterChange"] =
+    function afterChange(this: unknown, changes, ...rest): void {
+      changes?.forEach(([row, column, _, nextValue]) => {
+        setValue(`${data[row].id}.${column}`, nextValue);
+      });
+      restProps.afterChange?.call(this, changes, ...rest);
+    };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Handsontable
-      data={data}
-      columns={columns}
-      rowHeaders={(index) => String(data[index].id)}
-      afterChange={(changes) => {
-        changes?.forEach(([row, column, prevValue, nextValue]) => {
-          setValue(`${data[row].id}.${column}`, nextValue);
-        });
-      }}
       allowInvalid={false}
+      allowEmpty={false}
       rowHeaderWidth={rowHeaderWidth}
-      height="100%"
-      width="100%"
       manualColumnResize
       manualRowResize
+      {...restProps}
+      data={data}
+      rowHeaders={
+        RA.isFunction(rowHeaders)
+          ? (index) => rowHeaders(data[index])
+          : rowHeaders
+      }
+      afterChange={handleAfterChange}
+      ref={tableRef}
     />
   );
 }

@@ -75,6 +75,9 @@ from antarest.study.business.hydro_management import (
     HydroManager,
 )
 from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.playlist_management import (
+    PlaylistManager,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
@@ -214,6 +217,7 @@ class StudyService:
         self.hydro_manager = HydroManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
+        self.playlist_manager = PlaylistManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(

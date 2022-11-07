@@ -8,29 +8,43 @@ import type { Theme } from "@mui/system";
 import { useMemo, useState } from "react";
 import type { IdType } from "../../../common/types";
 import Form, { FormProps } from "../Form";
-import Table from "./Table";
+import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
 
 type TableFieldValuesByRow = Record<
   IdType,
-  { [key: string]: string | boolean | number }
+  Record<string, string | boolean | number>
 >;
 
 export interface FormTableProps<
   TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow
 > {
   defaultValues: DefaultValues<TFieldValues>;
-  columns: Array<string | ColumnSettings> | ((index: number) => ColumnSettings);
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
   onSubmitError?: FormProps<TFieldValues>["onSubmitError"];
+  formApiRef?: FormProps<TFieldValues>["apiRef"];
   sx?: SxProps<Theme>;
+  tableProps?: Omit<TableProps, "data" | "columns"> & {
+    columns?:
+      | Array<string | ColumnSettings>
+      | ((index: number) => ColumnSettings);
+  };
 }
 
 function FormTable<TFieldValues extends TableFieldValuesByRow>(
   props: FormTableProps<TFieldValues>
 ) {
-  const { defaultValues, columns, onSubmit, onSubmitError, sx } = props;
+  const {
+    defaultValues,
+    onSubmit,
+    onSubmitError,
+    sx,
+    formApiRef,
+    tableProps = {},
+  } = props;
+
+  const { columns, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
   // So we do the same for the table data with `useState`.
@@ -42,10 +56,11 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
   );
 
   const formattedColumns = useMemo(() => {
-    if (Array.isArray(columns)) {
+    if (!columns || Array.isArray(columns)) {
       const firstRow = defaultData[0];
+      const cols = columns || Object.keys(R.omit(["id"], firstRow));
 
-      return columns.map(
+      return cols.map(
         (col): ColumnSettings =>
           RA.isString(col)
             ? {
@@ -69,9 +84,14 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
       onSubmit={onSubmit}
       onSubmitError={onSubmitError}
       autoSubmit
-      sx={mergeSxProp({ width: 1, height: 1 }, sx)}
+      sx={mergeSxProp({ width: 1, height: 1, pt: 0 }, sx)}
+      apiRef={formApiRef}
     >
-      <Table data={defaultData} columns={formattedColumns} />
+      <Table
+        data={defaultData}
+        columns={formattedColumns}
+        {...restTableProps}
+      />
     </Form>
   );
 }
