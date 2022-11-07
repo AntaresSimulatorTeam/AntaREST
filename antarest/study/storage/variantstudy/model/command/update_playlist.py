@@ -46,6 +46,7 @@ class UpdatePlaylist(ICommand):
             args={
                 "active": self.active,
                 "items": self.items,
+                "weights": self.weights,
                 "reverse": self.reverse,
             },
         )

@@ -103,6 +103,8 @@ class CreateBindingConstraint(ICommand):
                 "coeffs": self.coeffs,
                 "values": strip_matrix_protocol(self.values),
                 "comments": self.comments,
+                "filter_year_by_year": self.filter_year_by_year,
+                "filter_synthesis": self.filter_synthesis,
             },
         )
 

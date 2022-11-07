@@ -102,6 +102,8 @@ class UpdateBindingConstraint(ICommand):
             "operator": self.operator.value,
             "coeffs": self.coeffs,
             "comments": self.comments,
+            "filter_year_by_year": self.filter_year_by_year,
+            "filter_synthesis": self.filter_synthesis,
         }
         if self.values is not None:
             args["values"] = strip_matrix_protocol(self.values)
