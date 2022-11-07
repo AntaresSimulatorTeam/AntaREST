@@ -32,7 +32,7 @@ function Modelization() {
         path: `/studies/${study?.id}/explore/modelization/debug`,
       },
       {
-        label: t("study.tableMode"),
+        label: t("study.modelization.tableMode"),
         path: `/studies/${study?.id}/explore/modelization/tablemode`,
       },
     ],

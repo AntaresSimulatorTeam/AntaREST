@@ -4,7 +4,6 @@ export enum TableTemplateType {
   Area = "area",
   Link = "link",
   Cluster = "cluster",
-  BindingConstraint = "bindingConstraint",
 }
 
 export const TABLE_TEMPLATE_TYPE_OPTIONS = Object.values(TableTemplateType);
@@ -57,7 +56,6 @@ const TABLE_TEMPLATE_COLUMNS_BY_TYPE = {
     "lawForced",
     "lawPlanned",
   ],
-  [TableTemplateType.BindingConstraint]: [],
 } as const;
 
 export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
@@ -85,12 +83,20 @@ export function createTableTemplate<T extends TableTemplateType>(
 }
 
 export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
-  createTableTemplate("Economic Opt.", TableTemplateType.Area, [
+  createTableTemplate("economicOpt", TableTemplateType.Area, [
     "spreadUnsuppliedEnergyCost",
     "spreadSpilledEnergyCost",
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
+  ]),
+  createTableTemplate("geographicTrimmingAreas", TableTemplateType.Area, [
+    "filterYearByYear",
+    "filterSynthesis",
+  ]),
+  createTableTemplate("geographicTrimmingLinks", TableTemplateType.Link, [
+    "filterYearByYear",
+    "filterSynthesis",
   ]),
 ];
 

@@ -29,9 +29,12 @@ import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog
 import * as api from "../../../../../../services/api/forms/tableMode";
 
 function TableMode() {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState(() => [
-    ...DEFAULT_TABLE_TEMPLATES,
-    ...(storage.getItem(StorageKey.StudiesModelTableModeTemplates) || []),
+    ...DEFAULT_TABLE_TEMPLATES.map((tp) => ({
+      ...tp,
+      name: t(`study.modelization.tableMode.template.${tp.name}`),
+    })),
     ...(storage.getItem(StorageKey.StudiesModelTableModeTemplates) || []).map(
       (tp) => ({ ...tp, id: uuidv4() })
     ),
@@ -44,7 +47,6 @@ function TableMode() {
     templateId: TableTemplate["id"];
   } | null>(null);
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { t } = useTranslation();
 
   const res = usePromise(async () => {
     const { type, columns } = selectedTemplate;
