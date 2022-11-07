@@ -11,7 +11,7 @@ export type PlaylistData = Record<number, PlaylistColumns>;
 export const DEFAULT_WEIGHT = 1;
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/playlist_form_data`;
+  return `v1/studies/${studyId}/config/playlist/form`;
 }
 
 export async function getPlaylist(

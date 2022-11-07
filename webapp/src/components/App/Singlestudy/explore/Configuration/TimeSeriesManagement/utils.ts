@@ -61,7 +61,7 @@ export const SEASONAL_CORRELATION_OPTIONS = Object.values(SeasonCorrelation);
 ////////////////////////////////////////////////////////////////
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/timeseries_form_fields`;
+  return `v1/studies/${studyId}/config/timeseries/form`;
 }
 
 export async function getTimeSeriesFormFields(

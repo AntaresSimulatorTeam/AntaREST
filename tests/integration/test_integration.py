@@ -217,7 +217,7 @@ def test_main(app: FastAPI):
 
     # config / thematic trimming
     res = client.get(
-        f"/v1/studies/{study_id}/config/thematic_trimming_form_fields",
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -750,7 +750,7 @@ def test_area_management(app: FastAPI):
     ]
 
     res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -777,7 +777,7 @@ def test_area_management(app: FastAPI):
     }
 
     client.put(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -788,7 +788,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization_form_fields",
+        f"/v1/studies/{study_id}/config/optimization/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -815,7 +815,7 @@ def test_area_management(app: FastAPI):
     }
 
     res_general_config = client.get(
-        f"/v1/studies/{study_id}/config/general_form_fields",
+        f"/v1/studies/{study_id}/config/general/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -841,7 +841,7 @@ def test_area_management(app: FastAPI):
     }
 
     client.put(
-        f"/v1/studies/{study_id}/config/general_form_fields",
+        f"/v1/studies/{study_id}/config/general/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -852,7 +852,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_general_config = client.get(
-        f"/v1/studies/{study_id}/config/general_form_fields",
+        f"/v1/studies/{study_id}/config/general/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -878,7 +878,7 @@ def test_area_management(app: FastAPI):
     }
 
     res_thematic_trimming_config = client.get(
-        f"/v1/studies/{study_id}/config/thematic_trimming_form_fields",
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -951,7 +951,7 @@ def test_area_management(app: FastAPI):
     }
 
     client.put(
-        f"/v1/studies/{study_id}/config/thematic_trimming_form_fields",
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1022,7 +1022,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_thematic_trimming_config = client.get(
-        f"/v1/studies/{study_id}/config/thematic_trimming_form_fields",
+        f"/v1/studies/{study_id}/config/thematictrimming/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1095,7 +1095,7 @@ def test_area_management(app: FastAPI):
     }
 
     res_hydro_config = client.put(
-        f"/v1/studies/{study_id}/areas/area1/hydro/config",
+        f"/v1/studies/{study_id}/areas/area1/hydro/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1109,7 +1109,7 @@ def test_area_management(app: FastAPI):
     assert res_hydro_config.status_code == 200
 
     res_hydro_config = client.get(
-        f"/v1/studies/{study_id}/areas/area1/hydro/config",
+        f"/v1/studies/{study_id}/areas/area1/hydro/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1134,7 +1134,7 @@ def test_area_management(app: FastAPI):
     }
 
     res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1181,7 +1181,7 @@ def test_area_management(app: FastAPI):
         "ntc": {"stochasticTsStatus": False, "intraModal": False},
     }
     res_ts_config = client.put(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1195,7 +1195,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries_form_fields",
+        f"/v1/studies/{study_id}/config/timeseries/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1244,7 +1244,7 @@ def test_area_management(app: FastAPI):
 
     # --- TableMode START ---
 
-    table_mode_url = f"/v1/studies/{study_id}/table_mode"
+    table_mode_url = f"/v1/studies/{study_id}/tablemode/form"
 
     # Table Mode - Area
 

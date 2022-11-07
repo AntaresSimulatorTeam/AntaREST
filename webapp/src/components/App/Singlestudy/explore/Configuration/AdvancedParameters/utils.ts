@@ -106,7 +106,7 @@ export interface AdvancedParamsFormFields {
 }
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/advanced_parameters`;
+  return `v1/studies/${studyId}/config/advancedparameters/form`;
 }
 
 export async function getAdvancedParamsFormFields(

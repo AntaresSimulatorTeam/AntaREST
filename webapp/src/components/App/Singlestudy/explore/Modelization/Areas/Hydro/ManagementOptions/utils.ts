@@ -37,7 +37,7 @@ export const INITIALIZE_RESERVOIR_DATE_OPTIONS = Object.entries(
 // Types
 ////////////////////////////////////////////////////////////////
 
-export interface ManagementOptionsFormFields {
+export interface HydroFormFields {
   followLoad: boolean;
   useHeuristic: boolean;
   interDailyBreakdown: number;
@@ -63,13 +63,13 @@ function makeRequestURL(
   studyId: StudyMetadata["id"],
   areaId: Area["name"]
 ): string {
-  return `v1/studies/${studyId}/areas/${areaId}/hydro/config`;
+  return `v1/studies/${studyId}/areas/${areaId}/hydro/form`;
 }
 
 export async function getManagementOptionsFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"]
-): Promise<ManagementOptionsFormFields> {
+): Promise<HydroFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId));
   return res.data;
 }
@@ -77,7 +77,7 @@ export async function getManagementOptionsFormFields(
 export function setManagementOptionsFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  values: Partial<ManagementOptionsFormFields>
+  values: Partial<HydroFormFields>
 ): Promise<void> {
   return client.put(makeRequestURL(studyId, areaId), values);
 }

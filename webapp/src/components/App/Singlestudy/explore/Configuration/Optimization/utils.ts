@@ -70,7 +70,7 @@ export const TRANSMISSION_CAPACITIES_OPTIONS = ["true", "false", INFINITE];
 ////////////////////////////////////////////////////////////////
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/optimization_form_fields`;
+  return `v1/studies/${studyId}/config/optimization/form`;
 }
 
 export async function getOptimizationFormFields(

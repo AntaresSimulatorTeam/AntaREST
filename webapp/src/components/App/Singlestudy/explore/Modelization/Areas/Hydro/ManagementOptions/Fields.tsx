@@ -4,13 +4,10 @@ import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContext } from "../../../../../../../common/Form";
-import {
-  INITIALIZE_RESERVOIR_DATE_OPTIONS,
-  ManagementOptionsFormFields,
-} from "./utils";
+import { INITIALIZE_RESERVOIR_DATE_OPTIONS, HydroFormFields } from "./utils";
 
 function Fields() {
-  const { control, watch } = useFormContext<ManagementOptionsFormFields>();
+  const { control, watch } = useFormContext<HydroFormFields>();
   const [
     reservoirDisabled,
     waterValuesDisabled,
