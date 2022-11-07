@@ -7,6 +7,7 @@ import {
 } from "../../common/types";
 import {
   BindingConstFields,
+  BindingConstFieldsDTO,
   ConstraintType,
   UpdateBindingConstraint,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
@@ -111,7 +112,7 @@ export const deleteConstraintTerm = async (
 export const getBindingConstraint = async (
   uuid: string,
   bindingConst: string
-): Promise<BindingConstFields> => {
+): Promise<BindingConstFieldsDTO> => {
   const res = await client.get(
     `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(bindingConst)}`
   );

@@ -38,6 +38,7 @@ import { appendCommands } from "../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studyDataSynthesis";
+import OutputFilters from "../../../common/OutputFilters";
 
 const DEBOUNCE_DELAY = 200;
 
@@ -97,9 +98,8 @@ export default function BindingConstForm(props: Props) {
 
   const saveValue = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (name: string, path: string, defaultValues: any, data: any) => {
+    async (name: string, data: any) => {
       try {
-        // await editStudy(data, studyId, path);
         await updateBindingConstraint(studyId, bindingConst, {
           key: name,
           value: data,
@@ -109,6 +109,13 @@ export default function BindingConstForm(props: Props) {
       }
     },
     [bindingConst, enqueueErrorSnackbar, studyId, t]
+  );
+
+  const saveValueFormGenerator = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (name: string, path: string, defaultValues: any, data: any) =>
+      saveValue(name, data),
+    [saveValue]
   );
 
   const saveContraintValue = useDebounce(
@@ -279,8 +286,11 @@ export default function BindingConstForm(props: Props) {
     <>
       <AutoSubmitGeneratorForm
         jsonTemplate={jsonGenerator}
-        saveField={saveValue}
+        saveField={saveValueFormGenerator}
       />
+      {Number(study.version) >= 840 && (
+        <OutputFilters control={control} onAutoSubmit={saveValue} />
+      )}
       <Box
         width="100%"
         height="100%"

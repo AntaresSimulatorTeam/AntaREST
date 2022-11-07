@@ -197,3 +197,19 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
             head_writer=AreaHeadWriter(area, config.path.name[:2], freq),
             freq=freq,
         )
+
+
+class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        freq: str,
+    ):
+        super(BindingConstraintOutputSeriesMatrix, self).__init__(
+            context,
+            config=config,
+            date_serializer=FactoryDateSerializer.create(freq, "system"),
+            head_writer=AreaHeadWriter("system", config.path.name[:2], freq),
+            freq=freq,
+        )
