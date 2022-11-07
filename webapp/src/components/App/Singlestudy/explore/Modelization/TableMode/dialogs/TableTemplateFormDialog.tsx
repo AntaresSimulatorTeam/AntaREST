@@ -1,6 +1,5 @@
 import { Box } from "@mui/material";
 import { startCase } from "lodash";
-import { FieldPathValue, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import FormDialog, {
   FormDialogProps,
@@ -19,21 +18,12 @@ export interface TableTemplateFormDialogProps
     FormDialogProps<TableTemplate>,
     "open" | "title" | "titleIcon" | "onSubmit" | "onCancel" | "config"
   > {
-  validateName?: Validate<FieldPathValue<TableTemplate, "name">>;
-  disableName?: boolean;
+  templates: TableTemplate[];
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const {
-    open,
-    title,
-    titleIcon,
-    config,
-    onSubmit,
-    onCancel,
-    validateName,
-    disableName,
-  } = props;
+  const { open, title, titleIcon, config, onSubmit, onCancel, templates } =
+    props;
   const { t } = useTranslation();
 
   return (
@@ -59,8 +49,18 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             name="name"
             autoFocus
             control={control}
-            rules={{ validate: validateName, required: true }}
-            disabled={disableName}
+            rules={{
+              validate: (value) => {
+                const id = getValues("id");
+                const hasDuplicate = templates.find(
+                  (tp) => tp.id !== id && tp.name.trim() === value.trim()
+                );
+                if (hasDuplicate) {
+                  return t("form.field.notAllowedValue") as string;
+                }
+              },
+              required: true,
+            }}
           />
           <SelectFE
             label={t("study.type")}

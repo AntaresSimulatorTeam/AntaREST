@@ -171,6 +171,7 @@ function TableMode() {
           defaultValues={
             templates.find((tp) => tp.id === dialog.templateId) as TableTemplate
           }
+          templates={templates}
           setTemplates={setTemplates}
           onCancel={closeDialog}
           open
