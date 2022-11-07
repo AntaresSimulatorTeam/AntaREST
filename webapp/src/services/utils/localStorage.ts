@@ -27,7 +27,7 @@ interface TypeFromKey {
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
-  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
+  [StorageKey.StudiesModelTableModeTemplates]: Omit<TableTemplate, "id">[];
 }
 
 function formalizeKey(key: StorageKey): string {

@@ -12,6 +12,7 @@ import { useState } from "react";
 interface PropsType<T> {
   list: Array<T>;
   currentElement?: string;
+  currentElementKeyToTest?: keyof T;
   setSelectedItem: (item: T, index: number) => void;
   contextMenuContent?: (props: {
     element: T;
@@ -25,6 +26,7 @@ function ListElement<T extends { name: string; label?: string }>(
   const {
     list,
     currentElement,
+    currentElementKeyToTest,
     setSelectedItem,
     contextMenuContent: ContextMenuContent,
   } = props;
@@ -72,7 +74,9 @@ function ListElement<T extends { name: string; label?: string }>(
     >
       {list.map((element, index) => (
         <ListItemButton
-          selected={currentElement === element.name}
+          selected={
+            currentElement === element[currentElementKeyToTest || "name"]
+          }
           onClick={() => setSelectedItem(element, index)}
           key={element.name}
           sx={{
