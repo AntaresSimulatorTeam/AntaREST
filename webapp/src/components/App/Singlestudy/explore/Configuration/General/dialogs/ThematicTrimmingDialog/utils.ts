@@ -146,7 +146,7 @@ export function getFieldNames(
 }
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `/v1/studies/${studyId}/config/thematic_trimming_form_fields`;
+  return `/v1/studies/${studyId}/config/thematictrimming/form`;
 }
 
 export const getThematicTrimmingFormFields = async (

@@ -109,7 +109,7 @@ export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 ////////////////////////////////////////////////////////////////
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/general_form_fields`;
+  return `v1/studies/${studyId}/config/general/form`;
 }
 
 export async function getGeneralFormFields(

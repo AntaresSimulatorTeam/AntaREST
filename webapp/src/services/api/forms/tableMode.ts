@@ -9,7 +9,7 @@ import {
 import client from "../client";
 
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/table_mode`;
+  return `v1/studies/${studyId}/tablemode/form`;
 }
 
 export async function getTableData<T extends TableTemplateType>(

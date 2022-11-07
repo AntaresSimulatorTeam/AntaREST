@@ -9,7 +9,7 @@ import { Root } from "../style";
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,
-  ManagementOptionsFormFields,
+  HydroFormFields,
   setManagementOptionsFormFields,
 } from "./utils";
 
@@ -31,9 +31,7 @@ function ManagementOptions() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (
-    data: SubmitHandlerPlus<ManagementOptionsFormFields>
-  ) => {
+  const handleSubmit = (data: SubmitHandlerPlus<HydroFormFields>) => {
     setManagementOptionsFormFields(studyId, areaId, data.dirtyValues);
   };
 
