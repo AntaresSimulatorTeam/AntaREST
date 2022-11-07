@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import { useState } from "react";
+import { IdType } from "../../../../../common/types";
 
 interface PropsType<T> {
   list: Array<T>;
@@ -20,7 +21,7 @@ interface PropsType<T> {
   }) => React.ReactElement;
 }
 
-function ListElement<T extends { name: string; label?: string }>(
+function ListElement<T extends { id?: IdType; name: string; label?: string }>(
   props: PropsType<T>
 ) {
   const {
@@ -78,7 +79,7 @@ function ListElement<T extends { name: string; label?: string }>(
             currentElement === element[currentElementKeyToTest || "name"]
           }
           onClick={() => setSelectedItem(element, index)}
-          key={element.name}
+          key={element.id || element.name}
           sx={{
             width: "100%",
             display: "flex",
