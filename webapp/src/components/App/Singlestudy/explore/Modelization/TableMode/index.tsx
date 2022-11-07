@@ -4,6 +4,7 @@ import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { v4 as uuidv4 } from "uuid";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
@@ -14,7 +15,7 @@ import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import FormTable from "../../../../../common/FormTable";
 import {
   DEFAULT_TABLE_TEMPLATES,
-  DEFAULT_TABLE_TEMPLATE_NAMES,
+  DEFAULT_TABLE_TEMPLATE_IDS,
   TableData,
   TableTemplate,
 } from "./utils";
@@ -31,15 +32,16 @@ function TableMode() {
   const [templates, setTemplates] = useState(() => [
     ...DEFAULT_TABLE_TEMPLATES,
     ...(storage.getItem(StorageKey.StudiesModelTableModeTemplates) || []),
+    ...(storage.getItem(StorageKey.StudiesModelTableModeTemplates) || []).map(
+      (tp) => ({ ...tp, id: uuidv4() })
+    ),
   ]);
-  const [selectedTemplateName, setSelectedTemplateName] = useState(
-    templates[0].name
-  );
+  const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0].id);
   const selectedTemplate =
-    templates.find((t) => t.name === selectedTemplateName) || templates[0];
+    templates.find((tp) => tp.id === selectedTemplateId) || templates[0];
   const [dialog, setDialog] = useState<{
     type: "add" | "edit" | "delete";
-    templateName: string;
+    templateId: TableTemplate["id"];
   } | null>(null);
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
@@ -53,7 +55,10 @@ function TableMode() {
   useUpdateEffect(() => {
     storage.setItem(
       StorageKey.StudiesModelTableModeTemplates,
-      templates.filter((t) => !DEFAULT_TABLE_TEMPLATE_NAMES.includes(t.name))
+      templates
+        .filter((tp) => !DEFAULT_TABLE_TEMPLATE_IDS.includes(tp.id))
+        // It is useless to keep template ids in local storage
+        .map(({ id, ...rest }) => rest)
     );
   }, [templates]);
 
@@ -73,7 +78,7 @@ function TableMode() {
 
   const handleDeleteTemplate = () => {
     setTemplates((templates) =>
-      templates.filter((t) => t.name !== dialog?.templateName)
+      templates.filter((tp) => tp.id !== dialog?.templateId)
     );
     closeDialog();
   };
@@ -90,11 +95,12 @@ function TableMode() {
             mainContent={
               <ListElement
                 list={templates}
-                currentElement={selectedTemplate.name}
-                setSelectedItem={({ name }) => setSelectedTemplateName(name)}
+                currentElement={selectedTemplate.id}
+                currentElementKeyToTest="id"
+                setSelectedItem={({ id }) => setSelectedTemplateId(id)}
                 contextMenuContent={({ element, close }) => {
-                  const isNotAllowed = DEFAULT_TABLE_TEMPLATE_NAMES.includes(
-                    element.name
+                  const isNotAllowed = DEFAULT_TABLE_TEMPLATE_IDS.includes(
+                    element.id
                   );
                   return (
                     <>
@@ -103,7 +109,7 @@ function TableMode() {
                           event.stopPropagation();
                           setDialog({
                             type: "edit",
-                            templateName: element.name,
+                            templateId: element.id,
                           });
                           close();
                         }}
@@ -116,7 +122,7 @@ function TableMode() {
                           event.stopPropagation();
                           setDialog({
                             type: "delete",
-                            templateName: element.name,
+                            templateId: element.id,
                           });
                           close();
                         }}
@@ -129,7 +135,7 @@ function TableMode() {
                 }}
               />
             }
-            onAdd={() => setDialog({ type: "add", templateName: "" })}
+            onAdd={() => setDialog({ type: "add", templateId: "" })}
           />
         }
         right={
@@ -161,9 +167,7 @@ function TableMode() {
       {dialog?.type === "edit" && (
         <UpdateTemplateTableDialog
           defaultValues={
-            templates.find(
-              (t) => t.name === dialog.templateName
-            ) as TableTemplate
+            templates.find((tp) => tp.id === dialog.templateId) as TableTemplate
           }
           setTemplates={setTemplates}
           onCancel={closeDialog}
@@ -179,7 +183,7 @@ function TableMode() {
           open
         >
           {t("study.modelization.tableMode.dialog.delete.text", [
-            dialog.templateName,
+            templates.find((tp) => tp.id === dialog.templateId)?.name,
           ])}
         </ConfirmationDialog>
       )}

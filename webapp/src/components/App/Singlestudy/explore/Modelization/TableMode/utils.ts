@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from "uuid";
+
 export enum TableTemplateType {
   Area = "area",
   Link = "link",
@@ -65,6 +67,7 @@ export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
 export interface TableTemplate<
   T extends TableTemplateType = TableTemplateType
 > {
+  id: string;
   name: string;
   type: T;
   columns: TableTemplateColumnsForType<T>;
@@ -78,7 +81,7 @@ export function createTableTemplate<T extends TableTemplateType>(
   type: T,
   columns: TableTemplateColumnsForType<T>
 ): TableTemplate<T> {
-  return { name, type, columns };
+  return { id: uuidv4(), name, type, columns };
 }
 
 export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
@@ -91,8 +94,8 @@ export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
   ]),
 ];
 
-export const DEFAULT_TABLE_TEMPLATE_NAMES = DEFAULT_TABLE_TEMPLATES.map(
-  (t) => t.name
+export const DEFAULT_TABLE_TEMPLATE_IDS = DEFAULT_TABLE_TEMPLATES.map(
+  (t) => t.id
 );
 
 export function getTableColumnsForType(type: TableTemplateType): string[] {
