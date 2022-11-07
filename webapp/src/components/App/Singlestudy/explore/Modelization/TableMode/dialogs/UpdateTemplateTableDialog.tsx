@@ -10,10 +10,11 @@ interface Props
   extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
   defaultValues: TableTemplate;
   setTemplates: React.Dispatch<React.SetStateAction<TableTemplate[]>>;
+  templates: TableTemplate[];
 }
 
 function UpdateTemplateTableDialog(props: Props) {
-  const { open, onCancel, defaultValues, setTemplates } = props;
+  const { open, onCancel, defaultValues, setTemplates, templates } = props;
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -22,7 +23,7 @@ function UpdateTemplateTableDialog(props: Props) {
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     setTemplates((templates) =>
-      templates.map((t) => (t.name === data.values.name ? data.values : t))
+      templates.map((t) => (t.id === data.values.id ? data.values : t))
     );
 
     onCancel();
@@ -40,7 +41,7 @@ function UpdateTemplateTableDialog(props: Props) {
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       onCancel={onCancel}
-      disableName
+      templates={templates}
     />
   );
 }
