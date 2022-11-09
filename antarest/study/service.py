@@ -505,6 +505,9 @@ class StudyService:
         logger.info(
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
+        # todo debounce this with a "update_study_last_access" method updating only every some seconds
+        study.last_access = datetime.utcnow()
+        self.repository.save(study, update_in_listing=False)
         return self.storage_service.get_storage(study).get_study_information(
             study
         )
@@ -670,6 +673,8 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
+        study.last_access = datetime.utcnow()
+        self.repository.save(study, update_in_listing=False)
         return self.storage_service.get_storage(study).get_synthesis(
             study, params
         )
@@ -2077,9 +2082,6 @@ class StudyService:
                 sanitized,
             )
             raise StudyNotFoundError(uuid)
-        # todo debounce this with a "update_study_last_access" method updating only every some seconds
-        study.last_access = datetime.utcnow()
-        self.repository.save(study)
         return study
 
     def _assert_study_unarchived(
