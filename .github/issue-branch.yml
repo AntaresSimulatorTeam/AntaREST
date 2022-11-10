@@ -3,7 +3,7 @@ autoCloseIssue: true
 branches:
   - label: '*'
     name: dev
-    prefix: feature/${issue.user.login}/
+    prefix: feature/${issue.assignees.0.login}/
   - label: bug
-    prefix: bugfix/${issue.user.login}/
+    prefix: bugfix/${issue.assignees.0.login}/
 
