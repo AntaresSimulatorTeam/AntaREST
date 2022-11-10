@@ -77,9 +77,8 @@ class XpansionSettingsDTO(BaseModel):
     additional_constraints: Optional[str] = Field(
         None, alias="additional-constraints"
     )
-    relaxed_optimality_gap: Optional[Union[float, str]] = Field(
-        None, alias="relaxed-optimality-gap"
-    )
+    # this will break compatibility with old xpansion R version
+    relaxed_optimality_gap: Optional[float] = 10e-4
     cut_type: Optional[CutType] = Field(None, alias="cut-type")
     ampl_solver: Optional[str] = Field(None, alias="ampl.solver")
     ampl_presolve: Optional[int] = Field(None, alias="ampl.presolve")
@@ -91,21 +90,7 @@ class XpansionSettingsDTO(BaseModel):
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
     sensitivity_config: Optional[XpansionSensitivitySettingsDTO] = None
-
-    @validator("relaxed_optimality_gap")
-    def relaxed_optimality_gap_validation(
-        cls, v: Optional[Union[float, str]]
-    ) -> Optional[Union[float, str]]:
-        if isinstance(v, float):
-            return v
-        if isinstance(v, str):
-            stripped_v = v.strip()
-            if stripped_v.endswith("%") and float(stripped_v[:-1]):
-                return v
-            raise ValueError(
-                "season_correlation is not allowed for 'thermal' type"
-            )
-        return v
+    separation_parameter: Optional[float] = 0.5
 
 
 class XpansionCandidateDTO(BaseModel):
@@ -259,6 +244,8 @@ class XpansionManager:
             else:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
+                xpansion_settings["relaxed_optimality_gap"] = 10e-4
+                xpansion_settings["separation_parameter"] = 0.5
 
             xpansion_configuration_data = {
                 "user": {

@@ -55,6 +55,8 @@ class ExpansionSettings(IniFileNode):
             "ampl.solver": str,
             "ampl.presolve": int,
             "ampl.solve_bounds_frequency": int,
+            "separation_parameter": float,
+            "relaxed_optimality_gap": float
         }
         if self.config.version > 800:
             types["relative-gap"] = float
