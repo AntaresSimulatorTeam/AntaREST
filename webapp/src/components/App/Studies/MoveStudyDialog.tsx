@@ -9,7 +9,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { moveStudy } from "../../../services/api/study";
 import { isStringEmpty } from "../../../services/utils";
 import FormDialog from "../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../common/Form";
+import { SubmitHandlerPlus } from "../../common/Form/types";
 
 interface Props extends DialogProps {
   study: StudyMetadata;

@@ -17,7 +17,7 @@ import {
   PlaylistData,
   setPlaylist,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { HandsontableProps } from "../../../../../../../common/Handsontable";
 
 interface Props {

@@ -1,15 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
-import { FieldPath, useFormContext } from "react-hook-form";
+import { FieldPath } from "react-hook-form";
 import { useMemo } from "react";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { Root } from "../style";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { CreateBindingConstraint } from "../../../../Commands/Edition/commandTypes";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
+import { useFormContextPlus } from "../../../../../../common/Form";
 
 function AddClusterForm() {
-  const { control } = useFormContext<CreateBindingConstraint>();
+  const { control } = useFormContextPlus<CreateBindingConstraint>();
 
   const { t } = useTranslation();
   const operatorOptions = useMemo(

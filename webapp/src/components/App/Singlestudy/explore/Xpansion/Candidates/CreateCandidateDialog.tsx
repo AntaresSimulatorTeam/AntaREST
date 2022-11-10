@@ -10,7 +10,7 @@ import StringFE from "../../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../../common/Fieldset";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface PropType {
   open: boolean;

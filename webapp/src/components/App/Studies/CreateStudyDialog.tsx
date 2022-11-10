@@ -15,7 +15,7 @@ import StringFE from "../../common/fieldEditors/StringFE";
 import SelectFE from "../../common/fieldEditors/SelectFE";
 import Fieldset from "../../common/Fieldset";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import { SubmitHandlerPlus } from "../../common/Form";
+import { SubmitHandlerPlus } from "../../common/Form/types";
 import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 const logErr = debug("antares:createstudyform:error");

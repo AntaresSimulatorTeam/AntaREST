@@ -5,7 +5,7 @@ import { StudyMetadata } from "../../../../../../common/types";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
-import { useFormContext } from "../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../common/Form";
 import {
   LINK_TYPE_OPTIONS,
   OptimizationFormFields,
@@ -21,7 +21,7 @@ interface Props {
 function Fields(props: Props) {
   const { study } = props;
   const { t } = useTranslation();
-  const { control } = useFormContext<OptimizationFormFields>();
+  const { control } = useFormContextPlus<OptimizationFormFields>();
   const isVer830OrAbove = Number(study.version) >= 830;
 
   return (

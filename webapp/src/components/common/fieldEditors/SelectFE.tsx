@@ -86,4 +86,6 @@ function SelectFE(props: SelectFEProps) {
   );
 }
 
-export default reactHookFormSupport()(SelectFE);
+export default reactHookFormSupport<SelectFEProps["value"]>({
+  defaultValue: (props: SelectFEProps) => (props.multiple ? [] : ""),
+})(SelectFE);

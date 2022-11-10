@@ -8,10 +8,11 @@ import { Fragment, ReactNode, useMemo } from "react";
 import SelectFE, { SelectFEProps } from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
-import { RegisterOptionsPlus, useFormContext } from "../Form";
+import { useFormContextPlus } from "../Form";
 import NumberFE from "../fieldEditors/NumberFE";
 import SwitchFE from "../fieldEditors/SwitchFE";
 import BooleanFE, { BooleanFEProps } from "../fieldEditors/BooleanFE";
+import { RegisterOptionsPlus } from "../Form/types";
 
 export type GeneratorFieldType =
   | "text"
@@ -80,7 +81,7 @@ export default function FormGenerator<T extends FieldValues>(
     [jsonTemplate]
   );
   const [t] = useTranslation();
-  const { control, defaultValues } = useFormContext<T>();
+  const { control, defaultValues } = useFormContextPlus<T>();
 
   return (
     <>

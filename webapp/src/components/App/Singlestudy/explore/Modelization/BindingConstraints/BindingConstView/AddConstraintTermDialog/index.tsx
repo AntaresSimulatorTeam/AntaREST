@@ -6,7 +6,7 @@ import { UseFieldArrayAppend } from "react-hook-form";
 import FormDialog, {
   FormDialogProps,
 } from "../../../../../../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   BindingConstFields,

@@ -1,10 +1,9 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form, { SubmitHandlerPlus } from "../../../../../../../common/Form";
-import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import Form from "../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { Root } from "../style";
 import Fields from "./Fields";
 import {
@@ -18,14 +17,6 @@ function ManagementOptions() {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
-
-  const res = usePromiseWithSnackbarError(
-    () => getManagementOptionsFormFields(studyId, areaId),
-    {
-      errorMessage: "Cannot get management options fields",
-      deps: [studyId, areaId],
-    }
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -41,14 +32,17 @@ function ManagementOptions() {
 
   return (
     <Root>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(defaultValues) => (
-          <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
-            <Fields />
-          </Form>
-        )}
-      />
+      <Form
+        key={studyId + areaId}
+        config={{
+          asyncDefaultValues: () =>
+            getManagementOptionsFormFields(studyId, areaId),
+        }}
+        onSubmit={handleSubmit}
+        autoSubmit
+      >
+        <Fields />
+      </Form>
     </Root>
   );
 }

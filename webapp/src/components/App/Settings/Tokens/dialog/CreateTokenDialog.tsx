@@ -15,7 +15,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import { createBot } from "../../../../../services/api/user";
 import OkDialog from "../../../../common/dialogs/OkDialog";
 import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-import { SubmitHandlerPlus } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
