@@ -762,18 +762,18 @@ class StudyService:
                     )
                     study.missing = now
                     self.repository.save(study)
-                elif study.missing < clean_up_missing_studies_threshold:
-                    logger.info(
-                        "Study %s at %s is not present in disk and will be deleted",
-                        study.id,
-                        study.path,
-                    )
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_DELETED,
                             payload=study.to_json_summary(),
                             permissions=create_permission_from_study(study),
                         )
+                    )
+                elif study.missing < clean_up_missing_studies_threshold:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be deleted",
+                        study.id,
+                        study.path,
                     )
                     self.repository.delete(study.id)
 
