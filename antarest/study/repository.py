@@ -48,6 +48,12 @@ class StudyMetadataRepository:
         metadata: Study = db.session.query(Study).get(id)
         return metadata
 
+    def get_list(self, study_id: List[str]) -> List[Study]:
+        studies: List[Study] = (
+            db.session.query(Study).where(Study.id.in_(study_id)).all()
+        )
+        return studies
+
     def get_additional_data(
         self, study_id: str
     ) -> Optional[StudyAdditionalData]:
