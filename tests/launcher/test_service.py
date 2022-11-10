@@ -217,6 +217,7 @@ def test_service_get_jobs_from_database():
     fake_execution_result = [
         JobResult(
             id=str(uuid4()),
+            study_id="a",
             job_status=JobStatus.SUCCESS,
             msg="Hello, World!",
             exit_code=0,
@@ -262,19 +263,15 @@ def test_service_get_jobs_from_database():
     repository.get_all.return_value = all_faked_execution_results
 
     study_service = Mock()
-    study_service.get_study.side_effect = [
-        Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE),
-        Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE),
-        StudyNotFoundError(""),
-        StudyNotFoundError(""),
+    study_service.repository = Mock()
+    study_service.repository.get_list.return_value = [
         Mock(
             spec=Study,
+            id="b",
             groups=[],
             owner=User(id=2),
             public_mode=PublicMode.NONE,
-        ),
-        StudyNotFoundError(""),
-        StudyNotFoundError(""),
+        )
     ]
 
     launcher_service = LauncherService(

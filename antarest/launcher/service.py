@@ -330,21 +330,25 @@ class LauncherService:
             days=ORPHAN_JOBS_VISIBILITY_THRESHOLD
         )
         allowed_job_results = []
+        studies = {
+            study.id: study
+            for study in self.study_service.repository.get_list(
+                [job.study_id for job in job_results]
+            )
+        }
         for job_result in job_results:
-            try:
+            if job_result.study_id in studies:
                 if assert_permission(
                     user,
-                    self.study_service.get_study(job_result.study_id),
+                    studies[job_result.study_id],
                     StudyPermissionType.RUN,
                     raising=False,
                 ):
                     allowed_job_results.append(job_result)
-            except StudyNotFoundError:
-                if (
-                    (user and (user.is_site_admin() or user.is_admin_token()))
-                    or job_result.creation_date >= orphan_visibility_threshold
-                ):
-                    allowed_job_results.append(job_result)
+            elif (
+                user and (user.is_site_admin() or user.is_admin_token())
+            ) or job_result.creation_date >= orphan_visibility_threshold:
+                allowed_job_results.append(job_result)
         return allowed_job_results
 
     def get_result(

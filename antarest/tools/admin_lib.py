@@ -37,7 +37,7 @@ def clean_locks(config: Path) -> None:
 
 def reindex_table(config: Path) -> None:
     import sqlalchemy  # type: ignore
-    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT  # type: ignore
+    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
     config_obj = get_config(config)
     engine = sqlalchemy.create_engine(config_obj.db.db_admin_url, echo=True)

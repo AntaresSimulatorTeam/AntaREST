@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # Adding options to the System Tray
     tray.setContextMenu(menu)
-    app.processEvents()  # type: ignore
+    app.processEvents()
 
     tray.setToolTip("AntaresWebServer")
 

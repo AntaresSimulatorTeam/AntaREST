@@ -104,8 +104,7 @@ class DummyEventBusService(IEventBus):
     def add_queue_consumer(
         self, listener: Callable[[Event], Awaitable[None]], queue: str
     ) -> str:
-        # Noop
-        pass
+        return ""
 
     def remove_queue_consumer(self, listener_id: str) -> None:
         # Noop

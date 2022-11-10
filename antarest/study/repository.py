@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, cast
 
 from sqlalchemy.orm import with_polymorphic  # type: ignore
 
@@ -21,7 +21,10 @@ class StudyMetadataRepository:
         self.cache_service = cache_service
 
     def save(
-        self, metadata: Study, update_modification_date: bool = False
+        self,
+        metadata: Study,
+        update_modification_date: bool = False,
+        update_in_listing: bool = True,
     ) -> Study:
         metadata_id = metadata.id or metadata.name
         logger.debug(f"Saving study {metadata_id}")
@@ -34,7 +37,8 @@ class StudyMetadataRepository:
         db.session.add(metadata)
         db.session.commit()
 
-        self._update_study_from_cache_listing(metadata)
+        if update_in_listing:
+            self._update_study_from_cache_listing(metadata)
         return metadata
 
     def refresh(self, metadata: Study) -> None:
@@ -43,6 +47,12 @@ class StudyMetadataRepository:
     def get(self, id: str) -> Optional[Study]:
         metadata: Study = db.session.query(Study).get(id)
         return metadata
+
+    def get_list(self, study_id: List[str]) -> List[Study]:
+        studies: List[Study] = (
+            db.session.query(Study).where(Study.id.in_(study_id)).all()
+        )
+        return studies
 
     def get_additional_data(
         self, study_id: str
@@ -99,7 +109,10 @@ class StudyMetadataRepository:
                 CacheConstants.STUDY_LISTING.value
             )
             if cached_studies:
-                cached_studies[study.id] = get_study_information(study)
+                if isinstance(study, RawStudy) and study.missing is not None:
+                    del cached_studies[study.id]
+                else:
+                    cached_studies[study.id] = get_study_information(study)
                 self.cache_service.put(
                     CacheConstants.STUDY_LISTING.value, cached_studies
                 )
