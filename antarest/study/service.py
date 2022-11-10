@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict, Callable, Any
+from typing import List, IO, Optional, cast, Union, Dict, Callable, Any, Tuple
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -21,6 +21,7 @@ from antarest.core.exceptions import (
     NotAManagedStudyException,
     CommandApplicationError,
     StudyDeletionNotAllowed,
+    TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
@@ -1939,9 +1940,7 @@ class StudyService:
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
         ):
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST, "Study is already archiving"
-            )
+            raise TaskAlreadyRunning()
 
         def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
@@ -1983,9 +1982,7 @@ class StudyService:
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
         ):
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST, "Study is already unarchiving"
-            )
+            raise TaskAlreadyRunning()
 
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
@@ -2258,6 +2255,15 @@ class StudyService:
             if not file_study.config.outputs[output].archived:
                 self.archive_output(study_id, output, params)
 
+    @staticmethod
+    def _get_output_archive_task_names(
+        study: Study, output_id: str
+    ) -> Tuple[str, str]:
+        return (
+            f"Archive output {study.id}/{output_id}",
+            f"Unarchive output {study.name}/{output_id} ({study.id})",
+        )
+
     def archive_output(
         self,
         study_id: str,
@@ -2269,19 +2275,27 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if not force and self.task_service.list_tasks(
-            TaskListFilter(
-                ref_id=study_id,
-                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
-                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
-        ):
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
-            )
+        archive_task_names = StudyService._get_output_archive_task_names(
+            study, output_id
+        )
+        task_name = archive_task_names[0]
 
-        task_name = f"Archive output {study_id}/{output_id}"
+        if not force:
+            study_tasks = self.task_service.list_tasks(
+                TaskListFilter(
+                    ref_id=study_id,
+                    name=task_name,
+                    type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
+                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                ),
+                RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+            if len(
+                list(
+                    filter(lambda t: t.name in archive_task_names, study_tasks)
+                )
+            ):
+                raise TaskAlreadyRunning()
 
         def archive_output_task(
             notifier: TaskUpdateNotifier,
@@ -2330,19 +2344,24 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if self.task_service.list_tasks(
+        archive_task_names = StudyService._get_output_archive_task_names(
+            study, output_id
+        )
+        task_name = archive_task_names[1]
+
+        study_tasks = self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=study_id,
+                name=task_name,
                 type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        if len(
+            list(filter(lambda t: t.name in archive_task_names, study_tasks))
         ):
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST, "Study output is already (un)archiving"
-            )
-
-        task_name = f"Unarchive output {study.name}/{output_id} ({study_id})"
+            raise TaskAlreadyRunning()
 
         def unarchive_output_task(
             notifier: TaskUpdateNotifier,

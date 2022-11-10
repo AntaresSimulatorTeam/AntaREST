@@ -79,6 +79,13 @@ class NotAManagedStudyException(HTTPException):
         )
 
 
+class TaskAlreadyRunning(HTTPException):
+    def __init__(self) -> None:
+        super(TaskAlreadyRunning, self).__init__(
+            HTTPStatus.EXPECTATION_FAILED, "Task is already running"
+        )
+
+
 class StudyDeletionNotAllowed(HTTPException):
     def __init__(self, uuid: str, message: Optional[str] = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"

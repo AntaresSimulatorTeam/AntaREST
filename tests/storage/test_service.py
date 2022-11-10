@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownloadTaskDTO, FileDownload
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
@@ -19,7 +20,7 @@ from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskType
+from antarest.core.tasks.model import TaskType, TaskDTO, TaskStatus
 from antarest.login.model import User, Group, GroupDTO
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
@@ -57,9 +58,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
@@ -1357,6 +1355,136 @@ def test_unarchive_output(tmp_path: Path):
     output_id = "some-output"
     service.task_service.add_worker_task.return_value = None
     service.task_service.list_tasks.return_value = []
+    service.unarchive_output(
+        study_id,
+        output_id,
+        keep_src_zip=True,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    service.task_service.add_worker_task.assert_called_once_with(
+        TaskType.UNARCHIVE,
+        f"unarchive_other_workspace",
+        ArchiveTaskArgs(
+            src=str(tmp_path / "output" / f"{output_id}.zip"),
+            dest=str(tmp_path / "output" / output_id),
+            remove_src=False,
+        ).dict(),
+        name=f"Unarchive output my_study/{output_id} ({study_id})",
+        ref_id="my_study",
+        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    service.task_service.add_task.assert_called_once_with(
+        ANY,
+        f"Unarchive output my_study/{output_id} ({study_id})",
+        task_type=TaskType.UNARCHIVE,
+        ref_id=study_id,
+        custom_event_messages=None,
+        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
+def test_archive_output_locks(tmp_path: Path):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        name="my_study",
+        path=tmp_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    study_mock.name = "my_study"
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    service.task_service.reset_mock()
+    service.repository.get.return_value = study_mock
+
+    study_id = "my_study"
+    study_name = study_id
+    output_id = "some-output"
+    service.task_service.add_worker_task.return_value = None
+    service.task_service.list_tasks.side_effect = [
+        [
+            TaskDTO(
+                id="1",
+                name=f"Archive output {study_id}/{output_id}",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.utcnow()),
+                type=TaskType.ARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.utcnow()),
+                type=TaskType.UNARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Archive output {study_id}/{output_id}",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.utcnow()),
+                type=TaskType.ARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                status=TaskStatus.RUNNING,
+                creation_date_utc=str(datetime.utcnow()),
+                type=TaskType.UNARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [],
+    ]
+
+    with pytest.raises(TaskAlreadyRunning):
+        service.unarchive_output(
+            study_id,
+            output_id,
+            keep_src_zip=True,
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    with pytest.raises(TaskAlreadyRunning):
+        service.unarchive_output(
+            study_id,
+            output_id,
+            keep_src_zip=True,
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    with pytest.raises(TaskAlreadyRunning):
+        service.archive_output(
+            study_id,
+            output_id,
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    with pytest.raises(TaskAlreadyRunning):
+        service.archive_output(
+            study_id,
+            output_id,
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
     service.unarchive_output(
         study_id,
         output_id,
