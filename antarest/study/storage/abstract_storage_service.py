@@ -237,7 +237,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
 
             data = self.get(
-                metadata, f"output/{output_full_name}", -1, use_cache=False
+                metadata, f"output/{output_full_name}", 1, use_cache=False
             )
 
             if data is None:
