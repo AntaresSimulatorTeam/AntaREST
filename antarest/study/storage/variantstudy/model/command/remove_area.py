@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.core.model import JSON
@@ -5,6 +6,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     remove_area_cluster_from_binding_constraints,
 )
@@ -17,6 +21,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     MATCH_SIGNATURE_SEPARATOR,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+logger = logging.getLogger(__name__)
 
 
 class RemoveArea(ICommand):
@@ -71,11 +77,45 @@ class RemoveArea(ICommand):
             for link in area.links.keys():
                 if link == self.id:
                     study_data.tree.delete(
-                        ["input", "links", area_name, self.id]
-                    )
-                    study_data.tree.delete(
                         ["input", "links", area_name, "properties", self.id]
                     )
+                    try:
+                        if study_data.config.version < 820:
+                            study_data.tree.delete(
+                                ["input", "links", area_name, self.id]
+                            )
+                        else:
+                            study_data.tree.delete(
+                                [
+                                    "input",
+                                    "links",
+                                    area_name,
+                                    f"{self.id}_parameters",
+                                ]
+                            )
+                            study_data.tree.delete(
+                                [
+                                    "input",
+                                    "links",
+                                    area_name,
+                                    "capacities",
+                                    f"{self.id}_indirect",
+                                ]
+                            )
+                            study_data.tree.delete(
+                                [
+                                    "input",
+                                    "links",
+                                    area_name,
+                                    "capacities",
+                                    f"{self.id}_direct",
+                                ]
+                            )
+                    except ChildNotFoundError as e:
+                        logger.warning(
+                            f"Failed to clean link data when deleting area {self.id} in study {study_data.config.study_id}",
+                            exc_info=e,
+                        )
 
     def _remove_area_from_binding_constraints(
         self, study_data: FileStudy
