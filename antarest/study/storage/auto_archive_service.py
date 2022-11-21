@@ -36,18 +36,30 @@ class AutoArchiveService(IService):
                     study_id = study.id
                     try:
                         if isinstance(study, RawStudy) and not study.archived:
-                            self.study_service.archive(
-                                study.id,
-                                params=RequestParameters(DEFAULT_ADMIN_USER),
+                            logger.info(
+                                f"Auto Archiving raw study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
                             )
+                            if not self.config.storage.auto_archive_dry_run:
+                                self.study_service.archive(
+                                    study.id,
+                                    params=RequestParameters(
+                                        DEFAULT_ADMIN_USER
+                                    ),
+                                )
                         elif isinstance(study, VariantStudy):
-                            self.study_service.storage_service.variant_study_service.clear_snapshot(
-                                study
+                            logger.info(
+                                f"Auto Archiving variant study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
                             )
-                            self.study_service.archive_outputs(
-                                study.id,
-                                params=RequestParameters(DEFAULT_ADMIN_USER),
-                            )
+                            if not self.config.storage.auto_archive_dry_run:
+                                self.study_service.storage_service.variant_study_service.clear_snapshot(
+                                    study
+                                )
+                                self.study_service.archive_outputs(
+                                    study.id,
+                                    params=RequestParameters(
+                                        DEFAULT_ADMIN_USER
+                                    ),
+                                )
                     except TaskAlreadyRunning:
                         pass
                     except Exception as e:
