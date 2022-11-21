@@ -44,8 +44,10 @@ def matrix_garbage_collector(tmp_path: Path):
     mock_config.storage.workspaces = {"default": mock_workspace_config}
     mock_config.storage.matrix_gc_dry_run = False
 
+    matrix_constant_generator = Mock(spec=GeneratorMatrixConstants)
+    matrix_constant_generator.hashes = {"test": "constant_matrix"}
     command_factory = CommandFactory(
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        generator_matrix_constants=matrix_constant_generator,
         matrix_service=Mock(spec=MatrixService),
         patch_service=Mock(spec=PatchService),
     )
@@ -234,6 +236,7 @@ def test_get_used_matrices(matrix_garbage_collector: MatrixGarbageCollector):
         "matrix3",
         "matrix4",
         "matrix6",
+        "constant_matrix",
     }
 
 
