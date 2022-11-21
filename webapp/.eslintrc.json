@@ -59,6 +59,7 @@
       }
     ],
     "no-shadow": "off",
+    "no-underscore-dangle": "off",
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],
     "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],

@@ -3,7 +3,7 @@ import { FieldPath } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../common/Fieldset";
-import { ControlPlus } from "../../../../common/Form";
+import { ControlPlus } from "../../../../common/Form/types";
 import { FilteringType } from "./types";
 
 interface FilterFieldValues {
@@ -12,7 +12,7 @@ interface FilterFieldValues {
 }
 
 interface Props<T extends FilterFieldValues> {
-  onAutoSubmit: (name: string, selection: string) => void;
+  onAutoSubmit: (name: keyof FilterFieldValues, selection: string) => void;
   control: ControlPlus<T>;
 }
 
@@ -29,9 +29,9 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
     [t]
   );
 
-  const renderFilter = (filterName: FieldPath<T>) => (
+  const renderFilter = (filterName: keyof FilterFieldValues) => (
     <SelectFE
-      name={filterName}
+      name={filterName as FieldPath<T>}
       multiple
       options={filterOptions}
       label={t(`study.modelization.nodeProperties.${filterName}`)}
@@ -49,8 +49,8 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
 
   return (
     <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
-      {renderFilter("filterSynthesis" as FieldPath<T>)}
-      {renderFilter("filterByYear" as FieldPath<T>)}
+      {renderFilter("filterSynthesis")}
+      {renderFilter("filterByYear")}
     </Fieldset>
   );
 }

@@ -6,7 +6,7 @@ import FormDialog, {
   FormDialogProps,
 } from "../../../../../../../../common/dialogs/FormDialog";
 import AddClusterForm from "./AddClusterForm";
-import { SubmitHandlerPlus } from "../../../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { appendCommands } from "../../../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../../../Commands/Edition/commandTypes";

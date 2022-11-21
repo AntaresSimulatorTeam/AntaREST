@@ -14,7 +14,7 @@ import {
   CreateBindingConstraint,
   TimeStep,
 } from "../../../../Commands/Edition/commandTypes";
-import { SubmitHandlerPlus } from "../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;

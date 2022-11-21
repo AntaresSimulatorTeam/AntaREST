@@ -7,7 +7,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
-import { ControlPlus } from "../../../../../../../../common/Form";
+import { ControlPlus } from "../../../../../../../../common/Form/types";
 import {
   BindingConstFields,
   ConstraintType,

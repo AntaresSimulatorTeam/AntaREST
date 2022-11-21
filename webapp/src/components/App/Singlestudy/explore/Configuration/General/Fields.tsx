@@ -15,11 +15,12 @@ import {
   YEAR_OPTIONS,
 } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import { useFormContext } from "../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../common/Form";
 import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
+import { FieldWithButton } from "./styles";
 
 interface Props {
   setDialog: React.Dispatch<
@@ -31,7 +32,7 @@ function Fields(props: Props) {
   const { setDialog } = props;
   const [t] = useTranslation();
   const { control, setValue, watch, getValues } =
-    useFormContext<GeneralFormFields>();
+    useFormContextPlus<GeneralFormFields>();
   const [buildingMode, firstDay, lastDay, filtering] = watch([
     "buildingMode",
     "firstDay",
@@ -197,7 +198,7 @@ function Fields(props: Props) {
             control={control}
             rules={{ deps: "nbYears" }}
           />
-          <Box>
+          <FieldWithButton>
             <BooleanFE
               name="selectionMode"
               label={t("study.configuration.general.selectionMode")}
@@ -212,7 +213,7 @@ function Fields(props: Props) {
             >
               {t("global.settings")}
             </Button>
-          </Box>
+          </FieldWithButton>
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
         <Fieldset
@@ -240,14 +241,14 @@ function Fields(props: Props) {
             control={control}
           />
           {hasFiltering ? (
-            <Box>
+            <FieldWithButton>
               <SwitchFE
                 name="filtering"
                 label={t("study.configuration.general.filtering")}
                 control={control}
               />
               {thematicTrimmingButton}
-            </Box>
+            </FieldWithButton>
           ) : (
             <>
               <BooleanFE
@@ -257,7 +258,7 @@ function Fields(props: Props) {
                 falseText="None"
                 control={control}
               />
-              <Box>
+              <FieldWithButton>
                 <BooleanFE
                   name="thematicTrimming"
                   label={t("study.configuration.general.thematicTrimming")}
@@ -266,7 +267,7 @@ function Fields(props: Props) {
                   control={control}
                 />
                 {thematicTrimmingButton}
-              </Box>
+              </FieldWithButton>
             </>
           )}
         </Fieldset>

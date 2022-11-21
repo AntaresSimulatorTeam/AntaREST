@@ -29,7 +29,7 @@ function Fieldset(props: FieldsetProps) {
           m: 0,
           p: 0,
           pb: 5,
-          ".MuiBox-root": {
+          "> .MuiBox-root": {
             display: "flex",
             flexWrap: "wrap",
             gap: 2,

@@ -6,21 +6,21 @@ import { editStudy } from "../../../../../../../services/api/study";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { UseFormReturnPlus } from "../../../../../../common/Form";
 import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
 import { stringToRGB } from "../../../../../../common/fieldEditors/ColorPickerFE/utils";
 import { getPropertiesPath, PropertiesFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import OutputFilters from "../../../common/OutputFilters";
+import { UseFormReturnPlus } from "../../../../../../common/Form/types";
 
-export default function PropertiesForm(
-  props: UseFormReturnPlus<PropertiesFields, unknown> & {
-    studyId: string;
-    areaName: string;
-    studyVersion: number;
-  }
-) {
+interface Props extends UseFormReturnPlus<PropertiesFields> {
+  studyId: string;
+  areaName: string;
+  studyVersion: number;
+}
+
+export default function PropertiesForm(props: Props) {
   const { control, getValues, defaultValues, studyId, areaName, studyVersion } =
     props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();

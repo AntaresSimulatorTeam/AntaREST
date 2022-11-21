@@ -10,7 +10,7 @@ import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
 import usePromise from "../../../../../../hooks/usePromise";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import { SubmitHandlerPlus } from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import FormTable from "../../../../../common/FormTable";
 import {

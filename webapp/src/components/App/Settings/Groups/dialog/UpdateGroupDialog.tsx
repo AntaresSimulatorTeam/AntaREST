@@ -14,7 +14,7 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
-import { SubmitHandlerPlus } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 type InheritPropsToOmit =
   | "title"

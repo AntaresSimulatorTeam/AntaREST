@@ -20,7 +20,7 @@ import StringFE from "../../../common/fieldEditors/StringFE";
 import SelectFE from "../../../common/fieldEditors/SelectFE";
 import CheckboxesTagsFE from "../../../common/fieldEditors/CheckboxesTagsFE";
 import Fieldset from "../../../common/Fieldset";
-import { SubmitHandlerPlus } from "../../../common/Form";
+import { SubmitHandlerPlus } from "../../../common/Form/types";
 
 const logErr = debug("antares:createstudyform:error");
 

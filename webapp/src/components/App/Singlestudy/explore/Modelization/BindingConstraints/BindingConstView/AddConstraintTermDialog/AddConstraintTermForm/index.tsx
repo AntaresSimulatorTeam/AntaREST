@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../../common/fieldEditors/NumberFE";
-import { useFormContext } from "../../../../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../../../../common/Form";
 import { ConstraintItemRoot } from "../../ConstraintTerm/style";
 import { BindingConstFields, ConstraintType } from "../../utils";
 import ConstraintElement from "../../constraintviews/ConstraintElement";
@@ -19,7 +19,7 @@ interface Props {
 export default function AddConstraintTermForm(props: Props) {
   const { options, constraintsTerm } = props;
   const { control, watch, unregister, setValue } =
-    useFormContext<ConstraintType>();
+    useFormContextPlus<ConstraintType>();
 
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(true);

@@ -10,7 +10,7 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createGroup, createRole } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
 /**

@@ -13,10 +13,11 @@ import usePromiseWithSnackbarError from "../../hooks/usePromiseWithSnackbarError
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../redux/hooks/useAppDispatch";
 import storage, { StorageKey } from "../../services/utils/localStorage";
-import Form, { SubmitHandlerPlus } from "../common/Form";
+import Form from "../common/Form";
 import StringFE from "../common/fieldEditors/StringFE";
 import PasswordFE from "../common/fieldEditors/PasswordFE";
 import UsePromiseCond from "../common/utils/UsePromiseCond";
+import { SubmitHandlerPlus } from "../common/Form/types";
 
 interface FormValues {
   username: string;

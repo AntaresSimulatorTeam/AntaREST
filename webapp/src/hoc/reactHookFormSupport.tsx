@@ -11,12 +11,16 @@ import {
 } from "react-hook-form";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { ControlPlus, RegisterOptionsPlus } from "../components/common/Form";
+import { Skeleton } from "@mui/material";
 import { getComponentDisplayName } from "../utils/reactUtils";
 import { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
+import {
+  ControlPlus,
+  RegisterOptionsPlus,
+} from "../components/common/Form/types";
 
 interface ReactHookFormSupport<TValue> {
-  defaultValue?: NonNullable<TValue>;
+  defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
   preValidate?: (value: any) => boolean;
 }
@@ -78,13 +82,8 @@ function reactHookFormSupport<TValue>(
       props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
         TProps
     ) {
-      const {
-        control,
-        rules = {},
-        shouldUnregister,
-        disabled,
-        ...feProps
-      } = props;
+      const { control, rules = {}, shouldUnregister, ...feProps } = props;
+
       const {
         validate,
         setValueAs: setValueAsFromRules = R.identity,
@@ -98,7 +97,7 @@ function reactHookFormSupport<TValue>(
       const handleChange =
         (internalOnChange: ControllerRenderProps["onChange"]) =>
         (event: FakeChangeEventHandler) => {
-          if (disabled) {
+          if (feProps.disabled) {
             return;
           }
 
@@ -121,7 +120,7 @@ function reactHookFormSupport<TValue>(
       const handleBlur =
         (internalOnBlur: ControllerRenderProps["onBlur"]) =>
         (event: FakeBlurEventHandler) => {
-          if (disabled) {
+          if (feProps.disabled) {
             return;
           }
 
@@ -156,17 +155,26 @@ function reactHookFormSupport<TValue>(
         return validate;
       }, [validate]);
 
+      const getDefaultValuesFromOptions = () => {
+        const { defaultValue } = options;
+        return RA.isFunction(defaultValue)
+          ? defaultValue(feProps)
+          : defaultValue;
+      };
+
       ////////////////////////////////////////////////////////////////
       // JSX
       ////////////////////////////////////////////////////////////////
 
       if (control && feProps.name) {
-        return (
+        const field = (
           <Controller
             control={control}
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
-            defaultValue={(feProps.defaultValue ?? options.defaultValue) as any}
+            defaultValue={
+              (feProps.defaultValue ?? getDefaultValuesFromOptions()) as any
+            }
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
             render={({
@@ -181,10 +189,17 @@ function reactHookFormSupport<TValue>(
                 inputRef={ref}
                 error={!!error}
                 helperText={error?.message}
-                disabled={disabled}
               />
             )}
           />
+        );
+
+        return control._showSkeleton ? (
+          <Skeleton variant="rectangular" sx={{ borderRadius: "5px" }}>
+            {field}
+          </Skeleton>
+        ) : (
+          field
         );
       }
 
