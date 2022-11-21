@@ -150,7 +150,7 @@ class StorageConfig:
             auto_archive_threshold_days=data.get(
                 "auto_archive_threshold_days", 60
             ),
-            auto_archive_dry_run=data.get("auto_archive_dry_run", False)
+            auto_archive_dry_run=data.get("auto_archive_dry_run", False),
         )
 
 
