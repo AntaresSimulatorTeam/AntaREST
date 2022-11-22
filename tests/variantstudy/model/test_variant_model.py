@@ -216,6 +216,7 @@ def test_smart_generation(
         origin_study = RawStudy(
             id=origin_id,
             name="my-study",
+            folder=f"some_place/{origin_id}",
             workspace=DEFAULT_WORKSPACE_NAME,
             additional_data=StudyAdditionalData(),
             updated_at=datetime.datetime(year=2000, month=1, day=1),
@@ -224,6 +225,10 @@ def test_smart_generation(
 
         variant_id = service.create_variant_study(
             origin_id, "my variant", SADMIN
+        )
+        assert (
+            service._get_variant_study(variant_id, SADMIN).folder
+            == "some_place"
         )
         unmanaged_user_config_path = (
             tmp_path
