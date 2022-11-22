@@ -134,6 +134,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{OPTIMIZATION_PATH}/include-split-exported-mps",
         "default_value": False,
         "start_version": 830,
+        "end_version": 840,
     },
     "enable_adequacy_patch": {
         "path": f"{ADEQUACY_PATCH_PATH}/include-adq-patch",
