@@ -66,7 +66,7 @@ class GeneralData(IniFileNode):
         },
         "optimization": {
             "simplex-range": str,
-            "transmission-capacities": bool,
+            "transmission-capacities": str,
             "include-constraints": bool,
             "include-hurdlecosts": bool,
             "include-tc-minstablepower": bool,
