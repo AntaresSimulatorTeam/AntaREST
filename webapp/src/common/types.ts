@@ -669,9 +669,33 @@ export interface AreaInfoDTO extends AreaCreationDTO {
   thermals: Array<object>;
 }
 
-export const isNode = (el: NodeProperties | LinkProperties): boolean =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (el as any).id !== undefined;
+export interface DeleteMapNodeDTO {
+  studyId: string;
+  source: string;
+}
+
+export interface DeleteMapLinkDTO {
+  studyId: string;
+  source: string;
+  target: string;
+}
+
+export interface UpdateMapNodeDTO {
+  studyId: string;
+  nodeId: string;
+  nodeUI: UpdateAreaUi;
+}
+
+export interface CreateMapLinkDTO {
+  studyId: string;
+  sourceNode: string;
+  targetNode: string;
+}
+
+export interface CreateMapNodeDTO {
+  studyId: string;
+  name: string;
+}
 
 export interface TaskView {
   id: string;

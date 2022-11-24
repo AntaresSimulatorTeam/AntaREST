@@ -7,11 +7,11 @@ import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSave: (name: string) => void;
+  createArea: (name: string) => void;
 }
 
-function CreateAreaModal(props: Props) {
-  const { open, onClose, onSave } = props;
+function CreateAreaDialog(props: Props) {
+  const { open, onClose, createArea } = props;
   const [t] = useTranslation();
 
   const defaultValues = {
@@ -23,9 +23,7 @@ function CreateAreaModal(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    const { name } = data.values;
-
-    onSave(name);
+    createArea(data.values.name);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -59,4 +57,4 @@ function CreateAreaModal(props: Props) {
   );
 }
 
-export default CreateAreaModal;
+export default CreateAreaDialog;

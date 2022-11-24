@@ -197,6 +197,28 @@ export const getCurrentLinkId = (
   return getStudyDataState(state).currentLink;
 };
 
+export const getSelectedNode = (
+  state: AppState
+): StudyDataState["selectedNode"] => {
+  return getStudyDataState(state).selectedNode;
+};
+
+export const getSelectedLink = (
+  state: AppState
+): StudyDataState["selectedLink"] => {
+  return getStudyDataState(state).selectedLink;
+};
+
+export const getMapNodes = (state: AppState): StudyDataState["nodes"] => {
+  return getStudyDataState(state).nodes;
+};
+
+export const getSelectedNodeLinks = (
+  state: AppState
+): StudyDataState["selectedNodeLinks"] => {
+  return getStudyDataState(state).selectedNodeLinks;
+};
+
 export const getStudyAreas = createSelector(getStudyData, (studyData) => {
   if (studyData) {
     // studyData ? Object.values(studyData.areas) :
@@ -236,9 +258,9 @@ export const selectLinks = (
 
 export const getStudyLinks = createSelector(getStudyData, (data) => {
   if (data) {
-    const tmp = selectLinks(data);
-    if (tmp) {
-      return Object.values(tmp) || [];
+    const links = selectLinks(data);
+    if (links) {
+      return Object.values(links);
     }
   }
   return [];
