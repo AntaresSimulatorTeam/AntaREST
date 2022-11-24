@@ -379,6 +379,7 @@ export enum TaskType {
   UNARCHIVE = "UNARCHIVE",
   DOWNLOAD = "DOWNLOAD",
   SCAN = "SCAN",
+  UPGRADE_STUDY = "UPGRADE_STUDY",
   UNKNOWN = "UNKNOWN",
 }
 
