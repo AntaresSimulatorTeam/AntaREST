@@ -1,12 +1,13 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Typography } from "@mui/material";
+import { Fab, Typography } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   LinkProperties,
   NodeProperties,
@@ -39,6 +40,7 @@ import {
   fetchNodesData,
   updateMapNodeUI,
 } from "../../../../../../redux/ducks/studyDataSynthesis";
+import MapConfig from "./MapConfig";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -47,6 +49,7 @@ function Map() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [openConfig, setOpenConfig] = useState<boolean>(false);
   const previousNode = useRef<string>();
   const graphRef =
     useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
@@ -174,33 +177,44 @@ function Map() {
   return (
     <>
       <SplitLayoutView
-        left={<Areas onArea={() => setOpenDialog(true)} updateUI={updateUI} />}
+        left={<Areas onAdd={() => setOpenDialog(true)} updateUI={updateUI} />}
         right={
-          <MapContainer>
-            <MapHeader>
-              <Typography>{`${mapNodes.length} ${t(
-                "study.areas"
-              )}`}</Typography>
-              <Typography>
-                {`${mapLinks.length} ${t("study.links")}`}
-              </Typography>
-            </MapHeader>
-            {isLoaded && (
-              <Suspense fallback={<SimpleLoader />}>
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <MapGraph
-                      height={height}
-                      width={width}
-                      links={mapLinks}
-                      graph={graphRef}
-                      onNodePositionChange={handlePositionChange}
-                    />
-                  )}
-                </AutoSizer>
-              </Suspense>
-            )}
-          </MapContainer>
+          openConfig ? (
+            <MapConfig onClose={() => setOpenConfig(false)} />
+          ) : (
+            <MapContainer>
+              <MapHeader>
+                <Typography>{`${mapNodes.length} ${t(
+                  "study.areas"
+                )}`}</Typography>
+                <Typography>
+                  {`${mapLinks.length} ${t("study.links")}`}
+                </Typography>
+                <Fab
+                  size="small"
+                  color="default"
+                  onClick={() => setOpenConfig(true)}
+                >
+                  <SettingsIcon />
+                </Fab>
+              </MapHeader>
+              {isLoaded && !openConfig && (
+                <Suspense fallback={<SimpleLoader />}>
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <MapGraph
+                        height={height}
+                        width={width}
+                        links={mapLinks}
+                        graph={graphRef}
+                        onNodePositionChange={handlePositionChange}
+                      />
+                    )}
+                  </AutoSizer>
+                </Suspense>
+              )}
+            </MapContainer>
+          )
         }
       />
       {openDialog && (
