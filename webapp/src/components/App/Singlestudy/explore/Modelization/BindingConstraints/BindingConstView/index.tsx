@@ -7,8 +7,8 @@ import BindingConstForm from "./BindingConstForm";
 import { getDefaultValues, BindingConstFields } from "./utils";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import { selectLinksAndClusters } from "../../../../../../../redux/selectors";
-import useStudyData from "../../../hooks/useStudyData";
+import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 
 interface Props {
   bindingConst: string;
@@ -21,9 +21,9 @@ function BindingConstView(props: Props) {
     () => getDefaultValues(study.id, bindingConst),
     [study.id, bindingConst]
   );
-  const { value: options } = useStudyData({
+  const { value: options } = useStudySynthesis({
     studyId: study.id,
-    selector: selectLinksAndClusters,
+    selector: (state) => getLinksAndClusters(state, study.id),
   });
 
   return (

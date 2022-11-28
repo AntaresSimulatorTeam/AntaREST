@@ -5,12 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  setSelectedNode,
-  setSelectedLink,
-  deleteMapNode,
-  deleteMapLink,
-} from "../../../../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import {
