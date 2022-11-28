@@ -569,17 +569,6 @@ export interface MatrixAggregationResult {
   warnings: Array<string>;
 }
 
-export interface NodeProperties {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  color: string;
-  rgbColor: Array<number>;
-  size: { width: number; height: number };
-  highlighted?: boolean;
-}
-
 export interface LinkSynthesis {
   [index: string]: object;
 }
@@ -632,7 +621,7 @@ export interface SingleAreaConfig {
 }
 
 export interface AreasConfig {
-  [index: string]: SingleAreaConfig;
+  [areaId: string]: SingleAreaConfig;
 }
 
 export interface UpdateAreaUi {

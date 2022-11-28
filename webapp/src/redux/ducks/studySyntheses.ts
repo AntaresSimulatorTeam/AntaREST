@@ -11,9 +11,14 @@ import {
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import { getStudySynthesis, getStudySynthesisIds } from "../selectors";
+import {
+  getStudyMapsIds,
+  getStudySynthesis,
+  getStudySynthesisIds,
+} from "../selectors";
 import { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
+import { setStudyMap } from "./studyMaps";
 
 export const studySynthesesAdapter =
   createEntityAdapter<FileStudyTreeConfigDTO>({
@@ -95,7 +100,7 @@ export const createStudySynthesis = createAsyncThunk<
   AppAsyncThunkConfig
 >(
   n("CREATE_STUDY_SYNTHESIS"),
-  async (studyId, { dispatch, getState, rejectWithValue }) => {
+  async (studyId, { dispatch, rejectWithValue }) => {
     try {
       // Fetch study synthesis data
       const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(
@@ -111,19 +116,23 @@ export const createStudySynthesis = createAsyncThunk<
 
 export const setStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO,
-  WSMessage<GenericInfo>,
+  FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
->(n("SET_STUDY_SYNTHESIS"), (event, { rejectWithValue }) => {
-  const { id } = event.payload;
-  return api.getStudySynthesis(id as string).catch(rejectWithValue);
+>(n("SET_STUDY_SYNTHESIS"), (studyId, { rejectWithValue }) => {
+  return api.getStudySynthesis(studyId).catch(rejectWithValue);
 });
 
 export const refreshStudySynthesis =
   (event: WSMessage<GenericInfo>): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    if (getStudySynthesisIds(state).indexOf(event.payload.id) !== -1) {
-      dispatch(setStudySynthesis(event));
+    const { id } = event.payload;
+    if (getStudySynthesisIds(state).includes(id)) {
+      dispatch(setStudySynthesis(id as string));
+
+      if (getStudyMapsIds(state).includes(id)) {
+        dispatch(setStudyMap(id as string));
+      }
     }
   };
 
