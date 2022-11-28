@@ -37,7 +37,7 @@ import useDebounce from "../../../../../../../hooks/useDebounce";
 import { appendCommands } from "../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studyDataSynthesis";
+import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
 import OutputFilters from "../../../common/OutputFilters";
 
 const DEBOUNCE_DELAY = 200;

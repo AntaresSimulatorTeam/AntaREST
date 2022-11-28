@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { LinkProperties, NodeProperties } from "../../../../../../common/types";
-import {
-  setCurrentArea,
-  setSelectedNodeLinks,
-} from "../../../../../../redux/ducks/studyDataSynthesis";
+import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 
 ////////////////////////////////////////////////////////////////
