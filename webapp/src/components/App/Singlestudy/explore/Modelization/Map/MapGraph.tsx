@@ -9,13 +9,8 @@ import {
   StudyMetadata,
 } from "../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  setSelectedLink,
-  setSelectedNode,
-} from "../../../../../../redux/ducks/studyDataSynthesis";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getMapNodes } from "../../../../../../redux/selectors";
 import { createLink } from "../../../../../../services/api/studydata";
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";

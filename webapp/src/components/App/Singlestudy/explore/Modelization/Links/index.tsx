@@ -1,49 +1,32 @@
 import { Box } from "@mui/material";
 import * as R from "ramda";
-import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import { LinkElement, StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../common/page/SimpleContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import LinkPropsView from "./LinkPropsView";
-import useStudyData from "../../hooks/useStudyData";
-import {
-  getCurrentLinkId,
-  selectLinks,
-} from "../../../../../../redux/selectors";
+import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { getCurrentLink } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentLink } from "../../../../../../redux/ducks/studyDataSynthesis";
+import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import LinkView from "./LinkView";
 
 function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const {
-    value: studyData,
-    error,
-    isLoading,
-  } = useStudyData({
-    studyId: study.id,
-    selector: selectLinks,
-  });
-  const currentLink = useAppSelector(getCurrentLinkId);
+  const { error, isLoading } = useStudySynthesis({ studyId: study.id });
+  const currentLink = useAppSelector((state) =>
+    getCurrentLink(state, study.id)
+  );
   const dispatch = useAppDispatch();
-  const selectedLink =
-    studyData && currentLink ? studyData[currentLink].name : undefined;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleLinkClick = (linkName: string): void => {
-    if (studyData === undefined) {
-      return;
-    }
-    const elm = studyData[linkName];
-    if (elm) {
-      dispatch(setCurrentLink(linkName));
-    }
+    dispatch(setCurrentLink(linkName));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -54,40 +37,34 @@ function Links() {
     <SplitLayoutView
       left={
         <Box width="100%" height="100%">
-          {studyData !== undefined && !isLoading && (
-            <LinkPropsView
-              studyId={study.id}
-              onClick={handleLinkClick}
-              currentLink={selectedLink || undefined}
-            />
-          )}
+          <LinkPropsView
+            studyId={study.id}
+            onClick={handleLinkClick}
+            currentLink={currentLink?.name}
+          />
         </Box>
       }
       right={
         <>
           {R.cond([
             // Loading
-            [() => isLoading, () => (<SimpleLoader />) as ReactNode],
+            [() => isLoading, () => <SimpleLoader />],
+            // Error
             [
               () => error !== undefined,
-              () => (<SimpleContent title={error?.message} />) as ReactNode,
+              () => <SimpleContent title={error?.message} />,
             ],
             // Link list
             [
-              () => selectedLink !== undefined,
-              () =>
-                (
-                  <Box width="100%" height="100%">
-                    {studyData === undefined ? (
-                      <SimpleLoader />
-                    ) : (
-                      <LinkView link={studyData[selectedLink as string]} />
-                    )}
-                  </Box>
-                ) as ReactNode,
+              () => !!currentLink,
+              () => (
+                <Box width="100%" height="100%">
+                  <LinkView link={currentLink as LinkElement} />
+                </Box>
+              ),
             ],
             // No Areas
-            [R.T, () => (<SimpleContent title="No Links" />) as ReactNode],
+            [R.T, () => <SimpleContent title="No Links" />],
           ])()}
         </>
       }

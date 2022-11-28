@@ -1,11 +1,6 @@
 import { useTranslation } from "react-i18next";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import {
-  setSelectedLink,
-  setSelectedNode,
-} from "../../../../../../../redux/ducks/studyDataSynthesis";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getSelectedNodeLinks } from "../../../../../../../redux/selectors";
 import {
   AreaLinkContainer,
   AreaLinkContent,

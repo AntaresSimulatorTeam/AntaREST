@@ -7,13 +7,7 @@ import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import { AreasContainer } from "../style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import {
-  getCurrentAreaId,
-  getMapNodes,
-  getSelectedLink,
-  getSelectedNode,
-} from "../../../../../../../redux/selectors";
-import { setSelectedNode } from "../../../../../../../redux/ducks/studyDataSynthesis";
+import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/textUtils";

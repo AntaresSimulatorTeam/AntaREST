@@ -23,7 +23,7 @@ import {
   AsyncEntityState,
   createThunk,
 } from "../utils";
-import { setDefaultAreaLinkSelection } from "./studyDataSynthesis";
+import { setDefaultAreaLinkSelection } from "./studySyntheses";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
