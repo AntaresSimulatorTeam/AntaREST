@@ -27,13 +27,7 @@ import {
 } from "./utils";
 import { MapContainer, MapHeader } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import {
-  getMapNodes,
-  getSelectedNode,
-  getStudyLinks,
-} from "../../../../../../redux/selectors";
-import useStudyData from "../../hooks/useStudyData";
-
+import { getLinks } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import {
   createMapNode,
@@ -60,7 +54,7 @@ function Map() {
 
   const selectedNode = useAppSelector(getSelectedNode);
   const mapNodes = useAppSelector(getMapNodes);
-  const studyLinks = useAppSelector((state) => getStudyLinks(state, study.id));
+  const studyLinks = useAppSelector((state) => getLinks(state, study.id));
   const mapLinks = useMemo(
     () =>
       R.map(
@@ -72,7 +66,7 @@ function Map() {
 
   useSetCurrentNode(selectedNode);
   useSetSelectedNodeLinks(selectedNode, mapLinks);
-  useStudyData({
+  useStudySynthesis({
     studyId: study.id,
     selector: (state) => ({
       areas: state.areas,

@@ -1,31 +1,27 @@
 import { useEffect, useState } from "react";
-import {
-  FileStudyTreeConfigDTO,
-  StudyMetadata,
-} from "../../../../../common/types";
-import { createStudyData } from "../../../../../redux/ducks/studyDataSynthesis";
-import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getStudyData } from "../../../../../redux/selectors";
+import { StudyMetadata } from "../../common/types";
+import { AppState } from "../ducks";
+import { createStudySynthesis } from "../ducks/studySyntheses";
+import useAppDispatch from "./useAppDispatch";
+import useAppSelector from "./useAppSelector";
+import { getStudySynthesis } from "../selectors";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
-  selector: (state: FileStudyTreeConfigDTO) => T;
+  selector?: (state: AppState) => T;
 }
 
-export default function useStudyData<T>(props: Props<T>): {
+export default function useStudySynthesis<T>(props: Props<T>): {
   value?: T;
   error?: Error;
   isLoading: boolean;
 } {
   const { studyId, selector } = props;
   const isSynthesisExist = useAppSelector(
-    (state) => !!getStudyData(state, studyId)
+    (state) => !!getStudySynthesis(state, studyId)
   );
   const value = useAppSelector((state) =>
-    isSynthesisExist
-      ? selector(getStudyData(state, studyId) as FileStudyTreeConfigDTO)
-      : undefined
+    isSynthesisExist && selector ? selector(state) : undefined
   );
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +30,7 @@ export default function useStudyData<T>(props: Props<T>): {
   useEffect(() => {
     if (!isSynthesisExist) {
       try {
-        dispatch(createStudyData(studyId)).unwrap();
+        dispatch(createStudySynthesis(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);
       } finally {

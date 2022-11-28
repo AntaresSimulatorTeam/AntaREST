@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import { updateStudyData } from "../../../../../../redux/ducks/studyDataSynthesis";
+import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import Form from "../../../../../common/Form";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
@@ -34,7 +34,7 @@ function AdvancedParameters() {
     return setAdvancedParamsFormFields(study.id, values).then(() => {
       if (values.renewableGenerationModelling) {
         dispatch(
-          updateStudyData({
+          updateStudySynthesis({
             id: study.id,
             changes: { enr_modelling: values.renewableGenerationModelling },
           })
