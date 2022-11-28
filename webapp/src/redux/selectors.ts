@@ -21,6 +21,7 @@ import {
 } from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
+import { studyMapsAdapter, StudyMapsState } from "./ducks/studyMaps";
 
 // TODO resultEqualityCheck
 
@@ -201,6 +202,12 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) =>
   synthesis ? Object.values(synthesis.areas) : []
 );
 
+export const getArea = createSelector(
+  getStudySynthesis,
+  (state: AppState, areaId: string) => areaId,
+  (synthesis, areaId) => synthesis?.areas[areaId]
+);
+
 export const getCurrentAreaId = (
   state: AppState
 ): StudySynthesesState["currentArea"] => {
@@ -335,6 +342,23 @@ export const getStudyOutput = createSelector(
     }
   }
 );
+
+////////////////////////////////////////////////////////////////
+// Study Maps
+////////////////////////////////////////////////////////////////
+
+export const getStudyMapsState = (state: AppState): StudyMapsState =>
+  state.studyMaps;
+
+const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
+
+export const getStudyMapsById = studyMapsSelectors.selectEntities;
+
+export const getStudyMapsIds = studyMapsSelectors.selectIds;
+
+export const getStudyMaps = studyMapsSelectors.selectAll;
+
+export const getStudyMap = studyMapsSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
 // UI
