@@ -26,7 +26,7 @@ export const getAllMiscRunningTasks = async (): Promise<Array<TaskDTO>> => {
       TaskStatus.FAILED,
       TaskStatus.COMPLETED,
     ],
-    type: ["COPY", "ARCHIVE", "UNARCHIVE", "SCAN"],
+    type: ["COPY", "ARCHIVE", "UNARCHIVE", "SCAN", "UPGRADE_STUDY"],
   });
   return res.data;
 };

@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal, call, ANY
+from unittest.mock import Mock, seal, call, ANY, patch
 from uuid import uuid4
 
 import pytest
@@ -20,7 +20,7 @@ from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskType, TaskDTO, TaskStatus
+from antarest.core.tasks.model import TaskType, TaskDTO, TaskStatus, TaskResult
 from antarest.login.model import User, Group, GroupDTO
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
@@ -84,6 +84,7 @@ from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from tests.conftest import with_db_context
 
 
 def build_study_service(
@@ -1602,4 +1603,142 @@ def test_get_save_logs(tmp_path: Path):
             RequestParameters(user=DEFAULT_ADMIN_USER),
         )
         == "some log 3"
+    )
+
+
+def test_task_upgrade_study(tmp_path: Path):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        name="my_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    study_mock.name = "my_study"
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    service.repository.get.return_value = study_mock
+
+    study_id = "my_study"
+    service.task_service.reset_mock()
+    service.task_service.list_tasks.side_effect = [
+        [
+            TaskDTO(
+                id="1",
+                name=f"Upgrade study my_study ({study_id}) to version 800",
+                status=TaskStatus.RUNNING,
+                creation_date_utc=str(datetime.utcnow()),
+                type=TaskType.UNARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [],
+    ]
+
+    with pytest.raises(TaskAlreadyRunning):
+        service.upgrade_study(
+            study_id,
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    service.upgrade_study(
+        study_id,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    service.task_service.add_task.assert_called_once_with(
+        ANY,
+        f"Upgrade study my_study ({study_id}) to version 800",
+        task_type=TaskType.UPGRADE_STUDY,
+        ref_id=study_id,
+        custom_event_messages=None,
+        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
+@with_db_context
+@patch("antarest.study.service.upgrade_study")
+def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    raw_study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        name="my_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    raw_study_mock.name = "my_study"
+    service.repository.get.return_value = raw_study_mock
+
+    study_id = "my_study"
+
+    res = service._upgrade_study(
+        study_id,
+        800,
+    )
+
+    upgrade_study_mock.assert_called_with(
+        tmp_path,
+        800,
+    )
+    assert res == TaskResult(
+        success=True,
+        message=f"Sucessfuly upgraded study {raw_study_mock.name} ({study_id}) to 800",
+    )
+
+    raw_managed_study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        name="my_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    raw_managed_study_mock.name = "my_study"
+    service.repository.get.return_value = raw_managed_study_mock
+    service.storage_service.raw_study_service.reset_mock()
+    file_study = Mock()
+    service.storage_service.raw_study_service.get_raw.return_value = file_study
+    file_study.tree = Mock()
+
+    study_id = "my_study"
+
+    res = service._upgrade_study(
+        study_id,
+        800,
+    )
+
+    upgrade_study_mock.assert_called_with(
+        tmp_path,
+        800,
+    )
+    file_study.tree.denormalize.assert_called_once()
+    file_study.tree.normalize.assert_called_once()
+    assert res == TaskResult(
+        success=True,
+        message=f"Sucessfuly upgraded study {raw_managed_study_mock.name} ({study_id}) to 800",
     )
