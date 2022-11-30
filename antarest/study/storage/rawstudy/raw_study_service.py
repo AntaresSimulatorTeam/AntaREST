@@ -4,6 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
+from threading import Thread
 from typing import Optional, IO, List
 from uuid import uuid4
 from zipfile import ZipFile
@@ -34,6 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.utils import (
     update_antares_info,
     get_default_workspace_path,
@@ -69,6 +71,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             cache=cache,
         )
         self.path_resources: Path = path_resources
+        self.cleanup_thread = Thread(
+            target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
+            daemon=True,
+        )
+        self.cleanup_thread.start()
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
@@ -466,3 +473,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 study.id,
                 exc_info=e,
             )
+
+    @staticmethod
+    def cleanup_lazynode_zipfilelist_cache() -> None:
+        while True:
+            logger.info(
+                f"Cleaning lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)"
+            )
+            LazyNode.ZIP_FILELIST_CACHE = {
+                key: LazyNode.ZIP_FILELIST_CACHE[key]
+                for key in LazyNode.ZIP_FILELIST_CACHE
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date
+                < datetime.utcnow()
+            }
+            logger.info(
+                f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)"
+            )
+            time.sleep(600)
