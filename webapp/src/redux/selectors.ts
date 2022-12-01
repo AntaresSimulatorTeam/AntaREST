@@ -1,10 +1,11 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import * as R from "ramda";
 import {
   AllClustersAndLinks,
   Area,
   Cluster,
   GroupDetailsDTO,
-  LinkListElement,
+  LinkElement,
   StudyMetadata,
   UserDetailsDTO,
 } from "../common/types";
@@ -217,11 +218,37 @@ export const getCurrentAreaId = (
 export const getCurrentArea = createSelector(
   getCurrentStudySynthesis,
   getCurrentAreaId,
-  (synthesis, areaId) => synthesis?.areas[areaId]
+  (synthesis, areaId) => {
+    if (synthesis?.areas[areaId]) {
+      return { id: areaId, ...synthesis?.areas[areaId] } as Area & {
+        id: string;
+      };
+    }
+  }
 );
 export const getMapNodes = (state: AppState): StudyDataState["nodes"] => {
   return getStudyDataState(state).nodes;
 };
+
+function makeLink(
+  area1: Area & { id: string },
+  area2: Area & { id: string }
+): LinkElement {
+  // The source is always the area that is first in alphabetical order
+  const [source, target] = R.sort(
+    (a, b) => a.id.localeCompare(b.id),
+    [area1, area2]
+  );
+  const id = `${source.id} / ${target.id}`;
+
+  return {
+    id, // For consistency
+    name: id,
+    label: `${source.name} / ${target.name}`,
+    area1: source.id,
+    area2: target.id,
+  };
+}
 
 export const getSelectedNodeLinks = (
   state: AppState
@@ -241,28 +268,19 @@ export const getStudyAreas = createSelector(getStudyData, (studyData) => {
 });
 
 export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
+  const links: LinkElement[] = [];
+
   if (synthesis) {
-    const links: LinkListElement = {};
-    Object.keys(synthesis.areas).forEach((elm1) => {
-      const area1 = synthesis.areas[elm1];
-      Object.keys(area1.links).forEach((elm2) => {
-        const area2 = synthesis.areas[elm2];
-        const area1Id = elm1.localeCompare(elm2) < 0 ? elm1 : elm2;
-        const area2Id = elm1 === area1Id ? elm2 : elm1;
-        const id = `${area1Id} / ${area2Id}`;
-        links[id] = {
-          id,
-          name: id,
-          label: `${area1.name} / ${area2.name}`,
-          area1: area1Id,
-          area2: area2Id,
-        };
+    Object.keys(synthesis.areas).forEach((id1) => {
+      const area1 = { id: id1, ...synthesis.areas[id1] };
+      Object.keys(area1.links).forEach((id2) => {
+        const area2 = { id: id2, ...synthesis.areas[id2] };
+        links.push(makeLink(area1, area2));
       });
     });
-
-    return Object.values(links);
   }
-  return [];
+
+  return links;
 });
 
 export const getCurrentLinkId = (
@@ -275,6 +293,20 @@ export const getCurrentLink = createSelector(
   getLinks,
   getCurrentLinkId,
   (links, linkId) => links.find((link) => link.name === linkId)
+);
+
+export const getCurrentAreaLinks = createSelector(
+  getCurrentStudySynthesis,
+  getCurrentArea,
+  (currStudySynthesis, currArea) => {
+    if (currStudySynthesis && currArea) {
+      return Object.keys(currArea.links).map((areaID) => {
+        const area = { id: areaID, ...currStudySynthesis.areas[areaID] };
+        return makeLink(currArea, area);
+      });
+    }
+    return [];
+  }
 );
 
 export const getCurrentBindingConstId = (
