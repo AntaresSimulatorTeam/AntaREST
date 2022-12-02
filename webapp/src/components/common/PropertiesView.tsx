@@ -28,7 +28,7 @@ function PropertiesView(props: PropsType) {
       }}
     >
       {onSearchFilterChange && (
-        <SearchFE setSearchValue={onSearchFilterChange} />
+        <SearchFE onSearchValueChange={onSearchFilterChange} />
       )}
       {mainContent}
       {secondaryContent}

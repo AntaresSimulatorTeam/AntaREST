@@ -35,7 +35,7 @@ function Header(props: Props) {
           mb: "5px",
         }}
       >
-        <SearchFE sx={{ m: 0 }} setSearchValue={setSearchValue} />
+        <SearchFE sx={{ m: 0 }} onSearchValueChange={setSearchValue} />
         <Button
           startIcon={<PersonAddAltIcon />}
           variant="outlined"
