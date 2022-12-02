@@ -53,5 +53,6 @@ class OutputSimulationSet(FolderNode):
         return {
             child: children[child]
             for child in children
-            if cast(AreaOutputSeriesMatrix, children[child]).file_exists()
+            # this takes way too long... see above todo to prevent needing this
+            # if cast(AreaOutputSeriesMatrix, children[child]).file_exists()
         }

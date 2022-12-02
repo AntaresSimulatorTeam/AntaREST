@@ -56,5 +56,6 @@ class OutputSimulationLinkItem(FolderNode):
         return {
             child: children[child]
             for child in children
-            if cast(LinkOutputSeriesMatrix, children[child]).file_exists()
+            # this takes way too long... see above todo to prevent needing this
+            # if cast(LinkOutputSeriesMatrix, children[child]).file_exists()
         }
