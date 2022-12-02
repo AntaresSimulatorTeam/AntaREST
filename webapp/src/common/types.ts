@@ -454,6 +454,7 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 export interface LinkElement {
+  id: string;
   label: string;
   name: string;
   area1: string;

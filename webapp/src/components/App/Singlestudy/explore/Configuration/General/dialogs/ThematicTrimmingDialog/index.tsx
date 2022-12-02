@@ -88,7 +88,7 @@ function ThematicTrimmingDialog(props: Props) {
             <SearchFE
               sx={{ m: 0 }}
               value={search}
-              setSearchValue={setSearch}
+              onSearchValueChange={setSearch}
               size="small"
             />
             <Box sx={{ display: "flex", gap: 1 }}>

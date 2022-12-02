@@ -1,6 +1,7 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import {
   AllClustersAndLinks,
+  Area,
   Cluster,
   FileStudyTreeConfigDTO,
   GroupDetailsDTO,
@@ -196,9 +197,16 @@ export const getCurrentLinkId = (
   return getStudyDataState(state).currentLink;
 };
 
-export const getStudyAreas = createSelector(getStudyData, (studyData) =>
-  studyData ? Object.values(studyData.areas) : []
-);
+export const getStudyAreas = createSelector(getStudyData, (studyData) => {
+  if (studyData) {
+    // studyData ? Object.values(studyData.areas) :
+    return Object.keys(studyData.areas).map((id) => ({
+      ...studyData.areas[id],
+      id,
+    })) as Array<Area & { id: string }>;
+  }
+  return [];
+});
 
 export const selectLinks = (
   studyData: FileStudyTreeConfigDTO | undefined
@@ -211,10 +219,11 @@ export const selectLinks = (
         const area2 = studyData.areas[elm2];
         const area1Id = elm1.localeCompare(elm2) < 0 ? elm1 : elm2;
         const area2Id = elm1 === area1Id ? elm2 : elm1;
-        const name = `${area1Id} / ${area2Id}`;
-        links[name] = {
+        const id = `${area1Id} / ${area2Id}`;
+        links[id] = {
+          id,
+          name: id,
           label: `${area1.name} / ${area2.name}`,
-          name,
           area1: area1Id,
           area2: area2Id,
         };
@@ -291,6 +300,16 @@ export const selectLinksAndClusters = (
 export const getLinksAndClusters = createSelector(
   getStudyData,
   selectLinksAndClusters
+);
+
+export const getStudyOutput = createSelector(
+  getStudyData,
+  (state: AppState, outputId: string) => outputId,
+  (synthesis, outputId) => {
+    if (synthesis?.outputs[outputId]) {
+      return { id: outputId, ...synthesis?.outputs[outputId] };
+    }
+  }
 );
 
 ////////////////////////////////////////////////////////////////

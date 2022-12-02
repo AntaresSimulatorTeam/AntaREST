@@ -347,12 +347,14 @@ function StudiesList(props: StudiesListProps) {
           {({ height, width }) => {
             const paddedWidth = width - 10;
             const columnWidth =
-              paddedWidth / Math.floor(paddedWidth / CARD_TARGET_WIDTH);
+              paddedWidth /
+              Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
             const columnCount = Math.floor(paddedWidth / columnWidth);
             const rowHeight = CARD_HEIGHT;
+
             return (
               <FixedSizeGrid
-                key={JSON.stringify(studyIds)}
+                key={studyIds.join()}
                 columnCount={columnCount}
                 columnWidth={columnWidth}
                 height={height}
