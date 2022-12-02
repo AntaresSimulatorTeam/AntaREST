@@ -2,27 +2,35 @@ import { Box, Button, Typography } from "@mui/material";
 import { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import { StudyMetadata } from "../../../../../../../common/types";
+import { useOutletContext } from "react-router";
+import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
 import {
-  getSelectedLink,
-  getSelectedNode,
-} from "../../../../../../../redux/selectors";
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import {
+  deleteArea,
+  deleteLink,
+} from "../../../../../../../services/api/studydata";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import { AreaDeleteIcon } from "../style";
 
-function DeleteAreaDialog() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+interface Props {
+  currentLink?: LinkElement;
+  currentArea?: AreaNode | undefined;
+}
+
+function DeleteAreaDialog(props: Props) {
+  const { currentLink, currentArea } = props;
   const [t] = useTranslation();
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<boolean>(false);
-  const selectedNode = useAppSelector(getSelectedNode);
-  const selectedLink = useAppSelector(getSelectedLink);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -30,11 +38,10 @@ function DeleteAreaDialog() {
 
   const handleDelete = async () => {
     // Delete node
-    if (selectedNode) {
+    if (currentArea && !currentLink) {
       try {
-        await dispatch(
-          deleteMapNode({ studyId: study.id, source: selectedNode.id })
-        );
+        await deleteArea(study.id, currentArea.id);
+        dispatch(setCurrentArea(""));
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.deleteAreaOrLink"),
@@ -43,15 +50,10 @@ function DeleteAreaDialog() {
       }
     }
     // Delete link
-    if (selectedLink) {
+    if (currentLink && !currentArea) {
       try {
-        await dispatch(
-          deleteMapLink({
-            studyId: study.id,
-            source: selectedLink.source,
-            target: selectedLink.target,
-          })
-        );
+        await deleteLink(study.id, currentLink.area1, currentLink.area2);
+        dispatch(setCurrentLink(""));
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.deleteAreaOrLink"),
@@ -80,8 +82,8 @@ function DeleteAreaDialog() {
           color="primary"
           size="small"
           onClick={() => {
-            dispatch(setSelectedNode(undefined));
-            dispatch(setSelectedLink(undefined));
+            dispatch(setCurrentArea(""));
+            dispatch(setCurrentLink(""));
           }}
         >
           {t("button.back")}
@@ -96,8 +98,8 @@ function DeleteAreaDialog() {
           open
         >
           <Typography sx={{ p: 3 }}>
-            {selectedNode && t("study.question.deleteArea")}
-            {selectedLink && t("study.question.deleteLink")}
+            {currentArea && t("study.question.deleteArea")}
+            {currentLink && t("study.question.deleteLink")}
           </Typography>
         </ConfirmationDialog>
       )}

@@ -44,7 +44,7 @@ function Areas() {
           <AreaPropsView
             studyId={study.id}
             onClick={handleAreaClick}
-            currentArea={currentArea?.name}
+            currentArea={currentArea?.id}
           />
         </Box>
       }

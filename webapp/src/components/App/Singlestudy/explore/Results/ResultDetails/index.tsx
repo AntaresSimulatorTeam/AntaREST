@@ -20,8 +20,9 @@ import {
 import usePromise, { PromiseStatus } from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
-  getStudyAreas,
-  getStudyLinks,
+  getAreas,
+  getLinks,
+  getStudyOutput,
 } from "../../../../../../redux/selectors";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/textUtils";
@@ -29,19 +30,18 @@ import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
-import useStudyData from "../../hooks/useStudyData";
 import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
 import { createPath, DataType, OutputItemType, Timestep } from "./utils";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { outputId } = useParams();
 
-  const { value: output, isLoading: isOutputLoading } = useStudyData({
+  const { value: output, isLoading: isOutputLoading } = useStudySynthesis({
     studyId: study.id,
-    selector: (state) => state.outputs[outputId as string],
-    // selector: (state) => getStudyOutput(state, outputId),
+    selector: (state) => getStudyOutput(state, outputId as string),
   });
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimeStep] = useState(Timestep.Hourly);
@@ -54,8 +54,8 @@ function ResultDetails() {
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas
-      ? getStudyAreas(state, study.id)
-      : getStudyLinks(state, study.id)
+      ? getAreas(state, study.id)
+      : getLinks(state, study.id)
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
