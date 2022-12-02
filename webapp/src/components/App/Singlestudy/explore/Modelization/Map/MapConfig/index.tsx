@@ -1,4 +1,5 @@
 import { Button } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import UnderConstruction from "../../../../../../common/page/UnderConstruction";
 
@@ -11,7 +12,12 @@ function MapConfig({ onClose }: Props) {
 
   return (
     <>
-      <Button color="primary" size="small" onClick={onClose}>
+      <Button
+        color="secondary"
+        size="small"
+        onClick={onClose}
+        startIcon={<ArrowBackIcon color="secondary" />}
+      >
         {t("button.back")}
       </Button>
       <UnderConstruction />

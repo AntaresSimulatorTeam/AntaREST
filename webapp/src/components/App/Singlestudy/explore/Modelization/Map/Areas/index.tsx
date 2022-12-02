@@ -1,44 +1,47 @@
 import { useEffect, useState } from "react";
-import {
-  NodeProperties,
-  UpdateAreaUi,
-} from "../../../../../../../common/types";
+import { useOutletContext } from "react-router-dom";
+import { StudyMetadata, UpdateAreaUi } from "../../../../../../../common/types";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import { AreasContainer } from "../style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import {
+  getCurrentLink,
+  getCurrentStudyMapNode,
+} from "../../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/textUtils";
+import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
+import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
   onAdd: () => void;
   updateUI: (id: string, value: UpdateAreaUi) => void;
+  nodes: AreaNode[];
 }
 
 function Areas(props: Props) {
-  const { onAdd, updateUI } = props;
+  const { onAdd, updateUI, nodes } = props;
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
-  const mapNodes = useAppSelector(getMapNodes);
-  const selectedNode = useAppSelector(getSelectedNode);
-  const selectedLink = useAppSelector(getSelectedLink);
-  const currentNode = useAppSelector(getCurrentAreaId);
-  const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>([]);
+  const [filteredNodes, setFilteredNodes] = useState<Array<AreaNode>>([]);
   const [searchValue, setSearchValue] = useState("");
+  const currentLink = useAppSelector((state) =>
+    getCurrentLink(state, study.id)
+  );
+  const currentArea = useAppSelector(getCurrentStudyMapNode);
 
   useEffect(() => {
-    const filter = (): NodeProperties[] => {
-      if (mapNodes) {
-        return mapNodes.filter((node) =>
-          isSearchMatching(searchValue, node.id)
-        );
+    const filter = (): AreaNode[] => {
+      if (nodes) {
+        return nodes.filter((node) => isSearchMatching(searchValue, node.id));
       }
       return [];
     };
 
     setFilteredNodes(filter());
-  }, [mapNodes, searchValue]);
+  }, [nodes, searchValue]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -47,35 +50,34 @@ function Areas(props: Props) {
   return (
     <PropertiesView
       mainContent={
-        selectedNode ? (
+        currentArea ? (
           <AreasContainer>
-            <AreaConfig node={selectedNode} updateUI={updateUI} />
+            <AreaConfig currentArea={currentArea} updateUI={updateUI} />
           </AreasContainer>
         ) : (
-          selectedLink && (
+          currentLink && (
             <AreasContainer>
-              <AreaConfig updateUI={updateUI} />
+              <AreaConfig updateUI={updateUI} currentLink={currentLink} />
             </AreasContainer>
           )
         )
       }
       secondaryContent={
         filteredNodes &&
-        !selectedLink &&
-        !selectedNode && (
+        !currentLink &&
+        !currentArea && (
           <ListElement
-            currentElement={currentNode.toUpperCase()} // TODO replace
             setSelectedItem={(node) => {
-              dispatch(setSelectedNode(node));
+              dispatch(setCurrentArea(node.id));
             }}
             list={filteredNodes}
           />
         )
       }
-      onSearchFilterChange={(searchedNodes) => {
-        setSearchValue(searchedNodes);
+      onSearchFilterChange={(searchValue) => {
+        setSearchValue(searchValue);
       }}
-      onAdd={!selectedNode ? onAdd : undefined}
+      onAdd={!currentArea ? onAdd : undefined}
     />
   );
 }
