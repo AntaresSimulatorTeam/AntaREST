@@ -4,20 +4,27 @@ import {
   createReducer,
   EntityState,
 } from "@reduxjs/toolkit";
-import { Area, StudyMetadata } from "../../common/types";
+import {
+  Area,
+  AreaInfoDTO,
+  StudyMetadata,
+  UpdateAreaUi,
+} from "../../common/types";
 import { AppAsyncThunkConfig } from "../store";
 import { makeActionName } from "../utils";
 import * as api from "../../services/api/study";
 import {
   getNodeWidth,
+  NODE_COLOR,
   NODE_HEIGHT,
 } from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
 import { AppState } from ".";
 import { getArea } from "../selectors";
+import { createArea, updateAreaUI } from "../../services/api/studydata";
 
 export interface AreaNode {
   id: string;
-  areaName: string;
+  name: string;
   x: number;
   y: number;
   color: string;
@@ -28,7 +35,7 @@ export interface AreaNode {
 
 export interface StudyMap {
   studyId: StudyMetadata["id"];
-  nodes: AreaNode[];
+  nodes: Record<AreaNode["id"], AreaNode>;
 }
 
 export const studyMapsAdapter = createEntityAdapter<StudyMap>({
@@ -45,8 +52,6 @@ const n = makeActionName("studyMaps");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-// TODO
-
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
@@ -54,23 +59,23 @@ const n = makeActionName("studyMaps");
 async function getNodes(
   state: AppState,
   studyId: StudyMetadata["id"]
-): Promise<AreaNode[]> {
+): Promise<StudyMap["nodes"]> {
   const areaPositions = await api.getAreaPositions(studyId);
-  return Object.keys(areaPositions).map((areaId) => {
+  return Object.keys(areaPositions).reduce((acc, areaId) => {
     const { ui } = areaPositions[areaId];
     const rgb = [ui.color_r, ui.color_g, ui.color_b];
-    const area = getArea(state, areaId) as Area;
-
-    return {
+    const area = getArea(state, studyId, areaId) as Area;
+    acc[areaId] = {
       id: areaId,
-      areaName: area.name,
+      name: area.name,
       x: ui.x,
       y: ui.y,
       color: `rgb(${rgb.join(", ")})`,
       rgbColor: rgb,
       size: { width: getNodeWidth(areaId), height: NODE_HEIGHT },
     };
-  });
+    return acc;
+  }, {} as StudyMap["nodes"]);
 }
 
 export const createStudyMap = createAsyncThunk<
@@ -82,6 +87,46 @@ export const createStudyMap = createAsyncThunk<
     return { studyId, nodes: await getNodes(getState(), studyId) };
   } catch (err) {
     return rejectWithValue(err);
+  }
+});
+
+export const createStudyMapNode = createAsyncThunk<
+  {
+    newArea: AreaInfoDTO;
+    studyId: StudyMetadata["id"];
+  },
+  { name: AreaInfoDTO["name"]; studyId: StudyMetadata["id"] },
+  AppAsyncThunkConfig
+>(n("CREATE_STUDY_MAP_NODE"), async (data, { rejectWithValue }) => {
+  try {
+    const { studyId, name } = data;
+    const newArea = await createArea(studyId, name);
+    return { newArea, studyId };
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
+export const updateStudyMapNode = createAsyncThunk<
+  {
+    studyId: StudyMetadata["id"];
+    nodeId: AreaNode["id"];
+    nodeUI: UpdateAreaUi;
+  },
+  {
+    studyId: StudyMetadata["id"];
+    nodeId: AreaNode["id"];
+    nodeUI: UpdateAreaUi;
+  },
+  AppAsyncThunkConfig
+>(n("UPDATE_STUDY_MAP_NODE"), async (data, { rejectWithValue }) => {
+  const { studyId, nodeId, nodeUI } = data;
+
+  try {
+    await updateAreaUI(studyId, nodeId, nodeUI);
+    return { studyId, nodeId, nodeUI };
+  } catch (error) {
+    return rejectWithValue(error);
   }
 });
 
@@ -104,5 +149,41 @@ export const setStudyMap = createAsyncThunk<
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(createStudyMap.fulfilled, studyMapsAdapter.addOne)
-    .addCase(setStudyMap.fulfilled, studyMapsAdapter.setOne);
+    .addCase(setStudyMap.fulfilled, studyMapsAdapter.setOne)
+    .addCase(createStudyMapNode.fulfilled, (draftState, action) => {
+      const { studyId, newArea } = action.payload;
+      const entity = draftState.entities[studyId];
+      if (entity) {
+        entity.nodes[newArea.id] = {
+          id: newArea.id,
+          name: newArea.name,
+          x: 0,
+          y: 0,
+          color: NODE_COLOR,
+          rgbColor: NODE_COLOR.slice(4, -1).split(",").map(Number),
+          size: {
+            width: getNodeWidth(newArea.name),
+            height: NODE_HEIGHT,
+          },
+        };
+      }
+    })
+    .addCase(updateStudyMapNode.fulfilled, (draftState, action) => {
+      const { studyId, nodeId, nodeUI } = action.payload;
+
+      const entity = draftState.entities[studyId];
+      if (entity) {
+        entity.nodes[nodeId] = {
+          ...entity.nodes[nodeId],
+          x: nodeUI.x,
+          y: nodeUI.y,
+          color: `rgb(${nodeUI.color_rgb[0]}, ${nodeUI.color_rgb[1]}, ${nodeUI.color_rgb[2]})`,
+          rgbColor: [
+            nodeUI.color_rgb[0],
+            nodeUI.color_rgb[1],
+            nodeUI.color_rgb[2],
+          ],
+        };
+      }
+    });
 });

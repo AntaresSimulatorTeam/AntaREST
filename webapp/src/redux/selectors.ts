@@ -1,5 +1,4 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import {
   AllClustersAndLinks,
   Area,
@@ -205,7 +204,7 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) =>
 
 export const getArea = createSelector(
   getStudySynthesis,
-  (state: AppState, areaId: string) => areaId,
+  (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
   (synthesis, areaId) => synthesis?.areas[areaId]
 );
 
@@ -226,60 +225,25 @@ export const getCurrentArea = createSelector(
     }
   }
 );
-export const getMapNodes = (state: AppState): StudyDataState["nodes"] => {
-  return getStudyDataState(state).nodes;
-};
-
-function makeLink(
-  area1: Area & { id: string },
-  area2: Area & { id: string }
-): LinkElement {
-  // The source is always the area that is first in alphabetical order
-  const [source, target] = R.sort(
-    (a, b) => a.id.localeCompare(b.id),
-    [area1, area2]
-  );
-  const id = `${source.id} / ${target.id}`;
-
-  return {
-    id, // For consistency
-    name: id,
-    label: `${source.name} / ${target.name}`,
-    area1: source.id,
-    area2: target.id,
-  };
-}
-
-export const getSelectedNodeLinks = (
-  state: AppState
-): StudyDataState["selectedNodeLinks"] => {
-  return getStudyDataState(state).selectedNodeLinks;
-};
-
-export const getStudyAreas = createSelector(getStudyData, (studyData) => {
-  if (studyData) {
-    // studyData ? Object.values(studyData.areas) :
-    return Object.keys(studyData.areas).map((id) => ({
-      ...studyData.areas[id],
-      id,
-    })) as Array<Area & { id: string }>;
-  }
-  return [];
-});
 
 export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
   const links: LinkElement[] = [];
-
   if (synthesis) {
     Object.keys(synthesis.areas).forEach((id1) => {
       const area1 = { id: id1, ...synthesis.areas[id1] };
       Object.keys(area1.links).forEach((id2) => {
         const area2 = { id: id2, ...synthesis.areas[id2] };
-        links.push(makeLink(area1, area2));
+        const id = `${area1.id} / ${area2.id}`;
+        links.push({
+          id, // For consistency
+          name: id,
+          label: `${area1.name} / ${area2.name}`,
+          area1: area1.id,
+          area2: area2.id,
+        });
       });
     });
   }
-
   return links;
 });
 
@@ -297,13 +261,14 @@ export const getCurrentLink = createSelector(
 
 export const getCurrentAreaLinks = createSelector(
   getCurrentStudySynthesis,
-  getCurrentArea,
-  (currStudySynthesis, currArea) => {
-    if (currStudySynthesis && currArea) {
-      return Object.keys(currArea.links).map((areaID) => {
-        const area = { id: areaID, ...currStudySynthesis.areas[areaID] };
-        return makeLink(currArea, area);
-      });
+  getLinks,
+  getCurrentAreaId,
+  (currStudySynthesis, links, currAreaId) => {
+    if (currStudySynthesis && links && currAreaId) {
+      const areaLinks = links.filter(
+        (link) => link.area1 === currAreaId || link.area2 === currAreaId
+      );
+      return areaLinks;
     }
     return [];
   }
@@ -366,7 +331,7 @@ export const getLinksAndClusters = createSelector(
 );
 
 export const getStudyOutput = createSelector(
-  getStudyData,
+  getStudySynthesis,
   (state: AppState, outputId: string) => outputId,
   (synthesis, outputId) => {
     if (synthesis?.outputs[outputId]) {
@@ -391,6 +356,18 @@ export const getStudyMapsIds = studyMapsSelectors.selectIds;
 export const getStudyMaps = studyMapsSelectors.selectAll;
 
 export const getStudyMap = studyMapsSelectors.selectById;
+
+export const getStudyMapNodes = createSelector(getStudyMap, (studyMap) =>
+  Object.values(studyMap?.nodes || {})
+);
+
+export const getCurrentStudyMapNode = createSelector(
+  getStudyMapsById,
+  getCurrentStudyId,
+  getCurrentAreaId,
+  (studyMapsById, currentStudyId, currentAreaId) =>
+    studyMapsById[currentStudyId]?.nodes[currentAreaId]
+);
 
 ////////////////////////////////////////////////////////////////
 // UI

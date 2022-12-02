@@ -1,4 +1,4 @@
-import { Box, TextField, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import OutputFilters from "../../../common/OutputFilters";
 import { UseFormReturnPlus } from "../../../../../../common/Form/types";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
 
 interface Props extends UseFormReturnPlus<PropertiesFields> {
   studyId: string;
@@ -21,8 +22,7 @@ interface Props extends UseFormReturnPlus<PropertiesFields> {
 }
 
 export default function PropertiesForm(props: Props) {
-  const { control, getValues, defaultValues, studyId, areaName, studyVersion } =
-    props;
+  const { control, getValues, studyId, areaName, studyVersion } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const adequacyPatchModeOptions = ["inside", "outside", "virtual"].map(
@@ -59,18 +59,15 @@ export default function PropertiesForm(props: Props) {
         }}
       >
         <Fieldset legend={t("global.general")}>
-          <TextField
+          <StringFE
             label={t("study.modelization.map.areaName")}
             variant="filled"
-            value={defaultValues?.name}
-            InputLabelProps={
-              defaultValues?.name !== undefined ? { shrink: true } : {}
-            }
+            name="name"
+            control={control}
             disabled
           />
           <ColorPickerFE
             name="color"
-            value={defaultValues?.color}
             control={control}
             rules={{
               onAutoSubmit: (value) => {
@@ -91,10 +88,6 @@ export default function PropertiesForm(props: Props) {
             name="posX"
             label={t("study.modelization.posX")}
             variant="filled"
-            placeholder={defaultValues?.posX?.toString()}
-            InputLabelProps={
-              defaultValues?.posX !== undefined ? { shrink: true } : {}
-            }
             control={control}
             rules={{
               onAutoSubmit: (value) => handleAutoSubmit(path.posX, value),
@@ -104,10 +97,6 @@ export default function PropertiesForm(props: Props) {
             name="posY"
             label={t("study.modelization.posY")}
             variant="filled"
-            placeholder={defaultValues?.posY?.toString()}
-            InputLabelProps={
-              defaultValues?.posY !== undefined ? { shrink: true } : {}
-            }
             control={control}
             rules={{
               onAutoSubmit: (value) => handleAutoSubmit(path.posY, value),
@@ -143,12 +132,6 @@ export default function PropertiesForm(props: Props) {
                   name="energieCostUnsupplied"
                   label={t("study.modelization.nodeProperties.unsupplied")}
                   variant="filled"
-                  placeholder={defaultValues?.energieCostUnsupplied?.toString()}
-                  InputLabelProps={
-                    defaultValues?.energieCostUnsupplied !== undefined
-                      ? { shrink: true }
-                      : {}
-                  }
                   control={control}
                   rules={{
                     onAutoSubmit: (value) =>
@@ -160,12 +143,6 @@ export default function PropertiesForm(props: Props) {
                   sx={{ mx: 1 }}
                   label={t("study.modelization.nodeProperties.splilled")}
                   variant="filled"
-                  placeholder={defaultValues?.energieCostSpilled?.toString()}
-                  InputLabelProps={
-                    defaultValues?.energieCostSpilled !== undefined
-                      ? { shrink: true }
-                      : {}
-                  }
                   control={control}
                   rules={{
                     onAutoSubmit: (value) =>
