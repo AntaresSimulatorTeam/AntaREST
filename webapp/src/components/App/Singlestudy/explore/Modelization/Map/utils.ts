@@ -1,7 +1,4 @@
-import { useEffect } from "react";
-import { LinkProperties, NodeProperties } from "../../../../../../common/types";
-import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -49,8 +46,8 @@ export const getNodeWidth = (nodeText: string): number => {
 
 export function getUpdatedNode(
   id: string,
-  nodeData: NodeProperties[]
-): NodeProperties | undefined {
+  nodeData: AreaNode[]
+): AreaNode | undefined {
   return nodeData.find((node) => node.id === id);
 }
 
@@ -72,8 +69,8 @@ const getContrastRatio = (colorA: RGB, colorB: RGB): number => {
 };
 
 export const getTextColor = (bgColor: RGB): string => {
-  const whiteContrast = getContrastRatio(bgColor, [255, 255, 255]);
-  const blackContrast = getContrastRatio(bgColor, [0, 0, 0]);
+  const whiteContrast = getContrastRatio(bgColor || [], [255, 255, 255]);
+  const blackContrast = getContrastRatio(bgColor || [], [0, 0, 0]);
 
   return whiteContrast > blackContrast ? "#ffffff" : "#000000";
 };
@@ -83,49 +80,13 @@ export const getTextColor = (bgColor: RGB): string => {
 ////////////////////////////////////////////////////////////////
 
 /**
- * When a node is clicked sets the current selected node
- */
-export function useSetCurrentNode(
-  selectedNode: NodeProperties | undefined
-): void {
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (selectedNode) {
-      // dispatch(setSelectedLink(undefined));
-      dispatch(setCurrentArea(selectedNode.id));
-    }
-  }, [dispatch, selectedNode]);
-}
-
-/**
- * When a node is clicked sets the links for this node
- */
-export function useSetSelectedNodeLinks(
-  selectedNode: NodeProperties | undefined,
-  mapLinks: LinkProperties[]
-): void {
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (selectedNode) {
-      const nodeLinks = mapLinks.filter(
-        (link) =>
-          link.source === selectedNode.id || link.target === selectedNode.id
-      );
-      dispatch(setSelectedNodeLinks(nodeLinks));
-    }
-  }, [selectedNode, mapLinks, dispatch]);
-}
-
-/**
  * Sets the graph nodes from the nodes data
  */
 export function useRenderNodes(
-  nodes: NodeProperties[],
+  nodes: AreaNode[],
   width: number,
   height: number
-): NodeProperties[] {
+): AreaNode[] {
   // compute center offset with scale fix on x axis
   const centerVector = { x: width / INITIAL_ZOOM / 2, y: height / 2 };
   // get real center from origin enclosing rectangle
