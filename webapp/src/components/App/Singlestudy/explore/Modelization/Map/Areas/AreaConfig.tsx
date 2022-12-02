@@ -2,53 +2,47 @@ import { useEffect, useState } from "react";
 import { ColorResult, MaterialPicker } from "react-color";
 import { Box, TextField, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import {
-  NodeProperties,
-  UpdateAreaUi,
-} from "../../../../../../../common/types";
+import { LinkElement, UpdateAreaUi } from "../../../../../../../common/types";
 import AreaLinks from "./AreaLinks";
 
 import AreaLink from "./AreaLink";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import {
-  getSelectedLink,
-  getSelectedNode,
-} from "../../../../../../../redux/selectors";
+
 import { AreaColorPicker, AreaHuePicker } from "../style";
 import DeleteAreaDialog from "./DeleteAreaDialog";
+import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
-  node?: NodeProperties;
+  node?: AreaNode;
   updateUI: (id: string, value: UpdateAreaUi) => void;
+  currentLink?: LinkElement;
+  currentArea?: AreaNode | undefined;
 }
 
 function AreaConfig(props: Props) {
   const [t] = useTranslation();
-  const { node, updateUI } = props;
+  const { node, updateUI, currentLink, currentArea } = props;
   const [currentColor, setCurrentColor] = useState<string>(node?.color || "");
-  const selectedNode = useAppSelector(getSelectedNode);
-  const selectedLink = useAppSelector(getSelectedLink);
 
   useEffect(() => {
-    if (selectedNode?.color) {
-      setCurrentColor(selectedNode.color);
+    if (currentArea?.color) {
+      setCurrentColor(currentArea.color);
     }
-  }, [selectedNode]);
+  }, [currentArea]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleChangeColor = (color: ColorResult) => {
-    if (selectedNode) {
+    if (currentArea) {
       setCurrentColor(`rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`);
-      updateUI(selectedNode.id, {
-        x: selectedNode.x,
-        y: selectedNode.y,
+      updateUI(currentArea.id, {
+        x: currentArea.x,
+        y: currentArea.y,
         color_rgb:
           color.rgb !== null
             ? [color.rgb.r, color.rgb.g, color.rgb.b]
-            : selectedNode.color.slice(4, -1).split(",").map(Number),
+            : currentArea.color.slice(4, -1).split(",").map(Number),
       });
     }
   };
@@ -68,7 +62,7 @@ function AreaConfig(props: Props) {
         mb: 1,
       }}
     >
-      {selectedNode && (
+      {currentArea && (
         <Box
           sx={{
             width: "100%",
@@ -83,7 +77,7 @@ function AreaConfig(props: Props) {
             sx={{ mt: 1 }}
             label={t("study.modelization.map.areaName")}
             variant="filled"
-            value={selectedNode.name}
+            value={currentArea.name}
             disabled
           />
           <AreaHuePicker
@@ -98,10 +92,10 @@ function AreaConfig(props: Props) {
           </AreaColorPicker>
         </Box>
       )}
-      {selectedNode && <AreaLinks />}
-      {selectedLink && <AreaLink />}
+      {currentArea && <AreaLinks />}
+      {currentLink && <AreaLink currentLink={currentLink} />}
       <Divider sx={{ height: "1px", width: "90%", mt: 1, mb: 1.5 }} />
-      <DeleteAreaDialog />
+      <DeleteAreaDialog currentArea={currentArea} currentLink={currentLink} />
     </Box>
   );
 }

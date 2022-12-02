@@ -1,6 +1,13 @@
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+import { StudyMetadata } from "../../../../../../../common/types";
+import {
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaLinks } from "../../../../../../../redux/selectors";
 import {
   AreaLinkContainer,
   AreaLinkContent,
@@ -11,7 +18,10 @@ import {
 function AreaLinks() {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const selectedNodeLinks = useAppSelector(getSelectedNodeLinks);
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const areaLinks = useAppSelector((state) =>
+    getCurrentAreaLinks(state, study.id)
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -19,19 +29,19 @@ function AreaLinks() {
 
   return (
     <AreaLinkRoot>
-      {selectedNodeLinks.length >= 1 && (
+      {areaLinks && areaLinks.length >= 1 && (
         <AreaLinkTitle>{t("study.links")}</AreaLinkTitle>
       )}
-      {selectedNodeLinks &&
-        selectedNodeLinks.map(({ source, target }) => (
-          <AreaLinkContainer key={`${source}${target}`}>
+      {areaLinks &&
+        areaLinks.map(({ area1, area2 }) => (
+          <AreaLinkContainer key={`${area1}${area2}`}>
             <AreaLinkContent
               onClick={() => {
-                dispatch(setSelectedNode(undefined));
-                dispatch(setSelectedLink({ source, target }));
+                dispatch(setCurrentArea(""));
+                dispatch(setCurrentLink(`${area1} / ${area2}`));
               }}
             >
-              {source} / {target}
+              {area1} / {area2}
             </AreaLinkContent>
           </AreaLinkContainer>
         ))}

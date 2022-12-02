@@ -10,7 +10,6 @@ import * as RA from "ramda-adjunct";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
   LinkProperties,
-  NodeProperties,
   StudyMetadata,
   UpdateAreaUi,
 } from "../../../../../../common/types";
@@ -20,21 +19,22 @@ import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  getUpdatedNode,
-  useSetCurrentNode,
-  useSetSelectedNodeLinks,
-} from "./utils";
-import { MapContainer, MapHeader } from "./style";
+import { getUpdatedNode } from "./utils";
+import { MapContainer, MapFooter, MapHeader } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getLinks } from "../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import {
-  createMapNode,
-  fetchNodesData,
-  updateMapNodeUI,
-} from "../../../../../../redux/ducks/studyDataSynthesis";
+  getCurrentStudyMapNode,
+  getLinks,
+  getStudyMapNodes,
+} from "../../../../../../redux/selectors";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import MapConfig from "./MapConfig";
+import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
+import {
+  AreaNode,
+  createStudyMapNode,
+  updateStudyMapNode,
+} from "../../../../../../redux/ducks/studyMaps";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -42,18 +42,11 @@ function Map() {
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [openConfig, setOpenConfig] = useState<boolean>(false);
   const previousNode = useRef<string>();
   const graphRef =
-    useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
-
-  ////////////////////////////////////////////////////////////////
-  // Selectors
-  ////////////////////////////////////////////////////////////////
-
-  const selectedNode = useAppSelector(getSelectedNode);
-  const mapNodes = useAppSelector(getMapNodes);
+    useRef<Graph<GraphNode & AreaNode, GraphLink & LinkProperties>>(null);
+  const currentArea = useAppSelector(getCurrentStudyMapNode);
   const studyLinks = useAppSelector((state) => getLinks(state, study.id));
   const mapLinks = useMemo(
     () =>
@@ -63,30 +56,10 @@ function Map() {
       ) as LinkProperties[],
     [studyLinks]
   );
-
-  useSetCurrentNode(selectedNode);
-  useSetSelectedNodeLinks(selectedNode, mapLinks);
-  useStudySynthesis({
+  const { isLoading, value: mapNodes = [] } = useStudyMaps({
     studyId: study.id,
-    selector: (state) => ({
-      areas: state.areas,
-    }),
+    selector: (state) => getStudyMapNodes(state, study.id),
   });
-
-  useEffect(() => {
-    const fetchNodes = async (): Promise<void> => {
-      try {
-        setIsLoaded(false);
-        await dispatch(fetchNodesData(study.id));
-      } catch (e) {
-        enqueueErrorSnackbar(t("study.error.getAreasInfo"), e as AxiosError);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    fetchNodes();
-  }, [dispatch, enqueueErrorSnackbar, study.id, t]);
 
   /**
    * Sets highlight mode on node click
@@ -99,11 +72,11 @@ function Map() {
         current._setNodeHighlightedValue(previousNode.current, false);
       }
 
-      if (selectedNode) {
+      if (currentArea) {
         const timerId = setTimeout(() => {
           // eslint-disable-next-line no-underscore-dangle
-          current._setNodeHighlightedValue(selectedNode.id, true);
-          previousNode.current = selectedNode.id;
+          current._setNodeHighlightedValue(currentArea.id, true);
+          previousNode.current = currentArea.id;
         }, 20);
 
         return () => {
@@ -111,7 +84,7 @@ function Map() {
         };
       }
     }
-  }, [selectedNode, dispatch]);
+  }, [dispatch, currentArea]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -129,7 +102,7 @@ function Map() {
       try {
         if (study) {
           await dispatch(
-            updateMapNodeUI({ studyId: study.id, nodeId, nodeUI })
+            updateStudyMapNode({ studyId: study.id, nodeId, nodeUI })
           );
         }
       } catch (e) {
@@ -146,7 +119,7 @@ function Map() {
     setOpenDialog(false);
     try {
       if (study) {
-        await dispatch(createMapNode({ studyId: study.id, name }));
+        await dispatch(createStudyMapNode({ studyId: study.id, name }));
       }
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
@@ -171,28 +144,27 @@ function Map() {
   return (
     <>
       <SplitLayoutView
-        left={<Areas onAdd={() => setOpenDialog(true)} updateUI={updateUI} />}
+        left={
+          <Areas
+            onAdd={() => setOpenDialog(true)}
+            nodes={mapNodes}
+            updateUI={updateUI}
+          />
+        }
         right={
           openConfig ? (
             <MapConfig onClose={() => setOpenConfig(false)} />
           ) : (
             <MapContainer>
               <MapHeader>
-                <Typography>{`${mapNodes.length} ${t(
+                <Typography>{`${mapNodes?.length} ${t(
                   "study.areas"
                 )}`}</Typography>
                 <Typography>
                   {`${mapLinks.length} ${t("study.links")}`}
                 </Typography>
-                <Fab
-                  size="small"
-                  color="default"
-                  onClick={() => setOpenConfig(true)}
-                >
-                  <SettingsIcon />
-                </Fab>
               </MapHeader>
-              {isLoaded && !openConfig && (
+              {!isLoading && !openConfig && (
                 <Suspense fallback={<SimpleLoader />}>
                   <AutoSizer>
                     {({ height, width }) => (
@@ -200,6 +172,7 @@ function Map() {
                         height={height}
                         width={width}
                         links={mapLinks}
+                        nodes={mapNodes}
                         graph={graphRef}
                         onNodePositionChange={handlePositionChange}
                       />
@@ -207,6 +180,15 @@ function Map() {
                   </AutoSizer>
                 </Suspense>
               )}
+              <MapFooter>
+                <Fab
+                  size="small"
+                  color="default"
+                  onClick={() => setOpenConfig(true)}
+                >
+                  <SettingsIcon />
+                </Fab>
+              </MapFooter>
             </MapContainer>
           )
         }

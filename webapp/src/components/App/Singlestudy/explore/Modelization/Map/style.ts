@@ -20,11 +20,17 @@ export const MapContainer = styled(Box)(() => ({
 export const MapHeader = styled(Box)(() => ({
   width: "14%",
   display: "flex",
-  justifyContent: "space-between",
+  justifyContent: "space-around",
   alignItems: "center",
   position: "absolute",
   right: "16px",
   top: "10px",
+}));
+
+export const MapFooter = styled(Box)(() => ({
+  position: "absolute",
+  right: "15px",
+  bottom: "15px",
 }));
 
 ////////////////////////////////////////////////////////////////
@@ -70,10 +76,13 @@ export const NodeDefault = styled(Chip)<NodeProps>(
   })
 );
 
-export const NodeHighlighted = styled(Chip)<NodeProps>(({ nodecolor }) => ({
-  color: nodecolor,
-  border: `1px solid ${nodecolor}`,
-}));
+export const NodeHighlighted = styled(Chip)<NodeProps>(
+  ({ nodecolor, rgbcolor }) => ({
+    color: getTextColor(rgbcolor as RGB),
+    backgroundColor: `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 0.6)`,
+    outline: `2px dashed ${nodecolor}`,
+  })
+);
 
 ////////////////////////////////////////////////////////////////
 // Areas

@@ -3,14 +3,14 @@ import { RefObject, useEffect, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import {
-  LinkProperties,
-  NodeProperties,
-  StudyMetadata,
-} from "../../../../../../common/types";
+import { LinkProperties, StudyMetadata } from "../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
+import {
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { createLink } from "../../../../../../services/api/studydata";
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";
@@ -19,14 +19,13 @@ interface Props {
   height: number;
   width: number;
   links: LinkProperties[];
-  graph: RefObject<
-    Graph<NodeProperties & GraphNode, LinkProperties & GraphLink>
-  >;
+  nodes: AreaNode[];
+  graph: RefObject<Graph<AreaNode & GraphNode, LinkProperties & GraphLink>>;
   onNodePositionChange: (id: string, x: number, y: number) => void;
 }
 
 function MapGraph(props: Props) {
-  const { height, width, links, graph, onNodePositionChange } = props;
+  const { height, width, links, nodes, graph, onNodePositionChange } = props;
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -38,8 +37,7 @@ function MapGraph(props: Props) {
   // Selectors
   ////////////////////////////////////////////////////////////////
 
-  const mapNodes = useAppSelector(getMapNodes);
-  const nodes = useRenderNodes(mapNodes, width, height);
+  const mapNodes = useRenderNodes(nodes, width, height);
 
   /**
    * Create new map link if sourceNode and targetNode are set
@@ -78,29 +76,22 @@ function MapGraph(props: Props) {
   };
 
   const handleOnClickNode = async (nodeId: string) => {
-    if (!sourceNode && mapNodes) {
-      const selectedNode = mapNodes.find(
-        (node: NodeProperties) => node.id === nodeId
-      );
-      dispatch(setSelectedLink(undefined));
-      dispatch(setSelectedNode(selectedNode));
+    if (!sourceNode && nodes) {
+      dispatch(setCurrentLink(""));
+      dispatch(setCurrentArea(nodeId));
     } else if (sourceNode) {
       setTargetNode(nodeId);
     }
   };
 
   const handleOnClickLink = (source: string, target: string) => {
-    const currentLink = {
-      source,
-      target,
-    };
-    dispatch(setSelectedNode(undefined));
-    dispatch(setSelectedLink(currentLink));
+    dispatch(setCurrentArea(""));
+    dispatch(setCurrentLink(`${source} / ${target}`));
   };
 
   const handleGraphClick = () => {
-    dispatch(setSelectedNode(undefined));
-    dispatch(setSelectedLink(undefined));
+    dispatch(setCurrentArea(""));
+    dispatch(setCurrentLink(""));
   };
 
   const handleNodePositionChange = (id: string, x: number, y: number) => {
@@ -120,8 +111,8 @@ function MapGraph(props: Props) {
       id="graph-id"
       ref={graph}
       data={{
-        nodes,
-        links: nodes.length > 0 ? links : [],
+        nodes: mapNodes,
+        links: mapNodes.length > 0 ? links : [],
       }}
       config={{
         height,
