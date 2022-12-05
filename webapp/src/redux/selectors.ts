@@ -198,9 +198,15 @@ export const getCurrentStudySynthesis = createSelector(
   (syntheses, currentStudyId) => syntheses[currentStudyId]
 );
 
-export const getAreas = createSelector(getStudySynthesis, (synthesis) =>
-  synthesis ? Object.values(synthesis.areas) : []
-);
+export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    return Object.keys(synthesis.areas).map((id) => ({
+      ...synthesis.areas[id],
+      id,
+    })) as Array<Area & { id: string }>;
+  }
+  return [];
+});
 
 export const getArea = createSelector(
   getStudySynthesis,
@@ -332,7 +338,7 @@ export const getLinksAndClusters = createSelector(
 
 export const getStudyOutput = createSelector(
   getStudySynthesis,
-  (state: AppState, outputId: string) => outputId,
+  (state: AppState, studyId: StudyMetadata["id"], outputId: string) => outputId,
   (synthesis, outputId) => {
     if (synthesis?.outputs[outputId]) {
       return { id: outputId, ...synthesis?.outputs[outputId] };
