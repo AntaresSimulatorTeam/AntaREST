@@ -16,7 +16,7 @@ import {
   deleteLink,
 } from "../../../../../../../services/api/studydata";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import { AreaDeleteIcon } from "../style";
+import { AreaDeleteIcon } from "./style";
 
 interface Props {
   currentLink?: LinkElement;
