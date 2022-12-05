@@ -4,12 +4,14 @@ import {
   createReducer,
   EntityState,
 } from "@reduxjs/toolkit";
+import * as R from "ramda";
 import {
   Area,
   AreaInfoDTO,
   StudyMetadata,
   UpdateAreaUi,
 } from "../../common/types";
+
 import { AppAsyncThunkConfig } from "../store";
 import { makeActionName } from "../utils";
 import * as api from "../../services/api/study";
@@ -20,7 +22,11 @@ import {
 } from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
 import { AppState } from ".";
 import { getArea } from "../selectors";
-import { createArea, updateAreaUI } from "../../services/api/studydata";
+import {
+  createArea,
+  getAllLinks,
+  updateAreaUI,
+} from "../../services/api/studydata";
 
 export interface AreaNode {
   id: string;
@@ -33,9 +39,19 @@ export interface AreaNode {
   highlighted?: boolean;
 }
 
+export interface AreaNodeLink {
+  id: string;
+  // Props for react-d3-graph, don't rename them
+  color: string;
+  strokeDasharray: number[];
+  strokeLinecap: string;
+  strokeWidth: number;
+}
+
 export interface StudyMap {
   studyId: StudyMetadata["id"];
   nodes: Record<AreaNode["id"], AreaNode>;
+  links: Record<AreaNodeLink["id"], AreaNodeLink>;
 }
 
 export const studyMapsAdapter = createEntityAdapter<StudyMap>({
@@ -55,6 +71,33 @@ const n = makeActionName("studyMaps");
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
+
+type LinkStyle = [number[], string];
+
+const makeLinkStyle = R.cond<[string], LinkStyle>([
+  [R.equals("dot"), (): LinkStyle => [[1, 5], "round"]],
+  [R.equals("dash"), (): LinkStyle => [[16, 8], "square"]],
+  [R.equals("dotdash"), (): LinkStyle => [[10, 6, 1, 6], "square"]],
+  [R.T, (): LinkStyle => [[0], "butt"]],
+]);
+
+async function getLinks(
+  studyId: StudyMetadata["id"]
+): Promise<StudyMap["links"]> {
+  const allLinks = await getAllLinks({ uuid: studyId, withUi: true });
+  return allLinks.reduce((acc, link) => {
+    const [style, linecap] = makeLinkStyle(link.ui?.style);
+    const id = `${link.area1} / ${link.area2}`;
+    acc[id] = {
+      id,
+      color: `rgb(${link.ui?.color}`,
+      strokeDasharray: style,
+      strokeLinecap: linecap,
+      strokeWidth: link.ui?.width,
+    };
+    return acc;
+  }, {} as StudyMap["links"]);
+}
 
 async function getNodes(
   state: AppState,
@@ -84,7 +127,11 @@ export const createStudyMap = createAsyncThunk<
   AppAsyncThunkConfig
 >(n("CREATE_STUDY_MAP"), async (studyId, { getState, rejectWithValue }) => {
   try {
-    return { studyId, nodes: await getNodes(getState(), studyId) };
+    return {
+      studyId,
+      nodes: await getNodes(getState(), studyId),
+      links: await getLinks(studyId),
+    };
   } catch (err) {
     return rejectWithValue(err);
   }
@@ -136,7 +183,11 @@ export const setStudyMap = createAsyncThunk<
   AppAsyncThunkConfig
 >(n("SET_STUDY_MAP"), async (studyId, { getState, rejectWithValue }) => {
   try {
-    return { studyId, nodes: await getNodes(getState(), studyId) };
+    return {
+      studyId,
+      nodes: await getNodes(getState(), studyId),
+      links: await getLinks(studyId),
+    };
   } catch (err) {
     return rejectWithValue(err);
   }
