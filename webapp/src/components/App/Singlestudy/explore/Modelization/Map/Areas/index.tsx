@@ -3,7 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { StudyMetadata, UpdateAreaUi } from "../../../../../../../common/types";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
-import { AreasContainer } from "../style";
+import { AreasContainer } from "./style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentLink,
@@ -27,10 +27,10 @@ function Areas(props: Props) {
   const dispatch = useAppDispatch();
   const [filteredNodes, setFilteredNodes] = useState<Array<AreaNode>>([]);
   const [searchValue, setSearchValue] = useState("");
+  const currentArea = useAppSelector(getCurrentStudyMapNode);
   const currentLink = useAppSelector((state) =>
     getCurrentLink(state, study.id)
   );
-  const currentArea = useAppSelector(getCurrentStudyMapNode);
 
   useEffect(() => {
     const filter = (): AreaNode[] => {
