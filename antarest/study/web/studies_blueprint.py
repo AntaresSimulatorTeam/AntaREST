@@ -143,7 +143,7 @@ def create_study_routes(
     )
     def upgrade_study(
         uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> str:
+    ) -> Any:
         logger.info(
             f"Upgrade study {uuid} to a new version",
             extra={"user": current_user.id},

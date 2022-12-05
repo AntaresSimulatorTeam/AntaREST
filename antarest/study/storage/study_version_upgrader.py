@@ -22,7 +22,7 @@ def modify_file(
     study_path: str,
     file_path: str,
     key: str,
-    parameter_to_add: str,
+    parameter_to_add: Optional[str],
     value: typing.Any,
     parameter_to_delete: Optional[str],
 ) -> None:
@@ -31,11 +31,13 @@ def modify_file(
     path = Path(file)
     data = reader.read(path)
     if key in data:
-        data[key][parameter_to_add] = value
+        if parameter_to_add is not None:
+            data[key][parameter_to_add] = value
         if parameter_to_delete is not None:
             del data[key][parameter_to_delete]
     else:
-        data[key] = {parameter_to_add: value}
+        if parameter_to_add is not None:
+            data[key] = {parameter_to_add: value}
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, path)
 
@@ -54,6 +56,11 @@ sep = os.sep
 other_preferencies = "other preferences"
 general_data_path = f"settings{sep}generaldata.ini"
 adequacy_patch = "adequacy patch"
+mapping_transmission_capacities = {
+    True: "local-values",
+    False: "null-for-all-links",
+    "infinite": "infinite-for-all-links",
+}
 
 
 def upgrade_700(study_path: str) -> None:
@@ -229,6 +236,31 @@ def upgrade_830(study_path: str) -> None:
     )
 
 
+def upgrade_840(study_path: str) -> None:
+    old_value = find_value_in_file(
+        study_path,
+        general_data_path,
+        "optimization",
+        "transmission-capacities",
+    )
+    modify_file(
+        study_path,
+        general_data_path,
+        "optimization",
+        None,
+        None,
+        "include-split-exported-mps",
+    )
+    modify_file(
+        study_path,
+        general_data_path,
+        "optimization",
+        "transmission-capacities",
+        mapping_transmission_capacities[old_value],
+        None,
+    )
+
+
 upgrade_methods = {
     700: upgrade_700,
     710: upgrade_710,
@@ -237,6 +269,7 @@ upgrade_methods = {
     810: upgrade_810,
     820: upgrade_820,
     830: upgrade_830,
+    840: upgrade_840,
 }
 
 
