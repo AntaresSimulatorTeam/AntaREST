@@ -13,7 +13,7 @@ import {
   AreaLinkContent,
   AreaLinkRoot,
   AreaLinkTitle,
-} from "../style";
+} from "./style";
 
 function AreaLinks() {
   const [t] = useTranslation();
@@ -29,7 +29,7 @@ function AreaLinks() {
 
   return (
     <AreaLinkRoot>
-      {areaLinks && areaLinks.length >= 1 && (
+      {areaLinks && areaLinks.length > 0 && (
         <AreaLinkTitle>{t("study.links")}</AreaLinkTitle>
       )}
       {areaLinks &&

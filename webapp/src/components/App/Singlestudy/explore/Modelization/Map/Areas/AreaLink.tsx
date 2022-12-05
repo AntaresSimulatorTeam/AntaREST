@@ -13,7 +13,7 @@ import {
   AreaLinkRoot,
   AreaLinkTitle,
   AreaLinkLabel,
-} from "../style";
+} from "./style";
 
 interface Props {
   currentLink: LinkElement;
