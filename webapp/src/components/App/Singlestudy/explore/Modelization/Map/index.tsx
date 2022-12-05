@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Fab, Typography } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -24,7 +24,7 @@ import { MapContainer, MapFooter, MapHeader } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentStudyMapNode,
-  getLinks,
+  getStudyMapNodeLinks,
   getStudyMapNodes,
 } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
@@ -47,7 +47,9 @@ function Map() {
   const graphRef =
     useRef<Graph<GraphNode & AreaNode, GraphLink & LinkProperties>>(null);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
-  const studyLinks = useAppSelector((state) => getLinks(state, study.id));
+  const studyLinks = useAppSelector((state) =>
+    getStudyMapNodeLinks(state, study.id)
+  );
   const mapLinks = useMemo(
     () =>
       R.map(
@@ -164,21 +166,20 @@ function Map() {
                   {`${mapLinks.length} ${t("study.links")}`}
                 </Typography>
               </MapHeader>
+              {isLoading && <SimpleLoader />}
               {!isLoading && !openConfig && (
-                <Suspense fallback={<SimpleLoader />}>
-                  <AutoSizer>
-                    {({ height, width }) => (
-                      <MapGraph
-                        height={height}
-                        width={width}
-                        links={mapLinks}
-                        nodes={mapNodes}
-                        graph={graphRef}
-                        onNodePositionChange={handlePositionChange}
-                      />
-                    )}
-                  </AutoSizer>
-                </Suspense>
+                <AutoSizer>
+                  {({ height, width }) => (
+                    <MapGraph
+                      height={height}
+                      width={width}
+                      links={mapLinks}
+                      nodes={mapNodes}
+                      graph={graphRef}
+                      onNodePositionChange={handlePositionChange}
+                    />
+                  )}
+                </AutoSizer>
               )}
               <MapFooter>
                 <Fab

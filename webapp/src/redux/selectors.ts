@@ -369,6 +369,19 @@ export const getCurrentStudyMapNode = createSelector(
     studyMapsById[currentStudyId]?.nodes[currentAreaId]
 );
 
+export const getStudyMapNodeLinks = createSelector(
+  getLinks,
+  getStudyMap,
+  (links, studyMap) => {
+    return links.map((link) => {
+      return {
+        ...link,
+        ...studyMap?.links[link.id],
+      };
+    });
+  }
+);
+
 ////////////////////////////////////////////////////////////////
 // UI
 ////////////////////////////////////////////////////////////////
