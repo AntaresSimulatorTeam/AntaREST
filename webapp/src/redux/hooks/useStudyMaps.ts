@@ -34,12 +34,12 @@ export default function useStudyMaps<T>(props: Props<T>): {
     }
     if (!isMapsExist) {
       try {
+        // Prevent default selected node on first render
+        dispatch(setCurrentArea(""));
         dispatch(createStudyMap(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);
       } finally {
-        // Prevent default selected node on first render
-        dispatch(setCurrentArea(""));
         setIsLoading(false);
       }
     } else {
