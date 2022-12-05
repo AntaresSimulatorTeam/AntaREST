@@ -14,7 +14,6 @@ import {
   UpdateAreaUi,
 } from "../../../../../../common/types";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
@@ -35,6 +34,7 @@ import {
   createStudyMapNode,
   updateStudyMapNode,
 } from "../../../../../../redux/ducks/studyMaps";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -50,6 +50,7 @@ function Map() {
   const studyLinks = useAppSelector((state) =>
     getStudyMapNodeLinks(state, study.id)
   );
+
   const mapLinks = useMemo(
     () =>
       R.map(
@@ -58,9 +59,10 @@ function Map() {
       ) as LinkProperties[],
     [studyLinks]
   );
-  const { isLoading, value: mapNodes = [] } = useStudyMaps({
+
+  const mapNodesRes = useStudyMaps({
     studyId: study.id,
-    selector: (state) => getStudyMapNodes(state, study.id),
+    selector: getStudyMapNodes,
   });
 
   /**
@@ -93,7 +95,7 @@ function Map() {
   ////////////////////////////////////////////////////////////////
 
   const updateUI = async (nodeId: string, nodeUI: UpdateAreaUi) => {
-    const updatedNode = getUpdatedNode(nodeId, mapNodes);
+    const updatedNode = getUpdatedNode(nodeId, mapNodesRes.data || []);
     /**
      * Compare the new node position: @nodeUI and the existing one: @updatedNode
      * If they are not equal the UI should be updated
@@ -129,7 +131,7 @@ function Map() {
   };
 
   const handlePositionChange = async (id: string, x: number, y: number) => {
-    const updatedNode = getUpdatedNode(id, mapNodes);
+    const updatedNode = getUpdatedNode(id, mapNodesRes.data || []);
     if (updatedNode) {
       updateUI(id, { x, y, color_rgb: updatedNode.rgbColor });
     }
@@ -144,64 +146,66 @@ function Map() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <SplitLayoutView
-        left={
-          <Areas
-            onAdd={() => setOpenDialog(true)}
-            nodes={mapNodes}
-            updateUI={updateUI}
+    <UsePromiseCond
+      response={mapNodesRes}
+      ifResolved={(mapNodes) => (
+        <>
+          <SplitLayoutView
+            left={
+              <Areas
+                onAdd={() => setOpenDialog(true)}
+                nodes={mapNodes}
+                updateUI={updateUI}
+              />
+            }
+            right={
+              openConfig ? (
+                <MapConfig onClose={() => setOpenConfig(false)} />
+              ) : (
+                <MapContainer>
+                  <MapHeader>
+                    <Typography>{`${mapNodes.length} ${t(
+                      "study.areas"
+                    )}`}</Typography>
+                    <Typography>
+                      {`${mapLinks.length} ${t("study.links")}`}
+                    </Typography>
+                  </MapHeader>
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <MapGraph
+                        height={height}
+                        width={width}
+                        links={mapLinks}
+                        nodes={mapNodes}
+                        graph={graphRef}
+                        onNodePositionChange={handlePositionChange}
+                      />
+                    )}
+                  </AutoSizer>
+                  <MapFooter>
+                    <Fab
+                      size="small"
+                      color="default"
+                      onClick={() => setOpenConfig(true)}
+                    >
+                      <SettingsIcon />
+                    </Fab>
+                  </MapFooter>
+                </MapContainer>
+              )
+            }
           />
-        }
-        right={
-          openConfig ? (
-            <MapConfig onClose={() => setOpenConfig(false)} />
-          ) : (
-            <MapContainer>
-              <MapHeader>
-                <Typography>{`${mapNodes?.length} ${t(
-                  "study.areas"
-                )}`}</Typography>
-                <Typography>
-                  {`${mapLinks.length} ${t("study.links")}`}
-                </Typography>
-              </MapHeader>
-              {isLoading && <SimpleLoader />}
-              {!isLoading && !openConfig && (
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <MapGraph
-                      height={height}
-                      width={width}
-                      links={mapLinks}
-                      nodes={mapNodes}
-                      graph={graphRef}
-                      onNodePositionChange={handlePositionChange}
-                    />
-                  )}
-                </AutoSizer>
-              )}
-              <MapFooter>
-                <Fab
-                  size="small"
-                  color="default"
-                  onClick={() => setOpenConfig(true)}
-                >
-                  <SettingsIcon />
-                </Fab>
-              </MapFooter>
-            </MapContainer>
-          )
-        }
-      />
-      {openDialog && (
-        <CreateAreaDialog
-          open={openDialog}
-          onClose={handleClose}
-          createArea={handleCreateArea}
-        />
+          {openDialog && (
+            <CreateAreaDialog
+              open={openDialog}
+              onClose={handleClose}
+              createArea={handleCreateArea}
+            />
+          )}
+        </>
       )}
-    </>
+    />
   );
 }
 

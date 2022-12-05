@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StudyMetadata } from "../../common/types";
 import { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
@@ -7,45 +7,52 @@ import { getStudyMap } from "../selectors";
 import { createStudyMap } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
 import { setCurrentArea } from "../ducks/studySyntheses";
+import { Response } from "../../components/common/utils/UsePromiseCond";
+import usePromise, { PromiseStatus } from "../../hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
-  selector?: (state: AppState) => T;
+  selector?: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudyMaps<T>(props: Props<T>): {
-  value?: T;
-  error?: Error;
-  isLoading: boolean;
-} {
+export default function useStudyMaps<T>(props: Props<T>): Response<T> {
   const { studyId, selector } = props;
   const synthesisRes = useStudySynthesis({ studyId });
   const isMapsExist = useAppSelector((state) => !!getStudyMap(state, studyId));
-  const value = useAppSelector((state) =>
-    isMapsExist && selector ? selector(state) : undefined
+  const data = useAppSelector((state) =>
+    isMapsExist && selector ? selector(state, studyId) : undefined
   );
   const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error>();
+  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [error, setError] = useState<Response["error"]>();
 
-  useEffect(() => {
-    if (synthesisRes.error || synthesisRes.isLoading) {
+  usePromise(async () => {
+    if (synthesisRes.status === PromiseStatus.Rejected) {
+      setError(synthesisRes.error);
+      setStatus(PromiseStatus.Rejected);
       return;
     }
+
+    if (synthesisRes.status !== PromiseStatus.Resolved) {
+      setStatus(PromiseStatus.Pending);
+      return;
+    }
+
     if (!isMapsExist) {
+      setStatus(PromiseStatus.Pending);
+
       try {
         // Prevent default selected node on first render
         dispatch(setCurrentArea(""));
-        dispatch(createStudyMap(studyId)).unwrap();
+        await dispatch(createStudyMap(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);
-      } finally {
-        setIsLoading(false);
+        setStatus(PromiseStatus.Rejected);
       }
     } else {
-      setIsLoading(false);
+      setStatus(PromiseStatus.Resolved);
     }
-  }, [dispatch, isMapsExist, studyId, synthesisRes]);
+  }, [isMapsExist, studyId, synthesisRes.status]);
 
-  return { isLoading, error, value };
+  return { data, status, error };
 }

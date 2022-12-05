@@ -56,7 +56,7 @@ function AddConstraintTermDialog(props: Props) {
       area2: "",
     },
   };
-  const { value: optionsItems } = useStudySynthesis({
+  const { data: optionsItems } = useStudySynthesis({
     studyId,
     selector: (state) => getLinksAndClusters(state, studyId),
   });
