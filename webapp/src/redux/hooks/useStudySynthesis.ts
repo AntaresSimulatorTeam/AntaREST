@@ -1,45 +1,45 @@
 import { useEffect, useState } from "react";
+import { useAsync } from "react-use";
 import { StudyMetadata } from "../../common/types";
 import { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudySynthesis } from "../selectors";
+import { PromiseStatus } from "../../hooks/usePromise";
+import { Response } from "../../components/common/utils/UsePromiseCond";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
-  selector?: (state: AppState) => T;
+  selector?: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudySynthesis<T>(props: Props<T>): {
-  value?: T;
-  error?: Error;
-  isLoading: boolean;
-} {
+export default function useStudySynthesis<T>(props: Props<T>): Response<T> {
   const { studyId, selector } = props;
   const isSynthesisExist = useAppSelector(
     (state) => !!getStudySynthesis(state, studyId)
   );
-  const value = useAppSelector((state) =>
-    isSynthesisExist && selector ? selector(state) : undefined
+  const data = useAppSelector((state) =>
+    isSynthesisExist && selector ? selector(state, studyId) : undefined
   );
   const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error>();
+  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [error, setError] = useState<Response["error"]>();
 
-  useEffect(() => {
+  useAsync(async () => {
     if (!isSynthesisExist) {
+      setStatus(PromiseStatus.Pending);
+
       try {
-        dispatch(createStudySynthesis(studyId)).unwrap();
+        await dispatch(createStudySynthesis(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);
-      } finally {
-        setIsLoading(false);
+        setStatus(PromiseStatus.Rejected);
       }
     } else {
-      setIsLoading(false);
+      setStatus(PromiseStatus.Resolved);
     }
   }, [dispatch, isSynthesisExist, studyId]);
 
-  return { isLoading, error, value };
+  return { data, status, error };
 }

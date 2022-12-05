@@ -1,24 +1,23 @@
 import { Box } from "@mui/material";
-import * as R from "ramda";
 import { useOutletContext } from "react-router";
-import { LinkElement, StudyMetadata } from "../../../../../../common/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
+import { StudyMetadata } from "../../../../../../common/types";
 import SimpleContent from "../../../../../common/page/SimpleContent";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import LinkPropsView from "./LinkPropsView";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { getCurrentLink } from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import LinkView from "./LinkView";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { error, isLoading } = useStudySynthesis({ studyId: study.id });
-  const currentLink = useAppSelector((state) =>
-    getCurrentLink(state, study.id)
-  );
+  const res = useStudySynthesis({
+    studyId: study.id,
+    selector: getCurrentLink,
+  });
+
   const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
@@ -37,36 +36,22 @@ function Links() {
     <SplitLayoutView
       left={
         <Box width="100%" height="100%">
-          <LinkPropsView
-            studyId={study.id}
-            onClick={handleLinkClick}
-            currentLink={currentLink?.name}
-          />
+          <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
         </Box>
       }
       right={
-        <>
-          {R.cond([
-            // Loading
-            [() => isLoading, () => <SimpleLoader />],
-            // Error
-            [
-              () => error !== undefined,
-              () => <SimpleContent title={error?.message} />,
-            ],
-            // Link list
-            [
-              () => !!currentLink,
-              () => (
-                <Box width="100%" height="100%">
-                  <LinkView link={currentLink as LinkElement} />
-                </Box>
-              ),
-            ],
-            // No Areas
-            [R.T, () => <SimpleContent title="No Links" />],
-          ])()}
-        </>
+        <UsePromiseCond
+          response={res}
+          ifResolved={(currentLink) =>
+            currentLink ? (
+              <Box sx={{ width: 1, height: 1 }}>
+                <LinkView link={currentLink} />
+              </Box>
+            ) : (
+              <SimpleContent title="No Links" />
+            )
+          }
+        />
       }
     />
   );
