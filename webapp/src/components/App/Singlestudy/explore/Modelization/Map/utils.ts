@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
 
 ////////////////////////////////////////////////////////////////
@@ -18,30 +19,29 @@ export const NODE_COLOR = "rgb(230, 108, 44)";
 // Utils
 ////////////////////////////////////////////////////////////////
 
-// TODO rework
 export const getNodeWidth = (nodeText: string): number => {
-  const FONT_SIZE = 16;
+  const fontSize = 16;
   const TEXT_SIZE = nodeText.length;
 
   if (TEXT_SIZE === 1) {
-    return FONT_SIZE * TEXT_SIZE * 36;
+    return fontSize * TEXT_SIZE * 36;
   }
   if (TEXT_SIZE <= 2) {
-    return FONT_SIZE * TEXT_SIZE * 20;
+    return fontSize * TEXT_SIZE * 20;
   }
   if (TEXT_SIZE <= 3) {
-    return FONT_SIZE * TEXT_SIZE * 12;
+    return fontSize * TEXT_SIZE * 12;
   }
   if (TEXT_SIZE <= 5) {
-    return FONT_SIZE * TEXT_SIZE * 10;
+    return fontSize * TEXT_SIZE * 10;
   }
   if (TEXT_SIZE <= 6) {
-    return FONT_SIZE * TEXT_SIZE * 8.5;
+    return fontSize * TEXT_SIZE * 8.5;
   }
   if (TEXT_SIZE <= 10) {
-    return FONT_SIZE * TEXT_SIZE * 7.5;
+    return fontSize * TEXT_SIZE * 7.5;
   }
-  return FONT_SIZE * TEXT_SIZE * 6.5;
+  return fontSize * TEXT_SIZE * 6.5;
 };
 
 export function getUpdatedNode(
@@ -94,12 +94,13 @@ export function useRenderNodes(
     y: 0,
     x: 0,
   };
-  // apply translations (y axis is inverted)
-  const renderNodes = nodes.map((node) => ({
-    ...node,
-    x: node.x + centerVector.x - realCenter.x,
-    y: -node.y + centerVector.y + realCenter.y,
-  }));
-
-  return renderNodes;
+  return useMemo(
+    () =>
+      nodes.map((node) => ({
+        ...node,
+        x: node.x + centerVector.x - realCenter.x,
+        y: -node.y + centerVector.y + realCenter.y,
+      })),
+    [nodes, centerVector.x, centerVector.y, realCenter.x, realCenter.y]
+  );
 }
