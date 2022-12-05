@@ -93,7 +93,7 @@ async function getLinks(
       color: `rgb(${link.ui?.color}`,
       strokeDasharray: style,
       strokeLinecap: linecap,
-      strokeWidth: link.ui?.width,
+      strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width, // Sets minimum link width to 2
     };
     return acc;
   }, {} as StudyMap["links"]);
@@ -224,16 +224,13 @@ export default createReducer(initialState, (builder) => {
 
       const entity = draftState.entities[studyId];
       if (entity) {
+        const color = nodeUI.color_rgb;
         entity.nodes[nodeId] = {
           ...entity.nodes[nodeId],
           x: nodeUI.x,
           y: nodeUI.y,
-          color: `rgb(${nodeUI.color_rgb[0]}, ${nodeUI.color_rgb[1]}, ${nodeUI.color_rgb[2]})`,
-          rgbColor: [
-            nodeUI.color_rgb[0],
-            nodeUI.color_rgb[1],
-            nodeUI.color_rgb[2],
-          ],
+          color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+          rgbColor: [color[0], color[1], color[2]],
         };
       }
     });
