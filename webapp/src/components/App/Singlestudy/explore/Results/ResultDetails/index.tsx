@@ -17,7 +17,7 @@ import {
   MatrixType,
   StudyMetadata,
 } from "../../../../../../common/types";
-import usePromise, { PromiseStatus } from "../../../../../../hooks/usePromise";
+import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getAreas,
@@ -32,17 +32,21 @@ import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
 import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
 import { createPath, DataType, OutputItemType, Timestep } from "./utils";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import UsePromiseCond, {
+  mergeResponses,
+} from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { outputId } = useParams();
 
-  const { value: output, isLoading: isOutputLoading } = useStudySynthesis({
+  const outputRes = useStudySynthesis({
     studyId: study.id,
-    selector: (state) => getStudyOutput(state, outputId as string),
+    selector: (state, id) => getStudyOutput(state, id, outputId as string),
   });
+
+  const { data: output } = outputRes;
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimeStep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
@@ -68,17 +72,6 @@ function ResultDetails() {
     (item) => item.id === selectedItemId
   ) as (Area & { id: string }) | LinkElement | undefined;
 
-  const path =
-    output && selectedItem
-      ? createPath({
-          output: { ...output, id: outputId as string },
-          item: selectedItem,
-          dataType,
-          timestep,
-          year,
-        })
-      : null;
-
   useEffect(
     () => {
       const isValidSelectedItem =
@@ -93,9 +86,17 @@ function ResultDetails() {
     [filteredItems]
   );
 
-  const resMatrix = usePromise<MatrixType | null>(
+  const matrixRes = usePromise<MatrixType | null>(
     async () => {
-      if (path) {
+      if (output && selectedItem) {
+        const path = createPath({
+          output: { ...output, id: outputId as string },
+          item: selectedItem,
+          dataType,
+          timestep,
+          year,
+        });
+
         const res = await getStudyData(study.id, path);
         if (typeof res === "string") {
           const fixed = res
@@ -111,7 +112,7 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, path],
+      deps: [study.id, output, selectedItem],
     }
   );
 
@@ -208,23 +209,18 @@ function ResultDetails() {
               ))}
               <Button
                 onClick={() => setShowFilter(true)}
-                disabled={resMatrix.isLoading}
+                disabled={matrixRes.isLoading}
               >
                 {t("global.change")}
               </Button>
             </Box>
             <Box sx={{ flex: 1 }}>
               <UsePromiseCond
-                response={{
-                  ...resMatrix,
-                  status: isOutputLoading
-                    ? PromiseStatus.Pending
-                    : resMatrix.status,
-                }}
+                response={mergeResponses(outputRes, matrixRes)}
                 ifPending={() => (
                   <Skeleton sx={{ height: 1, transform: "none" }} />
                 )}
-                ifResolved={(matrix) =>
+                ifResolved={([, matrix]) =>
                   matrix && (
                     <EditableMatrix
                       matrix={matrix}
