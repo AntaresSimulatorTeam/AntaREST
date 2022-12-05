@@ -321,6 +321,8 @@ class StudyService:
         log_suffix: str,
         log_data: str,
     ) -> None:
+        logger.info(f"Saving logs for job {job_id} of study {study_id}")
+        stopwatch = StopWatch()
         study = self.get_study(study_id)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         file_study.tree.save(
@@ -330,6 +332,9 @@ class StudyService:
                 "logs",
                 f"{job_id}-{log_suffix}",
             ],
+        )
+        stopwatch.log_elapsed(
+            lambda t: logger.info(f"Saved logs for job {job_id} in {t}s")
         )
 
     def get_comments(
@@ -1429,6 +1434,7 @@ class StudyService:
         Returns: output simulation json formatted
 
         """
+        logger.info(f"Importing new output for study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)

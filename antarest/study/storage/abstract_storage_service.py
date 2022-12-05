@@ -214,9 +214,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = (
             Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         )
+        study_id = metadata.id
         path_output.mkdir(parents=True)
         output_full_name: Optional[str] = None
         is_zipped = False
+        stopwatch = StopWatch()
         try:
             if isinstance(output, Path):
                 if output != path_output and output.suffix != ".zip":
@@ -229,6 +231,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             else:
                 extract_zip(output, path_output)
 
+            stopwatch.log_elapsed(
+                lambda t: logger.info(f"Copied output for {study_id} in {t}s")
+            )
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
             extension = ".zip" if is_zipped else ""
