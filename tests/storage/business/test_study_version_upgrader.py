@@ -14,6 +14,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
     DUPLICATE_KEYS,
 )
 from antarest.study.storage.study_version_upgrader import InvalidUpgrade
+from antarest.study.storage.study_version_upgrader import (
+    mapping_transmission_capacities,
+)
 
 sep = os.sep
 
@@ -25,7 +28,7 @@ def test_study_version_upgrader(tmp_path: Path):
         zip_output.extractall(path=tmp_path)
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
-    study_version_upgrader.upgrade_study(str(tmp_path), 830)
+    study_version_upgrader.upgrade_study(str(tmp_path), 840)
     assert_study_antares_file_is_updated(tmp_path)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -62,7 +65,7 @@ def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
         lines = study_antares.readlines()
         for elt in lines:
             if "version" in elt:
-                assert "830" in elt
+                assert "840" in elt
             elif "lastsave" in elt:
                 time_in_test = int(datetime.strftime(datetime.now(), "%S"))
                 time_in_file = int(elt[11:])
@@ -85,7 +88,6 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert (
         optimization["include-infeasible-problem-behavior"] == "error-verbose"
     )
-    assert optimization["include-split-exported-mps"] is False
     assert (
         other_preferences["hydro-heuristic-policy"]
         == "accommodate rule curves"
@@ -102,6 +104,11 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         ]
         is True
     )
+    assert (
+        optimization["transmission-capacities"]
+        == mapping_transmission_capacities[old_values[2]]
+    )
+    assert "include-split-exported-mps" not in optimization
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
@@ -110,7 +117,8 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
     data = reader.read(Path(general_data_path))
     filtering_value = data["general"]["filtering"]
     custom_ts_value = data["general"]["custom-ts-numbers"]
-    return [filtering_value, custom_ts_value]
+    transmission_capa_value = data["optimization"]["transmission-capacities"]
+    return [filtering_value, custom_ts_value, transmission_capa_value]
 
 
 def get_old_area_values(tmp_path: Path) -> dict:
