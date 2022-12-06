@@ -66,11 +66,6 @@ def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
         for elt in lines:
             if "version" in elt:
                 assert "840" in elt
-            elif "lastsave" in elt:
-                time_in_test = int(datetime.strftime(datetime.now(), "%S"))
-                time_in_file = int(elt[11:])
-                assert time_in_file > time_in_test - 5
-                assert time_in_file < time_in_test + 5
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
