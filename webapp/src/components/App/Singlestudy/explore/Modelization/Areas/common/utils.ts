@@ -36,21 +36,21 @@ export const saveField = R.curry(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any
   ): Promise<void> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (data === (noDataValues as any)[name] || data === undefined) {
-      const { [name]: ignore, ...toEdit } = defaultValues;
-      let edit = {};
-      Object.keys(toEdit).forEach((item) => {
-        if (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          toEdit[item] !== (noDataValues as any)[item] &&
-          toEdit[item] !== undefined
-        ) {
-          edit = { ...edit, [item]: toEdit[item] };
-        }
-      });
-      return editStudy(edit, studyId, pathPrefix);
-    }
+    // TODO strange code that cause bug
+    // if (data === (noDataValues as any)[name] || data === undefined) {
+    //   const { [name]: ignore, ...toEdit } = defaultValues;
+    //   let edit = {};
+    //   Object.keys(toEdit).forEach((item) => {
+    //     if (
+    //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //       toEdit[item] !== (noDataValues as any)[item] &&
+    //       toEdit[item] !== undefined
+    //     ) {
+    //       edit = { ...edit, [item]: toEdit[item] };
+    //     }
+    //   });
+    //   return editStudy(edit, studyId, pathPrefix);
+    // }
     return editStudy(data, studyId, path);
   }
 );
