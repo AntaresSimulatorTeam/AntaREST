@@ -143,7 +143,7 @@ def test_service() -> None:
                     owner_id=1,
                     status=TaskStatus.FAILED.value,
                     result_status=False,
-                    result_msg="",
+                    result_msg="NotImplementedError()",
                     creation_date=now,
                 )
             ),
@@ -155,7 +155,7 @@ def test_service() -> None:
                     owner_id=1,
                     status=TaskStatus.FAILED.value,
                     result_status=False,
-                    result_msg="",
+                    result_msg="NotImplementedError()",
                     creation_date=now,
                 )
             ),

@@ -11,7 +11,7 @@ import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../../common/Fieldset";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface Props {
   parentId: string;

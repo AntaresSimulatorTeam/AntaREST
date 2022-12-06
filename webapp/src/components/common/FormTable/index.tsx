@@ -5,12 +5,13 @@ import { DefaultValues } from "react-hook-form";
 import * as R from "ramda";
 import type { SxProps } from "@mui/material";
 import type { Theme } from "@mui/system";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { IdType } from "../../../common/types";
 import Form, { FormProps } from "../Form";
 import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
+import useMemoLocked from "../../../hooks/useMemoLocked";
 
 type TableFieldValuesByRow = Record<
   IdType,
@@ -47,8 +48,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
   const { columns, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
-  // So we do the same for the table data with `useState`.
-  const [defaultData] = useState(() =>
+  const defaultData = useMemoLocked(() =>
     R.keys(defaultValues).map((id) => ({
       ...defaultValues[id],
       id: id as IdType,

@@ -8,7 +8,7 @@ import {
 import TableTemplateFormDialog, {
   TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
-import { SubmitHandlerPlus } from "../../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 interface Props
   extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {

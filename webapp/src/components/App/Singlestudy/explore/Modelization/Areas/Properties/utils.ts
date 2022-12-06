@@ -1,4 +1,3 @@
-import { FieldValues } from "react-hook-form";
 import { TFunction } from "react-i18next";
 import { getStudyData } from "../../../../../../../services/api/study";
 import { transformNameToId } from "../../../../../../../services/utils";
@@ -37,7 +36,7 @@ export interface PropertiesType {
   };
 }
 
-export interface PropertiesFields extends FieldValues {
+export interface PropertiesFields {
   name: string;
   color: string;
   posX: number;

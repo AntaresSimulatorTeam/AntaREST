@@ -1,8 +1,7 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import Form from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getOptimizationFormFields,
@@ -12,12 +11,6 @@ import {
 
 function Optimization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-
-  const res = usePromiseWithSnackbarError(
-    () => getOptimizationFormFields(study.id),
-    // TODO i18n
-    { errorMessage: "Cannot get optimization fields", deps: [study.id] }
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -34,14 +27,14 @@ function Optimization() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={res}
-      ifResolved={(defaultValues) => (
-        <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
-          <Fields study={study} />
-        </Form>
-      )}
-    />
+    <Form
+      key={study.id}
+      config={{ asyncDefaultValues: () => getOptimizationFormFields(study.id) }}
+      onSubmit={handleSubmit}
+      autoSubmit
+    >
+      <Fields study={study} />
+    </Form>
   );
 }
 

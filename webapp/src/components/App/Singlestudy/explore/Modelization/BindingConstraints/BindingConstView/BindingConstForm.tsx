@@ -16,7 +16,7 @@ import {
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
 import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 import ConstraintItem, { ConstraintWithNullableOffset } from "./ConstraintTerm";
-import { useFormContext } from "../../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
   updateBindingConstraint,
@@ -56,7 +56,7 @@ export default function BindingConstForm(props: Props) {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { control } = useFormContext<BindingConstFields>();
+  const { control } = useFormContextPlus<BindingConstFields>();
   const { fields, update, append, remove } = useFieldArray({
     control,
     name: "constraints",

@@ -5,8 +5,9 @@ import { StudyMetadata } from "../../../../../../common/types";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
-import { useFormContext } from "../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../common/Form";
 import {
+  LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
   LINK_TYPE_OPTIONS,
   OptimizationFormFields,
   SIMPLEX_OPTIMIZATION_RANGE_OPTIONS,
@@ -21,8 +22,10 @@ interface Props {
 function Fields(props: Props) {
   const { study } = props;
   const { t } = useTranslation();
-  const { control } = useFormContext<OptimizationFormFields>();
-  const isVer830OrAbove = Number(study.version) >= 830;
+  const { control } = useFormContextPlus<OptimizationFormFields>();
+  const version = Number(study.version);
+  const isVer830OrAbove = version >= 830;
+  const isVer840OrAbove = version >= 840;
 
   return (
     <Box>
@@ -39,7 +42,11 @@ function Fields(props: Props) {
         />
         <SelectFE
           label={t("study.configuration.optimization.transmissionCapacities")}
-          options={TRANSMISSION_CAPACITIES_OPTIONS}
+          options={
+            isVer840OrAbove
+              ? TRANSMISSION_CAPACITIES_OPTIONS
+              : LEGACY_TRANSMISSION_CAPACITIES_OPTIONS
+          }
           name="transmissionCapacities"
           control={control}
           rules={{

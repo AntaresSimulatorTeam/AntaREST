@@ -62,6 +62,8 @@ function NotificationBadge(props: Props) {
             newNotification("studies.studyunarchiving");
           } else if (task.type === "SCAN") {
             newNotification("studies.success.scanFolder");
+          } else if (task.type === "UPGRADE_STUDY") {
+            newNotification("study.message.upgradeInProgress");
           }
         } catch (error) {
           logError(error);

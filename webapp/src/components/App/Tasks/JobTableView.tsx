@@ -79,6 +79,7 @@ function JobTableView(props: PropType) {
     TaskType.COPY,
     TaskType.ARCHIVE,
     TaskType.UNARCHIVE,
+    TaskType.UPGRADE_STUDY,
     TaskType.SCAN,
   ];
 

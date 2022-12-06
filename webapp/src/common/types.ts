@@ -379,6 +379,7 @@ export enum TaskType {
   UNARCHIVE = "UNARCHIVE",
   DOWNLOAD = "DOWNLOAD",
   SCAN = "SCAN",
+  UPGRADE_STUDY = "UPGRADE_STUDY",
   UNKNOWN = "UNKNOWN",
 }
 
@@ -453,6 +454,7 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 export interface LinkElement {
+  id: string;
   label: string;
   name: string;
   area1: string;

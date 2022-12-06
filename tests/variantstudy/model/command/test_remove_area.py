@@ -114,80 +114,83 @@ class TestRemoveArea:
 
         empty_study_hash = dirhash(empty_study.config.study_path, "md5")
 
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name2,
-                "command_context": command_context,
-            }
-        )
-        output = create_area_command.apply(study_data=empty_study)
-        assert output.status
+        for version in [810, 840]:
+            empty_study.config.version = version
+            create_area_command: ICommand = CreateArea.parse_obj(
+                {
+                    "area_name": area_name2,
+                    "command_context": command_context,
+                }
+            )
+            output = create_area_command.apply(study_data=empty_study)
+            assert output.status
 
-        create_link_command: ICommand = CreateLink(
-            area1=area_id,
-            area2=area_id2,
-            parameters={},
-            command_context=command_context,
-            series=[[0]],
-        )
-        output = create_link_command.apply(study_data=empty_study)
-        assert output.status
+            create_link_command: ICommand = CreateLink(
+                area1=area_id,
+                area2=area_id2,
+                parameters={},
+                command_context=command_context,
+                series=[[0]],
+            )
+            output = create_link_command.apply(study_data=empty_study)
+            assert output.status
 
-        create_cluster_command = CreateCluster.parse_obj(
-            {
-                "area_id": area_id2,
-                "cluster_name": "cluster",
-                "parameters": parameters,
-                "prepro": [[0]],
-                "modulation": [[0]],
-                "command_context": command_context,
-            }
-        )
-        output = create_cluster_command.apply(study_data=empty_study)
-        assert output.status
+            create_cluster_command = CreateCluster.parse_obj(
+                {
+                    "area_id": area_id2,
+                    "cluster_name": "cluster",
+                    "parameters": parameters,
+                    "prepro": [[0]],
+                    "modulation": [[0]],
+                    "command_context": command_context,
+                }
+            )
+            output = create_cluster_command.apply(study_data=empty_study)
+            assert output.status
 
-        bind1_cmd = CreateBindingConstraint(
-            name="BD 2",
-            time_step=TimeStep.HOURLY,
-            operator=BindingConstraintOperator.LESS,
-            coeffs={
-                f"{area_id}%{area_id2}": [400, 30],
-                f"{area_id2}.cluster": [400, 30],
-            },
-            comments="Hello",
-            command_context=command_context,
-        )
-        output = bind1_cmd.apply(study_data=empty_study)
-        assert output.status
+            bind1_cmd = CreateBindingConstraint(
+                name="BD 2",
+                time_step=TimeStep.HOURLY,
+                operator=BindingConstraintOperator.LESS,
+                coeffs={
+                    f"{area_id}%{area_id2}": [400, 30],
+                    f"{area_id2}.cluster": [400, 30],
+                },
+                comments="Hello",
+                command_context=command_context,
+            )
+            output = bind1_cmd.apply(study_data=empty_study)
+            assert output.status
 
-        remove_district_command = RemoveDistrict(
-            id="foo",
-            command_context=command_context,
-        )
-        output = remove_district_command.apply(study_data=empty_study)
-        assert output.status
+            remove_district_command = RemoveDistrict(
+                id="foo",
+                command_context=command_context,
+            )
+            output = remove_district_command.apply(study_data=empty_study)
+            assert output.status
 
-        create_district_command = CreateDistrict(
-            name="foo",
-            base_filter=DistrictBaseFilter.add_all,
-            filter_items=[area_id, area_id2],
-            command_context=command_context,
-        )
-        output = create_district_command.apply(study_data=empty_study)
-        assert output.status
+            create_district_command = CreateDistrict(
+                name="foo",
+                base_filter=DistrictBaseFilter.add_all,
+                filter_items=[area_id, area_id2],
+                command_context=command_context,
+            )
+            output = create_district_command.apply(study_data=empty_study)
+            assert output.status
 
-        remove_area_command: ICommand = RemoveArea.parse_obj(
-            {
-                "id": transform_name_to_id(area_name2),
-                "command_context": command_context,
-            }
-        )
-        output = remove_area_command.apply(study_data=empty_study)
-        assert output.status
+            remove_area_command: ICommand = RemoveArea.parse_obj(
+                {
+                    "id": transform_name_to_id(area_name2),
+                    "command_context": command_context,
+                }
+            )
+            output = remove_area_command.apply(study_data=empty_study)
+            assert output.status
 
-        assert (
-            dirhash(empty_study.config.study_path, "md5") == empty_study_hash
-        )
+            assert (
+                dirhash(empty_study.config.study_path, "md5")
+                == empty_study_hash
+            )
 
 
 def test_match(command_context: CommandContext):

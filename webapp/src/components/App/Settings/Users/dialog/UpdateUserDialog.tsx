@@ -12,7 +12,7 @@ import { createRole, deleteUserRoles } from "../../../../../services/api/user";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { SubmitHandlerPlus } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 type InheritPropsToOmit =
   | "title"

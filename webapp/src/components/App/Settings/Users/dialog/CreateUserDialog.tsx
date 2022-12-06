@@ -11,7 +11,7 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";

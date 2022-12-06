@@ -49,6 +49,7 @@ interface OutputDetail {
   creationDate?: string;
   completionDate?: string;
   job?: LaunchJob;
+  output?: StudyOutput;
   archived?: boolean;
 }
 
@@ -70,6 +71,7 @@ const combineJobsAndOutputs = (
     const outputDetail: OutputDetail = {
       name: output.name,
       archived: output.archived,
+      output,
     };
     if (relatedJob) {
       outputDetail.completionDate = relatedJob.completionDate;
@@ -172,8 +174,10 @@ function Results() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOutputNameClick = (outputName: string) => () => {
-    navigate(`/studies/${study.id}/explore/results/${outputName}`);
+  const handleOutputNameClick = (output: OutputDetail) => () => {
+    navigate(`/studies/${study.id}/explore/results/${output.name}`, {
+      state: output.output,
+    });
   };
 
   const handleDeleteOutput = async () => {
@@ -225,7 +229,7 @@ function Results() {
           <TableBody>
             {R.cond([
               [
-                () => studyJobsLoading && studyOutputsLoading,
+                () => studyJobsLoading || studyOutputsLoading,
                 () => (
                   <>
                     {Array.from({ length: 3 }, (v, k) => k).map((v) => (
@@ -271,7 +275,7 @@ function Results() {
                                 "&:hover": { textDecoration: "underline" },
                                 cursor: "pointer",
                               }}
-                              onClick={handleOutputNameClick(row.name)}
+                              onClick={handleOutputNameClick(row)}
                             >
                               {row.name}
                             </Typography>

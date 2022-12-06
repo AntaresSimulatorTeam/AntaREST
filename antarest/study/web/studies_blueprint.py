@@ -135,6 +135,22 @@ def create_study_routes(
 
         return uuid
 
+    @bp.put(
+        "/studies/{uuid}/upgrade",
+        status_code=HTTPStatus.OK,
+        tags=[APITag.study_management],
+        summary="Upgrade study to a new version",
+    )
+    def upgrade_study(
+        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        logger.info(
+            f"Upgrade study {uuid} to a new version",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.upgrade_study(uuid, params)
+
     @bp.post(
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED,

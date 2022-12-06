@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import {
-  AutoSubmitHandler,
-  useFormContext,
-} from "../../../../../../common/Form";
+import { AutoSubmitHandler } from "../../../../../../common/Form/types";
 import { getLinkPath, LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -20,6 +17,7 @@ import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
+import { useFormContextPlus } from "../../../../../../common/Form";
 
 interface Props {
   link: LinkElement;
@@ -46,7 +44,7 @@ function LinkForm(props: Props) {
     return getLinkPath(area1, area2);
   }, [area1, area2]);
 
-  const { control, defaultValues } = useFormContext<LinkFields>();
+  const { control, defaultValues } = useFormContextPlus<LinkFields>();
 
   const optionTransCap = ["infinite", "ignore", "enabled"].map((item) => ({
     label: t(`study.modelization.links.transmissionCapa.${item}`),

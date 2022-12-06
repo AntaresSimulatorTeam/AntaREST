@@ -759,7 +759,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": True,
+        "transmissionCapacities": "local-values",
         "linkType": "local",
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,
@@ -797,7 +797,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": True,
+        "transmissionCapacities": "local-values",
         "linkType": "local",
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface Props {
   open: boolean;

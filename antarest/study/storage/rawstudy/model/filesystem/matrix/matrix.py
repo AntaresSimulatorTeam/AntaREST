@@ -46,11 +46,12 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
 
         matrix = self.parse()
 
-        uuid = self.context.matrix.create(matrix["data"])
-        self.get_link_path().write_text(
-            self.context.resolver.build_matrix_uri(uuid)
-        )
-        self.config.path.unlink()
+        if "data" in matrix:
+            uuid = self.context.matrix.create(matrix["data"])
+            self.get_link_path().write_text(
+                self.context.resolver.build_matrix_uri(uuid)
+            )
+            self.config.path.unlink()
 
     def denormalize(self) -> None:
         if self.config.path.exists() or not self.get_link_path().exists():

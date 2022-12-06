@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
-import { useFormContext } from "../../../../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../../../../common/Form";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
 import { AddClustersFields } from "../utils";
 import StringFE from "../../../../../../../../common/fieldEditors/StringFE";
@@ -11,7 +11,7 @@ interface Props {
 
 function AddClusterForm(props: Props) {
   const { clusterGroupList } = props;
-  const { control } = useFormContext<AddClustersFields>();
+  const { control } = useFormContextPlus<AddClustersFields>();
   const { t } = useTranslation();
   const groupOptions = clusterGroupList.map((item) => ({
     label: item,

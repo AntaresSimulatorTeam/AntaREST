@@ -1,8 +1,7 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import Form, { SubmitHandlerPlus } from "../../../../../common/Form";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import Form from "../../../../../common/Form";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getTimeSeriesFormFields,
@@ -12,12 +11,6 @@ import {
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-
-  const res = usePromiseWithSnackbarError(
-    () => getTimeSeriesFormFields(study.id),
-    // TODO i18n
-    { errorMessage: "Cannot get time series fields", deps: [study.id] }
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -32,14 +25,14 @@ function TimeSeriesManagement() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={res}
-      ifResolved={(defaultValues) => (
-        <Form config={{ defaultValues }} onSubmit={handleSubmit} autoSubmit>
-          <Fields />
-        </Form>
-      )}
-    />
+    <Form
+      key={study.id}
+      config={{ asyncDefaultValues: () => getTimeSeriesFormFields(study.id) }}
+      onSubmit={handleSubmit}
+      autoSubmit
+    >
+      <Fields />
+    </Form>
   );
 }
 

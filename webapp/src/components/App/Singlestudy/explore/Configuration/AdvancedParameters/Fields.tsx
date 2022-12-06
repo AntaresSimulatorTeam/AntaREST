@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../common/Fieldset";
-import { useFormContext } from "../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../common/Form";
 import {
   AdvancedParamsFormFields,
   HYDRO_HEURISTIC_POLICY_OPTIONS,
@@ -24,7 +24,7 @@ interface Props {
 
 function Fields(props: Props) {
   const [t] = useTranslation();
-  const { control } = useFormContext<AdvancedParamsFormFields>();
+  const { control } = useFormContextPlus<AdvancedParamsFormFields>();
   const { version } = props;
 
   ////////////////////////////////////////////////////////////////

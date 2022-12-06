@@ -13,6 +13,9 @@ from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -44,6 +47,9 @@ class MatrixGarbageCollector(IService):
             matrix_service.repo_dataset
         )
         self.sleeping_time = config.storage.matrix_gc_sleeping_time
+        self.matrix_constants = (
+            study_service.storage_service.variant_study_service.command_factory.command_context.generator_matrix_constants
+        )
         self.dry_run = config.storage.matrix_gc_dry_run
 
     def _get_saved_matrices(self) -> Set[str]:
@@ -108,7 +114,10 @@ class MatrixGarbageCollector(IService):
         variant_studies_matrices = self._get_variant_studies_matrices()
         datasets_matrices = self._get_datasets_matrices()
         return (
-            raw_studies_matrices | variant_studies_matrices | datasets_matrices
+            raw_studies_matrices
+            | variant_studies_matrices
+            | datasets_matrices
+            | set(self.matrix_constants.hashes.values())
         )
 
     def _delete_unused_saved_matrices(self, unused_matrices: Set[str]) -> None:

@@ -12,13 +12,13 @@ import CheckBoxFE from "../../../../../common/fieldEditors/CheckBoxFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import { useFormContext } from "../../../../../common/Form";
+import { useFormContextPlus } from "../../../../../common/Form";
 import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "./utils";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control, getValues, setValue } = useFormContext<TSFormFields>();
+  const { control, getValues, setValue } = useFormContextPlus<TSFormFields>();
 
   ////////////////////////////////////////////////////////////////
   // JSX

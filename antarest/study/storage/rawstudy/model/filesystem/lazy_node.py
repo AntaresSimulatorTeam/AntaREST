@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Generic, Union, cast, Tuple, Any
+from typing import Optional, List, Generic, Union, cast, Tuple, Any, Dict
+from zipfile import ZipFile
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -16,10 +19,18 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import (
 )
 
 
+@dataclass
+class SimpleCache:
+    value: Any
+    expiration_date: datetime
+
+
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     """
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
+
+    ZIP_FILELIST_CACHE: Dict[str, SimpleCache] = {}
 
     def __init__(
         self,
@@ -35,21 +46,29 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         tmp_dir = None
         if self.config.zip_path:
             path, tmp_dir = self._extract_file_to_tmp_dir()
-
         else:
             path = self.config.path
         return path, tmp_dir
 
     def file_exists(self) -> bool:
-        tmp_dir = None
-        try:
-            path, tmp_dir = self._get_real_file_path()
-            return path.exists()
-        except Exception:
-            return False
-        finally:
-            if tmp_dir:
-                tmp_dir.cleanup()
+        if self.config.zip_path:
+            str_zipped_path = str(self.config.zip_path)
+            inside_zip_path = str(self.config.path)[
+                len(str_zipped_path[:-4]) + 1 :
+            ]
+            str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
+            if str_zipped_path not in LazyNode.ZIP_FILELIST_CACHE:
+                with ZipFile(file=self.config.zip_path) as zip_file:
+                    LazyNode.ZIP_FILELIST_CACHE[str_zipped_path] = SimpleCache(
+                        value=zip_file.namelist(),
+                        expiration_date=datetime.utcnow() + timedelta(hours=2),
+                    )
+            return (
+                str_inside_zip_path
+                in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
+            )
+        else:
+            return self.config.path.exists()
 
     def _get(
         self,

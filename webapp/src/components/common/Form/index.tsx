@@ -1,21 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  Control,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
   DeepPartial,
   FieldPath,
-  FieldPathValue,
   FieldValues,
   FormProvider,
   FormState,
   Path,
-  RegisterOptions,
   SubmitErrorHandler,
   useForm,
   useFormContext as useFormContextOriginal,
-  UseFormProps,
-  UseFormRegisterReturn,
-  UseFormReturn,
   UseFormSetValue,
   UseFormUnregister,
 } from "react-hook-form";
@@ -38,48 +39,14 @@ import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
-
-export interface SubmitHandlerPlus<
-  TFieldValues extends FieldValues = FieldValues
-> {
-  values: TFieldValues;
-  dirtyValues: DeepPartial<TFieldValues>;
-}
-
-export type AutoSubmitHandler<
-  TFieldValues extends FieldValues = FieldValues,
-  TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> = (value: FieldPathValue<TFieldValues, TFieldName>) => any | Promise<any>;
-
-export interface RegisterOptionsPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> extends RegisterOptions<TFieldValues, TFieldName> {
-  onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
-}
-
-export type UseFormRegisterPlus<
-  TFieldValues extends FieldValues = FieldValues
-> = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
-  name: TFieldName,
-  options?: RegisterOptionsPlus<TFieldValues, TFieldName>
-) => UseFormRegisterReturn<TFieldName>;
-
-export interface ControlPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TContext = any
-> extends Control<TFieldValues, TContext> {
-  register: UseFormRegisterPlus<TFieldValues>;
-}
-
-export interface UseFormReturnPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TContext = any
-> extends UseFormReturn<TFieldValues, TContext> {
-  register: UseFormRegisterPlus<TFieldValues>;
-  control: ControlPlus<TFieldValues, TContext>;
-  defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
-}
+import useAsyncDefaultValues from "./useDefaultValuesPlus";
+import {
+  ControlPlus,
+  SubmitHandlerPlus,
+  UseFormPropsPlus,
+  UseFormRegisterPlus,
+  UseFormReturnPlus,
+} from "./types";
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
@@ -87,7 +54,7 @@ export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
 > extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
-  config?: UseFormProps<TFieldValues, TContext>;
+  config?: UseFormPropsPlus<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
@@ -105,7 +72,7 @@ export interface FormProps<
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
 }
 
-export function useFormContext<TFieldValues extends FieldValues>() {
+export function useFormContextPlus<TFieldValues extends FieldValues>() {
   return useFormContextOriginal() as UseFormReturnPlus<TFieldValues>;
 }
 
@@ -128,27 +95,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
     ...formProps
   } = props;
 
-  const formApi = useForm<TFieldValues, TContext>({
-    mode: "onChange",
-    delayError: 750,
-    ...config,
-  });
-
-  const {
-    register,
-    unregister,
-    getValues,
-    setValue,
-    control,
-    handleSubmit,
-    formState,
-    reset,
-  } = formApi;
-  // * /!\ `formState` is a proxy
-  const { isSubmitting, isDirty, dirtyFields } = formState;
-  // Don't add `isValid` because we need to trigger fields validation.
-  // In case we have invalid default value for example.
-  const isSubmitAllowed = isDirty && !isSubmitting;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -162,10 +108,38 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
+  const { asyncDefaultValues, ...restConfig } = config || {};
+  const [showSkeleton, setShowSkeleton] = useState(!!asyncDefaultValues);
+
+  const formApi = useForm<TFieldValues, TContext>({
+    mode: "onChange",
+    delayError: 750,
+    ...restConfig,
+  });
+
+  const {
+    register,
+    unregister,
+    getValues,
+    setValue,
+    control,
+    handleSubmit,
+    formState,
+    reset,
+  } = formApi;
+
+  // * /!\ `formState` is a proxy
+  const { isSubmitting, isDirty, dirtyFields } = formState;
+  // Don't add `isValid` because we need to trigger fields validation.
+  // In case we have invalid default value for example.
+  const isSubmitAllowed = isDirty && !isSubmitting;
   // To use it in wrapper functions without need to add the value in `useCallback`'s deps
   const isSubmittingRef = useRef(isSubmitting);
 
-  useEffect(() => setRef(apiRef, formApi));
+  useAsyncDefaultValues(asyncDefaultValues, (values) => {
+    reset(values);
+    setShowSkeleton(false);
+  });
 
   useUpdateEffect(() => {
     setShowLoader(isSubmitting);
@@ -290,7 +264,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       const newOptions: typeof options = {
         ...options,
-        onChange: (event: any) => {
+        onChange: (event: unknown) => {
           options?.onChange?.(event);
           if (autoSubmitConfig.enable) {
             if (
@@ -347,24 +321,31 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
     // Don't use spread to keep getters and setters
-    control.register = registerWrapper;
-    control.unregister = unregisterWrapper;
-    return control;
-  }, [control, registerWrapper, unregisterWrapper]);
+    const controlPlus = control as ControlPlus<TFieldValues, TContext>;
+    controlPlus.register = registerWrapper;
+    controlPlus.unregister = unregisterWrapper;
+    controlPlus._showSkeleton = showSkeleton;
+
+    return controlPlus;
+  }, [control, registerWrapper, unregisterWrapper, showSkeleton]);
 
   ////////////////////////////////////////////////////////////////
-  // JSX
+  // Form API Plus
   ////////////////////////////////////////////////////////////////
 
   const formApiPlus: UseFormReturnPlus<TFieldValues, TContext> = {
     ...formApi,
-    formState,
-    defaultValues: config?.defaultValues,
     register: registerWrapper,
     unregister: unregisterWrapper,
     setValue: setValueWrapper,
     control: controlWrapper,
   };
+
+  useEffect(() => setRef(apiRef, formApiPlus));
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box

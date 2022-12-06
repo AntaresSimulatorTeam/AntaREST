@@ -3,13 +3,16 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.study.model import RawStudy, DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from tests.conftest import with_db_context
 
 
+@with_db_context
 def test_auto_archival(tmp_path: Path):
     workspace_path = tmp_path / "workspace_test"
     auto_archive_service = AutoArchiveService(
@@ -52,6 +55,9 @@ def test_auto_archival(tmp_path: Path):
     auto_archive_service.study_service.storage_service = Mock()
     auto_archive_service.study_service.storage_service.variant_study_service = (
         Mock()
+    )
+    auto_archive_service.study_service.archive.return_value = (
+        TaskAlreadyRunning
     )
 
     auto_archive_service._try_archive_studies()

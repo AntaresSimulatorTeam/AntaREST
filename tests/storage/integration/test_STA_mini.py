@@ -368,11 +368,28 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
-            {},
+            {
+                "values-hourly": "matrixfile://values-hourly.txt",
+                "id-hourly": "matrixfile://id-hourly.txt",
+                "values-daily": "matrixfile://values-daily.txt",
+                "id-daily": "matrixfile://id-daily.txt",
+                "values-weekly": "matrixfile://values-weekly.txt",
+                "id-weekly": "matrixfile://id-weekly.txt",
+                "values-monthly": "matrixfile://values-monthly.txt",
+                "id-monthly": "matrixfile://id-monthly.txt",
+                "values-annual": "matrixfile://values-annual.txt",
+                "id-annual": "matrixfile://id-annual.txt",
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
-            {"values-hourly": "matrixfile://values-hourly.txt"},
+            {
+                "values-hourly": "matrixfile://values-hourly.txt",
+                "values-daily": "matrixfile://values-daily.txt",
+                "values-weekly": "matrixfile://values-weekly.txt",
+                "values-monthly": "matrixfile://values-monthly.txt",
+                "values-annual": "matrixfile://values-annual.txt",
+            },
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",

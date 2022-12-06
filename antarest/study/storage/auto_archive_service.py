@@ -4,9 +4,11 @@ import time
 from typing import List
 
 from antarest.core.config import Config
+from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.service import IService
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study, RawStudy
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import is_managed
@@ -23,26 +25,48 @@ class AutoArchiveService(IService):
 
     def _try_archive_studies(self) -> None:
         now = datetime.datetime.utcnow()
-        studies: List[Study] = self.study_service.repository.get_all()
-        for study in studies:
-            if is_managed(
-                study
-            ) and study.updated_at < now - datetime.timedelta(
-                days=self.config.storage.auto_archive_threshold_days
-            ):
-                if isinstance(study, RawStudy) and not study.archived:
-                    self.study_service.archive(
-                        study.id,
-                        params=RequestParameters(DEFAULT_ADMIN_USER),
-                    )
-                elif isinstance(study, VariantStudy):
-                    self.study_service.storage_service.variant_study_service.clear_snapshot(
-                        study
-                    )
-                    self.study_service.archive_outputs(
-                        study.id,
-                        params=RequestParameters(DEFAULT_ADMIN_USER),
-                    )
+        with db():
+            studies: List[Study] = self.study_service.repository.get_all()
+            for study in studies:
+                if is_managed(
+                    study
+                ) and study.updated_at < now - datetime.timedelta(
+                    days=self.config.storage.auto_archive_threshold_days
+                ):
+                    study_id = study.id
+                    try:
+                        if isinstance(study, RawStudy) and not study.archived:
+                            logger.info(
+                                f"Auto Archiving raw study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
+                            )
+                            if not self.config.storage.auto_archive_dry_run:
+                                self.study_service.archive(
+                                    study.id,
+                                    params=RequestParameters(
+                                        DEFAULT_ADMIN_USER
+                                    ),
+                                )
+                        elif isinstance(study, VariantStudy):
+                            logger.info(
+                                f"Auto Archiving variant study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
+                            )
+                            if not self.config.storage.auto_archive_dry_run:
+                                self.study_service.storage_service.variant_study_service.clear_snapshot(
+                                    study
+                                )
+                                self.study_service.archive_outputs(
+                                    study.id,
+                                    params=RequestParameters(
+                                        DEFAULT_ADMIN_USER
+                                    ),
+                                )
+                    except TaskAlreadyRunning:
+                        pass
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to auto archive study {study_id}",
+                            exc_info=e,
+                        )
 
     def _loop(self) -> None:
         while True:
@@ -54,4 +78,4 @@ class AutoArchiveService(IService):
                     exc_info=e,
                 )
             finally:
-                time.sleep(2)
+                time.sleep(600)

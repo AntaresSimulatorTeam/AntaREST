@@ -1,14 +1,15 @@
-import { SelectChangeEvent } from "@mui/material";
+import { SelectProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 import SelectFE, { SelectFEProps } from "./SelectFE";
 
 export interface BooleanFEProps
-  extends Omit<SelectFEProps, "options" | "multiple"> {
+  extends Omit<SelectFEProps, "options" | "multiple" | "onChange"> {
   defaultValue?: boolean;
   value?: boolean;
   trueText?: string;
   falseText?: string;
+  onChange?: SelectProps<boolean>["onChange"];
 }
 
 function toValidValue(value?: boolean) {
@@ -18,18 +19,14 @@ function toValidValue(value?: boolean) {
   return value;
 }
 
-function toValidEvent<
-  T extends
-    | SelectChangeEvent<unknown>
-    | React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
->(event: T): T {
+function toValidEvent<T extends { target: { value: unknown } }>(event: T) {
   return {
     ...event,
     target: {
       ...event.target,
       value: event.target.value === "true",
     },
-  } as T;
+  };
 }
 
 function BooleanFE(props: BooleanFEProps) {

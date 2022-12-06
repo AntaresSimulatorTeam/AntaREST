@@ -34,7 +34,7 @@ import usePromise from "../../../../../../hooks/usePromise";
 import { getUsers } from "../../../../../../services/api/user";
 import { getAuthUser } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { UseFormReturnPlus } from "../../../../../common/Form";
+import { UseFormReturnPlus } from "../../../../../common/Form/types";
 
 function GroupForm(props: UseFormReturnPlus) {
   const {

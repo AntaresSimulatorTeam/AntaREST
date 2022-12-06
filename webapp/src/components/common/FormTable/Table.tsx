@@ -3,7 +3,7 @@ import type { RowObject } from "handsontable/common";
 import * as RA from "ramda-adjunct";
 import { useMemo } from "react";
 import type { IdType } from "../../../common/types";
-import { useFormContext } from "../Form";
+import { useFormContextPlus } from "../Form";
 import Handsontable, { HandsontableProps } from "../Handsontable";
 
 type Row = { id: IdType } & RowObject;
@@ -22,7 +22,7 @@ function Table(props: TableProps) {
     tableRef,
     ...restProps
   } = props;
-  const { setValue } = useFormContext();
+  const { setValue } = useFormContextPlus();
 
   const rowHeaderWidth = useMemo(
     () =>

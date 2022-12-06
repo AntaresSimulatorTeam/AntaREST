@@ -66,7 +66,7 @@ class GeneralData(IniFileNode):
         },
         "optimization": {
             "simplex-range": str,
-            "transmission-capacities": bool,
+            "transmission-capacities": str,
             "include-constraints": bool,
             "include-hurdlecosts": bool,
             "include-tc-minstablepower": bool,
@@ -134,6 +134,8 @@ class GeneralData(IniFileNode):
             types["optimization"][
                 "include-exportmps"
             ] = str  # none, optim-1, optim-2, both-optims
+        if config.version >= 840:
+            del types["optimization"]["include-split-exported-mps"]
 
         IniFileNode.__init__(
             self,

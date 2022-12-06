@@ -12,6 +12,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
@@ -134,19 +137,27 @@ class OutputSeriesMatrix(
         expanded: bool = False,
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
-        file_path, tmp_dir = self._get_real_file_path()
-        if not formatted:
-            if file_path.exists():
+        try:
+            file_path, tmp_dir = self._get_real_file_path()
+            if not formatted:
+                if file_path.exists():
+                    file_content = file_path.read_bytes()
+                    if tmp_dir:
+                        tmp_dir.cleanup()
+                    return file_content
+
+                logger.warning(f"Missing file {self.config.path}")
                 if tmp_dir:
                     tmp_dir.cleanup()
-                return file_path.read_bytes()
+                return b""
 
-            logger.warning(f"Missing file {self.config.path}")
-            if tmp_dir:
-                tmp_dir.cleanup()
-            return b""
-
-        return self.parse(file_path, tmp_dir)
+            if not file_path.exists():
+                raise KeyError
+            return self.parse(file_path, tmp_dir)
+        except KeyError:
+            raise ChildNotFoundError(
+                f"Output file {self.config.path.name} not found in study {self.config.study_id}"
+            )
 
     def dump(
         self, data: Union[bytes, JSON], url: Optional[List[str]] = None
