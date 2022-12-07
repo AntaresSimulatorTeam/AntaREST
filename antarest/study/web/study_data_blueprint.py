@@ -22,6 +22,7 @@ from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaInfoDTO,
     AreaUI,
+    LayerInfoDTO,
 )
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
@@ -156,6 +157,7 @@ def create_study_data_routes(
         uuid: str,
         area_id: str,
         area_ui: AreaUI,
+        layer: str = "0",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -163,7 +165,9 @@ def create_study_data_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_area_ui(uuid, area_id, area_ui, params)
+        return study_service.update_area_ui(
+            uuid, area_id, area_ui, layer, params
+        )
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}",
@@ -232,6 +236,92 @@ def create_study_data_routes(
         params = RequestParameters(user=current_user)
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
+
+    @bp.get(
+        "/studies/{uuid}/layers",
+        tags=[APITag.study_data],
+        summary="Get all layers info",
+        response_model=List[LayerInfoDTO],
+    )
+    def get_layers(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> List[LayerInfoDTO]:
+        logger.info(
+            f"Fetching layer list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.areas.get_layers(study)
+
+    @bp.post(
+        "/studies/{uuid}/layers",
+        tags=[APITag.study_data],
+        summary="Get all layers info",
+        response_model=str,
+    )
+    def create_layer(
+        uuid: str,
+        name: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        logger.info(
+            f"Create layer {name} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        return study_service.areas.create_layer(study, name)
+
+    @bp.put(
+        "/studies/{uuid}/layers/{layer_id}",
+        tags=[APITag.study_data],
+        summary="Rename layer",
+    )
+    def update_layer(
+        uuid: str,
+        layer_id: str,
+        name: Optional[str] = None,
+        areas: Optional[List[str]] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating layer {layer_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        if name:
+            study_service.areas.update_layer_name(study, layer_id, name)
+        if areas:
+            study_service.areas.update_layer_areas(study, layer_id, areas)
+
+    @bp.delete(
+        "/studies/{uuid}/layers/{layer_id}",
+        tags=[APITag.study_data],
+        summary="Remove layer",
+    )
+    def remove_layer(
+        uuid: str,
+        layer_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Remove layer {layer_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.areas.remove_layer(study, layer_id)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
