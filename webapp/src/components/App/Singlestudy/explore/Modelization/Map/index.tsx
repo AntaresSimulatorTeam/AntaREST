@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Fab, Typography } from "@mui/material";
+import { Fab } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
@@ -18,7 +18,7 @@ import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { getUpdatedNode } from "./utils";
-import { MapContainer, MapFooter, MapHeader } from "./style";
+import { MapContainer, MapFooter } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentStudyMapNode,
@@ -34,6 +34,7 @@ import {
   updateStudyMapNode,
 } from "../../../../../../redux/ducks/studyMaps";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import MapHeader from "./MapHeader";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -46,8 +47,17 @@ function Map() {
   const graphRef =
     useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
-  const mapLinks = useAppSelector((state) => getStudyMapLinks(state, study.id));
-
+  const studyLinks = useAppSelector((state) =>
+    getStudyMapLinks(state, study.id)
+  );
+  const mapLinks = useMemo(
+    () =>
+      R.map(
+        RA.renameKeys({ area1: "source", area2: "target" }),
+        studyLinks || []
+      ) as LinkProperties[],
+    [studyLinks]
+  );
   const mapNodesRes = useStudyMaps({
     studyId: study.id,
     selector: getStudyMapNodes,
@@ -142,7 +152,7 @@ function Map() {
             left={
               <Areas
                 onAdd={() => setOpenDialog(true)}
-                nodes={mapNodes}
+                nodes={mapNodes || []}
                 updateUI={updateUI}
               />
             }
@@ -151,21 +161,14 @@ function Map() {
                 <MapConfig onClose={() => setOpenConfig(false)} />
               ) : (
                 <MapContainer>
-                  <MapHeader>
-                    <Typography>{`${mapNodes.length} ${t(
-                      "study.areas"
-                    )}`}</Typography>
-                    <Typography>
-                      {`${mapLinks.length} ${t("study.links")}`}
-                    </Typography>
-                  </MapHeader>
+                  <MapHeader links={mapLinks} nodes={mapNodes || []} />
                   <AutoSizer>
                     {({ height, width }) => (
                       <MapGraph
                         height={height}
                         width={width}
                         links={mapLinks}
-                        nodes={mapNodes}
+                        nodes={mapNodes || []}
                         graph={graphRef}
                         onNodePositionChange={handlePositionChange}
                       />

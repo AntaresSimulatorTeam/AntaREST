@@ -4,7 +4,7 @@ import { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudyMap } from "../selectors";
-import { createStudyMap } from "../ducks/studyMaps";
+import { createStudyMap, fetchStudyMapLayers } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
 import { setCurrentArea } from "../ducks/studySyntheses";
 import { Response } from "../../components/common/utils/UsePromiseCond";
@@ -44,6 +44,7 @@ export default function useStudyMaps<T>(props: Props<T>): Response<T> {
       try {
         // Prevent default selected node on first render
         dispatch(setCurrentArea(""));
+        await dispatch(fetchStudyMapLayers(studyId)).unwrap();
         await dispatch(createStudyMap(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);

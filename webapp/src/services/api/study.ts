@@ -18,6 +18,7 @@ import {
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
+import { Layer } from "../../redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<{
   [sid: string]: StudyMetadataDTO;
@@ -422,4 +423,9 @@ export const updateStudyMetadata = async (
 
 export const scanFolder = async (folderPath: string): Promise<void> => {
   await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
+};
+
+export const getStudyLayers = async (uuid: string): Promise<Layer[]> => {
+  const res = await client.get(`v1/studies/${uuid}/layers`);
+  return res.data;
 };

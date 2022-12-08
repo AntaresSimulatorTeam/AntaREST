@@ -21,13 +21,7 @@ import {
 } from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
-import {
-  StudyMapLink,
-  StudyMap,
-  studyMapsAdapter,
-  StudyMapsState,
-} from "./ducks/studyMaps";
-import { makeLinkId, parseLinkId } from "./utils";
+import { AreaNode, studyMapsAdapter, StudyMapsState } from "./ducks/studyMaps";
 
 // TODO resultEqualityCheck
 
@@ -369,10 +363,6 @@ export const getStudyMaps = studyMapsSelectors.selectAll;
 
 export const getStudyMap = studyMapsSelectors.selectById;
 
-export const getStudyMapNodes = createSelector(getStudyMap, (studyMap) =>
-  Object.values(studyMap?.nodes || {})
-);
-
 export const getCurrentStudyMapNode = createSelector(
   getStudyMapsById,
   getCurrentStudyId,
@@ -425,11 +415,81 @@ export const getStudyMapLinks = createSelector(
   }
 );
 
-export const isStudyMapLinkExist = createSelector(
+export const getStudyMapLayers = (
+  state: AppState
+): StudyMapsState["layers"] => {
+  return getStudyMapsState(state).layers;
+};
+
+export const getCurrentLayer = (
+  state: AppState
+): StudyMapsState["currentLayer"] => {
+  return getStudyMapsState(state).currentLayer;
+};
+
+export const getCurrentLayerAreas = createSelector(
+  getCurrentLayer,
+  getStudyMapLayers,
+  (currentLayerId, studyMapLayers) => {
+    if (currentLayerId) {
+      return studyMapLayers[currentLayerId].areas;
+    }
+    return {};
+  }
+);
+
+export const getStudyMapNodes = createSelector(
+  getCurrentLayerAreas,
   getStudyMap,
-  (state: AppState, studyId: StudyMap["studyId"], linkId: StudyMapLink["id"]) =>
-    linkId,
-  (studyMap, linkId) => !!studyMap?.links[linkId]
+  (currentLayerAreas, studyMap) => {
+    if (studyMap) {
+      const studyMapNodes = Object.values(currentLayerAreas).map(
+        (area) => studyMap?.nodes[area as AreaNode["id"]]
+      );
+
+      return Object.values(studyMapNodes || []);
+    }
+  }
+);
+
+export const getStudyMapLinks = createSelector(
+  getCurrentLayerAreas,
+  getStudySynthesis,
+  (currentLayerAreas, synthesis) => {
+    const studyMapLinks: LinkElement[] = [];
+
+    if (synthesis && currentLayerAreas) {
+      Object.values(currentLayerAreas).forEach((areaId) => {
+        const area1 = {
+          id: areaId as AreaNode["id"],
+          ...synthesis.areas[areaId as AreaNode["id"]],
+        };
+
+        const layerAreas = Object.keys(area1.links).map((link) => {
+          if (!Object.values(currentLayerAreas).includes(link)) {
+            return;
+          }
+          return link;
+        });
+
+        layerAreas.forEach((areaId) => {
+          if (areaId) {
+            const area2 = { id: areaId, ...synthesis.areas[areaId] };
+            const id = `${area1.id} / ${area2.id}`;
+            studyMapLinks.push({
+              id,
+              name: id,
+              label: `${area1.name} / ${area2.name}`,
+              area1: area1.id,
+              area2: area2.id,
+            });
+          }
+        });
+      });
+    }
+
+    return studyMapLinks;
+  }
 );
 
 ////////////////////////////////////////////////////////////////

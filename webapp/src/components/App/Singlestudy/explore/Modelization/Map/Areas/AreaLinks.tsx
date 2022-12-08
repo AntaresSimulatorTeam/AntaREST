@@ -29,14 +29,15 @@ function AreaLinks() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <AreaLinkRoot>
+    <AreaLinkRoot paragraph={false}>
       {areaLinks && areaLinks.length > 0 && (
         <AreaLinkTitle>{t("study.links")}</AreaLinkTitle>
       )}
       {areaLinks &&
         areaLinks.map(({ area1, area2 }) => (
-          <AreaLinkContainer key={area1 + area2}>
+          <AreaLinkContainer paragraph={false} key={`${area1}${area2}`}>
             <AreaLinkContent
+              paragraph={false}
               onClick={() => {
                 dispatch(setCurrentArea(""));
                 dispatch(setCurrentLink(makeLinkId(area1, area2)));

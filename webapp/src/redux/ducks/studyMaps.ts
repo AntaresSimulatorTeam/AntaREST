@@ -13,10 +13,9 @@ import {
   UpdateAreaUi,
 } from "../../common/types";
 
-import { AppAsyncThunkConfig } from "../store";
-import { makeActionName, makeLinkId, parseLinkId } from "../utils";
-import * as studyApi from "../../services/api/study";
-import * as studyDataApi from "../../services/api/studydata";
+import { AppAsyncThunkConfig, AppDispatch } from "../store";
+import { makeActionName } from "../utils";
+import * as api from "../../services/api/study";
 import {
   getNodeWidth,
   NODE_COLOR,
@@ -54,19 +53,32 @@ export interface StudyMapLink {
   strokeWidth?: number;
 }
 
+export interface Layer {
+  id: string;
+  name: string;
+  areas: AreaNode[];
+}
+
 export interface StudyMap {
   studyId: StudyMetadata["id"];
-  nodes: Record<StudyMapNode["id"], StudyMapNode>;
-  links: Record<StudyMapLink["id"], StudyMapLink>;
+  nodes: Record<AreaNode["id"], AreaNode>;
+  links: Record<AreaNodeLink["id"], AreaNodeLink>;
+  currentLayer?: Layer["id"];
 }
 
 export const studyMapsAdapter = createEntityAdapter<StudyMap>({
   selectId: (studyMap) => studyMap.studyId,
 });
 
-export type StudyMapsState = EntityState<StudyMap>;
+export interface StudyMapsState extends EntityState<StudyMap> {
+  currentLayer: string;
+  layers: Record<Layer["id"], Layer>;
+}
 
-const initialState = studyMapsAdapter.getInitialState() as StudyMapsState;
+const initialState = studyMapsAdapter.getInitialState({
+  currentLayer: "",
+  layers: {},
+}) as StudyMapsState;
 
 const n = makeActionName("studyMaps");
 
@@ -74,25 +86,13 @@ const n = makeActionName("studyMaps");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-const createStudyMapLinkTemp = createAction<{
-  studyId: StudyMap["studyId"];
-  sourceId: StudyMapNode["id"];
-  targetId: StudyMapNode["id"];
-}>(n("CREATE_STUDY_MAP_LINK_TEMP"));
+export const setCurrentLayer = createAction<
+  NonNullable<StudyMap["currentLayer"]>
+>(n("SET_CURRENT_LAYER"));
 
-const updateStudyMapLink = createAction<{
-  studyId: StudyMap["studyId"];
-  id: StudyMapLink["id"];
-  changes: Partial<Omit<StudyMapLink, "id">>;
-}>(n("UPDATE_STUDY_MAP_LINK"));
-
-const updateStudyMapNodeLinks = createAction<{
-  studyId: StudyMap["studyId"];
-  studyLinks: StudyMapLink[];
-  areaLinks: StudyMapLink[];
-  areaId: StudyMapNode["id"];
-  changes: Partial<Omit<StudyMapNode, "id">>;
-}>(n("UPDATE_STUDY_MAP_NODE_LINKS"));
+export const setLayers = createAction<NonNullable<Record<Layer["id"], Layer>>>(
+  n("SET_LAYERS")
+);
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -107,13 +107,53 @@ const makeLinkStyle = R.cond<[string], LinkStyle>([
   [R.T, (): LinkStyle => [[0], "butt"]],
 ]);
 
+const initStudyMapLayers = (
+  dispatch: AppDispatch,
+  layers: Record<Layer["id"], Layer>
+): void => {
+  if (layers) {
+    // Set Layers
+    dispatch(setLayers(layers));
+    // Set current layer
+    dispatch(setCurrentLayer(layers[0].id));
+  } else {
+    dispatch(setLayers({}));
+    dispatch(setCurrentLayer(""));
+  }
+};
+
+export const fetchStudyMapLayers = createAsyncThunk<
+  void,
+  StudyMap["studyId"],
+  AppAsyncThunkConfig
+>(
+  n("FETCH_STUDY_MAP_LAYERS"),
+  async (studyId, { dispatch, rejectWithValue }) => {
+    try {
+      const layers = await api.getStudyLayers(studyId);
+
+      const studyMapLayers = layers.reduce((acc, { id, name, areas }) => {
+        acc[id] = {
+          id,
+          name,
+          areas,
+        };
+        return acc;
+      }, {} as StudyMapsState["layers"]);
+
+      if (studyMapLayers) {
+        initStudyMapLayers(dispatch, studyMapLayers);
+      }
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  }
+);
+
 async function getLinks(
   studyId: StudyMap["studyId"]
 ): Promise<StudyMap["links"]> {
-  const links = await studyDataApi.getAllLinks({
-    uuid: studyId,
-    withUi: true,
-  });
+  const links = await getAllLinks({ uuid: studyId, withUi: true });
   return links.reduce((acc, link) => {
     const [style, linecap] = makeLinkStyle(link.ui?.style);
     const id = makeLinkId(link.area1, link.area2);
@@ -122,7 +162,7 @@ async function getLinks(
       color: `rgb(${link.ui?.color}`,
       strokeDasharray: style,
       strokeLinecap: linecap,
-      strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width, // Sets minimum link width to 2
+      strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
     };
     return acc;
   }, {} as StudyMap["links"]);
@@ -357,88 +397,10 @@ export default createReducer(initialState, (builder) => {
         };
       }
     })
-    .addCase(createStudyMapLinkTemp, (draftState, action) => {
-      const { studyId, sourceId, targetId } = action.payload;
-      const linkId = makeLinkId(sourceId, targetId);
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        entity.links[linkId] = {
-          id: linkId,
-          color: "rgb(112, 112, 112)",
-          strokeDasharray: [0],
-          strokeLinecap: "butt",
-          strokeWidth: 2,
-          isTemp: true,
-        };
-      }
+    .addCase(setCurrentLayer, (draftState, action) => {
+      draftState.currentLayer = action.payload;
     })
-    .addCase(createStudyMapLink.fulfilled, (draftState, action) => {
-      const { studyId, linkId } = action.payload;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        entity.links[linkId].isTemp = false;
-      }
-    })
-    .addCase(createStudyMapLink.rejected, (draftState, action) => {
-      const { studyId, sourceId, targetId } = action.meta.arg;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        delete entity.links[makeLinkId(sourceId, targetId)];
-      }
-    })
-    .addCase(updateStudyMapLink, (draftState, action) => {
-      const { studyId, id, changes } = action.payload;
-      const entity = draftState.entities[studyId];
-
-      if (entity && entity.links[id]) {
-        entity.links[id] = {
-          ...entity.links[id],
-          ...changes,
-        };
-      }
-    })
-    .addCase(deleteStudyMapLink.fulfilled, (draftState, action) => {
-      const { studyId, linkId } = action.payload;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        delete entity.links[linkId];
-      }
-    })
-    .addCase(deleteStudyMapLink.rejected, (draftState, action) => {
-      const { studyId, id } = action.meta.arg;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        delete entity.links[id]?.isDeleting;
-      }
-    })
-    .addCase(updateStudyMapNodeLinks, (draftState, action) => {
-      const { studyId } = action.payload;
-
-      const entity = draftState.entities[studyId];
-
-      if (entity && entity.links) {
-        // TODO remove links
-      }
-    })
-    .addCase(deleteStudyMapNode.fulfilled, (draftState, action) => {
-      const { studyId, areaId } = action.payload;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        delete entity.nodes[areaId];
-      }
-    })
-    .addCase(deleteStudyMapNode.rejected, (draftState, action) => {
-      const { studyId, areaId } = action.meta.arg;
-      const entity = draftState.entities[studyId];
-
-      if (entity) {
-        delete entity.nodes[areaId]?.isDeleting;
-      }
+    .addCase(setLayers, (draftState, action) => {
+      draftState.layers = action.payload;
     });
 });

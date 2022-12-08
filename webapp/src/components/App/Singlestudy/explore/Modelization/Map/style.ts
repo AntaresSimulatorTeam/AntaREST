@@ -16,12 +16,11 @@ export const MapContainer = styled(Box)(() => ({
 }));
 
 export const MapHeader = styled(Box)(() => ({
-  width: "14%",
+  width: "100%",
   display: "flex",
-  justifyContent: "space-around",
+  justifyContent: "space-between",
   alignItems: "center",
   position: "absolute",
-  right: "16px",
   top: "10px",
 }));
 
