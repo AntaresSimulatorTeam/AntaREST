@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Fab, Typography } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
   LinkProperties,
@@ -23,14 +22,14 @@ import { MapContainer, MapFooter, MapHeader } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentStudyMapNode,
-  getStudyMapNodeLinks,
+  getStudyMapLinks,
   getStudyMapNodes,
 } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import MapConfig from "./MapConfig";
 import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
 import {
-  AreaNode,
+  StudyMapNode,
   createStudyMapNode,
   updateStudyMapNode,
 } from "../../../../../../redux/ducks/studyMaps";
@@ -45,20 +44,9 @@ function Map() {
   const [openConfig, setOpenConfig] = useState<boolean>(false);
   const previousNode = useRef<string>();
   const graphRef =
-    useRef<Graph<GraphNode & AreaNode, GraphLink & LinkProperties>>(null);
+    useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
-  const studyLinks = useAppSelector((state) =>
-    getStudyMapNodeLinks(state, study.id)
-  );
-
-  const mapLinks = useMemo(
-    () =>
-      R.map(
-        RA.renameKeys({ area1: "source", area2: "target" }),
-        studyLinks
-      ) as LinkProperties[],
-    [studyLinks]
-  );
+  const mapLinks = useAppSelector((state) => getStudyMapLinks(state, study.id));
 
   const mapNodesRes = useStudyMaps({
     studyId: study.id,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAsync } from "react-use";
 import { StudyMetadata } from "../../common/types";
 import { AppState } from "../ducks";

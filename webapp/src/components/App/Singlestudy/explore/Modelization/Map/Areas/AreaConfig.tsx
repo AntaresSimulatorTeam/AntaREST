@@ -9,13 +9,13 @@ import AreaLink from "./AreaLink";
 
 import { AreaColorPicker, AreaHuePicker } from "./style";
 import DeleteAreaDialog from "./DeleteAreaDialog";
-import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
+import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
-  node?: AreaNode;
+  node?: StudyMapNode;
   updateUI: (id: string, value: UpdateAreaUi) => void;
   currentLink?: LinkElement;
-  currentArea?: AreaNode | undefined;
+  currentArea?: StudyMapNode | undefined;
 }
 
 function AreaConfig(props: Props) {
