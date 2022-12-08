@@ -1,17 +1,20 @@
 import { AxiosError } from "axios";
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { LinkProperties, StudyMetadata } from "../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
+import {
+  StudyMapNode,
+  createStudyMapLink,
+} from "../../../../../../redux/ducks/studyMaps";
 import {
   setCurrentArea,
   setCurrentLink,
 } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { createLink } from "../../../../../../services/api/studydata";
+import { makeLinkId } from "../../../../../../redux/utils";
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";
 
@@ -19,8 +22,8 @@ interface Props {
   height: number;
   width: number;
   links: LinkProperties[];
-  nodes: AreaNode[];
-  graph: RefObject<Graph<AreaNode & GraphNode, LinkProperties & GraphLink>>;
+  nodes: StudyMapNode[];
+  graph: RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink>>;
   onNodePositionChange: (id: string, x: number, y: number) => void;
 }
 
@@ -30,37 +33,8 @@ function MapGraph(props: Props) {
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [sourceNode, setSourceNode] = useState<string | undefined>(undefined);
-  const [targetNode, setTargetNode] = useState<string | undefined>(undefined);
-
-  ////////////////////////////////////////////////////////////////
-  // Selectors
-  ////////////////////////////////////////////////////////////////
-
+  const [sourceNode, setSourceNode] = useState("");
   const mapNodes = useRenderNodes(nodes, width, height);
-
-  /**
-   * Create new map link if sourceNode and targetNode are set
-   */
-  useEffect(() => {
-    const createMapLink = async (
-      sourceNode: string,
-      targetNode: string
-    ): Promise<void> => {
-      try {
-        await createLink(study.id, { area1: sourceNode, area2: targetNode });
-      } catch (e) {
-        enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
-      } finally {
-        setSourceNode(undefined);
-        setTargetNode(undefined);
-      }
-    };
-
-    if (sourceNode && targetNode) {
-      createMapLink(sourceNode, targetNode);
-    }
-  }, [sourceNode, targetNode, study.id, dispatch, enqueueErrorSnackbar, t]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -68,8 +42,7 @@ function MapGraph(props: Props) {
 
   const handleLinkCreation = (nodeId: string) => {
     if (sourceNode && sourceNode === nodeId) {
-      setSourceNode(undefined);
-      setTargetNode(undefined);
+      setSourceNode("");
     } else {
       setSourceNode(nodeId);
     }
@@ -80,16 +53,31 @@ function MapGraph(props: Props) {
       dispatch(setCurrentLink(""));
       dispatch(setCurrentArea(nodeId));
     } else if (sourceNode) {
-      setTargetNode(nodeId);
+      try {
+        await dispatch(
+          createStudyMapLink({
+            studyId: study.id,
+            sourceId: sourceNode,
+            targetId: nodeId,
+          })
+        ).unwrap();
+      } catch (e) {
+        enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
+      } finally {
+        setSourceNode("");
+      }
     }
   };
 
   const handleOnClickLink = (source: string, target: string) => {
     dispatch(setCurrentArea(""));
-    dispatch(setCurrentLink(`${source} / ${target}`));
+    dispatch(setCurrentLink(makeLinkId(source, target)));
   };
 
   const handleGraphClick = () => {
+    if (sourceNode) {
+      setSourceNode("");
+    }
     dispatch(setCurrentArea(""));
     dispatch(setCurrentLink(""));
   };

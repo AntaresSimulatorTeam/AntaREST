@@ -5,22 +5,22 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
+import {
+  deleteStudyMapLink,
+  StudyMapNode,
+} from "../../../../../../../redux/ducks/studyMaps";
 import {
   setCurrentArea,
   setCurrentLink,
 } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import {
-  deleteArea,
-  deleteLink,
-} from "../../../../../../../services/api/studydata";
+import { deleteArea } from "../../../../../../../services/api/studydata";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import { AreaDeleteIcon } from "./style";
 
 interface Props {
   currentLink?: LinkElement;
-  currentArea?: AreaNode | undefined;
+  currentArea?: StudyMapNode | undefined;
 }
 
 function DeleteAreaDialog(props: Props) {
@@ -37,6 +37,8 @@ function DeleteAreaDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleDelete = async () => {
+    setOpenConfirmationModal(false);
+
     // Delete node
     if (currentArea && !currentLink) {
       try {
@@ -52,7 +54,9 @@ function DeleteAreaDialog(props: Props) {
     // Delete link
     if (currentLink && !currentArea) {
       try {
-        await deleteLink(study.id, currentLink.area1, currentLink.area2);
+        await dispatch(
+          deleteStudyMapLink({ studyId: study.id, id: currentLink.id })
+        );
         dispatch(setCurrentLink(""));
       } catch (e) {
         enqueueErrorSnackbar(
@@ -61,7 +65,6 @@ function DeleteAreaDialog(props: Props) {
         );
       }
     }
-    setOpenConfirmationModal(false);
   };
 
   ////////////////////////////////////////////////////////////////

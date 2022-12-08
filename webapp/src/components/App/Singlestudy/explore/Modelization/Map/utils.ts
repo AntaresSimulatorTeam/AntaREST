@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
+import { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -46,8 +46,8 @@ export const getNodeWidth = (nodeText: string): number => {
 
 export function getUpdatedNode(
   id: string,
-  nodeData: AreaNode[]
-): AreaNode | undefined {
+  nodeData: StudyMapNode[]
+): StudyMapNode | undefined {
   return nodeData.find((node) => node.id === id);
 }
 
@@ -83,10 +83,10 @@ export const getTextColor = (bgColor: RGB): string => {
  * Sets the graph nodes from the nodes data
  */
 export function useRenderNodes(
-  nodes: AreaNode[],
+  nodes: StudyMapNode[],
   width: number,
   height: number
-): AreaNode[] {
+): StudyMapNode[] {
   // compute center offset with scale fix on x axis
   const centerVector = { x: width / INITIAL_ZOOM / 2, y: height / 2 };
   // get real center from origin enclosing rectangle
