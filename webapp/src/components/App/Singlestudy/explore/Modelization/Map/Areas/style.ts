@@ -1,4 +1,4 @@
-import { styled, Box, Typography } from "@mui/material";
+import { styled, Box } from "@mui/material";
 import { HuePicker } from "react-color";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -44,14 +44,14 @@ export const AreaDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   },
 }));
 
-export const AreaLinkRoot = styled(Typography)(() => ({
+export const AreaLinkRoot = styled("div")(() => ({
   width: "100%",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
 }));
 
-export const AreaLinkTitle = styled(Typography)(({ theme }) => ({
+export const AreaLinkTitle = styled("div")(({ theme }) => ({
   width: "90%",
   display: "flex",
   flexFlow: "row nowrap",
@@ -61,7 +61,7 @@ export const AreaLinkTitle = styled(Typography)(({ theme }) => ({
   fontWeight: "bold",
 }));
 
-export const AreaLinkContainer = styled(Typography)(() => ({
+export const AreaLinkContainer = styled("div")(() => ({
   width: "90%",
   display: "flex",
   justifyContent: "flex-start",
@@ -69,12 +69,12 @@ export const AreaLinkContainer = styled(Typography)(() => ({
   boxSizing: "border-box",
 }));
 
-export const AreaLinkLabel = styled(Typography)(({ theme }) => ({
+export const AreaLinkLabel = styled("div")(({ theme }) => ({
   fontWeight: "bold",
   color: theme.palette.text.secondary,
 }));
 
-export const AreaLinkContent = styled(Typography)(({ theme }) => ({
+export const AreaLinkContent = styled("div")(({ theme }) => ({
   cursor: "pointer",
   color: theme.palette.text.secondary,
   padding: theme.spacing(1.5),
