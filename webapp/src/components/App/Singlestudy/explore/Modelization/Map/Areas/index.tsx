@@ -13,19 +13,19 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/textUtils";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
-import { AreaNode } from "../../../../../../../redux/ducks/studyMaps";
+import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
   onAdd: () => void;
   updateUI: (id: string, value: UpdateAreaUi) => void;
-  nodes: AreaNode[];
+  nodes: StudyMapNode[];
 }
 
 function Areas(props: Props) {
   const { onAdd, updateUI, nodes } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
-  const [filteredNodes, setFilteredNodes] = useState<Array<AreaNode>>([]);
+  const [filteredNodes, setFilteredNodes] = useState<Array<StudyMapNode>>([]);
   const [searchValue, setSearchValue] = useState("");
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const currentLink = useAppSelector((state) =>
@@ -33,7 +33,7 @@ function Areas(props: Props) {
   );
 
   useEffect(() => {
-    const filter = (): AreaNode[] => {
+    const filter = (): StudyMapNode[] => {
       if (nodes) {
         return nodes.filter((node) => isSearchMatching(searchValue, node.id));
       }

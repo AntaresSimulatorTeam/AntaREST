@@ -1,9 +1,9 @@
 import AddLinkIcon from "@mui/icons-material/AddLink";
-import { AreaNode } from "../../../../../../redux/ducks/studyMaps";
+import { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 import { NodeContainer, NodeDefault, NodeHighlighted } from "./style";
 
 interface PropType {
-  node: AreaNode;
+  node: StudyMapNode;
   linkCreation: (id: string) => void;
 }
 

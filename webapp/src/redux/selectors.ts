@@ -21,7 +21,13 @@ import {
 } from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
-import { studyMapsAdapter, StudyMapsState } from "./ducks/studyMaps";
+import {
+  StudyMapLink,
+  StudyMap,
+  studyMapsAdapter,
+  StudyMapsState,
+} from "./ducks/studyMaps";
+import { makeLinkId, parseLinkId } from "./utils";
 
 // TODO resultEqualityCheck
 
@@ -239,7 +245,7 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       const area1 = { id: id1, ...synthesis.areas[id1] };
       Object.keys(area1.links).forEach((id2) => {
         const area2 = { id: id2, ...synthesis.areas[id2] };
-        const id = `${area1.id} / ${area2.id}`;
+        const id = makeLinkId(area1.id, area2.id);
         links.push({
           id, // For consistency
           name: id,
@@ -375,17 +381,55 @@ export const getCurrentStudyMapNode = createSelector(
     studyMapsById[currentStudyId]?.nodes[currentAreaId]
 );
 
-export const getStudyMapNodeLinks = createSelector(
+export const getStudyMapLinks = createSelector(
   getLinks,
   getStudyMap,
-  (links, studyMap) => {
-    return links.map((link) => {
-      return {
+  (
+    links,
+    studyMap
+  ): Array<
+    LinkElement &
+      Partial<StudyMapLink> & {
+        source: string;
+        target: string;
+        opacity?: number;
+      }
+  > => {
+    const nodeLinks = links
+      .filter((link) => !studyMap?.links[link.id]?.isDeleting)
+      .map((link) => ({
         ...link,
         ...studyMap?.links[link.id],
-      };
-    });
+        source: link.area1,
+        target: link.area2,
+      }));
+
+    const tempNodeLinks = Object.values(studyMap?.links || [])
+      .filter((link) => link.isTemp)
+      .map((link) => {
+        const [area1, area2] = parseLinkId(link.id);
+        return {
+          label: "",
+          name: link.id,
+          area1,
+          area2,
+          source: area1,
+          target: area2,
+          ...link,
+          // For react-d3-graph
+          opacity: 0.3,
+        };
+      });
+
+    return [...nodeLinks, ...tempNodeLinks];
   }
+);
+
+export const isStudyMapLinkExist = createSelector(
+  getStudyMap,
+  (state: AppState, studyId: StudyMap["studyId"], linkId: StudyMapLink["id"]) =>
+    linkId,
+  (studyMap, linkId) => !!studyMap?.links[linkId]
 );
 
 ////////////////////////////////////////////////////////////////
