@@ -77,7 +77,7 @@ export const NodeDefault = styled(Chip)<NodeProps>(
 export const NodeHighlighted = styled(Chip)<NodeProps>(
   ({ nodecolor, rgbcolor }) => ({
     color: getTextColor(rgbcolor as RGB),
-    backgroundColor: `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 0.6)`,
+    backgroundColor: `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 0.6) !important`,
     outline: `2px dashed ${nodecolor}`,
   })
 );
