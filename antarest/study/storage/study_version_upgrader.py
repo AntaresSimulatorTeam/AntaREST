@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import typing
 from datetime import datetime
@@ -175,9 +176,9 @@ def upgrade_820(study_path: str) -> None:
             if len(all_txt) > 0:
                 for txt in all_txt:
                     df = pandas.read_csv(txt, sep="\t", header=None)
-                    df_parameters = df.iloc[:, :6]
-                    df_direct = df.iloc[:, 6]
-                    df_indirect = df.iloc[:, 7]
+                    df_parameters = df.iloc[:, 2:8]
+                    df_direct = df.iloc[:, 0]
+                    df_indirect = df.iloc[:, 1]
                     reversed_txt = txt[::-1]
                     k = 0
                     while reversed_txt[k] != sep:
@@ -187,16 +188,19 @@ def upgrade_820(study_path: str) -> None:
                         folder + f"{sep}{name}_parameters.txt",
                         df_parameters.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     numpy.savetxt(
                         folder + f"{sep}capacities{sep}{name}_direct.txt",
                         df_direct.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     numpy.savetxt(
                         folder + f"{sep}capacities{sep}{name}_indirect.txt",
                         df_indirect.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     os.remove(folder + f"{sep}{name}.txt")
 
@@ -234,6 +238,15 @@ def upgrade_830(study_path: str) -> None:
         True,
         None,
     )
+    areas = glob.glob(os.path.join(study_path, f"input{sep}areas{sep}*"))
+    if len(areas) > 0:
+        for folder in areas:
+            if Path(folder).is_dir():
+                writer = IniWriter()
+                writer.write(
+                    {"adequacy-patch": {"adequacy-patch-mode": "outside"}},
+                    Path(folder) / "adequacy_patch.ini",
+                )
 
 
 def upgrade_840(study_path: str) -> None:
