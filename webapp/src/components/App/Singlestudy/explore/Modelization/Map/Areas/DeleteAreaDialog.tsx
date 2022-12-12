@@ -7,6 +7,7 @@ import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   deleteStudyMapLink,
+  deleteStudyMapNode,
   StudyMapNode,
 } from "../../../../../../../redux/ducks/studyMaps";
 import {
@@ -14,7 +15,6 @@ import {
   setCurrentLink,
 } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import { deleteArea } from "../../../../../../../services/api/studydata";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import { AreaDeleteIcon } from "./style";
 
@@ -42,8 +42,9 @@ function DeleteAreaDialog(props: Props) {
     // Delete node
     if (currentArea && !currentLink) {
       try {
-        await deleteArea(study.id, currentArea.id);
-        dispatch(setCurrentArea(""));
+        dispatch(
+          deleteStudyMapNode({ studyId: study.id, areaId: currentArea.id })
+        );
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.deleteAreaOrLink"),

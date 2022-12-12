@@ -39,7 +39,8 @@ function MapGraph(props: Props) {
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
-
+  console.log("mapNodes", mapNodes);
+  console.log("mapLinks", links);
   const handleLinkCreation = (nodeId: string) => {
     if (sourceNode && sourceNode === nodeId) {
       setSourceNode("");
