@@ -23,12 +23,13 @@ import {
   NODE_HEIGHT,
 } from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
 import { AppState } from ".";
-import { getArea, isStudyMapLinkExist } from "../selectors";
 import {
-  createArea,
-  getAllLinks,
-  updateAreaUI,
-} from "../../services/api/studydata";
+  getArea,
+  getCurrentAreaLinks,
+  getStudyMapLinks,
+  isStudyMapLinkExist,
+} from "../selectors";
+import { setCurrentArea } from "./studySyntheses";
 
 export interface StudyMapNode {
   id: string;
@@ -39,6 +40,7 @@ export interface StudyMapNode {
   rgbColor: Array<number>;
   size: { width: number; height: number };
   highlighted?: boolean;
+  isDeleting?: boolean;
 }
 
 export interface StudyMapLink {
@@ -84,6 +86,14 @@ const updateStudyMapLink = createAction<{
   changes: Partial<Omit<StudyMapLink, "id">>;
 }>(n("UPDATE_STUDY_MAP_LINK"));
 
+const updateStudyMapNodeLinks = createAction<{
+  studyId: StudyMap["studyId"];
+  studyLinks: StudyMapLink[];
+  areaLinks: StudyMapLink[];
+  areaId: StudyMapNode["id"];
+  changes: Partial<Omit<StudyMapNode, "id">>;
+}>(n("UPDATE_STUDY_MAP_NODE_LINKS"));
+
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
@@ -100,8 +110,11 @@ const makeLinkStyle = R.cond<[string], LinkStyle>([
 async function getLinks(
   studyId: StudyMap["studyId"]
 ): Promise<StudyMap["links"]> {
-  const allLinks = await getAllLinks({ uuid: studyId, withUi: true });
-  return allLinks.reduce((acc, link) => {
+  const links = await studyDataApi.getAllLinks({
+    uuid: studyId,
+    withUi: true,
+  });
+  return links.reduce((acc, link) => {
     const [style, linecap] = makeLinkStyle(link.ui?.style);
     const id = makeLinkId(link.area1, link.area2);
     acc[id] = {
@@ -160,10 +173,11 @@ export const createStudyMapNode = createAsyncThunk<
   },
   { name: AreaInfoDTO["name"]; studyId: StudyMap["studyId"] },
   AppAsyncThunkConfig
->(n("CREATE_STUDY_MAP_NODE"), async (data, { rejectWithValue }) => {
+>(n("CREATE_STUDY_MAP_NODE"), async (data, { dispatch, rejectWithValue }) => {
   try {
     const { studyId, name } = data;
-    const newArea = await createArea(studyId, name);
+
+    const newArea = await studyDataApi.createArea(studyId, name);
     return { newArea, studyId };
   } catch (error) {
     return rejectWithValue(error);
@@ -186,7 +200,7 @@ export const updateStudyMapNode = createAsyncThunk<
   const { studyId, nodeId, nodeUI } = data;
 
   try {
-    await updateAreaUI(studyId, nodeId, nodeUI);
+    await studyDataApi.updateAreaUI(studyId, nodeId, nodeUI);
     return { studyId, nodeId, nodeUI };
   } catch (error) {
     return rejectWithValue(error);
@@ -260,6 +274,43 @@ export const deleteStudyMapLink = createAsyncThunk<
       await studyDataApi.deleteLink(studyId, ...parseLinkId(id));
       return { studyId, linkId: id };
     } catch (err) {
+      return rejectWithValue(err);
+    }
+  }
+);
+
+export const deleteStudyMapNode = createAsyncThunk<
+  { studyId: StudyMap["studyId"]; areaId: StudyMapNode["id"] },
+  {
+    studyId: StudyMap["studyId"];
+    areaId: StudyMapNode["id"];
+  },
+  AppAsyncThunkConfig
+>(
+  n("DELETE_STUDY_MAP_NODE"),
+  async (data, { getState, dispatch, rejectWithValue }) => {
+    const { studyId, areaId } = data;
+
+    const state = getState();
+    const areaLinks = getCurrentAreaLinks(state, studyId);
+    const studyLinks = getStudyMapLinks(state, studyId);
+
+    dispatch(
+      updateStudyMapNodeLinks({
+        areaLinks,
+        studyLinks,
+        areaId,
+        studyId,
+        changes: { isDeleting: true },
+      })
+    );
+
+    try {
+      await studyDataApi.deleteArea(studyId, areaId);
+      dispatch(setCurrentArea(""));
+      return { studyId, areaId };
+    } catch (err) {
+      dispatch(setCurrentArea(""));
       return rejectWithValue(err);
     }
   }
@@ -363,6 +414,31 @@ export default createReducer(initialState, (builder) => {
 
       if (entity) {
         delete entity.links[id]?.isDeleting;
+      }
+    })
+    .addCase(updateStudyMapNodeLinks, (draftState, action) => {
+      const { studyId } = action.payload;
+
+      const entity = draftState.entities[studyId];
+
+      if (entity && entity.links) {
+        // TODO remove links
+      }
+    })
+    .addCase(deleteStudyMapNode.fulfilled, (draftState, action) => {
+      const { studyId, areaId } = action.payload;
+      const entity = draftState.entities[studyId];
+
+      if (entity) {
+        delete entity.nodes[areaId];
+      }
+    })
+    .addCase(deleteStudyMapNode.rejected, (draftState, action) => {
+      const { studyId, areaId } = action.meta.arg;
+      const entity = draftState.entities[studyId];
+
+      if (entity) {
+        delete entity.nodes[areaId]?.isDeleting;
       }
     });
 });
