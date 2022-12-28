@@ -1,6 +1,5 @@
 import glob
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import List
 from zipfile import ZipFile
