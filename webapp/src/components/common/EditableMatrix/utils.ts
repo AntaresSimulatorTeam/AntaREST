@@ -33,9 +33,7 @@ export const formatDateFromIndex = (
     }
     // weekly
     if (index.length > 12) {
-      const startDate = moment(_.padStart(String(sample), 2, "0"), "WW").year(
-        2005
-      );
+      const startDate = moment(2005, "YYYY").week(sample as number);
       return index.map((e, i) =>
         moment.utc(startDate).add(i, "w").format("YYYY/MM/DD HH:mm")
       );
