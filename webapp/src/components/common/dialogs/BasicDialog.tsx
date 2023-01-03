@@ -6,7 +6,6 @@ import {
   DialogProps,
   DialogTitle,
   styled,
-  experimental_sx as sx,
   DialogContentProps,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -41,20 +40,18 @@ export interface BasicDialogProps extends Omit<DialogProps, "title"> {
 
 const AlertBorder = styled("span", {
   shouldForwardProp: (prop: string) => !prop.startsWith("$"),
-})<{ $type: AlertValues }>(({ $type }) =>
-  sx({
-    position: "absolute",
-    top: 0,
-    width: 1,
-    borderTop: 4,
-    borderColor: R.cond([
-      [R.equals(Alert.success), () => "success.main"],
-      [R.equals(Alert.error), () => "error.main"],
-      [R.equals(Alert.warning), () => "warning.main"],
-      [R.equals(Alert.info), () => "info.main"],
-    ])(Alert[$type]),
-  })
-);
+})<{ $type: AlertValues }>(({ theme, $type }) => ({
+  position: "absolute",
+  top: 0,
+  width: "100%",
+  borderTop: "4px solid",
+  borderColor: R.cond([
+    [R.equals(Alert.success), () => theme.palette.success.main],
+    [R.equals(Alert.error), () => theme.palette.error.main],
+    [R.equals(Alert.warning), () => theme.palette.warning.main],
+    [R.equals(Alert.info), () => theme.palette.info.main],
+  ])(Alert[$type]),
+}));
 
 /**
  * Component
