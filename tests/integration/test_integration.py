@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from antarest.study.business.area_management import AreaType
+from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
 from antarest.study.business.table_mode_management import (
     TableTemplateType,
@@ -749,6 +749,66 @@ def test_area_management(app: FastAPI):
         }
     ]
 
+    res = client.get(
+        f"/v1/studies/{study_id}/layers",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict()
+    ]
+
+    res = client.post(
+        f"/v1/studies/{study_id}/layers?name=test",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == "1"
+
+    res = client.get(
+        f"/v1/studies/{study_id}/layers",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+        LayerInfoDTO(id="1", name="test", areas=[]).dict(),
+    ]
+
+    res = client.put(
+        f"/v1/studies/{study_id}/layers/1?name=test2",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res = client.put(
+        f"/v1/studies/{study_id}/layers/1",
+        json=["area 1"],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res = client.put(
+        f"/v1/studies/{study_id}/layers/1",
+        json=["area 2"],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/layers",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
+    ]
+
     res_optimization_config = client.get(
         f"/v1/studies/{study_id}/config/optimization/form",
         headers={
@@ -759,7 +819,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": True,
+        "transmissionCapacities": "local-values",
         "linkType": "local",
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,
@@ -797,7 +857,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": True,
+        "transmissionCapacities": "local-values",
         "linkType": "local",
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,
@@ -1583,6 +1643,13 @@ def test_area_management(app: FastAPI):
         },
         json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
     )
+    res = client.put(
+        f"/v1/studies/{study_id}/areas/area%202/ui?layer=1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"x": 105, "y": 105, "color_rgb": [255, 10, 100]},
+    )
     assert res.status_code == 200
     res_ui = client.get(
         f"/v1/studies/{study_id}/areas?ui=true",
@@ -1602,7 +1669,7 @@ def test_area_management(app: FastAPI):
             },
             "layerX": {"0": 100},
             "layerY": {"0": 100},
-            "layerColor": {"0": "230 , 108 , 44"},
+            "layerColor": {"0": "255 , 0 , 100"},
         },
         "area 2": {
             "ui": {
@@ -1611,11 +1678,11 @@ def test_area_management(app: FastAPI):
                 "color_r": 230,
                 "color_g": 108,
                 "color_b": 44,
-                "layers": 0,
+                "layers": "0 1",
             },
-            "layerX": {"0": 0},
-            "layerY": {"0": 0},
-            "layerColor": {"0": "230 , 108 , 44"},
+            "layerX": {"0": 0, "1": 105},
+            "layerY": {"0": 0, "1": 105},
+            "layerColor": {"0": "230 , 108 , 44", "1": "255 , 10 , 100"},
         },
     }
 

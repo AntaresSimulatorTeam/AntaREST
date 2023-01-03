@@ -400,7 +400,7 @@ class TaskJobService(ITaskService):
             logger.error(f"Exception when running task {task_id}", exc_info=e)
             with db():
                 self._update_task_status(
-                    task_id, TaskStatus.FAILED, False, str(e)
+                    task_id, TaskStatus.FAILED, False, repr(e)
                 )
             self.event_bus.push(
                 Event(

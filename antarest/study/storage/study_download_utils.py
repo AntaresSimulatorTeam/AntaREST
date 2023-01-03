@@ -43,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     OutputSeriesMatrix,
 )
@@ -496,8 +497,14 @@ def find_first_child(
                 pass
     else:
         try:
-            first_child = filtered_children.__next__()
-            return children[first_child]
+            while True:
+                first_child = filtered_children.__next__()
+                first_child_node = children[first_child]
+                if (
+                    not isinstance(first_child_node, LazyNode)
+                    or first_child_node.file_exists()
+                ):
+                    return first_child_node
         except StopIteration:
             raise BadOutputFormat("Couldn't find an output sample")
 

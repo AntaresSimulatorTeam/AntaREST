@@ -1,8 +1,11 @@
+import logging
+import re
 from enum import Enum
 from typing import Optional, Dict, List, Tuple, Any
 
 from pydantic import BaseModel
 
+from antarest.core.exceptions import LayerNotFound
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     RawStudy,
@@ -23,12 +26,16 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class AreaType(Enum):
@@ -68,6 +75,12 @@ class AreaUI(BaseModel):
     x: int
     y: int
     color_rgb: Tuple[int, int, int]
+
+
+class LayerInfoDTO(BaseModel):
+    id: str
+    name: str
+    areas: List[str]
 
 
 class AreaManager:
@@ -127,6 +140,174 @@ class AreaManager:
             return {list(file_study.config.areas.keys())[0]: areas_ui}
         return areas_ui
 
+    @staticmethod
+    def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
+        if (
+            area in area_uis
+            and "ui" in area_uis[area]
+            and "layers" in area_uis[area]["ui"]
+        ):
+            return re.split("\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
+        return []
+
+    def get_layers(self, study: RawStudy) -> List[LayerInfoDTO]:
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        areas_ui = file_study.tree.get(
+            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+        )
+        if len(layers) == 0:
+            layers["0"] = "All"
+        layers_with_items = [
+            LayerInfoDTO(
+                id=str(layer),
+                name=layers[str(layer)],
+                areas=[
+                    area
+                    for area in areas_ui
+                    if str(layer)
+                    in AreaManager._get_area_layers(areas_ui, area)
+                ],
+            )
+            for layer in layers
+        ]
+        return layers_with_items
+
+    def update_layer_areas(
+        self, study: RawStudy, layer_id: str, areas: List[str]
+    ) -> None:
+        logger.info(f"Updating layer {layer_id} with areas {areas}")
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        if layer_id not in [str(layer) for layer in list(layers.keys())]:
+            raise LayerNotFound
+
+        areas_ui = file_study.tree.get(
+            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+        )
+        existing_areas = [
+            area
+            for area in areas_ui
+            if "ui" in areas_ui[area]
+            and layer_id in AreaManager._get_area_layers(areas_ui, area)
+        ]
+        to_remove_areas = [
+            area for area in existing_areas if area not in areas
+        ]
+        to_add_areas = [area for area in areas if area not in existing_areas]
+        commands: List[ICommand] = []
+
+        def create_update_commands(area_id: str) -> List[ICommand]:
+            return [
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/layerX",
+                    data=areas_ui[area_id]["layerX"],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/layerY",
+                    data=areas_ui[area_id]["layerY"],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/layers",
+                    data=areas_ui[area_id]["ui"]["layers"],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+            ]
+
+        for area in to_remove_areas:
+            area_to_remove_layers: List[str] = AreaManager._get_area_layers(
+                areas_ui, area
+            )
+            if layer_id in areas_ui[area]["layerX"]:
+                del areas_ui[area]["layerX"][layer_id]
+            if layer_id in areas_ui[area]["layerY"]:
+                del areas_ui[area]["layerY"][layer_id]
+            if layer_id in area_to_remove_layers:
+                areas_ui[area]["ui"]["layers"] = " ".join(
+                    [
+                        area_layer
+                        for area_layer in area_to_remove_layers
+                        if area_layer != layer_id
+                    ]
+                )
+            commands.extend(create_update_commands(area))
+        for area in to_add_areas:
+            area_to_add_layers: List[str] = AreaManager._get_area_layers(
+                areas_ui, area
+            )
+            if layer_id not in areas_ui[area]["layerX"]:
+                areas_ui[area]["layerX"][layer_id] = areas_ui[area]["ui"]["x"]
+            if layer_id not in areas_ui[area]["layerY"]:
+                areas_ui[area]["layerY"][layer_id] = areas_ui[area]["ui"]["y"]
+            if layer_id not in area_to_add_layers:
+                areas_ui[area]["ui"]["layers"] = " ".join(
+                    area_to_add_layers + [layer_id]
+                )
+            commands.extend(create_update_commands(area))
+
+        execute_or_add_commands(
+            study, file_study, commands, self.storage_service
+        )
+
+    def update_layer_name(
+        self, study: RawStudy, layer_id: str, layer_name: str
+    ) -> None:
+        logger.info(f"Updating layer {layer_id} with name {layer_name}")
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        if layer_id not in [str(layer) for layer in list(layers.keys())]:
+            raise LayerNotFound
+        command = UpdateConfig(
+            target=f"layers/layers/layers/{layer_id}",
+            data=layer_name,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
+
+    def create_layer(self, study: RawStudy, layer_name: str) -> str:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        layer_ids = [int(layer) for layer in list(layers.keys())]
+        layer_id = "1"
+        if len(layer_ids) == 0:
+            command = UpdateConfig(
+                target=f"layers/layers/layers",
+                data={"0": "All", "1": layer_name},
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            )
+        else:
+            layer_id = str(layer_ids[-1] + 1)
+            command = UpdateConfig(
+                target=f"layers/layers/layers/{layer_id}",
+                data=layer_name,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
+        return layer_id
+
+    def remove_layer(self, study: RawStudy, layer_id: str) -> None:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        command = UpdateConfig(
+            target=f"layers/layers/layers",
+            data={
+                str(layer): layers[layer]
+                for layer in layers
+                if str(layer) != layer_id
+            },
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
+
     def create_area(
         self, study: Study, area_creation_info: AreaCreationDTO
     ) -> AreaInfoDTO:
@@ -179,46 +360,59 @@ class AreaManager:
         )
 
     def update_area_ui(
-        self, study: Study, area_id: str, area_ui: AreaUI
+        self, study: Study, area_id: str, area_ui: AreaUI, layer: str = "0"
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        commands = [
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/ui/x",
-                data=area_ui.x,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/layerX/0",
-                data=area_ui.x,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/ui/y",
-                data=area_ui.y,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/layerY/0",
-                data=area_ui.y,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/ui/color_r",
-                data=area_ui.color_rgb[0],
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/ui/color_g",
-                data=area_ui.color_rgb[1],
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-            UpdateConfig(
-                target=f"input/areas/{area_id}/ui/ui/color_b",
-                data=area_ui.color_rgb[2],
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            ),
-        ]
+        commands = (
+            [
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/x",
+                    data=area_ui.x,
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/y",
+                    data=area_ui.y,
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/color_r",
+                    data=area_ui.color_rgb[0],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/color_g",
+                    data=area_ui.color_rgb[1],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/ui/color_b",
+                    data=area_ui.color_rgb[2],
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+            ]
+            if layer == "0"
+            else []
+        )
+        commands.extend(
+            [
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/layerX/{layer}",
+                    data=area_ui.x,
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/layerY/{layer}",
+                    data=area_ui.y,
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+                UpdateConfig(
+                    target=f"input/areas/{area_id}/ui/layerColor/{layer}",
+                    data=f"{str(area_ui.color_rgb[0])} , {str(area_ui.color_rgb[1])} , {str(area_ui.color_rgb[2])}",
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                ),
+            ]
+        )
         execute_or_add_commands(
             study, file_study, commands, self.storage_service
         )

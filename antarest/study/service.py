@@ -52,6 +52,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
@@ -145,6 +146,7 @@ from antarest.study.storage.study_download_utils import (
     StudyDownloader,
     get_output_variables_information,
 )
+from antarest.study.storage.study_version_upgrader import upgrade_study
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
@@ -173,6 +175,7 @@ from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +321,8 @@ class StudyService:
         log_suffix: str,
         log_data: str,
     ) -> None:
+        logger.info(f"Saving logs for job {job_id} of study {study_id}")
+        stopwatch = StopWatch()
         study = self.get_study(study_id)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         file_study.tree.save(
@@ -327,6 +332,9 @@ class StudyService:
                 "logs",
                 f"{job_id}-{log_suffix}",
             ],
+        )
+        stopwatch.log_elapsed(
+            lambda t: logger.info(f"Saved logs for job {job_id} in {t}s")
         )
 
     def get_comments(
@@ -1426,6 +1434,7 @@ class StudyService:
         Returns: output simulation json formatted
 
         """
+        logger.info(f"Importing new output for study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
@@ -1864,12 +1873,13 @@ class StudyService:
         uuid: str,
         area_id: str,
         area_ui: AreaUI,
+        layer: str,
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area_ui(study, area_id, area_ui)
+        return self.areas.update_area_ui(study, area_id, area_ui, layer)
 
     def update_thermal_cluster_metadata(
         self,
@@ -2352,7 +2362,6 @@ class StudyService:
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=study_id,
-                name=task_name,
                 type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
@@ -2417,3 +2426,94 @@ class StudyService:
             )
 
         return task_id
+
+    def generate_timeseries(
+        self, study: Study, params: RequestParameters
+    ) -> None:
+        self._assert_study_unarchived(study)
+        self.task_service.add_worker_task(
+            TaskType.WORKER_TASK,
+            "generate-timeseries",
+            GenerateTimeseriesTaskArgs(
+                study_id=study.id,
+                managed=is_managed(study),
+                study_path=str(study.path),
+                study_version=str(study.version),
+            ).dict(),
+            name=f"Generate timeseries for study {study.id}",
+            ref_id=study.id,
+            request_params=params,
+        )
+
+    def _upgrade_study(self, study_id: str, target_version: int) -> TaskResult:
+        with db():
+            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
+            study_to_upgrade = self.get_study(study_id)
+            is_variant = isinstance(study_to_upgrade, VariantStudy)
+            if is_managed(study_to_upgrade) and not is_variant:
+                file_study = self.storage_service.get_storage(
+                    study_to_upgrade
+                ).get_raw(study_to_upgrade)
+                file_study.tree.denormalize()
+            try:
+                if not is_variant:
+                    upgrade_study(study_to_upgrade.path, target_version)
+                remove_from_cache(self.cache_service, study_to_upgrade.id)
+                study_to_upgrade.version = str(target_version)
+                self.repository.save(study_to_upgrade)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_to_upgrade.to_json_summary(),
+                        permissions=create_permission_from_study(
+                            study_to_upgrade
+                        ),
+                    )
+                )
+                return TaskResult(
+                    success=True,
+                    message=f"Sucessfuly upgraded study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version}",
+                )
+            except Exception as e:
+                return TaskResult(
+                    success=False,
+                    message=f"Failed to upgrad study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version} : {repr(e)}",
+                )
+            finally:
+                if is_managed(study_to_upgrade) and not is_variant:
+                    file_study = self.storage_service.get_storage(
+                        study_to_upgrade
+                    ).get_raw(study_to_upgrade)
+                    file_study.tree.normalize()
+
+    def upgrade_study(self, study_id: str, params: RequestParameters) -> str:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        list_versions = list(STUDY_REFERENCE_TEMPLATES.keys())
+        target_version = study.version
+        for k, elt in enumerate(list_versions):
+            if elt == study.version and k < len(list_versions) - 1:
+                target_version = int(list_versions[k + 1])
+                break
+
+        task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
+        study_tasks = self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.UPGRADE_STUDY],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        if len(study_tasks) > 0:
+            raise TaskAlreadyRunning()
+
+        return self.task_service.add_task(
+            lambda _: self._upgrade_study(study_id, target_version),
+            task_name,
+            task_type=TaskType.UPGRADE_STUDY,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
+        )

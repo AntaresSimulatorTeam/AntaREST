@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ErrorIcon from "@mui/icons-material/Error";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -38,6 +39,7 @@ import { StudyMetadata, VariantTree } from "../../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../../theme";
 import {
   archiveStudy as callArchiveStudy,
+  upgradeStudy as callUpgradeStudy,
   unarchiveStudy as callUnarchiveStudy,
 } from "../../../services/api/study";
 import { deleteStudy, toggleFavorite } from "../../../redux/ducks/studies";
@@ -103,6 +105,7 @@ function NavHeader(props: Props) {
   const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
   const [openPropertiesDialog, setOpenPropertiesDialog] =
     useState<boolean>(false);
+  const [openUpgradeDialog, setOpenUpgradeDialog] = useState<boolean>(false);
   const [deleteChildren, setDeleteChildren] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
@@ -159,6 +162,21 @@ function NavHeader(props: Props) {
         t("studies.error.unarchive", { studyname: study.name }),
         e as AxiosError
       );
+    }
+  };
+
+  const upgradeStudy = async () => {
+    if (study) {
+      try {
+        await callUpgradeStudy(study.id);
+      } catch (e) {
+        enqueueErrorSnackbar(
+          t("study.error.upgrade", { studyname: study.name }),
+          e as AxiosError
+        );
+      } finally {
+        setOpenUpgradeDialog(false);
+      }
     }
   };
 
@@ -381,6 +399,23 @@ function NavHeader(props: Props) {
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
+                    setOpenUpgradeDialog(true);
+                    handleClose();
+                  }}
+                >
+                  <ListItemIcon>
+                    <ErrorIcon
+                      sx={{
+                        color: "primary.main",
+                        width: "24px",
+                        height: "24px",
+                      }}
+                    />
+                  </ListItemIcon>
+                  <ListItemText>{t("study.upgrade")}</ListItemText>
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
                     setOpenExportDialog(true);
                     handleClose();
                   }}
@@ -569,6 +604,17 @@ function NavHeader(props: Props) {
               onChange={(e, checked) => setDeleteChildren(checked)}
             />
           </Box>
+        </ConfirmationDialog>
+      )}
+      {openUpgradeDialog && (
+        <ConfirmationDialog
+          title={t("dialog.title.confirmation")}
+          onCancel={() => setOpenUpgradeDialog(false)}
+          onConfirm={upgradeStudy}
+          alert="warning"
+          open
+        >
+          <Typography>{t("study.question.upgrade")}</Typography>
         </ConfirmationDialog>
       )}
       {study && openExportDialog && (

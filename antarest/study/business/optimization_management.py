@@ -21,6 +21,18 @@ class LinkType(str, Enum):
     AC = "ac"
 
 
+class LegacyTransmissionCapacities(str, Enum):
+    INFINITE = "infinite"
+
+
+class TransmissionCapacities(str, Enum):
+    LOCAL_VALUES = "local-values"
+    NULL_FOR_ALL_LINKS = "null-for-all-links"
+    INFINITE_FOR_ALL_LINKS = "infinite-for-all-links"
+    NULL_FOR_PHYSICAL_LINKS = "null-for-physical-links"
+    INFINITE_FOR_PHYSICAL_LINKS = "infinite-for-physical-links"
+
+
 class UnfeasibleProblemBehavior(str, Enum):
     WARNING_DRY = "warning-dry"
     WARNING_VERBOSE = "warning-verbose"
@@ -36,7 +48,12 @@ class SimplexOptimizationRange(str, Enum):
 class OptimizationFormFields(FormFieldsBaseModel):
     binding_constraints: Optional[StrictBool]
     hurdle_costs: Optional[StrictBool]
-    transmission_capacities: Optional[Union[StrictBool, Literal["infinite"]]]
+    transmission_capacities: Optional[
+        Union[
+            StrictBool,
+            Union[LegacyTransmissionCapacities, TransmissionCapacities],
+        ]
+    ]
     link_type: Optional[LinkType]
     thermal_clusters_min_stable_power: Optional[StrictBool]
     thermal_clusters_min_ud_time: Optional[StrictBool]
@@ -117,6 +134,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{OPTIMIZATION_PATH}/include-split-exported-mps",
         "default_value": False,
         "start_version": 830,
+        "end_version": 840,
     },
     "enable_adequacy_patch": {
         "path": f"{ADEQUACY_PATCH_PATH}/include-adq-patch",

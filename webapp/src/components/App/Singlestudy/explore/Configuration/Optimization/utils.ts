@@ -22,16 +22,31 @@ enum SimplexOptimizationRange {
   Week = "week",
 }
 
+enum LegacyTransmissionCapacities {
+  True = "true",
+  False = "false",
+  Infinite = "infinite",
+}
+
+enum TransmissionCapacities {
+  LocalValues = "local-values",
+  NullForAllLinks = "null-for-all-links",
+  InfiniteForAllLinks = "infinite-for-all-links",
+  NullForPhysicalLinks = "null-for-physical-links",
+  InfiniteForPhysicalLinks = "infinite-for-physical-links",
+}
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-const INFINITE = "infinite";
-
 export interface OptimizationFormFields {
   bindingConstraints: boolean;
   hurdleCosts: boolean;
-  transmissionCapacities: boolean | typeof INFINITE;
+  transmissionCapacities:
+    | boolean
+    | LegacyTransmissionCapacities.Infinite
+    | TransmissionCapacities;
   linkType: LinkType;
   thermalClustersMinStablePower: boolean;
   thermalClustersMinUdTime: boolean;
@@ -63,7 +78,12 @@ export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(
 export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS = Object.values(
   SimplexOptimizationRange
 );
-export const TRANSMISSION_CAPACITIES_OPTIONS = ["true", "false", INFINITE];
+export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
+  LegacyTransmissionCapacities
+);
+export const TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
+  TransmissionCapacities
+);
 
 ////////////////////////////////////////////////////////////////
 // Functions

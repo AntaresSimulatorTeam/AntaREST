@@ -450,7 +450,7 @@ class SlurmLauncher(AbstractLauncher):
                 self.local_workspace / STUDIES_OUTPUT_DIR_NAME
             ).iterdir():
                 if finished_zip.is_file() and re.match(
-                    f"finished_{launch_id}_\\d+", finished_zip.name
+                    f"finished_(XPANSION_)?{launch_id}_\\d+", finished_zip.name
                 ):
                     self._delete_workspace_file(finished_zip)
 

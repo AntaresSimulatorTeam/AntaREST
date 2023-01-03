@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import shutil
 import tempfile
 from datetime import datetime
@@ -628,6 +629,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=study.version,
+            folder=re.sub(f"/?{study.id}", "", study.folder)
+            if study.folder is not None
+            else None,
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,

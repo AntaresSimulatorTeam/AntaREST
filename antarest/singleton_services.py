@@ -15,6 +15,7 @@ from antarest.utils import (
     create_matrix_gc,
     create_archive_worker,
     create_core_services,
+    create_simulator_worker,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,12 @@ class SingletonServices:
         if Module.ARCHIVE_WORKER in services_list:
             worker = create_archive_worker(config, "test", event_bus=event_bus)
             services[Module.ARCHIVE_WORKER] = worker
+
+        if Module.SIMULATOR_WORKER in services_list:
+            worker = create_simulator_worker(
+                config, matrix_service=matrix_service, event_bus=event_bus
+            )
+            services[Module.SIMULATOR_WORKER] = worker
 
         if Module.AUTO_ARCHIVER in services_list:
             auto_archive_service = AutoArchiveService(study_service, config)

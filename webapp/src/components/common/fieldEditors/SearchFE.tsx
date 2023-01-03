@@ -5,12 +5,13 @@ import StringFE, { StringFEProps } from "./StringFE";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
   InputProps?: Omit<StringFEProps["InputProps"], "startAdornment">;
-  setSearchValue?: (value: string) => void;
+  onSearchValueChange?: (value: string) => void;
   useLabel?: boolean;
 }
 
 function SearchFE(props: SearchFE) {
-  const { setSearchValue, onChange, InputProps, useLabel, ...rest } = props;
+  const { onSearchValueChange, onChange, InputProps, useLabel, ...rest } =
+    props;
   const { t } = useTranslation();
   const placeholderOrLabel = {
     [useLabel ? "label" : "placeholder"]: t("global.search"),
@@ -30,7 +31,7 @@ function SearchFE(props: SearchFE) {
       }}
       onChange={(event) => {
         onChange?.(event);
-        setSearchValue?.(event.target.value);
+        onSearchValueChange?.(event.target.value);
       }}
     />
   );
