@@ -1,6 +1,5 @@
 import glob
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import List
 from zipfile import ZipFile
@@ -63,9 +62,8 @@ def test_study_version_upgrader_fails(tmp_path: Path):
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
     with open(str(tmp_path) + f"{sep}study.antares") as study_antares:
         lines = study_antares.readlines()
-        for elt in lines:
-            if "version" in elt:
-                assert "840" in elt
+        assert lines[1] == "version = 840\n"
+        assert len(lines) == 7
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:

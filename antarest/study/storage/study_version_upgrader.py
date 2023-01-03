@@ -171,9 +171,9 @@ def upgrade_820(study_path: str) -> None:
     links = glob.glob(os.path.join(study_path, f"input{sep}links{sep}*"))
     if len(links) > 0:
         for folder in links:
-            os.mkdir(os.path.join(folder, "capacities"))
             all_txt = glob.glob(os.path.join(folder, "*.txt"))
             if len(all_txt) > 0:
+                os.mkdir(os.path.join(folder, "capacities"))
                 for txt in all_txt:
                     df = pandas.read_csv(txt, sep="\t", header=None)
                     df_parameters = df.iloc[:, 2:8]
@@ -326,19 +326,14 @@ def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
 
 
 def update_study_antares_file(new_version: int, study_path: str) -> None:
-    text_to_replace = ["lastsave", "version"]
-    new_text = [
-        "lastsave = {}\n".format(datetime.strftime(datetime.now(), "%S")),
-        f"version = {str(new_version)}\n",
-    ]
+    epoch_time = datetime(1970, 1, 1)
+    delta = int((datetime.now() - epoch_time).total_seconds())
     file = glob.glob(os.path.join(study_path, "study.antares"))[0]
     with open(file, "r") as f:
         lines = f.readlines()
-        for k, elt in enumerate(lines):
-            for n, text in enumerate(text_to_replace):
-                if text in elt:
-                    lines[k] = new_text[n]
-    with open(file, "r+") as f:
+        lines[1] = f"version = {new_version}\n"
+        lines[4] = f"lastsave = {delta}\n"
+    with open(file, "w") as f:
         for item in lines:
             f.write(item)
     f.close()
