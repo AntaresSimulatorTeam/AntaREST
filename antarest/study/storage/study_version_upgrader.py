@@ -329,11 +329,11 @@ def update_study_antares_file(new_version: int, study_path: str) -> None:
     epoch_time = datetime(1970, 1, 1)
     delta = int((datetime.now() - epoch_time).total_seconds())
     file = glob.glob(os.path.join(study_path, "study.antares"))[0]
-    with open(file, "r+") as f:
+    with open(file, "r") as f:
         lines = f.readlines()
         lines[1] = f"version = {new_version}\n"
         lines[4] = f"lastsave = {delta}\n"
-    with open(file, "w+") as f:
+    with open(file, "w") as f:
         for item in lines:
             f.write(item)
     f.close()
