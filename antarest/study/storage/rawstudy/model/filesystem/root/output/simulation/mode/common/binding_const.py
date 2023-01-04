@@ -19,7 +19,9 @@ class OutputSimulationBindingConstraintItem(FolderNode):
         filters = ["hourly", "daily", "weekly", "monthly", "annual"]
 
         for timing in filters:
-            children[f"binding-constraints-{timing}"] = BindingConstraintOutputSeriesMatrix(
+            children[
+                f"binding-constraints-{timing}"
+            ] = BindingConstraintOutputSeriesMatrix(
                 self.context,
                 self.config.next_file(f"binding-constraints-{timing}.txt"),
                 timing,
