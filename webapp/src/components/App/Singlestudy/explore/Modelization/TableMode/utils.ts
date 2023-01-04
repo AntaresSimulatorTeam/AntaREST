@@ -14,7 +14,9 @@ const TABLE_TEMPLATE_COLUMNS_BY_TYPE = {
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
+    "averageUnsuppliedEnergyCost",
     "spreadUnsuppliedEnergyCost",
+    "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
     // Optimization - Filtering
     "filterSynthesis",
@@ -84,7 +86,9 @@ export function createTableTemplate<T extends TableTemplateType>(
 
 export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
   createTableTemplate("economicOpt", TableTemplateType.Area, [
+    "averageUnsuppliedEnergyCost",
     "spreadUnsuppliedEnergyCost",
+    "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
     "nonDispatchablePower",
     "dispatchableHydroPower",

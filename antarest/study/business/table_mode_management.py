@@ -70,7 +70,9 @@ class AreaColumns(FormFieldsBaseModel):
     non_dispatchable_power: Optional[StrictBool]
     dispatchable_hydro_power: Optional[StrictBool]
     other_dispatchable_power: Optional[StrictBool]
+    average_unsupplied_energy_cost: Optional[Union[StrictFloat, StrictInt]]
     spread_unsupplied_energy_cost: Optional[Union[StrictFloat, StrictInt]]
+    average_spilled_energy_cost: Optional[Union[StrictFloat, StrictInt]]
     spread_spilled_energy_cost: Optional[Union[StrictFloat, StrictInt]]
     # Optimization - Filtering
     filter_synthesis: Optional[StrictStr]
@@ -116,7 +118,8 @@ class ClusterColumns(FormFieldsBaseModel):
 
 
 class ColumnInfo(TypedDict):
-    path: str
+    glob_path: str
+    rel_glob_path: str
     default_value: Any
 
 
@@ -132,165 +135,214 @@ class PathVars(TypedDict, total=False):
 
 
 AREA_FIELD_PATH_PREFIX = "input/areas/{id}/optimization"
+ECONOMIC_OPTIONS_PREFIX = "input/thermal/areas"
 LINK_FIELD_PATH_PREFIX = "input/links/{area1}/properties/{area2}"
 CLUSTER_FIELD_PATH_PREFIX = "input/thermal/clusters/{area}/list/{cluster}"
 
 FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     TableTemplateType.AREA: {
         "non_dispatchable_power": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/non-dispatchable-power",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nodal optimization/non-dispatchable-power",
             "default_value": NodalOptimization.NON_DISPATCHABLE_POWER,
         },
         "dispatchable_hydro_power": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/dispatchable-hydro-power",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nodal optimization/dispatchable-hydro-power",
             "default_value": NodalOptimization.DISPATCHABLE_HYDRO_POWER,
         },
         "other_dispatchable_power": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/other-dispatchable-power",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nodal optimization/other-dispatchable-power",
             "default_value": NodalOptimization.OTHER_DISPATCHABLE_POWER,
         },
-        "spread_unsupplied_energy_cost": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/spread-unsupplied-energy-cost",
+        "average_unsupplied_energy_cost": {
+            "glob_path": ECONOMIC_OPTIONS_PREFIX,
+            "rel_glob_path": "unserverdenergycost",
             "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
         },
+        "spread_unsupplied_energy_cost": {
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nodal optimization/spread-unsupplied-energy-cost",
+            "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
+        },
+        "average_spilled_energy_cost": {
+            "glob_path": ECONOMIC_OPTIONS_PREFIX,
+            "rel_glob_path": "spilledenergycost",
+            "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
+        },
         "spread_spilled_energy_cost": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/nodal optimization/spread-spilled-energy-cost",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nodal optimization/spread-spilled-energy-cost",
             "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
         },
         "filter_synthesis": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/filtering/filter-synthesis",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "filtering/filter-synthesis",
             "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
-            "path": f"{AREA_FIELD_PATH_PREFIX}/filtering/filter-year-by-year",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "filtering/filter-year-by-year",
             "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
         "adequacy_patch_mode": {
-            "path": "input/areas/{id}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
+            "glob_path": AREA_FIELD_PATH_PREFIX,
+            "rel_glob_path": "adequacy_patch/adequacy-patch/adequacy-patch-mode",
             "default_value": AdequacyPatchMode.OUTSIDE.value,
         },
     },
     TableTemplateType.LINK: {
         "hurdles_cost": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/hurdles-cost",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "hurdles-cost",
             "default_value": LinkProperties.HURDLES_COST,
         },
         "loop_flow": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/loop-flow",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "loop-flow",
             "default_value": LinkProperties.LOOP_FLOW,
         },
         "use_phase_shifter": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/use-phase-shifter",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "use-phase-shifter",
             "default_value": LinkProperties.USE_PHASE_SHIFTER,
         },
         "transmission_capacities": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/transmission-capacities",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "transmission-capacities",
             "default_value": LinkProperties.TRANSMISSION_CAPACITIES,
         },
         "asset_type": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/asset-type",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "asset-type",
             "default_value": LinkProperties.ASSET_TYPE,
         },
         "link_style": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/link-style",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "link-style",
             "default_value": LinkProperties.LINK_STYLE,
         },
         "link_width": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/link-width",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "link-width",
             "default_value": LinkProperties.LINK_WIDTH,
         },
         "display_comments": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/display-comments",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "display-comments",
             "default_value": LinkProperties.DISPLAY_COMMENTS,
         },
         "filter_synthesis": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/filter-synthesis",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "filter-synthesis",
             "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
-            "path": f"{LINK_FIELD_PATH_PREFIX}/filter-year-by-year",
+            "glob_path": LINK_FIELD_PATH_PREFIX,
+            "rel_glob_path": "filter-year-by-year",
             "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
     },
     TableTemplateType.CLUSTER: {
         "group": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/group",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "group",
             "default_value": "",
         },
         "enabled": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/enabled",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "enabled",
             "default_value": True,
         },
         "must_run": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/must-run",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "must-run",
             "default_value": False,
         },
         "unit_count": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/unitcount",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "unitcount",
             "default_value": 0,
         },
         "nominal_capacity": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/nominalcapacity",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "nominalcapacity",
             "default_value": 0,
         },
         "min_stable_power": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/min-stable-power",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "min-stable-power",
             "default_value": 0,
         },
         "spinning": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/spinning",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "spinning",
             "default_value": 0,
         },
         "min_up_time": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/min-up-time",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "min-up-time",
             "default_value": 1,
         },
         "min_down_time": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/min-down-time",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "min-down-time",
             "default_value": 1,
         },
         "co2": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/co2",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "co2",
             "default_value": 0,
         },
         "marginal_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/marginal-cost",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "marginal-cost",
             "default_value": 0,
         },
         "fixed_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/fixed-cost",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "fixed-cost",
             "default_value": 0,
         },
         "startup_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/startup-cost",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "startup-cost",
             "default_value": 0,
         },
         "market_bid_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/market-bid-cost",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "market-bid-cost",
             "default_value": 0,
         },
         "spread_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/spread-cost",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "spread-cost",
             "default_value": 0,
         },
         "ts_gen": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/gen-ts",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "gen-ts",
             "default_value": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
         },
         "volatility_forced": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/volatility.forced",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "volatility.forced",
             "default_value": 0,
         },
         "volatility_planned": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/volatility.planned",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "volatility.planned",
             "default_value": 0,
         },
         "law_forced": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/law.forced",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "law.forced",
             "default_value": LawOption.UNIFORM.value,
         },
         "law_planned": {
-            "path": f"{CLUSTER_FIELD_PATH_PREFIX}/law.planned",
+            "glob_path": CLUSTER_FIELD_PATH_PREFIX,
+            "rel_glob_path": "law.planned",
             "default_value": LawOption.UNIFORM.value,
         },
     },
@@ -326,9 +378,10 @@ class TableModeManager:
 
             def get_value_from_data(col: str, data: Dict[str, Any]) -> Any:
                 field_info = fields_info[col]
-                parent_name, field_name = field_info["path"].split("/")[-2:]
-                return data.get(parent_name, {}).get(
-                    field_name, field_info["default_value"]
+                return TableModeManager.__get_value(
+                    field_info["rel_glob_path"].split("/"),
+                    data,
+                    field_info["default_value"],
                 )
 
             return {
@@ -344,7 +397,7 @@ class TableModeManager:
                 obj[f"{id_1} / {id_2}"] = column_model.construct(
                     **{
                         col: value_2.get(
-                            fields_info[col]["path"].split("/")[-1],
+                            fields_info[col]["rel_glob_path"],
                             fields_info[col]["default_value"],
                         )
                         for col in columns
@@ -385,12 +438,26 @@ class TableModeManager:
             )
 
     @staticmethod
+    def __get_value(
+        path: List[str], data: Dict[str, Any], default_value: Any
+    ) -> Any:
+        if len(path):
+            return TableModeManager.__get_value(
+                path[1:], data.get(path[0], {}), default_value
+            )
+        return data if data != {} else default_value
+
+    @staticmethod
     def __get_column_path(
         table_type: TableTemplateType,
         path_vars: PathVars,
         column: str,
     ) -> str:
-        path = FIELDS_INFO_BY_TYPE[table_type][column]["path"]
+        path = (
+            FIELDS_INFO_BY_TYPE[table_type][column]["glob_path"]
+            + "/"
+            + FIELDS_INFO_BY_TYPE[table_type][column]["rel_glob_path"]
+        )
         if table_type == TableTemplateType.LINK:
             return path.replace("{area1}", path_vars["area1"]).replace(
                 "{area2}", path_vars["area2"]
@@ -400,6 +467,8 @@ class TableModeManager:
                 "{cluster}", path_vars["cluster"]
             )
         # Area
+        if "{id}" not in path:
+            path += "/{id}"
         return path.replace("{id}", path_vars["id"])
 
     @staticmethod
@@ -422,9 +491,14 @@ class TableModeManager:
         file_study: FileStudy, table_type: TableTemplateType
     ) -> Dict[str, Any]:
         if table_type == TableTemplateType.AREA:
-            return file_study.tree.get(
+            data: Dict[str, Any] = file_study.tree.get(
                 AREA_FIELD_PATH_PREFIX.replace("{id}", "*").split("/")
             )
+            ecopts = file_study.tree.get(ECONOMIC_OPTIONS_PREFIX.split("/"))
+            for opt in ecopts:
+                for area in ecopts[opt]:
+                    data[area] = {**data.get(area, {}), opt: ecopts[opt][area]}
+            return data
         elif table_type == TableTemplateType.LINK:
             return file_study.tree.get(
                 LINK_FIELD_PATH_PREFIX.replace("{area1}", "*")
