@@ -114,7 +114,6 @@
   "matrix.error.failedToRetrieveIndex": "Échec lors de la récupération des index de la matrice",
   "matrix.success.matrixUpdate": "Matrice modifiée avec succès",
   "matrix.error.matrixUpdate": "Erreur lors de la modification de la matrice",
-  "matrix.error.tooManyUpdates": "10 cellules max par modification",
   "downloads.expirationDate": "Date d'expiration",
   "downloads.newDownload": "Nouveau téléchargement créé",
   "downloads.downloadReady": "Téléchargement prêt",
