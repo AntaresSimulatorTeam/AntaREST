@@ -45,7 +45,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
     tableProps = {},
   } = props;
 
-  const { columns, ...restTableProps } = tableProps;
+  const { columns, type, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
   const defaultData = useMemoLocked(() =>
@@ -66,13 +66,13 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
             ? {
                 data: col,
                 title: startCase(col),
-                type: getCellType(firstRow?.[col]),
+                type: type || getCellType(firstRow?.[col]),
               }
             : col
       );
     }
     return columns;
-  }, [columns, defaultData]);
+  }, [columns, type, defaultData]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
