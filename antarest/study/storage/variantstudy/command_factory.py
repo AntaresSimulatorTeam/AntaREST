@@ -68,6 +68,7 @@ from antarest.study.storage.variantstudy.model.command.update_playlist import (
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -203,6 +204,11 @@ class CommandFactory:
             return UpdatePlaylist(
                 **args,
                 command_context=self.command_context,
+            )
+        elif action == CommandName.UPDATE_SCENARIO_BUILDER.value:
+            return UpdateScenarioBuilder(
+                **args,
+                command_context=self.command_context
             )
         raise NotImplementedError()
 

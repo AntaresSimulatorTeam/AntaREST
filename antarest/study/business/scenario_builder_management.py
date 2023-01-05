@@ -6,9 +6,6 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from antarest.study.storage.variantstudy.model.command.update_playlist import (
-    UpdatePlaylist,
-)
 
 
 class ScenarioBuilderManager:
