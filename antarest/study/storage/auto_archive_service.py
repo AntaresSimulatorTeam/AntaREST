@@ -63,12 +63,12 @@ class AutoArchiveService(IService):
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
-                            self.study_service.storage_service.variant_study_service.clear_snapshot(
-                                self.study_service.get_study(study_id)
-                            )
                             self.study_service.archive_outputs(
                                 study_id,
                                 params=RequestParameters(DEFAULT_ADMIN_USER),
+                            )
+                            self.study_service.storage_service.variant_study_service.clear_snapshot(
+                                self.study_service.get_study(study_id)
                             )
             except TaskAlreadyRunning:
                 pass

@@ -156,9 +156,7 @@ class StorageConfig:
             auto_archive_sleeping_time=data.get(
                 "auto_archive_sleeping_time", 3600
             ),
-            auto_archive_max_parallel=data.get(
-                "auto_archive_max_parallel", 5
-            ),
+            auto_archive_max_parallel=data.get("auto_archive_max_parallel", 5),
         )
 
 

@@ -275,6 +275,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
