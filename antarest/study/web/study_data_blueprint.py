@@ -505,7 +505,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Updating playlist confi for study {uuid}",
+            f"Updating playlist config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -515,6 +515,47 @@ def create_study_data_routes(
         study_service.config_manager.set_playlist(
             study, playlist, weights, reverse, active
         )
+
+    @bp.get(
+        path="/studies/{uuid}/config/scenariobuilder",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario builder config",
+        response_model=Dict[str, Any],
+    )
+    def get_scenario_builder_config(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Dict[str, Any]:
+        logger.info(
+            f"Getting MC Scenario builder config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.scenario_builder_manager.get_config(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/scenariobuilder",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario builder config",
+    )
+    def set_scenario_builder_config(
+        uuid: str,
+        config: Dict[str, Any],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating MC Scenario builder config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.scenario_builder_manager.set_config(study, config)
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",
