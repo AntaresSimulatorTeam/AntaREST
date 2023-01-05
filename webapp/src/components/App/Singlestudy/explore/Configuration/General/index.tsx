@@ -1,23 +1,32 @@
 import { useOutletContext } from "react-router";
 import * as R from "ramda";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
-import PlaylistDialog from "./dialogs/PlaylistDialog";
+import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
 import {
   GeneralFormFields,
   getGeneralFormFields,
   setGeneralFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import {
+  SubmitHandlerPlus,
+  UseFormReturnPlus,
+} from "../../../../../common/Form/types";
+import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
+
+export type SetDialogStateType =
+  | "thematicTrimming"
+  | "scenarioPlaylist"
+  | "scenarioBuilder"
+  | "";
 
 function GeneralParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [dialog, setDialog] = useState<"thematicTrimming" | "playlist" | "">(
-    ""
-  );
+  const [dialog, setDialog] = useState<SetDialogStateType>("");
+  const apiRef = useRef<UseFormReturnPlus<GeneralFormFields>>();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -42,6 +51,7 @@ function GeneralParameters() {
         config={{ asyncDefaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
         autoSubmit
+        apiRef={apiRef}
       >
         <Fields setDialog={setDialog} />
       </Form>
@@ -57,9 +67,24 @@ function GeneralParameters() {
           ),
         ],
         [
-          R.equals("playlist"),
+          R.equals("scenarioBuilder"),
           () => (
-            <PlaylistDialog open study={study} onClose={handleCloseDialog} />
+            <ScenarioBuilderDialog
+              open
+              study={study}
+              onClose={handleCloseDialog}
+              nbYears={apiRef?.current?.getValues("nbYears") || 0}
+            />
+          ),
+        ],
+        [
+          R.equals("scenarioPlaylist"),
+          () => (
+            <ScenarioPlaylistDialog
+              open
+              study={study}
+              onClose={handleCloseDialog}
+            />
           ),
         ],
       ])(dialog)}

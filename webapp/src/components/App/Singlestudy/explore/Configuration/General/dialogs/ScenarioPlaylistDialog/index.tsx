@@ -26,7 +26,7 @@ interface Props {
   onClose: VoidFunction;
 }
 
-function PlaylistDialog(props: Props) {
+function ScenarioPlaylistDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
   const tableRef = useRef({} as HotTable);
@@ -125,7 +125,7 @@ function PlaylistDialog(props: Props) {
               height: "100%",
               width: 500,
               stretchH: "all",
-              tableClassName: "htCenter",
+              className: "htCenter",
               cells: handleCellsRender,
             }}
           />
@@ -135,4 +135,4 @@ function PlaylistDialog(props: Props) {
   );
 }
 
-export default PlaylistDialog;
+export default ScenarioPlaylistDialog;

@@ -21,11 +21,10 @@ import StringFE from "../../../../../common/fieldEditors/StringFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { FieldWithButton } from "./styles";
+import { SetDialogStateType } from ".";
 
 interface Props {
-  setDialog: React.Dispatch<
-    React.SetStateAction<"thematicTrimming" | "playlist" | "">
-  >;
+  setDialog: React.Dispatch<React.SetStateAction<SetDialogStateType>>;
 }
 
 function Fields(props: Props) {
@@ -33,12 +32,22 @@ function Fields(props: Props) {
   const [t] = useTranslation();
   const { control, setValue, watch, getValues } =
     useFormContextPlus<GeneralFormFields>();
-  const [buildingMode, firstDay, lastDay, filtering] = watch([
+  const [
+    buildingMode,
+    selectionMode,
+    firstDay,
+    lastDay,
+    filtering,
+    thematicTrimming,
+  ] = watch([
     "buildingMode",
+    "selectionMode",
     "firstDay",
     "lastDay",
     "filtering",
+    "thematicTrimming",
   ]);
+
   // Only present on study versions < 710
   const hasFiltering = RA.isBoolean(filtering);
 
@@ -91,7 +100,7 @@ function Fields(props: Props) {
     <Button
       startIcon={<SettingsIcon />}
       onClick={() => setDialog("thematicTrimming")}
-      disabled={!getValues(hasFiltering ? "filtering" : "thematicTrimming")}
+      disabled={!(hasFiltering ? filtering : thematicTrimming)}
     >
       {t("global.settings")}
     </Button>
@@ -191,13 +200,22 @@ function Fields(props: Props) {
               },
             }}
           />
-          <SelectFE
-            name="buildingMode"
-            label={t("study.configuration.general.buildingMode")}
-            options={BUILDING_MODE_OPTIONS}
-            control={control}
-            rules={{ deps: "nbYears" }}
-          />
+          <FieldWithButton>
+            <SelectFE
+              name="buildingMode"
+              label={t("study.configuration.general.buildingMode")}
+              options={BUILDING_MODE_OPTIONS}
+              control={control}
+              rules={{ deps: "nbYears" }}
+            />
+            <Button
+              startIcon={<SettingsIcon />}
+              onClick={() => setDialog("scenarioBuilder")}
+              disabled={buildingMode !== BuildingMode.Custom}
+            >
+              {t("global.settings")}
+            </Button>
+          </FieldWithButton>
           <FieldWithButton>
             <BooleanFE
               name="selectionMode"
@@ -208,8 +226,8 @@ function Fields(props: Props) {
             />
             <Button
               startIcon={<SettingsIcon />}
-              onClick={() => setDialog("playlist")}
-              disabled={!getValues("selectionMode")}
+              onClick={() => setDialog("scenarioPlaylist")}
+              disabled={!selectionMode}
             >
               {t("global.settings")}
             </Button>
