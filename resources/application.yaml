@@ -26,6 +26,10 @@ storage:
   allow_deletion: false # indicate if studies found in non default workspace can be deleted by the application
   #matrix_gc_sleeping_time: 3600 # time in seconds to sleep between two garbage collection
   #matrix_gc_dry_run: False # Skip matrix effective deletion
+  #auto_archive_sleeping_time: 3600 # time in seconds to sleep between two auto archival checks
+  #auto_archive_dry_run: True # Skip auto archive effective archival
+  #auto_archive_threshold_days: 60 # number of days after last study access when the study should be archived
+  #auto_archive_max_parallel: 5 # max auto archival tasks in parallel
   workspaces:
     default: # required, no filters applied, this folder is not watched
       path: examples/internal_studies/

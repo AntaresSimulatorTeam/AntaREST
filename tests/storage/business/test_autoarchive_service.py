@@ -59,6 +59,9 @@ def test_auto_archival(tmp_path: Path):
     auto_archive_service.study_service.archive.return_value = (
         TaskAlreadyRunning
     )
+    auto_archive_service.study_service.get_study.return_value = VariantStudy(
+        id="e", updated_at=now - datetime.timedelta(days=61)
+    )
 
     auto_archive_service._try_archive_studies()
 
