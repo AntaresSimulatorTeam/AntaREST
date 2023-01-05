@@ -35,6 +35,7 @@ class AutoArchiveService(IService):
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
                 if is_managed(study)
+                # todo this should be last_access
                 and study.updated_at
                 < now
                 - datetime.timedelta(
