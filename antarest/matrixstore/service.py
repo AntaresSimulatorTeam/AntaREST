@@ -376,13 +376,13 @@ class MatrixService(ISimpleMatrixService):
                 if not mtx:
                     continue
                 write_tsv_matrix(mtx, tmpdir)
-            zip_dir(tmpdir, export_path)
+            zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(
                 lambda x: logger.info(
                     f"Matrix dataset exported (zipped mode) in {x}s"
                 )
             )
-        return export_path
+        return str(export_path)
 
     def download_dataset(
         self,
