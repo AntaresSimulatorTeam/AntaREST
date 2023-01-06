@@ -655,11 +655,7 @@ class LauncherService:
             def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
                     #
-                    shutil.make_archive(
-                        base_name=os.path.splitext(export_path)[0],
-                        format="zip",
-                        root_dir=output_path,
-                    )
+                    zip_dir(output_path, export_path)
                     self.file_transfer_manager.set_ready(export_id)
                     return TaskResult(success=True, message="")
                 except Exception as e:
