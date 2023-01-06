@@ -53,7 +53,7 @@ def apply_binding_constraint(
         "type": time_step.value,
         "operator": operator.value,
     }
-    if study_data.config.version >= 840:
+    if study_data.config.version >= 830:
         if filter_year_by_year:
             binding_constraints[str(new_key)][
                 "filter-year-by-year"
