@@ -156,8 +156,17 @@ class AreaManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        areas_ui = file_study.tree.get(
-            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+        areas_ui = (
+            file_study.tree.get(
+                [
+                    "input",
+                    "areas",
+                    ",".join(file_study.config.areas.keys()),
+                    "ui",
+                ]
+            )
+            if len(file_study.config.areas)
+            else {}
         )
         if len(layers) == 0:
             layers["0"] = "All"
