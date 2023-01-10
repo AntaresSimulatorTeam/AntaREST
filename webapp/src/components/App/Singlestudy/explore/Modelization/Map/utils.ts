@@ -100,7 +100,7 @@ export function useRenderNodes(
     () =>
       nodes.map((node) => {
         const x = node.layerX[currentLayerId] + centerVector.x - realCenter.x;
-        const y = -node.layerY[currentLayerId] + centerVector.x - realCenter.x;
+        const y = -node.layerY[currentLayerId] + centerVector.y + realCenter.y;
         const color = node.layerColor[currentLayerId]
           ? `rgb(${node.layerColor[currentLayerId]})`
           : NODE_COLOR;
@@ -115,6 +115,13 @@ export function useRenderNodes(
           rgbColor,
         };
       }),
-    [currentLayerId, nodes, centerVector.x, realCenter.x]
+    [
+      currentLayerId,
+      nodes,
+      centerVector.x,
+      realCenter.x,
+      realCenter.y,
+      centerVector.y,
+    ]
   );
 }
