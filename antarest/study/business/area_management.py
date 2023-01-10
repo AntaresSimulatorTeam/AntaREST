@@ -306,6 +306,8 @@ class AreaManager:
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
+        # remove all areas from the layer since this info is stored in area data...
+        self.update_layer_areas(study, layer_id, [])
         command = UpdateConfig(
             target=f"layers/layers/layers",
             data={
