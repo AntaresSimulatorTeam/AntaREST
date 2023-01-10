@@ -414,9 +414,11 @@ export const getStudyMapNodes = createSelector(
 );
 
 export const getStudyMapLinks = createSelector(
+  getStudyMap,
   getCurrentLayerAreas,
   getStudySynthesis,
-  (currentLayerAreas, synthesis) => {
+  (studyMap, currentLayerAreas, synthesis) => {
+    const linksUI = studyMap?.links;
     const studyMapLinks: Array<LinkElement & Partial<StudyMapLink>> = [];
     if (synthesis && currentLayerAreas) {
       Object.values(currentLayerAreas).forEach((areaId) => {
@@ -431,10 +433,11 @@ export const getStudyMapLinks = createSelector(
           return link;
         });
         layerAreas.forEach((areaId) => {
-          if (areaId) {
+          if (areaId && linksUI) {
             const area2 = { id: areaId, ...synthesis.areas[areaId] };
             const id = makeLinkId(area1.id, area2.id);
             studyMapLinks.push({
+              ...linksUI[id],
               id,
               name: id,
               label: makeLinkId(area1.name, area2.name),
