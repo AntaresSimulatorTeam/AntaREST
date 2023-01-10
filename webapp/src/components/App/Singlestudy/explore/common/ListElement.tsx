@@ -5,10 +5,13 @@ import {
   ListItemText,
   Menu,
   PopoverPosition,
+  SxProps,
+  Theme,
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import { useState } from "react";
 import { IdType } from "../../../../../common/types";
+import { mergeSxProp } from "../../../../../utils/muiUtils";
 
 interface PropsType<T> {
   list: Array<T>;
@@ -19,6 +22,7 @@ interface PropsType<T> {
     element: T;
     close: VoidFunction;
   }) => React.ReactElement;
+  sx?: SxProps<Theme>;
 }
 
 function ListElement<T extends { id?: IdType; name: string; label?: string }>(
@@ -30,6 +34,7 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
     currentElementKeyToTest,
     setSelectedItem,
     contextMenuContent: ContextMenuContent,
+    sx,
   } = props;
 
   const [contextMenuPosition, setContextMenuPosition] =
@@ -71,7 +76,7 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
       width="100%"
       flexGrow={1}
       flexShrink={1}
-      sx={{ pl: 2, pt: 1, pr: 1, mb: 1, overflow: "auto" }}
+      sx={mergeSxProp({ pl: 2, pt: 1, pr: 1, mb: 1, overflow: "auto" }, sx)}
     >
       {list.map((element, index) => (
         <ListItemButton

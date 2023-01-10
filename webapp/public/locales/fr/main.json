@@ -284,6 +284,7 @@
   "study.configuration.general.mcScenario": "MC Scenario",
   "study.configuration.general.mcScenarioBuilder": "MC Scenario builder",
   "study.configuration.general.mcScenarioBuilder.ruleset": "Ruleset:",
+  "study.configuration.general.mcScenarioBuilder.year": "Year",
   "study.configuration.general.mcScenarioBuilder.tab.load": "Load",
   "study.configuration.general.mcScenarioBuilder.tab.thermal": "Thermal",
   "study.configuration.general.mcScenarioBuilder.tab.hydro": "Hydro",

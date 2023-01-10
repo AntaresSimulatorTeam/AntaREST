@@ -1,13 +1,14 @@
 import { ReactNode } from "react";
-import { Divider, Box } from "@mui/material";
+import { Divider, Box, SxProps, Theme } from "@mui/material";
 
 interface Props {
   left: ReactNode;
   right: ReactNode;
+  sx?: SxProps<Theme>;
 }
 
 function SplitLayoutView(props: Props) {
-  const { left, right } = props;
+  const { left, right, sx } = props;
 
   return (
     <Box
@@ -17,8 +18,10 @@ function SplitLayoutView(props: Props) {
       alignItems="center"
       overflow="hidden"
       flexGrow="1"
+      sx={sx}
     >
       <Box
+        className="SplitLayoutView__Left"
         width="20%"
         height="100%"
         position="relative"
@@ -34,6 +37,7 @@ function SplitLayoutView(props: Props) {
         variant="middle"
       />
       <Box
+        className="SplitLayoutView__Right"
         width="calc(80% - 1px)"
         height="96%"
         display="flex"

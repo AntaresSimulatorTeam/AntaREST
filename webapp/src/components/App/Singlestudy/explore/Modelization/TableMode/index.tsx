@@ -143,7 +143,6 @@ function TableMode() {
         right={
           <UsePromiseCond
             response={res}
-            ifPending={() => <SimpleLoader />}
             ifResolved={(data) => (
               <FormTable
                 defaultValues={data}

@@ -1,16 +1,32 @@
 import { StudyMetadata } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 
+export const TABS_DATA: Array<[string, string]> = [
+  ["load", "l"],
+  ["thermal", "t"],
+  ["hydro", "h"],
+  ["wind", "w"],
+  ["solar", "s"],
+  ["ntc", "ntc"],
+  ["hydroLevels", "hl"],
+];
+
+export type ScenarioBuilderConfig = Record<string, unknown>;
+
+function makeRequestURL(studyId: StudyMetadata["id"]): string {
+  return `v1/studies/${studyId}/config/scenariobuilder`;
+}
+
 export async function getScenarioBuilderConfig(
   studyId: StudyMetadata["id"]
-): Promise<any> {
-  const res = await client.get(`v1/studies/${studyId}/config/scenariobuilder`);
+): Promise<ScenarioBuilderConfig> {
+  const res = await client.get(makeRequestURL(studyId));
   return res.data;
 }
 
 export async function setScenarioBuilderConfig(
   studyId: StudyMetadata["id"],
-  config: any
-): Promise<any> {
-  return client.put(`v1/studies/${studyId}/config/scenariobuilder`, config);
+  data: Partial<ScenarioBuilderConfig>
+): Promise<void> {
+  return client.put(makeRequestURL(studyId), data);
 }

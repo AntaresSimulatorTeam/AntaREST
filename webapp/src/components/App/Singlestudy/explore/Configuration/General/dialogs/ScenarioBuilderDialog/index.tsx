@@ -2,24 +2,15 @@ import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Tab } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import * as R from "ramda";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import Rulesets from "./Rulesets";
 import Table from "./tabs/Table";
-import { getScenarioBuilderConfig } from "./utils";
+import { getScenarioBuilderConfig, TABS_DATA } from "./utils";
 import ConfigContext from "./ConfigContext";
-
-const TABS_DATA: Array<[string, string]> = [
-  ["load", "l"],
-  ["thermal", "t"],
-  ["hydro", "h"],
-  ["wind", "w"],
-  ["solar", "s"],
-  ["ntc", "ntc"],
-  ["hydroLevels", "hl"],
-];
+import Thermal from "./tabs/Thermal";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   study: StudyMetadata;
@@ -35,7 +26,7 @@ function ScenarioBuilderDialog(props: Props) {
   const [config, setConfig] = useState({});
   const { t } = useTranslation();
 
-  usePromise(async () => {
+  const res = usePromise(async () => {
     const config = await getScenarioBuilderConfig(study.id);
     setConfig(config);
     setCurrentRuleset(Object.keys(config)[0] || "");
@@ -71,40 +62,47 @@ function ScenarioBuilderDialog(props: Props) {
         sx: { height: "calc(100% - 64px)", maxHeight: "900px" },
       }}
     >
-      <ConfigContext.Provider value={cxValue}>
-        <Rulesets />
-        <TabContext value={currentTab}>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <TabList onChange={handleTabChange}>
-              {TABS_DATA.map(([name]) => (
-                <Tab
+      <UsePromiseCond
+        response={res}
+        ifResolved={() => (
+          <ConfigContext.Provider value={cxValue}>
+            <Rulesets />
+            <TabContext value={currentTab}>
+              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <TabList onChange={handleTabChange}>
+                  {TABS_DATA.map(([name]) => (
+                    <Tab
+                      key={name}
+                      value={name}
+                      label={t(
+                        `study.configuration.general.mcScenarioBuilder.tab.${name}`
+                      )}
+                    />
+                  ))}
+                </TabList>
+              </Box>
+              {TABS_DATA.map(([name, sym]) => (
+                <TabPanel
                   key={name}
                   value={name}
-                  label={t(
-                    `study.configuration.general.mcScenarioBuilder.tab.${name}`
+                  sx={{ p: 0, pt: 2, height: 1, overflow: "auto" }}
+                >
+                  {name === "thermal" ? (
+                    <Thermal study={study} nbYears={nbYears} />
+                  ) : (
+                    <Table
+                      study={study}
+                      nbYears={nbYears}
+                      symbol={sym}
+                      rowType={name === "ntc" ? "link" : "area"}
+                    />
                   )}
-                />
+                </TabPanel>
               ))}
-            </TabList>
-          </Box>
-          {TABS_DATA.map(([name, sym]) => (
-            <TabPanel
-              key={name}
-              value={name}
-              sx={{ p: 0, pt: 2, height: 1, overflow: "auto" }}
-            >
-              {R.cond<[string], React.ReactNode>([
-                [R.equals("thermal"), () => null],
-                [R.equals("ntc"), () => null],
-                [
-                  R.T,
-                  () => <Table study={study} nbYears={nbYears} symbol={sym} />,
-                ],
-              ])(name)}
-            </TabPanel>
-          ))}
-        </TabContext>
-      </ConfigContext.Provider>
+            </TabContext>
+          </ConfigContext.Provider>
+        )}
+      />
     </BasicDialog>
   );
 }
