@@ -402,12 +402,17 @@ export const getCurrentLayerAreas = createSelector(
 export const getStudyMapNodes = createSelector(
   getCurrentLayerAreas,
   getStudyMap,
-  (currentLayerAreas, studyMap) => {
-    if (studyMap && currentLayerAreas) {
-      const studyMapNodes = Object.values(studyMap?.nodes).filter(
-        (area) => currentLayerAreas.indexOf(area.id) !== -1
-      );
-      return Object.values(studyMapNodes || []);
+  getStudySynthesis,
+  (currentLayerAreas, studyMap, synthesis) => {
+    if (synthesis && studyMap && currentLayerAreas) {
+      const nodeUIList = Object.keys(studyMap?.nodes);
+      return Object.keys(synthesis?.areas)
+        .filter(
+          (areaId) =>
+            currentLayerAreas.indexOf(areaId) !== -1 &&
+            nodeUIList.includes(areaId)
+        )
+        .map((areaId) => studyMap?.nodes[areaId]);
     }
     return [];
   }
@@ -419,34 +424,44 @@ export const getStudyMapLinks = createSelector(
   getStudySynthesis,
   (studyMap, currentLayerAreas, synthesis) => {
     const linksUI = studyMap?.links;
+    if (!linksUI) {
+      return [];
+    }
     const studyMapLinks: Array<LinkElement & Partial<StudyMapLink>> = [];
     if (synthesis && currentLayerAreas) {
-      Object.values(currentLayerAreas).forEach((areaId) => {
-        const area1 = {
-          id: areaId as StudyMapNode["id"],
-          ...synthesis.areas[areaId as StudyMapNode["id"]],
-        };
-        const layerAreas = Object.keys(area1.links || {}).map((link) => {
-          if (!Object.values(currentLayerAreas).includes(link)) {
-            return;
-          }
-          return link;
+      const areasUIList = Object.keys(studyMap.nodes);
+      Object.keys(synthesis.areas)
+        .filter(
+          (areaId) =>
+            currentLayerAreas.indexOf(areaId) !== -1 &&
+            areasUIList.includes(areaId)
+        )
+        .forEach((areaId) => {
+          const area1 = {
+            id: areaId as StudyMapNode["id"],
+            ...synthesis.areas[areaId as StudyMapNode["id"]],
+          };
+          const linkAreas2 = Object.keys(area1.links || {}).filter(
+            (link) =>
+              Object.values(currentLayerAreas).includes(link) &&
+              Object.keys(synthesis.areas).includes(link) &&
+              areasUIList.includes(link)
+          );
+          linkAreas2.forEach((areaId) => {
+            if (linksUI) {
+              const area2 = { id: areaId, ...synthesis.areas[areaId] };
+              const id = makeLinkId(area1.id, area2.id);
+              studyMapLinks.push({
+                ...linksUI[id],
+                id,
+                name: id,
+                label: makeLinkId(area1.name, area2.name),
+                area1: area1.id,
+                area2: area2.id,
+              });
+            }
+          });
         });
-        layerAreas.forEach((areaId) => {
-          if (areaId && linksUI) {
-            const area2 = { id: areaId, ...synthesis.areas[areaId] };
-            const id = makeLinkId(area1.id, area2.id);
-            studyMapLinks.push({
-              ...linksUI[id],
-              id,
-              name: id,
-              label: makeLinkId(area1.name, area2.name),
-              area1: area1.id,
-              area2: area2.id,
-            });
-          }
-        });
-      });
     }
     return studyMapLinks;
   }
