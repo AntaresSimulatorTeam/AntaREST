@@ -5,7 +5,6 @@ import {
   setCurrentLink,
 } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-// import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 
 import {
   AreaLinkContainer,

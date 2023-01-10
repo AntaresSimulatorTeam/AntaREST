@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Fab } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
   LinkProperties,
@@ -21,6 +22,7 @@ import { getUpdatedNode } from "./utils";
 import { MapContainer, MapFooter } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
+  getCurrentLayer,
   getCurrentStudyMapNode,
   getStudyMapLinks,
   getStudyMapNodes,
@@ -41,11 +43,12 @@ function Map() {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [openConfig, setOpenConfig] = useState<boolean>(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openConfig, setOpenConfig] = useState(false);
   const previousNode = useRef<string>();
   const graphRef =
     useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
+  const currentLayerId = useAppSelector(getCurrentLayer);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const studyLinks = useAppSelector((state) =>
     getStudyMapLinks(state, study.id)
@@ -100,13 +103,9 @@ function Map() {
      */
     const updatedUI = !R.whereEq(nodeUI, updatedNode);
 
-    if (updatedUI) {
+    if (updatedUI && study) {
       try {
-        if (study) {
-          await dispatch(
-            updateStudyMapNode({ studyId: study.id, nodeId, nodeUI })
-          );
-        }
+        dispatch(updateStudyMapNode({ studyId: study.id, nodeId, nodeUI }));
       } catch (e) {
         enqueueErrorSnackbar(t("study.error.updateUI"), e as AxiosError);
       }
@@ -121,7 +120,7 @@ function Map() {
     setOpenDialog(false);
     try {
       if (study) {
-        await dispatch(createStudyMapNode({ studyId: study.id, name }));
+        dispatch(createStudyMapNode({ studyId: study.id, name }));
       }
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
@@ -131,7 +130,15 @@ function Map() {
   const handlePositionChange = async (id: string, x: number, y: number) => {
     const updatedNode = getUpdatedNode(id, mapNodesRes.data || []);
     if (updatedNode) {
-      updateUI(id, { x, y, color_rgb: updatedNode.rgbColor });
+      const { layerX, layerY, layerColor } = updatedNode;
+      updateUI(id, {
+        x,
+        y,
+        color_rgb: layerColor[currentLayerId].split(",").map(Number),
+        layerX,
+        layerY,
+        layerColor,
+      });
     }
   };
 
@@ -152,7 +159,7 @@ function Map() {
             left={
               <Areas
                 onAdd={() => setOpenDialog(true)}
-                nodes={mapNodes || []}
+                nodes={mapNodes}
                 updateUI={updateUI}
               />
             }
@@ -161,14 +168,14 @@ function Map() {
                 <MapConfig onClose={() => setOpenConfig(false)} />
               ) : (
                 <MapContainer>
-                  <MapHeader links={mapLinks} nodes={mapNodes || []} />
+                  <MapHeader links={mapLinks} nodes={mapNodes} />
                   <AutoSizer>
                     {({ height, width }) => (
                       <MapGraph
                         height={height}
                         width={width}
                         links={mapLinks}
-                        nodes={mapNodes || []}
+                        nodes={mapNodes}
                         graph={graphRef}
                         onNodePositionChange={handlePositionChange}
                       />
@@ -178,7 +185,9 @@ function Map() {
                     <Fab
                       size="small"
                       color="default"
-                      onClick={() => setOpenConfig(true)}
+                      onClick={() => {
+                        setOpenConfig(true);
+                      }}
                     >
                       <SettingsIcon />
                     </Fab>

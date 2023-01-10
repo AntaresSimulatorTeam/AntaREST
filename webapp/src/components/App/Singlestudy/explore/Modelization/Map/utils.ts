@@ -85,7 +85,8 @@ export const getTextColor = (bgColor: RGB): string => {
 export function useRenderNodes(
   nodes: StudyMapNode[],
   width: number,
-  height: number
+  height: number,
+  currentLayerId: number
 ): StudyMapNode[] {
   // compute center offset with scale fix on x axis
   const centerVector = { x: width / INITIAL_ZOOM / 2, y: height / 2 };
@@ -94,13 +95,26 @@ export function useRenderNodes(
     y: 0,
     x: 0,
   };
+
   return useMemo(
     () =>
-      nodes.map((node) => ({
-        ...node,
-        x: node.x + centerVector.x - realCenter.x,
-        y: -node.y + centerVector.y + realCenter.y,
-      })),
-    [nodes, centerVector.x, centerVector.y, realCenter.x, realCenter.y]
+      nodes.map((node) => {
+        const x = node.layerX[currentLayerId] + centerVector.x - realCenter.x;
+        const y = -node.layerY[currentLayerId] + centerVector.x - realCenter.x;
+        const color = node.layerColor[currentLayerId]
+          ? `rgb(${node.layerColor[currentLayerId]})`
+          : NODE_COLOR;
+        const rgbColor = node.layerColor[currentLayerId]
+          ? node.layerColor[currentLayerId].split(",").map(Number)
+          : NODE_COLOR.slice(4, -1).split(",").map(Number);
+        return {
+          ...node,
+          x,
+          y,
+          color,
+          rgbColor,
+        };
+      }),
+    [currentLayerId, nodes, centerVector.x, realCenter.x]
   );
 }

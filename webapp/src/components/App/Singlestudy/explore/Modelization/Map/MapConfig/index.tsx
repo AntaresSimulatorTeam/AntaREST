@@ -12,25 +12,33 @@ interface Props {
 
 function MapConfig({ onClose }: Props) {
   const [t] = useTranslation();
-
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   const tabList = useMemo(
     () => [
       {
-        label: "Districts",
-        path: `/studies/${study?.id}/explore/modelization/map/districts`,
-      },
-      {
         label: "Layers",
         path: `/studies/${study?.id}/explore/modelization/map/layers`,
+      },
+      {
+        label: "Districts",
+        path: `/studies/${study?.id}/explore/modelization/map/districts`,
       },
     ],
     [study]
   );
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <Box sx={{ display: "flex", flex: 1, flexDirection: "column" }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+      }}
+    >
       <Button
         color="secondary"
         size="small"
@@ -40,6 +48,7 @@ function MapConfig({ onClose }: Props) {
       >
         {t("button.back")}
       </Button>
+
       <TabWrapper study={study} tabStyle="normal" tabList={tabList} />
     </Box>
   );

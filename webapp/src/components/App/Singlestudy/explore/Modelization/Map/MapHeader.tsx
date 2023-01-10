@@ -1,33 +1,40 @@
 import { Box, Chip, Typography } from "@mui/material";
-import { SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LinkProperties } from "../../../../../../common/types";
 import {
-  AreaNode,
+  StudyMapNode,
   setCurrentLayer,
 } from "../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayers } from "../../../../../../redux/selectors";
+import {
+  getCurrentLayer,
+  getStudyMapLayers,
+} from "../../../../../../redux/selectors";
 
 interface Props {
   links: LinkProperties[];
-  nodes: AreaNode[];
+  nodes: StudyMapNode[];
 }
+
 function MapHeader(props: Props) {
   const { nodes, links } = props;
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const layers = useAppSelector(getStudyMapLayers);
-  const [activeLayer, setActiveLayer] = useState(layers[0].name);
+  const currentLayerId = useAppSelector(getCurrentLayer);
 
-  const handleLayerClick = (
-    layerId: string,
-    layerName: SetStateAction<string>
-  ) => {
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleLayerClick = (layerId: number) => {
     dispatch(setCurrentLayer(layerId));
-    setActiveLayer(layerName);
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
@@ -44,20 +51,20 @@ function MapHeader(props: Props) {
         sx={{
           display: "flex",
           width: "80%",
+          flexWrap: "wrap",
         }}
       >
-        {layers &&
-          Object.values(layers).map(({ id, name }) => (
-            <Chip
-              key={id}
-              label={name}
-              color={activeLayer === name ? "secondary" : "default"}
-              clickable
-              size="small"
-              sx={{ mx: 1 }}
-              onClick={() => handleLayerClick(id, name)}
-            />
-          ))}
+        {Object.values(layers).map(({ id, name }) => (
+          <Chip
+            key={id}
+            label={name}
+            color={currentLayerId === id ? "secondary" : "default"}
+            clickable
+            size="small"
+            sx={{ m: 1 }}
+            onClick={() => handleLayerClick(id)}
+          />
+        ))}
       </Box>
       <Box
         sx={{

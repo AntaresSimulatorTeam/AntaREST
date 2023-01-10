@@ -6,7 +6,6 @@ import useAppSelector from "./useAppSelector";
 import { getStudyMap } from "../selectors";
 import { createStudyMap, fetchStudyMapLayers } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
-import { setCurrentArea } from "../ducks/studySyntheses";
 import { Response } from "../../components/common/utils/UsePromiseCond";
 import usePromise, { PromiseStatus } from "../../hooks/usePromise";
 
@@ -42,8 +41,6 @@ export default function useStudyMaps<T>(props: Props<T>): Response<T> {
       setStatus(PromiseStatus.Pending);
 
       try {
-        // Prevent default selected node on first render
-        dispatch(setCurrentArea(""));
         await dispatch(fetchStudyMapLayers(studyId)).unwrap();
         await dispatch(createStudyMap(studyId)).unwrap();
       } catch (e) {

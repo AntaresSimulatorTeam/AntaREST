@@ -597,7 +597,7 @@ export interface AreaLayerColor {
   [key: number]: string;
 }
 export interface AreaLayerXandY {
-  [key: number]: string;
+  [key: number]: number;
 }
 
 export interface AreaUI {
@@ -629,6 +629,9 @@ export interface UpdateAreaUi {
   y: number;
   // eslint-disable-next-line camelcase
   color_rgb: Array<number>;
+  layerX: AreaLayerXandY;
+  layerY: AreaLayerXandY;
+  layerColor: AreaLayerColor;
 }
 
 export interface LinkUIInfoDTO {

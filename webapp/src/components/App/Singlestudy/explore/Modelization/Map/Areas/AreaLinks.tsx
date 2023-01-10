@@ -8,7 +8,6 @@ import {
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaLinks } from "../../../../../../../redux/selectors";
-import { makeLinkId } from "../../../../../../../redux/utils";
 import {
   AreaLinkContainer,
   AreaLinkContent,
@@ -29,21 +28,20 @@ function AreaLinks() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <AreaLinkRoot paragraph={false}>
-      {areaLinks && areaLinks.length > 0 && (
+    <AreaLinkRoot>
+      {areaLinks.length > 0 && (
         <AreaLinkTitle>{t("study.links")}</AreaLinkTitle>
       )}
-      {areaLinks &&
-        areaLinks.map(({ area1, area2 }) => (
-          <AreaLinkContainer paragraph={false} key={`${area1}${area2}`}>
+      {areaLinks.length > 0 &&
+        areaLinks.map(({ label, id }) => (
+          <AreaLinkContainer key={id}>
             <AreaLinkContent
-              paragraph={false}
               onClick={() => {
                 dispatch(setCurrentArea(""));
-                dispatch(setCurrentLink(makeLinkId(area1, area2)));
+                dispatch(setCurrentLink(id));
               }}
             >
-              {area1} / {area2}
+              {label}
             </AreaLinkContent>
           </AreaLinkContainer>
         ))}

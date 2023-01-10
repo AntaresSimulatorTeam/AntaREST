@@ -21,7 +21,13 @@ import {
 } from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
-import { AreaNode, studyMapsAdapter, StudyMapsState } from "./ducks/studyMaps";
+import {
+  StudyMapNode,
+  StudyMapLink,
+  studyMapsAdapter,
+  StudyMapsState,
+} from "./ducks/studyMaps";
+import { makeLinkId } from "./utils";
 
 // TODO resultEqualityCheck
 
@@ -241,9 +247,9 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
         const area2 = { id: id2, ...synthesis.areas[id2] };
         const id = makeLinkId(area1.id, area2.id);
         links.push({
-          id, // For consistency
+          id,
           name: id,
-          label: `${area1.name} / ${area2.name}`,
+          label: makeLinkId(area1.name, area2.name),
           area1: area1.id,
           area2: area2.id,
         });
@@ -371,50 +377,6 @@ export const getCurrentStudyMapNode = createSelector(
     studyMapsById[currentStudyId]?.nodes[currentAreaId]
 );
 
-export const getStudyMapLinks = createSelector(
-  getLinks,
-  getStudyMap,
-  (
-    links,
-    studyMap
-  ): Array<
-    LinkElement &
-      Partial<StudyMapLink> & {
-        source: string;
-        target: string;
-        opacity?: number;
-      }
-  > => {
-    const nodeLinks = links
-      .filter((link) => !studyMap?.links[link.id]?.isDeleting)
-      .map((link) => ({
-        ...link,
-        ...studyMap?.links[link.id],
-        source: link.area1,
-        target: link.area2,
-      }));
-
-    const tempNodeLinks = Object.values(studyMap?.links || [])
-      .filter((link) => link.isTemp)
-      .map((link) => {
-        const [area1, area2] = parseLinkId(link.id);
-        return {
-          label: "",
-          name: link.id,
-          area1,
-          area2,
-          source: area1,
-          target: area2,
-          ...link,
-          // For react-d3-graph
-          opacity: 0.3,
-        };
-      });
-
-    return [...nodeLinks, ...tempNodeLinks];
-  }
-);
-
 export const getStudyMapLayers = (
   state: AppState
 ): StudyMapsState["layers"] => {
@@ -431,10 +393,9 @@ export const getCurrentLayerAreas = createSelector(
   getCurrentLayer,
   getStudyMapLayers,
   (currentLayerId, studyMapLayers) => {
-    if (currentLayerId) {
+    if (currentLayerId && studyMapLayers[currentLayerId]) {
       return studyMapLayers[currentLayerId].areas;
     }
-    return {};
   }
 );
 
@@ -442,13 +403,13 @@ export const getStudyMapNodes = createSelector(
   getCurrentLayerAreas,
   getStudyMap,
   (currentLayerAreas, studyMap) => {
-    if (studyMap) {
-      const studyMapNodes = Object.values(currentLayerAreas).map(
-        (area) => studyMap?.nodes[area as AreaNode["id"]]
+    if (studyMap && currentLayerAreas) {
+      const studyMapNodes = Object.values(studyMap?.nodes).filter(
+        (area) => currentLayerAreas.indexOf(area.id) !== -1
       );
-
       return Object.values(studyMapNodes || []);
     }
+    return [];
   }
 );
 
@@ -456,30 +417,27 @@ export const getStudyMapLinks = createSelector(
   getCurrentLayerAreas,
   getStudySynthesis,
   (currentLayerAreas, synthesis) => {
-    const studyMapLinks: LinkElement[] = [];
-
+    const studyMapLinks: Array<LinkElement & Partial<StudyMapLink>> = [];
     if (synthesis && currentLayerAreas) {
       Object.values(currentLayerAreas).forEach((areaId) => {
         const area1 = {
-          id: areaId as AreaNode["id"],
-          ...synthesis.areas[areaId as AreaNode["id"]],
+          id: areaId as StudyMapNode["id"],
+          ...synthesis.areas[areaId as StudyMapNode["id"]],
         };
-
-        const layerAreas = Object.keys(area1.links).map((link) => {
+        const layerAreas = Object.keys(area1.links || {}).map((link) => {
           if (!Object.values(currentLayerAreas).includes(link)) {
             return;
           }
           return link;
         });
-
         layerAreas.forEach((areaId) => {
           if (areaId) {
             const area2 = { id: areaId, ...synthesis.areas[areaId] };
-            const id = `${area1.id} / ${area2.id}`;
+            const id = makeLinkId(area1.id, area2.id);
             studyMapLinks.push({
               id,
               name: id,
-              label: `${area1.name} / ${area2.name}`,
+              label: makeLinkId(area1.name, area2.name),
               area1: area1.id,
               area2: area2.id,
             });
@@ -487,7 +445,6 @@ export const getStudyMapLinks = createSelector(
         });
       });
     }
-
     return studyMapLinks;
   }
 );

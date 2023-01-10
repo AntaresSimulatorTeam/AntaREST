@@ -10,6 +10,8 @@ import AreaLink from "./AreaLink";
 import { AreaColorPicker, AreaHuePicker } from "./style";
 import DeleteAreaDialog from "./DeleteAreaDialog";
 import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentLayer } from "../../../../../../../redux/selectors";
 
 interface Props {
   node?: StudyMapNode;
@@ -21,13 +23,14 @@ interface Props {
 function AreaConfig(props: Props) {
   const [t] = useTranslation();
   const { node, updateUI, currentLink, currentArea } = props;
+  const currentLayerId = useAppSelector(getCurrentLayer);
   const [currentColor, setCurrentColor] = useState(node?.color || "");
 
   useEffect(() => {
-    if (currentArea?.color) {
-      setCurrentColor(currentArea.color);
+    if (currentArea?.layerColor) {
+      setCurrentColor(`rgb(${currentArea.layerColor[currentLayerId]})`);
     }
-  }, [currentArea?.color]);
+  }, [currentArea?.layerColor, currentLayerId]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -36,14 +39,18 @@ function AreaConfig(props: Props) {
   const handleChangeColor = (color: ColorResult) => {
     const { r, g, b } = color.rgb;
     if (currentArea) {
-      setCurrentColor(`rgb(${r}, ${g}, ${b})`);
-      updateUI(currentArea.id, {
-        x: currentArea.x,
-        y: currentArea.y,
+      const { id, x, y, layerX, layerY, layerColor } = currentArea;
+      setCurrentColor(`rgb(${layerColor[currentLayerId]})`);
+      updateUI(id, {
+        x,
+        y,
+        layerX,
+        layerY,
+        layerColor,
         color_rgb:
           color.rgb !== null
             ? [r, g, b]
-            : currentArea.color.slice(4, -1).split(",").map(Number),
+            : currentArea.layerColor[currentLayerId].split(",").map(Number),
       });
     }
   };

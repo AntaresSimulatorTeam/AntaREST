@@ -1,6 +1,5 @@
 import {
   AllClustersAndLinks,
-  AreaInfoDTO,
   LinkCreationInfoDTO,
   LinkInfoWithUI,
   UpdateAreaUi,
@@ -11,12 +10,13 @@ import {
   ConstraintType,
   UpdateBindingConstraint,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
+import { StudyMapNode } from "../../redux/ducks/studyMaps";
 import client from "./client";
 
 export const createArea = async (
   uuid: string,
   name: string
-): Promise<AreaInfoDTO> => {
+): Promise<StudyMapNode> => {
   const res = await client.post(`/v1/studies/${uuid}/areas?uuid=${uuid}`, {
     name,
     type: "AREA",
@@ -38,10 +38,11 @@ export const createLink = async (
 export const updateAreaUI = async (
   uuid: string,
   areaId: string,
+  layerId: number,
   areaUi: UpdateAreaUi
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/areas/${areaId}/ui?uuid=${uuid}&area_id=${areaId}`,
+    `/v1/studies/${uuid}/areas/${areaId}/ui?uuid=${uuid}&area_id=${areaId}&layer=${layerId}`,
     areaUi
   );
   return res.data;
