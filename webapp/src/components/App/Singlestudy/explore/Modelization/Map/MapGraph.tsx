@@ -78,7 +78,8 @@ function MapGraph(props: Props) {
 
   const handleLinkCreation = (nodeId: string) => {
     if (sourceNode && sourceNode === nodeId) {
-      setSourceNode("");
+      setSourceNode(undefined);
+      setTargetNode(undefined);
     } else {
       setSourceNode(nodeId);
     }
@@ -88,6 +89,8 @@ function MapGraph(props: Props) {
     if (!sourceNode && nodes) {
       dispatch(setCurrentLink(""));
       dispatch(setCurrentArea(nodeId));
+    } else if (sourceNode) {
+      setTargetNode(nodeId);
     }
   };
 
