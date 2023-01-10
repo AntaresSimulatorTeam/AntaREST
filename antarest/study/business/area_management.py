@@ -5,7 +5,7 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import LayerNotFound
+from antarest.core.exceptions import LayerNotFound, LayerNotAllowedToBeDeleted
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     RawStudy,
@@ -305,6 +305,8 @@ class AreaManager:
 
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        if layer_id == "0":
+            raise LayerNotAllowedToBeDeleted
         layers = file_study.tree.get(["layers", "layers", "layers"])
         # remove all areas from the layer since this info is stored in area data...
         self.update_layer_areas(study, layer_id, [])

@@ -168,6 +168,11 @@ class LayerNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND)
 
 
+class LayerNotAllowedToBeDeleted(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.EXPECTATION_FAILED)
+
+
 class StudyOutputNotFoundError(Exception):
     pass
 
