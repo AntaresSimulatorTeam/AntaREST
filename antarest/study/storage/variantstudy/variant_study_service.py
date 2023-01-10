@@ -907,7 +907,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study = self.study_factory.create_from_fs(
                 self.raw_study_service.get_study_path(parent_study),
                 parent_study.id,
-                use_cache=True,
+                output_path=Path(metadata.path) / OUTPUT_RELATIVE_PATH,
+                use_cache=False,
             )
             parent_config = study.config
         else:
@@ -918,7 +919,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 return res, parent_config
 
         # Generate
-        return self._generate_config(metadata, parent_config)
+        res, config = self._generate_config(metadata, parent_config)
+        # fix paths
+        config.path = Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
+        config.study_path = Path(metadata.path)
+        return res, config
 
     def _get_commands_and_notifier(
         self,
