@@ -167,7 +167,7 @@ class Watcher(IService):
         params: RequestParameters,
         workspace: Optional[str] = None,
         path: Optional[str] = None,
-    ) -> None:
+    ) -> str:
         """
         Scan a folder and add studies found to database.
 
@@ -181,7 +181,7 @@ class Watcher(IService):
             self.scan(workspace, path)
             return TaskResult(success=True, message="Scan completed")
 
-        self.task_service.add_task(
+        return self.task_service.add_task(
             action=scan_task,
             name=f"Scanning {workspace}/{path}",
             task_type=TaskType.SCAN,
