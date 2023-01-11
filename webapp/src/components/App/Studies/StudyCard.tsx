@@ -83,10 +83,10 @@ const StudyCard = memo((props: Props) => {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openMenu, setOpenMenu] = useState<string>("");
+  const [openMenu, setOpenMenu] = useState("");
   const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
-  const [openExportModal, setOpenExportModal] = useState<boolean>(false);
-  const [openMoveDialog, setOpenMoveDialog] = useState<boolean>(false);
+  const [openExportModal, setOpenExportModal] = useState(false);
+  const [openMoveDialog, setOpenMoveDialog] = useState(false);
   const study = useAppSelector((state) => getStudy(state, id));
   const isFavorite = useAppSelector((state) => isStudyFavorite(state, id));
   const dispatch = useAppDispatch();
@@ -121,7 +121,6 @@ const StudyCard = memo((props: Props) => {
         enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
         logError("Failed to delete study", study, err);
       });
-
     setOpenConfirmDeleteDialog(false);
   };
 
@@ -143,7 +142,6 @@ const StudyCard = memo((props: Props) => {
       );
       logError("Failed to archive study", study, err);
     });
-
     handleMenuClose();
   };
 
@@ -168,7 +166,6 @@ const StudyCard = memo((props: Props) => {
         enqueueErrorSnackbar(t("studies.error.copyStudy"), err);
         logError("Failed to copy study", study, err);
       });
-
     handleMenuClose();
   };
 
@@ -221,21 +218,25 @@ const StudyCard = memo((props: Props) => {
         sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
       >
         <Box
-          width="100%"
-          height="36px"
-          display="flex"
-          flexDirection="row"
-          justifyContent="flex-start"
-          sx={{ px: 0.5, paddingTop: 0.5 }}
+          sx={{
+            width: "100%",
+            height: "36px",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "flex-start",
+            px: 0.5,
+            paddingTop: 0.5,
+          }}
         >
           <Tooltip title={study.name}>
             <Typography
               noWrap
               variant="h6"
               component="div"
-              color="white"
-              boxSizing="border-box"
               sx={{
+                color: "white",
+                boxSizing: "border-box",
+                flexFlow: "nowrap",
                 width: "calc(100% - 64px)",
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
@@ -246,19 +247,21 @@ const StudyCard = memo((props: Props) => {
             </Typography>
           </Tooltip>
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            p={0}
-            sx={{ flexFlow: "row nowrap" }}
+            sx={{
+              display: "flex",
+              flexFlow: "row nowrap",
+              justifyContent: "center",
+              alignItems: "center",
+              p: 0,
+            }}
           >
             <StarToggle
               isActive={isFavorite}
-              activeTitle={t("studies.removeFavorite") as string}
-              unactiveTitle={t("studies.bookmark") as string}
+              activeTitle={t("studies.removeFavorite")}
+              unactiveTitle={t("studies.bookmark")}
               onToggle={handleFavoriteToggle}
             />
-            <Tooltip title={t("study.copyId") as string}>
+            <Tooltip title={t("study.copyId")}>
               <ContentCopyIcon
                 sx={{
                   cursor: "pointer",
@@ -275,30 +278,37 @@ const StudyCard = memo((props: Props) => {
         </Box>
         <Tooltip title={study.folder || ""}>
           <Typography
-            noWrap
             variant="caption"
             component="div"
-            color="white"
-            boxSizing="border-box"
-            sx={{ px: 0.5, paddingBottom: 0.5 }}
+            sx={{
+              color: "white",
+              boxSizing: "border-box",
+              flexFlow: "nowrap",
+              px: 0.5,
+              paddingBottom: 0.5,
+            }}
           >
             {study.folder}
           </Typography>
         </Tooltip>
         <Box
-          width="100%"
-          height="25px"
-          display="flex"
-          flexDirection="row"
-          justifyContent="space-between"
-          mt={0}
+          sx={{
+            width: "100%",
+            height: "25px",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            mt: 0,
+          }}
         >
           <Box
-            display="flex"
-            maxWidth="65%"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
+            sx={{
+              display: "flex",
+              maxWidth: "65%",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+            }}
           >
             <ScheduleOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
             <TinyText noWrap>
@@ -306,10 +316,12 @@ const StudyCard = memo((props: Props) => {
             </TinyText>
           </Box>
           <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+            }}
           >
             <UpdateOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
             <TinyText>
@@ -318,17 +330,21 @@ const StudyCard = memo((props: Props) => {
           </Box>
         </Box>
         <Box
-          width="100%"
-          display="flex"
-          flexDirection="row"
-          justifyContent="space-between"
-          alignItems="center"
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
           <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="flex-start"
-            alignItems="center"
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+            }}
           >
             <PersonOutlineIcon sx={{ color: "text.secondary", mr: 1 }} />
             <TinyText>{study.owner.name}</TinyText>
@@ -384,8 +400,7 @@ const StudyCard = memo((props: Props) => {
             {t("button.explore")}
           </Button>
         </NavLink>
-
-        <Tooltip title={t("studies.moreActions") as string}>
+        <Tooltip title={t("studies.moreActions")}>
           <Button
             size="small"
             aria-controls="menu-elements"
