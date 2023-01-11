@@ -132,6 +132,11 @@ export const updateStudiesFromLocalStorage = createAction<
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
 
+export const updateStudy = createAction<{
+  id: StudyMetadata["id"];
+  changes: Partial<Omit<StudyMetadata, "id">>;
+}>(n("UPDATE_STUDY"));
+
 ////////////////////////////////////////////////////////////////
 // Thunks
 ////////////////////////////////////////////////////////////////
@@ -265,6 +270,7 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)
+    .addCase(updateStudy, studiesAdapter.updateOne)
     .addCase(deleteStudy.fulfilled, studiesAdapter.removeOne)
     .addCase(fetchStudies.pending, (draftState) => {
       draftState.status = FetchStatus.Loading;

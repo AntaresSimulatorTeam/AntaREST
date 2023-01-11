@@ -35,6 +35,7 @@ import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { StudyMetadata, StudyType } from "../../../common/types";
 import {
   buildModificationDate,
@@ -51,6 +52,7 @@ import { getStudy, isStudyFavorite } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { deleteStudy, toggleFavorite } from "../../../redux/ducks/studies";
 import * as studyApi from "../../../services/api/study";
+import PropertiesDialog from "../Singlestudy/PropertiesDialog";
 
 const logError = debug("antares:studieslist:error");
 
@@ -84,6 +86,7 @@ const StudyCard = memo((props: Props) => {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState("");
+  const [openPropertiesDialog, setOpenPropertiesDialog] = useState(false);
   const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
   const [openExportModal, setOpenExportModal] = useState(false);
   const [openMoveDialog, setOpenMoveDialog] = useState(false);
@@ -447,6 +450,23 @@ const StudyCard = memo((props: Props) => {
                 </ListItemIcon>
                 <ListItemText>{t("global.launch")}</ListItemText>
               </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setOpenPropertiesDialog(true);
+                  handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <EditOutlinedIcon
+                    sx={{
+                      color: "action.active",
+                      width: "24px",
+                      height: "24px",
+                    }}
+                  />
+                </ListItemIcon>
+                <ListItemText>{t("study.properties")}</ListItemText>
+              </MenuItem>
               <MenuItem onClick={handleCopyClick}>
                 <ListItemIcon>
                   <FileCopyOutlinedIcon
@@ -530,6 +550,13 @@ const StudyCard = memo((props: Props) => {
           )}
         </Menu>
       </CardActions>
+      {openPropertiesDialog && study && (
+        <PropertiesDialog
+          open={openPropertiesDialog}
+          onClose={() => setOpenPropertiesDialog(false)}
+          study={study}
+        />
+      )}
       {openConfirmDeleteDialog && (
         <ConfirmationDialog
           title={t("dialog.title.confirmation")}
