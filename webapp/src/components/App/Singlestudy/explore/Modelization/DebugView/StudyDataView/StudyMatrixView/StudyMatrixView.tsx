@@ -87,9 +87,6 @@ function StudyMatrixView(props: PropTypes) {
   const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
     if (source !== "loadData" && source !== "updateData") {
       try {
-        if (change.length > 10) {
-          throw new Error(t("matrix.error.tooManyUpdates"));
-        }
         if (change.length > 0) {
           await editMatrix(study, formatedPath, change);
           enqueueSnackbar(t("matrix.success.matrixUpdate"), {

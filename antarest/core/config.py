@@ -128,6 +128,8 @@ class StorageConfig:
     matrix_gc_dry_run: bool = False
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
+    auto_archive_sleeping_time: int = 3600
+    auto_archive_max_parallel: int = 5
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -151,6 +153,10 @@ class StorageConfig:
                 "auto_archive_threshold_days", 60
             ),
             auto_archive_dry_run=data.get("auto_archive_dry_run", False),
+            auto_archive_sleeping_time=data.get(
+                "auto_archive_sleeping_time", 3600
+            ),
+            auto_archive_max_parallel=data.get("auto_archive_max_parallel", 5),
         )
 
 

@@ -39,14 +39,14 @@ class CreateArea(ICommand):
         self,
         file_study: FileStudy,
         area_id: str,
-        unservedenergycost: Optional[float] = None,
+        unserverdenergycost: Optional[float] = None,
         spilledenergycost: Optional[float] = None,
     ) -> JSON:
         new_areas: JSON = file_study.tree.get(
             url=["input", "thermal", "areas"]
         )
-        if unservedenergycost is not None:
-            new_areas["unserverdenergycost"][area_id] = unservedenergycost
+        if unserverdenergycost is not None:
+            new_areas["unserverdenergycost"][area_id] = unserverdenergycost
         if spilledenergycost is not None:
             new_areas["spilledenergycost"][area_id] = spilledenergycost
 
@@ -207,7 +207,7 @@ class CreateArea(ICommand):
                     "areas": self._generate_new_thermal_areas_ini(
                         study_data,
                         area_id,
-                        unservedenergycost=NodalOptimization.UNSERVERDDENERGYCOST,
+                        unserverdenergycost=NodalOptimization.UNSERVERDDENERGYCOST,
                         spilledenergycost=NodalOptimization.SPILLEDENERGYCOST,
                     ),
                 },

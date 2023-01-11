@@ -130,9 +130,13 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
 
 def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     redis_client = redis.Redis(
-        host=config.host, port=config.port, password=config.password, db=0
+        host=config.host,
+        port=config.port,
+        password=config.password,
+        db=0,
+        retry_on_error=[redis.ConnectionError, redis.TimeoutError],  # type: ignore
     )
-    return redis_client
+    return redis_client  # type: ignore
 
 
 class StopWatch:

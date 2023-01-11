@@ -140,36 +140,36 @@ export default function PropertiesForm(props: Props) {
                 }}
               >
                 <NumberFE
-                  name="energieCostUnsupplied"
+                  name="energyCostUnsupplied"
                   label={t("study.modelization.nodeProperties.unsupplied")}
                   variant="filled"
-                  placeholder={defaultValues?.energieCostUnsupplied?.toString()}
+                  placeholder={defaultValues?.energyCostUnsupplied?.toString()}
                   InputLabelProps={
-                    defaultValues?.energieCostUnsupplied !== undefined
+                    defaultValues?.energyCostUnsupplied !== undefined
                       ? { shrink: true }
                       : {}
                   }
                   control={control}
                   rules={{
                     onAutoSubmit: (value) =>
-                      handleAutoSubmit(path.energieCostUnsupplied, value),
+                      handleAutoSubmit(path.energyCostUnsupplied, value),
                   }}
                 />
                 <NumberFE
-                  name="energieCostSpilled"
+                  name="energyCostSpilled"
                   sx={{ mx: 1 }}
                   label={t("study.modelization.nodeProperties.splilled")}
                   variant="filled"
-                  placeholder={defaultValues?.energieCostSpilled?.toString()}
+                  placeholder={defaultValues?.energyCostSpilled?.toString()}
                   InputLabelProps={
-                    defaultValues?.energieCostSpilled !== undefined
+                    defaultValues?.energyCostSpilled !== undefined
                       ? { shrink: true }
                       : {}
                   }
                   control={control}
                   rules={{
                     onAutoSubmit: (value) =>
-                      handleAutoSubmit(path.energieCostSpilled, value),
+                      handleAutoSubmit(path.energyCostSpilled, value),
                   }}
                 />
               </Box>

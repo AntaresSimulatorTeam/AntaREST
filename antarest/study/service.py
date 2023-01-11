@@ -1873,12 +1873,13 @@ class StudyService:
         uuid: str,
         area_id: str,
         area_ui: AreaUI,
+        layer: str,
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area_ui(study, area_id, area_ui)
+        return self.areas.update_area_ui(study, area_id, area_ui, layer)
 
     def update_thermal_cluster_metadata(
         self,

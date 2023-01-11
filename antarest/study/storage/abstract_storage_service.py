@@ -275,21 +275,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            filename = shutil.make_archive(
-                base_name=os.path.splitext(target)[0],
-                format="zip",
-                root_dir=tmp_study_path,
-            )
+            zip_dir(tmp_study_path, target)
             stopwatch.log_elapsed(
                 lambda x: logger.info(
                     f"Study {path_study} exported (zipped mode) in {x}s"
                 )
             )
-        return target.parent / filename
+        return target
 
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
         """
@@ -312,11 +309,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
         if not path_output_zip.exists():
-            shutil.make_archive(
-                base_name=os.path.splitext(target)[0],
-                format="zip",
-                root_dir=path_output,
-            )
+            zip_dir(path_output, target)
         stopwatch.log_elapsed(
             lambda x: logger.info(
                 f"Output {output_id} from study {metadata.path} exported in {x}s"

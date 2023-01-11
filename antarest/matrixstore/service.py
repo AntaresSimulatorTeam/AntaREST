@@ -26,7 +26,7 @@ from antarest.core.tasks.service import (
     ITaskService,
 )
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, assert_this
+from antarest.core.utils.utils import StopWatch, assert_this, zip_dir
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -376,17 +376,13 @@ class MatrixService(ISimpleMatrixService):
                 if not mtx:
                     continue
                 write_tsv_matrix(mtx, tmpdir)
-            filename = shutil.make_archive(
-                base_name=os.path.splitext(export_path)[0],
-                format="zip",
-                root_dir=tmpdir,
-            )
+            zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(
                 lambda x: logger.info(
                     f"Matrix dataset exported (zipped mode) in {x}s"
                 )
             )
-        return filename if filename else ""
+        return str(export_path)
 
     def download_dataset(
         self,

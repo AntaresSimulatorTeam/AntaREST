@@ -41,8 +41,8 @@ export interface PropertiesFields {
   color: string;
   posX: number;
   posY: number;
-  energieCostUnsupplied: number;
-  energieCostSpilled: number;
+  energyCostUnsupplied: number;
+  energyCostSpilled: number;
   nonDispatchPower: boolean;
   dispatchHydroPower: boolean;
   otherDispatchPower: boolean;
@@ -57,15 +57,16 @@ export type PropertiesPath = Omit<
 >;
 
 export function getPropertiesPath(areaName: string): PropertiesPath {
-  const pathPrefix = `input/areas/${transformNameToId(areaName)}`;
+  const areaId = transformNameToId(areaName);
+  const pathPrefix = `input/areas/${areaId}`;
   const optimization = `${pathPrefix}/optimization`;
   const ui = `${pathPrefix}/ui/ui`;
   return {
     color: ui,
     posX: `${ui}/x`,
     posY: `${ui}/y`,
-    energieCostUnsupplied: `${optimization}/nodal optimization/spread-unsupplied-energy-cost`,
-    energieCostSpilled: `${optimization}/nodal optimization/spread-spilled-energy-cost`,
+    energyCostUnsupplied: `input/thermal/areas/unserverdenergycost/${areaId}`,
+    energyCostSpilled: `input/thermal/areas/spilledenergycost/${areaId}`,
     nonDispatchPower: `${optimization}/nodal optimization/non-dispatchable-power`,
     dispatchHydroPower: `${optimization}/nodal optimization/dispatchable-hydro-power`,
     otherDispatchPower: `${optimization}/nodal optimization/other-dispatchable-power`,
@@ -80,10 +81,22 @@ export async function getDefaultValues(
   areaName: string,
   t: TFunction<"translation", undefined>
 ): Promise<PropertiesFields> {
+  const areaId = transformNameToId(areaName);
   // Path
-  const pathPrefix = `/input/areas/${areaName.toLowerCase()}`;
+  const pathPrefix = `/input/areas/${areaId}`;
   // Fetch fields
   const fields: PropertiesType = await getStudyData(studyId, pathPrefix, 3);
+  const energyCostUnsupplied = await getStudyData(
+    studyId,
+    `input/thermal/areas/unserverdenergycost`,
+    1
+  );
+  const energyCostSpilled = await getStudyData(
+    studyId,
+    `input/thermal/areas/spilledenergycost`,
+    1
+  );
+
   const nodalOptimization: PropertiesType["optimization"]["nodal optimization"] =
     fields.optimization["nodal optimization"];
   const uiElement: PropertiesType["ui"]["ui"] = fields.ui.ui;
@@ -99,8 +112,8 @@ export async function getDefaultValues(
     }),
     posX: uiElement.x,
     posY: uiElement.y,
-    energieCostUnsupplied: nodalOptimization["spread-unsupplied-energy-cost"],
-    energieCostSpilled: nodalOptimization["spread-spilled-energy-cost"],
+    energyCostUnsupplied: energyCostUnsupplied[areaId] || 0,
+    energyCostSpilled: energyCostSpilled[areaId] || 0,
     nonDispatchPower: nodalOptimization["non-dispatchable-power"],
     dispatchHydroPower: nodalOptimization["dispatchable-hydro-power"],
     otherDispatchPower: nodalOptimization["other-dispatchable-power"],

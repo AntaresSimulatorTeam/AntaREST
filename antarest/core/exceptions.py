@@ -163,6 +163,11 @@ class ConstraintIdNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class LayerNotFound(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND)
+
+
 class StudyOutputNotFoundError(Exception):
     pass
 

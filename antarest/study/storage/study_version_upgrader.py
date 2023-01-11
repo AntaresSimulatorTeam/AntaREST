@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import typing
 from datetime import datetime
@@ -170,14 +171,14 @@ def upgrade_820(study_path: str) -> None:
     links = glob.glob(os.path.join(study_path, f"input{sep}links{sep}*"))
     if len(links) > 0:
         for folder in links:
-            os.mkdir(os.path.join(folder, "capacities"))
             all_txt = glob.glob(os.path.join(folder, "*.txt"))
             if len(all_txt) > 0:
+                os.mkdir(os.path.join(folder, "capacities"))
                 for txt in all_txt:
                     df = pandas.read_csv(txt, sep="\t", header=None)
-                    df_parameters = df.iloc[:, :6]
-                    df_direct = df.iloc[:, 6]
-                    df_indirect = df.iloc[:, 7]
+                    df_parameters = df.iloc[:, 2:8]
+                    df_direct = df.iloc[:, 0]
+                    df_indirect = df.iloc[:, 1]
                     reversed_txt = txt[::-1]
                     k = 0
                     while reversed_txt[k] != sep:
@@ -187,16 +188,19 @@ def upgrade_820(study_path: str) -> None:
                         folder + f"{sep}{name}_parameters.txt",
                         df_parameters.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     numpy.savetxt(
                         folder + f"{sep}capacities{sep}{name}_direct.txt",
                         df_direct.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     numpy.savetxt(
                         folder + f"{sep}capacities{sep}{name}_indirect.txt",
                         df_indirect.values,
                         delimiter="\t",
+                        fmt="%.6f",
                     )
                     os.remove(folder + f"{sep}{name}.txt")
 
@@ -234,6 +238,15 @@ def upgrade_830(study_path: str) -> None:
         True,
         None,
     )
+    areas = glob.glob(os.path.join(study_path, f"input{sep}areas{sep}*"))
+    if len(areas) > 0:
+        for folder in areas:
+            if Path(folder).is_dir():
+                writer = IniWriter()
+                writer.write(
+                    {"adequacy-patch": {"adequacy-patch-mode": "outside"}},
+                    Path(folder) / "adequacy_patch.ini",
+                )
 
 
 def upgrade_840(study_path: str) -> None:
@@ -313,19 +326,14 @@ def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
 
 
 def update_study_antares_file(new_version: int, study_path: str) -> None:
-    text_to_replace = ["lastsave", "version"]
-    new_text = [
-        "lastsave = {}\n".format(datetime.strftime(datetime.now(), "%S")),
-        f"version = {str(new_version)}\n",
-    ]
+    epoch_time = datetime(1970, 1, 1)
+    delta = int((datetime.now() - epoch_time).total_seconds())
     file = glob.glob(os.path.join(study_path, "study.antares"))[0]
     with open(file, "r") as f:
         lines = f.readlines()
-        for k, elt in enumerate(lines):
-            for n, text in enumerate(text_to_replace):
-                if text in elt:
-                    lines[k] = new_text[n]
-    with open(file, "r+") as f:
+        lines[1] = f"version = {new_version}\n"
+        lines[4] = f"lastsave = {delta}\n"
+    with open(file, "w") as f:
         for item in lines:
             f.write(item)
     f.close()

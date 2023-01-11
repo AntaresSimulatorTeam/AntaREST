@@ -65,9 +65,7 @@ def test_export_file(tmp_path: Path, outputs: bool):
     zipf = ZipFile(export_path)
 
     assert "file.txt" in zipf.namelist()
-    assert "test/" in zipf.namelist()
     assert "test/file.txt" in zipf.namelist()
-    assert ("output/" in zipf.namelist()) == outputs
     assert ("output/file.txt" in zipf.namelist()) == outputs
 
 
@@ -136,7 +134,7 @@ def test_export_output(tmp_path: Path):
     (root / "output" / output_id).mkdir(parents=True)
     (root / "output" / output_id / "file_output.txt").write_text("42")
 
-    export_path = tmp_path / "study"
+    export_path = tmp_path / "study.zip"
 
     study_factory = Mock()
     study_service = RawStudyService(
@@ -152,6 +150,6 @@ def test_export_output(tmp_path: Path):
     study_factory.create_from_fs.return_value = study_tree
 
     study_service.export_output(study, output_id, export_path)
-    zipf = ZipFile(f"{export_path}.zip")
+    zipf = ZipFile(export_path)
 
     assert "file_output.txt" in zipf.namelist()

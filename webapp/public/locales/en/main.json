@@ -114,7 +114,6 @@
   "matrix.error.failedToRetrieveIndex": "Failed to retrieve the matrix's index",
   "matrix.success.matrixUpdate": "Matrix updated successfully",
   "matrix.error.matrixUpdate": "Failed to update the matrix",
-  "matrix.error.tooManyUpdates": "10 cells max per update",
   "downloads.expirationDate": "Expiration date",
   "downloads.newDownload": "New download created",
   "downloads.downloadReady": "Download ready",

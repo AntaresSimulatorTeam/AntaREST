@@ -1,6 +1,5 @@
 import glob
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import List
 from zipfile import ZipFile
@@ -63,9 +62,8 @@ def test_study_version_upgrader_fails(tmp_path: Path):
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
     with open(str(tmp_path) + f"{sep}study.antares") as study_antares:
         lines = study_antares.readlines()
-        for elt in lines:
-            if "version" in elt:
-                assert "840" in elt
+        assert lines[1] == "version = 840\n"
+        assert len(lines) == 7
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
@@ -147,7 +145,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                     .replace(".txt", "")
                     .replace("_parameters", "")
                 )
-                assert df.equals(dico[old_txt].iloc[:, :6])
+                assert (df.values == dico[old_txt].iloc[:, 2:8].values).all()
         capacities = glob.glob(os.path.join(folder, f"capacities{sep}*"))
         if len(capacities) > 0:
             for direction_txt in capacities:
@@ -159,7 +157,13 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                 ).replace(f"capacities{sep}", "")
                 if "indirect" in old_txt:
                     new_txt = old_txt.replace("_indirect.txt", "")
-                    assert df_capacities[0].equals(dico[new_txt].iloc[:, 7])
+                    assert (
+                        df_capacities[0].values
+                        == dico[new_txt].iloc[:, 0].values
+                    ).all()
                 else:
                     new_txt = old_txt.replace("_direct.txt", "")
-                    assert df_capacities[0].equals(dico[new_txt].iloc[:, 6])
+                    assert (
+                        df_capacities[0].values
+                        == dico[new_txt].iloc[:, 1].values
+                    ).all()

@@ -18,6 +18,7 @@ from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaUI,
+    LayerInfoDTO,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.model import (
@@ -59,6 +60,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
+from tests.conftest import with_db_context
 
 
 @pytest.fixture
@@ -184,9 +186,7 @@ def test_area_crud(
                 action=CommandName.UPDATE_CONFIG.value,
                 args=[
                     {"target": "input/areas/test/ui/ui/x", "data": "100"},
-                    {"target": "input/areas/test/ui/layerX/0", "data": "100"},
                     {"target": "input/areas/test/ui/ui/y", "data": "200"},
-                    {"target": "input/areas/test/ui/layerY/0", "data": "200"},
                     {
                         "target": "input/areas/test/ui/ui/color_r",
                         "data": "255",
@@ -195,6 +195,12 @@ def test_area_crud(
                     {
                         "target": "input/areas/test/ui/ui/color_b",
                         "data": "100",
+                    },
+                    {"target": "input/areas/test/ui/layerX/0", "data": "100"},
+                    {"target": "input/areas/test/ui/layerY/0", "data": "200"},
+                    {
+                        "target": "input/areas/test/ui/layerColor/0",
+                        "data": "255 , 0 , 100",
                     },
                 ],
             ),

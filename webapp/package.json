@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.11.0",
+  "version": "2.11.1",
   "private": true,
   "dependencies": {
     "@emotion/react": "11.10.0",
@@ -9,7 +9,7 @@
     "@hookform/resolvers": "2.9.7",
     "@mui/icons-material": "5.8.4",
     "@mui/lab": "5.0.0-alpha.93",
-    "@mui/material": "5.9.3",
+    "@mui/material": "5.11.2",
     "@reduxjs/toolkit": "1.8.3",
     "@testing-library/jest-dom": "5.16.4",
     "@testing-library/react": "13.3.0",
