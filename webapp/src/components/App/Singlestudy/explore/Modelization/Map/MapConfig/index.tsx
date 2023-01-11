@@ -1,10 +1,10 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, Tab } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
-import { useMemo } from "react";
-import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
-import TabWrapper from "../../../TabWrapper";
+import { useState } from "react";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
+import Layers from "./Layers";
+import Districts from "./Districts";
 
 interface Props {
   onClose: () => void;
@@ -12,21 +12,15 @@ interface Props {
 
 function MapConfig({ onClose }: Props) {
   const [t] = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [value, setValue] = useState("layers");
 
-  const tabList = useMemo(
-    () => [
-      {
-        label: "Layers",
-        path: `/studies/${study?.id}/explore/modelization/map/layers`,
-      },
-      {
-        label: "Districts",
-        path: `/studies/${study?.id}/explore/modelization/map/districts`,
-      },
-    ],
-    [study]
-  );
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    setValue(newValue);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -49,7 +43,20 @@ function MapConfig({ onClose }: Props) {
         {t("button.back")}
       </Button>
 
-      <TabWrapper study={study} tabStyle="normal" tabList={tabList} />
+      <TabContext value={value}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <TabList onChange={handleChange}>
+            <Tab label="Layers" value="layers" />
+            <Tab label="Districts" value="districts" />
+          </TabList>
+        </Box>
+        <TabPanel value="layers">
+          <Layers />
+        </TabPanel>
+        <TabPanel value="districts">
+          <Districts />
+        </TabPanel>
+      </TabContext>
     </Box>
   );
 }

@@ -70,10 +70,6 @@ function App() {
                         element={<SingleStudy isExplorer />}
                       >
                         <Route path="modelization" element={<Modelization />}>
-                          <Route
-                            path="map"
-                            element={<Navigate to="layers" replace />}
-                          />
                           <Route path="map" element={<Map />}>
                             <Route path="layers" element={<Layers />} />
                             <Route path="districts" element={<Districts />} />
