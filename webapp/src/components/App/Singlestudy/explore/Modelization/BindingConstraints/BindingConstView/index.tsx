@@ -4,11 +4,12 @@ import { StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import BindingConstForm from "./BindingConstForm";
-import { getDefaultValues, BindingConstFields } from "./utils";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import { selectLinksAndClusters } from "../../../../../../../redux/selectors";
-import useStudyData from "../../../hooks/useStudyData";
+import { getDefaultValues } from "./utils";
+import UsePromiseCond, {
+  mergeResponses,
+} from "../../../../../../common/utils/UsePromiseCond";
+import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 
 interface Props {
   bindingConst: string;
@@ -17,27 +18,23 @@ interface Props {
 function BindingConstView(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { bindingConst } = props;
-  const res = usePromise(
+  const defaultValuesRes = usePromise(
     () => getDefaultValues(study.id, bindingConst),
     [study.id, bindingConst]
   );
-  const { value: options } = useStudyData({
+  const optionsRes = useStudySynthesis({
     studyId: study.id,
-    selector: selectLinksAndClusters,
+    selector: (state) => getLinksAndClusters(state, study.id),
   });
 
   return (
-    <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
+    <Box sx={{ width: 1, height: 1, overflowY: "auto" }}>
       <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
         <UsePromiseCond
-          response={res}
-          ifPending={() => <SimpleLoader />}
-          ifResolved={(data) => (
-            <Form
-              autoSubmit
-              config={{ defaultValues: data as BindingConstFields }}
-            >
-              {bindingConst && options && (
+          response={mergeResponses(defaultValuesRes, optionsRes)}
+          ifResolved={([defaultValues, options]) => (
+            <Form autoSubmit config={{ defaultValues }}>
+              {bindingConst && (
                 <BindingConstForm
                   study={study}
                   bindingConst={bindingConst}

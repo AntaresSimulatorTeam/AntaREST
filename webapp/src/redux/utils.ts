@@ -7,6 +7,7 @@ import * as R from "ramda";
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
 import packages from "../../package.json";
+import { LinkElement } from "../common/types";
 
 export enum FetchStatus {
   Idle = "idle",
@@ -49,4 +50,18 @@ export function createThunk<P = void, T = void>(
   Object.assign(thunkActionCreator, actionCreator);
 
   return thunkActionCreator as ThunkActionCreatorWithPayload<P, T>;
+}
+
+const LINK_ID_SEPARATOR = " / ";
+
+export function makeLinkId(
+  sourceId: LinkElement["area1"],
+  targetId: LinkElement["area2"]
+): string {
+  return sourceId + LINK_ID_SEPARATOR + targetId;
+}
+
+export function parseLinkId(id: LinkElement["id"]): [string, string] {
+  const [sourceId, targetId] = id.split(LINK_ID_SEPARATOR);
+  return [sourceId, targetId];
 }

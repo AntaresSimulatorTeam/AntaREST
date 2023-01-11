@@ -260,7 +260,7 @@ def create_study_data_routes(
     @bp.post(
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
-        summary="Get all layers info",
+        summary="Create new layer",
         response_model=str,
     )
     def create_layer(
@@ -281,7 +281,7 @@ def create_study_data_routes(
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
         tags=[APITag.study_data],
-        summary="Rename layer",
+        summary="Update layer",
     )
     def update_layer(
         uuid: str,

@@ -569,17 +569,6 @@ export interface MatrixAggregationResult {
   warnings: Array<string>;
 }
 
-export interface NodeProperties {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  color: string;
-  rgbColor: Array<number>;
-  size: { width: number; height: number };
-  highlighted?: boolean;
-}
-
 export interface LinkSynthesis {
   [index: string]: object;
 }
@@ -608,7 +597,7 @@ export interface AreaLayerColor {
   [key: number]: string;
 }
 export interface AreaLayerXandY {
-  [key: number]: string;
+  [key: number]: number;
 }
 
 export interface AreaUI {
@@ -632,7 +621,7 @@ export interface SingleAreaConfig {
 }
 
 export interface AreasConfig {
-  [index: string]: SingleAreaConfig;
+  [areaId: string]: SingleAreaConfig;
 }
 
 export interface UpdateAreaUi {
@@ -640,6 +629,9 @@ export interface UpdateAreaUi {
   y: number;
   // eslint-disable-next-line camelcase
   color_rgb: Array<number>;
+  layerX: AreaLayerXandY;
+  layerY: AreaLayerXandY;
+  layerColor: AreaLayerColor;
 }
 
 export interface LinkUIInfoDTO {
@@ -668,10 +660,6 @@ export interface AreaInfoDTO extends AreaCreationDTO {
   id: string;
   thermals: Array<object>;
 }
-
-export const isNode = (el: NodeProperties | LinkProperties): boolean =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (el as any).id !== undefined;
 
 export interface TaskView {
   id: string;

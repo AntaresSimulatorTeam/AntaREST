@@ -23,8 +23,8 @@ import {
   ClusterElement,
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
-import { selectLinksAndClusters } from "../../../../../../../../redux/selectors";
-import useStudyData from "../../../../hooks/useStudyData";
+import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
@@ -56,9 +56,9 @@ function AddConstraintTermDialog(props: Props) {
       area2: "",
     },
   };
-  const { value: optionsItems } = useStudyData({
+  const { data: optionsItems } = useStudySynthesis({
     studyId,
-    selector: selectLinksAndClusters,
+    selector: (state) => getLinksAndClusters(state, studyId),
   });
 
   ////////////////////////////////////////////////////////////////

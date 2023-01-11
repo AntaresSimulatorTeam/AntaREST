@@ -3,9 +3,8 @@ import {
   AllClustersAndLinks,
   Area,
   Cluster,
-  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
-  LinkListElement,
+  LinkElement,
   StudyMetadata,
   UserDetailsDTO,
 } from "../common/types";
@@ -16,9 +15,19 @@ import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
 import { GroupsState } from "./ducks/groups";
 import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import { studyDataAdapter, StudyDataState } from "./ducks/studyDataSynthesis";
+import {
+  studySynthesesAdapter,
+  StudySynthesesState,
+} from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
+import {
+  StudyMapNode,
+  StudyMapLink,
+  studyMapsAdapter,
+  StudyMapsState,
+} from "./ducks/studyMaps";
+import { makeLinkId } from "./utils";
 
 // TODO resultEqualityCheck
 
@@ -125,7 +134,7 @@ export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
 };
 
 export const getCurrentStudy = createSelector(
-  studiesSelectors.selectEntities,
+  getStudiesById,
   getCurrentStudyId,
   (studies, current) => studies[current]
 );
@@ -171,83 +180,116 @@ export const getGroupIds = groupsSelectors.selectIds;
 export const getGroup = groupsSelectors.selectById;
 
 ////////////////////////////////////////////////////////////////
-// Study Data Synthesis
+// Study Syntheses
 ////////////////////////////////////////////////////////////////
 
-export const getStudyDataState = (state: AppState): StudyDataState =>
-  state.studyDataSynthesis;
+export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
+  state.studySyntheses;
 
-const studyDataSelectors = studyDataAdapter.getSelectors(getStudyDataState);
+const studySynthesesSelectors = studySynthesesAdapter.getSelectors(
+  getStudySynthesesState
+);
 
-export const getStudyDataIds = studyDataSelectors.selectIds;
+export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
 
-export const getAllStudyData = studyDataSelectors.selectAll;
+export const getStudySynthesisIds = studySynthesesSelectors.selectIds;
 
-export const getStudyData = studyDataSelectors.selectById;
+export const getStudySyntheses = studySynthesesSelectors.selectAll;
 
-export const getCurrentAreaId = (
-  state: AppState
-): StudyDataState["currentArea"] => {
-  return getStudyDataState(state).currentArea;
-};
+export const getStudySynthesis = studySynthesesSelectors.selectById;
 
-export const getCurrentLinkId = (
-  state: AppState
-): StudyDataState["currentLink"] => {
-  return getStudyDataState(state).currentLink;
-};
+export const getCurrentStudySynthesis = createSelector(
+  getStudySynthesisById,
+  getCurrentStudyId,
+  (syntheses, currentStudyId) => syntheses[currentStudyId]
+);
 
-export const getStudyAreas = createSelector(getStudyData, (studyData) => {
-  if (studyData) {
-    // studyData ? Object.values(studyData.areas) :
-    return Object.keys(studyData.areas).map((id) => ({
-      ...studyData.areas[id],
+export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    return Object.keys(synthesis.areas).map((id) => ({
+      ...synthesis.areas[id],
       id,
     })) as Array<Area & { id: string }>;
   }
   return [];
 });
 
-export const selectLinks = (
-  studyData: FileStudyTreeConfigDTO | undefined
-): LinkListElement | undefined => {
-  if (studyData) {
-    const links: LinkListElement = {};
-    Object.keys(studyData.areas).forEach((elm1) => {
-      const area1 = studyData.areas[elm1];
-      Object.keys(area1.links).forEach((elm2) => {
-        const area2 = studyData.areas[elm2];
-        const area1Id = elm1.localeCompare(elm2) < 0 ? elm1 : elm2;
-        const area2Id = elm1 === area1Id ? elm2 : elm1;
-        const id = `${area1Id} / ${area2Id}`;
-        links[id] = {
-          id,
-          name: id,
-          label: `${area1.name} / ${area2.name}`,
-          area1: area1Id,
-          area2: area2Id,
-        };
-      });
-    });
-    return links;
-  }
-  return undefined;
+export const getArea = createSelector(
+  getStudySynthesis,
+  (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
+  (synthesis, areaId) => synthesis?.areas[areaId]
+);
+
+export const getCurrentAreaId = (
+  state: AppState
+): StudySynthesesState["currentArea"] => {
+  return getStudySynthesesState(state).currentArea;
 };
 
-export const getStudyLinks = createSelector(getStudyData, (data) => {
-  if (data) {
-    const tmp = selectLinks(data);
-    if (tmp) {
-      return Object.values(tmp) || [];
+export const getCurrentArea = createSelector(
+  getCurrentStudySynthesis,
+  getCurrentAreaId,
+  (synthesis, areaId) => {
+    if (synthesis?.areas[areaId]) {
+      return { id: areaId, ...synthesis?.areas[areaId] } as Area & {
+        id: string;
+      };
     }
   }
-  return [];
+);
+
+export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
+  const links: LinkElement[] = [];
+  if (synthesis) {
+    Object.keys(synthesis.areas).forEach((id1) => {
+      const area1 = { id: id1, ...synthesis.areas[id1] };
+      Object.keys(area1.links).forEach((id2) => {
+        const area2 = { id: id2, ...synthesis.areas[id2] };
+        const id = makeLinkId(area1.id, area2.id);
+        links.push({
+          id,
+          name: id,
+          label: makeLinkId(area1.name, area2.name),
+          area1: area1.id,
+          area2: area2.id,
+        });
+      });
+    });
+  }
+  return links;
 });
+
+export const getCurrentLinkId = (
+  state: AppState
+): StudySynthesesState["currentLink"] => {
+  return getStudySynthesesState(state).currentLink;
+};
+
+export const getCurrentLink = createSelector(
+  getLinks,
+  getCurrentLinkId,
+  (links, linkId) => links.find((link) => link.name === linkId)
+);
+
+export const getCurrentAreaLinks = createSelector(
+  getCurrentStudySynthesis,
+  getLinks,
+  getCurrentAreaId,
+  (currStudySynthesis, links, currAreaId) => {
+    if (currStudySynthesis && links && currAreaId) {
+      const areaLinks = links.filter(
+        (link) => link.area1 === currAreaId || link.area2 === currAreaId
+      );
+      return areaLinks;
+    }
+    return [];
+  }
+);
 
 export const getCurrentBindingConstId = (
   state: AppState
-): StudyDataState["currentBindingConst"] => {
-  return getStudyDataState(state).currentBindingConst;
+): StudySynthesesState["currentBindingConst"] => {
+  return getStudySynthesesState(state).currentBindingConst;
 };
 
 export const getCurrentClusters = (
@@ -255,60 +297,173 @@ export const getCurrentClusters = (
   studyId: string,
   state: AppState
 ): Array<Cluster> => {
-  const currentStudyState = getStudyDataState(state);
+  const currentStudyState = getStudySynthesesState(state);
   const { currentArea } = currentStudyState;
   const clusters =
     currentStudyState.entities[studyId]?.areas[currentArea][type];
   return clusters || [];
 };
 
-export const getBindingConst = createSelector(getStudyData, (studyData) =>
+export const getBindingConst = createSelector(getStudySynthesis, (studyData) =>
   studyData ? studyData.bindings || [] : []
 );
 
-export const selectLinksAndClusters = (
-  studydata: FileStudyTreeConfigDTO | undefined
-): AllClustersAndLinks => {
-  const linksAndClusters: AllClustersAndLinks = {
-    links: [],
-    clusters: [],
-  };
-  if (studydata) {
-    const res = Object.keys(studydata.areas).reduce((acc, areaId) => {
-      const area = { id: areaId, name: studydata.areas[areaId].name };
-      acc.links.push({
-        element: area,
-        item_list: Object.keys(studydata.areas[areaId].links).map((area2) => ({
-          id: area2,
-          name: studydata.areas[area2].name,
-        })),
-      });
-      acc.clusters.push({
-        element: area,
-        item_list: studydata.areas[areaId].thermals.map((thermal) => ({
-          id: thermal.id,
-          name: thermal.name,
-        })),
-      });
-      return acc;
-    }, linksAndClusters);
-    return res;
-  }
-  return linksAndClusters;
-};
-
 export const getLinksAndClusters = createSelector(
-  getStudyData,
-  selectLinksAndClusters
+  getStudySynthesis,
+  (synthesis) => {
+    const linksAndClusters: AllClustersAndLinks = {
+      links: [],
+      clusters: [],
+    };
+    if (synthesis) {
+      const res = Object.keys(synthesis.areas).reduce((acc, areaId) => {
+        const area = { id: areaId, name: synthesis.areas[areaId].name };
+        acc.links.push({
+          element: area,
+          item_list: Object.keys(synthesis.areas[areaId].links).map(
+            (area2) => ({
+              id: area2,
+              name: synthesis.areas[area2].name,
+            })
+          ),
+        });
+        acc.clusters.push({
+          element: area,
+          item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
+            id: thermal.id,
+            name: thermal.name,
+          })),
+        });
+        return acc;
+      }, linksAndClusters);
+      return res;
+    }
+    return linksAndClusters;
+  }
 );
 
 export const getStudyOutput = createSelector(
-  getStudyData,
-  (state: AppState, outputId: string) => outputId,
+  getStudySynthesis,
+  (state: AppState, studyId: StudyMetadata["id"], outputId: string) => outputId,
   (synthesis, outputId) => {
     if (synthesis?.outputs[outputId]) {
       return { id: outputId, ...synthesis?.outputs[outputId] };
     }
+  }
+);
+
+////////////////////////////////////////////////////////////////
+// Study Maps
+////////////////////////////////////////////////////////////////
+
+export const getStudyMapsState = (state: AppState): StudyMapsState =>
+  state.studyMaps;
+
+const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
+
+export const getStudyMapsById = studyMapsSelectors.selectEntities;
+
+export const getStudyMapsIds = studyMapsSelectors.selectIds;
+
+export const getStudyMaps = studyMapsSelectors.selectAll;
+
+export const getStudyMap = studyMapsSelectors.selectById;
+
+export const getCurrentStudyMapNode = createSelector(
+  getStudyMapsById,
+  getCurrentStudyId,
+  getCurrentAreaId,
+  (studyMapsById, currentStudyId, currentAreaId) =>
+    studyMapsById[currentStudyId]?.nodes[currentAreaId]
+);
+
+export const getStudyMapLayers = (
+  state: AppState
+): StudyMapsState["layers"] => {
+  return getStudyMapsState(state).layers;
+};
+
+export const getCurrentLayer = (
+  state: AppState
+): StudyMapsState["currentLayer"] => {
+  return getStudyMapsState(state).currentLayer;
+};
+
+export const getCurrentLayerAreas = createSelector(
+  getCurrentLayer,
+  getStudyMapLayers,
+  (currentLayerId, studyMapLayers) => {
+    if (currentLayerId && studyMapLayers[currentLayerId]) {
+      return studyMapLayers[currentLayerId].areas;
+    }
+  }
+);
+
+export const getStudyMapNodes = createSelector(
+  getCurrentLayerAreas,
+  getStudyMap,
+  getStudySynthesis,
+  (currentLayerAreas, studyMap, synthesis) => {
+    if (synthesis && studyMap && currentLayerAreas) {
+      const nodeUIList = Object.keys(studyMap?.nodes);
+      return Object.keys(synthesis?.areas)
+        .filter(
+          (areaId) =>
+            currentLayerAreas.indexOf(areaId) !== -1 &&
+            nodeUIList.includes(areaId)
+        )
+        .map((areaId) => studyMap?.nodes[areaId]);
+    }
+    return [];
+  }
+);
+
+export const getStudyMapLinks = createSelector(
+  getStudyMap,
+  getCurrentLayerAreas,
+  getStudySynthesis,
+  (studyMap, currentLayerAreas, synthesis) => {
+    const linksUI = studyMap?.links;
+    if (!linksUI) {
+      return [];
+    }
+    const studyMapLinks: Array<LinkElement & Partial<StudyMapLink>> = [];
+    if (synthesis && currentLayerAreas) {
+      const areasUIList = Object.keys(studyMap.nodes);
+      Object.keys(synthesis.areas)
+        .filter(
+          (areaId) =>
+            currentLayerAreas.indexOf(areaId) !== -1 &&
+            areasUIList.includes(areaId)
+        )
+        .forEach((areaId) => {
+          const area1 = {
+            id: areaId as StudyMapNode["id"],
+            ...synthesis.areas[areaId as StudyMapNode["id"]],
+          };
+          const linkAreas2 = Object.keys(area1.links || {}).filter(
+            (link) =>
+              Object.values(currentLayerAreas).includes(link) &&
+              Object.keys(synthesis.areas).includes(link) &&
+              areasUIList.includes(link)
+          );
+          linkAreas2.forEach((areaId) => {
+            if (linksUI) {
+              const area2 = { id: areaId, ...synthesis.areas[areaId] };
+              const id = makeLinkId(area1.id, area2.id);
+              studyMapLinks.push({
+                ...linksUI[id],
+                id,
+                name: id,
+                label: makeLinkId(area1.name, area2.name),
+                area1: area1.id,
+                area2: area2.id,
+              });
+            }
+          });
+        });
+    }
+    return studyMapLinks;
   }
 );
 

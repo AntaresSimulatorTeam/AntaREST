@@ -228,44 +228,6 @@ export const createListFromTree = (tree: VariantTree): Array<GenericInfo> => {
   return res;
 };
 
-export const rgbToHsl = (rgbStr: string): Array<number> => {
-  const [r, g, b] = rgbStr.slice(4, -1).split(",").map(Number);
-  const red = r / 255;
-  const green = g / 255;
-  const blue = b / 255;
-
-  const cmin = Math.min(red, green, blue);
-  const cmax = Math.max(red, green, blue);
-  const delta = cmax - cmin;
-  let h = 0;
-  let s = 0;
-  let l = 0;
-
-  if (delta === 0) {
-    h = 0;
-  } else if (cmax === red) {
-    h = ((green - blue) / delta) % 6;
-  } else if (cmax === green) {
-    h = (blue - red) / delta + 2;
-  } else {
-    h = (red - green) / delta + 4;
-  }
-
-  h = Math.round(h * 60);
-
-  if (h < 0) {
-    h += 360;
-  }
-
-  l = (cmax + cmin) / 2;
-  s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-
-  s = +(s * 100).toFixed(1);
-  l = +(l * 100).toFixed(1);
-
-  return [h, s, l];
-};
-
 export const sortByProp = <T extends object>(
   getProp: (obj: T) => string,
   list: T[]

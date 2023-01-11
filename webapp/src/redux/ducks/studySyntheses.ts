@@ -11,49 +11,55 @@ import {
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import { getStudyData, getStudyDataIds, selectLinks } from "../selectors";
+import {
+  getStudyMapsIds,
+  getStudySynthesis,
+  getStudySynthesisIds,
+} from "../selectors";
 import { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
+import { setStudyMap } from "./studyMaps";
 
-export const studyDataAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
-  selectId: (studyData) => studyData.study_id,
-});
+export const studySynthesesAdapter =
+  createEntityAdapter<FileStudyTreeConfigDTO>({
+    selectId: (studyData) => studyData.study_id,
+  });
 
-export interface StudyDataState
-  extends ReturnType<typeof studyDataAdapter.getInitialState> {
+export interface StudySynthesesState
+  extends ReturnType<typeof studySynthesesAdapter.getInitialState> {
   currentArea: string;
   currentLink: string;
   currentBindingConst: string;
 }
 
-const initialState = studyDataAdapter.getInitialState({
+const initialState = studySynthesesAdapter.getInitialState({
   currentArea: "",
   currentLink: "",
   currentBindingConst: "",
-}) as StudyDataState;
+}) as StudySynthesesState;
 
-const n = makeActionName("studyDataSynthesis");
+const n = makeActionName("studySyntheses");
 
 ////////////////////////////////////////////////////////////////
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
 export const setCurrentArea = createAction<
-  NonNullable<StudyDataState["currentArea"]>
+  NonNullable<StudySynthesesState["currentArea"]>
 >(n("SET_CURRENT_AREA"));
 
 export const setCurrentLink = createAction<
-  NonNullable<StudyDataState["currentLink"]>
+  NonNullable<StudySynthesesState["currentLink"]>
 >(n("SET_CURRENT_LINK"));
 
 export const setCurrentBindingConst = createAction<
-  NonNullable<StudyDataState["currentBindingConst"]>
+  NonNullable<StudySynthesesState["currentBindingConst"]>
 >(n("SET_CURRENT_BINDING_CONST"));
 
-export const updateStudyData = createAction<{
+export const updateStudySynthesis = createAction<{
   id: FileStudyTreeConfigDTO["study_id"];
   changes: Partial<Omit<FileStudyTreeConfigDTO, "study_id">>;
-}>(n("SET_STUDY_DATA"));
+}>(n("SET_STUDY_SYNTHESIS"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -72,14 +78,7 @@ const initDefaultAreaLinkSelection = (
       dispatch(setCurrentArea(""));
     }
 
-    // Set current link
-    const links = selectLinks(studyData);
-    const linkList = links ? Object.values(links) : [];
-    if (linkList.length > 0) {
-      dispatch(setCurrentLink(linkList[0].name));
-    } else {
-      dispatch(setCurrentLink(""));
-    }
+    dispatch(setCurrentLink(""));
   } else {
     dispatch(setCurrentArea(""));
     dispatch(setCurrentLink(""));
@@ -91,17 +90,17 @@ export const setDefaultAreaLinkSelection =
   (studyId: FileStudyTreeConfigDTO["study_id"]): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const studyData = getStudyData(state, studyId);
+    const studyData = getStudySynthesis(state, studyId);
     initDefaultAreaLinkSelection(dispatch, studyData);
   };
 
-export const createStudyData = createAsyncThunk<
+export const createStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO,
   FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
 >(
-  n("CREATE_STUDY_DATA"),
-  async (studyId, { dispatch, getState, rejectWithValue }) => {
+  n("CREATE_STUDY_SYNTHESIS"),
+  async (studyId, { dispatch, rejectWithValue }) => {
     try {
       // Fetch study synthesis data
       const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(
@@ -115,34 +114,34 @@ export const createStudyData = createAsyncThunk<
   }
 );
 
-export const setStudyData = createAsyncThunk<
+export const setStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO,
-  WSMessage<GenericInfo>,
+  FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
->(n("SET_STUDY_DATA"), (event, { rejectWithValue }) => {
-  const { id } = event.payload;
-  return api.getStudySynthesis(id as string).catch(rejectWithValue);
+>(n("SET_STUDY_SYNTHESIS"), (studyId, { rejectWithValue }) => {
+  return api.getStudySynthesis(studyId).catch(rejectWithValue);
 });
 
-export const refreshStudyData =
+export const refreshStudySynthesis =
   (event: WSMessage<GenericInfo>): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    if (getStudyDataIds(state).indexOf(event.payload.id) !== -1) {
-      dispatch(setStudyData(event));
+    const { id } = event.payload;
+    if (getStudySynthesisIds(state).includes(id)) {
+      dispatch(setStudySynthesis(id as string));
+
+      if (getStudyMapsIds(state).includes(id)) {
+        dispatch(setStudyMap(id as string));
+      }
     }
   };
 
-export const deleteStudyData = createAsyncThunk<
+export const deleteStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO["study_id"],
   FileStudyTreeConfigDTO["study_id"] | WSMessage<GenericInfo>,
   AppAsyncThunkConfig
->(n("DELETE_STUDY_DATA"), async (arg, elm) => {
-  if (RA.isString(arg)) {
-    return arg;
-  }
-
-  return arg.payload.id as string;
+>(n("DELETE_STUDY_SYNTHESIS"), async (arg) => {
+  return RA.isString(arg) ? arg : (arg.payload.id as string);
 });
 
 ////////////////////////////////////////////////////////////////
@@ -151,10 +150,10 @@ export const deleteStudyData = createAsyncThunk<
 
 export default createReducer(initialState, (builder) => {
   builder
-    .addCase(createStudyData.fulfilled, studyDataAdapter.addOne)
-    .addCase(setStudyData.fulfilled, studyDataAdapter.setOne)
-    .addCase(updateStudyData, studyDataAdapter.updateOne)
-    .addCase(deleteStudyData.fulfilled, studyDataAdapter.removeOne)
+    .addCase(createStudySynthesis.fulfilled, studySynthesesAdapter.addOne)
+    .addCase(setStudySynthesis.fulfilled, studySynthesesAdapter.setOne)
+    .addCase(updateStudySynthesis, studySynthesesAdapter.updateOne)
+    .addCase(deleteStudySynthesis.fulfilled, studySynthesesAdapter.removeOne)
     .addCase(setCurrentArea, (draftState, action) => {
       draftState.currentArea = action.payload;
     })
