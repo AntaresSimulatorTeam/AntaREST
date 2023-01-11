@@ -1,6 +1,6 @@
 from typing import Dict, List, Union, Any, Optional, cast, Tuple
 
-from pydantic import validator
+from pydantic import validator, root_validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -53,6 +53,12 @@ class CreateLink(ICommand):
         if v is not None:
             return validate_matrix(v, values)
         return v
+
+    @root_validator
+    def validate_areas(cls, values: Dict[str, Any]) -> Any:
+        if values.get("area1") == values.get("area2"):
+            raise ValueError("Cannot create link on same node")
+        return values
 
     def _create_link_in_config(
         self, area_from: str, area_to: str, study_data: FileStudyTreeConfig
@@ -136,6 +142,15 @@ class CreateLink(ICommand):
                 CommandOutput(
                     status=False,
                     message=f"The area '{self.area2}' does not exist",
+                ),
+                dict(),
+            )
+
+        if self.area1 == self.area2:
+            return (
+                CommandOutput(
+                    status=False,
+                    message="Cannot create link between the same node",
                 ),
                 dict(),
             )

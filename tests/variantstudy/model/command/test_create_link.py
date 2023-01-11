@@ -1,5 +1,8 @@
 import configparser
 
+import pytest
+from pydantic import ValidationError
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -37,8 +40,37 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 
 class TestCreateLink:
-    def test_validation(self, empty_study: FileStudy):
-        pass
+    def test_validation(
+        self, empty_study: FileStudy, command_context: CommandContext
+    ):
+        area1 = "Area1"
+        area1_id = transform_name_to_id(area1)
+
+        area2 = "Area2"
+        area2_id = transform_name_to_id(area2)
+
+        CreateArea.parse_obj(
+            {
+                "area_name": area1,
+                "command_context": command_context,
+            }
+        ).apply(empty_study)
+
+        CreateArea.parse_obj(
+            {
+                "area_name": area2,
+                "command_context": command_context,
+            }
+        ).apply(empty_study)
+
+        with pytest.raises(ValidationError):
+            create_link_command: ICommand = CreateLink(
+                area1=area1_id,
+                area2=area1_id,
+                parameters={},
+                command_context=command_context,
+                series=[[0]],
+            )
 
     def test_apply(
         self, empty_study: FileStudy, command_context: CommandContext
