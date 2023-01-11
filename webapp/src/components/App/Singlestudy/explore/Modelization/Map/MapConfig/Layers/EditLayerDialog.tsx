@@ -2,13 +2,10 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { Delete, Edit } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../../../common/Form/types";
+import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayers } from "../../../../../../../../redux/selectors";
@@ -39,12 +36,12 @@ function EditLayerDialog(props: Props) {
     layerId: -1,
   };
 
-  const apiRef = useRef<UseFormReturnPlus<typeof defaultValues>>();
-
-  const layersOptions = Object.values(layers).map(({ name, id }) => ({
-    label: name,
-    value: id,
-  }));
+  const layersOptions = Object.values(layers)
+    .filter((layer) => Number(layer.id) !== 0)
+    .map(({ name, id }) => ({
+      label: name,
+      value: id,
+    }));
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -74,12 +71,11 @@ function EditLayerDialog(props: Props) {
 
   return (
     <FormDialog
-      title={t("Edit Layers")}
+      title="Edit Layers"
       titleIcon={Edit}
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      apiRef={apiRef}
       config={{
         defaultValues,
       }}
@@ -116,7 +112,7 @@ function EditLayerDialog(props: Props) {
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >
-            {t("Delete Layer")}
+            Delete Layer
           </Button>
           {openConfirmationModal && (
             <ConfirmationDialog
@@ -127,7 +123,7 @@ function EditLayerDialog(props: Props) {
               alert="warning"
               open
             >
-              <Typography sx={{ p: 3 }}>{t("Delete layer ?")}</Typography>
+              <Typography sx={{ p: 3 }}>Delete layer ?</Typography>
             </ConfirmationDialog>
           )}
         </Fieldset>

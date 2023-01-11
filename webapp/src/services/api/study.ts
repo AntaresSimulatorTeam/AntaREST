@@ -18,7 +18,7 @@ import {
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
-import { StudyMapNode, Layer } from "../../redux/ducks/studyMaps";
+import { StudyMapNode, StudyMapLayer } from "../../redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<{
   [sid: string]: StudyMetadataDTO;
@@ -425,15 +425,17 @@ export const scanFolder = async (folderPath: string): Promise<void> => {
   await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
 };
 
-export const getStudyLayers = async (uuid: string): Promise<Layer[]> => {
+export const getStudyLayers = async (
+  uuid: string
+): Promise<StudyMapLayer[]> => {
   const res = await client.get(`v1/studies/${uuid}/layers`);
   return res.data;
 };
 
 export async function createStudyLayer(
   studyId: StudyMetadata["id"],
-  layerName: Layer["name"]
-): Promise<Layer["id"]> {
+  layerName: StudyMapLayer["name"]
+): Promise<StudyMapLayer["id"]> {
   const res = await client.post(
     `v1/studies/${studyId}/layers?name=${encodeURIComponent(layerName)}`
   );
@@ -442,8 +444,8 @@ export async function createStudyLayer(
 
 export async function updateStudyLayer(
   studyId: StudyMetadata["id"],
-  layerId: Layer["id"],
-  layerName: Layer["name"],
+  layerId: StudyMapLayer["id"],
+  layerName: StudyMapLayer["name"],
   areas?: StudyMapNode[]
 ): Promise<void> {
   await client.put(
@@ -456,7 +458,7 @@ export async function updateStudyLayer(
 
 export async function deleteStudyLayer(
   studyId: StudyMetadata["id"],
-  layerId: Layer["id"]
+  layerId: StudyMapLayer["id"]
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/layers/${layerId}`);
 }

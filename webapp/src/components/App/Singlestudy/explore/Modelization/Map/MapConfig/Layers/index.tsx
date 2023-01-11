@@ -1,7 +1,6 @@
 import { Box, Button } from "@mui/material";
 import { useState } from "react";
 import { useOutletContext } from "react-router";
-import { useTranslation } from "react-i18next";
 import { Add, Edit } from "@mui/icons-material";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
@@ -21,7 +20,6 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 
 function Layers() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const layers = useAppSelector(getStudyMapLayers);
@@ -83,7 +81,7 @@ function Layers() {
           onClick={() => setCreateLayerDialogOpen(true)}
           sx={{ mr: 1 }}
         >
-          {t("Add Layer")}
+          Add Layer
         </Button>
         <Button
           color="primary"
@@ -92,7 +90,7 @@ function Layers() {
           startIcon={<Edit />}
           onClick={() => setEditLayerDialogOpen(true)}
         >
-          {t("Edit Layers")}
+          Edit Layers
         </Button>
       </Box>
       <Box>

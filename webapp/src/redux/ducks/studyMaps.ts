@@ -50,7 +50,7 @@ export interface StudyMapLink {
   strokeWidth?: number;
 }
 
-export interface Layer {
+export interface StudyMapLayer {
   id: number;
   name: string;
   areas: StudyMapNode["id"][];
@@ -60,7 +60,7 @@ export interface StudyMap {
   studyId: StudyMetadata["id"];
   nodes: Record<StudyMapNode["id"], StudyMapNode>;
   links: Record<StudyMapLink["id"], StudyMapLink>;
-  currentLayer?: Layer["id"];
+  currentLayer?: StudyMapLayer["id"];
 }
 
 export const studyMapsAdapter = createEntityAdapter<StudyMap>({
@@ -69,7 +69,7 @@ export const studyMapsAdapter = createEntityAdapter<StudyMap>({
 
 export interface StudyMapsState extends EntityState<StudyMap> {
   currentLayer: number;
-  layers: Record<Layer["id"], Layer>;
+  layers: Record<StudyMapLayer["id"], StudyMapLayer>;
 }
 
 const initialState = studyMapsAdapter.getInitialState({
@@ -87,9 +87,9 @@ export const setCurrentLayer = createAction<
   NonNullable<StudyMap["currentLayer"]>
 >(n("SET_CURRENT_LAYER"));
 
-export const setLayers = createAction<NonNullable<Record<Layer["id"], Layer>>>(
-  n("SET_LAYERS")
-);
+export const setLayers = createAction<
+  NonNullable<Record<StudyMapLayer["id"], StudyMapLayer>>
+>(n("SET_LAYERS"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -106,7 +106,7 @@ const makeLinkStyle = R.cond<[string], LinkStyle>([
 
 const refreshStudyMapLayers = (
   dispatch: AppDispatch,
-  layers: Record<Layer["id"], Layer>
+  layers: Record<StudyMapLayer["id"], StudyMapLayer>
 ): void => {
   if (layers) {
     // Set Layers
@@ -206,7 +206,7 @@ export const createStudyMapNode = createAsyncThunk<
   {
     newNode: StudyMapNode;
     studyId: StudyMetadata["id"];
-    currentLayerId: Layer["id"];
+    currentLayerId: StudyMapLayer["id"];
   },
   { name: StudyMapNode["name"]; studyId: StudyMetadata["id"] },
   AppAsyncThunkConfig
@@ -226,7 +226,7 @@ export const updateStudyMapNode = createAsyncThunk<
     studyId: StudyMap["studyId"];
     nodeId: StudyMapNode["id"];
     nodeUI: UpdateAreaUi;
-    currentLayerId: Layer["id"];
+    currentLayerId: StudyMapLayer["id"];
   },
   {
     studyId: StudyMap["studyId"];
@@ -249,7 +249,7 @@ export const deleteStudyMapNode = createAsyncThunk<
   {
     studyId: StudyMetadata["id"];
     nodeId: StudyMapNode["id"];
-    currentLayerId: Layer["id"];
+    currentLayerId: StudyMapLayer["id"];
   },
   {
     studyId: StudyMetadata["id"];
@@ -285,10 +285,10 @@ export const setStudyMap = createAsyncThunk<
 
 export const createStudyMapLayer = createAsyncThunk<
   {
-    newLayerId: Layer["id"];
-    name: Layer["name"];
+    newLayerId: StudyMapLayer["id"];
+    name: StudyMapLayer["name"];
   },
-  { name: Layer["name"]; studyId: StudyMetadata["id"] },
+  { name: StudyMapLayer["name"]; studyId: StudyMetadata["id"] },
   AppAsyncThunkConfig
 >(n("CREATE_STUDY_MAP_LAYER"), async (data, { rejectWithValue }) => {
   try {
@@ -302,14 +302,14 @@ export const createStudyMapLayer = createAsyncThunk<
 
 export const updateStudyMapLayer = createAsyncThunk<
   {
-    layerId: Layer["id"];
-    name: Layer["name"];
+    layerId: StudyMapLayer["id"];
+    name: StudyMapLayer["name"];
     areas?: StudyMapNode[];
   },
   {
     studyId: StudyMetadata["id"];
-    layerId: Layer["id"];
-    name: Layer["name"];
+    layerId: StudyMapLayer["id"];
+    name: StudyMapLayer["name"];
     areas?: StudyMapNode[];
   },
   AppAsyncThunkConfig
@@ -325,9 +325,9 @@ export const updateStudyMapLayer = createAsyncThunk<
 
 export const deleteStudyMapLayer = createAsyncThunk<
   {
-    layerId: Layer["id"];
+    layerId: StudyMapLayer["id"];
   },
-  { studyId: StudyMetadata["id"]; layerId: Layer["id"] },
+  { studyId: StudyMetadata["id"]; layerId: StudyMapLayer["id"] },
   AppAsyncThunkConfig
 >(
   n("DELETE_STUDY_MAP_LAYER"),

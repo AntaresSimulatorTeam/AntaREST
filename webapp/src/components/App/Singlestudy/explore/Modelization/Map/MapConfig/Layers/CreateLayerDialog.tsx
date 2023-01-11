@@ -40,7 +40,7 @@ function CreateLayerDialog(props: Props) {
 
   return (
     <FormDialog
-      title={t("Add new layer")}
+      title="Add new layer"
       titleIcon={AddCircleIcon}
       open={open}
       onCancel={onClose}

@@ -18,7 +18,7 @@ import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getUpdatedNode } from "./utils";
+import { getUpdatedNode, NODE_COLOR } from "./utils";
 import { MapContainer, MapFooter } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
@@ -134,7 +134,9 @@ function Map() {
       updateUI(id, {
         x,
         y,
-        color_rgb: layerColor[currentLayerId].split(",").map(Number),
+        color_rgb: layerColor[currentLayerId]
+          ? layerColor[currentLayerId].split(",").map(Number)
+          : NODE_COLOR.slice(4, -1).split(",").map(Number),
         layerX,
         layerY,
         layerColor,

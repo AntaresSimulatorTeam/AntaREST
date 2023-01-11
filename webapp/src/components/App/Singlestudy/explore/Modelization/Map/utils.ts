@@ -99,8 +99,12 @@ export function useRenderNodes(
   return useMemo(
     () =>
       nodes.map((node) => {
-        const x = node.layerX[currentLayerId] + centerVector.x - realCenter.x;
-        const y = -node.layerY[currentLayerId] + centerVector.y + realCenter.y;
+        const x = node.layerX[currentLayerId]
+          ? node.layerX[currentLayerId] + centerVector.x - realCenter.x
+          : node.x + centerVector.x - realCenter.x;
+        const y = node.layerY[currentLayerId]
+          ? -node.layerY[currentLayerId] + centerVector.y + realCenter.y
+          : -node.y + centerVector.y + realCenter.y;
         const color = node.layerColor[currentLayerId]
           ? `rgb(${node.layerColor[currentLayerId]})`
           : NODE_COLOR;
