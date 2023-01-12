@@ -59,7 +59,7 @@ export const setCurrentBindingConst = createAction<
 export const updateStudySynthesis = createAction<{
   id: FileStudyTreeConfigDTO["study_id"];
   changes: Partial<Omit<FileStudyTreeConfigDTO, "study_id">>;
-}>(n("SET_STUDY_SYNTHESIS"));
+}>(n("UPDATE_STUDY_SYNTHESIS"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
