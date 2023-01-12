@@ -279,7 +279,7 @@ def create_study_data_routes(
     def update_layer(
         uuid: str,
         layer_id: str,
-        name: Optional[str] = None,
+        name: str = "",
         areas: Optional[List[str]] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
