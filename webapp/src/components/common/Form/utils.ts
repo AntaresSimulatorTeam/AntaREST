@@ -20,6 +20,16 @@ export function getDirtyValues(
 ): UnknownArrayOrObject {
   // NOTE: Recursive function.
 
+  // Object with index key is considered as array by react-hook-form
+  if (Array.isArray(dirtyFields) && RA.isPlainObj(allValues)) {
+    return dirtyFields.reduce((acc: Record<string, unknown>, v, index) => {
+      if (v === true) {
+        acc[index] = (allValues as Record<string, unknown>)[index];
+      }
+      return acc;
+    }, {});
+  }
+
   // If *any* item in an array was modified, the entire array must be submitted, because there's no
   // way to indicate "placeholders" for unchanged elements. `dirtyFields` is `true` for leaves.
   if (dirtyFields === true || Array.isArray(dirtyFields)) {
