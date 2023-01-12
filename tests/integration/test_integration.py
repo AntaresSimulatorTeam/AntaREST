@@ -215,6 +215,38 @@ def test_main(app: FastAPI):
     assert res.status_code == 200
     assert res.json() == {"1": 8.0, "2": 1.0}
 
+    # scenario builder
+    res = client.put(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json={
+            "ruleset test": {
+                "l": {"area1": {"0": 1}},
+                "ntc": {"area1 / area2": {"1": 23}},
+                "t": {"area1": {"thermal": {"1": 2}}},
+            },
+            "Default Ruleset": "",
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {
+        "ruleset test": {
+            "l": {"area1": {"0": 1}},
+            "ntc": {"area1 / area2": {"1": 23}},
+            "t": {"area1": {"thermal": {"1": 2}}},
+        },
+    }
+
     # config / thematic trimming
     res = client.get(
         f"/v1/studies/{study_id}/config/thematictrimming/form",

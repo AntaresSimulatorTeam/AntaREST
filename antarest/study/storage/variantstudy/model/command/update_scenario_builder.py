@@ -23,14 +23,14 @@ class UpdateScenarioBuilder(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        def remove_empty_value(obj: Dict[str, Any]) -> Dict[str, Any]:
-            return {k: v for k, v in obj.items() if v}
+        def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:
+            return {k: v for k, v in obj.items() if v != ""}
 
         url = ["settings", "scenariobuilder"]
         prev = study_data.tree.get(url)
         new_config = {
-            # The value is a string when it is a ruleset cloning
-            k: remove_empty_value(v if isinstance(v, dict) else prev[v])
+            # The value `v` is a string when it is a ruleset cloning
+            k: remove_rand_values(v if isinstance(v, dict) else prev[v])
             for k, v in merge_deep(prev, self.data).items()
             # Deleted rulesets have an empty string
             if v != ""

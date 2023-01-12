@@ -52,7 +52,7 @@ Example of creation of 2 areas and 1 link:
 | update_binding_constraint           | <pre>{<br>id:&nbsp;&lt;BINDING_CONSTRAINT_ID&gt;<br>enabled?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>time_step:&nbsp;"hourly" &#124; "weekly" &#124; "daily"<br>operator:&nbsp;"equal" &#124; "both" &#124; "greater" &#124; "less"<br>coeffs:&nbsp;&lt;LIST&#91;CONSTRAINT_COEFF&#93;&gt;<br>values?:&nbsp;&lt;MATRIX&gt;<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre>              | Update an existing binding constraint          |
 | remove_binding_constraint           | <pre>{<br>id:&nbsp;&lt;BINDING_CONSTRAINT_ID&gt;<br>}</pre>              | Remove an existing binding constraint    |
 | update_playlist         | <pre>{<br>active:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>reverse:&nbsp;&lt;BOOLEAN&gt; (default: False)<br>items:&nbsp;&lt;LIST&#91;NUMBER&#93;&gt; (default: None)<br>}</pre>              | Update the playlist with provided active (or inactive) years (starting from year 1)                              |
-| update_scenario_builder         | <pre>{<br>data:&nbsp;&lt;INI_MODEL&gt; <br>}</pre>              | Update scenario builder with partial configuration |
+| update_scenario_builder         | <pre>{<br>data:&nbsp;&lt;RULESETS_MODEL&gt; <br>}</pre>              | Update scenario builder with partial configuration |
 | update_district           | <pre>{<br>id:&nbsp;&lt;STRING&gt;<br>base_filter?:&nbsp;"add-all" &#124; <b>"remove-all"</b><br>filter_items?:&nbsp;&lt;LIST&#91;AREA_ID&#93;&gt;<br>output?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre>              | Update a district (set of areas)                      |
 | update_raw_file        | <pre>{<br>target:&nbsp;&lt;INPUT_RAW_FILE_TARGET&gt;<br>b64Data:&nbsp;&lt;STRING&gt;<br>}</pre>              | Replace arbitrary data file (must not be a matrix or ini target) with a base64 encoded data                            |
 
@@ -65,6 +65,7 @@ Example of creation of 2 areas and 1 link:
 |BOOLEAN|true or false|
 |INI_TARGET|a valid antares file relative path (without extension). The path can be found when browsing the study in detailed view|
 |INI_MODEL|a json with a valid field corresponding to the ini file targeted|
+|RULESETS_MODEL| like `INI_MODEL` with some specifications: an empty string allows to remove a key (ruleset or cell value) and a ruleset "A" with for value the name of an another ruleset "B" allows to clone the content of "B" in "A" |
 |INPUT_RAW_FILE_TARGET|a valid antares raw data file relative path (without extension). The path can be found when browsing the study in detailed view|
 |INPUT_SERIES_MATRIX_TARGET|a valid antares matrix data file relative path (without extension). The path can be found when browsing the study in detailed view|
 |MATRIX|a matrix id or a list of list of values (eg. &#91;&#91;0,1,2&#93;,&#91;4,5,6&#93;&#93; where each sub list is a row of the matrix). Matrix id can be found in the Matrix Data manager tab.|

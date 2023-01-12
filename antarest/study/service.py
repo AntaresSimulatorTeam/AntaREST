@@ -84,6 +84,9 @@ from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
 )
+from antarest.study.business.scenario_builder_management import (
+    ScenarioBuilderManager,
+)
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
@@ -222,6 +225,9 @@ class StudyService:
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
+        self.scenario_builder_manager = ScenarioBuilderManager(
+            self.storage_service
+        )
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(
