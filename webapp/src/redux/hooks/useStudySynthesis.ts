@@ -9,12 +9,14 @@ import { getStudySynthesis } from "../selectors";
 import { PromiseStatus } from "../../hooks/usePromise";
 import { Response } from "../../components/common/utils/UsePromiseCond";
 
-interface Props<T> {
+export interface UseStudySynthesisProps<T> {
   studyId: StudyMetadata["id"];
   selector?: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudySynthesis<T>(props: Props<T>): Response<T> {
+export default function useStudySynthesis<T>(
+  props: UseStudySynthesisProps<T>
+): Response<T> {
   const { studyId, selector } = props;
   const isSynthesisExist = useAppSelector(
     (state) => !!getStudySynthesis(state, studyId)
