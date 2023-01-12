@@ -1,14 +1,12 @@
 import logging
-from typing import Any, Optional, List, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
@@ -18,9 +16,9 @@ from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
 )
 from antarest.study.business.area_management import (
-    AreaType,
     AreaCreationDTO,
     AreaInfoDTO,
+    AreaType,
     AreaUI,
     LayerInfoDTO,
 )
@@ -28,30 +26,25 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
+from antarest.study.business.district_manager import DistrictDTO
+from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
 )
-from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.link_management import (
-    LinkInfoDTO,
-)
-from antarest.study.business.playlist_management import (
-    PlaylistColumns,
-)
+from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
+from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import (
-    TableTemplateType,
     ColumnModelTypes,
+    TableTemplateType,
 )
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
 )
-from antarest.study.business.timeseries_config_management import (
-    TSFormFields,
-)
-from antarest.study.model import PatchCluster, PatchArea
+from antarest.study.business.timeseries_config_management import TSFormFields
+from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -322,6 +315,51 @@ def create_study_data_routes(
             uuid, StudyPermissionType.READ, params
         )
         return study_service.areas.remove_layer(study, layer_id)
+
+    @bp.get(
+        "/studies/{uuid}/districts",
+        tags=[APITag.study_data],
+        summary="Get all districts info",
+        response_model=List[DistrictDTO],
+    )
+    def get_districts(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> List[DistrictDTO]:
+        logger.info(
+            f"Fetching districts list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.district_manager.get_districts(study)
+
+    @bp.post(
+        "/studies/{uuid}/districts",
+        tags=[APITag.study_data],
+        summary="Create new district",
+        response_model=str,
+    )
+    def create_district(
+        uuid: str,
+        name: str,
+        output: bool,
+        comments: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Create district {name} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.district_manager.create_district(
+            study, name, output, comments
+        )
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",

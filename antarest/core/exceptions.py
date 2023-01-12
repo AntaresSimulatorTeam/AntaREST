@@ -177,6 +177,13 @@ class StudyOutputNotFoundError(Exception):
     pass
 
 
+class DistrictAlreadyExist(HTTPException):
+    def __init__(self, name: str):
+        super().__init__(
+            HTTPStatus.CONFLICT, f"The district {name} already exist"
+        )
+
+
 class BadEditInstructionException(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)

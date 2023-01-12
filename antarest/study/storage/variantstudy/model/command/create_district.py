@@ -27,10 +27,10 @@ class DistrictBaseFilter(Enum):
 
 class CreateDistrict(ICommand):
     name: str
-    base_filter: Optional[DistrictBaseFilter]
-    filter_items: Optional[List[str]]
-    output: Optional[bool]
-    comments: Optional[str]
+    base_filter: Optional[DistrictBaseFilter] = None
+    filter_items: Optional[List[str]] = None
+    output: bool = False
+    comments: str = ""
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
