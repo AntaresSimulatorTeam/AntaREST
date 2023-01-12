@@ -46,3 +46,4 @@ class CommandName(Enum):
     UPDATE_FILE = "update_file"
     UPDATE_DISTRICT = "update_district"
     UPDATE_PLAYLIST = "update_playlist"
+    UPDATE_SCENARIO_BUILDER = "update_scenario_builder"
