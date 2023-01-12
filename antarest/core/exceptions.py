@@ -64,10 +64,10 @@ class VariantStudyParentNotValid(HTTPException):
 
 
 class StudyTypeUnsupported(HTTPException):
-    def __init__(self, uuid: str, type: str) -> None:
+    def __init__(self, uuid: str, type_: str) -> None:
         super().__init__(
             HTTPStatus.UNPROCESSABLE_ENTITY,
-            f"Study {uuid} with type {type} not recognized",
+            f"Study {uuid} with type {type_} not recognized",
         )
 
 
@@ -177,11 +177,40 @@ class StudyOutputNotFoundError(Exception):
     pass
 
 
+class AreaNotFound(HTTPException):
+    def __init__(self, *area_ids: str) -> None:
+        count = len(area_ids)
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        msg = {
+            0: "All areas are found",
+            1: f"{count} area is not found: {ids}",
+            2: f"{count} areas are not found: {ids}",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class DistrictNotFound(HTTPException):
+    def __init__(self, *district_ids: str) -> None:
+        count = len(district_ids)
+        ids = ", ".join(f"'{a}'" for a in district_ids)
+        msg = {
+            0: "All districts are found",
+            1: f"{count} district is not found: {ids}",
+            2: f"{count} districts are not found: {ids}",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 class DistrictAlreadyExist(HTTPException):
-    def __init__(self, name: str):
-        super().__init__(
-            HTTPStatus.CONFLICT, f"The district {name} already exist"
-        )
+    def __init__(self, *district_ids: str):
+        count = len(district_ids)
+        ids = ", ".join(f"'{a}'" for a in district_ids)
+        msg = {
+            0: "No district already exist",
+            1: f"{count} district already exist: {ids}",
+            2: f"{count} districts already exist: {ids}",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.CONFLICT, msg)
 
 
 class BadEditInstructionException(HTTPException):

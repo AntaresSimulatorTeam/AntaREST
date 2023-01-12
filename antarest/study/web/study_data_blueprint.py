@@ -345,8 +345,9 @@ def create_study_data_routes(
     def create_district(
         uuid: str,
         name: str,
-        output: bool,
+        output: bool = True,
         comments: str = "",
+        areas: Optional[List[str]] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -358,7 +359,36 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
         study_service.district_manager.create_district(
-            study, name, output, comments
+            study, name, output, comments, areas
+        )
+
+    @bp.put(
+        "/studies/{uuid}/districts/{district_id}",
+        tags=[APITag.study_data],
+        summary="Update district",
+    )
+    def update_district(
+        uuid: str,
+        district_id: str,
+        output: bool = True,
+        comments: str = "",
+        areas: Optional[List[str]] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating district {district_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        study_service.district_manager.update_district(
+            study=study,
+            district_id=district_id,
+            output=output,
+            comments=comments,
+            areas=areas,
         )
 
     @bp.get(
