@@ -26,7 +26,7 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
-from antarest.study.business.district_manager import DistrictDTO
+from antarest.study.business.district_manager import DistrictInfoDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
@@ -314,18 +314,18 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.areas.remove_layer(study, layer_id)
+        study_service.areas.remove_layer(study, layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
-        summary="Get all districts info",
-        response_model=List[DistrictDTO],
+        summary="Get the list of districts defined in this study",
+        response_model=List[DistrictInfoDTO],
     )
     def get_districts(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[DistrictDTO]:
+    ) -> List[DistrictInfoDTO]:
         logger.info(
             f"Fetching districts list for study {uuid}",
             extra={"user": current_user.id},
@@ -339,8 +339,8 @@ def create_study_data_routes(
     @bp.post(
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
-        summary="Create new district",
-        response_model=str,
+        summary="Create a new district in the study",
+        response_model=DistrictInfoDTO,
     )
     def create_district(
         uuid: str,
@@ -349,7 +349,7 @@ def create_study_data_routes(
         comments: str = "",
         areas: Optional[List[str]] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> DistrictInfoDTO:
         logger.info(
             f"Create district {name} for study {uuid}",
             extra={"user": current_user.id},
@@ -358,14 +358,14 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        study_service.district_manager.create_district(
+        return study_service.district_manager.create_district(
             study, name, output, comments, areas
         )
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",
         tags=[APITag.study_data],
-        summary="Update district",
+        summary="Update the properties of a district",
     )
     def update_district(
         uuid: str,
@@ -390,6 +390,26 @@ def create_study_data_routes(
             comments=comments,
             areas=areas,
         )
+
+    @bp.delete(
+        "/studies/{uuid}/districts/{district_id}",
+        tags=[APITag.study_data],
+        summary="Remove a district from a study",
+    )
+    def remove_district(
+        uuid: str,
+        district_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Remove district {district_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        study_service.district_manager.remove_district(study, district_id)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -947,7 +967,7 @@ def create_study_data_routes(
         binding_constraint_id: str,
         term_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"delete constraint term {term_id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -956,7 +976,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        return study_service.binding_constraint_manager.remove_constraint_term(
+        study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
         )
 
