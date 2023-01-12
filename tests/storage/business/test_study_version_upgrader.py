@@ -85,7 +85,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         other_preferences["hydro-heuristic-policy"]
         == "accommodate rule curves"
     )
-    assert other_preferences["renewables-generation-modelling"] == "aggregated"
+    assert other_preferences["renewable-generation-modelling"] == "aggregated"
     assert adequacy_patch["include-adq-patch"] is False
     assert (
         adequacy_patch["set-to-null-ntc-between-physical-out-for-first-step"]

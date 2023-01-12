@@ -155,7 +155,7 @@ def upgrade_810(study_path: str) -> None:
         study_path,
         general_data_path,
         other_preferencies,
-        "renewables-generation-modelling",
+        "renewable-generation-modelling",
         "aggregated",
         None,
     )
