@@ -77,7 +77,7 @@ class DistrictManager:
         name: str,
         output: bool,
         comments: str,
-        areas: Optional[List[str]] = None,
+        areas: Optional[Iterable[str]] = None,
     ) -> DistrictInfoDTO:
         """
         Create a new district in the study and possibly attach areas to it.
@@ -132,7 +132,7 @@ class DistrictManager:
         district_id: str,
         output: bool,
         comments: str,
-        areas: Optional[List[str]] = None,
+        areas: Optional[Iterable[str]] = None,
     ) -> None:
         """
         Update the properties of a district and/or the areas list.
