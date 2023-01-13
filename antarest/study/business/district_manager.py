@@ -104,8 +104,7 @@ class DistrictManager:
             raise DistrictAlreadyExist(district_id)
         areas = frozenset(areas or [])
         all_areas = frozenset(file_study.config.areas)
-        invalid_areas = areas - all_areas
-        if invalid_areas:
+        if invalid_areas := areas - all_areas:
             raise AreaNotFound(*invalid_areas)
         command = CreateDistrict(
             name=name,
@@ -158,8 +157,7 @@ class DistrictManager:
             raise DistrictNotFound(district_id)
         areas = frozenset(areas or [])
         all_areas = frozenset(file_study.config.areas)
-        invalid_areas = areas - all_areas
-        if invalid_areas:
+        if invalid_areas := areas - all_areas:
             raise AreaNotFound(*invalid_areas)
         command = UpdateDistrict(
             id=district_id,
