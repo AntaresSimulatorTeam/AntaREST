@@ -83,11 +83,11 @@ class AdequacyPatchExtension(ILauncherExtension):
         ]
         original_area_enabled: Dict[str, bool] = {}
         original_link_enabled: Dict[str, bool] = {}
-        study.tree.save(
-            True, ["settings", "generaldata", "general", "year-by-year"]
+        year_by_year_active = study.tree.get(
+            ["settings", "generaldata", "general", "year-by-year"]
         )
         study.tree.save(
-            True, ["settings", "generaldata", "output", "synthesis"]
+            True, ["settings", "generaldata", "general", "year-by-year"]
         )
         for area_id, area in study.config.areas.items():
             # areas
@@ -144,6 +144,16 @@ class AdequacyPatchExtension(ILauncherExtension):
                 "w",
             ) as fh:
                 yaml.dump(original_link_enabled, fh)
+            if year_by_year_active:
+                with open(
+                    study.config.study_path
+                    / "user"
+                    / "adequacypatch"
+                    / "year-by-year-active",
+                    "w",
+                ) as fh:
+                    fh.write("True")
+
         return original_area_enabled
 
     def before_import_hook(

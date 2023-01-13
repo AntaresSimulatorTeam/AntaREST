@@ -44,6 +44,7 @@ remove_data <- function(path_prefix, data_type, data_list, include_id) {
                 unlink(file.path(paste0(c(item_data, "id-hourly.txt"), collapse="/")))
             }
             unlink(file.path(paste0(c(item_data, "details-hourly.txt"), collapse="/")))
+            unlink(file.path(paste0(c(item_data, "details-res-hourly.txt"), collapse="/")))
             if (length(list.files(file.path(item_data))) == 0) {
                 unlink(file.path(item_data))
             }
@@ -57,18 +58,21 @@ for (output in list.files("output")) {
         if (file.exists(output_data)) {
             # mc ind
             mc_data <- paste(c(output_data, "mc-ind"), collapse="/")
-            if (file.exists(mc_data)) {
+            if (!file.exists("user/adequacypatch/year-by-year-active")) {
+                unlink(mc_data, recursive=TRUE)
+            }
+            else if (file.exists(mc_data)) {
                 for (mc_year in list.files(file.path(mc_data))) {
                     remove_data(c(mc_data, mc_year), "areas", areas, FALSE)
                     remove_data(c(mc_data, mc_year), "links", links, FALSE)
                 }
             }
             # mc all
-            mc_data <- paste(c(output_data, "mc-all"), collapse="/")
-            if (file.exists(mc_data)) {
-                remove_data(mc_data, "areas", areas, TRUE)
-                remove_data(mc_data, "links", links, TRUE)
-            }
+#             mc_data <- paste(c(output_data, "mc-all"), collapse="/")
+#             if (file.exists(mc_data)) {
+#                 remove_data(mc_data, "areas", areas, TRUE)
+#                 remove_data(mc_data, "links", links, TRUE)
+#             }
         }
     }
 }
