@@ -6,23 +6,29 @@ import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
   getAreas,
-  getStudyMapLayers,
+  getStudyMapDistricts,
 } from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import FormTable from "../../../../../../../common/FormTable";
 import CreateDistrictDialog from "./CreateDistrictDialog";
 import EditDistrictDialog from "./EditDistrictDialog";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import {
+  StudyMapNode,
+  updateStudyMapDistrict,
+} from "../../../../../../../../redux/ducks/studyMaps";
 
 function Districts() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const dispatch = useAppDispatch();
   const areas = useAppSelector((state) => getAreas(state, study.id));
-  const layers = useAppSelector(getStudyMapLayers);
+  const districts = useAppSelector(getStudyMapDistricts);
   const [createDistrictDialogOpen, setCreateDistrictDialogOpen] =
     useState(false);
   const [editDistrictDialogOpen, setEditDistrictDialogOpen] = useState(false);
 
-  const combinedLayers = areas.map((area) => ({
-    [area.id]: Object.values(layers).reduce((acc, { name, areas }) => {
+  const combinedDistricts = areas.map((area) => ({
+    [area.id]: Object.values(districts).reduce((acc, { name, areas }) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       acc[name] = !!areas.includes(area.id);
@@ -30,14 +36,35 @@ function Districts() {
     }, {}),
   }));
 
-  const mapLayers = Object.assign({}, ...combinedLayers);
+  const mapDistricts = Object.assign({}, ...combinedDistricts);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus) => {
-    console.log("data :>> ", data);
+    const areaId = Object.keys(data.dirtyValues)[0];
+    const districtName = Object.keys(data.dirtyValues[areaId]).find(
+      (district) => district
+    );
+    if (districtName) {
+      const districtAreas = Object.keys(data.values).filter(
+        (area) => data.values[area][districtName]
+      ) as unknown as StudyMapNode[];
+      const targetDistrict = Object.values(districts).find(
+        (district) => district.name === districtName
+      );
+      if (targetDistrict) {
+        dispatch(
+          updateStudyMapDistrict({
+            studyId: study.id,
+            districtId: targetDistrict.id,
+            output: targetDistrict.output,
+            areas: districtAreas,
+          })
+        );
+      }
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -69,8 +96,8 @@ function Districts() {
       </Box>
       <Box>
         <FormTable
-          key={JSON.stringify(layers)}
-          defaultValues={mapLayers}
+          key={JSON.stringify(districts)}
+          defaultValues={mapDistricts}
           onSubmit={handleSubmit}
         />
       </Box>

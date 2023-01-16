@@ -7,6 +7,8 @@ import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
   open: boolean;
@@ -17,10 +19,11 @@ function CreateDistrictDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
+  const dispatch = useAppDispatch();
 
   const defaultValues = {
     name: "",
-    output: false,
+    output: true,
   };
 
   ////////////////////////////////////////////////////////////////
@@ -28,8 +31,14 @@ function CreateDistrictDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    console.log("data", data);
-    console.log("study.id", study.id);
+    const { name, output } = data.values;
+    dispatch(
+      createStudyMapDistrict({
+        studyId: study.id,
+        name,
+        output,
+      })
+    );
     onClose();
   };
 

@@ -467,6 +467,12 @@ export const getStudyMapLinks = createSelector(
   }
 );
 
+export const getStudyMapDistricts = (
+  state: AppState
+): StudyMapsState["districts"] => {
+  return getStudyMapsState(state).districts;
+};
+
 ////////////////////////////////////////////////////////////////
 // UI
 ////////////////////////////////////////////////////////////////

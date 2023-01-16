@@ -8,11 +8,16 @@ import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayers } from "../../../../../../../../redux/selectors";
+import { getStudyMapDistricts } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import {
+  deleteStudyMapDistrict,
+  updateStudyMapDistrict,
+} from "../../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
   open: boolean;
@@ -23,22 +28,20 @@ function EditDistrictDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
-  const layers = useAppSelector(getStudyMapLayers);
+  const dispatch = useAppDispatch();
+  const districts = useAppSelector(getStudyMapDistricts);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
 
   const defaultValues = {
     name: "",
-    output: null,
+    output: true,
     districtId: "",
   };
 
-  // TODO update with districts
-  const districtsOptions = Object.values(layers)
-    .filter((layer) => Number(layer.id) !== 0)
-    .map(({ name, id }) => ({
-      label: name,
-      value: id,
-    }));
+  const districtsOptions = Object.values(districts).map(({ name, id }) => ({
+    label: name,
+    value: id,
+  }));
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -47,14 +50,23 @@ function EditDistrictDialog(props: Props) {
   const handleSubmit = async (
     data: SubmitHandlerPlus<typeof defaultValues>
   ) => {
-    console.log("data :>> ", data);
-    console.log("study.id :>> ", study.id);
-    setOpenConfirmationModal(false);
+    const { districtId, output } = data.values;
+    dispatch(
+      updateStudyMapDistrict({
+        studyId: study.id,
+        districtId,
+        output,
+      })
+    );
     onClose();
   };
 
   const handleDelete = (districtId: string) => {
-    console.log("districtId", districtId);
+    if (districtId) {
+      dispatch(deleteStudyMapDistrict({ studyId: study.id, districtId }));
+    }
+    setOpenConfirmationModal(false);
+    onClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -80,19 +92,16 @@ function EditDistrictDialog(props: Props) {
             variant="filled"
             options={districtsOptions}
             control={control}
-            onChange={(e) =>
-              setValue("name", layers[Number(e.target.value)].name)
-            }
+            onChange={(e) => {
+              setValue("name", districts[e.target.value as string].name);
+            }}
           />
           <StringFE
             label={t("global.name")}
             name="name"
             control={control}
             fullWidth
-            rules={{
-              required: true,
-              validate: (val) => val.trim().length > 0,
-            }}
+            disabled
             sx={{ mx: 0 }}
           />
           <SwitchFE
@@ -106,7 +115,6 @@ function EditDistrictDialog(props: Props) {
             variant="outlined"
             size="small"
             startIcon={<Delete />}
-            disabled={getValues("districtId") === ""} // TODO update to prevent District All to be deleted
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >

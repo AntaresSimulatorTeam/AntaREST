@@ -19,7 +19,10 @@ import {
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
-import { StudyMapNode } from "../../redux/ducks/studyMaps";
+  StudyMapDistrict,
+  StudyMapNode,
+import {
+} from "../../redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<{
   [sid: string]: StudyMetadataDTO;
@@ -460,4 +463,45 @@ export async function deleteStudyLayer(
   layerId: StudyLayer["id"]
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/layers/${layerId}`);
+}
+
+export async function getStudyDistricts(
+  studyId: StudyMetadata["id"]
+): Promise<StudyMapDistrict[]> {
+  return (await client.get(`v1/studies/${studyId}/districts`)).data;
+}
+
+export async function createStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtName: StudyMapDistrict["name"],
+  output: StudyMapDistrict["output"]
+): Promise<StudyMapDistrict> {
+  return (
+    await client.post(
+      `v1/studies/${studyId}/districts?name=${encodeURIComponent(
+        districtName
+      )}&output=${encodeURIComponent(output)}`
+    )
+  ).data;
+}
+
+export async function updateStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtId: StudyMapDistrict["id"],
+  output: StudyMapDistrict["output"],
+  areas?: StudyMapNode[]
+): Promise<void> {
+  await client.put(
+    `v1/studies/${studyId}/districts/${districtId}?output=${encodeURIComponent(
+      output
+    )}`,
+    areas
+  );
+}
+
+export async function deleteStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtId: StudyMapDistrict["id"]
+): Promise<void> {
+  await client.delete(`v1/studies/${studyId}/districts/${districtId}`);
 }
