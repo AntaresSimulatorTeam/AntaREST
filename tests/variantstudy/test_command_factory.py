@@ -57,11 +57,23 @@ class TestCommandFactory:
             ),
             CommandDTO(
                 action=CommandName.CREATE_DISTRICT.value,
-                args={"name": "id", "filter_items": ["a"]},
+                args={
+                    "name": "id",
+                    "filter_items": ["a"],
+                    "output": True,
+                    "comments": "",
+                },
             ),
             CommandDTO(
                 action=CommandName.CREATE_DISTRICT.value,
-                args=[{"name": "id", "base_filter": "add-all"}],
+                args=[
+                    {
+                        "name": "id",
+                        "base_filter": "add-all",
+                        "output": True,
+                        "comments": "",
+                    }
+                ],
             ),
             CommandDTO(
                 action=CommandName.REMOVE_DISTRICT.value,

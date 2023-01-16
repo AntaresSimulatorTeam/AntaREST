@@ -29,7 +29,7 @@ class CreateDistrict(ICommand):
     name: str
     base_filter: Optional[DistrictBaseFilter] = None
     filter_items: Optional[List[str]] = None
-    output: bool = False
+    output: bool = True
     comments: str = ""
 
     def __init__(self, **data: Any) -> None:
@@ -64,7 +64,7 @@ class CreateDistrict(ICommand):
         study_data.sets[district_id] = DistrictSet(
             name=self.name,
             areas=self.filter_items or [],
-            output=self.output if self.output is not None else True,
+            output=self.output,
             inverted_set=inverted_set,
         )
         item_key = "-" if inverted_set else "+"
