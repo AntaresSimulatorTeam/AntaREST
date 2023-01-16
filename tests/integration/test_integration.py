@@ -1,3 +1,4 @@
+import contextlib
 import time
 from pathlib import Path
 from typing import Callable
@@ -27,11 +28,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
 def wait_for(predicate: Callable[[], bool], timeout=10):
     end = time.time() + timeout
     while time.time() < end:
-        try:
+        with contextlib.suppress(Exception):
             if predicate():
                 return
-        except Exception as e:
-            pass
         time.sleep(1)
     raise TimeoutError()
 
@@ -1351,9 +1350,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.AREA,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1414,7 +1411,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.AREA,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
+                list(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA])
             ),
         },
     )
@@ -1455,9 +1452,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.LINK,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1500,9 +1495,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.LINK,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1531,7 +1524,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.CLUSTER,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+                FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]
             ),
         },
     )
@@ -1612,7 +1605,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.CLUSTER,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+                FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]
             ),
         },
     )
