@@ -31,10 +31,10 @@ function ThermalMatrixView(props: Props) {
   const [value, setValue] = React.useState(0);
 
   const commonNames = [
-    "Marginal Cost modulation",
+    "Marginal cost modulation",
     "Market bid modulation",
-    "Capacity mod",
-    "Mid Gen modulation",
+    "Capacity modulation",
+    "Min gen modulation",
   ];
 
   const tsGenNames = [
