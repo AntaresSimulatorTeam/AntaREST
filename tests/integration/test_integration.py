@@ -314,6 +314,8 @@ def test_main(app: FastAPI):
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert created.status_code == 201
+
     res = client.get(
         "/v1/studies",
         headers={
@@ -329,13 +331,15 @@ def test_main(app: FastAPI):
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert copied.status_code == 201
 
-    client.put(
+    updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert updated.status_code == 200
 
     res = client.get(
         "/v1/studies",
