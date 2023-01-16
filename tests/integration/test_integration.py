@@ -511,7 +511,7 @@ def test_matrix(app: FastAPI):
     matrix = [[1, 2], [3, 4]]
 
     res = client.post(
-        f"/v1/matrix",
+        "/v1/matrix",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -543,7 +543,7 @@ def test_matrix(app: FastAPI):
     assert res.status_code == 200
 
     res = client.post(
-        f"/v1/matrixdataset",
+        "/v1/matrixdataset",
         json={
             "metadata": {
                 "name": "mydataset",
@@ -559,7 +559,7 @@ def test_matrix(app: FastAPI):
     assert res.status_code == 200
 
     res = client.get(
-        f"/v1/matrixdataset/_search?name=myda",
+        "/v1/matrixdataset/_search?name=myda",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -2170,7 +2170,7 @@ def test_maintenance(app: FastAPI):
     # Set message info
     message = "Hey"
     res = client.post(
-        f"/v1/core/maintenance/message",
+        "/v1/core/maintenance/message",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
