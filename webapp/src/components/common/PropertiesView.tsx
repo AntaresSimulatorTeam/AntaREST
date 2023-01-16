@@ -1,17 +1,20 @@
 import { ReactNode } from "react";
-import { Box, Fab } from "@mui/material";
+import { Box, Fab, SxProps, Theme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchFE from "./fieldEditors/SearchFE";
+import { mergeSxProp } from "../../utils/muiUtils";
 
 interface PropsType {
   mainContent: ReactNode | undefined;
   secondaryContent?: ReactNode;
   onSearchFilterChange?: (value: string) => void;
   onAdd?: () => void;
+  sx?: SxProps<Theme>;
 }
 
 function PropertiesView(props: PropsType) {
-  const { onAdd, onSearchFilterChange, mainContent, secondaryContent } = props;
+  const { onAdd, onSearchFilterChange, mainContent, secondaryContent, sx } =
+    props;
 
   return (
     <Box
@@ -22,10 +25,13 @@ function PropertiesView(props: PropsType) {
       justifyContent="flex-start"
       alignItems="center"
       boxSizing="border-box"
-      sx={{
-        pt: onSearchFilterChange ? 1 : 2,
-        pb: 1,
-      }}
+      sx={mergeSxProp(
+        {
+          pt: onSearchFilterChange ? 1 : 2,
+          pb: 1,
+        },
+        sx
+      )}
     >
       {onSearchFilterChange && (
         <SearchFE onSearchValueChange={onSearchFilterChange} />
