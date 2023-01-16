@@ -288,6 +288,18 @@ class TestCommandFactory:
                     "reverse": False,
                 },
             ),
+            CommandDTO(
+                action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+                args={
+                    "data": {
+                        "ruleset test": {
+                            "l": {"area1": {"0": 1}},
+                            "ntc": {"area1 / area2": {"1": 23}},
+                            "t": {"area1": {"thermal": {"1": 2}}},
+                        },
+                    }
+                },
+            ),
         ],
     )
     @pytest.mark.unit_test

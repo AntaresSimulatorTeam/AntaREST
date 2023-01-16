@@ -73,6 +73,9 @@ from antarest.study.storage.variantstudy.model.command.update_playlist import (
 from antarest.study.storage.variantstudy.model.command.update_raw_file import (
     UpdateRawFile,
 )
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import (
+    UpdateScenarioBuilder,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +208,17 @@ class CommandReverter:
     ) -> List[ICommand]:
         raise NotImplementedError(
             "The revert function for RemoveBindingConstraint is not available"
+        )
+
+    @staticmethod
+    def _revert_update_scenario_builder(
+        base_command: UpdateScenarioBuilder,
+        history: List["ICommand"],
+        base: FileStudy,
+    ) -> List[ICommand]:
+        # todo make the diff between base study scenariobuilder data and base_command
+        raise NotImplementedError(
+            "The revert function for UpdateScenarioBuilder is not available"
         )
 
     @staticmethod
