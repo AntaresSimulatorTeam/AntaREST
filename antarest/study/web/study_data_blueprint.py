@@ -26,7 +26,11 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
-from antarest.study.business.district_manager import DistrictInfoDTO
+from antarest.study.business.district_manager import (
+    DistrictCreationDTO,
+    DistrictInfoDTO,
+    DistrictUpdateDTO,
+)
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
@@ -65,6 +69,7 @@ def create_study_data_routes(
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
+    # noinspection PyShadowingBuiltins
     @bp.get(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
@@ -344,23 +349,18 @@ def create_study_data_routes(
     )
     def create_district(
         uuid: str,
-        name: str,
-        output: bool = True,
-        comments: str = "",
-        areas: Optional[List[str]] = None,
+        dto: DistrictCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> DistrictInfoDTO:
         logger.info(
-            f"Create district {name} for study {uuid}",
+            f"Create district {dto.name} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        return study_service.district_manager.create_district(
-            study, name, output, comments, areas
-        )
+        return study_service.district_manager.create_district(study, dto)
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",
@@ -370,9 +370,7 @@ def create_study_data_routes(
     def update_district(
         uuid: str,
         district_id: str,
-        output: bool = True,
-        comments: str = "",
-        areas: Optional[List[str]] = None,
+        dto: DistrictUpdateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -383,13 +381,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        study_service.district_manager.update_district(
-            study=study,
-            district_id=district_id,
-            output=output,
-            comments=comments,
-            areas=areas,
-        )
+        study_service.district_manager.update_district(study, district_id, dto)
 
     @bp.delete(
         "/studies/{uuid}/districts/{district_id}",

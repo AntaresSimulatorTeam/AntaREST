@@ -1,4 +1,4 @@
-from typing import List, Optional, Iterable
+from typing import List
 
 from pydantic import BaseModel
 
@@ -25,12 +25,24 @@ from antarest.study.storage.variantstudy.model.command.update_district import (
 )
 
 
-class DistrictInfoDTO(BaseModel):
-    id: str
-    name: str
-    areas: List[str]
+class DistrictUpdateDTO(BaseModel):
+    #: Indicates whether this district is used in the output (usually all
+    #: districts are visible, but the user can decide to hide some of them).
     output: bool
+    #: User-defined comments.
     comments: str = ""
+    #: List of areas that will be grouped in the district.
+    areas: List[str]
+
+
+class DistrictCreationDTO(DistrictUpdateDTO):
+    #: Name of the district (this name is also used as a unique identifier).
+    name: str
+
+
+class DistrictInfoDTO(DistrictCreationDTO):
+    #: District identifier (based on the district name)
+    id: str
 
 
 class DistrictManager:
@@ -74,22 +86,14 @@ class DistrictManager:
     def create_district(
         self,
         study: Study,
-        name: str,
-        output: bool,
-        comments: str,
-        areas: Optional[Iterable[str]] = None,
+        dto: DistrictCreationDTO,
     ) -> DistrictInfoDTO:
         """
         Create a new district in the study and possibly attach areas to it.
 
         Args:
             study: Study selected from the database.
-            name: name of the district (this name is also used as a unique identifier).
-            output:
-                Indicates whether this district is used in the output (usually all
-                districts are visible, but the user can decide to hide some of them).
-            comments: used-defined comments.
-            areas: optional list of areas that will be grouped in the district.
+            dto: Data Transfer Objects (DTO) used for creation.
 
         Returns:
             the Data Transfer Objects (DTO) representing the newly created district.
@@ -99,17 +103,17 @@ class DistrictManager:
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        district_id = transform_name_to_id(name)
+        district_id = transform_name_to_id(dto.name)
         if district_id in file_study.config.sets:
             raise DistrictAlreadyExist(district_id)
-        areas = frozenset(areas or [])
+        areas = frozenset(dto.areas or [])
         all_areas = frozenset(file_study.config.areas)
         if invalid_areas := areas - all_areas:
             raise AreaNotFound(*invalid_areas)
         command = CreateDistrict(
-            name=name,
-            output=output,
-            comments=comments,
+            name=dto.name,
+            output=dto.output,
+            comments=dto.comments,
             base_filter=DistrictBaseFilter.remove_all,
             filter_items=areas,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
@@ -119,19 +123,17 @@ class DistrictManager:
         )
         return DistrictInfoDTO(
             id=district_id,
-            name=name,
+            name=dto.name,
             areas=list(areas),
-            output=output,
-            comments=comments,
+            output=dto.output,
+            comments=dto.comments,
         )
 
     def update_district(
         self,
         study: Study,
         district_id: str,
-        output: bool,
-        comments: str,
-        areas: Optional[Iterable[str]] = None,
+        dto: DistrictUpdateDTO,
     ) -> None:
         """
         Update the properties of a district and/or the areas list.
@@ -142,11 +144,7 @@ class DistrictManager:
         Args:
             study: Study selected from the database.
             district_id: district identifier
-            output:
-                Indicates whether this district is used in the output (usually all
-                districts are visible, but the user can decide to hide some of them).
-            comments: used-defined comments.
-            areas: optional list of areas that will be grouped in the district.
+            dto: Data Transfer Objects (DTO) used for update.
 
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.
@@ -155,7 +153,7 @@ class DistrictManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         if district_id not in file_study.config.sets:
             raise DistrictNotFound(district_id)
-        areas = frozenset(areas or [])
+        areas = frozenset(dto.areas or [])
         all_areas = frozenset(file_study.config.areas)
         if invalid_areas := areas - all_areas:
             raise AreaNotFound(*invalid_areas)
@@ -163,8 +161,8 @@ class DistrictManager:
             id=district_id,
             base_filter=DistrictBaseFilter.remove_all,
             filter_items=areas,
-            output=output,
-            comments=comments,
+            output=dto.output,
+            comments=dto.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(

@@ -10,6 +10,8 @@ from antarest.core.exceptions import (
 from antarest.study.business.district_manager import (
     DistrictInfoDTO,
     DistrictManager,
+    DistrictCreationDTO,
+    DistrictUpdateDTO,
 )
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -142,8 +144,11 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictCreationDTO(
+            name="d1", output=True, comments="", areas=[]
+        )
         with pytest.raises(DistrictAlreadyExist):
-            manager.create_district(study, name="d1", output=True, comments="")
+            manager.create_district(study, dto)
 
     def test_create_district__area_not_found(
         self, study_storage_service: StudyStorageService
@@ -165,14 +170,14 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictCreationDTO(
+            name="d1",
+            output=True,
+            comments="",
+            areas=["n2", "MISSING"],
+        )
         with pytest.raises(AreaNotFound, match=r"MISSING"):
-            manager.create_district(
-                study,
-                name="d1",
-                output=True,
-                comments="",
-                areas=["n2", "MISSING"],
-            )
+            manager.create_district(study, dto)
 
     def test_create_district__nominal(
         self, study_storage_service: StudyStorageService
@@ -198,14 +203,14 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictCreationDTO(
+            name="D1",
+            output=True,
+            comments="hello",
+            areas=["n1", "n2", "n2"],  # areas can have duplicates
+        )
         with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            actual = manager.create_district(
-                study,
-                name="D1",
-                output=True,
-                comments="hello",
-                areas=["n1", "n2", "n2"],  # areas can have duplicates
-            )
+            actual = manager.create_district(study, dto)
         expected = DistrictInfoDTO(
             id="d1",
             name="D1",
@@ -237,10 +242,9 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictUpdateDTO(output=True, comments="", areas=[])
         with pytest.raises(DistrictNotFound, match="MISSING"):
-            manager.update_district(
-                study, district_id="MISSING", output=True, comments=""
-            )
+            manager.update_district(study, "MISSING", dto)
 
     def test_update_district__area_not_found(
         self, study_storage_service: StudyStorageService
@@ -266,14 +270,13 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictUpdateDTO(
+            output=True,
+            comments="",
+            areas=["n2", "MISSING"],
+        )
         with pytest.raises(AreaNotFound, match=r"MISSING"):
-            manager.update_district(
-                study,
-                district_id="d1",
-                output=True,
-                comments="",
-                areas=["n2", "MISSING"],
-            )
+            manager.update_district(study, "d1", dto)
 
     def test_update_district__nominal(
         self, study_storage_service: StudyStorageService
@@ -299,14 +302,13 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
+        dto = DistrictUpdateDTO(
+            output=True,
+            comments="",
+            areas=["n2", "n3"],
+        )
         with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            manager.update_district(
-                study,
-                district_id="d1",
-                output=True,
-                comments="",
-                areas=["n2", "n3"],
-            )
+            manager.update_district(study, "d1", dto)
         _check_execute_or_add_commands(exe, UpdateDistrict)
 
     def test_remove_district__district_not_found(

@@ -784,6 +784,8 @@ def test_area_management(app: FastAPI):
         }
     ]
 
+    # -- `layers` integration tests
+
     res = client.get(
         f"/v1/studies/{study_id}/layers",
         headers={
@@ -843,6 +845,78 @@ def test_area_management(app: FastAPI):
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
+
+    # -- `district` integration tests
+
+    res = client.post(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "My District",
+            "areas": [],
+        }
+    )
+    assert res.status_code == 200
+    assert res.json() == {
+        "id": "district 1",
+        "name": "District 1",
+        "output": True,
+        "comments": "My District",
+        "areas": [],
+    }
+
+    res = client.put(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        }
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    actual = res.json()
+    actual[0]["areas"].sort()
+    actual[1]["areas"].sort()
+    assert actual == [
+        {
+            "id": "all areas",
+            "name": "All areas",
+            "output": False,
+            "comments": "Spatial aggregates on all areas",
+            "areas": ["area 1", "area 2"],
+        },
+        {
+            "id": "district 1",
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        },
+    ]
+
+    res = client.delete(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
 
     res_optimization_config = client.get(
         f"/v1/studies/{study_id}/config/optimization/form",
