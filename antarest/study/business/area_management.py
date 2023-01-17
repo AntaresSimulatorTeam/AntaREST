@@ -179,6 +179,8 @@ class AreaManager:
                     for area in areas_ui
                     if str(layer)
                     in AreaManager._get_area_layers(areas_ui, area)
+                    # the layer 0 always display all areas
+                    or str(layer) == "0"
                 ],
             )
             for layer in layers
