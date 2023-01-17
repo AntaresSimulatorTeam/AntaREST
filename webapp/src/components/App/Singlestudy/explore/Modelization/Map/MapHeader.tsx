@@ -28,7 +28,7 @@ function MapHeader(props: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLayerClick = (layerId: number) => {
+  const handleLayerClick = (layerId: string) => {
     dispatch(setCurrentLayer(layerId));
   };
 
@@ -45,6 +45,7 @@ function MapHeader(props: Props) {
         alignItems: "center",
         position: "absolute",
         padding: "10px",
+        backdropFilter: "blur(2px)",
       }}
     >
       <Box

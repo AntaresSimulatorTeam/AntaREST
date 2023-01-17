@@ -33,11 +33,11 @@ function EditLayerDialog(props: Props) {
 
   const defaultValues = {
     name: "",
-    layerId: -1,
+    layerId: "",
   };
 
   const layersOptions = Object.values(layers)
-    .filter((layer) => Number(layer.id) !== 0)
+    .filter((layer) => layer.id !== "0")
     .map(({ name, id }) => ({
       label: name,
       value: id,
@@ -57,7 +57,7 @@ function EditLayerDialog(props: Props) {
     onClose();
   };
 
-  const handleDelete = async (layerId: number) => {
+  const handleDelete = async (layerId: string) => {
     if (layerId) {
       dispatch(deleteStudyMapLayer({ studyId: study.id, layerId }));
     }
@@ -89,7 +89,7 @@ function EditLayerDialog(props: Props) {
             options={layersOptions}
             control={control}
             onChange={(e) =>
-              setValue("name", layers[Number(e.target.value)].name)
+              setValue("name", layers[String(e.target.value)].name)
             }
           />
           <StringFE
@@ -108,7 +108,7 @@ function EditLayerDialog(props: Props) {
             variant="outlined"
             size="small"
             startIcon={<Delete />}
-            disabled={getValues("layerId") === -1}
+            disabled={getValues("layerId") === ""}
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >

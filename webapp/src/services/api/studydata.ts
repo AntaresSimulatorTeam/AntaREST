@@ -38,7 +38,7 @@ export const createLink = async (
 export const updateAreaUI = async (
   uuid: string,
   areaId: string,
-  layerId: number,
+  layerId: string,
   areaUi: UpdateAreaUi
 ): Promise<string> => {
   const res = await client.put(

@@ -96,6 +96,12 @@ export interface StudyOutput {
   archived: boolean;
 }
 
+export interface StudyLayer {
+  areas: string[];
+  id: string;
+  name: string;
+}
+
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
   children: Array<VariantTreeDTO>;
@@ -591,13 +597,14 @@ export interface AreasNameSynthesis {
 export interface LinkProperties {
   source: string;
   target: string;
+  temp?: boolean;
 }
 
 export interface AreaLayerColor {
-  [key: number]: string;
+  [key: string]: string;
 }
-export interface AreaLayerXandY {
-  [key: number]: number;
+export interface AreaLayerPosition {
+  [key: string]: number;
 }
 
 export interface AreaUI {
@@ -615,8 +622,8 @@ export interface AreaUI {
 
 export interface SingleAreaConfig {
   layerColor: AreaLayerColor;
-  layerX: AreaLayerXandY;
-  layerY: AreaLayerXandY;
+  layerX: AreaLayerPosition;
+  layerY: AreaLayerPosition;
   ui: AreaUI;
 }
 
@@ -629,8 +636,8 @@ export interface UpdateAreaUi {
   y: number;
   // eslint-disable-next-line camelcase
   color_rgb: Array<number>;
-  layerX: AreaLayerXandY;
-  layerY: AreaLayerXandY;
+  layerX: AreaLayerPosition;
+  layerY: AreaLayerPosition;
   layerColor: AreaLayerColor;
 }
 

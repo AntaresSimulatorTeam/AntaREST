@@ -8,6 +8,8 @@ import * as RA from "ramda-adjunct";
 import {
   FileStudyTreeConfigDTO,
   GenericInfo,
+  Link,
+  LinkElement,
   WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
@@ -60,6 +62,20 @@ export const updateStudySynthesis = createAction<{
   id: FileStudyTreeConfigDTO["study_id"];
   changes: Partial<Omit<FileStudyTreeConfigDTO, "study_id">>;
 }>(n("UPDATE_STUDY_SYNTHESIS"));
+
+export const createStudyLink = createAction<{
+  studyId: FileStudyTreeConfigDTO["study_id"];
+  area1: LinkElement["area1"];
+  area2: LinkElement["area2"];
+  filtersSynthesis?: Link["filters_synthesis"];
+  filtersYear?: Link["filters_year"];
+}>(n("CREATE_STUDY_LINK"));
+
+export const deleteStudyLink = createAction<{
+  studyId: FileStudyTreeConfigDTO["study_id"];
+  area1: LinkElement["area1"];
+  area2: LinkElement["area2"];
+}>(n("DELETE_STUDY_LINK"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -154,6 +170,29 @@ export default createReducer(initialState, (builder) => {
     .addCase(setStudySynthesis.fulfilled, studySynthesesAdapter.setOne)
     .addCase(updateStudySynthesis, studySynthesesAdapter.updateOne)
     .addCase(deleteStudySynthesis.fulfilled, studySynthesesAdapter.removeOne)
+    .addCase(createStudyLink, (draftState, action) => {
+      const filters = ["hourly", "daily", "weekly", "monthly", "annual"];
+      const {
+        studyId,
+        area1,
+        area2,
+        filtersSynthesis = filters,
+        filtersYear = filters,
+      } = action.payload;
+
+      const synthesis = draftState.entities[studyId];
+
+      if (synthesis) {
+        synthesis.areas[area1].links[area2] = {
+          filters_synthesis: filtersSynthesis,
+          filters_year: filtersYear,
+        };
+      }
+    })
+    .addCase(deleteStudyLink, (draftState, action) => {
+      const { studyId, area1, area2 } = action.payload;
+      delete draftState.entities[studyId]?.areas[area1].links[area2];
+    })
     .addCase(setCurrentArea, (draftState, action) => {
       draftState.currentArea = action.payload;
     })
