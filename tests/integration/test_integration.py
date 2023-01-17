@@ -4,25 +4,24 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import ANY
 
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
 from antarest.study.business.table_mode_management import (
-    TableTemplateType,
     FIELDS_INFO_BY_TYPE,
     AdequacyPatchMode,
-    TransmissionCapacity,
     AssetType,
-    TimeSeriesGenerationOption,
     LawOption,
+    TableTemplateType,
+    TimeSeriesGenerationOption,
+    TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 
 def wait_for(predicate: Callable[[], bool], timeout=10):
@@ -858,7 +857,7 @@ def test_area_management(app: FastAPI):
             "output": True,
             "comments": "My District",
             "areas": [],
-        }
+        },
     )
     assert res.status_code == 200
     assert res.json() == {
@@ -879,7 +878,7 @@ def test_area_management(app: FastAPI):
             "output": True,
             "comments": "Your District",
             "areas": [],
-        }
+        },
     )
     assert res.status_code == 200
 
