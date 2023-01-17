@@ -26,8 +26,12 @@ function LinkMatrixView(props: Props) {
   const [value, setValue] = React.useState(0);
 
   const columnsNames = [
-    t("study.modelization.links.matrix.columns.hurdleCostsDirect"),
-    t("study.modelization.links.matrix.columns.hurdleCostsIndirect"),
+    `${t(
+      "study.modelization.links.matrix.columns.hurdleCostsDirect"
+    )} (${area1}->${area2})`,
+    `${t(
+      "study.modelization.links.matrix.columns.hurdleCostsIndirect"
+    )} (${area2}->${area1})`,
     t("study.modelization.links.matrix.columns.inpedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
     t("study.modelization.links.matrix.columns.pShiftMin"),
@@ -72,18 +76,18 @@ function LinkMatrixView(props: Props) {
           <>
             <MatrixInput
               study={study}
-              title={t(
+              title={`${t(
                 "study.modelization.links.matrix.columns.transCapaDirect"
-              )}
+              )} (${area1}->${area2})`}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
               computStats={MatrixStats.NOCOL}
             />
             <Divider sx={{ width: "1px", mx: 2, bgcolor: "divider" }} />
             <MatrixInput
               study={study}
-              title={t(
+              title={`${t(
                 "study.modelization.links.matrix.columns.transCapaIndirect"
-              )}
+              )} (${area2}->${area1})`}
               url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
               computStats={MatrixStats.NOCOL}
             />
