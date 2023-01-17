@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { StudyLayer } from "../../../../../../common/types";
 import { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 
 ////////////////////////////////////////////////////////////////
@@ -86,7 +87,7 @@ export function useRenderNodes(
   nodes: StudyMapNode[],
   width: number,
   height: number,
-  currentLayerId: number
+  currentLayerId: StudyLayer["id"]
 ): StudyMapNode[] {
   // compute center offset with scale fix on x axis
   const centerVector = { x: width / INITIAL_ZOOM / 2, y: height / 2 };

@@ -6,6 +6,7 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
+  deleteStudyMapLink,
   deleteStudyMapNode,
   StudyMapLink,
   StudyMapNode,
@@ -15,8 +16,6 @@ import {
   setCurrentLink,
 } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import { parseLinkId } from "../../../../../../../redux/utils";
-import { deleteLink } from "../../../../../../../services/api/studydata";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import { AreaDeleteIcon } from "./style";
 
@@ -43,9 +42,9 @@ function DeleteAreaDialog(props: Props) {
     // Delete node
     if (currentArea && !currentLink) {
       try {
-        dispatch(
+        await dispatch(
           deleteStudyMapNode({ studyId: study.id, nodeId: currentArea.id })
-        );
+        ).unwrap();
         dispatch(setCurrentArea(""));
       } catch (e) {
         enqueueErrorSnackbar(
@@ -57,7 +56,9 @@ function DeleteAreaDialog(props: Props) {
     // Delete link
     if (currentLink && !currentArea) {
       try {
-        await deleteLink(study.id, ...parseLinkId(currentLink.id));
+        await dispatch(
+          deleteStudyMapLink({ studyId: study.id, linkId: currentLink.id })
+        ).unwrap();
         dispatch(setCurrentLink(""));
       } catch (e) {
         enqueueErrorSnackbar(

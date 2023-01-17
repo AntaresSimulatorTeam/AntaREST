@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { LinkProperties, StudyMetadata } from "../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
+import {
+  createStudyMapLink,
+  StudyMapNode,
+} from "../../../../../../redux/ducks/studyMaps";
 import {
   setCurrentArea,
   setCurrentLink,
@@ -14,7 +17,6 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLayer } from "../../../../../../redux/selectors";
 import { makeLinkId } from "../../../../../../redux/utils";
-import { createLink } from "../../../../../../services/api/studydata";
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";
 
@@ -53,22 +55,22 @@ function MapGraph(props: Props) {
    * Create new map link if sourceNode and targetNode are set
    */
   useEffect(() => {
-    const createMapLink = async (
-      sourceNode: string,
-      targetNode: string
-    ): Promise<void> => {
-      try {
-        await createLink(study.id, { area1: sourceNode, area2: targetNode });
-      } catch (e) {
-        enqueueErrorSnackbar(t("study.error.createLink"), e as AxiosError);
-      } finally {
-        setSourceNode(undefined);
-        setTargetNode(undefined);
-      }
-    };
-
     if (sourceNode && targetNode) {
-      createMapLink(sourceNode, targetNode);
+      dispatch(
+        createStudyMapLink({
+          studyId: study.id,
+          area1: sourceNode,
+          area2: targetNode,
+        })
+      )
+        .unwrap()
+        .catch((err: AxiosError) => {
+          enqueueErrorSnackbar(t("study.error.createLink"), err);
+        })
+        .finally(() => {
+          setSourceNode(undefined);
+          setTargetNode(undefined);
+        });
     }
   }, [sourceNode, targetNode, study.id, dispatch, enqueueErrorSnackbar, t]);
 
@@ -95,8 +97,14 @@ function MapGraph(props: Props) {
   };
 
   const handleOnClickLink = (source: string, target: string) => {
-    dispatch(setCurrentArea(""));
-    dispatch(setCurrentLink(makeLinkId(source, target)));
+    const isTempLink =
+      links.find((link) => link.source === source && link.target === target)
+        ?.temp || false;
+
+    if (!isTempLink) {
+      dispatch(setCurrentArea(""));
+      dispatch(setCurrentLink(makeLinkId(source, target)));
+    }
   };
 
   const handleGraphClick = () => {
