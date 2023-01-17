@@ -24,19 +24,19 @@ interface Props {
   onClose: () => void;
 }
 
-function EditDistrictDialog(props: Props) {
+const defaultValues = {
+  name: "",
+  output: true,
+  districtId: "",
+};
+
+function UpdateDistrictDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const districts = useAppSelector(getStudyMapDistricts);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
-
-  const defaultValues = {
-    name: "",
-    output: true,
-    districtId: "",
-  };
 
   const districtsOptions = Object.values(districts).map(({ name, id }) => ({
     label: name,
@@ -138,4 +138,4 @@ function EditDistrictDialog(props: Props) {
   );
 }
 
-export default EditDistrictDialog;
+export default UpdateDistrictDialog;

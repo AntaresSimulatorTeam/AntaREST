@@ -30,7 +30,7 @@ export interface FormTableProps<
     columns?:
       | Array<string | ColumnSettings>
       | ((index: number) => ColumnSettings);
-    colHeaders?: (index: number) => string;
+    colHeaders?: (index: number, colName: string) => string;
   };
 }
 
@@ -66,7 +66,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
           RA.isString(col)
             ? {
                 data: col,
-                title: colHeaders ? colHeaders(index) : startCase(col),
+                title: colHeaders ? colHeaders(index, col) : startCase(col),
                 type: type || getCellType(firstRow?.[col]),
               }
             : col

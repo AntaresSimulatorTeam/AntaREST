@@ -19,10 +19,7 @@ import {
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
-  StudyMapDistrict,
-  StudyMapNode,
-import {
-} from "../../redux/ducks/studyMaps";
+import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<{
   [sid: string]: StudyMetadataDTO;
@@ -448,7 +445,7 @@ export async function updateStudyLayer(
   studyId: StudyMetadata["id"],
   layerId: StudyLayer["id"],
   layerName: StudyLayer["name"],
-  areas?: StudyMapNode[]
+  areas?: StudyLayer["areas"]
 ): Promise<void> {
   await client.put(
     `v1/studies/${studyId}/layers/${layerId}?name=${encodeURIComponent(
@@ -477,11 +474,12 @@ export async function createStudyDistrict(
   output: StudyMapDistrict["output"]
 ): Promise<StudyMapDistrict> {
   return (
-    await client.post(
-      `v1/studies/${studyId}/districts?name=${encodeURIComponent(
-        districtName
-      )}&output=${encodeURIComponent(output)}`
-    )
+    await client.post(`v1/studies/${studyId}/districts`, {
+      name: districtName,
+      output,
+      areas: [],
+      comments: "",
+    })
   ).data;
 }
 
@@ -489,14 +487,12 @@ export async function updateStudyDistrict(
   studyId: StudyMetadata["id"],
   districtId: StudyMapDistrict["id"],
   output: StudyMapDistrict["output"],
-  areas?: StudyMapNode[]
+  areas?: StudyMapDistrict["areas"]
 ): Promise<void> {
-  await client.put(
-    `v1/studies/${studyId}/districts/${districtId}?output=${encodeURIComponent(
-      output
-    )}`,
-    areas
-  );
+  await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
+    output,
+    areas,
+  });
 }
 
 export async function deleteStudyDistrict(

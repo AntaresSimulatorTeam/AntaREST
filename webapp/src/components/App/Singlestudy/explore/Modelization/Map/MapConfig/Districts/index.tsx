@@ -11,12 +11,9 @@ import {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import FormTable from "../../../../../../../common/FormTable";
 import CreateDistrictDialog from "./CreateDistrictDialog";
-import EditDistrictDialog from "./EditDistrictDialog";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import {
-  StudyMapNode,
-  updateStudyMapDistrict,
-} from "../../../../../../../../redux/ducks/studyMaps";
+import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
+import UpdateDistrictDialog from "./UpdateDistrictDialog";
 
 function Districts() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -25,7 +22,8 @@ function Districts() {
   const districts = useAppSelector(getStudyMapDistricts);
   const [createDistrictDialogOpen, setCreateDistrictDialogOpen] =
     useState(false);
-  const [editDistrictDialogOpen, setEditDistrictDialogOpen] = useState(false);
+  const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] =
+    useState(false);
 
   const combinedDistricts = areas.map((area) => ({
     [area.id]: Object.values(districts).reduce((acc, { name, areas }) => {
@@ -50,7 +48,7 @@ function Districts() {
     if (districtName) {
       const districtAreas = Object.keys(data.values).filter(
         (area) => data.values[area][districtName]
-      ) as unknown as StudyMapNode[];
+      );
       const targetDistrict = Object.values(districts).find(
         (district) => district.name === districtName
       );
@@ -89,7 +87,7 @@ function Districts() {
           variant="outlined"
           size="small"
           startIcon={<Edit />}
-          onClick={() => setEditDistrictDialogOpen(true)}
+          onClick={() => setUpdateDistrictDialogOpen(true)}
         >
           Edit District
         </Button>
@@ -107,10 +105,10 @@ function Districts() {
           onClose={() => setCreateDistrictDialogOpen(false)}
         />
       )}
-      {editDistrictDialogOpen && (
-        <EditDistrictDialog
-          open={editDistrictDialogOpen}
-          onClose={() => setEditDistrictDialogOpen(false)}
+      {updateDistrictDialogOpen && (
+        <UpdateDistrictDialog
+          open={updateDistrictDialogOpen}
+          onClose={() => setUpdateDistrictDialogOpen(false)}
         />
       )}
     </Box>
