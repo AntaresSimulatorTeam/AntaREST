@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Optional, List, Awaitable
-
-from pydantic import BaseModel
+from typing import Any, Awaitable, Callable, List, Optional
 
 from antarest.core.model import PermissionInfo
+from pydantic import BaseModel
 
 
 class EventType(str, Enum):
@@ -50,7 +49,7 @@ class Event(BaseModel):
     type: EventType
     payload: Any
     permissions: PermissionInfo = PermissionInfo()
-    channel: Optional[str] = None
+    channel: str = ""
 
 
 class IEventBus(ABC):

@@ -78,7 +78,7 @@ class ConnectionManager:
                 connection.channel_subscriptions.remove(ws_message.payload)
 
     async def broadcast(
-        self, message: str, permissions: PermissionInfo, channel: Optional[str]
+        self, message: str, permissions: PermissionInfo, channel: str
     ) -> None:
         for connection in self.active_connections:
             # if is subscribed to chanel and has permission, send message to websocket
