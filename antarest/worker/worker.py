@@ -1,5 +1,6 @@
 import abc
 import logging
+import threading
 import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -42,6 +43,7 @@ class AbstractWorker(IService):
             max_workers=MAX_WORKERS, thread_name_prefix="workertask_"
         )
         self.task_watcher = Thread(target=self._loop, daemon=True)
+        self.lock = threading.Lock()
         self.futures: Dict[str, Future[TaskResult]] = {}
 
     async def listen_for_tasks(self, event: Event) -> None:
@@ -50,9 +52,10 @@ class AbstractWorker(IService):
         self.event_bus.push(
             Event(type=EventType.WORKER_TASK_STARTED, payload=task_info)
         )
-        self.futures[task_info.task_id] = self.threadpool.submit(
-            self.safe_execute_task, task_info
-        )
+        with self.lock:
+            self.futures[task_info.task_id] = self.threadpool.submit(
+                self.safe_execute_task, task_info
+            )
 
     def safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         try:
@@ -70,14 +73,17 @@ class AbstractWorker(IService):
 
     def _loop(self) -> None:
         while True:
-            for task_id, future in self.futures.items():
-                if future.done():
-                    self.event_bus.push(
-                        Event(
-                            type=EventType.WORKER_TASK_ENDED,
-                            payload=WorkerTaskResult(
-                                task_id=task_id, task_result=future.result()
-                            ),
+            with self.lock:
+                for task_id, future in list(self.futures.items()):
+                    if future.done():
+                        self.event_bus.push(
+                            Event(
+                                type=EventType.WORKER_TASK_ENDED,
+                                payload=WorkerTaskResult(
+                                    task_id=task_id,
+                                    task_result=future.result(),
+                                ),
+                            )
                         )
-                    )
+                        del self.futures[task_id]
             time.sleep(2)
