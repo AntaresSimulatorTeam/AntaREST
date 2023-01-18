@@ -23,18 +23,18 @@ interface Props {
   onClose: () => void;
 }
 
-function EditLayerDialog(props: Props) {
+const defaultValues = {
+  name: "",
+  layerId: "",
+};
+
+function UpdateLayerDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const layers = useAppSelector(getStudyMapLayers);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
-
-  const defaultValues = {
-    name: "",
-    layerId: "",
-  };
 
   const layersOptions = Object.values(layers)
     .filter((layer) => layer.id !== "0")
@@ -101,6 +101,7 @@ function EditLayerDialog(props: Props) {
               required: true,
               validate: (val) => val.trim().length > 0,
             }}
+            disabled={getValues("layerId") === ""}
             sx={{ mx: 0 }}
           />
           <Button
@@ -132,4 +133,4 @@ function EditLayerDialog(props: Props) {
   );
 }
 
-export default EditLayerDialog;
+export default UpdateLayerDialog;

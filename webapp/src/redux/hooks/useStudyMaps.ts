@@ -4,7 +4,11 @@ import { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudyMap } from "../selectors";
-import { createStudyMap, fetchStudyMapLayers } from "../ducks/studyMaps";
+import {
+  createStudyMap,
+  fetchStudyMapLayers,
+  fetchStudyMapDistricts,
+} from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
 import { Response } from "../../components/common/utils/UsePromiseCond";
 import usePromise, { PromiseStatus } from "../../hooks/usePromise";
@@ -42,6 +46,7 @@ export default function useStudyMaps<T>(props: Props<T>): Response<T> {
 
       try {
         await dispatch(fetchStudyMapLayers(studyId)).unwrap();
+        await dispatch(fetchStudyMapDistricts(studyId)).unwrap();
         await dispatch(createStudyMap(studyId)).unwrap();
       } catch (e) {
         setError(e as Error);

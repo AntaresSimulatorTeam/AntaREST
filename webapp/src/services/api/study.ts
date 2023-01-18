@@ -19,7 +19,7 @@ import {
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
-import { StudyMapNode } from "../../redux/ducks/studyMaps";
+import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<{
   [sid: string]: StudyMetadataDTO;
@@ -445,7 +445,7 @@ export async function updateStudyLayer(
   studyId: StudyMetadata["id"],
   layerId: StudyLayer["id"],
   layerName: StudyLayer["name"],
-  areas?: StudyMapNode[]
+  areas?: StudyLayer["areas"]
 ): Promise<void> {
   await client.put(
     `v1/studies/${studyId}/layers/${layerId}?name=${encodeURIComponent(
@@ -460,4 +460,47 @@ export async function deleteStudyLayer(
   layerId: StudyLayer["id"]
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/layers/${layerId}`);
+}
+
+export async function getStudyDistricts(
+  studyId: StudyMetadata["id"]
+): Promise<StudyMapDistrict[]> {
+  return (await client.get(`v1/studies/${studyId}/districts`)).data;
+}
+
+export async function createStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtName: StudyMapDistrict["name"],
+  output: StudyMapDistrict["output"],
+  comments: StudyMapDistrict["comments"]
+): Promise<StudyMapDistrict> {
+  return (
+    await client.post(`v1/studies/${studyId}/districts`, {
+      name: districtName,
+      output,
+      areas: [],
+      comments,
+    })
+  ).data;
+}
+
+export async function updateStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtId: StudyMapDistrict["id"],
+  output: StudyMapDistrict["output"],
+  comments: StudyMapDistrict["comments"],
+  areas?: StudyMapDistrict["areas"]
+): Promise<void> {
+  await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
+    output,
+    comments,
+    areas: areas || [],
+  });
+}
+
+export async function deleteStudyDistrict(
+  studyId: StudyMetadata["id"],
+  districtId: StudyMapDistrict["id"]
+): Promise<void> {
+  await client.delete(`v1/studies/${studyId}/districts/${districtId}`);
 }

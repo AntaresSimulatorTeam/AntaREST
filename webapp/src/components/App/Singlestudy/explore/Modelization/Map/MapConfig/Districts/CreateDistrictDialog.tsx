@@ -6,8 +6,10 @@ import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
-import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
+import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
+import Fieldset from "../../../../../../../common/Fieldset";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
@@ -17,26 +19,34 @@ interface Props {
 
 const defaultValues = {
   name: "",
+  output: true,
+  comments: "",
 };
 
-function CreateLayerDialog(props: Props) {
+function CreateDistrictDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const dispatch = useAppDispatch();
   const [t] = useTranslation();
+  const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
+    const { name, output, comments } = data.values;
     try {
       dispatch(
-        createStudyMapLayer({ studyId: study.id, name: data.values.name })
+        createStudyMapDistrict({
+          studyId: study.id,
+          name,
+          output,
+          comments,
+        })
       );
     } catch (e) {
-      enqueueErrorSnackbar(t("study.error.createLayer"), e as AxiosError);
+      enqueueErrorSnackbar(t("study.error.createDistrict"), e as AxiosError);
     }
 
     onClose();
@@ -48,7 +58,7 @@ function CreateLayerDialog(props: Props) {
 
   return (
     <FormDialog
-      title="Add new layer"
+      title="Add new district"
       titleIcon={AddCircleIcon}
       open={open}
       onCancel={onClose}
@@ -58,19 +68,35 @@ function CreateLayerDialog(props: Props) {
       }}
     >
       {({ control }) => (
-        <StringFE
-          label={t("global.name")}
-          name="name"
-          control={control}
-          fullWidth
-          rules={{
-            required: true,
-            validate: (val) => val.trim().length > 0,
-          }}
-        />
+        <Fieldset fullFieldWidth>
+          <StringFE
+            label={t("global.name")}
+            name="name"
+            control={control}
+            fullWidth
+            rules={{
+              required: true,
+              validate: (val) => val.trim().length > 0,
+            }}
+            sx={{ m: 0 }}
+          />
+          <SwitchFE
+            name="output"
+            label="Output"
+            control={control}
+            sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
+          />
+          <StringFE
+            name="comments"
+            label="Comments"
+            control={control}
+            fullWidth
+            sx={{ m: 0 }}
+          />
+        </Fieldset>
       )}
     </FormDialog>
   );
 }
 
-export default CreateLayerDialog;
+export default CreateDistrictDialog;

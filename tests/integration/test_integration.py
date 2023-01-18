@@ -4,25 +4,24 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import ANY
 
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
 from antarest.study.business.table_mode_management import (
-    TableTemplateType,
     FIELDS_INFO_BY_TYPE,
     AdequacyPatchMode,
-    TransmissionCapacity,
     AssetType,
-    TimeSeriesGenerationOption,
     LawOption,
+    TableTemplateType,
+    TimeSeriesGenerationOption,
+    TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 
 def wait_for(predicate: Callable[[], bool], timeout=10):
@@ -784,6 +783,8 @@ def test_area_management(app: FastAPI):
         }
     ]
 
+    # -- `layers` integration tests
+
     res = client.get(
         f"/v1/studies/{study_id}/layers",
         headers={
@@ -843,6 +844,78 @@ def test_area_management(app: FastAPI):
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
+
+    # -- `district` integration tests
+
+    res = client.post(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "My District",
+            "areas": [],
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {
+        "id": "district 1",
+        "name": "District 1",
+        "output": True,
+        "comments": "My District",
+        "areas": [],
+    }
+
+    res = client.put(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    actual = res.json()
+    actual[0]["areas"].sort()
+    actual[1]["areas"].sort()
+    assert actual == [
+        {
+            "id": "all areas",
+            "name": "All areas",
+            "output": False,
+            "comments": "Spatial aggregates on all areas",
+            "areas": ["area 1", "area 2"],
+        },
+        {
+            "id": "district 1",
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        },
+    ]
+
+    res = client.delete(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
 
     res_optimization_config = client.get(
         f"/v1/studies/{study_id}/config/optimization/form",

@@ -65,7 +65,6 @@ class UpdateDistrict(ICommand):
         if not output.status:
             return output
         sets = study_data.tree.get(["input", "areas", "sets"])
-        previous_filter_item = sets.get("+", sets.get("-", []))
         district_id = data["district_id"]
         item_key = data["item_key"]
         apply_filter = (
@@ -75,12 +74,11 @@ class UpdateDistrict(ICommand):
         )
         study_data.tree.save(
             {
-                "caption": self.id,
+                "caption": sets[district_id]["caption"],
                 "apply-filter": apply_filter,
-                item_key: self.filter_items or previous_filter_item,
-                "output": study_data.config.sets[district_id].output
-                or sets["output"],
-                "comments": self.comments or sets.get("comments", None),
+                item_key: self.filter_items,
+                "output": study_data.config.sets[district_id].output,
+                "comments": self.comments,
             },
             ["input", "areas", "sets", district_id],
         )

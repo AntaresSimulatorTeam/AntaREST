@@ -31,6 +31,8 @@ function MapConfig({ onClose }: Props) {
       sx={{
         width: "100%",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Button
@@ -42,21 +44,35 @@ function MapConfig({ onClose }: Props) {
       >
         {t("button.back")}
       </Button>
-
-      <TabContext value={value}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <TabList onChange={handleChange}>
-            <Tab label="Layers" value="layers" />
-            <Tab label="Districts" value="districts" />
-          </TabList>
-        </Box>
-        <TabPanel value="layers">
-          <Layers />
-        </TabPanel>
-        <TabPanel value="districts">
-          <Districts />
-        </TabPanel>
-      </TabContext>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <TabContext value={value}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <TabList onChange={handleChange}>
+              <Tab label="Layers" value="layers" />
+              <Tab label="Districts" value="districts" />
+            </TabList>
+          </Box>
+          <TabPanel
+            value="layers"
+            sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}
+          >
+            <Layers />
+          </TabPanel>
+          <TabPanel
+            value="districts"
+            sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}
+          >
+            <Districts />
+          </TabPanel>
+        </TabContext>
+      </Box>
     </Box>
   );
 }

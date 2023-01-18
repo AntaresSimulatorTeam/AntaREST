@@ -65,6 +65,14 @@ export interface StudyMapLink {
   opacity?: number;
 }
 
+export interface StudyMapDistrict {
+  id: string;
+  name: string;
+  output: boolean;
+  comments: string;
+  areas: Array<StudyMapNode["id"]>;
+}
+
 export interface StudyMap {
   studyId: StudyMetadata["id"];
   nodes: Record<StudyMapNode["id"], StudyMapNode>;
@@ -79,11 +87,13 @@ export const studyMapsAdapter = createEntityAdapter<StudyMap>({
 export interface StudyMapsState extends EntityState<StudyMap> {
   currentLayer: StudyLayer["id"];
   layers: Record<StudyLayer["id"], StudyLayer>;
+  districts: Record<StudyMapDistrict["id"], StudyMapDistrict>;
 }
 
 const initialState = studyMapsAdapter.getInitialState({
   currentLayer: "0",
   layers: {},
+  districts: {},
 }) as StudyMapsState;
 
 const n = makeActionName("studyMaps");
@@ -133,14 +143,12 @@ const makeLinkStyle = R.cond<[string], LinkStyle>([
   [R.T, (): LinkStyle => [[0], "butt"]],
 ]);
 
-const refreshStudyMapLayers = (
+const initStudyMapLayers = (
   dispatch: AppDispatch,
   layers: Record<StudyLayer["id"], StudyLayer>
 ): void => {
   if (layers) {
-    // Set Layers
     dispatch(setLayers(layers));
-    // Set current layer
     dispatch(setCurrentLayer(layers["0"].id));
   } else {
     dispatch(setLayers({}));
@@ -165,7 +173,7 @@ export const fetchStudyMapLayers = createAsyncThunk<
         };
         return acc;
       }, {} as StudyMapsState["layers"]);
-      refreshStudyMapLayers(dispatch, studyMapLayers);
+      initStudyMapLayers(dispatch, studyMapLayers);
     } catch (err) {
       return rejectWithValue(err);
     }
@@ -402,13 +410,13 @@ export const updateStudyMapLayer = createAsyncThunk<
   {
     layerId: StudyLayer["id"];
     name: StudyLayer["name"];
-    areas?: StudyMapNode[];
+    areas?: StudyLayer["areas"];
   },
   {
     studyId: StudyMetadata["id"];
     layerId: StudyLayer["id"];
     name: StudyLayer["name"];
-    areas?: StudyMapNode[];
+    areas?: StudyLayer["areas"];
   },
   AppAsyncThunkConfig
 >(n("UPDATE_STUDY_MAP_LAYER"), async (data, { rejectWithValue }) => {
@@ -434,7 +442,7 @@ export const deleteStudyMapLayer = createAsyncThunk<
       const { studyId, layerId } = data;
       const layers = getStudyMapLayers(getState());
       await studyApi.deleteStudyLayer(studyId, layerId);
-      refreshStudyMapLayers(dispatch, layers);
+      initStudyMapLayers(dispatch, layers);
       dispatch(setCurrentArea(""));
       return { layerId };
     } catch (error) {
@@ -442,6 +450,105 @@ export const deleteStudyMapLayer = createAsyncThunk<
     }
   }
 );
+
+export const fetchStudyMapDistricts = createAsyncThunk<
+  Record<StudyMapDistrict["id"], StudyMapDistrict>,
+  StudyMap["studyId"],
+  AppAsyncThunkConfig
+>(
+  n("FETCH_STUDY_MAP_DISTRICTS"),
+  async (studyId, { dispatch, rejectWithValue }) => {
+    try {
+      const districts = await studyApi.getStudyDistricts(studyId);
+      const studyMapDistricts = districts.reduce(
+        (acc, { id, name, output, comments, areas }) => {
+          acc[id] = {
+            id,
+            name,
+            output,
+            comments,
+            areas,
+          };
+          return acc;
+        },
+        {} as StudyMapsState["districts"]
+      );
+      return studyMapDistricts;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  }
+);
+
+export const createStudyMapDistrict = createAsyncThunk<
+  StudyMapDistrict,
+  {
+    studyId: StudyMetadata["id"];
+    name: StudyMapDistrict["name"];
+    output: StudyMapDistrict["output"];
+    comments: StudyMapDistrict["comments"];
+  },
+  AppAsyncThunkConfig
+>(n("CREATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
+  try {
+    const { name, output, studyId } = data;
+    const { id, comments, areas } = await studyApi.createStudyDistrict(
+      studyId,
+      name,
+      output,
+      data.comments
+    );
+    return { id, name, output, comments, areas };
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
+export const updateStudyMapDistrict = createAsyncThunk<
+  {
+    districtId: StudyMapDistrict["id"];
+    output: StudyMapDistrict["output"];
+    comments: StudyMapDistrict["comments"];
+    areas?: StudyMapDistrict["areas"];
+  },
+  {
+    studyId: StudyMetadata["id"];
+    districtId: StudyMapDistrict["id"];
+    output: StudyMapDistrict["output"];
+    comments: StudyMapDistrict["comments"];
+    areas?: StudyMapDistrict["areas"];
+  }
+>(n("UPDATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
+  try {
+    const { studyId, districtId, output, comments, areas } = data;
+    await studyApi.updateStudyDistrict(
+      studyId,
+      districtId,
+      output,
+      comments,
+      areas
+    );
+    return { districtId, output, comments, areas };
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
+export const deleteStudyMapDistrict = createAsyncThunk<
+  {
+    districtId: StudyMapDistrict["id"];
+  },
+  { studyId: StudyMetadata["id"]; districtId: StudyMapDistrict["id"] },
+  AppAsyncThunkConfig
+>(n("DELETE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
+  try {
+    const { studyId, districtId } = data;
+    await studyApi.deleteStudyDistrict(studyId, districtId);
+    return { districtId };
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
 
 ////////////////////////////////////////////////////////////////
 // Reducer
@@ -541,11 +648,36 @@ export default createReducer(initialState, (builder) => {
       const { layerId, name, areas } = action.payload;
       draftState.layers[layerId].name = name;
       if (areas) {
-        draftState.layers[layerId].areas = areas.map((area) => area.id);
+        draftState.layers[layerId].areas = areas;
       }
     })
     .addCase(deleteStudyMapLayer.fulfilled, (draftState, action) => {
       const { layerId } = action.payload;
       delete draftState.layers[layerId];
+    })
+    .addCase(fetchStudyMapDistricts.fulfilled, (draftState, action) => {
+      draftState.districts = action.payload;
+    })
+    .addCase(createStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { id, name, output, comments, areas } = action.payload;
+      draftState.districts[id] = {
+        id,
+        name,
+        output,
+        comments,
+        areas,
+      };
+    })
+    .addCase(deleteStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { districtId } = action.payload;
+      delete draftState.districts[districtId];
+    })
+    .addCase(updateStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { districtId, output, comments, areas } = action.payload;
+      draftState.districts[districtId].output = output;
+      draftState.districts[districtId].comments = comments;
+      if (areas) {
+        draftState.districts[districtId].areas = areas;
+      }
     });
 });

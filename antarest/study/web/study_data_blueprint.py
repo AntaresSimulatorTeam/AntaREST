@@ -1,14 +1,12 @@
 import logging
-from typing import Any, Optional, List, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
@@ -18,9 +16,9 @@ from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
 )
 from antarest.study.business.area_management import (
-    AreaType,
     AreaCreationDTO,
     AreaInfoDTO,
+    AreaType,
     AreaUI,
     LayerInfoDTO,
 )
@@ -28,30 +26,29 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
+from antarest.study.business.district_manager import (
+    DistrictCreationDTO,
+    DistrictInfoDTO,
+    DistrictUpdateDTO,
+)
+from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.hydro_management import (
     ManagementOptionsFormFields,
 )
-from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.link_management import (
-    LinkInfoDTO,
-)
-from antarest.study.business.playlist_management import (
-    PlaylistColumns,
-)
+from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
+from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import (
-    TableTemplateType,
     ColumnModelTypes,
+    TableTemplateType,
 )
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
 )
-from antarest.study.business.timeseries_config_management import (
-    TSFormFields,
-)
-from antarest.study.model import PatchCluster, PatchArea
+from antarest.study.business.timeseries_config_management import TSFormFields
+from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -72,6 +69,7 @@ def create_study_data_routes(
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
+    # noinspection PyShadowingBuiltins
     @bp.get(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
@@ -286,7 +284,7 @@ def create_study_data_routes(
     def update_layer(
         uuid: str,
         layer_id: str,
-        name: Optional[str] = None,
+        name: str = "",
         areas: Optional[List[str]] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
@@ -321,7 +319,89 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.areas.remove_layer(study, layer_id)
+        study_service.areas.remove_layer(study, layer_id)
+
+    @bp.get(
+        "/studies/{uuid}/districts",
+        tags=[APITag.study_data],
+        summary="Get the list of districts defined in this study",
+        response_model=List[DistrictInfoDTO],
+    )
+    def get_districts(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> List[DistrictInfoDTO]:
+        logger.info(
+            f"Fetching districts list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.district_manager.get_districts(study)
+
+    @bp.post(
+        "/studies/{uuid}/districts",
+        tags=[APITag.study_data],
+        summary="Create a new district in the study",
+        response_model=DistrictInfoDTO,
+    )
+    def create_district(
+        uuid: str,
+        dto: DistrictCreationDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> DistrictInfoDTO:
+        logger.info(
+            f"Create district {dto.name} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        return study_service.district_manager.create_district(study, dto)
+
+    @bp.put(
+        "/studies/{uuid}/districts/{district_id}",
+        tags=[APITag.study_data],
+        summary="Update the properties of a district",
+    )
+    def update_district(
+        uuid: str,
+        district_id: str,
+        dto: DistrictUpdateDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating district {district_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        study_service.district_manager.update_district(study, district_id, dto)
+
+    @bp.delete(
+        "/studies/{uuid}/districts/{district_id}",
+        tags=[APITag.study_data],
+        summary="Remove a district from a study",
+    )
+    def remove_district(
+        uuid: str,
+        district_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Remove district {district_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        study_service.district_manager.remove_district(study, district_id)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -879,7 +959,7 @@ def create_study_data_routes(
         binding_constraint_id: str,
         term_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"delete constraint term {term_id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -888,7 +968,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        return study_service.binding_constraint_manager.remove_constraint_term(
+        study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
         )
 

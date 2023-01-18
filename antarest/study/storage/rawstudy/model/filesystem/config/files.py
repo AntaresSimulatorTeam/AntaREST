@@ -191,7 +191,7 @@ class ConfigPathBuilder:
             multi_ini_keys=["+", "-"],
         )
         return {
-            name.lower(): DistrictSet(
+            transform_name_to_id(name): DistrictSet(
                 areas=item.get(
                     "-"
                     if item.get("apply-filter", "remove-all") == "add-all"
