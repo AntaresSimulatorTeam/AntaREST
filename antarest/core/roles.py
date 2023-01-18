@@ -9,8 +9,8 @@ class RoleType(enum.Enum):
     """
 
     ADMIN = 40
-    RUNNER = 30
-    WRITER = 20
+    WRITER = 30
+    RUNNER = 20
     READER = 10
 
     def is_higher_or_equals(self, other: "RoleType") -> bool:

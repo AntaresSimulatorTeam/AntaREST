@@ -180,8 +180,8 @@ export interface LaunchJobsProgress {
 
 export enum RoleType {
   ADMIN = 40,
-  RUNNER = 30,
-  WRITER = 20,
+  WRITER = 30,
+  RUNNER = 20,
   READER = 10,
 }
 
