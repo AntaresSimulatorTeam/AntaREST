@@ -1,4 +1,5 @@
 import { Box, Button } from "@mui/material";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
@@ -70,7 +71,14 @@ function Districts() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: "100%", height: "100%", py: 3 }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box sx={{ mb: 2 }}>
         <Button
           color="primary"
@@ -92,13 +100,20 @@ function Districts() {
           Edit District
         </Button>
       </Box>
-      <Box>
-        <FormTable
-          key={JSON.stringify(districts)}
-          defaultValues={mapDistricts}
-          onSubmit={handleSubmit}
-        />
+      <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
+        <AutoSizer>
+          {({ height, width }) => (
+            <Box sx={{ height, width, position: "relative" }}>
+              <FormTable
+                key={JSON.stringify(districts)}
+                defaultValues={mapDistricts}
+                onSubmit={handleSubmit}
+              />
+            </Box>
+          )}
+        </AutoSizer>
       </Box>
+
       {createDistrictDialogOpen && (
         <CreateDistrictDialog
           open={createDistrictDialogOpen}

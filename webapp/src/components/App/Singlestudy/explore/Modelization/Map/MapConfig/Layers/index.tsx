@@ -1,4 +1,5 @@
 import { Box, Button } from "@mui/material";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
@@ -116,7 +117,14 @@ function Layers() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: "100%", height: "100%", py: 3 }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box sx={{ mb: 2 }}>
         <Button
           color="primary"
@@ -138,15 +146,21 @@ function Layers() {
           Edit Layers
         </Button>
       </Box>
-      <Box>
-        <FormTable
-          key={JSON.stringify(defaultValues)}
-          defaultValues={defaultValues}
-          tableProps={{
-            colHeaders: (_, colName) => layers[colName].name,
-          }}
-          onSubmit={handleSubmit}
-        />
+      <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
+        <AutoSizer>
+          {({ height, width }) => (
+            <Box sx={{ height, width, position: "relative" }}>
+              <FormTable
+                key={JSON.stringify(defaultValues)}
+                defaultValues={defaultValues}
+                tableProps={{
+                  colHeaders: (_, colName) => layers[colName].name,
+                }}
+                onSubmit={handleSubmit}
+              />
+            </Box>
+          )}
+        </AutoSizer>
       </Box>
       {createLayerDialogOpen && (
         <CreateLayerDialog
