@@ -46,7 +46,7 @@ function Layers() {
         return acc;
       }, {}),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [Object.keys(layers).length]
+    [columns.length]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -119,21 +119,23 @@ function Layers() {
         </Button>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-        <AutoSizer>
-          {({ height, width }) => (
-            <Box sx={{ height, width, position: "relative" }}>
-              <FormTable
-                key={JSON.stringify(defaultValues)}
-                defaultValues={defaultValues}
-                tableProps={{
-                  columns,
-                  colHeaders: (_, colName) => layers[colName].name,
-                }}
-                onSubmit={handleSubmit}
-              />
-            </Box>
-          )}
-        </AutoSizer>
+        {columns.length > 0 && (
+          <AutoSizer>
+            {({ height, width }) => (
+              <Box sx={{ height, width, position: "relative" }}>
+                <FormTable
+                  key={JSON.stringify(defaultValues)}
+                  defaultValues={defaultValues}
+                  tableProps={{
+                    columns,
+                    colHeaders: (_, colName) => layers[colName].name,
+                  }}
+                  onSubmit={handleSubmit}
+                />
+              </Box>
+            )}
+          </AutoSizer>
+        )}
       </Box>
       {createLayerDialogOpen && (
         <CreateLayerDialog

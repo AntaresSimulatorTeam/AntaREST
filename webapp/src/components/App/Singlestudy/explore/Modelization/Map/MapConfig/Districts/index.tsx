@@ -26,9 +26,10 @@ function Districts() {
   const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] =
     useState(false);
 
-  const columns = useMemo(() => {
-    return Object.keys(districts).map((id) => id);
-  }, [districts]);
+  const columns = useMemo(
+    () => Object.keys(districts).map((id) => id),
+    [districts]
+  );
 
   const defaultValues = useMemo(
     () =>
@@ -43,7 +44,7 @@ function Districts() {
         return acc;
       }, {}),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [Object.keys(districts).length]
+    [columns.length]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -116,21 +117,23 @@ function Districts() {
         </Button>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-        <AutoSizer>
-          {({ height, width }) => (
-            <Box sx={{ height, width, position: "relative" }}>
-              <FormTable
-                key={JSON.stringify(defaultValues)}
-                defaultValues={defaultValues}
-                tableProps={{
-                  columns,
-                  colHeaders: (_, colName) => districts[colName].name,
-                }}
-                onSubmit={handleSubmit}
-              />
-            </Box>
-          )}
-        </AutoSizer>
+        {columns.length > 0 && (
+          <AutoSizer>
+            {({ height, width }) => (
+              <Box sx={{ height, width, position: "relative" }}>
+                <FormTable
+                  key={JSON.stringify(defaultValues)}
+                  defaultValues={defaultValues}
+                  tableProps={{
+                    columns,
+                    colHeaders: (_, colName) => districts[colName].name,
+                  }}
+                  onSubmit={handleSubmit}
+                />
+              </Box>
+            )}
+          </AutoSizer>
+        )}
       </Box>
 
       {createDistrictDialogOpen && (
