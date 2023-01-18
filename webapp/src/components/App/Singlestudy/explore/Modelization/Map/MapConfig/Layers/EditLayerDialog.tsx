@@ -101,6 +101,7 @@ function EditLayerDialog(props: Props) {
               required: true,
               validate: (val) => val.trim().length > 0,
             }}
+            disabled={getValues("layerId") === ""}
             sx={{ mx: 0 }}
           />
           <Button

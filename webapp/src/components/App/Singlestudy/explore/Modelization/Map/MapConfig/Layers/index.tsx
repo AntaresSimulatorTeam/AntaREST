@@ -24,6 +24,15 @@ function Layers() {
   const [createLayerDialogOpen, setCreateLayerDialogOpen] = useState(false);
   const [editLayerDialogOpen, setEditLayerDialogOpen] = useState(false);
 
+  const columns = useMemo(() => {
+    return (
+      Object.keys(layers)
+        // Remove "All"
+        .filter((id) => id !== "0")
+        .map((id) => id)
+    );
+  }, [layers]);
+
   const defaultValues = useMemo(
     () =>
       areas.reduce((acc: Record<string, Record<string, boolean>>, area) => {
@@ -44,73 +53,37 @@ function Layers() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    try {
-      const areasByLayer: Record<string, string[]> = {};
+    const areasByLayer: Record<string, string[]> = {};
 
-      Object.keys(data.dirtyValues).forEach((areaId) => {
-        Object.keys(data.dirtyValues[areaId] || {}).forEach((layerId) => {
-          areasByLayer[layerId] ||= layers[layerId].areas;
-          if (data.dirtyValues[areaId]?.[layerId]) {
-            areasByLayer[layerId].push(areaId);
-          } else {
-            areasByLayer[layerId] = areasByLayer[layerId].filter(
-              (id) => id !== areaId
-            );
-          }
-        });
+    Object.keys(data.dirtyValues).forEach((areaId) => {
+      Object.keys(data.dirtyValues[areaId] || {}).forEach((layerId) => {
+        areasByLayer[layerId] ||= [...layers[layerId].areas];
+
+        if (data.dirtyValues[areaId]?.[layerId]) {
+          areasByLayer[layerId].push(areaId);
+        } else {
+          areasByLayer[layerId] = areasByLayer[layerId].filter(
+            (id) => id !== areaId
+          );
+        }
       });
+    });
 
-      console.log("areasByLayer :>> ", areasByLayer);
+    console.log(areasByLayer);
 
-      const promises = Object.keys(areasByLayer).map((layerId) => {
-        console.log("args", {
+    const promises = Object.keys(areasByLayer).map((layerId) => {
+      return dispatch(
+        updateStudyMapLayer({
           studyId: study.id,
           layerId,
           name: layers[layerId].name,
           areas: areasByLayer[layerId],
-        });
-        return dispatch(
-          updateStudyMapLayer({
-            studyId: study.id,
-            layerId,
-            name: layers[layerId].name,
-            areas: areasByLayer[layerId],
-          })
-        ).unwrap();
-      });
+        })
+      ).unwrap();
+    });
 
-      return Promise.all(promises);
-    } catch (e) {
-      console.error(e);
-    }
+    return Promise.all(promises);
   };
-
-  /*    
-        const layerName = Object.keys(data.dirtyValues[areaName]).find(
-          (layer) => layer
-        );
-
-        const layerAreas = Object.keys(data.values).filter(
-          (area) => data.values[area][layerName || ""]
-        );
-
-        console.log("layerAreas", layerAreas);
-        const targetLayer = Object.values(layers).find(
-          (layer) => layer.name === layerName
-        );
-
-        if (targetLayer && layerName) {
-          const promise = dispatch(
-            updateStudyMapLayer({
-              studyId: study.id,
-              layerId: targetLayer.id,
-              name: layerName,
-              areas: layerAreas,
-            })
-          ).unwrap();
-
-          promises.push(promise);
-        } */
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -154,6 +127,7 @@ function Layers() {
                 key={JSON.stringify(defaultValues)}
                 defaultValues={defaultValues}
                 tableProps={{
+                  columns,
                   colHeaders: (_, colName) => layers[colName].name,
                 }}
                 onSubmit={handleSubmit}
