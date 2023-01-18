@@ -44,7 +44,7 @@ function CreateDistrictDialog(props: Props) {
         })
       );
     } catch (e) {
-      enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError); // TODO update message
+      enqueueErrorSnackbar(t("study.error.createDistrict"), e as AxiosError);
     }
 
     onClose();

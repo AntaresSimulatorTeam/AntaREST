@@ -12,9 +12,9 @@ import {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import FormTable from "../../../../../../../common/FormTable";
 import CreateLayerDialog from "./CreateLayerDialog";
-import EditLayerDialog from "./EditLayerDialog";
 import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import UpdateLayerDialog from "./UpdateLayerDialog";
 
 function Layers() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -22,7 +22,7 @@ function Layers() {
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const layers = useAppSelector(getStudyMapLayers);
   const [createLayerDialogOpen, setCreateLayerDialogOpen] = useState(false);
-  const [editLayerDialogOpen, setEditLayerDialogOpen] = useState(false);
+  const [updateLayerDialogOpen, setUpdateLayerDialogOpen] = useState(false);
 
   const columns = useMemo(() => {
     return (
@@ -113,7 +113,7 @@ function Layers() {
           variant="outlined"
           size="small"
           startIcon={<Edit />}
-          onClick={() => setEditLayerDialogOpen(true)}
+          onClick={() => setUpdateLayerDialogOpen(true)}
         >
           Edit Layers
         </Button>
@@ -141,10 +141,10 @@ function Layers() {
           onClose={() => setCreateLayerDialogOpen(false)}
         />
       )}
-      {editLayerDialogOpen && (
-        <EditLayerDialog
-          open={editLayerDialogOpen}
-          onClose={() => setEditLayerDialogOpen(false)}
+      {updateLayerDialogOpen && (
+        <UpdateLayerDialog
+          open={updateLayerDialogOpen}
+          onClose={() => setUpdateLayerDialogOpen(false)}
         />
       )}
     </Box>

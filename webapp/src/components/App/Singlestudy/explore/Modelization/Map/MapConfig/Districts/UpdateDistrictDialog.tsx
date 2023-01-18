@@ -94,6 +94,7 @@ function UpdateDistrictDialog(props: Props) {
             control={control}
             onChange={(e) => {
               setValue("name", districts[e.target.value as string].name);
+              setValue("output", districts[e.target.value as string].output);
             }}
           />
           <StringFE
@@ -108,12 +109,14 @@ function UpdateDistrictDialog(props: Props) {
             name="output"
             label="Output"
             control={control}
+            disabled={getValues("districtId") === ""}
             sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
           />
           <Button
             color="error"
             variant="outlined"
             size="small"
+            disabled={getValues("districtId") === ""}
             startIcon={<Delete />}
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}

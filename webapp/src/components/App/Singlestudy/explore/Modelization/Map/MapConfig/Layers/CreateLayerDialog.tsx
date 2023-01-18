@@ -1,36 +1,44 @@
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
+import { AxiosError } from "axios";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
+const defaultValues = {
+  name: "",
+};
+
 function CreateLayerDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
-
-  const defaultValues = {
-    name: "",
-  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    dispatch(
-      createStudyMapLayer({ studyId: study.id, name: data.values.name })
-    );
+    try {
+      dispatch(
+        createStudyMapLayer({ studyId: study.id, name: data.values.name })
+      );
+    } catch (e) {
+      enqueueErrorSnackbar(t("study.error.createLayer"), e as AxiosError);
+    }
+
     onClose();
   };
 

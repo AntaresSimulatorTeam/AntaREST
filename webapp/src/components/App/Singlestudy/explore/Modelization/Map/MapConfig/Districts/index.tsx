@@ -1,6 +1,6 @@
 import { Box, Button } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -26,44 +26,59 @@ function Districts() {
   const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] =
     useState(false);
 
-  const combinedDistricts = areas.map((area) => ({
-    [area.id]: Object.values(districts).reduce((acc, { name, areas }) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      acc[name] = !!areas.includes(area.id);
-      return acc;
-    }, {}),
-  }));
+  const columns = useMemo(() => {
+    return Object.keys(districts).map((id) => id);
+  }, [districts]);
 
-  const mapDistricts = Object.assign({}, ...combinedDistricts);
+  const defaultValues = useMemo(
+    () =>
+      areas.reduce((acc: Record<string, Record<string, boolean>>, area) => {
+        acc[area.id] = Object.values(districts).reduce(
+          (acc2: Record<string, boolean>, district) => {
+            acc2[district.id] = !!district.areas.includes(area.id);
+            return acc2;
+          },
+          {}
+        );
+        return acc;
+      }, {}),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [Object.keys(districts).length]
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus) => {
-    const areaId = Object.keys(data.dirtyValues)[0];
-    const districtName = Object.keys(data.dirtyValues[areaId]).find(
-      (district) => district
-    );
-    if (districtName) {
-      const districtAreas = Object.keys(data.values).filter(
-        (area) => data.values[area][districtName]
-      );
-      const targetDistrict = Object.values(districts).find(
-        (district) => district.name === districtName
-      );
-      if (targetDistrict) {
-        dispatch(
-          updateStudyMapDistrict({
-            studyId: study.id,
-            districtId: targetDistrict.id,
-            output: targetDistrict.output,
-            areas: districtAreas,
-          })
-        );
-      }
-    }
+    const areasByDistrict: Record<string, string[]> = {};
+
+    Object.keys(data.dirtyValues).forEach((areaId) => {
+      Object.keys(data.dirtyValues[areaId] || {}).forEach((districtId) => {
+        areasByDistrict[districtId] ||= [...districts[districtId].areas];
+
+        if (data.dirtyValues[areaId]?.[districtId]) {
+          areasByDistrict[districtId].push(areaId);
+        } else {
+          areasByDistrict[districtId] = areasByDistrict[districtId].filter(
+            (id) => id !== areaId
+          );
+        }
+      });
+    });
+
+    const promises = Object.keys(areasByDistrict).map((districtId) => {
+      return dispatch(
+        updateStudyMapDistrict({
+          studyId: study.id,
+          districtId,
+          output: districts[districtId].output,
+          areas: areasByDistrict[districtId],
+        })
+      ).unwrap();
+    });
+
+    return Promise.all(promises);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -97,7 +112,7 @@ function Districts() {
           startIcon={<Edit />}
           onClick={() => setUpdateDistrictDialogOpen(true)}
         >
-          Edit District
+          Edit Districts
         </Button>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
@@ -105,8 +120,12 @@ function Districts() {
           {({ height, width }) => (
             <Box sx={{ height, width, position: "relative" }}>
               <FormTable
-                key={JSON.stringify(districts)}
-                defaultValues={mapDistricts}
+                key={JSON.stringify(defaultValues)}
+                defaultValues={defaultValues}
+                tableProps={{
+                  columns,
+                  colHeaders: (_, colName) => districts[colName].name,
+                }}
                 onSubmit={handleSubmit}
               />
             </Box>

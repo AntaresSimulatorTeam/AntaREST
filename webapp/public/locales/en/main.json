@@ -467,6 +467,8 @@
   "study.error.modifiedStudy": "Study {{studyname}} not updated",
   "study.error.launchLoad": "Failed to retrieve the load of the cluster",
   "study.error.upgrade": "Failed to upgrade your study",
+  "study.error.createDistrict": "Failed to add district",
+  "study.error.createLayer": "Failed to add layer",
   "study.success.commentsSaved": "Comments saved successfully",
   "study.success.studyIdCopy": "Study id copied !",
   "study.success.jobIdCopy": "Job id copied !",

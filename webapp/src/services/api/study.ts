@@ -491,7 +491,7 @@ export async function updateStudyDistrict(
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
-    areas,
+    areas: areas || [],
   });
 }
 
