@@ -81,14 +81,13 @@ class ConnectionManager:
         self, message: str, permissions: PermissionInfo, channel: Optional[str]
     ) -> None:
         for connection in self.active_connections:
-            if channel is not None or check_permission(
+            # if is subscribed to chanel and has permission, send message to websocket
+            if (
+                not channel or channel in connection.channel_subscriptions
+            ) and check_permission(
                 connection.user, permissions, StudyPermissionType.READ
             ):
-                if (
-                    channel is None
-                    or channel in connection.channel_subscriptions
-                ):
-                    await connection.websocket.send_text(message)
+                await connection.websocket.send_text(message)
 
 
 def configure_websockets(
