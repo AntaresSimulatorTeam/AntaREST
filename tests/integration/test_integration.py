@@ -413,7 +413,7 @@ def test_main(app: FastAPI):
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"type": 20, "group_id": group_id, "identity_id": 2},
+        json={"type": 30, "group_id": group_id, "identity_id": 2},
     )
     # reset login to update credentials
     res = client.post(
