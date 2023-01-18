@@ -25,9 +25,10 @@ interface Props {
 }
 
 const defaultValues = {
+  districtId: "",
   name: "",
   output: true,
-  districtId: "",
+  comments: "",
 };
 
 function UpdateDistrictDialog(props: Props) {
@@ -50,12 +51,13 @@ function UpdateDistrictDialog(props: Props) {
   const handleSubmit = async (
     data: SubmitHandlerPlus<typeof defaultValues>
   ) => {
-    const { districtId, output } = data.values;
+    const { districtId, output, comments } = data.values;
     dispatch(
       updateStudyMapDistrict({
         studyId: study.id,
         districtId,
         output,
+        comments,
       })
     );
     onClose();
@@ -95,6 +97,10 @@ function UpdateDistrictDialog(props: Props) {
             onChange={(e) => {
               setValue("name", districts[e.target.value as string].name);
               setValue("output", districts[e.target.value as string].output);
+              setValue(
+                "comments",
+                districts[e.target.value as string].comments
+              );
             }}
           />
           <StringFE
@@ -111,6 +117,13 @@ function UpdateDistrictDialog(props: Props) {
             control={control}
             disabled={getValues("districtId") === ""}
             sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
+          />
+          <StringFE
+            label="Comment"
+            name="comments"
+            control={control}
+            fullWidth
+            sx={{ mx: 0 }}
           />
           <Button
             color="error"

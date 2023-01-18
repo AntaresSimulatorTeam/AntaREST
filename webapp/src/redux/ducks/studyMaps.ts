@@ -483,9 +483,10 @@ export const fetchStudyMapDistricts = createAsyncThunk<
 export const createStudyMapDistrict = createAsyncThunk<
   StudyMapDistrict,
   {
+    studyId: StudyMetadata["id"];
     name: StudyMapDistrict["name"];
     output: StudyMapDistrict["output"];
-    studyId: StudyMetadata["id"];
+    comments: StudyMapDistrict["comments"];
   },
   AppAsyncThunkConfig
 >(n("CREATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
@@ -494,7 +495,8 @@ export const createStudyMapDistrict = createAsyncThunk<
     const { id, comments, areas } = await studyApi.createStudyDistrict(
       studyId,
       name,
-      output
+      output,
+      data.comments
     );
     return { id, name, output, comments, areas };
   } catch (error) {
@@ -506,19 +508,27 @@ export const updateStudyMapDistrict = createAsyncThunk<
   {
     districtId: StudyMapDistrict["id"];
     output: StudyMapDistrict["output"];
+    comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
   },
   {
     studyId: StudyMetadata["id"];
     districtId: StudyMapDistrict["id"];
     output: StudyMapDistrict["output"];
+    comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
   }
 >(n("UPDATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
   try {
-    const { studyId, districtId, output, areas } = data;
-    await studyApi.updateStudyDistrict(studyId, districtId, output, areas);
-    return { districtId, output, areas };
+    const { studyId, districtId, output, comments, areas } = data;
+    await studyApi.updateStudyDistrict(
+      studyId,
+      districtId,
+      output,
+      comments,
+      areas
+    );
+    return { districtId, output, comments, areas };
   } catch (error) {
     return rejectWithValue(error);
   }
@@ -663,8 +673,9 @@ export default createReducer(initialState, (builder) => {
       delete draftState.districts[districtId];
     })
     .addCase(updateStudyMapDistrict.fulfilled, (draftState, action) => {
-      const { districtId, output, areas } = action.payload;
+      const { districtId, output, comments, areas } = action.payload;
       draftState.districts[districtId].output = output;
+      draftState.districts[districtId].comments = comments;
       if (areas) {
         draftState.districts[districtId].areas = areas;
       }

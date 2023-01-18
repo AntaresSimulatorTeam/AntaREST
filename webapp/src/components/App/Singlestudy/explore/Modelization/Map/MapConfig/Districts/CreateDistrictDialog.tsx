@@ -20,6 +20,7 @@ interface Props {
 const defaultValues = {
   name: "",
   output: true,
+  comments: "",
 };
 
 function CreateDistrictDialog(props: Props) {
@@ -34,13 +35,14 @@ function CreateDistrictDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    const { name, output } = data.values;
+    const { name, output, comments } = data.values;
     try {
       dispatch(
         createStudyMapDistrict({
           studyId: study.id,
           name,
           output,
+          comments,
         })
       );
     } catch (e) {
@@ -83,6 +85,13 @@ function CreateDistrictDialog(props: Props) {
             label="Output"
             control={control}
             sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
+          />
+          <StringFE
+            name="comments"
+            label="Comments"
+            control={control}
+            fullWidth
+            sx={{ m: 0 }}
           />
         </Fieldset>
       )}

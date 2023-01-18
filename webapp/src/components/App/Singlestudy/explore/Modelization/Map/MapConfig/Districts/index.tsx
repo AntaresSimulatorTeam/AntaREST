@@ -74,6 +74,7 @@ function Districts() {
           studyId: study.id,
           districtId,
           output: districts[districtId].output,
+          comments: districts[districtId].comments,
           areas: areasByDistrict[districtId],
         })
       ).unwrap();

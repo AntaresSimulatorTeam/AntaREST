@@ -471,14 +471,15 @@ export async function getStudyDistricts(
 export async function createStudyDistrict(
   studyId: StudyMetadata["id"],
   districtName: StudyMapDistrict["name"],
-  output: StudyMapDistrict["output"]
+  output: StudyMapDistrict["output"],
+  comments: StudyMapDistrict["comments"]
 ): Promise<StudyMapDistrict> {
   return (
     await client.post(`v1/studies/${studyId}/districts`, {
       name: districtName,
       output,
       areas: [],
-      comments: "",
+      comments,
     })
   ).data;
 }
@@ -487,10 +488,12 @@ export async function updateStudyDistrict(
   studyId: StudyMetadata["id"],
   districtId: StudyMapDistrict["id"],
   output: StudyMapDistrict["output"],
+  comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"]
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
+    comments,
     areas: areas || [],
   });
 }
