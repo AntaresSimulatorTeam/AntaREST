@@ -1,16 +1,14 @@
-import asyncio
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import Mock, MagicMock
-
-from starlette.websockets import WebSocket
+from unittest.mock import MagicMock
 
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, PublicMode
+from antarest.core.model import PermissionInfo
 from antarest.eventbus.web import (
     ConnectionManager,
     WebsocketMessage,
     WebsocketMessageAction,
 )
+from starlette.websockets import WebSocket
 
 
 class AsyncMock(MagicMock):
@@ -19,14 +17,15 @@ class AsyncMock(MagicMock):
 
 
 class ConnectionManagerTest(IsolatedAsyncioTestCase):
+    # noinspection PyMethodMayBeStatic
     async def test_subscriptions(self):
         ws_manager = ConnectionManager()
 
         user = JWTUser(id=1, type="user", impersonator=1, groups=[])
-        subscription_message = WebsocketMessage(
+        subscribe_message = WebsocketMessage(
             action=WebsocketMessageAction.SUBSCRIBE, payload="foo"
         )
-        unsubscription_message = WebsocketMessage(
+        unsubscribe_message = WebsocketMessage(
             action=WebsocketMessageAction.UNSUBSCRIBE, payload="foo"
         )
         mock_connection = AsyncMock(spec=WebSocket)
@@ -34,7 +33,7 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
         assert len(ws_manager.active_connections) == 1
 
         ws_manager.process_message(
-            subscription_message.json(), mock_connection, user
+            subscribe_message.json(), mock_connection, user
         )
         assert len(ws_manager.active_connections[0].channel_subscriptions) == 1
         assert (
@@ -45,7 +44,7 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
         mock_connection.send_text.assert_called_with("hello")
 
         ws_manager.process_message(
-            unsubscription_message.json(), mock_connection, user
+            unsubscribe_message.json(), mock_connection, user
         )
         assert len(ws_manager.active_connections[0].channel_subscriptions) == 0
 
