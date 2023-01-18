@@ -45,7 +45,8 @@ function Layers() {
         );
         return acc;
       }, {}),
-    [areas, layers]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [Object.keys(layers).length]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -68,8 +69,6 @@ function Layers() {
         }
       });
     });
-
-    console.log(areasByLayer);
 
     const promises = Object.keys(areasByLayer).map((layerId) => {
       return dispatch(
