@@ -127,6 +127,7 @@ function Districts() {
                   tableProps={{
                     columns,
                     colHeaders: (_, colName) => districts[colName].name,
+                    selectionMode: "single",
                   }}
                   onSubmit={handleSubmit}
                 />

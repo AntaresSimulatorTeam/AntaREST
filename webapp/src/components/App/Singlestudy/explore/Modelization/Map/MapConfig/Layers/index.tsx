@@ -129,6 +129,7 @@ function Layers() {
                   tableProps={{
                     columns,
                     colHeaders: (_, colName) => layers[colName].name,
+                    selectionMode: "single",
                   }}
                   onSubmit={handleSubmit}
                 />
