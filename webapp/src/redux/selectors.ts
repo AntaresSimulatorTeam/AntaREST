@@ -377,7 +377,7 @@ export const getCurrentStudyMapNode = createSelector(
     studyMapsById[currentStudyId]?.nodes[currentAreaId]
 );
 
-export const getStudyMapLayers = (
+export const getStudyMapLayersById = (
   state: AppState
 ): StudyMapsState["layers"] => {
   return getStudyMapsState(state).layers;
@@ -391,10 +391,10 @@ export const getCurrentLayer = (
 
 export const getCurrentLayerAreas = createSelector(
   getCurrentLayer,
-  getStudyMapLayers,
-  (currentLayerId, studyMapLayers) => {
-    if (currentLayerId && studyMapLayers[currentLayerId]) {
-      return studyMapLayers[currentLayerId].areas;
+  getStudyMapLayersById,
+  (currentLayerId, studyMapLayersById) => {
+    if (currentLayerId && studyMapLayersById[currentLayerId]) {
+      return studyMapLayersById[currentLayerId].areas;
     }
   }
 );
@@ -467,7 +467,7 @@ export const getStudyMapLinks = createSelector(
   }
 );
 
-export const getStudyMapDistricts = (
+export const getStudyMapDistrictsById = (
   state: AppState
 ): StudyMapsState["districts"] => {
   return getStudyMapsState(state).districts;

@@ -7,7 +7,7 @@ import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
   getAreas,
-  getStudyMapDistricts,
+  getStudyMapDistrictsById,
 } from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import FormTable from "../../../../../../../common/FormTable";
@@ -20,21 +20,21 @@ function Districts() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const areas = useAppSelector((state) => getAreas(state, study.id));
-  const districts = useAppSelector(getStudyMapDistricts);
+  const districtsById = useAppSelector(getStudyMapDistrictsById);
   const [createDistrictDialogOpen, setCreateDistrictDialogOpen] =
     useState(false);
   const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] =
     useState(false);
 
   const columns = useMemo(
-    () => Object.keys(districts).map((id) => id),
-    [districts]
+    () => Object.keys(districtsById).map((id) => id),
+    [districtsById]
   );
 
   const defaultValues = useMemo(
     () =>
       areas.reduce((acc: Record<string, Record<string, boolean>>, area) => {
-        acc[area.id] = Object.values(districts).reduce(
+        acc[area.id] = Object.values(districtsById).reduce(
           (acc2: Record<string, boolean>, district) => {
             acc2[district.id] = !!district.areas.includes(area.id);
             return acc2;
@@ -56,7 +56,7 @@ function Districts() {
 
     Object.keys(data.dirtyValues).forEach((areaId) => {
       Object.keys(data.dirtyValues[areaId] || {}).forEach((districtId) => {
-        areasByDistrict[districtId] ||= [...districts[districtId].areas];
+        areasByDistrict[districtId] ||= [...districtsById[districtId].areas];
 
         if (data.dirtyValues[areaId]?.[districtId]) {
           areasByDistrict[districtId].push(areaId);
@@ -73,8 +73,8 @@ function Districts() {
         updateStudyMapDistrict({
           studyId: study.id,
           districtId,
-          output: districts[districtId].output,
-          comments: districts[districtId].comments,
+          output: districtsById[districtId].output,
+          comments: districtsById[districtId].comments,
           areas: areasByDistrict[districtId],
         })
       ).unwrap();
@@ -127,7 +127,7 @@ function Districts() {
                   defaultValues={defaultValues}
                   tableProps={{
                     columns,
-                    colHeaders: (_, colName) => districts[colName].name,
+                    colHeaders: (_, colName) => districtsById[colName].name,
                     selectionMode: "single",
                   }}
                   onSubmit={handleSubmit}

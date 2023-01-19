@@ -8,7 +8,7 @@ import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapDistricts } from "../../../../../../../../redux/selectors";
+import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
@@ -36,10 +36,10 @@ function UpdateDistrictDialog(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const districts = useAppSelector(getStudyMapDistricts);
+  const districtsById = useAppSelector(getStudyMapDistrictsById);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
 
-  const districtsOptions = Object.values(districts).map(({ name, id }) => ({
+  const districtsOptions = Object.values(districtsById).map(({ name, id }) => ({
     label: name,
     value: id,
   }));
@@ -95,11 +95,14 @@ function UpdateDistrictDialog(props: Props) {
             options={districtsOptions}
             control={control}
             onChange={(e) => {
-              setValue("name", districts[e.target.value as string].name);
-              setValue("output", districts[e.target.value as string].output);
+              setValue("name", districtsById[e.target.value as string].name);
+              setValue(
+                "output",
+                districtsById[e.target.value as string].output
+              );
               setValue(
                 "comments",
-                districts[e.target.value as string].comments
+                districtsById[e.target.value as string].comments
               );
             }}
           />

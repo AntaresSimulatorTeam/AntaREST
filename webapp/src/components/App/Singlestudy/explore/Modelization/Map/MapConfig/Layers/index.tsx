@@ -7,7 +7,7 @@ import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
   getAreas,
-  getStudyMapLayers,
+  getStudyMapLayersById,
 } from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import FormTable from "../../../../../../../common/FormTable";
@@ -20,23 +20,23 @@ function Layers() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const areas = useAppSelector((state) => getAreas(state, study.id));
-  const layers = useAppSelector(getStudyMapLayers);
+  const layersById = useAppSelector(getStudyMapLayersById);
   const [createLayerDialogOpen, setCreateLayerDialogOpen] = useState(false);
   const [updateLayerDialogOpen, setUpdateLayerDialogOpen] = useState(false);
 
   const columns = useMemo(() => {
     return (
-      Object.keys(layers)
+      Object.keys(layersById)
         // Remove "All"
         .filter((id) => id !== "0")
         .map((id) => id)
     );
-  }, [layers]);
+  }, [layersById]);
 
   const defaultValues = useMemo(
     () =>
       areas.reduce((acc: Record<string, Record<string, boolean>>, area) => {
-        acc[area.id] = Object.values(layers).reduce(
+        acc[area.id] = Object.values(layersById).reduce(
           (acc2: Record<string, boolean>, layer) => {
             acc2[layer.id] = !!layer.areas.includes(area.id);
             return acc2;
@@ -58,7 +58,7 @@ function Layers() {
 
     Object.keys(data.dirtyValues).forEach((areaId) => {
       Object.keys(data.dirtyValues[areaId] || {}).forEach((layerId) => {
-        areasByLayer[layerId] ||= [...layers[layerId].areas];
+        areasByLayer[layerId] ||= [...layersById[layerId].areas];
 
         if (data.dirtyValues[areaId]?.[layerId]) {
           areasByLayer[layerId].push(areaId);
@@ -75,7 +75,7 @@ function Layers() {
         updateStudyMapLayer({
           studyId: study.id,
           layerId,
-          name: layers[layerId].name,
+          name: layersById[layerId].name,
           areas: areasByLayer[layerId],
         })
       ).unwrap();
@@ -128,7 +128,7 @@ function Layers() {
                   defaultValues={defaultValues}
                   tableProps={{
                     columns,
-                    colHeaders: (_, colName) => layers[colName].name,
+                    colHeaders: (_, colName) => layersById[colName].name,
                     selectionMode: "single",
                   }}
                   onSubmit={handleSubmit}

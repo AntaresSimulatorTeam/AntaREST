@@ -29,7 +29,7 @@ import {
   getArea,
   getCurrentLayer,
   getStudyMap,
-  getStudyMapLayers,
+  getStudyMapLayersById,
   getStudySynthesis,
 } from "../selectors";
 import * as studyDataApi from "../../services/api/studydata";
@@ -440,7 +440,7 @@ export const deleteStudyMapLayer = createAsyncThunk<
   async (data, { getState, dispatch, rejectWithValue }) => {
     try {
       const { studyId, layerId } = data;
-      const layers = getStudyMapLayers(getState());
+      const layers = getStudyMapLayersById(getState());
       await studyApi.deleteStudyLayer(studyId, layerId);
       initStudyMapLayers(dispatch, layers);
       dispatch(setCurrentArea(""));

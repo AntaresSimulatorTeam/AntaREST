@@ -8,7 +8,7 @@ import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayers } from "../../../../../../../../redux/selectors";
+import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
@@ -33,7 +33,7 @@ function UpdateLayerDialog(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const layers = useAppSelector(getStudyMapLayers);
+  const layers = useAppSelector(getStudyMapLayersById);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
 
   const layersOptions = Object.values(layers)

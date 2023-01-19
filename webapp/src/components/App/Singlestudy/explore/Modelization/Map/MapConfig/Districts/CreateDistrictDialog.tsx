@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
 import { AxiosError } from "axios";
+import { useMemo } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
@@ -11,6 +12,8 @@ import Fieldset from "../../../../../../../common/Fieldset";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 
 interface Props {
   open: boolean;
@@ -26,9 +29,15 @@ const defaultValues = {
 function CreateDistrictDialog(props: Props) {
   const { open, onClose } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const districtsById = useAppSelector(getStudyMapDistrictsById);
+
+  const existingDistricts = useMemo(
+    () => Object.values(districtsById).map((district) => district.name),
+    [districtsById]
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -75,8 +84,15 @@ function CreateDistrictDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              required: true,
-              validate: (val) => val.trim().length > 0,
+              required: { value: true, message: t("form.field.required") },
+              validate: (v) => {
+                if (v.trim().length <= 0) {
+                  return false;
+                }
+                if (existingDistricts.includes(v)) {
+                  return `The District "${v}" already exists`;
+                }
+              },
             }}
             sx={{ m: 0 }}
           />
