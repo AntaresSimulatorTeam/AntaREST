@@ -31,7 +31,7 @@ function CreateLayerDialog(props: Props) {
   const layersById = useAppSelector(getStudyMapLayersById);
 
   const existingLayers = useMemo(
-    () => Object.values(layersById).map((layer) => layer.name),
+    () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
     [layersById]
   );
 
@@ -78,7 +78,7 @@ function CreateLayerDialog(props: Props) {
               if (v.trim().length <= 0) {
                 return false;
               }
-              if (existingLayers.includes(v)) {
+              if (existingLayers.includes(v.toLowerCase())) {
                 return `The layer "${v}" already exists`;
               }
             },

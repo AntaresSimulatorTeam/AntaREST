@@ -44,7 +44,7 @@ function UpdateLayerDialog(props: Props) {
     }));
 
   const existingLayers = useMemo(
-    () => Object.values(layersById).map((layer) => layer.name),
+    () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
     [layersById]
   );
 
@@ -57,9 +57,10 @@ function UpdateLayerDialog(props: Props) {
   ) => {
     const { layerId, name } = data.values;
     if (layerId && name) {
-      dispatch(updateStudyMapLayer({ studyId: study.id, layerId, name }));
+      return dispatch(updateStudyMapLayer({ studyId: study.id, layerId, name }))
+        .unwrap()
+        .then(onClose);
     }
-    onClose();
   };
 
   const handleDelete = async (layerId: string) => {
@@ -108,7 +109,7 @@ function UpdateLayerDialog(props: Props) {
                 if (v.trim().length <= 0) {
                   return false;
                 }
-                if (existingLayers.includes(v)) {
+                if (existingLayers.includes(v.toLowerCase())) {
                   return `The Layer "${v}" already exists`;
                 }
               },
