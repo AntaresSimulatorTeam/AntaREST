@@ -32,9 +32,7 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
         await ws_manager.connect(mock_connection, user)
         assert len(ws_manager.active_connections) == 1
 
-        ws_manager.process_message(
-            subscribe_message.json(), mock_connection, user
-        )
+        ws_manager.process_message(subscribe_message.json(), mock_connection)
         connections = ws_manager.active_connections[0]
         assert len(connections.channel_subscriptions) == 1
         assert connections.channel_subscriptions[0] == "foo"
@@ -50,9 +48,7 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
             [call("msg1"), call("msg2")]
         )
 
-        ws_manager.process_message(
-            unsubscribe_message.json(), mock_connection, user
-        )
+        ws_manager.process_message(unsubscribe_message.json(), mock_connection)
         assert len(connections.channel_subscriptions) == 0
 
         ws_manager.disconnect(mock_connection)

@@ -62,9 +62,7 @@ class ConnectionManager:
         if connection_to_remove is not None:
             self.active_connections.remove(connection_to_remove)
 
-    def process_message(
-        self, message: str, websocket: WebSocket, user: JWTUser
-    ) -> None:
+    def process_message(self, message: str, websocket: WebSocket) -> None:
         connection = self._get_connection(websocket)
         if not connection:
             return
@@ -129,9 +127,7 @@ def configure_websockets(
             while True:
                 message = await websocket.receive_text()
                 try:
-                    manager.process_message(
-                        message, websocket, user or DEFAULT_ADMIN_USER
-                    )
+                    manager.process_message(message, websocket)
                 except Exception as e:
                     logger.error(
                         f"Failed to process websocket message {message}",
