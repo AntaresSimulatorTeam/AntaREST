@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict, Callable, Any, Tuple
+from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -15,37 +15,33 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    CommandApplicationError,
+    NotAManagedStudyException,
+    StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
-    UnsupportedOperationOnArchivedStudy,
-    NotAManagedStudyException,
-    CommandApplicationError,
-    StudyDeletionNotAllowed,
     TaskAlreadyRunning,
+    UnsupportedOperationOnArchivedStudy,
 )
-from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import (
     JSON,
+    SUB_JSON,
+    PermissionInfo,
     PublicMode,
     StudyPermissionType,
-    SUB_JSON,
 )
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import (
-    TaskResult,
-    TaskType,
     TaskListFilter,
+    TaskResult,
     TaskStatus,
+    TaskType,
 )
 from antarest.core.tasks.service import (
     ITaskService,
@@ -60,11 +56,14 @@ from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
 from antarest.matrixstore.utils import parse_tsv_matrix
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsManager,
+)
 from antarest.study.business.area_management import (
+    AreaCreationDTO,
+    AreaInfoDTO,
     AreaManager,
     AreaType,
-    AreaInfoDTO,
-    AreaCreationDTO,
     AreaUI,
 )
 from antarest.study.business.binding_constraint_management import (
@@ -73,18 +72,11 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkManager, LinkInfoDTO
-from antarest.study.business.hydro_management import (
-    HydroManager,
-)
+from antarest.study.business.hydro_management import HydroManager
+from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.business.matrix_management import MatrixManager
-from antarest.study.business.playlist_management import (
-    PlaylistManager,
-)
 from antarest.study.business.optimization_management import OptimizationManager
-from antarest.study.business.advanced_parameters_management import (
-    AdvancedParamsManager,
-)
+from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import (
     ScenarioBuilderManager,
 )
@@ -97,30 +89,30 @@ from antarest.study.business.timeseries_config_management import (
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
+    XpansionCandidateDTO,
     XpansionManager,
     XpansionSettingsDTO,
-    XpansionCandidateDTO,
 )
 from antarest.study.model import (
-    Study,
-    StudyContentStatus,
-    StudyFolder,
     DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyMetadataPatchDTO,
-    StudyMetadataDTO,
-    StudyDownloadDTO,
-    StudySimResultDTO,
-    CommentsDto,
-    STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
-    PatchStudy,
-    MatrixIndex,
-    PatchCluster,
-    PatchArea,
+    STUDY_REFERENCE_TEMPLATES,
+    CommentsDto,
     ExportFormat,
+    MatrixIndex,
+    PatchArea,
+    PatchCluster,
+    PatchStudy,
+    RawStudy,
+    Study,
     StudyAdditionalData,
+    StudyContentStatus,
+    StudyDownloadDTO,
     StudyDownloadLevelDTO,
+    StudyFolder,
+    StudyMetadataDTO,
+    StudyMetadataPatchDTO,
+    StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -142,9 +134,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import (
     StudyDownloader,
@@ -152,12 +142,11 @@ from antarest.study.storage.study_download_utils import (
 )
 from antarest.study.storage.study_version_upgrader import upgrade_study
 from antarest.study.storage.utils import (
+    assert_permission,
     get_default_workspace_path,
+    get_start_date,
     is_managed,
     remove_from_cache,
-    assert_permission,
-    create_permission_from_study,
-    get_start_date,
     study_matcher,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -595,7 +584,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_metadata
@@ -667,7 +656,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_CREATED,
                 payload=raw.to_json_summary(),
-                permissions=create_permission_from_study(raw),
+                permissions=PermissionInfo.from_study(raw),
             )
         )
 
@@ -783,7 +772,7 @@ class StudyService:
                         Event(
                             type=EventType.STUDY_DELETED,
                             payload=study.to_json_summary(),
-                            permissions=create_permission_from_study(study),
+                            permissions=PermissionInfo.from_study(study),
                         )
                     )
                 elif study.missing < clean_up_missing_studies_threshold:
@@ -851,7 +840,7 @@ class StudyService:
                         Event(
                             type=EventType.STUDY_CREATED,
                             payload=study.to_json_summary(),
-                            permissions=create_permission_from_study(study),
+                            permissions=PermissionInfo.from_study(study),
                         )
                     )
                 except Exception as e:
@@ -904,7 +893,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_CREATED,
                     payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
+                    permissions=PermissionInfo.from_study(study),
                 )
             )
 
@@ -948,7 +937,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1139,7 +1128,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DELETED,
                 payload=study_info,
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1182,7 +1171,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1413,7 +1402,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_CREATED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1587,7 +1576,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1628,7 +1617,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1664,7 +1653,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1707,7 +1696,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1743,7 +1732,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1777,7 +1766,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1830,7 +1819,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_area
@@ -1849,7 +1838,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_link
@@ -1871,7 +1860,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return updated_area
@@ -1914,7 +1903,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1933,7 +1922,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1971,7 +1960,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_EDITED,
                     payload=study_to_archive.to_json_summary(),
-                    permissions=create_permission_from_study(study_to_archive),
+                    permissions=PermissionInfo.from_study(study_to_archive),
                 )
             )
             return TaskResult(success=True, message="ok")
@@ -2022,7 +2011,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_EDITED,
                     payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
+                    permissions=PermissionInfo.from_study(study),
                 )
             )
             remove_from_cache(cache=self.cache_service, root_id=uuid)
@@ -2477,7 +2466,7 @@ class StudyService:
                     Event(
                         type=EventType.STUDY_EDITED,
                         payload=study_to_upgrade.to_json_summary(),
-                        permissions=create_permission_from_study(
+                        permissions=PermissionInfo.from_study(
                             study_to_upgrade
                         ),
                     )

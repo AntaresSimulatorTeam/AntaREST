@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
-from typing import List, Optional, cast, Dict
+from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
@@ -16,29 +16,24 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
-    IEventBus,
     Event,
-    EventType,
     EventChannelDirectory,
+    EventType,
+    IEventBus,
 )
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.core.model import (
-    StudyPermissionType,
-)
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import (
-    concat_files,
-    zip_dir,
     StopWatch,
+    concat_files,
+    concat_files_to_str,
     is_zip,
     read_in_zip,
-    concat_files_to_str,
+    zip_dir,
 )
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
@@ -47,19 +42,18 @@ from antarest.launcher.extensions.adequacy_patch.extension import (
 )
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
-    JobResult,
-    JobStatus,
     JobLog,
     JobLogType,
+    JobResult,
+    JobStatus,
     LauncherParametersDTO,
-    XpansionParametersDTO,
     LogType,
+    XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     assert_permission,
-    create_permission_from_study,
     extract_output_name,
     find_single_output_path,
 )
@@ -281,7 +275,7 @@ class LauncherService:
             Event(
                 type=EventType.STUDY_JOB_STARTED,
                 payload=job_status.to_dto().dict(),
-                permissions=create_permission_from_study(study_info),
+                permissions=PermissionInfo.from_study(study_info),
             )
         )
         return job_uuid
