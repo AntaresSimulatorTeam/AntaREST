@@ -9,7 +9,7 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentLayer,
-  getStudyMapLayers,
+  getStudyMapLayersById,
 } from "../../../../../../redux/selectors";
 
 interface Props {
@@ -21,7 +21,7 @@ function MapHeader(props: Props) {
   const { nodes, links } = props;
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
-  const layers = useAppSelector(getStudyMapLayers);
+  const layers = useAppSelector(getStudyMapLayersById);
   const currentLayerId = useAppSelector(getCurrentLayer);
 
   ////////////////////////////////////////////////////////////////

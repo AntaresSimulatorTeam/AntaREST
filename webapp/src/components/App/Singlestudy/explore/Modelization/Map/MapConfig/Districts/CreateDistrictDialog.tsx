@@ -13,7 +13,7 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapDistricts } from "../../../../../../../../redux/selectors";
+import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 
 interface Props {
   open: boolean;
@@ -32,11 +32,11 @@ function CreateDistrictDialog(props: Props) {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const districts = useAppSelector(getStudyMapDistricts);
+  const districtsById = useAppSelector(getStudyMapDistrictsById);
 
   const existingDistricts = useMemo(
-    () => Object.values(districts).map((district) => district.name),
-    [districts]
+    () => Object.values(districtsById).map((district) => district.name),
+    [districtsById]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -85,12 +85,12 @@ function CreateDistrictDialog(props: Props) {
             fullWidth
             rules={{
               required: { value: true, message: t("form.field.required") },
-              validate: (district) => {
-                if (district.trim().length <= 0) {
+              validate: (v) => {
+                if (v.trim().length <= 0) {
                   return false;
                 }
-                if (existingDistricts.includes(district)) {
-                  return `The District ${district} already exists`;
+                if (existingDistricts.includes(v)) {
+                  return `The District "${v}" already exists`;
                 }
               },
             }}

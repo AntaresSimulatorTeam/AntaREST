@@ -11,7 +11,7 @@ import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMa
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayers } from "../../../../../../../../redux/selectors";
+import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 
 interface Props {
   open: boolean;
@@ -28,11 +28,11 @@ function CreateLayerDialog(props: Props) {
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const layers = useAppSelector(getStudyMapLayers);
+  const layersById = useAppSelector(getStudyMapLayersById);
 
   const existingLayers = useMemo(
-    () => Object.values(layers).map((layer) => layer.name),
-    [layers]
+    () => Object.values(layersById).map((layer) => layer.name),
+    [layersById]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -74,12 +74,12 @@ function CreateLayerDialog(props: Props) {
           fullWidth
           rules={{
             required: { value: true, message: t("form.field.required") },
-            validate: (layer) => {
-              if (layer.trim().length <= 0) {
+            validate: (v) => {
+              if (v.trim().length <= 0) {
                 return false;
               }
-              if (existingLayers.includes(layer)) {
-                return `The layer ${layer} already exists`;
+              if (existingLayers.includes(v)) {
+                return `The layer "${v}" already exists`;
               }
             },
           }}
