@@ -48,7 +48,7 @@ class EventChannelDirectory:
 class Event(BaseModel):
     type: EventType
     payload: Any
-    permissions: PermissionInfo = PermissionInfo()
+    permissions: PermissionInfo
     channel: str = ""
 
 

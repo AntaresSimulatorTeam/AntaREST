@@ -1,38 +1,36 @@
-import asyncio
 import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, Future
-from enum import Enum
+from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Callable, Optional, List, Dict, Awaitable, Union, cast
+from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import (
-    IEventBus,
     Event,
-    EventType,
     EventChannelDirectory,
+    EventType,
+    IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import PermissionInfo
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import (
-    RequestParameters,
     MustBeAuthenticatedError,
+    RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.core.tasks.model import (
-    TaskDTO,
-    TaskListFilter,
-    TaskJob,
-    TaskStatus,
-    TaskJobLog,
-    TaskResult,
     CustomTaskEventMessages,
+    TaskDTO,
     TaskEventPayload,
+    TaskJob,
+    TaskJobLog,
+    TaskListFilter,
+    TaskResult,
+    TaskStatus,
     TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
@@ -152,6 +150,7 @@ class TaskJobService(ITaskService):
                         task_type=task_type,
                         task_args=task_args,
                     ),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                 ),
                 task_type,
             )
@@ -279,7 +278,11 @@ class TaskJobService(ITaskService):
             self.repo.save(task)
         elif dispatch:
             self.event_bus.push(
-                Event(type=EventType.TASK_CANCEL_REQUEST, payload=task_id)
+                Event(
+                    type=EventType.TASK_CANCEL_REQUEST,
+                    payload=task_id,
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                )
             )
 
     def status_task(
@@ -358,6 +361,7 @@ class TaskJobService(ITaskService):
                     if custom_event_messages is not None
                     else f"Task {task_id} is running",
                 ).dict(),
+                permissions=PermissionInfo(public_mode=PublicMode.READ),
                 channel=EventChannelDirectory.TASK + task_id,
             )
         )
@@ -393,6 +397,7 @@ class TaskJobService(ITaskService):
                         if custom_event_messages is not None
                         else f'Task {task_id} {"completed" if result.success else "failed"}',
                     ).dict(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
@@ -411,6 +416,7 @@ class TaskJobService(ITaskService):
                         if custom_event_messages is not None
                         else f"Task {task_id} failed",
                     ).dict(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )

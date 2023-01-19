@@ -1,23 +1,24 @@
 import datetime
 from pathlib import Path
 from typing import Callable, List
-from unittest.mock import Mock, ANY, call
+from unittest.mock import ANY, Mock, call
 
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config, TaskConfig, RemoteWorkerConfig
-from antarest.core.interfaces.eventbus import EventType, Event, IEventBus
+from antarest.core.config import Config, RemoteWorkerConfig, TaskConfig
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
-    TaskJob,
-    TaskStatus,
-    TaskListFilter,
-    TaskJobLog,
-    TaskResult,
     TaskDTO,
+    TaskJob,
+    TaskJobLog,
+    TaskListFilter,
+    TaskResult,
+    TaskStatus,
     TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
@@ -468,7 +469,11 @@ def test_cancel():
         "b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
     )
     service.event_bus.push.assert_called_with(
-        Event(type=EventType.TASK_CANCEL_REQUEST, payload="b")
+        Event(
+            type=EventType.TASK_CANCEL_REQUEST,
+            payload="b",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        )
     )
 
     creation_date = datetime.datetime.utcnow()

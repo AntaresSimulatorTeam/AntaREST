@@ -22,7 +22,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
@@ -194,6 +194,9 @@ class LauncherService:
                         if final_status
                         else EventType.STUDY_JOB_STATUS_UPDATE,
                         payload=job_result.to_dto().dict(),
+                        permissions=PermissionInfo(
+                            public_mode=PublicMode.READ
+                        ),
                         channel=EventChannelDirectory.JOB_STATUS
                         + job_result.id,
                     )
@@ -308,6 +311,7 @@ class LauncherService:
             Event(
                 type=EventType.STUDY_JOB_CANCELLED,
                 payload=job_status.to_dto().dict(),
+                permissions=PermissionInfo.from_study(study),
                 channel=EventChannelDirectory.JOB_STATUS + job_result.id,
             )
         )
