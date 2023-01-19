@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { Delete, Edit } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
@@ -33,15 +33,20 @@ function UpdateLayerDialog(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const layers = useAppSelector(getStudyMapLayersById);
+  const layersById = useAppSelector(getStudyMapLayersById);
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
 
-  const layersOptions = Object.values(layers)
+  const layersOptions = Object.values(layersById)
     .filter((layer) => layer.id !== "0")
     .map(({ name, id }) => ({
       label: name,
       value: id,
     }));
+
+  const existingLayers = useMemo(
+    () => Object.values(layersById).map((layer) => layer.name),
+    [layersById]
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -89,7 +94,7 @@ function UpdateLayerDialog(props: Props) {
             options={layersOptions}
             control={control}
             onChange={(e) =>
-              setValue("name", layers[String(e.target.value)].name)
+              setValue("name", layersById[String(e.target.value)].name)
             }
           />
           <StringFE
@@ -98,8 +103,15 @@ function UpdateLayerDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              required: true,
-              validate: (val) => val.trim().length > 0,
+              required: { value: true, message: t("form.field.required") },
+              validate: (v) => {
+                if (v.trim().length <= 0) {
+                  return false;
+                }
+                if (existingLayers.includes(v)) {
+                  return `The Layer "${v}" already exists`;
+                }
+              },
             }}
             disabled={getValues("layerId") === ""}
             sx={{ mx: 0 }}
