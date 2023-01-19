@@ -2464,7 +2464,11 @@ class StudyService:
                 ).get_raw(study_to_upgrade)
                 file_study.tree.denormalize()
             try:
-                if not is_variant:
+                if is_variant:
+                    self.storage_service.variant_study_service.clear_snapshot(
+                        study_to_upgrade
+                    )
+                else:
                     upgrade_study(study_to_upgrade.path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = str(target_version)
