@@ -1,37 +1,35 @@
+import contextlib
 import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import ANY
 
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
 from antarest.study.business.table_mode_management import (
-    TableTemplateType,
     FIELDS_INFO_BY_TYPE,
     AdequacyPatchMode,
-    TransmissionCapacity,
     AssetType,
-    TimeSeriesGenerationOption,
     LawOption,
+    TableTemplateType,
+    TimeSeriesGenerationOption,
+    TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 
 def wait_for(predicate: Callable[[], bool], timeout=10):
     end = time.time() + timeout
     while time.time() < end:
-        try:
+        with contextlib.suppress(Exception):
             if predicate():
                 return
-        except Exception as e:
-            pass
         time.sleep(1)
     raise TimeoutError()
 
@@ -215,6 +213,38 @@ def test_main(app: FastAPI):
     assert res.status_code == 200
     assert res.json() == {"1": 8.0, "2": 1.0}
 
+    # scenario builder
+    res = client.put(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json={
+            "ruleset test": {
+                "l": {"area1": {"0": 1}},
+                "ntc": {"area1 / area2": {"1": 23}},
+                "t": {"area1": {"thermal": {"1": 2}}},
+            },
+            "Default Ruleset": "",
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {
+        "ruleset test": {
+            "l": {"area1": {"0": 1}},
+            "ntc": {"area1 / area2": {"1": 23}},
+            "t": {"area1": {"thermal": {"1": 2}}},
+        },
+    }
+
     # config / thematic trimming
     res = client.get(
         f"/v1/studies/{study_id}/config/thematictrimming/form",
@@ -282,6 +312,8 @@ def test_main(app: FastAPI):
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert created.status_code == 201
+
     res = client.get(
         "/v1/studies",
         headers={
@@ -297,13 +329,15 @@ def test_main(app: FastAPI):
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert copied.status_code == 201
 
-    client.put(
+    updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    assert updated.status_code == 200
 
     res = client.get(
         "/v1/studies",
@@ -379,7 +413,7 @@ def test_main(app: FastAPI):
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"type": 20, "group_id": group_id, "identity_id": 2},
+        json={"type": 30, "group_id": group_id, "identity_id": 2},
     )
     # reset login to update credentials
     res = client.post(
@@ -475,7 +509,7 @@ def test_matrix(app: FastAPI):
     matrix = [[1, 2], [3, 4]]
 
     res = client.post(
-        f"/v1/matrix",
+        "/v1/matrix",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -507,7 +541,7 @@ def test_matrix(app: FastAPI):
     assert res.status_code == 200
 
     res = client.post(
-        f"/v1/matrixdataset",
+        "/v1/matrixdataset",
         json={
             "metadata": {
                 "name": "mydataset",
@@ -523,7 +557,7 @@ def test_matrix(app: FastAPI):
     assert res.status_code == 200
 
     res = client.get(
-        f"/v1/matrixdataset/_search?name=myda",
+        "/v1/matrixdataset/_search?name=myda",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -749,6 +783,8 @@ def test_area_management(app: FastAPI):
         }
     ]
 
+    # -- `layers` integration tests
+
     res = client.get(
         f"/v1/studies/{study_id}/layers",
         headers={
@@ -808,6 +844,78 @@ def test_area_management(app: FastAPI):
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
+
+    # -- `district` integration tests
+
+    res = client.post(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "My District",
+            "areas": [],
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == {
+        "id": "district 1",
+        "name": "District 1",
+        "output": True,
+        "comments": "My District",
+        "areas": [],
+    }
+
+    res = client.put(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}/districts",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    actual = res.json()
+    actual[0]["areas"].sort()
+    actual[1]["areas"].sort()
+    assert actual == [
+        {
+            "id": "all areas",
+            "name": "All areas",
+            "output": False,
+            "comments": "Spatial aggregates on all areas",
+            "areas": ["area 1", "area 2"],
+        },
+        {
+            "id": "district 1",
+            "name": "District 1",
+            "output": True,
+            "comments": "Your District",
+            "areas": [],
+        },
+    ]
+
+    res = client.delete(
+        f"/v1/studies/{study_id}/districts/district%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
 
     res_optimization_config = client.get(
         f"/v1/studies/{study_id}/config/optimization/form",
@@ -1315,9 +1423,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.AREA,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1378,7 +1484,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.AREA,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]]
+                list(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA])
             ),
         },
     )
@@ -1419,9 +1525,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.LINK,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1464,9 +1568,7 @@ def test_area_management(app: FastAPI):
         },
         params={
             "table_type": TableTemplateType.LINK,
-            "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]]
-            ),
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1495,7 +1597,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.CLUSTER,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+                FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]
             ),
         },
     )
@@ -1576,7 +1678,7 @@ def test_area_management(app: FastAPI):
         params={
             "table_type": TableTemplateType.CLUSTER,
             "columns": ",".join(
-                [key for key in FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]]
+                FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]
             ),
         },
     )
@@ -2134,7 +2236,7 @@ def test_maintenance(app: FastAPI):
     # Set message info
     message = "Hey"
     res = client.post(
-        f"/v1/core/maintenance/message",
+        "/v1/core/maintenance/message",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },

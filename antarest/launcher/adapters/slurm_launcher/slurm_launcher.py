@@ -288,15 +288,19 @@ class SlurmLauncher(AbstractLauncher):
                 logger.info(
                     "Unzipping zipped output for xpansion result storage"
                 )
-                unzip(
+                unzipped_output_path = (
                     self.local_workspace
                     / STUDIES_OUTPUT_DIR_NAME
                     / job_id
                     / "output"
-                    / output_path.name[:-4],
+                    / output_path.name[:-4]
+                )
+                unzip(
+                    unzipped_output_path,
                     output_path,
                     remove_source_zip=True,
                 )
+                output_path = unzipped_output_path
 
             if (output_path / "updated_links").exists():
                 logger.warning("Skipping updated links")

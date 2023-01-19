@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Area } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getStudyAreas } from "../../../../../../redux/selectors";
+import { getAreas } from "../../../../../../redux/selectors";
 import ListElement from "../../common/ListElement";
 import { transformNameToId } from "../../../../../../services/utils";
 
@@ -13,7 +13,7 @@ interface PropsType {
 }
 function AreaPropsView(props: PropsType) {
   const { onClick, currentArea, studyId } = props;
-  const areas = useAppSelector((state) => getStudyAreas(state, studyId));
+  const areas = useAppSelector((state) => getAreas(state, studyId));
   const [areaNameFilter, setAreaNameFilter] = useState<string>();
   const [filteredAreas, setFilteredAreas] = useState<Array<Area>>(areas || []);
 

@@ -71,6 +71,7 @@ from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.hydro_management import (
@@ -83,6 +84,9 @@ from antarest.study.business.playlist_management import (
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
+)
+from antarest.study.business.scenario_builder_management import (
+    ScenarioBuilderManager,
 )
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
@@ -208,6 +212,7 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
+        self.district_manager = DistrictManager(self.storage_service)
         self.links = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
@@ -222,6 +227,9 @@ class StudyService:
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
+        self.scenario_builder_manager = ScenarioBuilderManager(
+            self.storage_service
+        )
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(
@@ -2456,7 +2464,11 @@ class StudyService:
                 ).get_raw(study_to_upgrade)
                 file_study.tree.denormalize()
             try:
-                if not is_variant:
+                if is_variant:
+                    self.storage_service.variant_study_service.clear_snapshot(
+                        study_to_upgrade
+                    )
+                else:
                     upgrade_study(study_to_upgrade.path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = str(target_version)

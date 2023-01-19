@@ -69,7 +69,7 @@ export interface FormProps<
   autoSubmit?: boolean | AutoSubmitConfig;
   disableLoader?: boolean;
   sx?: SxProps<Theme>;
-  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
+  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext> | undefined>;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {

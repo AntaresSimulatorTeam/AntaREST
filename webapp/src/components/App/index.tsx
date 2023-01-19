@@ -48,6 +48,8 @@ import {
   HydroRoute,
 } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
+import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
+import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
 
 function App() {
   return (
@@ -68,7 +70,10 @@ function App() {
                         element={<SingleStudy isExplorer />}
                       >
                         <Route path="modelization" element={<Modelization />}>
-                          <Route path="map" element={<Map />} />
+                          <Route path="map" element={<Map />}>
+                            <Route path="layers" element={<Layers />} />
+                            <Route path="districts" element={<Districts />} />
+                          </Route>
                           <Route path="area" element={<Areas />}>
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />

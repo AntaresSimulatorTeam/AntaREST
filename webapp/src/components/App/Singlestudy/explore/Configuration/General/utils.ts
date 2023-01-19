@@ -69,6 +69,12 @@ export interface GeneralFormFields {
   thematicTrimming?: boolean;
 }
 
+export type SetDialogStateType =
+  | "thematicTrimming"
+  | "scenarioPlaylist"
+  | "scenarioBuilder"
+  | "";
+
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////

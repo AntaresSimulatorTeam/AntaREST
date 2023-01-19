@@ -13,7 +13,7 @@ import {
 } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studyDataSynthesis";
+import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import BindingConstView from "./BindingConstView";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getBindingConstraintList } from "../../../../../../services/api/studydata";

@@ -31,7 +31,7 @@ def test_hooks(tmp_path: Path):
         filestudy
     )
 
-    study_tree.get.side_effect = [{}, {"flowbased": {}}, '{"areas": []}']
+    study_tree.get.side_effect = [{}, {"flowbased": {}}, '{"areas": []}', True]
     study_config.areas = {}
     study_config.study_path = study_export_path
 
@@ -46,4 +46,7 @@ def test_hooks(tmp_path: Path):
     assert (study_export_path / "post-processing.R").exists()
     assert (
         study_export_path / "user" / "adequacypatch" / "hourly-areas.yml"
+    ).exists()
+    assert (
+        study_export_path / "user" / "adequacypatch" / "year-by-year-active"
     ).exists()

@@ -57,11 +57,23 @@ class TestCommandFactory:
             ),
             CommandDTO(
                 action=CommandName.CREATE_DISTRICT.value,
-                args={"name": "id", "filter_items": ["a"]},
+                args={
+                    "name": "id",
+                    "filter_items": ["a"],
+                    "output": True,
+                    "comments": "",
+                },
             ),
             CommandDTO(
                 action=CommandName.CREATE_DISTRICT.value,
-                args=[{"name": "id", "base_filter": "add-all"}],
+                args=[
+                    {
+                        "name": "id",
+                        "base_filter": "add-all",
+                        "output": True,
+                        "comments": "",
+                    }
+                ],
             ),
             CommandDTO(
                 action=CommandName.REMOVE_DISTRICT.value,
@@ -286,6 +298,18 @@ class TestCommandFactory:
                     "items": [1, 3],
                     "weights": {1: 5.0},
                     "reverse": False,
+                },
+            ),
+            CommandDTO(
+                action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+                args={
+                    "data": {
+                        "ruleset test": {
+                            "l": {"area1": {"0": 1}},
+                            "ntc": {"area1 / area2": {"1": 23}},
+                            "t": {"area1": {"thermal": {"1": 2}}},
+                        },
+                    }
                 },
             ),
         ],

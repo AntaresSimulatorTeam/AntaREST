@@ -11,7 +11,6 @@ import ListElement from "../../common/ListElement";
 import usePromise from "../../../../../../hooks/usePromise";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import FormTable from "../../../../../common/FormTable";
 import {
   DEFAULT_TABLE_TEMPLATES,
@@ -143,7 +142,6 @@ function TableMode() {
         right={
           <UsePromiseCond
             response={res}
-            ifPending={() => <SimpleLoader />}
             ifResolved={(data) => (
               <FormTable
                 defaultValues={data}

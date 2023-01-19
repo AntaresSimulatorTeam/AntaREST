@@ -17,11 +17,12 @@ import {
   MatrixType,
   StudyMetadata,
 } from "../../../../../../common/types";
-import usePromise, { PromiseStatus } from "../../../../../../hooks/usePromise";
+import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
-  getStudyAreas,
-  getStudyLinks,
+  getAreas,
+  getLinks,
+  getStudyOutput,
 } from "../../../../../../redux/selectors";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/textUtils";
@@ -29,20 +30,23 @@ import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
-import useStudyData from "../../hooks/useStudyData";
 import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
 import { createPath, DataType, OutputItemType, Timestep } from "./utils";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import UsePromiseCond, {
+  mergeResponses,
+} from "../../../../../common/utils/UsePromiseCond";
+import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { outputId } = useParams();
 
-  const { value: output, isLoading: isOutputLoading } = useStudyData({
+  const outputRes = useStudySynthesis({
     studyId: study.id,
-    selector: (state) => state.outputs[outputId as string],
-    // selector: (state) => getStudyOutput(state, outputId),
+    selector: (state, id) => getStudyOutput(state, id, outputId as string),
   });
+
+  const { data: output } = outputRes;
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimeStep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
@@ -54,8 +58,8 @@ function ResultDetails() {
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas
-      ? getStudyAreas(state, study.id)
-      : getStudyLinks(state, study.id)
+      ? getAreas(state, study.id)
+      : getLinks(state, study.id)
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
@@ -67,17 +71,6 @@ function ResultDetails() {
   const selectedItem = filteredItems.find(
     (item) => item.id === selectedItemId
   ) as (Area & { id: string }) | LinkElement | undefined;
-
-  const path =
-    output && selectedItem
-      ? createPath({
-          output: { ...output, id: outputId as string },
-          item: selectedItem,
-          dataType,
-          timestep,
-          year,
-        })
-      : null;
 
   useEffect(
     () => {
@@ -93,9 +86,17 @@ function ResultDetails() {
     [filteredItems]
   );
 
-  const resMatrix = usePromise<MatrixType | null>(
+  const matrixRes = usePromise<MatrixType | null>(
     async () => {
-      if (path) {
+      if (output && selectedItem) {
+        const path = createPath({
+          output: { ...output, id: outputId as string },
+          item: selectedItem,
+          dataType,
+          timestep,
+          year,
+        });
+
         const res = await getStudyData(study.id, path);
         if (typeof res === "string") {
           const fixed = res
@@ -111,7 +112,7 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, path],
+      deps: [study.id, output, selectedItem],
     }
   );
 
@@ -208,23 +209,18 @@ function ResultDetails() {
               ))}
               <Button
                 onClick={() => setShowFilter(true)}
-                disabled={resMatrix.isLoading}
+                disabled={matrixRes.isLoading}
               >
                 {t("global.change")}
               </Button>
             </Box>
             <Box sx={{ flex: 1 }}>
               <UsePromiseCond
-                response={{
-                  ...resMatrix,
-                  status: isOutputLoading
-                    ? PromiseStatus.Pending
-                    : resMatrix.status,
-                }}
+                response={mergeResponses(outputRes, matrixRes)}
                 ifPending={() => (
                   <Skeleton sx={{ height: 1, transform: "none" }} />
                 )}
-                ifResolved={(matrix) =>
+                ifResolved={([, matrix]) =>
                   matrix && (
                     <EditableMatrix
                       matrix={matrix}

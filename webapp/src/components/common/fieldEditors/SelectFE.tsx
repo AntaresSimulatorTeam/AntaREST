@@ -22,13 +22,17 @@ export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
   options: Array<string | OptionObj>;
   helperText?: React.ReactNode;
   emptyValue?: boolean;
+  startCaseLabel?: boolean;
 }
 
 function formatOptions(
-  options: SelectFEProps["options"]
+  options: SelectFEProps["options"],
+  startCaseLabel: boolean
 ): Array<OptionObj<{ id: string }>> {
   return options.map((opt) => ({
-    ...(RA.isPlainObj(opt) ? opt : { label: startCase(opt), value: opt }),
+    ...(RA.isPlainObj(opt)
+      ? opt
+      : { label: startCaseLabel ? startCase(opt) : opt, value: opt }),
     id: uuidv4(),
   }));
 }
@@ -46,13 +50,14 @@ function SelectFE(props: SelectFEProps) {
     size,
     sx,
     fullWidth,
+    startCaseLabel = true,
     ...selectProps
   } = props;
 
   const labelId = useRef(uuidv4()).current;
 
   const optionsFormatted = useMemo(
-    () => formatOptions(options),
+    () => formatOptions(options, startCaseLabel),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(options)]
   );

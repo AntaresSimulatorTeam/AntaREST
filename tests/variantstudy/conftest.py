@@ -34,6 +34,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
 def matrix_service() -> MatrixService:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker,SpellCheckingInspection
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -63,7 +64,7 @@ def command_context(matrix_service: MatrixService) -> CommandContext:
 
 
 @pytest.fixture
-def command_factory(matrix_service: MatrixService) -> MatrixService:
+def command_factory(matrix_service: MatrixService) -> CommandFactory:
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service

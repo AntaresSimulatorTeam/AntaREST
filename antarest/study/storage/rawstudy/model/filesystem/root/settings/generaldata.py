@@ -123,7 +123,7 @@ class GeneralData(IniFileNode):
             types["general"]["custom-scenario"] = bool
             del types["general"]["custom-ts-numbers"]
         if config.version >= 810:
-            types["other preferences"]["renewables-generation-modelling"] = str
+            types["other preferences"]["renewable-generation-modelling"] = str
         if config.version >= 830:
             types["adequacy patch"] = {
                 "include-adq-patch": bool,

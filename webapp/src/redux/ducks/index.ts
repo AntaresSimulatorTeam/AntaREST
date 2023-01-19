@@ -5,7 +5,8 @@ import users from "./users";
 import groups from "./groups";
 import auth, { logout } from "./auth";
 import ui from "./ui";
-import studyDataSynthesis from "./studyDataSynthesis";
+import studySyntheses from "./studySyntheses";
+import studyMaps from "./studyMaps";
 
 const appReducer = combineReducers({
   studies,
@@ -13,7 +14,8 @@ const appReducer = combineReducers({
   groups,
   auth,
   ui,
-  studyDataSynthesis,
+  studySyntheses,
+  studyMaps,
 });
 
 type AppReducerType = typeof appReducer;

@@ -1,6 +1,7 @@
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import StringFE, { StringFEProps } from "./StringFE";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
@@ -10,8 +11,14 @@ export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
 }
 
 function SearchFE(props: SearchFE) {
-  const { onSearchValueChange, onChange, InputProps, useLabel, ...rest } =
-    props;
+  const {
+    onSearchValueChange,
+    onChange,
+    InputProps,
+    useLabel,
+    className,
+    ...rest
+  } = props;
   const { t } = useTranslation();
   const placeholderOrLabel = {
     [useLabel ? "label" : "placeholder"]: t("global.search"),
@@ -21,6 +28,7 @@ function SearchFE(props: SearchFE) {
     <StringFE
       {...rest}
       {...placeholderOrLabel}
+      className={clsx("SearchFE", className)}
       InputProps={{
         ...InputProps,
         startAdornment: (

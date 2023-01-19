@@ -59,8 +59,12 @@ function LinkForm(props: Props) {
   const columnsNames = [
     t("study.modelization.links.matrix.columns.transCapaDirect"),
     t("study.modelization.links.matrix.columns.transCapaIndirect"),
-    t("study.modelization.links.matrix.columns.hurdleCostsDirect"),
-    t("study.modelization.links.matrix.columns.hurdleCostsIndirect"),
+    `${t(
+      "study.modelization.links.matrix.columns.hurdleCostsDirect"
+    )} (${area1}->${area2})`,
+    `${t(
+      "study.modelization.links.matrix.columns.hurdleCostsIndirect"
+    )} (${area2}->${area1})`,
     t("study.modelization.links.matrix.columns.inpedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
     t("study.modelization.links.matrix.columns.pShiftMin"),

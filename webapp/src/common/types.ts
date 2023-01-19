@@ -96,6 +96,12 @@ export interface StudyOutput {
   archived: boolean;
 }
 
+export interface StudyLayer {
+  areas: string[];
+  id: string;
+  name: string;
+}
+
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
   children: Array<VariantTreeDTO>;
@@ -174,8 +180,8 @@ export interface LaunchJobsProgress {
 
 export enum RoleType {
   ADMIN = 40,
-  RUNNER = 30,
-  WRITER = 20,
+  WRITER = 30,
+  RUNNER = 20,
   READER = 10,
 }
 
@@ -569,17 +575,6 @@ export interface MatrixAggregationResult {
   warnings: Array<string>;
 }
 
-export interface NodeProperties {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  color: string;
-  rgbColor: Array<number>;
-  size: { width: number; height: number };
-  highlighted?: boolean;
-}
-
 export interface LinkSynthesis {
   [index: string]: object;
 }
@@ -602,13 +597,14 @@ export interface AreasNameSynthesis {
 export interface LinkProperties {
   source: string;
   target: string;
+  temp?: boolean;
 }
 
 export interface AreaLayerColor {
-  [key: number]: string;
+  [key: string]: string;
 }
-export interface AreaLayerXandY {
-  [key: number]: string;
+export interface AreaLayerPosition {
+  [key: string]: number;
 }
 
 export interface AreaUI {
@@ -626,13 +622,13 @@ export interface AreaUI {
 
 export interface SingleAreaConfig {
   layerColor: AreaLayerColor;
-  layerX: AreaLayerXandY;
-  layerY: AreaLayerXandY;
+  layerX: AreaLayerPosition;
+  layerY: AreaLayerPosition;
   ui: AreaUI;
 }
 
 export interface AreasConfig {
-  [index: string]: SingleAreaConfig;
+  [areaId: string]: SingleAreaConfig;
 }
 
 export interface UpdateAreaUi {
@@ -640,6 +636,9 @@ export interface UpdateAreaUi {
   y: number;
   // eslint-disable-next-line camelcase
   color_rgb: Array<number>;
+  layerX: AreaLayerPosition;
+  layerY: AreaLayerPosition;
+  layerColor: AreaLayerColor;
 }
 
 export interface LinkUIInfoDTO {
@@ -668,10 +667,6 @@ export interface AreaInfoDTO extends AreaCreationDTO {
   id: string;
   thermals: Array<object>;
 }
-
-export const isNode = (el: NodeProperties | LinkProperties): boolean =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (el as any).id !== undefined;
 
 export interface TaskView {
   id: string;

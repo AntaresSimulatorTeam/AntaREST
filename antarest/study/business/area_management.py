@@ -5,7 +5,7 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import LayerNotFound
+from antarest.core.exceptions import LayerNotFound, LayerNotAllowedToBeDeleted
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
     RawStudy,
@@ -133,6 +133,8 @@ class AreaManager:
     def get_all_areas_ui_info(self, study: RawStudy) -> Dict[str, Any]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
+        if len(file_study.config.areas.keys()) == 0:
+            return {}
         areas_ui = file_study.tree.get(
             ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
         )
@@ -154,8 +156,17 @@ class AreaManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        areas_ui = file_study.tree.get(
-            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+        areas_ui = (
+            file_study.tree.get(
+                [
+                    "input",
+                    "areas",
+                    ",".join(file_study.config.areas.keys()),
+                    "ui",
+                ]
+            )
+            if len(file_study.config.areas)
+            else {}
         )
         if len(layers) == 0:
             layers["0"] = "All"
@@ -168,6 +179,8 @@ class AreaManager:
                     for area in areas_ui
                     if str(layer)
                     in AreaManager._get_area_layers(areas_ui, area)
+                    # the layer 0 always display all areas
+                    or str(layer) == "0"
                 ],
             )
             for layer in layers
@@ -294,7 +307,11 @@ class AreaManager:
 
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        if layer_id == "0":
+            raise LayerNotAllowedToBeDeleted
         layers = file_study.tree.get(["layers", "layers", "layers"])
+        # remove all areas from the layer since this info is stored in area data...
+        self.update_layer_areas(study, layer_id, [])
         command = UpdateConfig(
             target=f"layers/layers/layers",
             data={

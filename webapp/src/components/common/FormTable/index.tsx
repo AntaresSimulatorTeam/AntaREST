@@ -26,10 +26,11 @@ export interface FormTableProps<
   onSubmitError?: FormProps<TFieldValues>["onSubmitError"];
   formApiRef?: FormProps<TFieldValues>["apiRef"];
   sx?: SxProps<Theme>;
-  tableProps?: Omit<TableProps, "data" | "columns"> & {
+  tableProps?: Omit<TableProps, "data" | "columns" | "colHeaders"> & {
     columns?:
       | Array<string | ColumnSettings>
       | ((index: number) => ColumnSettings);
+    colHeaders?: (index: number, colName: string) => string;
   };
 }
 
@@ -45,7 +46,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
     tableProps = {},
   } = props;
 
-  const { columns, ...restTableProps } = tableProps;
+  const { columns, type, colHeaders, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
   const defaultData = useMemoLocked(() =>
@@ -61,18 +62,18 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
       const cols = columns || Object.keys(R.omit(["id"], firstRow));
 
       return cols.map(
-        (col): ColumnSettings =>
+        (col, index): ColumnSettings =>
           RA.isString(col)
             ? {
                 data: col,
-                title: startCase(col),
-                type: getCellType(firstRow?.[col]),
+                title: colHeaders ? colHeaders(index, col) : startCase(col),
+                type: type || getCellType(firstRow?.[col]),
               }
             : col
       );
     }
     return columns;
-  }, [columns, defaultData]);
+  }, [columns, defaultData, colHeaders, type]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

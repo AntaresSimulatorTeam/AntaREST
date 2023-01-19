@@ -61,12 +61,12 @@ def create_study_routes(
     )
     def get_studies(
         managed: bool = False,
-        name: Optional[str] = None,
-        folder: Optional[str] = None,
-        workspace: Optional[str] = None,
+        name: str = "",
+        folder: str = "",
+        workspace: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        logger.info("Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = study_service.get_studies_information(
             managed, name, workspace, folder, params
@@ -122,14 +122,14 @@ def create_study_routes(
     )
     def import_study(
         study: bytes = File(...),
-        groups: Optional[str] = None,
+        groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Importing new study", extra={"user": current_user.id})
+        logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
-        group_ids = groups.split(",") if groups is not None else []
+        group_ids = groups.split(",") if groups else []
 
         uuid = study_service.import_study(zip_binary, group_ids, params)
 
@@ -162,7 +162,7 @@ def create_study_routes(
         uuid: str,
         dest: str,
         with_outputs: bool = False,
-        groups: Optional[str] = None,
+        groups: str = "",
         use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -171,7 +171,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         source_uuid = uuid
-        group_ids = groups.split(",") if groups is not None else []
+        group_ids = groups.split(",") if groups else []
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 
@@ -214,15 +214,15 @@ def create_study_routes(
     )
     def create_study(
         name: str,
-        version: Optional[str] = None,
-        groups: Optional[str] = None,
+        version: str = "",
+        groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Creating new study '{name}'", extra={"user": current_user.id}
         )
         name_sanitized = escape(name)
-        group_ids = groups.split(",") if groups is not None else []
+        group_ids = groups.split(",") if groups else []
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)
@@ -258,7 +258,7 @@ def create_study_routes(
     )
     def get_study_matrix_index(
         uuid: str,
-        path: Optional[str] = None,
+        path: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(uuid)
@@ -425,7 +425,7 @@ def create_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        logger.info(f"Fetching version list")
+        logger.info("Fetching version list")
         return StudyService.get_studies_versions(params=params)
 
     @bp.get(
@@ -700,7 +700,7 @@ def create_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Invalidating the study listing cache",
+            "Invalidating the study listing cache",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)

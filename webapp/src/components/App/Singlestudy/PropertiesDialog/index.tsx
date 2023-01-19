@@ -21,6 +21,8 @@ import SelectFE from "../../../common/fieldEditors/SelectFE";
 import CheckboxesTagsFE from "../../../common/fieldEditors/CheckboxesTagsFE";
 import Fieldset from "../../../common/Fieldset";
 import { SubmitHandlerPlus } from "../../../common/Form/types";
+import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
+import { updateStudy } from "../../../../redux/ducks/studies";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -28,7 +30,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   study: StudyMetadata;
-  updateStudyData: VoidFunction;
+  updateStudyData?: VoidFunction;
 }
 
 function PropertiesDialog(props: Props) {
@@ -36,6 +38,7 @@ function PropertiesDialog(props: Props) {
   const { open, onClose, study, updateStudyData } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const dispatch = useAppDispatch();
 
   const { data: groupList = [] } = usePromiseWithSnackbarError(getGroups, {
     errorMessage: t("settings.error.groupsError"),
@@ -62,6 +65,8 @@ function PropertiesDialog(props: Props) {
     const { id: studyId } = study;
 
     try {
+      // TODO create redux thunk
+
       // Update metadata
       if (name || tags) {
         await updateStudyMetadata(studyId, {
@@ -89,7 +94,20 @@ function PropertiesDialog(props: Props) {
         );
       }
 
-      updateStudyData();
+      if (updateStudyData) {
+        updateStudyData();
+      } else {
+        dispatch(
+          updateStudy({
+            id: study.id,
+            changes: {
+              name: data.values.name,
+              tags: data.values.tags,
+            },
+          })
+        );
+      }
+
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });

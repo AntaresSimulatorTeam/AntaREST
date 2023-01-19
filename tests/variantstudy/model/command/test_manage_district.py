@@ -89,7 +89,7 @@ def test_manage_district(
     assert set_config["comments"] == "First district"
 
     create_district2_command: ICommand = CreateDistrict(
-        name="One substracted zone",
+        name="One subtracted zone",
         metadata={},
         base_filter=DistrictBaseFilter.add_all,
         filter_items=[area1_id],
@@ -102,12 +102,12 @@ def test_manage_district(
     sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
         empty_study.config.study_path / "input/areas/sets.ini"
     )
-    set_config = sets_config.get("one substracted zone")
+    set_config = sets_config.get("one subtracted zone")
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
 
     update_district2_command: ICommand = UpdateDistrict(
-        id="one substracted zone",
+        id="one subtracted zone",
         metadata={},
         base_filter=DistrictBaseFilter.remove_all,
         filter_items=[area2_id],
@@ -119,7 +119,7 @@ def test_manage_district(
     sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
         empty_study.config.study_path / "input/areas/sets.ini"
     )
-    set_config = sets_config.get("one substracted zone")
+    set_config = sets_config.get("one subtracted zone")
     assert set_config["+"] == [area2_id]
     assert set_config["apply-filter"] == "remove-all"
 
@@ -199,10 +199,7 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-@patch(
-    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.extract_district",
-)
-def test_revert(mock_extract_district, command_context: CommandContext):
+def test_revert(command_context: CommandContext):
     base = CreateDistrict(
         name="foo",
         base_filter=DistrictBaseFilter.add_all,
@@ -229,13 +226,13 @@ def test_create_diff(command_context: CommandContext):
     )
     assert base.create_diff(other_match) == [
         UpdateConfig(
-            target=f"input/areas/sets/foo",
+            target="input/areas/sets/foo",
             data={
                 "caption": "foo",
                 "apply-filter": DistrictBaseFilter.remove_all.value,
                 "+": ["c"],
-                "output": None,
-                "comments": None,
+                "output": True,
+                "comments": "",
             },
             command_context=command_context,
         )

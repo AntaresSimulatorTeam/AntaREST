@@ -116,7 +116,7 @@ def create_xpansion_routes(
     )
     def update_additional_constraints_settings(
         uuid: str,
-        filename: Optional[str] = None,
+        filename: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(

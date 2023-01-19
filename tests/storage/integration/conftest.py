@@ -29,8 +29,8 @@ from antarest.study.service import StudyService
 
 
 @pytest.fixture
-def sta_mini_path(tmp_path: str) -> Path:
-    return Path(tmp_path) / "studies" / "STA-mini"
+def sta_mini_path(tmp_path: Path) -> Path:
+    return tmp_path / "studies" / "STA-mini"
 
 
 @pytest.fixture
@@ -40,22 +40,24 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def storage_service(
-    tmp_path: str, project_path: Path, sta_mini_zip_path: Path
+    tmp_path: Path, project_path: Path, sta_mini_zip_path: Path
 ) -> StudyService:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker,SpellCheckingInspection
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    path_studies = Path(tmp_path) / "studies"
+    path_studies = tmp_path / "studies"
 
     path_resources = project_path / "resources"
 
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
+    # noinspection PyArgumentList
     md = RawStudy(
         id="STA-mini",
         name="STA-mini",
@@ -69,6 +71,7 @@ def storage_service(
         ),
     )
     repo = Mock()
+    # noinspection PyArgumentList
     repo.get.side_effect = lambda name: RawStudy(
         id=name,
         name=name,
@@ -97,9 +100,10 @@ def storage_service(
 
     task_service_mock = Mock(spec=ITaskService)
     user_service = Mock()
+    # noinspection PyArgumentList
     user_service.get_user.return_value = User(id=0, name="test")
 
-    matrix_path = Path(tmp_path) / "matrices"
+    matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
     matrix_service = SimpleMatrixService(matrix_path)
     storage_service = build_study_service(

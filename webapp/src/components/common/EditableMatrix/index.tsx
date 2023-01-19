@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import _ from "lodash";
+import debug from "debug";
 import HotTable from "@handsontable/react";
 import { CellChange } from "handsontable/common";
 import {
@@ -15,6 +16,8 @@ import "./style.css";
 import { computeStats, createDateFromIndex, slice } from "./utils";
 import Handsontable from "../Handsontable";
 
+const logError = debug("antares:editablematrix:error");
+
 interface PropTypes {
   matrix: MatrixType;
   matrixIndex?: MatrixIndex;
@@ -28,6 +31,18 @@ interface PropTypes {
 
 type CellType = Array<number | string | boolean>;
 type ColumnsType = { title: string; readOnly: boolean };
+
+const formatColumnName = (col: string) => {
+  try {
+    const colIndex = parseInt(col, 10);
+    if (!Number.isNaN(colIndex)) {
+      return `TS-${colIndex + 1}`;
+    }
+  } catch (e) {
+    logError(`Unable to parse matrix column index ${col}`, e);
+  }
+  return col;
+};
 
 function EditableMatrix(props: PropTypes) {
   const {
@@ -88,7 +103,7 @@ function EditableMatrix(props: PropTypes) {
     setFormatedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
       ...columns.map((col, index) => ({
-        title: columnsNames?.[index] || String(col),
+        title: columnsNames?.[index] || formatColumnName(col),
         readOnly,
       })),
       ...(computStats === MatrixStats.TOTAL

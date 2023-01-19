@@ -85,7 +85,7 @@ def upgrade_710(study_path: str) -> None:
         study_path,
         general_data_path,
         "general",
-        "geographical-trimming",
+        "geographic-trimming",
         geographical_trimming,
         "filtering",
     )
@@ -136,7 +136,7 @@ def upgrade_800(study_path: str) -> None:
         study_path,
         general_data_path,
         "optimization",
-        "include-infeasible-problem-behavior",
+        "include-unfeasible-problem-behavior",
         "error-verbose",
         None,
     )
@@ -155,7 +155,7 @@ def upgrade_810(study_path: str) -> None:
         study_path,
         general_data_path,
         other_preferencies,
-        "renewables-generation-modelling",
+        "renewable-generation-modelling",
         "aggregated",
         None,
     )

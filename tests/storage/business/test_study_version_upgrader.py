@@ -74,18 +74,18 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     optimization = data["optimization"]
     adequacy_patch = data["adequacy patch"]
     other_preferences = data["other preferences"]
-    assert general["geographical-trimming"] == old_values[0]
+    assert general["geographic-trimming"] == old_values[0]
     assert general["custom-scenario"] == old_values[1]
     assert general["thematic-trimming"] is False
     assert optimization["include-exportstructure"] is False
     assert (
-        optimization["include-infeasible-problem-behavior"] == "error-verbose"
+        optimization["include-unfeasible-problem-behavior"] == "error-verbose"
     )
     assert (
         other_preferences["hydro-heuristic-policy"]
         == "accommodate rule curves"
     )
-    assert other_preferences["renewables-generation-modelling"] == "aggregated"
+    assert other_preferences["renewable-generation-modelling"] == "aggregated"
     assert adequacy_patch["include-adq-patch"] is False
     assert (
         adequacy_patch["set-to-null-ntc-between-physical-out-for-first-step"]
