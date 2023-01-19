@@ -405,6 +405,7 @@ export default function BindingConstForm(props: Props) {
                 study={study}
                 title={t("global.matrix")}
                 url={`input/bindingconstraints/${bindingConst}`}
+                columnsNames={["<", ">", "="]}
                 computStats={MatrixStats.NOCOL}
               />
             </MatrixContainer>
