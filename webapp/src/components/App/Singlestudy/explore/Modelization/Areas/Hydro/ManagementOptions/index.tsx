@@ -2,6 +2,7 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import DocLink from "../../../../../../../common/DocLink";
 import Form from "../../../../../../../common/Form";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { Root } from "../style";
@@ -32,6 +33,7 @@ function ManagementOptions() {
 
   return (
     <Root>
+      <DocLink to="hydro" isAbsolute />
       <Form
         key={studyId + areaId}
         config={{

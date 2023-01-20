@@ -4,6 +4,7 @@ import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import { Root } from "./style";
+import DocLink from "../../../../../common/DocLink";
 
 function MiscGen() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -20,8 +21,13 @@ function MiscGen() {
     "ROW Balance",
   ];
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Root>
+      <DocLink to="misc-gen" isAbsolute />
       <MatrixInput
         study={study}
         url={url}

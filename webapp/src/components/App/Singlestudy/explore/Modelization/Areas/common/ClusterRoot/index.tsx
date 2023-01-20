@@ -9,7 +9,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-
 import * as R from "ramda";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -19,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { FieldValues } from "react-hook-form";
+import { Add } from "@mui/icons-material";
 import {
   Header,
   ListContainer,
@@ -42,6 +42,7 @@ import { CommandEnum } from "../../../../../Commands/Edition/commandTypes";
 import ClusterView from "./ClusterView";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
+import DocLink from "../../../../../../../common/DocLink";
 
 interface ClusterRootProps<T> {
   children: (elm: {
@@ -187,11 +188,13 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
       <Header>
         <Button
           color="primary"
-          variant="text"
+          variant="outlined"
+          startIcon={<Add />}
           onClick={() => setIsAddClusterDialogOpen(true)}
         >
           {t("study.modelization.clusters.addCluster")}
         </Button>
+        <DocLink to="renewable" isAbsolute />
       </Header>
       <ListContainer>
         <UsePromiseCond
