@@ -655,7 +655,7 @@ class SlurmLauncher(AbstractLauncher):
                 Event(
                     type=EventType.STUDY_JOB_CANCEL_REQUEST,
                     payload=job_id,
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 )
             )
             self.callbacks.update_status(

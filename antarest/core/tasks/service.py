@@ -150,7 +150,8 @@ class TaskJobService(ITaskService):
                         task_type=task_type,
                         task_args=task_args,
                     ),
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    # Use `NONE` for internal events
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 ),
                 task_type,
             )
@@ -281,7 +282,8 @@ class TaskJobService(ITaskService):
                 Event(
                     type=EventType.TASK_CANCEL_REQUEST,
                     payload=task_id,
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    # Use `NONE` for internal events
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 )
             )
 

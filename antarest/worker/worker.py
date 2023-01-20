@@ -1,4 +1,3 @@
-import abc
 import logging
 import threading
 import time
@@ -7,12 +6,11 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from threading import Thread
 from typing import Dict, List, Union
 
-from pydantic import BaseModel
-
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +51,8 @@ class AbstractWorker(IService):
             Event(
                 type=EventType.WORKER_TASK_STARTED,
                 payload=task_info,
-                permissions=PermissionInfo(public_mode=PublicMode.READ),
+                # Use `NONE` for internal events
+                permissions=PermissionInfo(public_mode=PublicMode.NONE),
             )
         )
         with self.lock:
@@ -87,8 +86,9 @@ class AbstractWorker(IService):
                                     task_id=task_id,
                                     task_result=future.result(),
                                 ),
+                                # Use `NONE` for internal events
                                 permissions=PermissionInfo(
-                                    public_mode=PublicMode.READ
+                                    public_mode=PublicMode.NONE
                                 ),
                             )
                         )

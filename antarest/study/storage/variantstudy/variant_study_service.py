@@ -950,9 +950,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
                         payload=command_result_obj,
-                        permissions=PermissionInfo(
-                            public_mode=PublicMode.READ
-                        ),
+                        permissions=PermissionInfo.from_study(variant_study),
                         channel=EventChannelDirectory.STUDY_GENERATION
                         + variant_study.id,
                     )

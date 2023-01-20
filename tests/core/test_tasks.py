@@ -472,7 +472,7 @@ def test_cancel():
         Event(
             type=EventType.TASK_CANCEL_REQUEST,
             payload="b",
-            permissions=PermissionInfo(public_mode=PublicMode.READ),
+            permissions=PermissionInfo(public_mode=PublicMode.NONE),
         )
     )
 
