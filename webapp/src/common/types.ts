@@ -621,9 +621,9 @@ export interface AreaUI {
 }
 
 export interface SingleAreaConfig {
-  layerColor: AreaLayerColor;
-  layerX: AreaLayerPosition;
-  layerY: AreaLayerPosition;
+  layerColor?: AreaLayerColor;
+  layerX?: AreaLayerPosition;
+  layerY?: AreaLayerPosition;
   ui: AreaUI;
 }
 
