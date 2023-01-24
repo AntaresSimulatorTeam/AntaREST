@@ -43,6 +43,7 @@ import ClusterView from "./ClusterView";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
 import DocLink from "../../../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../../../BindingConstraints/BindingConstView/utils";
 
 interface ClusterRootProps<T> {
   children: (elm: {
@@ -194,7 +195,12 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
         >
           {t("study.modelization.clusters.addCluster")}
         </Button>
-        <DocLink to="renewable" isAbsolute />
+        <DocLink
+          to={`${ACTIVE_WINDOWS_DOC_PATH}#${
+            type === "thermals" ? "thermal" : "renewable"
+          }`}
+          isAbsolute
+        />
       </Header>
       <ListContainer>
         <UsePromiseCond

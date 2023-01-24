@@ -5,6 +5,7 @@ import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import { Root } from "./style";
 import DocLink from "../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../BindingConstraints/BindingConstView/utils";
 
 function Load() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -17,7 +18,7 @@ function Load() {
 
   return (
     <Root>
-      <DocLink to="load" isAbsolute />
+      <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#load`} isAbsolute />
       <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
     </Root>
   );

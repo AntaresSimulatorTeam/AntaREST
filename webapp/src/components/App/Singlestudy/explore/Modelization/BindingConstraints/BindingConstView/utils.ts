@@ -109,3 +109,6 @@ export const isTermExist = (
 ): boolean => {
   return list.findIndex((item) => item.id === termId) >= 0;
 };
+
+export const ACTIVE_WINDOWS_DOC_PATH =
+  "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";

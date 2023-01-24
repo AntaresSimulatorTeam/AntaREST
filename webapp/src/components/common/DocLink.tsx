@@ -1,5 +1,5 @@
 import { Help } from "@mui/icons-material";
-import { Tooltip, IconButton, Box, SxProps, Theme } from "@mui/material";
+import { Tooltip, IconButton, SxProps, Theme } from "@mui/material";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
@@ -9,14 +9,9 @@ interface Props {
 }
 
 function DocLink({ to, isAbsolute, sx }: Props) {
-  const DOC_LINK = `https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/#${to}`;
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
   return (
-    <Box
+    <Tooltip
+      title="View documentation"
       sx={mergeSxProp(
         isAbsolute
           ? {
@@ -24,20 +19,19 @@ function DocLink({ to, isAbsolute, sx }: Props) {
               right: "20px",
               top: "5px",
             }
-          : sx
+          : {},
+        sx
       )}
     >
-      <Tooltip title="View documentation">
-        <IconButton
-          href={DOC_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
-          color="default"
-        >
-          <Help />
-        </IconButton>
-      </Tooltip>
-    </Box>
+      <IconButton
+        href={to}
+        target="_blank"
+        rel="noopener noreferrer"
+        color="default"
+      >
+        <Help />
+      </IconButton>
+    </Tooltip>
   );
 }
 

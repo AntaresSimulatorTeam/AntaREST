@@ -7,7 +7,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { BindingConstFields, ConstraintType, dataToId } from "./utils";
+import {
+  ACTIVE_WINDOWS_DOC_PATH,
+  BindingConstFields,
+  ConstraintType,
+  dataToId,
+} from "./utils";
 import {
   AllClustersAndLinks,
   MatrixStats,
@@ -243,7 +248,7 @@ export default function BindingConstForm(props: Props) {
               >
                 {t("global.delete")}
               </Button>
-              <DocLink to="binding-constraints" />
+              <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
             </Box>
           </Box>
         ),

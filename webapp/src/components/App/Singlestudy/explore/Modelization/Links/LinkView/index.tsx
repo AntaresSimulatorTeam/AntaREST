@@ -6,7 +6,6 @@ import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";
 import { getDefaultValues } from "./utils";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import DocLink from "../../../../../../common/DocLink";
 
 interface Props {
   link: LinkElement;
@@ -26,7 +25,6 @@ function LinkView(props: Props) {
 
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
-      <DocLink to="links" isAbsolute />
       <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
         <UsePromiseCond
           response={res}

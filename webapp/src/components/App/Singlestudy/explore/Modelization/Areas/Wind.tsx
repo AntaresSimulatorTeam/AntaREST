@@ -5,6 +5,7 @@ import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import { Root } from "./style";
 import DocLink from "../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../BindingConstraints/BindingConstView/utils";
 
 function Wind() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -17,7 +18,11 @@ function Wind() {
 
   return (
     <Root>
-      <DocLink to="wind" isAbsolute />
+      <DocLink
+        to={`${ACTIVE_WINDOWS_DOC_PATH}#wind`}
+        isAbsolute
+        sx={{ m: 0 }}
+      />
       <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
     </Root>
   );

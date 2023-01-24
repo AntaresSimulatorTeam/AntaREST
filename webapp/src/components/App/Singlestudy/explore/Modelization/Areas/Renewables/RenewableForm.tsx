@@ -9,6 +9,7 @@ import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/Auto
 import { saveField } from "../common/utils";
 import { transformNameToId } from "../../../../../../../services/utils";
 import DocLink from "../../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
 
 interface Props {
   area: string;
@@ -106,7 +107,7 @@ export default function RenewableForm(props: Props) {
           height: "500px",
         }}
       >
-        <DocLink to="renewable" isAbsolute />
+        <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#renewable`} isAbsolute />
         <MatrixInput
           study={study}
           url={`input/renewables/series/${area}/${transformNameToId(
