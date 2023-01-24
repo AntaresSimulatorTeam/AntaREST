@@ -4,6 +4,8 @@ import time
 from threading import Thread
 from typing import Callable, Optional
 
+from fastapi import HTTPException
+
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.cache import ICache
@@ -12,7 +14,6 @@ from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -116,9 +117,9 @@ class MaintenanceService:
         data: bool,
         request_params: RequestParameters,
     ) -> None:
-        maintenance_mode = MaintenanceMode.to_str(data)
+        maintenance_mode = MaintenanceMode.from_bool(data)
         self._set_maintenance_data(
-            data=maintenance_mode,
+            data=maintenance_mode.value,
             cache_id=ConfigDataAppKeys.MAINTENANCE_MODE.value,
             db_call=lambda x: self.repo.save_maintenance_mode(x),
             request_params=request_params,
@@ -137,7 +138,7 @@ class MaintenanceService:
             db_call=lambda: self.repo.get_maintenance_mode(),
             default_value=MaintenanceMode.NORMAL_MODE.value,
         )
-        return data == MaintenanceMode.MAINTENANCE_MODE.value
+        return bool(MaintenanceMode(data))
 
     def set_message_info(
         self,

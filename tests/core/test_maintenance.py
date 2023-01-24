@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import create_engine
+
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.eventbus import Event, EventType
@@ -12,7 +14,6 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from sqlalchemy import create_engine
 
 
 def test_service_without_cache() -> None:
@@ -77,13 +78,14 @@ def test_service_without_cache() -> None:
 
     # Set maintenance mode
     mode = True
-    data = MaintenanceMode.to_str(mode)
+    maintenance_mode = MaintenanceMode.from_bool(mode)
     service.set_maintenance_status(
         data=mode, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
     )
-    repo_mock.save_maintenance_mode.assert_called_with(data)
+    repo_mock.save_maintenance_mode.assert_called_with(maintenance_mode.value)
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": data}
+        ConfigDataAppKeys.MAINTENANCE_MODE.value,
+        {"content": maintenance_mode.value},
     )
     event_bus.push.assert_called_with(
         Event(

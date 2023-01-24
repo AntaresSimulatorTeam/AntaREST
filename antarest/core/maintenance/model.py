@@ -5,8 +5,10 @@ class MaintenanceMode(str, Enum):
     NORMAL_MODE = "NORMAL"
     MAINTENANCE_MODE = "MAINTENANCE"
 
-    @staticmethod
-    def to_str(element: bool) -> str:
-        if element:
-            return MaintenanceMode.MAINTENANCE_MODE.value
-        return MaintenanceMode.NORMAL_MODE.value
+    @classmethod
+    def from_bool(cls, flag: bool) -> "MaintenanceMode":
+        return {False: cls.NORMAL_MODE, True: cls.MAINTENANCE_MODE}[flag]
+
+    def __bool__(self) -> bool:
+        cls = self.__class__
+        return {cls.NORMAL_MODE: False, cls.MAINTENANCE_MODE: True}[self]
