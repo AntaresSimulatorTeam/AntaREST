@@ -1,9 +1,6 @@
 from unittest.mock import Mock
 
 import pytest
-from fastapi import HTTPException
-from sqlalchemy import create_engine
-
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.eventbus import Event, EventType
@@ -15,11 +12,13 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from sqlalchemy import create_engine
 
 
 def test_service_without_cache() -> None:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker,SpellCheckingInspection
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,

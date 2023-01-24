@@ -2,27 +2,17 @@ import logging
 import shutil
 import time
 from threading import Thread
-from typing import Optional, Callable
-
-from fastapi import HTTPException
+from typing import Callable, Optional
 
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    IEventBus,
-    EventType,
-    Event,
-)
-from antarest.core.maintenance.model import (
-    MaintenanceMode,
-)
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +41,8 @@ class MaintenanceService:
                 try:
                     usage = shutil.disk_usage(workspace.path)
                     logger.info(
-                        f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}% ({(usage.free / 1000000000):.3f}GB free)"
+                        f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}%"
+                        f" ({(usage.free / 1000000000):.3f}GB free)"
                     )
                 except Exception as e:
                     logger.error(
@@ -115,7 +106,10 @@ class MaintenanceService:
         except Exception as e:
             cache_save_error = f"Failed to put {cache_id} in cache"
             logger.error(cache_save_error, exc_info=e)
-            raise HTTPException(status_code=500, detail=cache_save_error)
+            raise HTTPException(
+                status_code=500,
+                detail=cache_save_error,
+            ) from e
 
     def set_maintenance_status(
         self,
@@ -150,8 +144,7 @@ class MaintenanceService:
         data: str,
         request_params: RequestParameters,
     ) -> None:
-        message = "" if data.replace("\t", "").replace(" ", "") == "" else data
-        message = message.strip()
+        message = data.strip()
         self._set_maintenance_data(
             data=message,
             cache_id=ConfigDataAppKeys.MESSAGE_INFO.value,
