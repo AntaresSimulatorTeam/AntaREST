@@ -204,7 +204,12 @@ async function getNodes(
 ): Promise<StudyMap["nodes"]> {
   const areaPositions = await studyApi.getAreaPositions(studyId);
   return Object.keys(areaPositions).reduce((acc, areaId) => {
-    const { ui, layerColor, layerX, layerY } = areaPositions[areaId];
+    const {
+      ui,
+      layerColor = {},
+      layerX = {},
+      layerY = {},
+    } = areaPositions[areaId];
     const rgb = [ui.color_r, ui.color_g, ui.color_b];
     const area = getArea(state, studyId, areaId) as Area;
     acc[areaId] = {
