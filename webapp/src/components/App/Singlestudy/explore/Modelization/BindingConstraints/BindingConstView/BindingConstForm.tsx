@@ -7,7 +7,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { BindingConstFields, ConstraintType, dataToId } from "./utils";
+import {
+  ACTIVE_WINDOWS_DOC_PATH,
+  BindingConstFields,
+  ConstraintType,
+  dataToId,
+} from "./utils";
 import {
   AllClustersAndLinks,
   MatrixStats,
@@ -39,6 +44,7 @@ import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
 import OutputFilters from "../../../common/OutputFilters";
+import DocLink from "../../../../../../common/DocLink";
 
 const DEBOUNCE_DELAY = 200;
 
@@ -226,19 +232,24 @@ export default function BindingConstForm(props: Props) {
             >
               {t("global.general")}
             </Typography>
-            <Button
-              variant="text"
-              color="error"
-              onClick={() => setDeleteConstraint(true)}
-              sx={{
-                p: 0,
-                m: 0,
-                minWidth: 0,
-                minHeight: 0,
-              }}
-            >
-              <DeleteIcon />
-            </Button>
+
+            <Box sx={{ display: "flex" }}>
+              <Button
+                startIcon={<DeleteIcon />}
+                variant="text"
+                color="error"
+                onClick={() => setDeleteConstraint(true)}
+                sx={{
+                  p: 0,
+                  mr: 3,
+                  minWidth: 0,
+                  minHeight: 0,
+                }}
+              >
+                {t("global.delete")}
+              </Button>
+              <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
+            </Box>
           </Box>
         ),
         fields: [

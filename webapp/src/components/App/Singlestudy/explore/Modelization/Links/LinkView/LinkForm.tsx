@@ -18,6 +18,8 @@ import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
 import { useFormContextPlus } from "../../../../../../common/Form";
+import DocLink from "../../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
 
 interface Props {
   link: LinkElement;
@@ -195,6 +197,11 @@ function LinkForm(props: Props) {
           flexDirection: "column",
         }}
       >
+        <DocLink
+          to={`${ACTIVE_WINDOWS_DOC_PATH}#links`}
+          isAbsolute
+          sx={{ top: "15px" }}
+        />
         <Fieldset legend={t("global.general")}>
           <SwitchFE
             name="hurdleCost"
