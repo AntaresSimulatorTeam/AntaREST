@@ -12,6 +12,7 @@ from typing import List, Optional
 from filelock import FileLock
 
 from antarest.core.config import Config
+from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.interfaces.service import IService
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -204,6 +205,8 @@ class Watcher(IService):
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None
         if workspace_directory_path is not None and workspace_name:
+            if workspace_name == DEFAULT_WORKSPACE_NAME:
+                raise CannotScanInternalWorkspace
             try:
                 workspace = self.config.storage.workspaces[workspace_name]
             except KeyError:
