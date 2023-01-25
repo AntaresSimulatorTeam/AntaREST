@@ -563,6 +563,7 @@
   "variants.commands.export": "Export all commands",
   "variants.commands.exportMatrices": "Export matrices",
   "variants.commands.question.deleteAll": "Are you sure you want to delete all commands ?",
+  "variants.commands.question.delete": "Are you sure you want to delete this command ?",
   "xpansion.timeSeries": "Time series",
   "xpansion.link": "Link",
   "xpansion.annualCost": "Annual cost per mw",

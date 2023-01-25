@@ -65,12 +65,12 @@ function EditionView(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { studyId } = props;
-  const [openClearCommandsDialog, setOpenClearCommandsDialog] =
-    useState<boolean>(false);
+  const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
+  const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
   const [openExportCommandsDialog, setOpenExportCommandsDialog] =
-    useState<boolean>(false);
+    useState(false);
   const [exportMatrices, setExportMatrices] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
     useState<number>(-1);
@@ -120,20 +120,7 @@ function EditionView(props: Props) {
   };
 
   const onDelete = async (index: number) => {
-    try {
-      const elm = commands[index];
-      await deleteCommand(studyId, elm.id as string);
-      setCommands((commandList) =>
-        commandList
-          .filter((item, idx) => idx !== index)
-          .map((item) => ({ ...item, results: undefined }))
-      );
-      enqueueSnackbar(t("variants.success.delete"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.commandDeleted"), e as AxiosError);
-    }
+    setOpenDeleteCommandDialog(index);
   };
 
   const onArgsUpdate = (index: number, args: object) => {
@@ -426,6 +413,25 @@ function EditionView(props: Props) {
     }
   };
 
+  const handleDeleteCommand = async () => {
+    setOpenDeleteCommandDialog(-1);
+    try {
+      const index = openDeleteCommandDialog;
+      const elm = commands[index];
+      await deleteCommand(studyId, elm.id as string);
+      setCommands((commandList) =>
+        commandList
+          .filter((item, idx) => idx !== index)
+          .map((item) => ({ ...item, results: undefined }))
+      );
+      enqueueSnackbar(t("variants.success.delete"), {
+        variant: "success",
+      });
+    } catch (e) {
+      enqueueErrorSnackbar(t("variants.error.commandDeleted"), e as AxiosError);
+    }
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -519,6 +525,15 @@ function EditionView(props: Props) {
           onCancel={() => setOpenClearCommandsDialog(false)}
         >
           {t("variants.commands.question.deleteAll")}
+        </ConfirmationDialog>
+      )}
+      {openDeleteCommandDialog > -1 && (
+        <ConfirmationDialog
+          open
+          onConfirm={handleDeleteCommand}
+          onCancel={() => setOpenDeleteCommandDialog(-1)}
+        >
+          {t("variants.commands.question.delete")}
         </ConfirmationDialog>
       )}
       {openExportCommandsDialog && (
