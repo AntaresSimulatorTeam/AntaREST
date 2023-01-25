@@ -1,18 +1,16 @@
-import abc
 import logging
 import threading
 import time
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import Future, ThreadPoolExecutor
 from threading import Thread
-from typing import List, Dict, Union
+from typing import Dict, List, Union
 
-from pydantic import BaseModel
-
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
-
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,12 @@ class AbstractWorker(IService):
         logger.info(f"Accepting new task {event.json()}")
         task_info = WorkerTaskCommand.parse_obj(event.payload)
         self.event_bus.push(
-            Event(type=EventType.WORKER_TASK_STARTED, payload=task_info)
+            Event(
+                type=EventType.WORKER_TASK_STARTED,
+                payload=task_info,
+                # Use `NONE` for internal events
+                permissions=PermissionInfo(public_mode=PublicMode.NONE),
+            )
         )
         with self.lock:
             self.futures[task_info.task_id] = self.threadpool.submit(
@@ -62,7 +65,7 @@ class AbstractWorker(IService):
             return self.execute_task(task_info)
         except Exception as e:
             logger.error(
-                f"Unexpected error occured when executing task {task_info.json()}",
+                f"Unexpected error occurred when executing task {task_info.json()}",
                 exc_info=e,
             )
             return TaskResult(success=False, message=repr(e))
@@ -82,6 +85,10 @@ class AbstractWorker(IService):
                                 payload=WorkerTaskResult(
                                     task_id=task_id,
                                     task_result=future.result(),
+                                ),
+                                # Use `NONE` for internal events
+                                permissions=PermissionInfo(
+                                    public_mode=PublicMode.NONE
                                 ),
                             )
                         )

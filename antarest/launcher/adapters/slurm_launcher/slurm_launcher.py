@@ -8,7 +8,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict, Awaitable, List
+from typing import Awaitable, Callable, Dict, List, Optional
 
 from filelock import FileLock
 
@@ -21,24 +21,21 @@ from antareslauncher.main_option_parser import (
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    IEventBus,
-    Event,
-    EventType,
-)
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
-    LauncherInitException,
     LauncherCallbacks,
+    LauncherInitException,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import (
     JobStatus,
     LauncherParametersDTO,
-    XpansionParametersDTO,
     LogType,
+    XpansionParametersDTO,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
@@ -655,7 +652,11 @@ class SlurmLauncher(AbstractLauncher):
                 return
         if dispatch:
             self.event_bus.push(
-                Event(type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id)
+                Event(
+                    type=EventType.STUDY_JOB_CANCEL_REQUEST,
+                    payload=job_id,
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
+                )
             )
             self.callbacks.update_status(
                 job_id,

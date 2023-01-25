@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, cast, Tuple, Callable
+from typing import Callable, List, Optional, Tuple, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -14,33 +14,35 @@ from filelock import FileLock
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
-    StudyNotFoundError,
-    StudyTypeUnsupported,
-    NoParentStudyError,
     CommandNotFoundError,
-    VariantGenerationError,
-    VariantStudyParentNotValid,
     CommandNotValid,
     CommandUpdateAuthorizationError,
+    NoParentStudyError,
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+    VariantGenerationError,
+    VariantStudyParentNotValid,
 )
-from antarest.core.filetransfer.model import (
-    FileDownloadDTO,
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
-    IEventBus,
     Event,
-    EventType,
     EventChannelDirectory,
+    EventType,
+    IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.model import (
+    JSON,
+    PermissionInfo,
+    PublicMode,
+    StudyPermissionType,
+)
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
-    TaskResult,
-    TaskDTO,
     CustomTaskEventMessages,
+    TaskDTO,
+    TaskResult,
     TaskType,
 )
 from antarest.core.tasks.service import (
@@ -50,50 +52,47 @@ from antarest.core.tasks.service import (
 )
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.variantstudy.business.utils import (
-    transform_command_to_dto,
-)
 from antarest.study.model import (
+    RawStudy,
     Study,
+    StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
-    RawStudy,
-    StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
     FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
+    assert_permission,
+    export_study_flat,
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
-    assert_permission,
-    create_permission_from_study,
-    export_study_flat,
+)
+from antarest.study.storage.variantstudy.business.utils import (
+    transform_command_to_dto,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
-    VariantStudy,
     CommandBlock,
+    VariantStudy,
     VariantStudySnapshot,
 )
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
-    GenerationResultInfoDTO,
     CommandResultDTO,
+    GenerationResultInfoDTO,
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import (
@@ -252,7 +251,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return [c.id for c in new_commands]
@@ -642,7 +641,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             Event(
                 type=EventType.STUDY_CREATED,
                 payload=variant_study.to_json_summary(),
-                permissions=create_permission_from_study(variant_study),
+                permissions=PermissionInfo.from_study(variant_study),
             )
         )
         logger.info(
@@ -951,6 +950,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
                         payload=command_result_obj,
+                        permissions=PermissionInfo.from_study(variant_study),
                         channel=EventChannelDirectory.STUDY_GENERATION
                         + variant_study.id,
                     )
