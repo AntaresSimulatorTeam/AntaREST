@@ -884,6 +884,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study = self.study_factory.create_from_fs(
                 self.get_study_path(variant_study),
                 study_id=variant_study.id,
+                output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
             )
             variant_study.additional_data = (
                 self._read_additional_data_from_files(study)
@@ -1267,6 +1268,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 study = self.study_factory.create_from_fs(
                     self.get_study_path(variant_study),
                     study_id=variant_study.id,
+                    output_path=Path(variant_study.path)
+                    / OUTPUT_RELATIVE_PATH,
                 )
                 variant_study.additional_data = (
                     self._read_additional_data_from_files(study)
