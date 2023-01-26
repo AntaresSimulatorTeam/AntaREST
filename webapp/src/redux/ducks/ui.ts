@@ -11,7 +11,7 @@ export interface UIState {
 }
 
 const initialState = {
-  menuExtended: false,
+  menuExtended: true,
   currentPage: "/",
   webSocketConnected: false,
   maintenanceMode: false,
