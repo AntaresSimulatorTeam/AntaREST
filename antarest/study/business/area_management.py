@@ -168,6 +168,12 @@ class AreaManager:
             if len(file_study.config.areas)
             else {}
         )
+
+        # if there is only 1 area, the area_ui object is not a dict keyed by area_id
+        area_list = list(file_study.config.areas.keys())
+        if len(area_list) == 1:
+            areas_ui = {area_list[0]: areas_ui}
+
         if len(layers) == 0:
             layers["0"] = "All"
         layers_with_items = [
