@@ -20,7 +20,7 @@ from antarest.study.storage.study_version_upgrader import (
 sep = os.sep
 
 
-def test_study_version_upgrader(tmp_path: Path):
+def test_end_to_end_upgrades(tmp_path: Path):
     cur_dir: Path = Path(__file__).parent
     path_study = cur_dir / "assets" / "little_study_700.zip"
     with ZipFile(path_study) as zip_output:
@@ -33,18 +33,18 @@ def test_study_version_upgrader(tmp_path: Path):
     assert_inputs_are_updated(tmp_path, old_areas_values)
 
 
-def test_study_version_upgrader_fails(tmp_path: Path):
+def test_fails_because_of_versions_asked(tmp_path: Path):
     cur_dir: Path = Path(__file__).parent
     path_study = cur_dir / "assets" / "little_study_700.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     with pytest.raises(
-        expected_exception=InvalidUpgrade,
+        InvalidUpgrade,
         match=f"The version {600} is not supported",
     ):
         study_version_upgrader.upgrade_study(str(tmp_path), 600)
     with pytest.raises(
-        expected_exception=InvalidUpgrade,
+        InvalidUpgrade,
         match="The version you asked for is the one you currently have",
     ):
         study_version_upgrader.upgrade_study(str(tmp_path), 700)
@@ -53,10 +53,22 @@ def test_study_version_upgrader_fails(tmp_path: Path):
     with ZipFile(path_other_study) as zip_output:
         zip_output.extractall(path=target_other_study)
     with pytest.raises(
-        expected_exception=InvalidUpgrade,
+        InvalidUpgrade,
         match="Cannot downgrade your study version",
     ):
         study_version_upgrader.upgrade_study(str(target_other_study), 700)
+
+
+def test_fallback_if_study_input_broken(tmp_path):
+    cur_dir: Path = Path(__file__).parent
+    path_study = cur_dir / "assets" / "broken_study_720.zip"
+    with ZipFile(path_study) as zip_output:
+        zip_output.extractall(path=tmp_path)
+    with pytest.raises(
+        expected_exception=pandas.errors.EmptyDataError,
+        match="No columns to parse from file",
+    ):
+        study_version_upgrader.upgrade_study(str(tmp_path), 840)
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:

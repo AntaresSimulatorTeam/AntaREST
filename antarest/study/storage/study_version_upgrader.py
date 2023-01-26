@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import typing
 from datetime import datetime
@@ -292,9 +291,12 @@ class InvalidUpgrade(HTTPException):
 
 
 def upgrade_study(study_path: str, new_version: int) -> None:
-    old_version = get_current_version(study_path)
-    check_upgrade_is_possible(old_version, new_version)
-    return do_upgrade(study_path, old_version, new_version)
+    try:
+        old_version = get_current_version(study_path)
+        check_upgrade_is_possible(old_version, new_version)
+        do_upgrade(study_path, old_version, new_version)
+    except Exception as e:
+        raise e
 
 
 def get_current_version(study_path: str) -> int:

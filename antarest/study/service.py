@@ -2479,7 +2479,7 @@ class StudyService:
             except Exception as e:
                 return TaskResult(
                     success=False,
-                    message=f"Failed to upgrad study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version} : {repr(e)}",
+                    message=f"Failed to upgrade study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version} : {repr(e)}",
                 )
             finally:
                 if is_managed(study_to_upgrade) and not is_variant:
