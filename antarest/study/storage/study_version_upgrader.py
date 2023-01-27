@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import shutil
 import tempfile
@@ -18,6 +19,9 @@ from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def modify_file(
@@ -299,6 +303,7 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
     try:
         shutil.rmtree(tmp_dir)
     except Exception as e:
+        logger.warning("Some files are locked therefore the study cannot be upgraded")
         raise e
     else:
         shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
@@ -307,6 +312,7 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
             check_upgrade_is_possible(old_version, new_version)
             do_upgrade(str(tmp_dir), old_version, new_version)
         except Exception as e:
+            logger.warning("Some files are not in the right format")
             shutil.rmtree(tmp_dir)
             raise e
         else:
