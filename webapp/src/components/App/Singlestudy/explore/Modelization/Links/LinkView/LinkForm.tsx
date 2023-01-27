@@ -67,7 +67,7 @@ function LinkForm(props: Props) {
     `${t(
       "study.modelization.links.matrix.columns.hurdleCostsIndirect"
     )} (${area2}->${area1})`,
-    t("study.modelization.links.matrix.columns.inpedances"),
+    t("study.modelization.links.matrix.columns.impedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
     t("study.modelization.links.matrix.columns.pShiftMin"),
     t("study.modelization.links.matrix.columns.pShiftMax"),
