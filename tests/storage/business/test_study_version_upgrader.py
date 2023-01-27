@@ -1,5 +1,8 @@
+import filecmp
 import glob
 import os
+import shutil
+import tempfile
 from pathlib import Path
 from typing import List
 from zipfile import ZipFile
@@ -25,12 +28,18 @@ def test_end_to_end_upgrades(tmp_path: Path):
     path_study = cur_dir / "assets" / "little_study_700.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
+    tmp_dir_before_upgrade = tempfile.mkdtemp(
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir
+    )
+    shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
-    study_version_upgrader.upgrade_study(str(tmp_path), 840)
+    study_version_upgrader.upgrade_study(tmp_path, 840)
     assert_study_antares_file_is_updated(tmp_path)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
+    assert (False, are_directories_the_same(tmp_path, tmp_dir_before_upgrade))
+    shutil.rmtree(tmp_dir_before_upgrade)
 
 
 def test_fails_because_of_versions_asked(tmp_path: Path):
@@ -40,14 +49,14 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         zip_output.extractall(path=tmp_path)
     with pytest.raises(
         InvalidUpgrade,
-        match=f"The version {600} is not supported",
+        match="The version 600 is not supported",
     ):
-        study_version_upgrader.upgrade_study(str(tmp_path), 600)
+        study_version_upgrader.upgrade_study(tmp_path, 600)
     with pytest.raises(
         InvalidUpgrade,
         match="The version you asked for is the one you currently have",
     ):
-        study_version_upgrader.upgrade_study(str(tmp_path), 700)
+        study_version_upgrader.upgrade_study(tmp_path, 700)
     path_other_study = cur_dir / "assets" / "little_study_720.zip"
     target_other_study = tmp_path / "other_study_for_test"
     with ZipFile(path_other_study) as zip_output:
@@ -56,7 +65,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         InvalidUpgrade,
         match="Cannot downgrade your study version",
     ):
-        study_version_upgrader.upgrade_study(str(target_other_study), 700)
+        study_version_upgrader.upgrade_study(target_other_study, 700)
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -64,22 +73,28 @@ def test_fallback_if_study_input_broken(tmp_path):
     path_study = cur_dir / "assets" / "broken_study_720.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
+    tmp_dir_before_upgrade = tempfile.mkdtemp(
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir
+    )
+    shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        study_version_upgrader.upgrade_study(str(tmp_path), 840)
+        study_version_upgrader.upgrade_study(tmp_path, 840)
+    assert (True, are_directories_the_same(tmp_path, tmp_dir_before_upgrade))
+    shutil.rmtree(tmp_dir_before_upgrade)
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
-    with open(str(tmp_path) + f"{sep}study.antares") as study_antares:
+    with open(f"{str(tmp_path)}{sep}study.antares") as study_antares:
         lines = study_antares.readlines()
         assert lines[1] == "version = 840\n"
         assert len(lines) == 7
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
-    general_data_path = str(tmp_path) + f"{sep}settings{sep}generaldata.ini"
+    general_data_path = f"{str(tmp_path)}{sep}settings{sep}generaldata.ini"
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(Path(general_data_path))
     general = data["general"]
@@ -117,7 +132,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
-    general_data_path = str(tmp_path) + f"{sep}settings{sep}generaldata.ini"
+    general_data_path = f"{str(tmp_path)}{sep}settings{sep}generaldata.ini"
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(Path(general_data_path))
     filtering_value = data["general"]["filtering"]
@@ -134,7 +149,7 @@ def get_old_area_values(tmp_path: Path) -> dict:
         if len(all_txt) > 0:
             for txt in all_txt:
                 new_txt = txt.replace(
-                    str(tmp_path) + f"{sep}input{sep}links{sep}", ""
+                    f"{str(tmp_path)}{sep}input{sep}links{sep}", ""
                 ).replace(".txt", "")
                 df = pandas.read_csv(txt, sep="\t", header=None)
                 dico[new_txt] = df
@@ -142,7 +157,7 @@ def get_old_area_values(tmp_path: Path) -> dict:
 
 
 def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
-    input_path = str(tmp_path) + f"{sep}input"
+    input_path = f"{str(tmp_path)}{sep}input"
     assert os.path.isdir(input_path + f"{sep}renewables") is True
     assert os.path.isdir(input_path + f"{sep}renewables{sep}clusters") is True
     assert os.path.isdir(input_path + f"{sep}renewables{sep}series") is True
@@ -179,3 +194,24 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                         df_capacities[0].values
                         == dico[new_txt].iloc[:, 1].values
                     ).all()
+
+
+def are_directories_the_same(dir1, dir2) -> bool:
+    dirs_cmp = filecmp.dircmp(dir1, dir2)
+    if (
+        len(dirs_cmp.left_only) > 0
+        or len(dirs_cmp.right_only) > 0
+        or len(dirs_cmp.funny_files) > 0
+    ):
+        return False
+    (_, mismatch, errors) = filecmp.cmpfiles(
+        dir1, dir2, dirs_cmp.common_files, shallow=False
+    )
+    if len(mismatch) > 0 or len(errors) > 0:
+        return False
+    for common_dir in dirs_cmp.common_dirs:
+        new_dir1 = os.path.join(dir1, common_dir)
+        new_dir2 = os.path.join(dir2, common_dir)
+        if not are_directories_the_same(new_dir1, new_dir2):
+            return False
+    return True

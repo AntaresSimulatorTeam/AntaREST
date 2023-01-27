@@ -157,7 +157,7 @@ def generate_script_diff(
     type=int,
     help="The version you want your study to be at (example : 6.0.0 -> you should type 600)",
 )
-def update_study(study_path: str, target_version: int) -> None:
+def update_study(study_path: Path, target_version: int) -> None:
     """Upgrades study's version"""
     study_version_upgrader.upgrade_study(study_path, target_version)
 

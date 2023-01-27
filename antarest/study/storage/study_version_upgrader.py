@@ -1,5 +1,7 @@
 import glob
 import os
+import shutil
+import tempfile
 import typing
 from datetime import datetime
 from http import HTTPStatus
@@ -35,9 +37,8 @@ def modify_file(
             data[key][parameter_to_add] = value
         if parameter_to_delete is not None:
             del data[key][parameter_to_delete]
-    else:
-        if parameter_to_add is not None:
-            data[key] = {parameter_to_add: value}
+    elif parameter_to_add is not None:
+        data[key] = {parameter_to_add: value}
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, path)
 
@@ -158,11 +159,11 @@ def upgrade_810(study_path: str) -> None:
         "aggregated",
         None,
     )
-    os.mkdir(os.path.join(study_path + f"{sep}input", "renewables"))
+    os.mkdir(os.path.join(f"{study_path}{sep}input", "renewables"))
     os.mkdir(
-        os.path.join(study_path + f"{sep}input{sep}renewables", "clusters")
+        os.path.join(f"{study_path}{sep}input{sep}renewables", "clusters")
     )
-    os.mkdir(os.path.join(study_path + f"{sep}input{sep}renewables", "series"))
+    os.mkdir(os.path.join(f"{study_path}{sep}input{sep}renewables", "series"))
     # TODO Cannot update study with renewables clusters for the moment
 
 
@@ -290,13 +291,27 @@ class InvalidUpgrade(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-def upgrade_study(study_path: str, new_version: int) -> None:
+def upgrade_study(study_path: Path, new_version: int) -> None:
+    tmp_dir = tempfile.mkdtemp(
+        suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+    )
+    shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
-        old_version = get_current_version(study_path)
-        check_upgrade_is_possible(old_version, new_version)
-        do_upgrade(study_path, old_version, new_version)
+        shutil.rmtree(tmp_dir)
     except Exception as e:
         raise e
+    else:
+        shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
+        try:
+            old_version = get_current_version(str(tmp_dir))
+            check_upgrade_is_possible(old_version, new_version)
+            do_upgrade(str(tmp_dir), old_version, new_version)
+        except Exception as e:
+            shutil.rmtree(tmp_dir)
+            raise e
+        else:
+            shutil.rmtree(study_path)
+            shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
 
 
 def get_current_version(study_path: str) -> int:
