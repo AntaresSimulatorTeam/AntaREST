@@ -40,7 +40,7 @@ def create_watcher_routes(
         "/watcher/_scan",
         summary="Launch scan in selected directory",
         tags=[APITag.study_raw_data],
-        response_model=List[str],
+        response_model=str,
     )
     def scan_dir(
         path: str,
