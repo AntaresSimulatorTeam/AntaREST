@@ -303,7 +303,9 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
     try:
         shutil.rmtree(tmp_dir)
     except Exception as e:
-        logger.warning("Some files are locked therefore the study cannot be upgraded")
+        logger.warning(
+            "Some files are locked therefore the study cannot be upgraded"
+        )
         raise e
     else:
         shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
