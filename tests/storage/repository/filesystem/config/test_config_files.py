@@ -1,4 +1,5 @@
 from pathlib import Path
+from zipfile import ZipFile
 
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
@@ -125,6 +126,18 @@ def test_parse_outputs(tmp_path: Path) -> None:
         },
     )
     assert ConfigPathBuilder.build(study_path, "id") == config
+
+
+def test_parse_outputs_discriminate_zips(tmp_path: Path) -> None:
+    cur_dir: Path = Path(__file__).parent.parent.parent.parent
+    path_study = (
+        cur_dir / "business" / "assets" / "test_output_zip_notzipped.zip"
+    )
+    with ZipFile(path_study) as zip_output:
+        zip_output.extractall(path=tmp_path)
+    output_path = tmp_path / "test_output_zip_notzipped" / "output"
+    output_parsed = ConfigPathBuilder._parse_outputs(output_path)
+    assert output_parsed["20230127-1550eco"].archived == False
 
 
 def test_parse_sets(tmp_path: Path) -> None:

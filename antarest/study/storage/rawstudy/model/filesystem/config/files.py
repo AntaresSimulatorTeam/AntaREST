@@ -224,14 +224,16 @@ class ConfigPathBuilder:
             return {}
 
         files = sorted(output_path.iterdir())
-        sims = {
-            f.stem
-            if f.suffix == ".zip"
-            else f.name: ConfigPathBuilder.parse_simulation(f)
-            for i, f in enumerate(files)
-            if (f / "about-the-study").exists() or f.suffix == ".zip"
-        }
-        return {k: v for k, v in sims.items() if v}
+        sims = {}
+        for f in files:
+            if (f / "about-the-study").exists() or f.suffix == ".zip":
+                if f.suffix == ".zip":
+                    if f.stem not in sims:
+                        if simulation := ConfigPathBuilder.parse_simulation(f):
+                            sims[f.stem] = simulation
+                elif simulation := ConfigPathBuilder.parse_simulation(f):
+                    sims[f.name] = simulation
+        return sims
 
     @staticmethod
     def parse_simulation(path: Path) -> Optional["Simulation"]:
@@ -242,9 +244,10 @@ class ConfigPathBuilder:
         )
         try:
             if path.suffix == ".zip":
-                zf = ZipFile(path, "r")
-                error = str("checkIntegrity.txt") not in zf.namelist()
-                xpansion = str("lp/lp_namer.log") in zf.namelist()
+                with ZipFile(path, mode="r") as zf:
+                    namelist = zf.namelist()
+                    error = "checkIntegrity.txt" not in namelist
+                    xpansion = "lp/lp_namer.log" in namelist
             else:
                 error = not (path / "checkIntegrity.txt").exists()
                 xpansion = (path / "lp" / "lp_namer.log").exists()
@@ -294,7 +297,7 @@ class ConfigPathBuilder:
         if playlist_reset:
             return {
                 year + 1: weights.get(year, 1)
-                for year in range(0, nb_years)
+                for year in range(nb_years)
                 if year not in removed
             }
         return {
@@ -330,10 +333,7 @@ class ConfigPathBuilder:
             par["general"]["nbyears"],
             par["general"]["year-by-year"],
             par["output"]["synthesis"],
-            [
-                year
-                for year in (ConfigPathBuilder.get_playlist(par) or {}).keys()
-            ],
+            list((ConfigPathBuilder.get_playlist(par) or {}).keys()),
         )
 
     @staticmethod
