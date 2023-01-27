@@ -226,12 +226,12 @@ class ConfigPathBuilder:
         files = sorted(output_path.iterdir())
         sims = {}
         for f in files:
-            if (f / "about-the-study").exists() or f.suffix == ".zip":
-                if f.suffix == ".zip":
-                    if f.stem not in sims:
-                        if simulation := ConfigPathBuilder.parse_simulation(f):
-                            sims[f.stem] = simulation
-                elif simulation := ConfigPathBuilder.parse_simulation(f):
+            if f.suffix == ".zip":
+                if f.stem not in sims:
+                    if simulation := ConfigPathBuilder.parse_simulation(f):
+                        sims[f.stem] = simulation
+            elif (f / "about-the-study").exists():
+                if simulation := ConfigPathBuilder.parse_simulation(f):
                     sims[f.name] = simulation
         return sims
 
