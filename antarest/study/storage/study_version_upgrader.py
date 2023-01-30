@@ -21,19 +21,27 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 )
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
+OTHER_PREFERENCIES = "other preferences"
+GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
+ADEQUACY_PATCH = "adequacy patch"
+MAPPING_TRANSMISSION_CAPACITIES = {
+    True: "local-values",
+    False: "null-for-all-links",
+    "infinite": "infinite-for-all-links",
+}
 
 
 def modify_file(
-    study_path: str,
-    file_path: str,
+    study_path: Path,
+    file_path: Path,
     key: str,
     parameter_to_add: Optional[str],
     value: typing.Any,
     parameter_to_delete: Optional[str],
 ) -> None:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = glob.glob(os.path.join(study_path, file_path))[0]
+    file = glob.glob(str(study_path / file_path))[0]
     path = Path(file)
     data = reader.read(path)
     if key in data:
@@ -48,38 +56,27 @@ def modify_file(
 
 
 def find_value_in_file(
-    study_path: str, file_path: str, key: str, parameter_to_check: str
+    study_path: Path, file_path: Path, key: str, parameter_to_check: str
 ) -> typing.Any:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = glob.glob(os.path.join(study_path, file_path))[0]
+    file = glob.glob(str(study_path / file_path))[0]
     path = Path(file)
     data = reader.read(path)
     return data[key][parameter_to_check]
 
 
-sep = os.sep
-other_preferencies = "other preferences"
-general_data_path = f"settings{sep}generaldata.ini"
-adequacy_patch = "adequacy patch"
-mapping_transmission_capacities = {
-    True: "local-values",
-    False: "null-for-all-links",
-    "infinite": "infinite-for-all-links",
-}
-
-
-def upgrade_700(study_path: str) -> None:
+def upgrade_700(study_path: Path) -> None:
     # It's the basecase study so we pass
     pass
 
 
-def upgrade_710(study_path: str) -> None:
+def upgrade_710(study_path: Path) -> None:
     geographical_trimming = find_value_in_file(
-        study_path, general_data_path, "general", "filtering"
+        study_path, GENERAL_DATA_PATH, "general", "filtering"
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "link-type",
         "local",
@@ -87,7 +84,7 @@ def upgrade_710(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "general",
         "geographic-trimming",
         geographical_trimming,
@@ -95,7 +92,7 @@ def upgrade_710(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "general",
         "thematic-trimming",
         False,
@@ -103,34 +100,34 @@ def upgrade_710(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
-        other_preferencies,
+        GENERAL_DATA_PATH,
+        OTHER_PREFERENCIES,
         "hydro-pricing-mode",
         "fast",
         None,
     )
 
 
-def upgrade_720(study_path: str) -> None:
+def upgrade_720(study_path: Path) -> None:
     # There is no input modification between the 7.1.0 and the 7.2.0 version
     pass
 
 
-def upgrade_800(study_path: str) -> None:
+def upgrade_800(study_path: Path) -> None:
     custom_ts_numbers_value = find_value_in_file(
-        study_path, general_data_path, "general", "custom-ts-numbers"
+        study_path, GENERAL_DATA_PATH, "general", "custom-ts-numbers"
     )
     modify_file(
         study_path,
-        general_data_path,
-        other_preferencies,
+        GENERAL_DATA_PATH,
+        OTHER_PREFERENCIES,
         "hydro-heuristic-policy",
         "accommodate rule curves",
         None,
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "include-exportstructure",
         False,
@@ -138,7 +135,7 @@ def upgrade_800(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "include-unfeasible-problem-behavior",
         "error-verbose",
@@ -146,7 +143,7 @@ def upgrade_800(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "general",
         "custom-scenario",
         custom_ts_numbers_value,
@@ -154,30 +151,30 @@ def upgrade_800(study_path: str) -> None:
     )
 
 
-def upgrade_810(study_path: str) -> None:
+def upgrade_810(study_path: Path) -> None:
     modify_file(
         study_path,
-        general_data_path,
-        other_preferencies,
+        GENERAL_DATA_PATH,
+        OTHER_PREFERENCIES,
         "renewable-generation-modelling",
         "aggregated",
         None,
     )
-    os.mkdir(os.path.join(f"{study_path}{sep}input", "renewables"))
-    os.mkdir(
-        os.path.join(f"{study_path}{sep}input{sep}renewables", "clusters")
-    )
-    os.mkdir(os.path.join(f"{study_path}{sep}input{sep}renewables", "series"))
+    (study_path / "input" / "renewables").mkdir()
+    (study_path / "input" / "renewables" / "clusters").mkdir()
+    (study_path / "input" / "renewables" / "series").mkdir()
+
     # TODO Cannot update study with renewables clusters for the moment
 
 
-def upgrade_820(study_path: str) -> None:
-    links = glob.glob(os.path.join(study_path, f"input{sep}links{sep}*"))
+def upgrade_820(study_path: Path) -> None:
+    links = glob.glob(str(study_path / "input" / "links" / "*"))
     if len(links) > 0:
         for folder in links:
-            all_txt = glob.glob(os.path.join(folder, "*.txt"))
+            folder_path = Path(folder)
+            all_txt = glob.glob(str(folder_path / "*.txt"))
             if len(all_txt) > 0:
-                os.mkdir(os.path.join(folder, "capacities"))
+                (folder_path / "capacities").mkdir()
                 for txt in all_txt:
                     df = pandas.read_csv(txt, sep="\t", header=None)
                     df_parameters = df.iloc[:, 2:8]
@@ -185,34 +182,34 @@ def upgrade_820(study_path: str) -> None:
                     df_indirect = df.iloc[:, 1]
                     reversed_txt = txt[::-1]
                     k = 0
-                    while reversed_txt[k] != sep:
+                    while reversed_txt[k] != os.sep:
                         k += 1
                     name = reversed_txt[4:k][::-1]
                     numpy.savetxt(
-                        folder + f"{sep}{name}_parameters.txt",
+                        folder_path / f"{name}_parameters.txt",
                         df_parameters.values,
                         delimiter="\t",
                         fmt="%.6f",
                     )
                     numpy.savetxt(
-                        folder + f"{sep}capacities{sep}{name}_direct.txt",
+                        folder_path / "capacities" / f"{name}_direct.txt",
                         df_direct.values,
                         delimiter="\t",
                         fmt="%.6f",
                     )
                     numpy.savetxt(
-                        folder + f"{sep}capacities{sep}{name}_indirect.txt",
+                        folder_path / "capacities" / f"{name}_indirect.txt",
                         df_indirect.values,
                         delimiter="\t",
                         fmt="%.6f",
                     )
-                    os.remove(folder + f"{sep}{name}.txt")
+                    (folder_path / f"{name}.txt").unlink()
 
 
-def upgrade_830(study_path: str) -> None:
+def upgrade_830(study_path: Path) -> None:
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "include-split-exported-mps",
         False,
@@ -220,49 +217,50 @@ def upgrade_830(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
-        adequacy_patch,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
         "include-adq-patch",
         False,
         None,
     )
     modify_file(
         study_path,
-        general_data_path,
-        adequacy_patch,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
         "set-to-null-ntc-between-physical-out-for-first-step",
         True,
         None,
     )
     modify_file(
         study_path,
-        general_data_path,
-        adequacy_patch,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
         "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step",
         True,
         None,
     )
-    areas = glob.glob(os.path.join(study_path, f"input{sep}areas{sep}*"))
+    areas = glob.glob(str(study_path / "input" / "areas" / "*"))
     if len(areas) > 0:
         for folder in areas:
-            if Path(folder).is_dir():
+            folder_path = Path(folder)
+            if folder_path.is_dir():
                 writer = IniWriter()
                 writer.write(
                     {"adequacy-patch": {"adequacy-patch-mode": "outside"}},
-                    Path(folder) / "adequacy_patch.ini",
+                    folder_path / "adequacy_patch.ini",
                 )
 
 
-def upgrade_840(study_path: str) -> None:
+def upgrade_840(study_path: Path) -> None:
     old_value = find_value_in_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "transmission-capacities",
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         None,
         None,
@@ -270,10 +268,10 @@ def upgrade_840(study_path: str) -> None:
     )
     modify_file(
         study_path,
-        general_data_path,
+        GENERAL_DATA_PATH,
         "optimization",
         "transmission-capacities",
-        mapping_transmission_capacities[old_value],
+        MAPPING_TRANSMISSION_CAPACITIES[old_value],
         None,
     )
 
@@ -296,25 +294,27 @@ class InvalidUpgrade(HTTPException):
 
 
 def upgrade_study(study_path: Path, new_version: int) -> None:
-    tmp_dir = tempfile.mkdtemp(
-        suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+    tmp_dir = Path(
+        tempfile.mkdtemp(
+            suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+        )
     )
     shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
         shutil.rmtree(tmp_dir)
     except Exception as e:
-        logger.warning(
+        LOGGER.warning(
             "Some files are locked therefore the study cannot be upgraded"
         )
         raise e
     else:
         shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
         try:
-            old_version = get_current_version(str(tmp_dir))
+            old_version = get_current_version(tmp_dir)
             check_upgrade_is_possible(old_version, new_version)
-            do_upgrade(str(tmp_dir), old_version, new_version)
+            do_upgrade(tmp_dir, old_version, new_version)
         except Exception as e:
-            logger.warning("Some files are not in the right format")
+            LOGGER.warning("Some files are not in the right format")
             shutil.rmtree(tmp_dir)
             raise e
         else:
@@ -322,17 +322,18 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
             shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
 
 
-def get_current_version(study_path: str) -> int:
-    file = glob.glob(os.path.join(study_path, "study.antares"))
+def get_current_version(study_path: Path) -> int:
+    file = glob.glob(str(study_path / "study.antares"))
     if len(file) != 1:
         raise StudyValidationError("The path of your study is not valid")
-    f = open(file[0])
-    for line in f:
-        if "version" in line:
-            return int(line[10:])
-    raise StudyValidationError(
-        "Your study.antares file is not in the good format"
-    )
+    with open(file[0], mode="r", encoding="utf-8") as f:
+        for line in f:
+            if "version" in line:
+                return int(line[10:])
+        f.close()
+        raise StudyValidationError(
+            "Your study.antares file is not in the good format"
+        )
 
 
 def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
@@ -350,21 +351,21 @@ def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
         )
 
 
-def update_study_antares_file(new_version: int, study_path: str) -> None:
+def update_study_antares_file(new_version: int, study_path: Path) -> None:
     epoch_time = datetime(1970, 1, 1)
     delta = int((datetime.now() - epoch_time).total_seconds())
-    file = glob.glob(os.path.join(study_path, "study.antares"))[0]
-    with open(file, "r") as f:
+    file = glob.glob(str(study_path / "study.antares"))[0]
+    with open(file, mode="r", encoding="utf-8") as f:
         lines = f.readlines()
         lines[1] = f"version = {new_version}\n"
         lines[4] = f"lastsave = {delta}\n"
-    with open(file, "w") as f:
+    with open(file, mode="w", encoding="utf-8") as f:
         for item in lines:
             f.write(item)
-    f.close()
+        f.close()
 
 
-def do_upgrade(study_path: str, old_version: int, new_version: int) -> None:
+def do_upgrade(study_path: Path, old_version: int, new_version: int) -> None:
     update_study_antares_file(new_version, study_path)
     possibilities = list(upgrade_methods.keys())
     start = 0
@@ -376,7 +377,7 @@ def do_upgrade(study_path: str, old_version: int, new_version: int) -> None:
     return recursive_changes(possibilities[start + 1 : end + 1], study_path)
 
 
-def recursive_changes(update_list: typing.List[int], study_path: str) -> None:
+def recursive_changes(update_list: typing.List[int], study_path: Path) -> None:
     if len(update_list) > 0:
         elt = update_list[0]
         upgrade_methods[elt](study_path)

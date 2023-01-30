@@ -17,10 +17,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 )
 from antarest.study.storage.study_version_upgrader import InvalidUpgrade
 from antarest.study.storage.study_version_upgrader import (
-    mapping_transmission_capacities,
+    MAPPING_TRANSMISSION_CAPACITIES,
 )
-
-sep = os.sep
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
@@ -87,14 +85,16 @@ def test_fallback_if_study_input_broken(tmp_path):
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
-    with open(f"{str(tmp_path)}{sep}study.antares") as study_antares:
+    with open(
+        tmp_path / "study.antares", mode="r", encoding="utf-8"
+    ) as study_antares:
         lines = study_antares.readlines()
         assert lines[1] == "version = 840\n"
         assert len(lines) == 7
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
-    general_data_path = f"{str(tmp_path)}{sep}settings{sep}generaldata.ini"
+    general_data_path = tmp_path / "settings" / "generaldata.ini"
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(Path(general_data_path))
     general = data["general"]
@@ -126,13 +126,13 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     )
     assert (
         optimization["transmission-capacities"]
-        == mapping_transmission_capacities[old_values[2]]
+        == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
     )
     assert "include-split-exported-mps" not in optimization
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
-    general_data_path = f"{str(tmp_path)}{sep}settings{sep}generaldata.ini"
+    general_data_path = tmp_path / "settings" / "generaldata.ini"
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(Path(general_data_path))
     filtering_value = data["general"]["filtering"]
@@ -142,14 +142,14 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
 
 
 def get_old_area_values(tmp_path: Path) -> dict:
-    links = glob.glob(os.path.join(tmp_path, f"input{sep}links{sep}*"))
+    links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     dico = {}
     for folder in links:
-        all_txt = glob.glob(os.path.join(folder, "*.txt"))
+        all_txt = glob.glob(str(Path(folder) / "*.txt"))
         if len(all_txt) > 0:
             for txt in all_txt:
                 new_txt = txt.replace(
-                    f"{str(tmp_path)}{sep}input{sep}links{sep}", ""
+                    str(tmp_path / "input" / "links"), ""
                 ).replace(".txt", "")
                 df = pandas.read_csv(txt, sep="\t", header=None)
                 dico[new_txt] = df
@@ -157,43 +157,46 @@ def get_old_area_values(tmp_path: Path) -> dict:
 
 
 def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
-    input_path = f"{str(tmp_path)}{sep}input"
-    assert os.path.isdir(input_path + f"{sep}renewables") is True
-    assert os.path.isdir(input_path + f"{sep}renewables{sep}clusters") is True
-    assert os.path.isdir(input_path + f"{sep}renewables{sep}series") is True
-    links = glob.glob(os.path.join(tmp_path, f"input{sep}links{sep}*"))
+    input_path = tmp_path / "input"
+    assert (input_path / "renewables").is_dir() is True
+    assert (input_path / "renewables" / "clusters").is_dir() is True
+    assert (input_path / "renewables" / "series").is_dir() is True
+    links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     for folder in links:
-        all_txt = glob.glob(os.path.join(folder, "*.txt"))
+        folder_path = Path(folder)
+        all_txt = glob.glob(str(folder_path / "*.txt"))
         if len(all_txt) > 0:
             for txt in all_txt:
                 df = pandas.read_csv(txt, sep="\t", header=None)
                 old_txt = (
-                    txt.replace(input_path + f"{sep}links{sep}", "")
+                    txt.replace(str(tmp_path / "input" / "links"), "")
                     .replace(".txt", "")
                     .replace("_parameters", "")
                 )
-                assert (df.values == dico[old_txt].iloc[:, 2:8].values).all()
-        capacities = glob.glob(os.path.join(folder, f"capacities{sep}*"))
+                assert (
+                    df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
+                )
+        capacities = glob.glob(str(folder_path / "capacities" / "*"))
         if len(capacities) > 0:
             for direction_txt in capacities:
                 df_capacities = pandas.read_csv(
                     direction_txt, sep="\t", header=None
                 )
                 old_txt = direction_txt.replace(
-                    input_path + f"{sep}links{sep}", ""
-                ).replace(f"capacities{sep}", "")
+                    str(tmp_path / "input" / "links"), ""
+                ).replace(f"capacities{os.sep}", "")
                 if "indirect" in old_txt:
                     new_txt = old_txt.replace("_indirect.txt", "")
                     assert (
-                        df_capacities[0].values
-                        == dico[new_txt].iloc[:, 0].values
-                    ).all()
+                        df_capacities[0].values.all()
+                        == dico[new_txt].iloc[:, 0].values.all()
+                    )
                 else:
                     new_txt = old_txt.replace("_direct.txt", "")
                     assert (
-                        df_capacities[0].values
-                        == dico[new_txt].iloc[:, 1].values
-                    ).all()
+                        df_capacities[0].values.all()
+                        == dico[new_txt].iloc[:, 1].values.all()
+                    )
 
 
 def are_directories_the_same(dir1, dir2) -> bool:
@@ -210,8 +213,11 @@ def are_directories_the_same(dir1, dir2) -> bool:
     if len(mismatch) > 0 or len(errors) > 0:
         return False
     for common_dir in dirs_cmp.common_dirs:
-        new_dir1 = os.path.join(dir1, common_dir)
-        new_dir2 = os.path.join(dir2, common_dir)
+        path_dir1 = Path(dir1)
+        path_dir2 = Path(dir2)
+        path_common_dir = Path(common_dir)
+        new_dir1 = path_dir1 / path_common_dir
+        new_dir2 = path_dir2 / path_common_dir
         if not are_directories_the_same(new_dir1, new_dir2):
             return False
     return True
