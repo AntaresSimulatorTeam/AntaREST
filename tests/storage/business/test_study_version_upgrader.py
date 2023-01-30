@@ -1,6 +1,6 @@
 import filecmp
 import glob
-import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -10,6 +10,7 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
+from antarest.core.exceptions import UnknownModuleError
 from antarest.study.storage import study_version_upgrader
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -36,7 +37,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     assert_study_antares_file_is_updated(tmp_path)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
-    assert (False, are_directories_the_same(tmp_path, tmp_dir_before_upgrade))
+    assert (False, are_same_dir(tmp_path, tmp_dir_before_upgrade))
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
@@ -76,11 +77,11 @@ def test_fallback_if_study_input_broken(tmp_path):
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
-        expected_exception=pandas.errors.EmptyDataError,
+        UnknownModuleError,
         match="No columns to parse from file",
     ):
         study_version_upgrader.upgrade_study(tmp_path, 840)
-    assert (True, are_directories_the_same(tmp_path, tmp_dir_before_upgrade))
+    assert (True, are_same_dir(tmp_path, tmp_dir_before_upgrade))
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
@@ -88,9 +89,12 @@ def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
     with open(
         tmp_path / "study.antares", mode="r", encoding="utf-8"
     ) as study_antares:
+        version = "version = 840"
         lines = study_antares.readlines()
-        assert lines[1] == "version = 840\n"
         assert len(lines) == 7
+        assert (
+            re.fullmatch(r"version\s*=\s*(\d+)", version.rstrip())[1] == "840"
+        )
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
@@ -148,11 +152,10 @@ def get_old_area_values(tmp_path: Path) -> dict:
         all_txt = glob.glob(str(Path(folder) / "*.txt"))
         if len(all_txt) > 0:
             for txt in all_txt:
-                new_txt = txt.replace(
-                    str(tmp_path / "input" / "links"), ""
-                ).replace(".txt", "")
+                path_txt = Path(txt)
+                new_txt = Path(path_txt.parent.name).joinpath(path_txt.stem)
                 df = pandas.read_csv(txt, sep="\t", header=None)
-                dico[new_txt] = df
+                dico[str(new_txt)] = df
     return dico
 
 
@@ -167,12 +170,11 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         all_txt = glob.glob(str(folder_path / "*.txt"))
         if len(all_txt) > 0:
             for txt in all_txt:
+                path_txt = Path(txt)
+                old_txt = str(
+                    Path(path_txt.parent.name).joinpath(path_txt.stem)
+                ).replace("_parameters", "")
                 df = pandas.read_csv(txt, sep="\t", header=None)
-                old_txt = (
-                    txt.replace(str(tmp_path / "input" / "links"), "")
-                    .replace(".txt", "")
-                    .replace("_parameters", "")
-                )
                 assert (
                     df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
                 )
@@ -182,9 +184,12 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                 df_capacities = pandas.read_csv(
                     direction_txt, sep="\t", header=None
                 )
-                old_txt = direction_txt.replace(
-                    str(tmp_path / "input" / "links"), ""
-                ).replace(f"capacities{os.sep}", "")
+                direction_path = Path(direction_txt)
+                old_txt = str(
+                    Path(direction_path.parent.parent.name).joinpath(
+                        direction_path.name
+                    )
+                )
                 if "indirect" in old_txt:
                     new_txt = old_txt.replace("_indirect.txt", "")
                     assert (
@@ -199,7 +204,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                     )
 
 
-def are_directories_the_same(dir1, dir2) -> bool:
+def are_same_dir(dir1, dir2) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2)
     if (
         len(dirs_cmp.left_only) > 0
@@ -218,6 +223,6 @@ def are_directories_the_same(dir1, dir2) -> bool:
         path_common_dir = Path(common_dir)
         new_dir1 = path_dir1 / path_common_dir
         new_dir2 = path_dir2 / path_common_dir
-        if not are_directories_the_same(new_dir1, new_dir2):
+        if not are_same_dir(new_dir1, new_dir2):
             return False
     return True

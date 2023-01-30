@@ -1,6 +1,5 @@
 import glob
 import logging
-import os
 import shutil
 import tempfile
 import typing
@@ -13,7 +12,7 @@ from typing import Optional
 import numpy
 import pandas  # type: ignore
 
-from antarest.core.exceptions import StudyValidationError
+from antarest.core.exceptions import StudyValidationError, UnknownModuleError
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -41,9 +40,8 @@ def modify_file(
     parameter_to_delete: Optional[str],
 ) -> None:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = glob.glob(str(study_path / file_path))[0]
-    path = Path(file)
-    data = reader.read(path)
+    file = study_path / file_path
+    data = reader.read(file)
     if key in data:
         if parameter_to_add is not None:
             data[key][parameter_to_add] = value
@@ -52,16 +50,15 @@ def modify_file(
     elif parameter_to_add is not None:
         data[key] = {parameter_to_add: value}
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
-    writer.write(data, path)
+    writer.write(data, file)
 
 
 def find_value_in_file(
     study_path: Path, file_path: Path, key: str, parameter_to_check: str
 ) -> typing.Any:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = glob.glob(str(study_path / file_path))[0]
-    path = Path(file)
-    data = reader.read(path)
+    file = study_path / file_path
+    data = reader.read(file)
     return data[key][parameter_to_check]
 
 
@@ -160,9 +157,8 @@ def upgrade_810(study_path: Path) -> None:
         "aggregated",
         None,
     )
-    (study_path / "input" / "renewables").mkdir()
-    (study_path / "input" / "renewables" / "clusters").mkdir()
-    (study_path / "input" / "renewables" / "series").mkdir()
+    study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True)
+    study_path.joinpath("input", "renewables", "series").mkdir(parents=True)
 
     # TODO Cannot update study with renewables clusters for the moment
 
@@ -180,11 +176,7 @@ def upgrade_820(study_path: Path) -> None:
                     df_parameters = df.iloc[:, 2:8]
                     df_direct = df.iloc[:, 0]
                     df_indirect = df.iloc[:, 1]
-                    reversed_txt = txt[::-1]
-                    k = 0
-                    while reversed_txt[k] != os.sep:
-                        k += 1
-                    name = reversed_txt[4:k][::-1]
+                    name = Path(txt).stem
                     numpy.savetxt(
                         folder_path / f"{name}_parameters.txt",
                         df_parameters.values,
@@ -301,32 +293,23 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
     )
     shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
-        shutil.rmtree(tmp_dir)
+        old_version = get_current_version(tmp_dir)
+        check_upgrade_is_possible(old_version, new_version)
+        do_upgrade(tmp_dir, old_version, new_version)
     except Exception as e:
-        LOGGER.warning(
-            "Some files are locked therefore the study cannot be upgraded"
-        )
+        shutil.rmtree(tmp_dir)
+        if isinstance(e.args[0], str):
+            LOGGER.warning("Some files are not in the right format")
+            raise UnknownModuleError(e.args[0])
         raise e
     else:
-        shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
-        try:
-            old_version = get_current_version(tmp_dir)
-            check_upgrade_is_possible(old_version, new_version)
-            do_upgrade(tmp_dir, old_version, new_version)
-        except Exception as e:
-            LOGGER.warning("Some files are not in the right format")
-            shutil.rmtree(tmp_dir)
-            raise e
-        else:
-            shutil.rmtree(study_path)
-            shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
+        shutil.rmtree(study_path)
+        shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
 
 
 def get_current_version(study_path: Path) -> int:
-    file = glob.glob(str(study_path / "study.antares"))
-    if len(file) != 1:
-        raise StudyValidationError("The path of your study is not valid")
-    with open(file[0], mode="r", encoding="utf-8") as f:
+    file = study_path / "study.antares"
+    with open(file, mode="r", encoding="utf-8") as f:
         for line in f:
             if "version" in line:
                 return int(line[10:])
@@ -354,7 +337,7 @@ def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
 def update_study_antares_file(new_version: int, study_path: Path) -> None:
     epoch_time = datetime(1970, 1, 1)
     delta = int((datetime.now() - epoch_time).total_seconds())
-    file = glob.glob(str(study_path / "study.antares"))[0]
+    file = study_path / "study.antares"
     with open(file, mode="r", encoding="utf-8") as f:
         lines = f.readlines()
         lines[1] = f"version = {new_version}\n"

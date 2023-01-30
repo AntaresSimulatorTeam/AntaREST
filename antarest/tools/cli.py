@@ -148,7 +148,7 @@ def generate_script_diff(
 @click.option(
     "-study_path",
     required=True,
-    type=click.Path(),
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="The path of the study you want to update",
 )
 @click.option(
@@ -159,7 +159,7 @@ def generate_script_diff(
 )
 def update_study(study_path: Path, target_version: int) -> None:
     """Upgrades study's version"""
-    study_version_upgrader.upgrade_study(study_path, target_version)
+    study_version_upgrader.upgrade_study(Path(study_path), target_version)
 
 
 if __name__ == "__main__":
