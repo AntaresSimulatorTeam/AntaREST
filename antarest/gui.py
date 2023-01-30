@@ -7,15 +7,12 @@ from multiprocessing import Process
 from pathlib import Path
 
 import requests
-
-from antarest import __version__
-
 import uvicorn  # type: ignore
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
-
+from antarest import __version__
 from antarest.core.utils.utils import get_local_path
 from antarest.main import fastapi_app, get_arguments
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
 
 RESOURCE_PATH = get_local_path() / "resources"
 
@@ -83,11 +80,11 @@ if __name__ == "__main__":
     menu = QMenu()
     openapp = QAction("Open application")
     menu.addAction(openapp)
-    openapp.triggered.connect(open_app)  # type: ignore
+    openapp.triggered.connect(open_app)
 
     # To quit the app
     quit = QAction("Quit")
-    quit.triggered.connect(app.quit)  # type: ignore
+    quit.triggered.connect(app.quit)
     menu.addAction(quit)
 
     # Adding options to the System Tray
