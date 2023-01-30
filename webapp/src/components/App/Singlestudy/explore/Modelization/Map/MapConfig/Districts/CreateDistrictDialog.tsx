@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
-import { AxiosError } from "axios";
 import { useMemo } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
@@ -11,7 +10,6 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 
@@ -31,11 +29,13 @@ function CreateDistrictDialog(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const districtsById = useAppSelector(getStudyMapDistrictsById);
 
   const existingDistricts = useMemo(
-    () => Object.values(districtsById).map((district) => district.name),
+    () =>
+      Object.values(districtsById).map((district) =>
+        district.name.toLowerCase()
+      ),
     [districtsById]
   );
 
@@ -45,20 +45,17 @@ function CreateDistrictDialog(props: Props) {
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { name, output, comments } = data.values;
-    try {
-      dispatch(
-        createStudyMapDistrict({
-          studyId: study.id,
-          name,
-          output,
-          comments,
-        })
-      );
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.createDistrict"), e as AxiosError);
-    }
 
-    onClose();
+    return dispatch(
+      createStudyMapDistrict({
+        studyId: study.id,
+        name,
+        output,
+        comments,
+      })
+    )
+      .unwrap()
+      .then(onClose);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -89,7 +86,7 @@ function CreateDistrictDialog(props: Props) {
                 if (v.trim().length <= 0) {
                   return false;
                 }
-                if (existingDistricts.includes(v)) {
+                if (existingDistricts.includes(v.toLowerCase())) {
                   return `The District "${v}" already exists`;
                 }
               },
