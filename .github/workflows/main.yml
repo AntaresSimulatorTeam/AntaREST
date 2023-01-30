@@ -28,7 +28,6 @@ jobs:
         #continue-on-error: true
         run: |
           mypy --install-types --non-interactive
-          mypy
 
   python-test:
     runs-on: ${{ matrix.os }}
