@@ -55,7 +55,7 @@ function MatrixAssignDialog(props: Props) {
 
   const dataSet = resList.data?.find((item) => item.id === selectedItem);
   const matrices = dataSet?.matrices;
-  const matrixName = `${t("global.matrixes")} - ${dataSet?.name}`;
+  const matrixName = `${t("global.matrices")} - ${dataSet?.name}`;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -81,7 +81,7 @@ function MatrixAssignDialog(props: Props) {
           },
         },
       ]);
-      enqueueSnackbar(t("data.succes.matrixAssignation"), {
+      enqueueSnackbar(t("data.success.matrixAssignation"), {
         variant: "success",
       });
       onClose();
