@@ -291,6 +291,7 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
     try:
         int_target_version = int(target_version.replace(".", ""))
     except Exception:
+        LOGGER.warning(f"Study version {target_version} is not handled")
         raise
     else:
         tmp_dir = Path(
