@@ -12,7 +12,10 @@ from typing import Optional
 import numpy
 import pandas  # type: ignore
 
-from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
+from antarest.core.exceptions import (
+    StudyValidationError,
+    UnsupportedStudyVersion,
+)
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
