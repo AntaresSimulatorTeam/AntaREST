@@ -2443,7 +2443,7 @@ class StudyService:
             request_params=params,
         )
 
-    def _upgrade_study(self, study_id: str, target_version: int) -> TaskResult:
+    def _upgrade_study(self, study_id: str, target_version: str) -> TaskResult:
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.get_study(study_id)
@@ -2461,7 +2461,7 @@ class StudyService:
                 else:
                     upgrade_study(study_to_upgrade.path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = str(target_version)
+                study_to_upgrade.version = target_version
                 self.repository.save(study_to_upgrade)
                 self.event_bus.push(
                     Event(

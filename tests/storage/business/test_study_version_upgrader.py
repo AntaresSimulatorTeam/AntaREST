@@ -28,12 +28,12 @@ def test_end_to_end_upgrades(tmp_path: Path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix="before_upgrade.tmp", prefix="", dir=cur_dir
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
-    study_version_upgrader.upgrade_study(tmp_path, 840)
+    study_version_upgrader.upgrade_study(tmp_path, "8.4.0")
     assert_study_antares_file_is_updated(tmp_path)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -43,28 +43,24 @@ def test_end_to_end_upgrades(tmp_path: Path):
 
 def test_fails_because_of_versions_asked(tmp_path: Path):
     cur_dir: Path = Path(__file__).parent
-    path_study = cur_dir / "assets" / "little_study_700.zip"
+    path_study = cur_dir / "assets" / "little_study_720.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     with pytest.raises(
         InvalidUpgrade,
         match="The version 600 is not supported",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, 600)
+        study_version_upgrader.upgrade_study(tmp_path, "6.0.0")
     with pytest.raises(
         InvalidUpgrade,
         match="The version you asked for is the one you currently have",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, 700)
-    path_other_study = cur_dir / "assets" / "little_study_720.zip"
-    target_other_study = tmp_path / "other_study_for_test"
-    with ZipFile(path_other_study) as zip_output:
-        zip_output.extractall(path=target_other_study)
+        study_version_upgrader.upgrade_study(tmp_path, "7.2.0")
     with pytest.raises(
         InvalidUpgrade,
         match="Cannot downgrade your study version",
     ):
-        study_version_upgrader.upgrade_study(target_other_study, 700)
+        study_version_upgrader.upgrade_study(tmp_path, "7.1.0")
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -73,14 +69,14 @@ def test_fallback_if_study_input_broken(tmp_path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix="before_upgrade.tmp", prefix="", dir=cur_dir
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
-        UnknownModuleError,
+        expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, 840)
+        study_version_upgrader.upgrade_study(tmp_path, "8.4.0")
     assert (True, are_same_dir(tmp_path, tmp_dir_before_upgrade))
     shutil.rmtree(tmp_dir_before_upgrade)
 

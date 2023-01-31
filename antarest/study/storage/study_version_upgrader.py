@@ -12,7 +12,7 @@ from typing import Optional
 import numpy
 import pandas  # type: ignore
 
-from antarest.core.exceptions import StudyValidationError, UnknownModuleError
+from antarest.core.exceptions import StudyValidationError
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -268,16 +268,15 @@ def upgrade_840(study_path: Path) -> None:
     )
 
 
-upgrade_methods = {
-    700: upgrade_700,
-    710: upgrade_710,
-    720: upgrade_720,
-    800: upgrade_800,
-    810: upgrade_810,
-    820: upgrade_820,
-    830: upgrade_830,
-    840: upgrade_840,
-}
+UPGRADE_METHODS = [
+    (700, 710, upgrade_710),
+    (710, 720, upgrade_720),
+    (720, 800, upgrade_800),
+    (800, 810, upgrade_810),
+    (810, 820, upgrade_820),
+    (820, 830, upgrade_830),
+    (830, 840, upgrade_840),
+]
 
 
 class InvalidUpgrade(HTTPException):
@@ -285,7 +284,8 @@ class InvalidUpgrade(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-def upgrade_study(study_path: Path, new_version: int) -> None:
+def upgrade_study(study_path: Path, target_version: str) -> None:
+    int_target_version = int(target_version.replace(".", ""))
     tmp_dir = Path(
         tempfile.mkdtemp(
             suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
@@ -293,15 +293,17 @@ def upgrade_study(study_path: Path, new_version: int) -> None:
     )
     shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
-        old_version = get_current_version(tmp_dir)
-        check_upgrade_is_possible(old_version, new_version)
-        do_upgrade(tmp_dir, old_version, new_version)
+        src_version = get_current_version(tmp_dir)
+        checks_if_upgrade_is_possible(src_version, int_target_version)
+        do_upgrade(tmp_dir, src_version, int_target_version)
+    except (StudyValidationError, InvalidUpgrade) as e:
+        shutil.rmtree(tmp_dir)
+        LOGGER.warning(str(e))
+        raise
     except Exception as e:
         shutil.rmtree(tmp_dir)
-        if isinstance(e.args[0], str):
-            LOGGER.warning("Some files are not in the right format")
-            raise UnknownModuleError(e.args[0])
-        raise e
+        LOGGER.warning(f"Unhandled exception : {e}")
+        raise
     else:
         shutil.rmtree(study_path)
         shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
@@ -319,28 +321,33 @@ def get_current_version(study_path: Path) -> int:
         )
 
 
-def check_upgrade_is_possible(old_version: int, new_version: int) -> None:
-    if new_version not in upgrade_methods.keys():
-        raise InvalidUpgrade(f"The version {new_version} is not supported")
-    if old_version < 700 or new_version < 700:
+def checks_if_upgrade_is_possible(
+    src_version: int, target_version: int
+) -> None:
+    is_version_supported = any(
+        target_v == target_version for _, target_v, _ in UPGRADE_METHODS
+    )
+    if not is_version_supported:
+        raise InvalidUpgrade(f"The version {target_version} is not supported")
+    if src_version < 700 or target_version < 700:
         raise InvalidUpgrade(
             "Sorry the first version we deal with is the 7.0.0"
         )
-    elif old_version > new_version:
+    elif src_version > target_version:
         raise InvalidUpgrade("Cannot downgrade your study version")
-    elif old_version == new_version:
+    elif src_version == target_version:
         raise InvalidUpgrade(
             "The version you asked for is the one you currently have"
         )
 
 
-def update_study_antares_file(new_version: int, study_path: Path) -> None:
+def update_study_antares_file(target_version: int, study_path: Path) -> None:
     epoch_time = datetime(1970, 1, 1)
     delta = int((datetime.now() - epoch_time).total_seconds())
     file = study_path / "study.antares"
     with open(file, mode="r", encoding="utf-8") as f:
         lines = f.readlines()
-        lines[1] = f"version = {new_version}\n"
+        lines[1] = f"version = {target_version}\n"
         lines[4] = f"lastsave = {delta}\n"
     with open(file, mode="w", encoding="utf-8") as f:
         for item in lines:
@@ -348,20 +355,12 @@ def update_study_antares_file(new_version: int, study_path: Path) -> None:
         f.close()
 
 
-def do_upgrade(study_path: Path, old_version: int, new_version: int) -> None:
-    update_study_antares_file(new_version, study_path)
-    possibilities = list(upgrade_methods.keys())
-    start = 0
-    end = len(possibilities) - 1
-    while possibilities[start] != old_version:
-        start += 1
-    while possibilities[end] != new_version:
-        end -= 1
-    return recursive_changes(possibilities[start + 1 : end + 1], study_path)
-
-
-def recursive_changes(update_list: typing.List[int], study_path: Path) -> None:
-    if len(update_list) > 0:
-        elt = update_list[0]
-        upgrade_methods[elt](study_path)
-        recursive_changes(update_list[1:], study_path)
+def do_upgrade(
+    study_path: Path, src_version: int, target_version: int
+) -> None:
+    update_study_antares_file(target_version, study_path)
+    curr_version = src_version
+    for old, new, method in UPGRADE_METHODS:
+        if curr_version == old and curr_version != target_version:
+            method(study_path)
+            curr_version = new
