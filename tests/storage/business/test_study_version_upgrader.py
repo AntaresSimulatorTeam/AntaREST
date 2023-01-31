@@ -10,7 +10,7 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-from antarest.core.exceptions import UnknownModuleError
+from antarest.core.exceptions import UnknownModuleError, UnsupportedStudyVersion
 from antarest.study.storage import study_version_upgrader
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -47,8 +47,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     with pytest.raises(
-        InvalidUpgrade,
-        match="The version 600 is not supported",
+        UnsupportedStudyVersion
     ):
         study_version_upgrader.upgrade_study(tmp_path, "6.0.0")
     with pytest.raises(
@@ -61,6 +60,10 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         match="Cannot downgrade your study version",
     ):
         study_version_upgrader.upgrade_study(tmp_path, "7.1.0")
+    with pytest.raises(
+            ValueError, match=re.escape("invalid literal for int() with base 10: '820rc'")
+    ):
+        study_version_upgrader.upgrade_study(tmp_path, "8.2.0.rc")
 
 
 def test_fallback_if_study_input_broken(tmp_path):

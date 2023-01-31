@@ -12,7 +12,7 @@ from typing import Optional
 import numpy
 import pandas  # type: ignore
 
-from antarest.core.exceptions import StudyValidationError
+from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -285,28 +285,36 @@ class InvalidUpgrade(HTTPException):
 
 
 def upgrade_study(study_path: Path, target_version: str) -> None:
-    int_target_version = int(target_version.replace(".", ""))
-    tmp_dir = Path(
-        tempfile.mkdtemp(
-            suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
-        )
-    )
-    shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
-        src_version = get_current_version(tmp_dir)
-        checks_if_upgrade_is_possible(src_version, int_target_version)
-        do_upgrade(tmp_dir, src_version, int_target_version)
-    except (StudyValidationError, InvalidUpgrade) as e:
-        shutil.rmtree(tmp_dir)
-        LOGGER.warning(str(e))
-        raise
-    except Exception as e:
-        shutil.rmtree(tmp_dir)
-        LOGGER.warning(f"Unhandled exception : {e}")
+        int_target_version = int(target_version.replace(".", ""))
+    except Exception:
         raise
     else:
-        shutil.rmtree(study_path)
-        shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
+        tmp_dir = Path(
+            tempfile.mkdtemp(
+                suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+            )
+        )
+        shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
+        try:
+            src_version = get_current_version(tmp_dir)
+            checks_if_upgrade_is_possible(src_version, int_target_version)
+            do_upgrade(tmp_dir, src_version, int_target_version)
+        except (StudyValidationError, InvalidUpgrade) as e:
+            shutil.rmtree(tmp_dir)
+            LOGGER.warning(str(e))
+            raise
+        except UnsupportedStudyVersion as e:
+            shutil.rmtree(tmp_dir)
+            LOGGER.warning(str(e.detail))
+            raise
+        except Exception as e:
+            shutil.rmtree(tmp_dir)
+            LOGGER.warning(f"Unhandled exception : {e}")
+            raise
+        else:
+            shutil.rmtree(study_path)
+            shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
 
 
 def get_current_version(study_path: Path) -> int:
@@ -328,7 +336,7 @@ def checks_if_upgrade_is_possible(
         target_v == target_version for _, target_v, _ in UPGRADE_METHODS
     )
     if not is_version_supported:
-        raise InvalidUpgrade(f"The version {target_version} is not supported")
+        raise UnsupportedStudyVersion(version=str(target_version))
     if src_version < 700 or target_version < 700:
         raise InvalidUpgrade(
             "Sorry the first version we deal with is the 7.0.0"
