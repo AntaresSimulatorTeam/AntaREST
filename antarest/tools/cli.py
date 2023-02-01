@@ -160,7 +160,7 @@ def update_study(study_path: Path, target_version: str) -> None:
 
     STUDY_PATH is the path of the study you want to update
 
-    TARGET-VERSION is the version you want your study to be at (example 8.4.0)
+    TARGET_VERSION is the version you want your study to be at (example 8.4.0)
     """
     study_version_upgrader.upgrade_study(Path(study_path), target_version)
 

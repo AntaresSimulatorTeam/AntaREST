@@ -320,8 +320,12 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
             try:
                 shutil.rmtree(study_path)
             except Exception:
-                LOGGER.error(f"Some files were locked so your study could not be replaced. Instead, a copy at the {target_version} will be created")
-                path_copy = study_path.parent.joinpath(f"{study_path.name}_copy")
+                LOGGER.error(
+                    f"Some files were locked so your study could not be replaced. Instead, a copy at the {target_version} will be created"
+                )
+                path_copy = study_path.parent.joinpath(
+                    f"{study_path.name}_copy"
+                )
                 path_copy.mkdir()
                 shutil.copytree(tmp_dir, path_copy, dirs_exist_ok=True)
                 raise
@@ -330,18 +334,13 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
 
 
 def get_current_version(study_path: Path) -> int:
-    lines = (
-        (study_path / "study.antares")
-        .read_text(encoding="utf-8")
+    lines = (study_path / "study.antares").read_text(encoding="utf-8")
+    possible_match = re.search(r"version\s*=\s*(\d+)", lines)
+    if possible_match is not None:
+        return int(possible_match[1])
+    raise StudyValidationError(
+        "Your study.antares file is not in the good format"
     )
-    try:
-        match = re.search(r"version\s*=\s*(\d+)", lines)[1]
-    except Exception as e:
-        raise StudyValidationError(
-            "Your study.antares file is not in the good format"
-        ) from e
-    else:
-        return int(match)
 
 
 def checks_if_upgrade_is_possible(
