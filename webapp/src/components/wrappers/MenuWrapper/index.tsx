@@ -17,7 +17,8 @@ import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import ReadMoreOutlinedIcon from "@mui/icons-material/ReadMoreOutlined";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import {
   keyframes,
   styled,
@@ -148,53 +149,59 @@ function MenuWrapper(props: Props) {
   const settings = navigation[navigation.length - 1];
 
   const drawMenuItem = (elm: MenuItem): ReactNode => {
+    const tooltipTitle = extended ? "" : t(elm.id);
+
     if (elm.id === "tasks.title") {
       return (
-        <NavListItem link key={elm.id}>
-          <NavInternalLink
-            to={elm.link}
-            end={elm.strict}
-            style={({ isActive }) => ({
-              background: isActive
-                ? theme.palette.primary.outlinedHoverBackground
-                : undefined,
-            })}
-          >
-            <NotificationBadge>
-              <NavListItemIcon>
-                <elm.icon sx={{ color: "grey.400" }} />
-              </NavListItemIcon>
-            </NotificationBadge>
-            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
-          </NavInternalLink>
-        </NavListItem>
+        <Tooltip title={tooltipTitle} placement="right-end">
+          <NavListItem link key={elm.id}>
+            <NavInternalLink
+              to={elm.link}
+              end={elm.strict}
+              style={({ isActive }) => ({
+                background: isActive
+                  ? theme.palette.primary.outlinedHoverBackground
+                  : undefined,
+              })}
+            >
+              <NotificationBadge>
+                <NavListItemIcon>
+                  <elm.icon sx={{ color: "grey.400" }} />
+                </NavListItemIcon>
+              </NotificationBadge>
+              {extended && <NavListItemText primary={t(`${elm.id}`)} />}
+            </NavInternalLink>
+          </NavListItem>
+        </Tooltip>
       );
     }
     return (
       <NavListItem link key={elm.id}>
-        {elm.newTab === true ? (
-          <NavExternalLink href={elm.link} target="_blank">
-            <NavListItemIcon>
-              <elm.icon sx={{ color: "grey.400" }} />
-            </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
-          </NavExternalLink>
-        ) : (
-          <NavInternalLink
-            to={elm.link}
-            end={elm.strict}
-            style={({ isActive }) => ({
-              background: isActive
-                ? theme.palette.primary.outlinedHoverBackground
-                : undefined,
-            })}
-          >
-            <NavListItemIcon>
-              <elm.icon sx={{ color: "grey.400" }} />
-            </NavListItemIcon>
-            {extended && <NavListItemText primary={t(`${elm.id}`)} />}
-          </NavInternalLink>
-        )}
+        <Tooltip title={tooltipTitle} placement="right-end">
+          {elm.newTab === true ? (
+            <NavExternalLink href={elm.link} target="_blank">
+              <NavListItemIcon>
+                <elm.icon sx={{ color: "grey.400" }} />
+              </NavListItemIcon>
+              {extended && <NavListItemText primary={t(`${elm.id}`)} />}
+            </NavExternalLink>
+          ) : (
+            <NavInternalLink
+              to={elm.link}
+              end={elm.strict}
+              style={({ isActive }) => ({
+                background: isActive
+                  ? theme.palette.primary.outlinedHoverBackground
+                  : undefined,
+              })}
+            >
+              <NavListItemIcon>
+                <elm.icon sx={{ color: "grey.400" }} />
+              </NavListItemIcon>
+              {extended && <NavListItemText primary={t(`${elm.id}`)} />}
+            </NavInternalLink>
+          )}
+        </Tooltip>
       </NavListItem>
     );
   };
@@ -264,20 +271,34 @@ function MenuWrapper(props: Props) {
         <Divider />
         <List>
           {drawMenuItem(settings)}
-          <NavListItem onClick={() => setOpenLogoutDialog(true)}>
-            <NavListItemIcon>
-              <LogoutIcon sx={{ color: "grey.400" }} />
-            </NavListItemIcon>
-            {extended && <NavListItemText primary={t("logout.title")} />}
-          </NavListItem>
-          <NavListItem
-            onClick={() => dispatch(setMenuExtensionStatus(!extended))}
+          <Tooltip
+            title={t(extended ? "" : "logout.title")}
+            placement="right-end"
           >
-            <NavListItemIcon>
-              <ReadMoreOutlinedIcon sx={{ color: "grey.400" }} />
-            </NavListItemIcon>
-            {extended && <NavListItemText primary={t("button.hide")} />}
-          </NavListItem>
+            <NavListItem onClick={() => setOpenLogoutDialog(true)}>
+              <NavInternalLink to="#">
+                <NavListItemIcon sx={{ color: "grey.400" }}>
+                  <LogoutIcon />
+                </NavListItemIcon>
+                {extended && <NavListItemText primary={t("logout.title")} />}
+              </NavInternalLink>
+            </NavListItem>
+          </Tooltip>
+          <Tooltip
+            title={t(extended ? "" : "button.expand")}
+            placement="right-end"
+          >
+            <NavListItem
+              onClick={() => dispatch(setMenuExtensionStatus(!extended))}
+            >
+              <NavInternalLink to="#">
+                <NavListItemIcon sx={{ color: "grey.400" }}>
+                  {extended ? <ArrowBackIosIcon /> : <ArrowForwardIosIcon />}
+                </NavListItemIcon>
+                {extended && <NavListItemText primary={t("button.collapse")} />}
+              </NavInternalLink>
+            </NavListItem>
+          </Tooltip>
         </List>
         {openLogoutDialog && (
           <ConfirmationDialog
