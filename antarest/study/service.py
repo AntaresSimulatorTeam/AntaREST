@@ -2118,9 +2118,10 @@ class StudyService:
             logger.error(e)
             return StudyContentStatus.ERROR
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
-        return list(STUDY_REFERENCE_TEMPLATES.keys())
+        return list(STUDY_REFERENCE_TEMPLATES)
 
     def create_xpansion_configuration(
         self,
