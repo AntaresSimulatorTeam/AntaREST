@@ -11,7 +11,6 @@ import pandas
 import pytest
 
 from antarest.core.exceptions import (
-    UnknownModuleError,
     UnsupportedStudyVersion,
 )
 from antarest.study.storage import study_version_upgrader
@@ -87,15 +86,14 @@ def test_fallback_if_study_input_broken(tmp_path):
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
-    with open(
-        tmp_path / "study.antares", mode="r", encoding="utf-8"
-    ) as study_antares:
-        version = "version = 840"
-        lines = study_antares.readlines()
-        assert len(lines) == 7
-        assert (
-            re.fullmatch(r"version\s*=\s*(\d+)", version.rstrip())[1] == "840"
-        )
+    version = "version = 840"
+    lines = (
+        (tmp_path / "study.antares")
+        .read_text(encoding="utf-8")
+        .splitlines(keepends=True)
+    )
+    assert len(lines) == 7
+    assert re.fullmatch(r"version\s*=\s*(\d+)", version.rstrip())[1] == "840"
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:

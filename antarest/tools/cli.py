@@ -156,11 +156,11 @@ def generate_script_diff(
     type=click.STRING,
 )
 def update_study(study_path: Path, target_version: str) -> None:
-    """Upgrades study's version
+    """Upgrades study version
 
-    study-path is the path of the study you want to update
+    STUDY_PATH is the path of the study you want to update
 
-    target-version is the version you want your study to be at (example 8.4.0)
+    TARGET-VERSION is the version you want your study to be at (example 8.4.0)
     """
     study_version_upgrader.upgrade_study(Path(study_path), target_version)
 

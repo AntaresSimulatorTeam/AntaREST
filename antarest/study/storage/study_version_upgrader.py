@@ -1,13 +1,13 @@
 import glob
 import logging
+import re
 import shutil
 import tempfile
-import typing
 from datetime import datetime
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import numpy
 import pandas  # type: ignore
@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 
 
 LOGGER = logging.getLogger(__name__)
-OTHER_PREFERENCIES = "other preferences"
+OTHER_PREFERENCES = "other preferences"
 GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
 ADEQUACY_PATCH = "adequacy patch"
 MAPPING_TRANSMISSION_CAPACITIES = {
@@ -39,7 +39,7 @@ def modify_file(
     file_path: Path,
     key: str,
     parameter_to_add: Optional[str],
-    value: typing.Any,
+    value: Any,
     parameter_to_delete: Optional[str],
 ) -> None:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
@@ -58,7 +58,7 @@ def modify_file(
 
 def find_value_in_file(
     study_path: Path, file_path: Path, key: str, parameter_to_check: str
-) -> typing.Any:
+) -> Any:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     file = study_path / file_path
     data = reader.read(file)
@@ -66,7 +66,7 @@ def find_value_in_file(
 
 
 def upgrade_700(study_path: Path) -> None:
-    # It's the basecase study so we pass
+    # It's the base case study so we pass
     pass
 
 
@@ -101,7 +101,7 @@ def upgrade_710(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        OTHER_PREFERENCIES,
+        OTHER_PREFERENCES,
         "hydro-pricing-mode",
         "fast",
         None,
@@ -120,7 +120,7 @@ def upgrade_800(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        OTHER_PREFERENCIES,
+        OTHER_PREFERENCES,
         "hydro-heuristic-policy",
         "accommodate rule curves",
         None,
@@ -155,7 +155,7 @@ def upgrade_810(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        OTHER_PREFERENCIES,
+        OTHER_PREFERENCES,
         "renewable-generation-modelling",
         "aggregated",
         None,
@@ -314,23 +314,34 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
             raise
         except Exception as e:
             shutil.rmtree(tmp_dir)
-            LOGGER.warning(f"Unhandled exception : {e}")
+            LOGGER.error(f"Unhandled exception : {e}", exc_info=True)
             raise
         else:
-            shutil.rmtree(study_path)
-            shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
+            try:
+                shutil.rmtree(study_path)
+            except Exception:
+                LOGGER.error(f"Some files were locked so your study could not be replaced. Instead, a copy at the {target_version} will be created")
+                path_copy = study_path.parent.joinpath(f"{study_path.name}_copy")
+                path_copy.mkdir()
+                shutil.copytree(tmp_dir, path_copy, dirs_exist_ok=True)
+                raise
+            else:
+                shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
 
 
 def get_current_version(study_path: Path) -> int:
-    file = study_path / "study.antares"
-    with open(file, mode="r", encoding="utf-8") as f:
-        for line in f:
-            if "version" in line:
-                return int(line[10:])
-        f.close()
+    lines = (
+        (study_path / "study.antares")
+        .read_text(encoding="utf-8")
+    )
+    try:
+        match = re.search(r"version\s*=\s*(\d+)", lines)[1]
+    except Exception as e:
         raise StudyValidationError(
             "Your study.antares file is not in the good format"
-        )
+        ) from e
+    else:
+        return int(match)
 
 
 def checks_if_upgrade_is_possible(
@@ -357,14 +368,12 @@ def update_study_antares_file(target_version: int, study_path: Path) -> None:
     epoch_time = datetime(1970, 1, 1)
     delta = int((datetime.now() - epoch_time).total_seconds())
     file = study_path / "study.antares"
-    with open(file, mode="r", encoding="utf-8") as f:
-        lines = f.readlines()
-        lines[1] = f"version = {target_version}\n"
-        lines[4] = f"lastsave = {delta}\n"
-    with open(file, mode="w", encoding="utf-8") as f:
+    lines = file.read_text(encoding="utf-8").splitlines(keepends=True)
+    lines[1] = f"version = {target_version}\n"
+    lines[4] = f"lastsave = {delta}\n"
+    with file.open(mode="w", encoding="utf-8") as f:
         for item in lines:
             f.write(item)
-        f.close()
 
 
 def do_upgrade(
