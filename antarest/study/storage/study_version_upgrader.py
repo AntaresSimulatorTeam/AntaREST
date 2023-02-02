@@ -321,7 +321,7 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
                 shutil.rmtree(study_path)
             except Exception:
                 LOGGER.error(
-                    f"Some files were locked so your study could not be replaced. Instead, a copy at the {target_version} will be created"
+                    f"Some files were locked so your study could not be replaced. It is now altered but a copy in the {target_version} version is being created"
                 )
                 path_copy = study_path.parent.joinpath(
                     f"{study_path.name}_copy"
