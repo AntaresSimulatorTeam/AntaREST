@@ -389,7 +389,6 @@ class LauncherService:
         filter_orphans: bool = True,
         latest: Optional[int] = None,
     ) -> List[JobResult]:
-
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
@@ -501,7 +500,6 @@ class LauncherService:
                 shutil.copytree(output_path, imported_output_path)
                 imported_output_path.rename(Path(job_output_path, output_name))
             else:
-
                 shutil.copy(
                     output_path, job_output_path / f"{output_name}.zip"
                 )

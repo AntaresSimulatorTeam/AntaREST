@@ -125,7 +125,6 @@ def test_service_without_cache() -> None:
 
 
 def test_service_with_cache() -> None:
-
     repo_mock = Mock(spec=MaintenanceRepository)
     cache = Mock()
     event_bus = Mock()

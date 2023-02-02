@@ -87,7 +87,6 @@ def assert_data(data: bytes):
 
 
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
-
     data = assert_url_content(
         url="/v1/studies/STA-mini/export",
         tmp_dir=tmp_path,
@@ -97,7 +96,6 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
 
 
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
-
     data = assert_url_content(
         url="/v1/studies/STA-mini/export?no-output",
         tmp_dir=tmp_path,

@@ -224,7 +224,6 @@ class TimeSeriesConfigManager:
         ts_type: TSType,
         general_data: JSON,
     ) -> Optional[TSFormFieldsForType]:
-
         general = general_data.get("general", {})
         input_ = general_data.get("input", {})
         output = general_data.get("output", {})

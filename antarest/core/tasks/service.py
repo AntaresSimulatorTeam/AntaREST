@@ -348,7 +348,6 @@ class TaskJobService(ITaskService):
         task_id: str,
         custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
-
         self.event_bus.push(
             Event(
                 type=EventType.TASK_RUNNING,

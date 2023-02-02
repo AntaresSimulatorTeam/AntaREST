@@ -16,7 +16,6 @@ def build_maintenance_manager(
     cache: ICache,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> MaintenanceService:
-
     repository = MaintenanceRepository()
     service = MaintenanceService(config, repository, event_bus, cache)
 

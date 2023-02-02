@@ -17,7 +17,6 @@ def build_eventbus(
     autostart: bool = True,
     redis_client: Optional[Redis] = None,  # type: ignore
 ) -> IEventBus:
-
     eventbus = EventBusService(
         RedisEventBus(redis_client)
         if redis_client is not None

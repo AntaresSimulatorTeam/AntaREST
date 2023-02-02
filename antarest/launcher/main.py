@@ -23,7 +23,6 @@ def build_launcher(
     event_bus: IEventBus = DummyEventBusService(),
     service_launcher: Optional[LauncherService] = None,
 ) -> Optional[LauncherService]:
-
     if not service_launcher:
         repository = JobResultRepository()
         # keep old job results

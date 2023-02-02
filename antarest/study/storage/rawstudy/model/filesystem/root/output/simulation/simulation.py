@@ -70,7 +70,6 @@ class OutputSimulation(FolderNode):
         }
 
         if not self.simulation.error:
-
             children["annualSystemCost"] = RawFileNode(
                 self.context, self.config.next_file("annualSystemCost.txt")
             )

@@ -610,7 +610,6 @@ class SlurmLauncher(AbstractLauncher):
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
-
         thread = threading.Thread(
             target=self._run_study,
             args=(study_uuid, job_id, launcher_parameters, version),

@@ -14,7 +14,6 @@ def build_taskjob_manager(
     config: Config,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> ITaskService:
-
     repository = TaskJobRepository()
     service = TaskJobService(config, repository, event_bus)
 

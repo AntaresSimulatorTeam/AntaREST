@@ -66,7 +66,6 @@ class MaintenanceService:
         db_call: Callable[[], Optional[str]],
         default_value: str,
     ) -> str:
-
         try:
             data_json = self.cache.get(cache_id)
             if data_json is not None and "content" in data_json.keys():
@@ -101,7 +100,6 @@ class MaintenanceService:
         db_call: Callable[[str], None],
         request_params: RequestParameters,
     ) -> None:
-
         if not request_params.user or not request_params.user.is_site_admin():
             raise UserHasNotPermissionError()
 

@@ -114,7 +114,6 @@ def test_filter():
 
 
 def test_delete(tmp_path: Path):
-
     folder_node = tmp_path / "folder_node"
     folder_node.mkdir()
     sub_folder = folder_node / "sub_folder"

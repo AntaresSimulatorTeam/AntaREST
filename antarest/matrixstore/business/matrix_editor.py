@@ -96,7 +96,7 @@ class MatrixEditor:
         coordinates: List[Tuple[int, int]],
         operation: Operation,
     ) -> pd.DataFrame:
-        for (row, column) in coordinates:
+        for row, column in coordinates:
             df.iat[row, column] = operation.compute(
                 df.iat[row, column], use_coords=True
             )
