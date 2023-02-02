@@ -30,13 +30,15 @@ def test_end_to_end_upgrades(tmp_path: Path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
+        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
-    study_version_upgrader.upgrade_study(tmp_path, "8.4.0")
-    assert_study_antares_file_is_updated(tmp_path)
+    # Only checks if the study_upgrader can go from the first supported version to the last one
+    target_version = "840"
+    study_version_upgrader.upgrade_study(tmp_path, target_version)
+    assert_study_antares_file_is_updated(tmp_path, target_version)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
     assert (False, are_same_dir(tmp_path, tmp_dir_before_upgrade))
@@ -73,7 +75,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
+        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
@@ -85,15 +87,9 @@ def test_fallback_if_study_input_broken(tmp_path):
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
-def assert_study_antares_file_is_updated(tmp_path: Path) -> None:
-    version = "version = 840"
-    lines = (
-        (tmp_path / "study.antares")
-        .read_text(encoding="utf-8")
-        .splitlines(keepends=True)
-    )
-    assert len(lines) == 7
-    assert re.fullmatch(r"version\s*=\s*(\d+)", version.rstrip())[1] == "840"
+def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) -> None:
+    lines = (tmp_path / "study.antares").read_text(encoding="utf-8")
+    assert re.search(r"version\s*=\s*(\d+)", lines)[1] == target_version
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:

@@ -3,7 +3,7 @@ import logging
 import re
 import shutil
 import tempfile
-from datetime import datetime
+import time
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
@@ -317,20 +317,14 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
             LOGGER.error(f"Unhandled exception : {e}", exc_info=True)
             raise
         else:
-            try:
-                shutil.rmtree(study_path)
-            except Exception:
-                LOGGER.error(
-                    f"Some files were locked so your study could not be replaced. It is now altered but a copy in the {target_version} version is being created"
+            backup_dir = Path(
+                tempfile.mkdtemp(
+                    suffix=".backup.tmp", prefix="~", dir=study_path.parent
                 )
-                path_copy = study_path.parent.joinpath(
-                    f"{study_path.name}_copy"
-                )
-                path_copy.mkdir()
-                shutil.copytree(tmp_dir, path_copy, dirs_exist_ok=True)
-                raise
-            else:
-                shutil.copytree(tmp_dir, study_path, dirs_exist_ok=True)
+            )
+            study_path.rename(backup_dir)
+            tmp_dir.rename(study_path)
+            shutil.rmtree(backup_dir, ignore_errors=True)
 
 
 def get_current_version(study_path: Path) -> int:
@@ -364,15 +358,21 @@ def checks_if_upgrade_is_possible(
 
 
 def update_study_antares_file(target_version: int, study_path: Path) -> None:
-    epoch_time = datetime(1970, 1, 1)
-    delta = int((datetime.now() - epoch_time).total_seconds())
     file = study_path / "study.antares"
-    lines = file.read_text(encoding="utf-8").splitlines(keepends=True)
-    lines[1] = f"version = {target_version}\n"
-    lines[4] = f"lastsave = {delta}\n"
-    with file.open(mode="w", encoding="utf-8") as f:
-        for item in lines:
-            f.write(item)
+    content = file.read_text(encoding="utf-8")
+    content = re.sub(
+        r"^version\s*=.*$",
+        f"version = {target_version}",
+        content,
+        flags=re.MULTILINE,
+    )
+    content = re.sub(
+        r"^lastsave\s*=.*$",
+        f"lastsave = {int(time.time())}",
+        content,
+        flags=re.MULTILINE,
+    )
+    file.write_text(content, encoding="utf-8")
 
 
 def do_upgrade(
