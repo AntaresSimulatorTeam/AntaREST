@@ -30,7 +30,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     old_values = get_old_settings_values(tmp_path)
@@ -75,7 +75,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
     tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
+        suffix="before_upgrade.tmp", prefix="", dir=cur_dir / "assets"
     )
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
