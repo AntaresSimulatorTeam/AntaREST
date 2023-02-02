@@ -1,18 +1,26 @@
 import enum
 import uuid
 from dataclasses import dataclass
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
-from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
-from antarest.login.model import Group, Identity, GroupDTO
+from antarest.login.model import Group, GroupDTO, Identity
+from pydantic import BaseModel
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+)
+from sqlalchemy.orm import relationship  # type: ignore
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -35,6 +43,8 @@ STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
     "820": "empty_study_820.zip",
     "830": "empty_study_830.zip",
     "840": "empty_study_840.zip",
+    # we use the version '8.5.0-rc3'
+    "850": "empty_study_840.zip",  # todo: "empty_study_840.zip"
 }
 
 NEW_DEFAULT_STUDY_VERSION: str = "840"
@@ -118,7 +128,17 @@ class Study(Base):  # type: ignore
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
-        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, last_access={self.last_access}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
+        return (
+            f"[Study]"
+            f" id={self.id},"
+            f" type={self.type},"
+            f" name={self.name},"
+            f" version={self.version},"
+            f" updated_at={self.updated_at},"
+            f" last_access={self.last_access},"
+            f" owner={self.owner},"
+            f" groups={[str(u) + ',' for u in self.groups]}"
+        )
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Study):
