@@ -60,7 +60,6 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-
         errors = []
         if any(
             a not in data

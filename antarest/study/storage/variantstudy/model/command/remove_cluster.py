@@ -175,7 +175,6 @@ class RemoveCluster(ICommand):
     def _remove_cluster_from_binding_constraints(
         self, study_data: FileStudy
     ) -> None:
-
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )

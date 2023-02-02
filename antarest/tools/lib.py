@@ -371,7 +371,6 @@ def generate_study(
     host: Optional[str] = None,
     token: Optional[str] = None,
 ) -> GenerationResultInfoDTO:
-
     if study_id is not None and host is not None:
         generator: IVariantGenerator = RemoteVariantGenerator(
             study_id, host, token

@@ -37,7 +37,6 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> bytes:
-
         file_path, tmp_dir = self._get_real_file_path()
 
         if file_path.exists():

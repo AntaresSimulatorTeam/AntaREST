@@ -91,7 +91,6 @@ class ConnectionManager:
 def configure_websockets(
     application: FastAPI, config: Config, event_bus: IEventBus
 ) -> None:
-
     manager = ConnectionManager()
 
     async def send_event_to_ws(event: Event) -> None:

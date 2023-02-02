@@ -214,7 +214,6 @@ def create_matrix_gc(
     study_service: Optional[StudyService] = None,
     matrix_service: Optional[MatrixService] = None,
 ) -> MatrixGarbageCollector:
-
     if study_service and matrix_service:
         return MatrixGarbageCollector(
             config=config,

@@ -106,7 +106,6 @@ def get_local_path() -> Path:
 
 
 def get_commit_id(path_resources: Path) -> Optional[str]:
-
     commit_id = None
 
     path_commit_id = path_resources / "commit_id"

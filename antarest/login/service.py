@@ -811,7 +811,6 @@ class LoginService:
                 )
             )
         ):
-
             logger.info("bot %d deleted by user %s", id, params.get_user_id())
             for role in self.roles.get_all_by_user(user=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)

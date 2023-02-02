@@ -732,7 +732,6 @@ def test_study_permission_management(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_study_versions(tmp_path: Path) -> None:
-
     app = FastAPI(title=__name__)
     build_study_service(
         app,

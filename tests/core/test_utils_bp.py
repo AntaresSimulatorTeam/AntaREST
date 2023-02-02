@@ -27,7 +27,6 @@ CONFIG = Config(
 
 @pytest.mark.unit_test
 def test_version() -> None:
-
     mock_storage_service = Mock()
     mock_storage_service.study_service.path_resources = Path("/")
 

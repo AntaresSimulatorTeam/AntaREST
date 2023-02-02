@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class TestCommandFactory:
     def setup_class(self):
-        for (module_loader, name, ispkg) in pkgutil.iter_modules(
+        for module_loader, name, ispkg in pkgutil.iter_modules(
             ["antarest/study/storage/variantstudy/model/command"]
         ):
             importlib.import_module(

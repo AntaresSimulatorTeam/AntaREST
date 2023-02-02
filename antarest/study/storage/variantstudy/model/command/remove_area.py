@@ -171,7 +171,6 @@ class RemoveArea(ICommand):
         study_data.tree.delete(["input", "thermal", "series", self.id])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-
         study_data.tree.delete(["input", "areas", self.id])
 
         study_data.tree.delete(["input", "hydro", "allocation", self.id])

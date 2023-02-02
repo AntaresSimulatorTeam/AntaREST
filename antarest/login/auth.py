@@ -31,7 +31,6 @@ class Auth:
             [], Dict[str, Any]
         ] = AuthJWT().get_raw_jwt,  # Test only
     ):
-
         self.disabled = config.security.disabled
         self.verify = verify
         self.get_identity = get_identity

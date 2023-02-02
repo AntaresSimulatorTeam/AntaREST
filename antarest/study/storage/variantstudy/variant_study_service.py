@@ -983,7 +983,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         config: FileStudyTreeConfig,
         notifier: TaskUpdateNotifier = noop_notifier,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-
         commands, notify = self._get_commands_and_notifier(
             variant_study=variant_study, notifier=notifier
         )

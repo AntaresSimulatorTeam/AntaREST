@@ -552,7 +552,6 @@ class XpansionManager:
     def add_candidate(
         self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
     ) -> None:
-
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )

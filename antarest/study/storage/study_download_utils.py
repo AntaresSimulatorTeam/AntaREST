@@ -122,7 +122,6 @@ class StudyDownloader:
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
-
         cluster_details = [f"details-{data.level.value}"]
         if study.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
             cluster_details += [f"details-res-{data.level.value}"]
@@ -150,7 +149,6 @@ class StudyDownloader:
         first_element_type_condition: bool,
         second_element_type_condition: Callable[[str], bool],
     ) -> None:
-
         if first_element_type_condition:
             if data.type == StudyDownloadType.LINK and isinstance(
                 type_elm[elm], Area
@@ -415,7 +413,6 @@ class StudyDownloader:
                 if filetype == ExportFormat.ZIP
                 else tarfile.open(target_file, mode="w:gz")
             ) as output_data:
-
                 # 2 - Create CSV files
                 for ts_data in matrix.data:
                     output = StringIO()

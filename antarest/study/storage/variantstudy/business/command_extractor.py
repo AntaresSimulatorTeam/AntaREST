@@ -615,7 +615,6 @@ class CommandExtractor(ICommandExtractor):
         study: FileStudy,
         district_id: str,
     ) -> ICommand:
-
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]

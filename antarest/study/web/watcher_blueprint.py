@@ -46,7 +46,6 @@ def create_watcher_routes(
         path: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-
         params = RequestParameters(user=current_user)
         if path:
             # The front actually sends <workspace>/<path/to/folder>

@@ -134,7 +134,6 @@ def test_study_inheritance():
 
 @with_db_context
 def test_cache():
-
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
 
