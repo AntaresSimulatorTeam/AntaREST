@@ -87,7 +87,9 @@ def test_fallback_if_study_input_broken(tmp_path):
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
-def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) -> None:
+def assert_study_antares_file_is_updated(
+    tmp_path: Path, target_version: str
+) -> None:
     lines = (tmp_path / "study.antares").read_text(encoding="utf-8")
     assert re.search(r"version\s*=\s*(\d+)", lines)[1] == target_version
 
