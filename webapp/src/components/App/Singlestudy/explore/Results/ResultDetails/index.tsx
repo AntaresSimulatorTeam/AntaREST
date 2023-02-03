@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext, useParams } from "react-router";
 import axios from "axios";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
   Area,
   LinkElement,
@@ -137,6 +138,16 @@ function ResultDetails() {
     setYear(year);
   };
 
+  const handleDownload = (data: MatrixType, filename: string): void => {
+    const fileData = data.data.map((row) => row.join("\t")).join("\n");
+    const blob = new Blob([fileData], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.download = filename;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -208,10 +219,24 @@ function ResultDetails() {
                 </Box>
               ))}
               <Button
+                variant="outlined"
                 onClick={() => setShowFilter(true)}
                 disabled={matrixRes.isLoading}
               >
                 {t("global.change")}
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<DownloadOutlinedIcon />}
+                onClick={() =>
+                  matrixRes.data &&
+                  handleDownload(matrixRes.data, `matrix_${study.id}`)
+                }
+                disabled={matrixRes.isLoading}
+              >
+                {t("global.download")}
               </Button>
             </Box>
             <Box sx={{ flex: 1 }}>
