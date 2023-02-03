@@ -272,13 +272,13 @@ def upgrade_840(study_path: Path) -> None:
 
 
 UPGRADE_METHODS = [
-    (700, 710, upgrade_710),
-    (710, 720, upgrade_720),
-    (720, 800, upgrade_800),
-    (800, 810, upgrade_810),
-    (810, 820, upgrade_820),
-    (820, 830, upgrade_830),
-    (830, 840, upgrade_840),
+    ("700", "710", upgrade_710),
+    ("710", "720", upgrade_720),
+    ("720", "800", upgrade_800),
+    ("800", "810", upgrade_810),
+    ("810", "820", upgrade_820),
+    ("820", "830", upgrade_830),
+    ("830", "840", upgrade_840),
 ]
 
 
@@ -288,76 +288,78 @@ class InvalidUpgrade(HTTPException):
 
 
 def upgrade_study(study_path: Path, target_version: str) -> None:
+    tmp_dir = Path(
+        tempfile.mkdtemp(
+            suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+        )
+    )
+    shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
-        int_target_version = int(target_version.replace(".", ""))
-    except Exception:
-        LOGGER.warning(f"Study version {target_version} is not handled")
+        src_version = get_current_version(tmp_dir)
+        checks_if_upgrade_is_possible(src_version, target_version)
+        do_upgrade(tmp_dir, src_version, target_version)
+    except (StudyValidationError, InvalidUpgrade) as e:
+        shutil.rmtree(tmp_dir)
+        LOGGER.warning(str(e))
+        raise
+    except UnsupportedStudyVersion as e:
+        shutil.rmtree(tmp_dir)
+        LOGGER.warning(str(e.detail))
+        raise
+    except Exception as e:
+        shutil.rmtree(tmp_dir)
+        LOGGER.error(f"Unhandled exception : {e}", exc_info=True)
         raise
     else:
-        tmp_dir = Path(
+        backup_dir = Path(
             tempfile.mkdtemp(
-                suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
+                suffix=".backup.tmp", prefix="~", dir=study_path.parent
             )
         )
-        shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
-        try:
-            src_version = get_current_version(tmp_dir)
-            checks_if_upgrade_is_possible(src_version, int_target_version)
-            do_upgrade(tmp_dir, src_version, int_target_version)
-        except (StudyValidationError, InvalidUpgrade) as e:
-            shutil.rmtree(tmp_dir)
-            LOGGER.warning(str(e))
-            raise
-        except UnsupportedStudyVersion as e:
-            shutil.rmtree(tmp_dir)
-            LOGGER.warning(str(e.detail))
-            raise
-        except Exception as e:
-            shutil.rmtree(tmp_dir)
-            LOGGER.error(f"Unhandled exception : {e}", exc_info=True)
-            raise
-        else:
-            backup_dir = Path(
-                tempfile.mkdtemp(
-                    suffix=".backup.tmp", prefix="~", dir=study_path.parent
-                )
-            )
-            study_path.replace(backup_dir)
-            tmp_dir.replace(study_path)
-            shutil.rmtree(backup_dir, ignore_errors=True)
+        backup_dir.rmdir()
+        study_path.rename(backup_dir)
+        tmp_dir.rename(study_path)
+        shutil.rmtree(backup_dir, ignore_errors=True)
 
 
-def get_current_version(study_path: Path) -> int:
+def get_current_version(study_path: Path) -> str:
     lines = (study_path / "study.antares").read_text(encoding="utf-8")
     possible_match = re.search(r"version\s*=\s*(\d+)", lines)
     if possible_match is not None:
-        return int(possible_match[1])
+        return possible_match[1]
     raise StudyValidationError(
         "Your study.antares file is not in the good format"
     )
 
 
-def checks_if_upgrade_is_possible(
-    src_version: int, target_version: int
-) -> None:
-    is_version_supported = any(
-        target_v == target_version for _, target_v, _ in UPGRADE_METHODS
-    )
-    if not is_version_supported:
-        raise UnsupportedStudyVersion(version=str(target_version))
-    if src_version < 700 or target_version < 700:
+def checks_if_upgrade_is_possible(src_version: str, dst_version: str) -> None:
+    if src_version == dst_version:
+        raise InvalidUpgrade(f"Your study is already in version {dst_version}")
+
+    sources = [u[0] for u in UPGRADE_METHODS]
+    if src_version not in sources:
         raise InvalidUpgrade(
-            "Sorry the first version we deal with is the 7.0.0"
+            f"Version {src_version} unknown: possible versions are {', '.join(sources)}"
         )
-    elif src_version > target_version:
-        raise InvalidUpgrade("Cannot downgrade your study version")
-    elif src_version == target_version:
+
+    targets = [u[1] for u in UPGRADE_METHODS]
+    if dst_version not in targets:
         raise InvalidUpgrade(
-            "The version you asked for is the one you currently have"
+            f"Version {dst_version} unknown: possible versions are {', '.join(targets)}"
+        )
+
+    curr_version = src_version
+    for src, dst in zip(sources, targets):
+        if curr_version == src:
+            curr_version = dst
+
+    if curr_version != dst_version:
+        raise InvalidUpgrade(
+            f"Impossible to upgrade from version {src_version} to version {dst_version}"
         )
 
 
-def update_study_antares_file(target_version: int, study_path: Path) -> None:
+def update_study_antares_file(target_version: str, study_path: Path) -> None:
     file = study_path / "study.antares"
     content = file.read_text(encoding="utf-8")
     content = re.sub(
@@ -376,7 +378,7 @@ def update_study_antares_file(target_version: int, study_path: Path) -> None:
 
 
 def do_upgrade(
-    study_path: Path, src_version: int, target_version: int
+    study_path: Path, src_version: str, target_version: str
 ) -> None:
     update_study_antares_file(target_version, study_path)
     curr_version = src_version

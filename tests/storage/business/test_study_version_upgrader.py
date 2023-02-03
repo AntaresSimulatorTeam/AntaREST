@@ -10,15 +10,15 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-from antarest.core.exceptions import (
-    UnsupportedStudyVersion,
-)
 from antarest.study.storage import study_version_upgrader
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
-from antarest.study.storage.study_version_upgrader import InvalidUpgrade
+from antarest.study.storage.study_version_upgrader import (
+    InvalidUpgrade,
+    UPGRADE_METHODS,
+)
 from antarest.study.storage.study_version_upgrader import (
     MAPPING_TRANSMISSION_CAPACITIES,
 )
@@ -50,23 +50,25 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     path_study = cur_dir / "assets" / "little_study_720.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
-    with pytest.raises(UnsupportedStudyVersion):
-        study_version_upgrader.upgrade_study(tmp_path, "6.0.0")
     with pytest.raises(
         InvalidUpgrade,
-        match="The version you asked for is the one you currently have",
+        match=f"Version 600 unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "7.2.0")
+        study_version_upgrader.upgrade_study(tmp_path, "600")
+    with pytest.raises(
+        InvalidUpgrade, match="Your study is already in version 720"
+    ):
+        study_version_upgrader.upgrade_study(tmp_path, "720")
     with pytest.raises(
         InvalidUpgrade,
-        match="Cannot downgrade your study version",
+        match="Impossible to upgrade from version 720 to version 710",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "7.1.0")
+        study_version_upgrader.upgrade_study(tmp_path, "710")
     with pytest.raises(
-        ValueError,
-        match=re.escape("invalid literal for int() with base 10: '820rc'"),
+        InvalidUpgrade,
+        match=f"Version 820.rc unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "8.2.0.rc")
+        study_version_upgrader.upgrade_study(tmp_path, "820.rc")
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -82,7 +84,7 @@ def test_fallback_if_study_input_broken(tmp_path):
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "8.4.0")
+        study_version_upgrader.upgrade_study(tmp_path, "840")
     assert (True, are_same_dir(tmp_path, tmp_dir_before_upgrade))
     shutil.rmtree(tmp_dir_before_upgrade)
 
