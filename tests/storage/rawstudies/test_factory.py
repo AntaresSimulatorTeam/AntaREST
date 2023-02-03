@@ -2,9 +2,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
 )
@@ -22,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 def test_renewable_subtree():
     path = Path(__file__).parent / "samples/v810/sample1"
     context: ContextServer = Mock(specs=ContextServer)
-    config = ConfigPathBuilder.build(path, "")
+    config = build(path, "")
     assert config.get_renewable_names("area") == ["la_rochelle", "oleron"]
 
     tree = FileStudyTree(context, config)
@@ -60,7 +58,7 @@ def test_factory_cache():
     factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)
     study_id = "study-id"
     cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
-    config = ConfigPathBuilder.build(path, study_id)
+    config = build(path, study_id)
 
     cache.get.return_value = None
     study = factory.create_from_fs(path, study_id)
