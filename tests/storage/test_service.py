@@ -579,6 +579,7 @@ def test_download_output() -> None:
         by_year=True,
         error=False,
         playlist=[0],
+        xpansion="",
     )
     file_config = FileStudyTreeConfig(
         study_path=input_study.path,

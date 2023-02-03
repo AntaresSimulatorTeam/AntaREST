@@ -130,6 +130,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
                 by_year=True,
                 error=False,
                 playlist=[1],
+                xpansion="",
             )
         },
     )
