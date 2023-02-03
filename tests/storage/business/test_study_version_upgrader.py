@@ -85,7 +85,7 @@ def test_fallback_if_study_input_broken(tmp_path):
         match="No columns to parse from file",
     ):
         study_version_upgrader.upgrade_study(tmp_path, "840")
-    assert (True, are_same_dir(tmp_path, tmp_dir_before_upgrade))
+    assert are_same_dir(tmp_path, tmp_dir_before_upgrade)
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
@@ -106,8 +106,8 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     other_preferences = data["other preferences"]
     assert general["geographic-trimming"] == old_values[0]
     assert general["custom-scenario"] == old_values[1]
-    assert general["thematic-trimming"] is False
-    assert optimization["include-exportstructure"] is False
+    assert not general["thematic-trimming"]
+    assert not optimization["include-exportstructure"]
     assert (
         optimization["include-unfeasible-problem-behavior"] == "error-verbose"
     )
@@ -116,17 +116,13 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         == "accommodate rule curves"
     )
     assert other_preferences["renewable-generation-modelling"] == "aggregated"
-    assert adequacy_patch["include-adq-patch"] is False
-    assert (
-        adequacy_patch["set-to-null-ntc-between-physical-out-for-first-step"]
-        is True
-    )
-    assert (
-        adequacy_patch[
-            "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
-        ]
-        is True
-    )
+    assert not adequacy_patch["include-adq-patch"]
+    assert adequacy_patch[
+        "set-to-null-ntc-between-physical-out-for-first-step"
+    ]
+    assert adequacy_patch[
+        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
+    ]
     assert (
         optimization["transmission-capacities"]
         == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
@@ -160,9 +156,9 @@ def get_old_area_values(tmp_path: Path) -> dict:
 
 def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
     input_path = tmp_path / "input"
-    assert (input_path / "renewables").is_dir() is True
-    assert (input_path / "renewables" / "clusters").is_dir() is True
-    assert (input_path / "renewables" / "series").is_dir() is True
+    assert (input_path / "renewables").is_dir()
+    assert (input_path / "renewables" / "clusters").is_dir()
+    assert (input_path / "renewables" / "series").is_dir()
     links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     for folder in links:
         folder_path = Path(folder)

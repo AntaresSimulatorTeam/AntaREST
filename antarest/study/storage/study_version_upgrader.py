@@ -324,7 +324,9 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
 
 def get_current_version(study_path: Path) -> str:
     lines = (study_path / "study.antares").read_text(encoding="utf-8")
-    possible_match = re.search(r"^version\s*=\s*(.*)$", lines, flags=re.MULTILINE)
+    possible_match = re.search(
+        r"^version\s*=\s*(.*)$", lines, flags=re.MULTILINE
+    )
     if possible_match is not None:
         return possible_match[1].rstrip()
     raise StudyValidationError(
