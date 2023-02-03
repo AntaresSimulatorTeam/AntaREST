@@ -234,7 +234,7 @@ def parse_simulation(path: Path) -> Optional["Simulation"]:
                 namelist = zf.namelist()
                 error = "checkIntegrity.txt" not in namelist
                 xpansion = ""
-                if 'expansion/out.json' in namelist:
+                if "expansion/out.json" in namelist:
                     tmp_dir = tempfile.mkdtemp(
                         suffix="output.tmp", prefix="~", dir=ASSETS_DIR
                     )
@@ -272,9 +272,11 @@ def parse_simulation(path: Path) -> Optional["Simulation"]:
 def _parse_xpansion_version(path: Path) -> str:
     try:
         file = (path / "expansion" / "out.json").read_text(encoding="utf-8")
-        version = json.loads(file)["antares_xpansion"]["version"]
+        version = str(json.loads(file)["antares_xpansion"]["version"])
     except Exception as e:
-        logger.warning(f"There is an issue with the expansion/out.json file : {str(e)}")
+        logger.warning(
+            f"There is an issue with the expansion/out.json file : {str(e)}"
+        )
         return ""
     else:
         return version
