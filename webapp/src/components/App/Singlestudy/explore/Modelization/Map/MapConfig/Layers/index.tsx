@@ -3,6 +3,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
@@ -19,6 +20,7 @@ import UpdateLayerDialog from "./UpdateLayerDialog";
 function Layers() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
+  const [t] = useTranslation();
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const layersById = useAppSelector(getStudyMapLayersById);
   const [createLayerDialogOpen, setCreateLayerDialogOpen] = useState(false);
@@ -106,7 +108,7 @@ function Layers() {
           onClick={() => setCreateLayerDialogOpen(true)}
           sx={{ mr: 1 }}
         >
-          Add Layer
+          {t("study.modelization.map.layers.add")}
         </Button>
         <Button
           color="primary"
@@ -115,7 +117,7 @@ function Layers() {
           startIcon={<Edit />}
           onClick={() => setUpdateLayerDialogOpen(true)}
         >
-          Edit Layers
+          {t("study.modelization.map.layers.edit")}
         </Button>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
