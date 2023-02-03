@@ -322,8 +322,8 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
                     suffix=".backup.tmp", prefix="~", dir=study_path.parent
                 )
             )
-            study_path.rename(backup_dir)
-            tmp_dir.rename(study_path)
+            study_path.replace(backup_dir)
+            tmp_dir.replace(study_path)
             shutil.rmtree(backup_dir, ignore_errors=True)
 
 
