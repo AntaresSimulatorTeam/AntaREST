@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import tempfile
 from abc import ABC
@@ -10,7 +9,7 @@ from uuid import uuid4
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.model import JSON, PublicMode
+from antarest.core.model import JSON
 from antarest.core.utils.utils import (
     extract_zip,
     StopWatch,
@@ -18,7 +17,6 @@ from antarest.core.utils.utils import (
     zip_dir,
     unzip,
 )
-from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
@@ -26,16 +24,13 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
     PatchOutputs,
-    OwnerInfo,
-    DEFAULT_WORKSPACE_NAME,
     PatchStudy,
     StudyMetadataPatchDTO,
-    Patch,
     StudyAdditionalData,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
+    get_playlist,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
@@ -171,8 +166,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                         playlist=[
                             year
                             for year in (
-                                ConfigPathBuilder.get_playlist(file_metadata)
-                                or {}
+                                get_playlist(file_metadata) or {}
                             ).keys()
                         ],
                     )

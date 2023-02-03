@@ -2,8 +2,13 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
+    build,
+    _parse_outputs,
+    _parse_thermal,
+    _parse_sets,
+    _parse_links,
 )
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
@@ -13,6 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     BindingConstraintDTO,
 )
+from tests.storage.business.assets import ASSET_DIR
 
 
 def build_empty_files(tmp: Path) -> Path:
@@ -51,7 +57,7 @@ def test_parse_output_parmeters(tmp_path) -> None:
         study_id="id",
         output_path=study / "output",
     )
-    assert ConfigPathBuilder.build(study, "id") == config
+    assert build(study, "id") == config
 
 
 def test_parse_bindings(tmp_path: Path) -> None:
@@ -80,7 +86,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
         output_path=study_path / "output",
     )
 
-    assert ConfigPathBuilder.build(study_path, "id") == config
+    assert build(study_path, "id") == config
 
 
 def test_parse_outputs(tmp_path: Path) -> None:
@@ -125,19 +131,16 @@ def test_parse_outputs(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path, "id") == config
+    assert build(study_path, "id") == config
 
 
 def test_parse_outputs_discriminate_zips(tmp_path: Path) -> None:
-    cur_dir: Path = Path(__file__).parent.parent.parent.parent
-    path_study = (
-        cur_dir / "business" / "assets" / "test_output_zip_notzipped.zip"
-    )
+    path_study = ASSET_DIR / "test_output_zip_not_zipped.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
-    output_path = tmp_path / "test_output_zip_notzipped" / "output"
-    output_parsed = ConfigPathBuilder._parse_outputs(output_path)
-    assert output_parsed["20230127-1550eco"].archived == False
+    output_path = tmp_path / "test_output_zip_not_zipped" / "output"
+    output_parsed = _parse_outputs(output_path)
+    assert not output_parsed["20230127-1550eco"].archived
 
 
 def test_parse_sets(tmp_path: Path) -> None:
@@ -150,7 +153,7 @@ output = true
 """
     (study_path / "input/areas/sets.ini").write_text(content)
 
-    assert ConfigPathBuilder._parse_sets(study_path) == {
+    assert _parse_sets(study_path) == {
         "hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)
     }
 
@@ -183,7 +186,7 @@ def test_parse_area(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path, "id") == config
+    assert build(study_path, "id") == config
 
 
 def test_parse_thermal(tmp_path: Path) -> None:
@@ -203,7 +206,7 @@ def test_parse_thermal(tmp_path: Path) -> None:
     """
     (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
 
-    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == [
+    assert _parse_thermal(study_path, "fr") == [
         Cluster(id="t1", name="t1", enabled=True),
         Cluster(id="t2", name="t2", enabled=False),
         Cluster(id="t3", name="t3", enabled=True),
@@ -221,4 +224,4 @@ def test_parse_links(tmp_path: Path) -> None:
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
     link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
-    assert ConfigPathBuilder._parse_links(study_path, "fr") == {"l1": link}
+    assert _parse_links(study_path, "fr") == {"l1": link}

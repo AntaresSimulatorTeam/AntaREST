@@ -3,7 +3,7 @@ from typing import Optional, List, cast, Dict
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
+    get_playlist,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -32,7 +32,7 @@ class FileStudyHelpers:
         study: FileStudy, output_id: Optional[str] = None
     ) -> Optional[Dict[int, float]]:
         config = FileStudyHelpers.get_config(study, output_id)
-        return ConfigPathBuilder.get_playlist(config)
+        return get_playlist(config)
 
     @staticmethod
     def set_playlist(
