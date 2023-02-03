@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import tempfile
@@ -25,6 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
+from tests.storage.business.assets import ASSETS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -231,10 +233,17 @@ def parse_simulation(path: Path) -> Optional["Simulation"]:
             with ZipFile(path, mode="r") as zf:
                 namelist = zf.namelist()
                 error = "checkIntegrity.txt" not in namelist
-                xpansion = "lp/lp_namer.log" in namelist
+                xpansion = ""
+                if 'expansion/out.json' in namelist:
+                    tmp_dir = tempfile.mkdtemp(
+                        suffix="output.tmp", prefix="~", dir=ASSETS_DIR
+                    )
+                    zf.extractall(path=tmp_dir)
+                    xpansion = _parse_xpansion_version(Path(tmp_dir))
+                    Path(tmp_dir).rmdir()
         else:
             error = not (path / "checkIntegrity.txt").exists()
-            xpansion = (path / "lp" / "lp_namer.log").exists()
+            xpansion = _parse_xpansion_version(path)
         (
             nbyears,
             by_year,
@@ -258,6 +267,17 @@ def parse_simulation(path: Path) -> Optional["Simulation"]:
             f"Failed to parse simulation found at {path}", exc_info=e
         )
     return None
+
+
+def _parse_xpansion_version(path: Path) -> str:
+    try:
+        file = (path / "expansion" / "out.json").read_text(encoding="utf-8")
+        version = json.loads(file)["antares_xpansion"]["version"]
+    except Exception as e:
+        logger.warning(f"There is an issue with the expansion/out.json file : {str(e)}")
+        return ""
+    else:
+        return version
 
 
 def get_playlist(config: JSON) -> Optional[Dict[int, float]]:

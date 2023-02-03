@@ -1,6 +1,8 @@
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
+
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     build,
     _parse_outputs,
@@ -18,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     BindingConstraintDTO,
 )
-from tests.storage.business.assets import ASSET_DIR
+from tests.storage.business.assets import ASSETS_DIR
 
 
 def build_empty_files(tmp: Path) -> Path:
@@ -134,13 +136,36 @@ def test_parse_outputs(tmp_path: Path) -> None:
     assert build(study_path, "id") == config
 
 
-def test_parse_outputs_discriminate_zips(tmp_path: Path) -> None:
-    path_study = ASSET_DIR / "test_output_zip_not_zipped.zip"
-    with ZipFile(path_study) as zip_output:
-        zip_output.extractall(path=tmp_path)
-    output_path = tmp_path / "test_output_zip_not_zipped" / "output"
-    output_parsed = _parse_outputs(output_path)
-    assert not output_parsed["20230127-1550eco"].archived
+@pytest.mark.parametrize(
+    "assets_name, expected",
+    [
+        (
+            "test_output_zip_not_zipped.zip",
+            {'20230127-1550eco': Simulation(name='', date='20230127-1550', mode='economy', nbyears=1, synthesis=True,
+                                            by_year=False, error=False, playlist=[], archived=False, xpansion=''),
+             '20230203-1530eco': Simulation(name='', date='20230203-1530', mode='economy', nbyears=1, synthesis=False,
+                                            by_year=False, error=False, playlist=[], archived=False, xpansion='1.0.2'),
+             '20230203-1531eco': Simulation(name='', date='20230203-1531', mode='economy', nbyears=1, synthesis=False,
+                                            by_year=False, error=False, playlist=[], archived=True, xpansion=''),
+             '20230203-1600eco': Simulation(name='', date='20230203-1600', mode='economy', nbyears=1, synthesis=True,
+                                            by_year=False, error=True, playlist=[], archived=False, xpansion='')}
+        ),
+    ],
+)
+def test_parse_outputs__nominal(
+    tmp_path: Path, assets_name: str, expected: dict
+) -> None:
+    """
+    This test decompresses a zipped study (stored in the `assets` directory)
+    into a temporary directory and executes the parsing of the outputs.
+    The result of the analysis is checked to match the expected output data.
+    """
+    pkg_dir = ASSETS_DIR.joinpath(assets_name)
+    with ZipFile(pkg_dir) as zf:
+        zf.extractall(tmp_path)
+    output_path = tmp_path.joinpath("output")
+    actual = _parse_outputs(output_path)
+    assert actual == expected
 
 
 def test_parse_sets(tmp_path: Path) -> None:
