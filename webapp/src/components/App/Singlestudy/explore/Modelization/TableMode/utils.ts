@@ -4,6 +4,8 @@ export enum TableTemplateType {
   Area = "area",
   Link = "link",
   Cluster = "cluster",
+  Renewable = "renewable",
+  BindingConstraint = "binding constraint",
 }
 
 export const TABLE_TEMPLATE_TYPE_OPTIONS = Object.values(TableTemplateType);
@@ -58,6 +60,14 @@ const TABLE_TEMPLATE_COLUMNS_BY_TYPE = {
     "lawForced",
     "lawPlanned",
   ],
+  [TableTemplateType.Renewable]: [
+    "group",
+    "tsInterpretation",
+    "enabled",
+    "unitCount",
+    "nominalCapacity",
+  ],
+  [TableTemplateType.BindingConstraint]: ["type", "operator", "enabled"],
 } as const;
 
 export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
@@ -71,6 +81,7 @@ export interface TableTemplate<
   name: string;
   type: T;
   columns: TableTemplateColumnsForType<T>;
+  frozen: true;
 }
 
 /**
@@ -81,7 +92,7 @@ export function createTableTemplate<T extends TableTemplateType>(
   type: T,
   columns: TableTemplateColumnsForType<T>
 ): TableTemplate<T> {
-  return { id: uuidv4(), name, type, columns };
+  return { id: uuidv4(), name, type, columns, frozen: true };
 }
 
 export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
