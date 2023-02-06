@@ -37,6 +37,7 @@ import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { downloadMatrix } from "../../../../../../utils/matrixUtils";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -138,14 +139,8 @@ function ResultDetails() {
     setYear(year);
   };
 
-  const handleDownload = (data: MatrixType, filename: string): void => {
-    const fileData = data.data.map((row) => row.join("\t")).join("\n");
-    const blob = new Blob([fileData], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.download = filename;
-    a.href = URL.createObjectURL(blob);
-    a.click();
-    URL.revokeObjectURL(a.href);
+  const handleDownload = (matrixData: MatrixType, fileName: string): void => {
+    downloadMatrix(matrixData, fileName);
   };
 
   ////////////////////////////////////////////////////////////////
