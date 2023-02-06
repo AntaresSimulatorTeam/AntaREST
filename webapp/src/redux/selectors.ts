@@ -501,6 +501,6 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
   return getUIState(state).messageInfo;
 };
 
-export const getMenuExtended = (state: AppState): UIState["menuExtended"] => {
-  return getUIState(state).menuExtended;
+export const getMenuExtended = (state: AppState): UIState["menuCollapsed"] => {
+  return !getUIState(state).menuCollapsed;
 };
