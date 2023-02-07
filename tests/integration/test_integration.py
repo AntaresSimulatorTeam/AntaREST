@@ -15,6 +15,9 @@ from antarest.study.business.table_mode_management import (
     TableTemplateType,
     TimeSeriesGenerationOption,
     TransmissionCapacity,
+    TimeSeriesMode,
+    BindingConstraintType,
+    BindingConstraintOperator,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -685,6 +688,78 @@ def test_area_management(app: FastAPI):
                     "area_id": "area 2",
                     "cluster_name": "cluster 2",
                     "parameters": {},
+                },
+            }
+        ],
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
+                "args": {
+                    "area_id": "area 1",
+                    "cluster_name": "cluster renewable 1",
+                    "parameters": {},
+                },
+            }
+        ],
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
+                "args": {
+                    "area_id": "area 2",
+                    "cluster_name": "cluster renewable 2",
+                    "parameters": {},
+                },
+            }
+        ],
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
+                "args": {
+                    "name": "binding constraint 1",
+                    "enabled": True,
+                    "time_step": BindingConstraintType.HOURLY.value,
+                    "operator": BindingConstraintOperator.LESS.value,
+                    "coeffs": {"area 1.cluster 1": [2.0, 4]},
+                },
+            }
+        ],
+    )
+
+    client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
+                "args": {
+                    "name": "binding constraint 2",
+                    "enabled": True,
+                    "time_step": BindingConstraintType.HOURLY.value,
+                    "operator": BindingConstraintOperator.LESS.value,
+                    "coeffs": {},
                 },
             }
         ],
@@ -1729,6 +1804,174 @@ def test_area_management(app: FastAPI):
             "lawPlanned": "uniform",
         },
     }
+
+    # Table Mode - Renewable
+
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.RENEWABLE,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / cluster renewable 1": {
+            "group": "",
+            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "enabled": True,
+            "unitCount": 0,
+            "nominalCapacity": 0,
+        },
+        "area 2 / cluster renewable 2": {
+            "group": "",
+            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "enabled": True,
+            "unitCount": 0,
+            "nominalCapacity": 0,
+        },
+    }
+
+    client.put(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.RENEWABLE,
+        },
+        json={
+            "area 1 / cluster renewable 1": {
+                "tsInterpretation": TimeSeriesMode.PRODUCTION_FACTOR.value,
+                "enabled": False,
+            },
+            "area 2 / cluster renewable 2": {
+                "unitCount": 2,
+                "nominalCapacity": 13,
+            },
+        },
+    )
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.RENEWABLE,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "area 1 / cluster renewable 1": {
+            "group": "",
+            "tsInterpretation": TimeSeriesMode.PRODUCTION_FACTOR.value,
+            "enabled": False,
+            "unitCount": 0,
+            "nominalCapacity": 0,
+        },
+        "area 2 / cluster renewable 2": {
+            "group": "",
+            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "enabled": True,
+            "unitCount": 2,
+            "nominalCapacity": 13,
+        },
+    }
+
+    # Table Mode - Binding Constraint
+
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "binding constraint 1": {
+            "enabled": True,
+            "type": BindingConstraintType.HOURLY.value,
+            "operator": BindingConstraintOperator.LESS.value,
+        },
+        "binding constraint 2": {
+            "enabled": True,
+            "type": BindingConstraintType.HOURLY.value,
+            "operator": BindingConstraintOperator.LESS.value,
+        },
+    }
+
+    client.put(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+        },
+        json={
+            "binding constraint 1": {
+                "enabled": False,
+                "operator": BindingConstraintOperator.BOTH.value,
+            },
+            "binding constraint 2": {
+                "type": BindingConstraintType.WEEKLY.value,
+                "operator": BindingConstraintOperator.EQUAL.value,
+            },
+        },
+    )
+    res_table_data = client.get(
+        table_mode_url,
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        params={
+            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]
+            ),
+        },
+    )
+    res_table_data_json = res_table_data.json()
+    assert res_table_data_json == {
+        "binding constraint 1": {
+            "enabled": False,
+            "type": BindingConstraintType.HOURLY.value,
+            "operator": BindingConstraintOperator.BOTH.value,
+        },
+        "binding constraint 2": {
+            "enabled": True,
+            "type": BindingConstraintType.WEEKLY.value,
+            "operator": BindingConstraintOperator.EQUAL.value,
+        },
+    }
+
+    res = client.get(
+        f"/v1/studies/{study_id}/bindingconstraints/binding constraint 1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    binding_constraint_1 = res.json()
+    assert res.status_code == 200
+
+    constraint = binding_constraint_1["constraints"][0]
+    assert constraint["id"] == "area 1.cluster 1"
+    assert constraint["weight"] == 2.0
+    assert constraint["offset"] == 4.0
 
     # --- TableMode END ---
 
