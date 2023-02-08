@@ -265,15 +265,17 @@ function NavHeader(props: Props) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Typography
-            variant="h6"
-            noWrap
-            sx={{
-              width: 1,
-            }}
-          >
-            {study?.name}
-          </Typography>
+          <Tooltip title={study?.folder || ""} placement="bottom-start">
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{
+                width: 1,
+              }}
+            >
+              {study?.name}
+            </Typography>
+          </Tooltip>
           <StarToggle
             isActive={isStudyFavorite}
             activeTitle={t("studies.removeFavorite") as string}
