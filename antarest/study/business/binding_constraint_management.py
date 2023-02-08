@@ -133,6 +133,20 @@ class BindingConstraintManager:
                 continue
         return new_config
 
+    @staticmethod
+    def constraints_to_coeffs(
+        constraint: BindingConstraintDTO,
+    ) -> Dict[str, List[float]]:
+        coeffs: Dict[str, List[float]] = {}
+        if constraint.constraints is not None:
+            for term in constraint.constraints:
+                if term.id is not None and term.weight is not None:
+                    coeffs[term.id] = [term.weight]
+                    if term.offset is not None:
+                        coeffs[term.id].append(term.offset)
+
+        return coeffs
+
     def get_binding_constraint(
         self, study: Study, constraint_id: Optional[str]
     ) -> Union[BindingConstraintDTO, List[BindingConstraintDTO], None]:
@@ -173,13 +187,6 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintDTO):
             raise NoBindingConstraintError(study.id)
 
-        coeffs = {}
-        if constraint.constraints is not None:
-            for term in constraint.constraints:
-                coeffs[term.id] = [term.weight]
-                if term.offset is not None:
-                    coeffs[term.id].append(term.offset)
-
         command = UpdateBindingConstraint(
             id=constraint.id,
             enabled=data.value
@@ -191,7 +198,7 @@ class BindingConstraintManager:
             operator=data.value
             if data.key == "operator"
             else constraint.operator,
-            coeffs=coeffs,
+            coeffs=BindingConstraintManager.constraints_to_coeffs(constraint),
             values=constraint.values,
             filter_year_by_year=data.value
             if data.key == "filterByYear"
