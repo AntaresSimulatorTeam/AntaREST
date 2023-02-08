@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext, useParams } from "react-router";
 import axios from "axios";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
   Area,
   LinkElement,
@@ -36,6 +37,7 @@ import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { downloadMatrix } from "../../../../../../utils/matrixUtils";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -137,6 +139,10 @@ function ResultDetails() {
     setYear(year);
   };
 
+  const handleDownload = (matrixData: MatrixType, fileName: string): void => {
+    downloadMatrix(matrixData, fileName);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -208,10 +214,24 @@ function ResultDetails() {
                 </Box>
               ))}
               <Button
+                variant="outlined"
                 onClick={() => setShowFilter(true)}
                 disabled={matrixRes.isLoading}
               >
                 {t("global.change")}
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<DownloadOutlinedIcon />}
+                onClick={() =>
+                  matrixRes.data &&
+                  handleDownload(matrixRes.data, `matrix_${study.id}`)
+                }
+                disabled={matrixRes.isLoading}
+              >
+                {t("global.download")}
               </Button>
             </Box>
             <Box sx={{ flex: 1 }}>
