@@ -30,7 +30,7 @@ import { useMount } from "react-use";
 import logo from "../../../assets/logo.png";
 import NotificationBadge from "../../App/Tasks/NotificationBadge";
 import topRightBackground from "../../../assets/top-right-background.png";
-import { setMenuExtensionStatus } from "../../../redux/ducks/ui";
+import { setMenuCollapse } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
   NavListItem,
@@ -288,9 +288,7 @@ function MenuWrapper(props: Props) {
             title={t(extended ? "" : "button.expand")}
             placement="right-end"
           >
-            <NavListItem
-              onClick={() => dispatch(setMenuExtensionStatus(!extended))}
-            >
+            <NavListItem onClick={() => dispatch(setMenuCollapse(extended))}>
               <NavInternalLink to="#">
                 <NavListItemIcon sx={{ color: "grey.400" }}>
                   {extended ? <ArrowBackIosIcon /> : <ArrowForwardIosIcon />}

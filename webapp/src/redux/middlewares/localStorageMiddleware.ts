@@ -9,6 +9,7 @@ import {
   updateStudiesSortConf,
   updateStudyFilters,
 } from "../ducks/studies";
+import { setMenuCollapse } from "../ducks/ui";
 
 const localStorageMiddleware = createListenerMiddleware<AppState>();
 
@@ -36,6 +37,11 @@ localStorageMiddleware.startListening({
           sort: storage.getItem(StorageKey.StudiesSort),
         })
       );
+
+      const menuCollapsed = storage.getItem(StorageKey.UIMenuCollapsed);
+      if (menuCollapsed !== null) {
+        dispatch(setMenuCollapse(menuCollapsed));
+      }
     }
   },
 });
@@ -68,6 +74,17 @@ localStorageMiddleware.startListening({
       ...prev,
       ...action.payload,
     }));
+  },
+});
+
+////////////////////////////////////////////////////////////////
+// UI
+////////////////////////////////////////////////////////////////
+
+localStorageMiddleware.startListening({
+  actionCreator: setMenuCollapse,
+  effect: (action) => {
+    storage.setItem(StorageKey.UIMenuCollapsed, action.payload);
   },
 });
 
