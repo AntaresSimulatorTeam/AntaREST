@@ -124,8 +124,11 @@ class EventBusService(IEventBus):
 
     def start(self, threaded: bool = True) -> None:
         if threaded:
-            t = threading.Thread(target=self._async_loop)
-            t.setDaemon(True)
+            t = threading.Thread(
+                target=self._async_loop,
+                name=self.__class__.__name__,
+                daemon=True,
+            )
             logger.info("Starting event bus")
             t.start()
         else:

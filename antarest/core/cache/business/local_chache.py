@@ -20,11 +20,13 @@ class LocalCacheElement(BaseModel):
 
 class LocalCache(ICache):
     def __init__(self, config: CacheConfig = CacheConfig()):
-        self.cache: Dict[str, LocalCacheElement] = dict()
+        self.cache: Dict[str, LocalCacheElement] = {}
         self.lock = threading.Lock()
         self.checker_delay = config.checker_delay
         self.checker_thread = threading.Thread(
-            target=self.checker, daemon=True
+            target=self.checker,
+            name=self.__class__.__name__,
+            daemon=True,
         )
 
     def start(self) -> None:

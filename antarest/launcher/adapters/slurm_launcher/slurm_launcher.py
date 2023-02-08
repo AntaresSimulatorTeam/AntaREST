@@ -155,7 +155,11 @@ class SlurmLauncher(AbstractLauncher):
     def start(self) -> None:
         logger.info("Starting slurm_launcher loop")
         self.check_state = True
-        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread = threading.Thread(
+            target=self._loop,
+            name=self.__class__.__name__,
+            daemon=True,
+        )
         self.thread.start()
 
     def stop(self) -> None:
@@ -610,6 +614,7 @@ class SlurmLauncher(AbstractLauncher):
         thread = threading.Thread(
             target=self._run_study,
             args=(study_uuid, job_id, launcher_parameters, version),
+            name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()
 

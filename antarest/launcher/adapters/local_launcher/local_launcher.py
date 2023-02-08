@@ -84,6 +84,7 @@ class LocalLauncher(AbstractLauncher):
                 job_id,
                 launcher_parameters,
             ),
+            name=f"{self.__class__.__name__}-JobRunner",
         )
         job.start()
 
@@ -144,23 +145,21 @@ class LocalLauncher(AbstractLauncher):
                     stop_reading_output,
                     None,
                 ),
+                name=f"{self.__class__.__name__}-LogsWatcher",
                 daemon=True,
             )
             thread.start()
 
-            while True:
-                if process.poll() is not None:
-                    break
+            while process.poll() is None:
                 time.sleep(1)
 
-            if launcher_parameters is not None:
-                if (
-                    launcher_parameters.post_processing
-                    or launcher_parameters.adequacy_patch is not None
-                ):
-                    subprocess.run(
-                        ["Rscript", "post-processing.R"], cwd=export_path
-                    )
+            if launcher_parameters is not None and (
+                launcher_parameters.post_processing
+                or launcher_parameters.adequacy_patch is not None
+            ):
+                subprocess.run(
+                    ["Rscript", "post-processing.R"], cwd=export_path
+                )
 
             output_id: Optional[str] = None
             try:

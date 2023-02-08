@@ -73,6 +73,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.path_resources: Path = path_resources
         self.cleanup_thread = Thread(
             target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
+            name=f"{self.__class__.__name__}-Cleaner",
             daemon=True,
         )
         self.cleanup_thread.start()

@@ -40,7 +40,11 @@ class AbstractWorker(IService):
         self.threadpool = ThreadPoolExecutor(
             max_workers=MAX_WORKERS, thread_name_prefix="workertask_"
         )
-        self.task_watcher = Thread(target=self._loop, daemon=True)
+        self.task_watcher = Thread(
+            target=self._loop,
+            name=f"{self.__class__.__name__}-TaskWatcher",
+            daemon=True,
+        )
         self.lock = threading.Lock()
         self.futures: Dict[str, Future[TaskResult]] = {}
 
