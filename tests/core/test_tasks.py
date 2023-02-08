@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+import time
 from typing import Callable, List
 from unittest.mock import ANY, Mock, call
 
@@ -271,6 +272,8 @@ class DummyWorker(AbstractWorker):
         self.tmp_path = tmp_path
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        # simulate a "long" task ;-)
+        time.sleep(0.01)
         relative_path = task_info.task_args["file"]
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")

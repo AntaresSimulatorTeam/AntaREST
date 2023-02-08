@@ -20,6 +20,8 @@ class DummyWorker(AbstractWorker):
         self.tmp_path = tmp_path
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        # simulate a "long" task ;-)
+        time.sleep(0.01)
         relative_path = task_info.task_args["file"]
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
@@ -41,25 +43,25 @@ def test_simple_task(tmp_path: Path):
         task_queue,
     )
 
+    # Add some listeners to debug the event bus notifications
     msg = []
 
-    async def notify_started(event: Event):
-        msg.append("started")
+    async def notify(event: Event):
+        msg.append(event.type.value)
 
-    async def notify_ended(event: Event):
-        msg.append("ended")
+    event_bus.add_listener(notify, [EventType.WORKER_TASK_STARTED])
+    event_bus.add_listener(notify, [EventType.WORKER_TASK_ENDED])
 
-    event_bus.add_listener(notify_started, [EventType.WORKER_TASK_STARTED])
-    event_bus.add_listener(notify_ended, [EventType.WORKER_TASK_ENDED])
-
-    assert not (tmp_path / "foo").exists()
-
+    # Initialize and start a worker
     worker = DummyWorker(event_bus, [task_queue], tmp_path)
-    worker.start(threaded=True)
+    worker.start()
 
+    # Wait for the end of the processing
+    # Set a big value to `timeout` if you want to debug the worker
     auto_retry_assert(lambda: (tmp_path / "foo").exists(), timeout=60)
 
-    # IMPORTANT: the worker loop has a duration of 2 seconds,
-    # so we need to wait at least this duration to get the end event notification.
-    time.sleep(2.1)
-    assert msg == ["started", "ended"]
+    # Wait a short time to allow the event bus to have the opportunity
+    # to process the notification of the end event.
+    time.sleep(0.01)
+
+    assert msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"]
