@@ -5,7 +5,7 @@ from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.main import build_eventbus
-from tests.conftest import autoretry_assert
+from tests.conftest import auto_retry_assert
 
 
 def test_service_factory():
@@ -53,7 +53,7 @@ def test_lifecycle():
             permissions=PermissionInfo(public_mode=PublicMode.READ),
         )
     )
-    autoretry_assert(lambda: len(test_bucket) == 3, 2)
+    auto_retry_assert(lambda: len(test_bucket) == 3, timeout=2)
 
     event_bus.remove_listener(lid1)
     event_bus.remove_listener(lid2)
@@ -65,7 +65,7 @@ def test_lifecycle():
             permissions=PermissionInfo(public_mode=PublicMode.READ),
         )
     )
-    autoretry_assert(lambda: len(test_bucket) == 0, 2)
+    auto_retry_assert(lambda: len(test_bucket) == 0, timeout=2)
 
     queue_name = "some work job"
     event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
@@ -80,4 +80,4 @@ def test_lifecycle():
         ),
         queue_name,
     )
-    autoretry_assert(lambda: len(test_bucket) == 1, 2)
+    auto_retry_assert(lambda: len(test_bucket) == 1, timeout=2)
