@@ -1,5 +1,5 @@
+import textwrap
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
@@ -10,49 +10,78 @@ from antarest.study.storage.rawstudy.io.reader.ini_reader import (
 
 
 @pytest.mark.unit_test
-def test_read(tmp_path: str, clean_ini_writer: Callable) -> None:
+def test_read(tmp_path: Path) -> None:
     path = Path(tmp_path) / "test.ini"
+    path.write_text(
+        textwrap.dedent(
+            """
+            [part1]
+            key_int = 1
+            key_float = 2.1
+            key_str = value1
+        
+            [part2]
+            key_bool = True
+            key_bool2 = False
+            """
+        )
+    )
 
-    ini_content = """
-        [part1]
-        key_int = 1
-        key_float = 2.1
-        key_str = value1
-    
-        [part2]
-        key_bool = True
-        key_bool2 = False
-    """
+    reader = IniReader()
+    actual = reader.read(path)
 
-    clean_ini_writer(path, ini_content)
-
-    expected_json = {
+    expected = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": True, "key_bool2": False},
     }
-    reader = IniReader()
-    assert reader.read(path) == expected_json
+    assert actual == expected
 
 
-def test_read_sets_init(tmp_path: str, clean_ini_writer) -> None:
+def test_read_sets_init(tmp_path: Path) -> None:
     path = Path(tmp_path) / "test.ini"
+    path.write_text(
+        textwrap.dedent(
+            """
+            [part1]
+            key_int = 1
+            key_float = 2.1
+            key_str = value1
 
-    ini_content = """
-        [part1]
-        key_int = 1
-        key_float = 2.1
-        key_str = value1
-        
-        [part2]
-        key_bool = true
-        key_bool = false
-    """
+            [part2]
+            key_bool = true
+            key_bool = false
+            """
+        )
+    )
 
-    clean_ini_writer(path, ini_content)
+    reader = MultipleSameKeysIniReader()
+    actual = reader.read(path)
 
-    exp_data = {
+    expected = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": [True, False]},
     }
 
-    assert MultipleSameKeysIniReader().read(path) == exp_data
+    assert actual == expected
+
+
+def test_read__with_special_keys(tmp_path: Path) -> None:
+    path = Path(tmp_path) / "test.ini"
+    path.write_text(
+        textwrap.dedent(
+            """
+            [chap]
+            + = areaA
+            + = areaB
+            """
+        )
+    )
+
+    reader = MultipleSameKeysIniReader(special_keys=["+"])
+    actual = reader.read(path)
+
+    expected = {
+        "chap": {"+": ["areaA", "areaB"]},
+    }
+
+    assert actual == expected

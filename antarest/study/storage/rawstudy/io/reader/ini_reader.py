@@ -1,10 +1,11 @@
 import configparser
+import contextlib
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
-from antarest.core.model import ELEMENT, JSON, SUB_JSON
+from antarest.core.model import JSON, SUB_JSON
 
 
 class IReader(ABC):
@@ -32,8 +33,7 @@ class IniReader(IReader):
 
     @staticmethod
     def _parse_bool(value: str) -> Optional[bool]:
-        value = value.lower()
-        return bool(value == "true") if value in ["true", "false"] else None
+        return {"true": True, "false": False}.get(value.lower())
 
     @staticmethod
     def _parse_int(value: str) -> Optional[int]:
@@ -51,14 +51,13 @@ class IniReader(IReader):
 
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
-        parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
-            value
-        )
-        parsed = parsed if parsed is not None else IniReader._parse_int(value)
-        parsed = (
-            parsed if parsed is not None else IniReader._parse_float(value)
-        )
-        return parsed if parsed is not None else value
+        def strict_bool(v):
+            return {"true": True, "false": False}[v.lower()]
+
+        for parser in [strict_bool, int, float]:
+            with contextlib.suppress(KeyError, ValueError):
+                return parser(value)
+        return value
 
     @staticmethod
     def _parse_json(json: configparser.SectionProxy) -> JSON:
@@ -89,6 +88,7 @@ class SimpleKeyValueReader(IReader):
         except ValueError:
             return None
 
+    # noinspection PyProtectedMember
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
         parsed: Union[
@@ -109,9 +109,9 @@ class SimpleKeyValueReader(IReader):
         }
 
     def read(self, path: Path) -> JSON:
-        with open(path, "r") as f:
-            json = {}
-            for line in f.readlines():
+        json = {}
+        with open(path, "r") as fd:
+            for line in fd:
                 line = line.strip()
                 if line and not line.startswith("#"):
                     key, value = line.split("=")
@@ -121,6 +121,7 @@ class SimpleKeyValueReader(IReader):
 
 
 class IniConfigParser(configparser.RawConfigParser):
+    # noinspection SpellCheckingInspection
     def optionxform(self, optionstr: str) -> str:
         return optionstr
 
@@ -129,7 +130,7 @@ class MultipleSameKeysIniReader(IReader):
     """
     Custom .ini reader for inputs/sets.ini file.
     This file has format :
-    ``` python
+    ```python
     [chap]
     + = areaA
     + = areaB
@@ -142,35 +143,27 @@ class MultipleSameKeysIniReader(IReader):
         self.special_keys = special_keys or []
         super().__init__()
 
-    @staticmethod
-    def fetch_cleaned_lines(path: Path) -> List[str]:
-        return [l for l in path.read_text().split("\n") if l.strip() != ""]
-
     def read(self, path: Path) -> JSON:
-        data: JSON = dict()
-        curr_part = ""
-        lines = MultipleSameKeysIniReader.fetch_cleaned_lines(path)
-
-        for l in lines:
-            line = l.strip()
-            regex = re.search("^\[(.*)\]$", line)
-            if regex:
-                curr_part = regex.group(1)
-                data[curr_part] = dict()
-            else:
-                elements = re.split("\s+=\s*", line)
-                key = elements[0]
-                value = None
-                if len(elements) == 2:
-                    value = IniReader.parse_value(elements[1].strip())
-                if key not in data[curr_part]:
-                    if key in self.special_keys:
-                        data[curr_part][key] = [value]
+        data: JSON = {}
+        section = ""
+        with path.open(encoding="utf-8") as lines:
+            for line in lines:
+                line = line.strip()
+                if match := re.fullmatch(r"\[(.*)]", line):
+                    section = match[1]
+                    data[section] = {}
+                elif "=" in line:
+                    key, value = map(str.strip, line.split("=", 1))
+                    value = IniReader.parse_value(value)
+                    group = data[section]
+                    if key in group:
+                        if isinstance(group[key], list):
+                            group[key].append(value)
+                        else:
+                            group[key] = [group[key], value]
+                    elif key in self.special_keys:
+                        group[key] = [value]
                     else:
-                        data[curr_part][key] = value
-                else:
-                    if not isinstance(data[curr_part][key], list):
-                        data[curr_part][key] = [data[curr_part][key]]
-                    data[curr_part][key].append(value)
+                        group[key] = value
 
         return data
