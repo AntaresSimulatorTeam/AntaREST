@@ -1,10 +1,8 @@
 import logging
 import threading
 import time
-from abc import abstractmethod
-from concurrent.futures import Future, ThreadPoolExecutor
-from threading import Thread
-from typing import Dict, List, Union
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Dict, List, Union, Any
 
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
@@ -28,23 +26,70 @@ class WorkerTaskCommand(BaseModel):
     task_args: Dict[str, Union[int, float, bool, str]]
 
 
+class _WorkerTaskEndedCallback:
+    """
+    Callback function which uses the event bus to notify
+    that the worker task is completed (or cancelled).
+    """
+
+    def __init__(
+        self,
+        event_bus: IEventBus,
+        task_id: str,
+    ) -> None:
+        self._event_bus = event_bus
+        self._task_id = task_id
+
+    # NOTE: it seems that mypy has an issue with `concurrent.futures.Future`,
+    # for this reason we have annotated the `future` parameter with a string.
+    def __call__(self, future: "Future[Any]") -> None:
+        result = future.result()
+        event = Event(
+            type=EventType.WORKER_TASK_ENDED,
+            payload=WorkerTaskResult(
+                task_id=self._task_id, task_result=result
+            ),
+            # Use `NONE` for internal events
+            permissions=PermissionInfo(public_mode=PublicMode.NONE),
+        )
+        self._event_bus.push(event)
+
+
+# fixme: `AbstractWorker` should not inherit from `IService`
 class AbstractWorker(IService):
     def __init__(
-        self, name: str, event_bus: IEventBus, accept: List[str]
+        self,
+        name: str,
+        event_bus: IEventBus,
+        accept: List[str],
     ) -> None:
-        super(AbstractWorker, self).__init__()
+        super().__init__()
+        # fixme: `AbstractWorker` should not have any `thread` attribute
+        del self.thread
         self.name = name
         self.event_bus = event_bus
-        for task_type in accept:
-            self.event_bus.add_queue_consumer(self.listen_for_tasks, task_type)
+        self.accept = accept
         self.threadpool = ThreadPoolExecutor(
-            max_workers=MAX_WORKERS, thread_name_prefix="workertask_"
+            max_workers=MAX_WORKERS,
+            thread_name_prefix="worker_task_",
         )
-        self.task_watcher = Thread(target=self._loop, daemon=True)
         self.lock = threading.Lock()
-        self.futures: Dict[str, Future[TaskResult]] = {}
 
-    async def listen_for_tasks(self, event: Event) -> None:
+    # fixme: `AbstractWorker.start` should not have any `threaded` parameter
+    def start(self, threaded: bool = True) -> None:
+        for task_type in self.accept:
+            self.event_bus.add_queue_consumer(
+                self._listen_for_tasks, task_type
+            )
+        # Wait a short time to allow the event bus to have the opportunity
+        # to process the tasks as soon as possible
+        time.sleep(0.01)
+
+    # fixme: `AbstractWorker` should not have any `_loop` function
+    def _loop(self) -> None:
+        pass
+
+    async def _listen_for_tasks(self, event: Event) -> None:
         logger.info(f"Accepting new task {event.json()}")
         task_info = WorkerTaskCommand.parse_obj(event.payload)
         self.event_bus.push(
@@ -56,11 +101,13 @@ class AbstractWorker(IService):
             )
         )
         with self.lock:
-            self.futures[task_info.task_id] = self.threadpool.submit(
-                self.safe_execute_task, task_info
-            )
+            # fmt: off
+            future = self.threadpool.submit(self._safe_execute_task, task_info)
+            callback = _WorkerTaskEndedCallback(self.event_bus, task_info.task_id)
+            future.add_done_callback(callback)
+            # fmt: on
 
-    def safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+    def _safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         try:
             return self.execute_task(task_info)
         except Exception as e:
@@ -70,27 +117,5 @@ class AbstractWorker(IService):
             )
             return TaskResult(success=False, message=repr(e))
 
-    @abstractmethod
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         raise NotImplementedError()
-
-    def _loop(self) -> None:
-        while True:
-            with self.lock:
-                for task_id, future in list(self.futures.items()):
-                    if future.done():
-                        self.event_bus.push(
-                            Event(
-                                type=EventType.WORKER_TASK_ENDED,
-                                payload=WorkerTaskResult(
-                                    task_id=task_id,
-                                    task_result=future.result(),
-                                ),
-                                # Use `NONE` for internal events
-                                permissions=PermissionInfo(
-                                    public_mode=PublicMode.NONE
-                                ),
-                            )
-                        )
-                        del self.futures[task_id]
-            time.sleep(2)

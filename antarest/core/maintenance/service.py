@@ -33,7 +33,11 @@ class MaintenanceService:
         self._init()
 
     def _init(self) -> None:
-        self.thread = Thread(target=self.check_disk_usage, daemon=True)
+        self.thread = Thread(
+            target=self.check_disk_usage,
+            name=self.__class__.__name__,
+            daemon=True,
+        )
         self.thread.start()
 
     def check_disk_usage(self) -> None:

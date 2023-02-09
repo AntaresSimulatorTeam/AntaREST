@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
@@ -8,7 +9,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
 from antarest.eventbus.main import build_eventbus
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.conftest import autoretry_assert
+from tests.conftest import auto_retry_assert
 
 
 class DummyWorker(AbstractWorker):
@@ -19,6 +20,8 @@ class DummyWorker(AbstractWorker):
         self.tmp_path = tmp_path
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        # simulate a "long" task ;-)
+        time.sleep(0.01)
         relative_path = task_info.task_args["file"]
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
@@ -40,9 +43,25 @@ def test_simple_task(tmp_path: Path):
         task_queue,
     )
 
-    assert not (tmp_path / "foo").exists()
+    # Add some listeners to debug the event bus notifications
+    msg = []
 
+    async def notify(event: Event):
+        msg.append(event.type.value)
+
+    event_bus.add_listener(notify, [EventType.WORKER_TASK_STARTED])
+    event_bus.add_listener(notify, [EventType.WORKER_TASK_ENDED])
+
+    # Initialize and start a worker
     worker = DummyWorker(event_bus, [task_queue], tmp_path)
-    worker.start(threaded=True)
+    worker.start()
 
-    autoretry_assert(lambda: (tmp_path / "foo").exists(), 2)
+    # Wait for the end of the processing
+    # Set a big value to `timeout` if you want to debug the worker
+    auto_retry_assert(lambda: (tmp_path / "foo").exists(), timeout=60)
+
+    # Wait a short time to allow the event bus to have the opportunity
+    # to process the notification of the end event.
+    time.sleep(0.01)
+
+    assert msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"]

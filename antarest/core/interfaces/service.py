@@ -4,7 +4,11 @@ from abc import abstractmethod, ABC
 
 class IService(ABC):
     def __init__(self) -> None:
-        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread = threading.Thread(
+            target=self._loop,
+            name=self.__class__.__name__,
+            daemon=True,
+        )
 
     def start(self, threaded: bool = True) -> None:
         if threaded:
