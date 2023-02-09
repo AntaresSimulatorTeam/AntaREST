@@ -2,10 +2,10 @@ import json
 import logging
 import re
 import tempfile
+import zipfile
 from enum import Enum
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional, cast
-from zipfile import ZipFile
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
@@ -13,20 +13,23 @@ from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     MultipleSameKeysIniReader,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
+    SimulationParsingError,
+    XpansionParsingError,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
-    Simulation,
-    Link,
-    DistrictSet,
-    transform_name_to_id,
-    Cluster,
     BindingConstraintDTO,
+    Cluster,
+    DistrictSet,
+    FileStudyTreeConfig,
+    Link,
+    Simulation,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
-from tests.storage.business.assets import ASSETS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -150,19 +153,18 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
         file_type=FileType.SIMPLE_INI,
     )
     output_list = []
-    for id, bind in bindings.items():
+    for bind in bindings.values():
         area_set = set()
-        cluster_set = (
-            set()
-        )  # contains a list of strings in the following format: "area.cluster"
-        for key in bind.keys():
+        # contains a set of strings in the following format: "area.cluster"
+        cluster_set = set()
+        for key in bind:
             if "%" in key:
-                areas = key.split("%")
+                areas = key.split("%", 1)
                 area_set.add(areas[0])
                 area_set.add(areas[1])
             elif "." in key:
                 cluster_set.add(key)
-                area_set.add(key.split(".")[0])
+                area_set.add(key.split(".", 1)[0])
 
         output_list.append(
             BindingConstraintDTO(
@@ -174,7 +176,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
 
 
 def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
-    json = _extract_data_from_file(
+    obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
         file_type=FileType.MULTI_INI,
@@ -191,7 +193,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
             inverted_set=item.get("apply-filter", "remove-all") == "add-all",
             output=item.get("output", True),
         )
-        for name, item in json.items()
+        for name, item in obj.items()
     }
 
 
@@ -206,80 +208,109 @@ def _parse_areas(root: Path) -> Dict[str, Area]:
 
 
 def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
-    if not output_path.exists():
+    if not output_path.is_dir():
         return {}
-
-    files = sorted(output_path.iterdir())
     sims = {}
-    for f in files:
-        if f.suffix == ".zip":
-            if f.stem not in sims:
-                if simulation := parse_simulation(f):
-                    sims[f.stem] = simulation
-        elif (f / "about-the-study").exists():
-            if simulation := parse_simulation(f):
-                sims[f.name] = simulation
+    # Paths are sorted to have the folders _before_ the ZIP files with the same name.
+    for path in sorted(output_path.iterdir()):
+        suffix = path.suffix.lower()
+        path_name = path.name
+        try:
+            if suffix == ".tmp" or path_name.startswith("~"):
+                continue
+            elif suffix == ".zip":
+                if path.stem not in sims:
+                    if simulation := parse_simulation_zip(path):
+                        sims[path.stem] = simulation
+            elif (path / "about-the-study/parameters.ini").exists():
+                if simulation := parse_simulation(
+                    path, canonical_name=path_name
+                ):
+                    sims[path_name] = simulation
+        except SimulationParsingError as exc:
+            logger.warning(str(exc), exc_info=True)
     return sims
 
 
-def parse_simulation(path: Path) -> Optional["Simulation"]:
-    modes = {"eco": "economy", "adq": "adequacy"}
-    regex: Any = re.search(
-        "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)",
-        path.stem if path.suffix == ".zip" else path.name,
-    )
-    try:
-        if path.suffix == ".zip":
-            with ZipFile(path, mode="r") as zf:
-                namelist = zf.namelist()
-                error = "checkIntegrity.txt" not in namelist
-                xpansion = ""
-                if "expansion/out.json" in namelist:
-                    tmp_dir = tempfile.mkdtemp(
-                        suffix="output.tmp", prefix="~", dir=ASSETS_DIR
-                    )
-                    zf.extractall(path=tmp_dir)
-                    xpansion = _parse_xpansion_version(Path(tmp_dir))
-                    Path(tmp_dir).rmdir()
-        else:
-            error = not (path / "checkIntegrity.txt").exists()
-            xpansion = _parse_xpansion_version(path)
-        (
-            nbyears,
-            by_year,
-            synthesis,
-            playlist,
-        ) = _parse_outputs_parameters(path)
-        return Simulation(
-            date=regex.group(1),
-            mode=modes[regex.group(2)],
-            name=regex.group(3),
-            nbyears=nbyears,
-            by_year=by_year,
-            synthesis=synthesis,
-            error=error,
-            playlist=playlist,
-            archived=path.suffix == ".zip",
-            xpansion=xpansion,
+def parse_simulation_zip(path: Path) -> Optional["Simulation"]:
+    with tempfile.TemporaryDirectory(
+        dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp"
+    ) as output_dir:
+        try:
+            with zipfile.ZipFile(path) as zf:
+                zf.extractall(output_dir)
+        except zipfile.BadZipFile as exc:
+            raise SimulationParsingError(path, f"Bad ZIP file: {exc}") from exc
+        simulation = parse_simulation(
+            Path(output_dir), canonical_name=path.stem
         )
-    except Exception as e:
-        logger.warning(
-            f"Failed to parse simulation found at {path}", exc_info=e
-        )
-    return None
+        simulation.archived = True
+        return simulation
 
 
 def _parse_xpansion_version(path: Path) -> str:
+    xpansion_json = path / "expansion" / "out.json"
     try:
-        file = (path / "expansion" / "out.json").read_text(encoding="utf-8")
-        version = str(json.loads(file)["antares_xpansion"]["version"])
-    except Exception as e:
-        logger.warning(
-            f"There is an issue with the expansion/out.json file : {str(e)}"
-        )
+        content = xpansion_json.read_text(encoding="utf-8")
+        obj = json.loads(content)
+        return str(obj["antares_xpansion"]["version"])
+    except FileNotFoundError:
         return ""
-    else:
-        return version
+    except json.JSONDecodeError as exc:
+        raise XpansionParsingError(
+            xpansion_json, f"invalid JSON format: {exc}"
+        ) from exc
+    except KeyError as exc:
+        raise XpansionParsingError(
+            xpansion_json, f"key '{exc}' not found in JSON object"
+        ) from exc
+
+
+_regex_eco_adq = re.compile("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)")
+match_eco_adq = _regex_eco_adq.match
+
+
+def parse_simulation(
+    path: Path, canonical_name: str
+) -> Optional["Simulation"]:
+    modes = {"eco": "economy", "adq": "adequacy"}
+    match = match_eco_adq(canonical_name)
+    if match is None:
+        raise SimulationParsingError(
+            path,
+            reason=f"Filename '{canonical_name}' doesn't match {_regex_eco_adq.pattern}",
+        )
+
+    try:
+        xpansion = _parse_xpansion_version(path)
+    except XpansionParsingError as exc:
+        # There is something wrong with Xpansion, let's assume it is not used!
+        logger.warning(str(exc), exc_info=True)
+        xpansion = ""
+
+    ini_path = path / "about-the-study" / "parameters.ini"
+    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    try:
+        obj: JSON = reader.read(ini_path)
+    except FileNotFoundError:
+        raise SimulationParsingError(
+            path,
+            f"Parameters file '{ini_path.relative_to(path)}' not found",
+        ) from None
+
+    error = not (path / "checkIntegrity.txt").exists()
+    return Simulation(
+        date=match.group(1),
+        mode=modes[match.group(2)],
+        name=match.group(3),
+        nbyears=obj["general"]["nbyears"],
+        by_year=obj["general"]["year-by-year"],
+        synthesis=obj["output"]["synthesis"],
+        error=error,
+        playlist=list(get_playlist(obj) or {}),
+        archived=False,
+        xpansion=xpansion,
+    )
 
 
 def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
@@ -305,36 +336,6 @@ def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
     return {
         year + 1: weights.get(year, 1) for year in added if year not in removed
     }
-
-
-def _parse_outputs_parameters(
-    path: Path,
-) -> Tuple[int, bool, bool, Optional[List[int]]]:
-    parameters_path_inside_output = "about-the-study/parameters.ini"
-    full_path_parameters = path / parameters_path_inside_output
-    tmp_dir = None
-
-    if path.suffix == ".zip":
-        tmp_dir = tempfile.TemporaryDirectory()
-        with ZipFile(path, "r") as zip_obj:
-            zip_obj.extract(parameters_path_inside_output, tmp_dir.name)
-            full_path_parameters = (
-                Path(tmp_dir.name) / parameters_path_inside_output
-            )
-
-    par: JSON = MultipleSameKeysIniReader(DUPLICATE_KEYS).read(
-        full_path_parameters
-    )
-
-    if tmp_dir:
-        tmp_dir.cleanup()
-
-    return (
-        par["general"]["nbyears"],
-        par["general"]["year-by-year"],
-        par["output"]["synthesis"],
-        list((get_playlist(par) or {}).keys()),
-    )
 
 
 def parse_area(root: Path, area: str) -> "Area":
@@ -382,7 +383,7 @@ def _parse_renewables(root: Path, area: str) -> List[Cluster]:
             )
             for key in list(list_ini.keys())
         ]
-    except:
+    except Exception:
         return []
 
 
