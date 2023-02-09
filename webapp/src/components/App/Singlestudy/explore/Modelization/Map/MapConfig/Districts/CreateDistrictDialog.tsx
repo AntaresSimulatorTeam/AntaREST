@@ -64,7 +64,7 @@ function CreateDistrictDialog(props: Props) {
 
   return (
     <FormDialog
-      title="Add new district"
+      title={t("study.modelization.map.districts.add")}
       titleIcon={AddCircleIcon}
       open={open}
       onCancel={onClose}
@@ -95,13 +95,13 @@ function CreateDistrictDialog(props: Props) {
           />
           <SwitchFE
             name="output"
-            label="Output"
+            label={t("study.modelization.map.districts.field.outputs")}
             control={control}
             sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
           />
           <StringFE
             name="comments"
-            label="Comments"
+            label={t("study.modelization.map.districts.field.comments")}
             control={control}
             fullWidth
             sx={{ m: 0 }}

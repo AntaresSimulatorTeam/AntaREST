@@ -57,7 +57,7 @@ function CreateLayerDialog(props: Props) {
 
   return (
     <FormDialog
-      title="Add new layer"
+      title={t("study.modelization.map.layers.add")}
       titleIcon={AddCircleIcon}
       open={open}
       onCancel={onClose}
