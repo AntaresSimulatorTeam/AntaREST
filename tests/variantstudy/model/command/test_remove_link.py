@@ -7,9 +7,7 @@ from zipfile import ZipFile
 import pytest
 from checksumdir import dirhash
 
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -51,7 +49,7 @@ class TestRemoveLink:
         os.mkdir(study_path)
         with ZipFile(study_dir) as zip_output:
             zip_output.extractall(path=study_path)
-        config = ConfigPathBuilder.build(study_path, "1")
+        config = build(study_path, "1")
         return FileStudy(config, FileStudyTree(Mock(), config))
 
     @pytest.mark.parametrize("version", [(810), (820)])
