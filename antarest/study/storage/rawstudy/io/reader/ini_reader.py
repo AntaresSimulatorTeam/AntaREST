@@ -50,13 +50,13 @@ class IniReader(IReader):
             return None
 
     @staticmethod
-    def parse_value(value: str) -> SUB_JSON:
-        def strict_bool(v):
+    def parse_value(value: str) -> Union[bool, int, float, str]:
+        def strict_bool(v: str) -> bool:
             return {"true": True, "false": False}[v.lower()]
 
         for parser in [strict_bool, int, float]:
             with contextlib.suppress(KeyError, ValueError):
-                return parser(value)
+                return parser(value)  # type: ignore
         return value
 
     @staticmethod
@@ -153,8 +153,8 @@ class MultipleSameKeysIniReader(IReader):
                     section = match[1]
                     data[section] = {}
                 elif "=" in line:
-                    key, value = map(str.strip, line.split("=", 1))
-                    value = IniReader.parse_value(value)
+                    key, arg = map(str.strip, line.split("=", 1))
+                    value = IniReader.parse_value(arg)
                     group = data[section]
                     if key in group:
                         if isinstance(group[key], list):

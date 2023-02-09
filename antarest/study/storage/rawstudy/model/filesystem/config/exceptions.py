@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 
 class BaseConfigError(Exception):
@@ -11,13 +12,13 @@ class SimulationParsingError(BaseConfigError):
 
     @property
     def output_path(self) -> Path:
-        return self.args[0]
+        return cast(Path, self.args[0])
 
     @property
     def reason(self) -> str:
-        return self.args[1]
+        return cast(str, self.args[1])
 
-    def __str__(self):
+    def __str__(self) -> str:
         output_path = self.output_path
         reason = self.reason
         return f"Fail to parse the simulation file '{output_path}': {reason}"
@@ -29,13 +30,13 @@ class XpansionParsingError(BaseConfigError):
 
     @property
     def xpansion_json(self) -> Path:
-        return self.args[0]
+        return cast(Path, self.args[0])
 
     @property
     def reason(self) -> str:
-        return self.args[1]
+        return cast(str, self.args[1])
 
-    def __str__(self):
+    def __str__(self) -> str:
         xpansion_json = self.xpansion_json
         reason = self.reason
         return f"Fail to parse the Xpansion file '{xpansion_json}': {reason}"

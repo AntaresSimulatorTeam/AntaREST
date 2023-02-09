@@ -232,7 +232,7 @@ def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
     return sims
 
 
-def parse_simulation_zip(path: Path) -> Optional["Simulation"]:
+def parse_simulation_zip(path: Path) -> Simulation:
     with tempfile.TemporaryDirectory(
         dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp"
     ) as output_dir:
@@ -270,9 +270,7 @@ _regex_eco_adq = re.compile("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)")
 match_eco_adq = _regex_eco_adq.match
 
 
-def parse_simulation(
-    path: Path, canonical_name: str
-) -> Optional["Simulation"]:
+def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     modes = {"eco": "economy", "adq": "adequacy"}
     match = match_eco_adq(canonical_name)
     if match is None:
