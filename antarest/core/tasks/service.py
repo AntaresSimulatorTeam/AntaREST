@@ -400,20 +400,26 @@ class TaskJobService(ITaskService):
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
-        except Exception as e:
-            logger.error(f"Exception when running task {task_id}", exc_info=e)
+        except Exception as exc:
+            err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
+            logger.error(err_msg, exc_info=exc)
             with db():
                 self._update_task_status(
-                    task_id, TaskStatus.FAILED, False, repr(e)
+                    task_id,
+                    TaskStatus.FAILED,
+                    False,
+                    f"{err_msg}\nSee the logs for detailed information and the error traceback.",
                 )
+            message = (
+                err_msg
+                if custom_event_messages is None
+                else custom_event_messages.end
+            )
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
                     payload=TaskEventPayload(
-                        id=task_id,
-                        message=custom_event_messages.end
-                        if custom_event_messages is not None
-                        else f"Task {task_id} failed",
+                        id=task_id, message=message
                     ).dict(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
