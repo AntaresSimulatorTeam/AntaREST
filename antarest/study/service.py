@@ -2502,9 +2502,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        target_version = target_version or find_next_version(
-            study.version
-        )
+        target_version = target_version or find_next_version(study.version)
         if not target_version:
             raise UnsupportedStudyVersion(study.version)
 
