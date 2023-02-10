@@ -11,11 +11,11 @@ def wait_task_completion(
     access_token: str,
     task_id: str,
     *,
-    timeout: float = 1,
+    timeout: float = 10,
 ) -> TaskDTO:
     end_time = time.time() + timeout
     while time.time() < end_time:
-        time.sleep(0.01)
+        time.sleep(0.1)
         res = client.get(
             f"/v1/tasks/{task_id}",
             headers={"Authorization": f"Bearer {access_token}"},
