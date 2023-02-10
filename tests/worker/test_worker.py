@@ -62,6 +62,6 @@ def test_simple_task(tmp_path: Path):
 
     # Wait a short time to allow the event bus to have the opportunity
     # to process the notification of the end event.
-    time.sleep(0.01)
+    time.sleep(0.1)
 
     assert msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"]
