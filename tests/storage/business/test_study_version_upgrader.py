@@ -52,21 +52,21 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         zip_output.extractall(path=tmp_path)
     with pytest.raises(
         InvalidUpgrade,
-        match=f"Version 600 unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
+        match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
         study_version_upgrader.upgrade_study(tmp_path, "600")
     with pytest.raises(
-        InvalidUpgrade, match="Your study is already in version 720"
+        InvalidUpgrade, match="Your study is already in version '720'"
     ):
         study_version_upgrader.upgrade_study(tmp_path, "720")
     with pytest.raises(
         InvalidUpgrade,
-        match="Impossible to upgrade from version 720 to version 710",
+        match="Impossible to upgrade from version '720' to version '710'",
     ):
         study_version_upgrader.upgrade_study(tmp_path, "710")
     with pytest.raises(
         InvalidUpgrade,
-        match=f"Version 820.rc unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
+        match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
         study_version_upgrader.upgrade_study(tmp_path, "820.rc")
 

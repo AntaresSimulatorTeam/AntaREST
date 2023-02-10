@@ -7,7 +7,7 @@ import time
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, NamedTuple, Optional
 
 import numpy
 import pandas  # type: ignore
@@ -21,7 +21,6 @@ from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
-
 
 LOGGER = logging.getLogger(__name__)
 OTHER_PREFERENCES = "other preferences"
@@ -63,11 +62,6 @@ def find_value_in_file(
     file = study_path / file_path
     data = reader.read(file)
     return data[key][parameter_to_check]
-
-
-def upgrade_700(study_path: Path) -> None:
-    # It's the base case study so we pass
-    pass
 
 
 def upgrade_710(study_path: Path) -> None:
@@ -271,15 +265,40 @@ def upgrade_840(study_path: Path) -> None:
     )
 
 
+class UpgradeMethod(NamedTuple):
+    """Raw study upgrade method (old version, new version, upgrade function)."""
+
+    old: str
+    new: str
+    method: Callable[[Path], None]
+
+
 UPGRADE_METHODS = [
-    ("700", "710", upgrade_710),
-    ("710", "720", upgrade_720),
-    ("720", "800", upgrade_800),
-    ("800", "810", upgrade_810),
-    ("810", "820", upgrade_820),
-    ("820", "830", upgrade_830),
-    ("830", "840", upgrade_840),
+    UpgradeMethod("700", "710", upgrade_710),
+    UpgradeMethod("710", "720", upgrade_720),
+    UpgradeMethod("720", "800", upgrade_800),
+    UpgradeMethod("800", "810", upgrade_810),
+    UpgradeMethod("810", "820", upgrade_820),
+    UpgradeMethod("820", "830", upgrade_830),
+    UpgradeMethod("830", "840", upgrade_840),
 ]
+
+
+def find_next_version(from_version: str) -> str:
+    """
+    Find the next study version from the given version.
+
+    Args:
+        from_version: The current version as a string.
+
+    Returns:
+        The next version as a string.
+        If no next version was found, returns an empty string.
+    """
+    return next(
+        (meth.new for meth in UPGRADE_METHODS if from_version == meth.old),
+        "",
+    )
 
 
 class InvalidUpgrade(HTTPException):
@@ -296,7 +315,7 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
     shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
         src_version = get_current_version(tmp_dir)
-        checks_if_upgrade_is_possible(src_version, target_version)
+        can_upgrade_version(src_version, target_version)
         do_upgrade(tmp_dir, src_version, target_version)
     except (StudyValidationError, InvalidUpgrade) as e:
         shutil.rmtree(tmp_dir)
@@ -323,42 +342,73 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
 
 
 def get_current_version(study_path: Path) -> str:
-    lines = (study_path / "study.antares").read_text(encoding="utf-8")
-    possible_match = re.search(
-        r"^version\s*=\s*(.*)$", lines, flags=re.MULTILINE
-    )
-    if possible_match is not None:
-        return possible_match[1].rstrip()
+    """
+    Get the current version of a study.
+
+    Args:
+        study_path: Path to the study.
+
+    Returns:
+        The current version of the study.
+
+    Raises:
+        StudyValidationError: If the version number is not found in the
+        `study.antares` file or does not match the expected format.
+    """
+
+    antares_path = study_path / "study.antares"
+    pattern = r"version\s*=\s*([\w.-]+)\s*"
+    with antares_path.open(encoding="utf-8") as lines:
+        for line in lines:
+            if match := re.fullmatch(pattern, line):
+                return match[1].rstrip()
     raise StudyValidationError(
-        "Your study.antares file is not in the good format"
+        f"File parsing error: the version number is not found in '{antares_path}'"
+        f" or does not match the expected '{pattern}' format."
     )
 
 
-def checks_if_upgrade_is_possible(src_version: str, dst_version: str) -> None:
-    if src_version == dst_version:
-        raise InvalidUpgrade(f"Your study is already in version {dst_version}")
+def can_upgrade_version(from_version: str, to_version: str) -> None:
+    """
+    Checks if upgrading from one version to another is possible.
 
-    sources = [u[0] for u in UPGRADE_METHODS]
-    if src_version not in sources:
+    Args:
+        from_version: The current version of the study.
+        to_version: The target version of the study.
+
+    Raises:
+        InvalidUpgrade: If the upgrade is not possible.
+    """
+    if from_version == to_version:
         raise InvalidUpgrade(
-            f"Version {src_version} unknown: possible versions are {', '.join(sources)}"
+            f"Your study is already in version '{to_version}'"
         )
 
-    targets = [u[1] for u in UPGRADE_METHODS]
-    if dst_version not in targets:
+    sources = [u.old for u in UPGRADE_METHODS]
+    if from_version not in sources:
         raise InvalidUpgrade(
-            f"Version {dst_version} unknown: possible versions are {', '.join(targets)}"
+            f"Version '{from_version}' unknown: possible versions are {', '.join(sources)}"
         )
 
-    curr_version = src_version
+    targets = [u.new for u in UPGRADE_METHODS]
+    if to_version not in targets:
+        raise InvalidUpgrade(
+            f"Version '{to_version}' unknown: possible versions are {', '.join(targets)}"
+        )
+
+    curr_version = from_version
     for src, dst in zip(sources, targets):
         if curr_version == src:
             curr_version = dst
+        if curr_version == to_version:
+            return
 
-    if curr_version != dst_version:
-        raise InvalidUpgrade(
-            f"Impossible to upgrade from version {src_version} to version {dst_version}"
-        )
+    # This code must be unreachable!
+    raise InvalidUpgrade(
+        f"Impossible to upgrade from version '{from_version}'"
+        f" to version '{to_version}':"
+        f" missing value in `UPGRADE_METHODS`."
+    )
 
 
 def update_study_antares_file(target_version: str, study_path: Path) -> None:
