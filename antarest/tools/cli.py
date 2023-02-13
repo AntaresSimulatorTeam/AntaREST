@@ -145,21 +145,26 @@ def generate_script_diff(
 
 
 @commands.command()
-@click.option(
-    "-study_path",
-    required=True,
-    type=click.Path(),
-    help="The path of the study you want to update",
+@click.argument(
+    "study-path",
+    nargs=1,
+    type=click.Path(exists=True, dir_okay=True, readable=True, writable=True),
 )
-@click.option(
-    "-target_version",
-    required=True,
-    type=int,
-    help="The version you want your study to be at (example : 6.0.0 -> you should type 600)",
+@click.argument(
+    "target-version",
+    nargs=1,
+    type=click.STRING,
 )
-def update_study(study_path: str, target_version: int) -> None:
-    """Upgrades study's version"""
-    study_version_upgrader.upgrade_study(study_path, target_version)
+def update_study(study_path: Path, target_version: str) -> None:
+    """Upgrades study version
+
+    STUDY_PATH is the path of the study you want to update
+
+    TARGET_VERSION is the version you want your study to be at (example 8.4.0 or 840)
+    """
+    study_version_upgrader.upgrade_study(
+        Path(study_path), target_version.replace(".", "")
+    )
 
 
 if __name__ == "__main__":

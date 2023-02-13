@@ -226,7 +226,7 @@ class PatchCluster(BaseModel):
     class Config:
         @classmethod
         def alias_generator(cls, string: str) -> str:
-            return "-".join(word for word in string.split("_"))
+            return "-".join(string.split("_"))
 
 
 class PatchOutputs(BaseModel):
@@ -369,13 +369,13 @@ class MatrixIndex(BaseModel):
 class TimeSerie(BaseModel):
     name: str
     unit: str
-    data: List[Optional[float]] = list()
+    data: List[Optional[float]] = []
 
 
 class TimeSeriesData(BaseModel):
     type: StudyDownloadType
     name: str
-    data: Dict[str, List[TimeSerie]] = dict()
+    data: Dict[str, List[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(BaseModel):

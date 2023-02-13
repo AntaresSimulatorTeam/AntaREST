@@ -2,60 +2,56 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
-from unittest.mock import Mock, seal, call, ANY, patch
+from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
-from antarest.core.filetransfer.model import FileDownloadTaskDTO, FileDownload
+from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.permissions import (
-    StudyPermissionType,
-)
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.permissions import StudyPermissionType
+from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskType, TaskDTO, TaskStatus, TaskResult
-from antarest.login.model import User, Group, GroupDTO
+from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
+from antarest.login.model import Group, GroupDTO, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
-    Study,
-    StudyContentStatus,
-    StudyFolder,
     DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    PublicMode,
-    StudyDownloadDTO,
-    MatrixIndex,
-    StudyDownloadType,
-    StudyMetadataDTO,
-    OwnerInfo,
-    StudyDownloadLevelDTO,
     ExportFormat,
     MatrixAggregationResultDTO,
+    MatrixIndex,
+    OwnerInfo,
+    PublicMode,
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyContentStatus,
+    StudyDownloadDTO,
+    StudyDownloadLevelDTO,
+    StudyDownloadType,
+    StudyFolder,
+    StudyMetadataDTO,
     TimeSerie,
     TimeSeriesData,
-    StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
+    MAX_MISSING_STUDY_TIMEOUT,
     StudyService,
     UserHasNotPermissionError,
-    MAX_MISSING_STUDY_TIMEOUT,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    FileStudyTreeConfig,
-    Simulation,
-    Link,
     DistrictSet,
+    FileStudyTreeConfig,
+    Link,
+    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
@@ -109,6 +105,7 @@ def build_study_service(
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_get_studies_uuid() -> None:
     bob = User(id=2, name="bob")
@@ -163,6 +160,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_study_listing() -> None:
     bob = User(id=2, name="bob")
@@ -268,6 +266,7 @@ def test_study_listing() -> None:
     assert expected_result == studies
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
@@ -333,6 +332,7 @@ def test_sync_studies_from_disk() -> None:
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
@@ -411,6 +411,7 @@ def test_remove_duplicate() -> None:
     repository.delete.assert_called_once_with(mb.id)
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
@@ -485,6 +486,7 @@ def test_create_study() -> None:
     repository.save.assert_called_once_with(expected)
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
@@ -536,6 +538,7 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
@@ -763,6 +766,7 @@ def test_download_output() -> None:
     assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_change_owner() -> None:
     uuid = str(uuid4())
@@ -816,6 +820,7 @@ def test_change_owner() -> None:
         )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_manage_group() -> None:
     uuid = str(uuid4())
@@ -898,6 +903,7 @@ def test_manage_group() -> None:
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_set_public_mode() -> None:
     uuid = str(uuid4())
@@ -935,6 +941,7 @@ def test_set_public_mode() -> None:
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_check_errors():
     study_service = Mock()
@@ -981,6 +988,7 @@ def test_study_match() -> None:
     )
 
 
+# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_assert_permission() -> None:
     uuid = str(uuid4())
@@ -1107,6 +1115,7 @@ def test_delete_with_prefetch(tmp_path: Path):
         Mock(),
         Mock(),
     )
+    # noinspection PyArgumentList
     service = build_study_service(
         raw_study_service,
         study_metadata_repository,
@@ -1174,6 +1183,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     )
 
 
+# noinspection PyArgumentList
 def test_delete_recursively(tmp_path: Path):
     study_metadata_repository = Mock()
     raw_study_service = RawStudyService(
@@ -1366,7 +1376,7 @@ def test_unarchive_output(tmp_path: Path):
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
-        f"unarchive_other_workspace",
+        "unarchive_other_workspace",
         ArchiveTaskArgs(
             src=str(tmp_path / "output" / f"{output_id}.zip"),
             dest=str(tmp_path / "output" / output_id),
@@ -1496,7 +1506,7 @@ def test_archive_output_locks(tmp_path: Path):
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
-        f"unarchive_other_workspace",
+        "unarchive_other_workspace",
         ArchiveTaskArgs(
             src=str(tmp_path / "output" / f"{output_id}.zip"),
             dest=str(tmp_path / "output" / output_id),
@@ -1649,11 +1659,13 @@ def test_task_upgrade_study(tmp_path: Path):
     with pytest.raises(TaskAlreadyRunning):
         service.upgrade_study(
             study_id,
+            target_version="",
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     service.upgrade_study(
         study_id,
+        target_version="",
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
@@ -1693,19 +1705,14 @@ def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
 
     study_id = "my_study"
 
-    res = service._upgrade_study(
-        study_id,
-        800,
-    )
+    target_version = "800"
+    actual = service._upgrade_study(study_id, target_version)
 
-    upgrade_study_mock.assert_called_with(
-        tmp_path,
-        800,
-    )
-    assert res == TaskResult(
-        success=True,
-        message=f"Sucessfuly upgraded study {raw_study_mock.name} ({study_id}) to 800",
-    )
+    upgrade_study_mock.assert_called_with(tmp_path, target_version)
+    assert actual.success
+    assert raw_study_mock.name in actual.message, f"{actual.message=}"
+    assert study_id in actual.message, f"{actual.message=}"
+    assert target_version in actual.message, f"{actual.message=}"
 
     raw_managed_study_mock = Mock(
         spec=RawStudy,
@@ -1728,18 +1735,14 @@ def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
 
     study_id = "my_study"
 
-    res = service._upgrade_study(
-        study_id,
-        800,
-    )
+    target_version = "810"
+    actual = service._upgrade_study(study_id, target_version)
 
-    upgrade_study_mock.assert_called_with(
-        tmp_path,
-        800,
-    )
+    upgrade_study_mock.assert_called_with(tmp_path, target_version)
     file_study.tree.denormalize.assert_called_once()
     file_study.tree.normalize.assert_called_once()
-    assert res == TaskResult(
-        success=True,
-        message=f"Sucessfuly upgraded study {raw_managed_study_mock.name} ({study_id}) to 800",
-    )
+
+    assert actual.success
+    assert raw_study_mock.name in actual.message, f"{actual.message=}"
+    assert study_id in actual.message, f"{actual.message=}"
+    assert target_version in actual.message, f"{actual.message=}"

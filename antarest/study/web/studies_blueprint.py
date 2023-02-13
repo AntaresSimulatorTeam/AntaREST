@@ -139,17 +139,36 @@ def create_study_routes(
         "/studies/{uuid}/upgrade",
         status_code=HTTPStatus.OK,
         tags=[APITag.study_management],
-        summary="Upgrade study to a new version",
+        summary="Upgrade study to the target version (or next version if not specified)",
     )
     def upgrade_study(
-        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
-        logger.info(
-            f"Upgrade study {uuid} to a new version",
-            extra={"user": current_user.id},
+        uuid: str,
+        target_version: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        """
+        This entry point allows you to upgrade a study to the target version
+        or the next version if the target version is not specified.
+
+        This method starts an upgrade task in the task manager.
+
+        Args:
+            uuid: UUID of the study to upgrade.
+            target_version: target study version, or "" to upgrade to the next version.
+            current_user: Current authenticated user.
+
+        Returns:
+            Upgrade task ID.
+        """
+        msg = (
+            f"Upgrade study {uuid} to the version {target_version}"
+            if target_version
+            else f"Upgrade study {uuid} to the next version"
         )
+        logger.info(msg, extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        return study_service.upgrade_study(uuid, params)
+        # returns the task ID
+        return study_service.upgrade_study(uuid, target_version, params)
 
     @bp.post(
         "/studies/{uuid}/copy",

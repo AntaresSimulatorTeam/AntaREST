@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
+    UnsupportedStudyVersion,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -140,7 +141,10 @@ from antarest.study.storage.study_download_utils import (
     StudyDownloader,
     get_output_variables_information,
 )
-from antarest.study.storage.study_version_upgrader import upgrade_study
+from antarest.study.storage.study_version_upgrader import (
+    find_next_version,
+    upgrade_study,
+)
 from antarest.study.storage.utils import (
     assert_permission,
     get_default_workspace_path,
@@ -2443,7 +2447,7 @@ class StudyService:
             request_params=params,
         )
 
-    def _upgrade_study(self, study_id: str, target_version: int) -> TaskResult:
+    def _upgrade_study(self, study_id: str, target_version: str) -> TaskResult:
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.get_study(study_id)
@@ -2454,14 +2458,16 @@ class StudyService:
                 ).get_raw(study_to_upgrade)
                 file_study.tree.denormalize()
             try:
+                # sourcery skip: extract-method
                 if is_variant:
                     self.storage_service.variant_study_service.clear_snapshot(
                         study_to_upgrade
                     )
                 else:
-                    upgrade_study(study_to_upgrade.path, target_version)
+                    study_path = Path(study_to_upgrade.path)
+                    upgrade_study(study_path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = str(target_version)
+                study_to_upgrade.version = target_version
                 self.repository.save(study_to_upgrade)
                 self.event_bus.push(
                     Event(
@@ -2474,12 +2480,10 @@ class StudyService:
                 )
                 return TaskResult(
                     success=True,
-                    message=f"Sucessfuly upgraded study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version}",
-                )
-            except Exception as e:
-                return TaskResult(
-                    success=False,
-                    message=f"Failed to upgrad study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version} : {repr(e)}",
+                    message=(
+                        f"Successfully upgraded study {study_to_upgrade.name}"
+                        f" ({study_to_upgrade.id}) to {target_version}"
+                    ),
                 )
             finally:
                 if is_managed(study_to_upgrade) and not is_variant:
@@ -2488,16 +2492,19 @@ class StudyService:
                     ).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
-    def upgrade_study(self, study_id: str, params: RequestParameters) -> str:
+    def upgrade_study(
+        self,
+        study_id: str,
+        target_version: str,
+        params: RequestParameters,
+    ) -> str:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        list_versions = list(STUDY_REFERENCE_TEMPLATES.keys())
-        target_version = study.version
-        for k, elt in enumerate(list_versions):
-            if elt == study.version and k < len(list_versions) - 1:
-                target_version = int(list_versions[k + 1])
-                break
+
+        target_version = target_version or find_next_version(study.version)
+        if not target_version:
+            raise UnsupportedStudyVersion(study.version)
 
         task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
         study_tasks = self.task_service.list_tasks(
