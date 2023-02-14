@@ -14,6 +14,7 @@ from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     WORKSPACE_LOCK_FILE_NAME,
@@ -44,6 +45,20 @@ def launcher_config(tmp_path: Path) -> Config:
         )
     )
     return config
+
+
+@pytest.mark.unit_test
+def test_slurm_launcher__launcher_init_exception():
+    with pytest.raises(
+        LauncherInitException,
+        match="Missing parameter 'launcher.slurm'",
+    ):
+        SlurmLauncher(
+            config=Config(launcher=LauncherConfig(slurm=None)),
+            callbacks=Mock(),
+            event_bus=Mock(),
+            cache=Mock(),
+        )
 
 
 @pytest.mark.unit_test

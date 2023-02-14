@@ -73,7 +73,7 @@ class SlurmLauncher(AbstractLauncher):
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
         if config.launcher.slurm is None:
-            raise LauncherInitException()
+            raise LauncherInitException("Missing parameter 'launcher.slurm'")
 
         self.slurm_config: SlurmConfig = config.launcher.slurm
         self.check_state: bool = True
@@ -85,6 +85,13 @@ class SlurmLauncher(AbstractLauncher):
         self.job_list: List[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
+
+        # fixme: use an absolute path instead of `LOCK_FILE_NAME`:
+        #  local_workspace_dir = Path(self.slurm_config.local_workspace)
+        #  with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
+        #      self.local_workspace = self._init_workspace(use_private_workspace)
+        #  self.log_tail_manager = LogTailManager(local_workspace_dir)
+
         with FileLock(LOCK_FILE_NAME):
             self.local_workspace = self._init_workspace(use_private_workspace)
 
