@@ -40,6 +40,7 @@ from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
+from antarest.study.business.renewable_manager import RenewableFormFields
 from antarest.study.business.table_mode_management import (
     ColumnModelTypes,
     TableTemplateType,
@@ -1039,5 +1040,51 @@ def create_study_data_routes(
         )
 
         return study_service.generate_timeseries(study, params)
+
+    @bp.get(
+        path="/studies/{study_id}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get renewable options for a given cluster",
+        response_model=RenewableFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_renewable_form(
+            study_id: str,
+            area_id: str,
+            cluster_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableFormFields:
+        logger.info(
+            "Getting renewable form values for study %s and cluster %s", study_id, cluster_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            study_id, StudyPermissionType.READ, params
+        )
+        return study_service.renewable_manager.get_field_values(
+            study, area_id, cluster_id
+        )
+
+    @bp.put(
+        path="/studies/{study_id}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Set renewable form values for a given cluster",
+        response_model=None,
+    )
+    def update_renewable_form(
+            study_id: str,
+            area_id: str,
+            cluster_id: str,
+            form_fields: RenewableFormFields = Body(...),
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ):
+        logger.info(
+            "Setting renewable form values for study %s and cluster %s", study_id, cluster_id,
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(study_id, StudyPermissionType.WRITE, request_params)
+        study_service.renewable_manager.update_field_values(study, form_fields, area_id, cluster_id)
 
     return bp

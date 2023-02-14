@@ -25,10 +25,10 @@ enum TsMode {
 export interface RenewableFormFields {
   name: string;
   group: string;
-  tsInterpretation: string;
+  tsMode: TsMode;
   enabled: boolean;
-  unitcount: number;
-  nominalcapacity: number;
+  unitCount: number;
+  nominalCapacity: number;
 }
 
 export const CLUSTER_GROUP_OPTIONS = Object.values<ClusterGroup>(ClusterGroup);

@@ -39,7 +39,7 @@ function Fields() {
         />
         <SelectFE
           label={t("study.modelization.clusters.tsInterpretation")}
-          name="tsInterpretation"
+          name="tsMode"
           control={control}
           options={TS_MODE_OPTIONS}
           sx={{
@@ -59,12 +59,12 @@ function Fields() {
         />
         <NumberFE
           label={t("study.modelization.clusters.unitcount")}
-          name="unitcount"
+          name="unitCount"
           control={control}
         />
         <NumberFE
           label={t("study.modelization.clusters.nominalCapacity")}
-          name="nominalcapacity"
+          name="nominalCapacity"
           control={control}
         />
       </Fieldset>

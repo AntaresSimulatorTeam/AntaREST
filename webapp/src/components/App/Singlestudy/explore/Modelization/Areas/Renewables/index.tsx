@@ -26,13 +26,16 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    { dirtyValues }: SubmitHandlerPlus<RenewableFormFields>,
-    areaId: string,
-    clusterId: string
-  ) => {
-    return updateRenewableFormFields(study.id, areaId, clusterId, dirtyValues);
-  };
+  const handleSubmit =
+    (areaId: string, clusterId: string) =>
+    ({ dirtyValues }: SubmitHandlerPlus<RenewableFormFields>) => {
+      return updateRenewableFormFields(
+        study.id,
+        areaId,
+        clusterId,
+        dirtyValues
+      );
+    };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -43,13 +46,11 @@ function Renewables() {
       study={study}
       fixedGroupList={CLUSTER_GROUP_OPTIONS}
       type="renewables"
-      // TODO remove ?
       noDataValues={{
         enabled: true,
         unitcount: 0,
         nominalcapacity: 0,
       }}
-      // TODO remove ?
       getDefaultValues={getDefaultValues}
       backButtonName={t("study.modelization.clusters.backClusterList")}
     >
@@ -63,9 +64,7 @@ function Renewables() {
                 return getRenewableFormFields(study.id, area, cluster);
               },
             }}
-            onSubmit={(data: SubmitHandlerPlus<RenewableFormFields>) =>
-              handleSubmit(data, area, cluster)
-            }
+            onSubmit={handleSubmit(area, cluster)}
             autoSubmit
           >
             <Fields />
