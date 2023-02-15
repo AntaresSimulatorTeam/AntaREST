@@ -1,39 +1,61 @@
-import { FieldValues } from "react-hook-form";
+import {
+  Area,
+  Cluster,
+  StudyMetadata,
+} from "../../../../../../../common/types";
+import client from "../../../../../../../services/api/client";
 
-type TsModeType = "power-generation" | "production-factor";
-
-export interface RenewableType extends FieldValues {
-  name: string;
-  group?: string;
-  "ts-interpretation": TsModeType;
-  enabled: boolean; // Default: true
-  unitcount: number; // Default: 0
-  nominalcapacity: number; // Default: 0
+enum ClusterGroup {
+  WindOnshore = "Wind Onshore",
+  WindOffshore = "Wind Offshore",
+  SolarThermal = "Solar Thermal",
+  SolarPV = "Solar PV",
+  SolarRooftop = "Solar Rooftop",
+  OtherRES1 = "Other RES 1",
+  OtherRES2 = "Other RES 2",
+  OtherRES3 = "Other RES 3",
+  OtherRES4 = "Other RES 4",
 }
 
-export const noDataValues: Partial<RenewableType> = {
-  enabled: true,
-  unitcount: 0,
-  nominalcapacity: 0,
-};
+enum TsMode {
+  PowerGeneration = "power-generation",
+  ProductionFactor = "production-factor",
+}
 
-export const tsModeOptions = ["power-generation", "production-factor"].map(
-  (item) => ({
-    label: item,
-    value: item,
-  })
-);
+export interface RenewableFormFields {
+  name: string;
+  group: string;
+  tsInterpretation: string;
+  enabled: boolean;
+  unitcount: number;
+  nominalcapacity: number;
+}
 
-export const fixedGroupList = [
-  "Wind Onshore",
-  "Wind Offshore",
-  "Solar Thermal",
-  "Solar PV",
-  "Solar Rooftop",
-  "Other RES 1",
-  "Other RES 2",
-  "Other RES 3",
-  "Other RES 4",
-];
+export const CLUSTER_GROUP_OPTIONS = Object.values<ClusterGroup>(ClusterGroup);
+export const TS_MODE_OPTIONS = Object.values<TsMode>(TsMode);
 
-export type RenewablePath = Record<keyof RenewableType, string>;
+function makeRequestURL(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"]
+): string {
+  return `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${clusterId}/form`;
+}
+
+export async function getRenewableFormFields(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"]
+): Promise<RenewableFormFields> {
+  const res = await client.get(makeRequestURL(studyId, areaId, clusterId));
+  return res.data;
+}
+
+export function updateRenewableFormFields(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"],
+  values: Partial<RenewableFormFields>
+): Promise<void> {
+  return client.put(makeRequestURL(studyId, areaId, clusterId), values);
+}
