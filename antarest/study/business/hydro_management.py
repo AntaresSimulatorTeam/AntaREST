@@ -5,6 +5,7 @@ from pydantic.types import StrictInt, StrictBool, StrictFloat
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
+    FieldInfo,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -28,11 +29,6 @@ class ManagementOptionsFormFields(FormFieldsBaseModel):
     leeway_low: Optional[Union[StrictFloat, StrictInt]]
     leeway_up: Optional[Union[StrictFloat, StrictInt]]
     pumping_efficiency: Optional[Union[StrictFloat, StrictInt]]
-
-
-class FieldInfo(TypedDict, total=False):
-    path: str
-    default_value: Any
 
 
 HYDRO_PATH = "input/hydro/hydro"

@@ -418,7 +418,7 @@
   "study.modelization.clusters.matrix.tsGen": "TS generator",
   "study.modelization.clusters.matrix.timeSeries": "Séries temporelles",
   "study.modelization.clusters.backClusterList": "Retour à la liste des clusters",
-  "study.modelization.clusters.tsInterpretation": "Mode séries temporelles",
+  "study.modelization.clusters.tsInterpretation": "TS interpretation",
   "study.modelization.clusters.group": "Groupes",
   "studies.modelization.clusters.question.delete": "Êtes-vous sûr de vouloir supprimer ce cluster ?",
   "study.modelization.bindingConst.comments": "Commentaires",

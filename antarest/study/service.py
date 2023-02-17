@@ -72,6 +72,7 @@ from antarest.study.business.binding_constraint_management import (
 )
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
+from antarest.study.business.renewable_management import RenewableManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -217,6 +218,7 @@ class StudyService:
             self.storage_service
         )
         self.hydro_manager = HydroManager(self.storage_service)
+        self.renewable_manager = RenewableManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)

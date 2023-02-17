@@ -14,6 +14,9 @@ from pydantic.types import StrictStr, StrictInt, StrictBool
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
+from antarest.study.business.renewable_management import (
+    TimeSeriesInterpretation,
+)
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
@@ -72,11 +75,6 @@ class TimeSeriesGenerationOption(str, Enum):
 class LawOption(str, Enum):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
-
-
-class TimeSeriesMode(str, Enum):
-    POWER_GENERATION = "power-generation"
-    PRODUCTION_FACTOR = "production-factor"
 
 
 class BindingConstraintType(str, Enum):
@@ -146,7 +144,7 @@ class ClusterColumns(FormFieldsBaseModel):
 
 class RenewableColumns(FormFieldsBaseModel):
     group: Optional[StrictStr]
-    ts_interpretation: Optional[TimeSeriesMode]
+    ts_interpretation: Optional[TimeSeriesInterpretation]
     enabled: Optional[StrictBool]
     unit_count: Optional[StrictInt]
     nominal_capacity: Optional[StrictInt]
@@ -357,7 +355,7 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
         },
         "ts_interpretation": {
             "path": f"{RENEWABLE_FIELD_PATH_BASE}/ts-interpretation",
-            "default_value": TimeSeriesMode.POWER_GENERATION.value,
+            "default_value": TimeSeriesInterpretation.POWER_GENERATION.value,
         },
         "enabled": {
             "path": f"{RENEWABLE_FIELD_PATH_BASE}/enabled",

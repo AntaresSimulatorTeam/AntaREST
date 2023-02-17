@@ -40,6 +40,7 @@ from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
+from antarest.study.business.renewable_management import RenewableFormFields
 from antarest.study.business.table_mode_management import (
     ColumnModelTypes,
     TableTemplateType,
@@ -446,9 +447,7 @@ def create_study_data_routes(
             uuid, StudyPermissionType.WRITE, params
         )
 
-        return study_service.hydro_manager.set_field_values(
-            study, data, area_id
-        )
+        study_service.hydro_manager.set_field_values(study, data, area_id)
 
     @bp.put(
         "/studies/{uuid}/matrix",
@@ -1002,7 +1001,7 @@ def create_study_data_routes(
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_params(
+    def set_advanced_parameters(
         uuid: str,
         field_values: AdvancedParamsFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -1039,5 +1038,59 @@ def create_study_data_routes(
         )
 
         return study_service.generate_timeseries(study, params)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get renewable options for a given cluster",
+        response_model=RenewableFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_renewable_form_values(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableFormFields:
+        logger.info(
+            "Getting renewable form values for study %s and cluster %s",
+            uuid,
+            cluster_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.renewable_manager.get_field_values(
+            study, area_id, cluster_id
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Set renewable form values for a given cluster",
+    )
+    def set_renewable_form_values(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        form_fields: RenewableFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            "Setting renewable form values for study %s and cluster %s",
+            uuid,
+            cluster_id,
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, request_params
+        )
+
+        study_service.renewable_manager.set_field_values(
+            study, area_id, cluster_id, form_fields
+        )
 
     return bp

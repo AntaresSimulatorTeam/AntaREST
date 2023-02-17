@@ -15,7 +15,7 @@ from antarest.study.business.table_mode_management import (
     TableTemplateType,
     TimeSeriesGenerationOption,
     TransmissionCapacity,
-    TimeSeriesMode,
+    TimeSeriesInterpretation,
     BindingConstraintType,
     BindingConstraintOperator,
 )
@@ -1337,6 +1337,8 @@ def test_area_management(app: FastAPI):
         "profit": True,
     }
 
+    # Hydro form
+
     res_hydro_config = client.put(
         f"/v1/studies/{study_id}/areas/area1/hydro/form",
         headers={
@@ -1375,6 +1377,8 @@ def test_area_management(app: FastAPI):
         "leewayUp": 1,
         "pumpingEfficiency": 1,
     }
+
+    # Time-series form
 
     res_ts_config = client.get(
         f"/v1/studies/{study_id}/config/timeseries/form",
@@ -1823,14 +1827,14 @@ def test_area_management(app: FastAPI):
     assert res_table_data_json == {
         "area 1 / cluster renewable 1": {
             "group": "",
-            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
             "enabled": True,
             "unitCount": 0,
             "nominalCapacity": 0,
         },
         "area 2 / cluster renewable 2": {
             "group": "",
-            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
             "enabled": True,
             "unitCount": 0,
             "nominalCapacity": 0,
@@ -1847,7 +1851,7 @@ def test_area_management(app: FastAPI):
         },
         json={
             "area 1 / cluster renewable 1": {
-                "tsInterpretation": TimeSeriesMode.PRODUCTION_FACTOR.value,
+                "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
                 "enabled": False,
             },
             "area 2 / cluster renewable 2": {
@@ -1872,14 +1876,14 @@ def test_area_management(app: FastAPI):
     assert res_table_data_json == {
         "area 1 / cluster renewable 1": {
             "group": "",
-            "tsInterpretation": TimeSeriesMode.PRODUCTION_FACTOR.value,
+            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
             "enabled": False,
             "unitCount": 0,
             "nominalCapacity": 0,
         },
         "area 2 / cluster renewable 2": {
             "group": "",
-            "tsInterpretation": TimeSeriesMode.POWER_GENERATION.value,
+            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
             "enabled": True,
             "unitCount": 2,
             "nominalCapacity": 13,
@@ -1974,6 +1978,42 @@ def test_area_management(app: FastAPI):
     assert constraint["offset"] == 4.0
 
     # --- TableMode END ---
+
+    # Renewable form
+
+    res_renewable_config = client.put(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "cluster renewable 1 renamed",
+            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
+            "unitCount": 9,
+            "enabled": False,
+            "nominalCapacity": 3,
+        },
+    )
+    assert res_renewable_config.status_code == 200
+
+    res_renewable_config = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_renewable_config_json = res_renewable_config.json()
+
+    assert res_renewable_config_json == {
+        "group": "",
+        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
+        "name": "cluster renewable 1 renamed",
+        "unitCount": 9,
+        "enabled": False,
+        "nominalCapacity": 3,
+    }
+
+    # Links
 
     client.delete(
         f"/v1/studies/{study_id}/links/area%201/area%202",
