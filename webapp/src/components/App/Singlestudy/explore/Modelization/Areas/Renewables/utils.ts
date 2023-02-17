@@ -5,6 +5,10 @@ import {
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 
+////////////////////////////////////////////////////////////////
+// Enums
+////////////////////////////////////////////////////////////////
+
 enum ClusterGroup {
   WindOnshore = "Wind Onshore",
   WindOffshore = "Wind Offshore",
@@ -17,22 +21,36 @@ enum ClusterGroup {
   OtherRES4 = "Other RES 4",
 }
 
-enum TsMode {
+enum TimeSeriesInterpretation {
   PowerGeneration = "power-generation",
   ProductionFactor = "production-factor",
 }
 
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
+
 export interface RenewableFormFields {
   name: string;
   group: string;
-  tsMode: TsMode;
+  tsInterpretation: TimeSeriesInterpretation;
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
 }
 
-export const CLUSTER_GROUP_OPTIONS = Object.values<ClusterGroup>(ClusterGroup);
-export const TS_MODE_OPTIONS = Object.values<TsMode>(TsMode);
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
+
+export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
+export const TS_INTERPRETATION_OPTIONS = Object.values(
+  TimeSeriesInterpretation
+);
+
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
 
 function makeRequestURL(
   studyId: StudyMetadata["id"],

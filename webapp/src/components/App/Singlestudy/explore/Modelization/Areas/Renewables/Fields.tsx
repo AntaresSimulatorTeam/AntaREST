@@ -8,7 +8,7 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   CLUSTER_GROUP_OPTIONS,
   RenewableFormFields,
-  TS_MODE_OPTIONS,
+  TS_INTERPRETATION_OPTIONS,
 } from "./utils";
 
 function Fields() {
@@ -39,9 +39,9 @@ function Fields() {
         />
         <SelectFE
           label={t("study.modelization.clusters.tsInterpretation")}
-          name="tsMode"
+          name="tsInterpretation"
           control={control}
-          options={TS_MODE_OPTIONS}
+          options={TS_INTERPRETATION_OPTIONS}
           sx={{
             alignSelf: "center",
           }}

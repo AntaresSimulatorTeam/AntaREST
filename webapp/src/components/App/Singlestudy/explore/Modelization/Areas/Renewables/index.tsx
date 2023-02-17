@@ -58,7 +58,7 @@ function Renewables() {
         <>
           <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#renewable`} isAbsolute />
           <Form
-            key={study.id}
+            key={study.id + cluster + area}
             config={{
               asyncDefaultValues: () => {
                 return getRenewableFormFields(study.id, area, cluster);

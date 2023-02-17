@@ -72,7 +72,7 @@ from antarest.study.business.binding_constraint_management import (
 )
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
-from antarest.study.business.renewable_manager import RenewableManager
+from antarest.study.business.renewable_management import RenewableManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
