@@ -7,7 +7,7 @@ import time
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, Dict, List
 
 import numpy
 import pandas  # type: ignore
@@ -36,21 +36,24 @@ MAPPING_TRANSMISSION_CAPACITIES = {
 def modify_file(
     study_path: Path,
     file_path: Path,
-    key: str,
-    parameter_to_add: Optional[str],
-    value: Any,
-    parameter_to_delete: Optional[str],
+    dict_to_add: Dict[str, Dict[str, Any]],
+    dict_to_remove: Dict[str, List[str]],
 ) -> None:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     file = study_path / file_path
     data = reader.read(file)
-    if key in data:
-        if parameter_to_add is not None:
-            data[key][parameter_to_add] = value
-        if parameter_to_delete is not None:
-            del data[key][parameter_to_delete]
-    elif parameter_to_add is not None:
-        data[key] = {parameter_to_add: value}
+    if dict_to_add:
+        for section in dict_to_add:
+            if section in data:
+                for key in dict_to_add[section]:
+                    data[section][key] = dict_to_add[section][key]
+            else:
+                data[section] = dict_to_add[section]
+    if dict_to_remove:
+        for section in dict_to_remove:
+            if section in data and len(dict_to_remove[section]) > 0:
+                for elt in dict_to_remove[section]:
+                    del data[section][elt]
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, file)
 
@@ -71,34 +74,15 @@ def upgrade_710(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        "optimization",
-        "link-type",
-        "local",
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "general",
-        "geographic-trimming",
-        geographical_trimming,
-        "filtering",
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "general",
-        "thematic-trimming",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        OTHER_PREFERENCES,
-        "hydro-pricing-mode",
-        "fast",
-        None,
+        {
+            "optimization": {"link-type": "local"},
+            "general": {
+                "geographic-trimming": geographical_trimming,
+                "thematic-trimming": False,
+            },
+            OTHER_PREFERENCES: {"hydro-pricing-mode": "fast"},
+        },
+        {"general": ["filtering"]},
     )
 
 
@@ -114,34 +98,17 @@ def upgrade_800(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        OTHER_PREFERENCES,
-        "hydro-heuristic-policy",
-        "accommodate rule curves",
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "optimization",
-        "include-exportstructure",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "optimization",
-        "include-unfeasible-problem-behavior",
-        "error-verbose",
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "general",
-        "custom-scenario",
-        custom_ts_numbers_value,
-        "custom-ts-numbers",
+        {
+            OTHER_PREFERENCES: {
+                "hydro-heuristic-policy": "accommodate rule curves"
+            },
+            "optimization": {
+                "include-exportstructure": False,
+                "include-unfeasible-problem-behavior": "error-verbose",
+            },
+            "general": {"custom-scenario": custom_ts_numbers_value},
+        },
+        {"general": ["custom-ts-numbers"]},
     )
 
 
@@ -149,10 +116,8 @@ def upgrade_810(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        OTHER_PREFERENCES,
-        "renewable-generation-modelling",
-        "aggregated",
-        None,
+        {OTHER_PREFERENCES: {"renewable-generation-modelling": "aggregated"}},
+        {},
     )
     study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True)
     study_path.joinpath("input", "renewables", "series").mkdir(parents=True)
@@ -199,34 +164,15 @@ def upgrade_830(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        "optimization",
-        "include-split-exported-mps",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "include-adq-patch",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "set-to-null-ntc-between-physical-out-for-first-step",
-        True,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step",
-        True,
-        None,
+        {
+            ADEQUACY_PATCH: {
+                "include-adq-patch": False,
+                "set-to-null-ntc-between-physical-out-for-first-step": True,
+                "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": True,
+            },
+            "optimization": {"include-split-exported-mps": False},
+        },
+        {},
     )
     areas = glob.glob(str(study_path / "input" / "areas" / "*"))
     if len(areas) > 0:
@@ -250,18 +196,14 @@ def upgrade_840(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        "optimization",
-        None,
-        None,
-        "include-split-exported-mps",
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "optimization",
-        "transmission-capacities",
-        MAPPING_TRANSMISSION_CAPACITIES[old_value],
-        None,
+        {
+            "optimization": {
+                "transmission-capacities": MAPPING_TRANSMISSION_CAPACITIES[
+                    old_value
+                ]
+            }
+        },
+        {"optimization": ["include-split-exported-mps"]},
     )
 
 
@@ -269,50 +211,17 @@ def upgrade_850(study_path: Path) -> None:
     modify_file(
         study_path,
         GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "price-taking-order",
-        "DENS",
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "include-hurdle-cost-csr",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "check-csr-cost-function",
-        False,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "threshold-initiate-curtailment-sharing-rule",
-        0.0,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "threshold-display-local-matching-rule-violations",
-        0.0,
-        None,
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        ADEQUACY_PATCH,
-        "threshold-csr-variable-bounds-relaxation",
-        3,
-        None,
+        {
+            ADEQUACY_PATCH: {
+                "price-taking-order": "DENS",
+                "include-hurdle-cost-csr": False,
+                "check-csr-cost-function": False,
+                "threshold-initiate-curtailment-sharing-rule": 0.0,
+                "threshold-display-local-matching-rule-violations": 0.0,
+                "threshold-csr-variable-bounds-relaxation": 3,
+            }
+        },
+        {},
     )
 
 
