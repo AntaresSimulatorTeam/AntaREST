@@ -129,8 +129,8 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     )
     assert "include-split-exported-mps" not in optimization
     assert adequacy_patch["price-taking-order"] == "DENS"
-    assert adequacy_patch["include-hurdle-cost-csr"] == False
-    assert adequacy_patch["check-csr-cost-function"] == False
+    assert adequacy_patch["include-hurdle-cost-csr"] is False
+    assert adequacy_patch["check-csr-cost-function"] is False
     assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
     assert (
         adequacy_patch["threshold-display-local-matching-rule-violations"]
