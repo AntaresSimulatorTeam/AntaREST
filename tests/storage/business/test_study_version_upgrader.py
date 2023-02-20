@@ -35,9 +35,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_areas_values = get_old_area_values(tmp_path)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "850"
-    upgrade_study(tmp_path, target_version)
-    with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
-        print(f.readlines())
+    study_version_upgrader.upgrade_study(tmp_path, target_version)
     assert_study_antares_file_is_updated(tmp_path, target_version)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -84,7 +82,7 @@ def test_fallback_if_study_input_broken(tmp_path):
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        upgrade_study(tmp_path, "850")
+        study_version_upgrader.upgrade_study(tmp_path, "850")
     assert are_same_dir(tmp_path, tmp_dir_before_upgrade)
     shutil.rmtree(tmp_dir_before_upgrade)
 
@@ -129,21 +127,14 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     )
     assert "include-split-exported-mps" not in optimization
     assert adequacy_patch["price-taking-order"] == "DENS"
-    assert adequacy_patch.getboolean("include-hurdle-cost-csr") is False
-    assert adequacy_patch.getboolean("check-csr-cost-function") is False
+    assert adequacy_patch["include-hurdle-cost-csr"] == False
+    assert adequacy_patch["check-csr-cost-function"] == False
+    assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
     assert (
-        adequacy_patch.getfloat("threshold-initiate-curtailment-sharing-rule")
+        adequacy_patch["threshold-display-local-matching-rule-violations"]
         == 0.0
     )
-    assert (
-        adequacy_patch.getfloat(
-            "threshold-display-local-matching-rule-violations"
-        )
-        == 0.0
-    )
-    assert (
-        adequacy_patch.getint("threshold-csr-variable-bounds-relaxation") == 3
-    )
+    assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
