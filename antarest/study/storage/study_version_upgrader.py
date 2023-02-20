@@ -265,6 +265,57 @@ def upgrade_840(study_path: Path) -> None:
     )
 
 
+def upgrade_850(study_path: Path) -> None:
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "price-taking-order",
+        "DENS",
+        None,
+    )
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "include-hurdle-cost-csr",
+        False,
+        None,
+    )
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "check-csr-cost-function",
+        False,
+        None,
+    )
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "threshold-initiate-curtailment-sharing-rule",
+        0.0,
+        None,
+    )
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "threshold-display-local-matching-rule-violations",
+        0.0,
+        None,
+    )
+    modify_file(
+        study_path,
+        GENERAL_DATA_PATH,
+        ADEQUACY_PATCH,
+        "threshold-csr-variable-bounds-relaxation",
+        3,
+        None,
+    )
+
+
 class UpgradeMethod(NamedTuple):
     """Raw study upgrade method (old version, new version, upgrade function)."""
 
@@ -281,6 +332,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("810", "820", upgrade_820),
     UpgradeMethod("820", "830", upgrade_830),
     UpgradeMethod("830", "840", upgrade_840),
+    UpgradeMethod("840", "850", upgrade_850),
 ]
 
 
