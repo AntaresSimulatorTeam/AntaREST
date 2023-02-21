@@ -14,7 +14,6 @@ import pandas  # type: ignore
 
 from antarest.core.exceptions import (
     StudyValidationError,
-    UnsupportedStudyVersion,
 )
 from antarest.study.storage.antares_configparser import (
     AntaresConfigParser,
@@ -226,10 +225,6 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
     except (StudyValidationError, InvalidUpgrade) as e:
         shutil.rmtree(tmp_dir)
         LOGGER.warning(str(e))
-        raise
-    except UnsupportedStudyVersion as e:
-        shutil.rmtree(tmp_dir)
-        LOGGER.warning(str(e.detail))
         raise
     except Exception as e:
         shutil.rmtree(tmp_dir)
