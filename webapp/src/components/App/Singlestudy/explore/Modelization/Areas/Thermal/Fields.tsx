@@ -49,6 +49,15 @@ function Fields() {
             alignSelf: "center",
           }}
         />
+        <SwitchFE
+          label={t("study.modelization.clusters.mustRun")}
+          name="mustRun"
+          control={control}
+          sx={{
+            alignItems: "center",
+            alignSelf: "center",
+          }}
+        />
         <NumberFE
           label={t("study.modelization.clusters.unitcount")}
           name="unitCount"
@@ -58,15 +67,6 @@ function Fields() {
           label={t("study.modelization.clusters.nominalCapacity")}
           name="nominalCapacity"
           control={control}
-        />
-        <SwitchFE
-          label={t("study.modelization.clusters.mustRun")}
-          name="mustRun"
-          control={control}
-          sx={{
-            alignItems: "center",
-            alignSelf: "center",
-          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.unitcount")}

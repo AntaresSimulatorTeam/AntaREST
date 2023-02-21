@@ -17,6 +17,10 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.renewable_management import (
     TimeSeriesInterpretation,
 )
+from antarest.study.business.thermal_management import (
+    TimeSeriesGenerationOption,
+    LawOption,
+)
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
@@ -64,17 +68,6 @@ class TransmissionCapacity(str, Enum):
     INFINITE = "infinite"
     IGNORE = "ignore"
     ENABLED = "enabled"
-
-
-class TimeSeriesGenerationOption(str, Enum):
-    USE_GLOBAL_PARAMETER = "use global parameter"
-    FORCE_NO_GENERATION = "force no generation"
-    FORCE_GENERATION = "force generation"
-
-
-class LawOption(str, Enum):
-    UNIFORM = "uniform"
-    GEOMETRIC = "geometric"
 
 
 class BindingConstraintType(str, Enum):

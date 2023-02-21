@@ -4,21 +4,27 @@ from typing import Optional, Dict, Any, List
 
 from pydantic import StrictStr, StrictInt, StrictBool
 
-from antarest.study.business.utils import FormFieldsBaseModel, FieldInfo, execute_or_add_commands
+from antarest.study.business.utils import (
+    FormFieldsBaseModel,
+    FieldInfo,
+    execute_or_add_commands,
+)
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 
 
-class TimeSeriesGeneration(str, Enum):
-    GLOBAL = "use global parameter"
-    NO_GENERATION = "force no generation"
-    GENERATION = "force generation"
+class TimeSeriesGenerationOption(str, Enum):
+    USE_GLOBAL_PARAMETER = "use global parameter"
+    FORCE_NO_GENERATION = "force no generation"
+    FORCE_GENERATION = "force generation"
 
 
-class TimeSeriesLaw(str, Enum):
-    GEOMETRIC = "geometric",
-    UNIFORM = "uniform",
+class LawOption(str, Enum):
+    UNIFORM = "uniform"
+    GEOMETRIC = "geometric"
 
 
 THERMAL_PATH = "input/thermal/clusters/{area}/list/{cluster}"
@@ -30,7 +36,7 @@ class ThermalFormFields(FormFieldsBaseModel):
     unit_count: Optional[StrictInt]
     enabled: Optional[StrictBool]
     nominal_capacity: Optional[StrictInt]
-    gen_ts: Optional[TimeSeriesGeneration]
+    gen_ts: Optional[TimeSeriesGenerationOption]
     min_stable_power: Optional[StrictInt]
     min_up_time: Optional[StrictInt]
     min_down_time: Optional[StrictInt]
@@ -39,8 +45,8 @@ class ThermalFormFields(FormFieldsBaseModel):
     co2: Optional[StrictInt]
     volatility_forced: Optional[StrictInt]
     volatility_planned: Optional[StrictInt]
-    law_forced: Optional[TimeSeriesLaw]
-    law_planned: Optional[TimeSeriesLaw]
+    law_forced: Optional[LawOption]
+    law_planned: Optional[LawOption]
     marginal_cost: Optional[StrictInt]
     spread_cost: Optional[StrictInt]
     fixed_cost: Optional[StrictInt]
@@ -71,7 +77,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "gen_ts": {
         "path": f"{THERMAL_PATH}/gen-ts",
-        "default_value": TimeSeriesGeneration.GLOBAL,
+        "default_value": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
     },
     "min_stable_power": {
         "path": f"{THERMAL_PATH}/min-stable-power",
@@ -107,22 +113,20 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "law_forced": {
         "path": f"{THERMAL_PATH}/law.forced",
-        "default_value": TimeSeriesLaw.UNIFORM,
+        "default_value": LawOption.UNIFORM.value,
     },
     "law_planned": {
         "path": f"{THERMAL_PATH}/law.planned",
-        "default_value": TimeSeriesLaw.UNIFORM,
+        "default_value": LawOption.UNIFORM.value,
     },
     "marginal_cost": {
         "path": f"{THERMAL_PATH}/marginal-cost",
         "default_value": 0,
     },
-
     "spread_cost": {
         "path": f"{THERMAL_PATH}/spread-cost",
         "default_value": 0,
     },
-
     "fixed_cost": {
         "path": f"{THERMAL_PATH}/fixed-cost",
         "default_value": 0,
@@ -135,7 +139,6 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{THERMAL_PATH}/market-bid-cost",
         "default_value": 0,
     },
-
 }
 
 
@@ -148,7 +151,7 @@ class ThermalManager:
         self.storage_service = storage_service
 
     def get_field_values(
-            self, study: Study, area_id: str, cluster_id: str
+        self, study: Study, area_id: str, cluster_id: str
     ) -> ThermalFormFields:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         thermal_config = file_study.tree.get(
@@ -157,20 +160,18 @@ class ThermalManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             target_name = PurePosixPath(field_info["path"]).name
-            return thermal_config.get(
-                target_name, field_info["default_value"]
-            )
+            return thermal_config.get(target_name, field_info["default_value"])
 
         return ThermalFormFields.construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}
         )
 
     def set_field_values(
-            self,
-            study: Study,
-            area_id: str,
-            cluster_id: str,
-            field_values: ThermalFormFields,
+        self,
+        study: Study,
+        area_id: str,
+        cluster_id: str,
+        field_values: ThermalFormFields,
     ) -> None:
         commands: List[UpdateConfig] = []
 

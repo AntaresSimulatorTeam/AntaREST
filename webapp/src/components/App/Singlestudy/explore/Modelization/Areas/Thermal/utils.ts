@@ -85,13 +85,13 @@ enum ClusterGroup {
   Other4 = "Other 4",
 }
 
-enum TimeSeriesGeneration {
-  Global = "use global parameter",
-  NoGeneration = "force no generation",
-  Generation = "force generation",
+enum TimeSeriesGenerationOption {
+  UseGlobal = "use global parameter",
+  ForceNoGeneration = "force no generation",
+  ForceGeneration = "force generation",
 }
 
-enum TimeSeriesLaw {
+enum LawOption {
   Geometric = "geometric",
   Uniform = "uniform",
 }
@@ -117,11 +117,11 @@ export interface ThermalFormFields {
   startupCost: number;
   marketBidCost: number;
   spreadCost: number;
-  genTs: TimeSeriesGeneration;
+  genTs: TimeSeriesGenerationOption;
   volatilityForced: number;
   volatilityPlanned: number;
-  lawForced: TimeSeriesLaw;
-  lawPlanned: TimeSeriesLaw;
+  lawForced: LawOption;
+  lawPlanned: LawOption;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -129,11 +129,11 @@ export interface ThermalFormFields {
 ////////////////////////////////////////////////////////////////
 
 export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
-export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGeneration);
-export const TS_LAW_OPTIONS = Object.values(TimeSeriesLaw);
+export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGenerationOption);
+export const TS_LAW_OPTIONS = Object.values(LawOption);
 
 ////////////////////////////////////////////////////////////////
-// Utils
+// Functions
 ////////////////////////////////////////////////////////////////
 
 function makeRequestURL(
