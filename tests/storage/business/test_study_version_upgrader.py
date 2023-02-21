@@ -10,16 +10,15 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-
-from antarest.study.storage.antares_configparser import AntaresConfigParser
-from antarest.study.storage.study_upgrader import (
-    upgrade_study,
+from antarest.study.storage import study_version_upgrader
+from antarest.study.storage.study_version_upgrader import (
     InvalidUpgrade,
     UPGRADE_METHODS,
 )
 from antarest.study.storage.study_upgrader.upgrader_840 import (
     MAPPING_TRANSMISSION_CAPACITIES,
 )
+from antarest.study.storage.antares_configparser import AntaresConfigParser
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
@@ -36,6 +35,8 @@ def test_end_to_end_upgrades(tmp_path: Path):
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "850"
     study_version_upgrader.upgrade_study(tmp_path, target_version)
+    with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
+        print(f.readlines())
     assert_study_antares_file_is_updated(tmp_path, target_version)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -102,8 +103,8 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     optimization = config["optimization"]
     adequacy_patch = config["adequacy patch"]
     other_preferences = config["other preferences"]
-    assert general.getboolean("geographic-trimming") == old_values[0]
-    assert general.getboolean("custom-scenario") == old_values[1]
+    assert general["geographic-trimming"] == old_values[0]
+    assert general["custom-scenario"] == old_values[1]
     assert general.getboolean("geographic-trimming") is False
     assert optimization.getboolean("include-exportstructure") is False
     assert (
@@ -127,22 +128,29 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     )
     assert "include-split-exported-mps" not in optimization
     assert adequacy_patch["price-taking-order"] == "DENS"
-    assert adequacy_patch["include-hurdle-cost-csr"] is False
-    assert adequacy_patch["check-csr-cost-function"] is False
-    assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
+    assert adequacy_patch.getboolean("include-hurdle-cost-csr") is False
+    assert adequacy_patch.getboolean("check-csr-cost-function") is False
     assert (
-        adequacy_patch["threshold-display-local-matching-rule-violations"]
+        adequacy_patch.getfloat("threshold-initiate-curtailment-sharing-rule")
         == 0.0
     )
-    assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
+    assert (
+        adequacy_patch.getfloat(
+            "threshold-display-local-matching-rule-violations"
+        )
+        == 0.0
+    )
+    assert (
+        adequacy_patch.getint("threshold-csr-variable-bounds-relaxation") == 3
+    )
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
     config = AntaresConfigParser()
     config.read(Path(general_data_path))
-    filtering_value = config["general"].getboolean("filtering")
-    custom_ts_value = config["general"].getboolean("custom-ts-numbers")
+    filtering_value = config["general"]["filtering"]
+    custom_ts_value = config["general"]["custom-ts-numbers"]
     transmission_capa_value = config["optimization"].getboolean(
         "transmission-capacities"
     )
