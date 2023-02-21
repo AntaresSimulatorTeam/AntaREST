@@ -10,15 +10,14 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-from antarest.study.storage import study_version_upgrader
-from antarest.study.storage.study_version_upgrader import (
+
+from antarest.study.storage.antares_configparser import AntaresConfigParser
+from antarest.study.storage.study_upgrader import study_version_upgrader
+from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,
     UPGRADE_METHODS,
-)
-from antarest.study.storage.study_version_upgrader import (
     MAPPING_TRANSMISSION_CAPACITIES,
 )
-from antarest.study.storage.antares_configparser import AntaresConfigParser
 
 
 def test_end_to_end_upgrades(tmp_path: Path):

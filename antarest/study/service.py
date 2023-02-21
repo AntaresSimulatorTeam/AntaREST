@@ -143,7 +143,7 @@ from antarest.study.storage.study_download_utils import (
     StudyDownloader,
     get_output_variables_information,
 )
-from antarest.study.storage.study_version_upgrader import (
+from antarest.study.storage.study_upgrader.study_version_upgrader import (
     find_next_version,
     upgrade_study,
 )
