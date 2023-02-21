@@ -221,7 +221,7 @@ export const importStudy = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
+        (progressEvent.loaded * 100) / (progressEvent.total || 1)
       );
       onProgress(percentCompleted);
     };
@@ -248,7 +248,7 @@ export const importFile = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
+        (progressEvent.loaded * 100) / (progressEvent.total || 1)
       );
       onProgress(percentCompleted);
     };

@@ -3,15 +3,15 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { GenericInfo, VariantTree } from "../../../../../../common/types";
-import { createVariant } from "../../../../../../services/api/variant";
-import { createListFromTree } from "../../../../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../../common/Fieldset";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { GenericInfo, VariantTree } from "../../../../../common/types";
+import { createVariant } from "../../../../../services/api/variant";
+import { createListFromTree } from "../../../../../services/utils";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import FormDialog from "../../../../common/dialogs/FormDialog";
+import StringFE from "../../../../common/fieldEditors/StringFE";
+import Fieldset from "../../../../common/Fieldset";
+import SelectFE from "../../../../common/fieldEditors/SelectFE";
+import { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 interface Props {
   parentId: string;
@@ -20,7 +20,7 @@ interface Props {
   onClose: () => void;
 }
 
-function CreateVariantModal(props: Props) {
+function CreateVariantDialog(props: Props) {
   const { parentId, open, tree, onClose } = props;
   const [t] = useTranslation();
   const navigate = useNavigate();
@@ -99,4 +99,4 @@ function CreateVariantModal(props: Props) {
   );
 }
 
-export default CreateVariantModal;
+export default CreateVariantDialog;

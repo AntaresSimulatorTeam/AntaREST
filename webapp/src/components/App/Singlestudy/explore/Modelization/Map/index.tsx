@@ -58,7 +58,7 @@ function Map() {
       R.map(
         RA.renameKeys({ area1: "source", area2: "target" }),
         studyLinks || []
-      ) as LinkProperties[],
+      ) as unknown as LinkProperties[],
     [studyLinks]
   );
   const mapNodesRes = useStudyMaps({

@@ -3,7 +3,7 @@ import Backend from "i18next-xhr-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-export function initI18n(version = "unknown") {
+export default function i18nInit(version = "unknown"): void {
   i18n
     // load translation using xhr -> see /public/locales
     // learn more: https://github.com/i18next/i18next-xhr-backend
@@ -22,14 +22,12 @@ export function initI18n(version = "unknown") {
       },
       react: {
         useSuspense: false,
-        wait: true,
       },
       interpolation: {
         escapeValue: false, // not needed for react as it escapes by default
       },
       ns: ["main"],
       defaultNS: "main",
+      returnNull: false,
     });
 }
-
-export default {};
