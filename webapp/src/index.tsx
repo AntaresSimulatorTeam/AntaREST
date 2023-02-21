@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { StyledEngineProvider } from "@mui/material";
-import { initI18n } from "./i18n";
+import i18nInit from "./i18n";
 import "./index.css";
 import App from "./components/App";
 import { Config, initConfig } from "./services/config";
@@ -15,7 +15,7 @@ initConfig((config: Config) => {
     window.location.reload();
   }
 
-  initI18n(config.version.gitcommit);
+  i18nInit(config.version.gitcommit);
 
   const container = document.getElementById("root") as HTMLElement;
   const root = createRoot(container);

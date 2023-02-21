@@ -4,25 +4,25 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
-import { StudyMetadata } from "../../../../common/types";
+import { StudyMetadata } from "../../../common/types";
 import {
   addStudyGroup,
   changePublicMode,
   deleteStudyGroup,
   updateStudyMetadata,
-} from "../../../../services/api/study";
-import { getGroups } from "../../../../services/api/user";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import FormDialog from "../../../common/dialogs/FormDialog";
-import StringFE from "../../../common/fieldEditors/StringFE";
-import SelectFE from "../../../common/fieldEditors/SelectFE";
-import CheckboxesTagsFE from "../../../common/fieldEditors/CheckboxesTagsFE";
-import Fieldset from "../../../common/Fieldset";
-import { SubmitHandlerPlus } from "../../../common/Form/types";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import { updateStudy } from "../../../../redux/ducks/studies";
+} from "../../../services/api/study";
+import { getGroups } from "../../../services/api/user";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import FormDialog from "../../common/dialogs/FormDialog";
+import StringFE from "../../common/fieldEditors/StringFE";
+import SelectFE from "../../common/fieldEditors/SelectFE";
+import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
+import Fieldset from "../../common/Fieldset";
+import { SubmitHandlerPlus } from "../../common/Form/types";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { updateStudy } from "../../../redux/ducks/studies";
 
 const logErr = debug("antares:createstudyform:error");
 

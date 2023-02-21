@@ -1,7 +1,6 @@
 import moment from "moment";
 import debug from "debug";
-import { TFunction } from "react-i18next";
-import i18n from "i18next";
+import i18n, { TFunction } from "i18next";
 import * as R from "ramda";
 import {
   StudyMetadataDTO,
@@ -236,7 +235,7 @@ export const sortByProp = <T extends object>(
 };
 
 export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
-  return sortByProp(R.prop("name"), list);
+  return sortByProp((v) => v.name, list);
 };
 
 // This should work better

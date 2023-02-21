@@ -71,7 +71,7 @@ const TABLE_TEMPLATE_COLUMNS_BY_TYPE = {
 } as const;
 
 export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
-  typeof TABLE_TEMPLATE_COLUMNS_BY_TYPE[T][number]
+  (typeof TABLE_TEMPLATE_COLUMNS_BY_TYPE)[T][number]
 >;
 
 export interface TableTemplate<
