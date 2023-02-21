@@ -10,7 +10,7 @@ from antarest.tools.lib import (
     extract_commands,
     generate_study,
 )
-from antarest.study.storage import study_version_upgrader
+from antarest.study.storage.study_upgrader import study_version_upgrader
 
 logging.basicConfig(level=logging.INFO)
 
