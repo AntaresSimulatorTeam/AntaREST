@@ -7,7 +7,7 @@ import time
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Dict, List
+from typing import Callable, NamedTuple, cast
 
 import numpy
 import pandas  # type: ignore
@@ -16,10 +16,9 @@ from antarest.core.exceptions import (
     StudyValidationError,
     UnsupportedStudyVersion,
 )
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
+from antarest.study.storage.antares_configparser import (
+    AntaresConfigParser,
+    AntaresSectionProxy,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -33,57 +32,17 @@ MAPPING_TRANSMISSION_CAPACITIES = {
 }
 
 
-def modify_file(
-    study_path: Path,
-    file_path: Path,
-    dict_to_add: Dict[str, Dict[str, Any]],
-    dict_to_remove: Dict[str, List[str]],
-) -> None:
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = study_path / file_path
-    data = reader.read(file)
-    if dict_to_add:
-        for section in dict_to_add:
-            if section in data:
-                for key in dict_to_add[section]:
-                    data[section][key] = dict_to_add[section][key]
-            else:
-                data[section] = dict_to_add[section]
-    if dict_to_remove:
-        for section in dict_to_remove:
-            if section in data and len(dict_to_remove[section]) > 0:
-                for elt in dict_to_remove[section]:
-                    del data[section][elt]
-    writer = IniWriter(special_keys=DUPLICATE_KEYS)
-    writer.write(data, file)
-
-
-def find_value_in_file(
-    study_path: Path, file_path: Path, key: str, parameter_to_check: str
-) -> Any:
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    file = study_path / file_path
-    data = reader.read(file)
-    return data[key][parameter_to_check]
-
-
 def upgrade_710(study_path: Path) -> None:
-    geographical_trimming = find_value_in_file(
-        study_path, GENERAL_DATA_PATH, "general", "filtering"
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {
-            "optimization": {"link-type": "local"},
-            "general": {
-                "geographic-trimming": geographical_trimming,
-                "thematic-trimming": False,
-            },
-            OTHER_PREFERENCES: {"hydro-pricing-mode": "fast"},
-        },
-        {"general": ["filtering"]},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    general = cast(AntaresSectionProxy, config["general"])
+    general["geographic-trimming"] = config["general"]["filtering"]
+    general["thematic-trimming"] = False
+    config["optimization"]["link-type"] = "local"
+    config[OTHER_PREFERENCES]["hydro-pricing-mode"] = "fast"
+    config.remove_option("general", "filtering")
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
 
 
 def upgrade_720(study_path: Path) -> None:
@@ -92,33 +51,28 @@ def upgrade_720(study_path: Path) -> None:
 
 
 def upgrade_800(study_path: Path) -> None:
-    custom_ts_numbers_value = find_value_in_file(
-        study_path, GENERAL_DATA_PATH, "general", "custom-ts-numbers"
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {
-            OTHER_PREFERENCES: {
-                "hydro-heuristic-policy": "accommodate rule curves"
-            },
-            "optimization": {
-                "include-exportstructure": False,
-                "include-unfeasible-problem-behavior": "error-verbose",
-            },
-            "general": {"custom-scenario": custom_ts_numbers_value},
-        },
-        {"general": ["custom-ts-numbers"]},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config[OTHER_PREFERENCES][
+        "hydro-heuristic-policy"
+    ] = "accommodate rule curves"
+    optimization = cast(AntaresSectionProxy, config["optimization"])
+    optimization["include-exportstructure"] = False
+    optimization["include-unfeasible-problem-behavior"] = "error-verbose"
+    config["general"]["custom-scenario"] = config["general"][
+        "custom-ts-numbers"
+    ]
+    config.remove_option("general", "custom-ts-numbers")
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
 
 
 def upgrade_810(study_path: Path) -> None:
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {OTHER_PREFERENCES: {"renewable-generation-modelling": "aggregated"}},
-        {},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config[OTHER_PREFERENCES]["renewable-generation-modelling"] = "aggregated"
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
     study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True)
     study_path.joinpath("input", "renewables", "series").mkdir(parents=True)
 
@@ -161,68 +115,59 @@ def upgrade_820(study_path: Path) -> None:
 
 
 def upgrade_830(study_path: Path) -> None:
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {
-            ADEQUACY_PATCH: {
-                "include-adq-patch": False,
-                "set-to-null-ntc-between-physical-out-for-first-step": True,
-                "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": True,
-            },
-            "optimization": {"include-split-exported-mps": False},
-        },
-        {},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config.add_section(ADEQUACY_PATCH)
+    adequacy_patch = cast(AntaresSectionProxy, config[ADEQUACY_PATCH])
+    adequacy_patch["include-adq-patch"] = False
+    adequacy_patch[
+        "set-to-null-ntc-between-physical-out-for-first-step"
+    ] = True
+    adequacy_patch[
+        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
+    ] = True
+    optimization = cast(AntaresSectionProxy, config["optimization"])
+    optimization["include-split-exported-mps"] = False
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
     areas = glob.glob(str(study_path / "input" / "areas" / "*"))
     if len(areas) > 0:
         for folder in areas:
             folder_path = Path(folder)
             if folder_path.is_dir():
-                writer = IniWriter()
-                writer.write(
-                    {"adequacy-patch": {"adequacy-patch-mode": "outside"}},
-                    folder_path / "adequacy_patch.ini",
+                config = AntaresConfigParser()
+                config.read(
+                    {"adequacy-patch": {"adequacy-patch-mode": "outside"}}
                 )
+                with open(folder_path / "adequacy_patch.ini", "w") as f:
+                    config.write(f)
 
 
 def upgrade_840(study_path: Path) -> None:
-    old_value = find_value_in_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        "optimization",
-        "transmission-capacities",
-    )
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {
-            "optimization": {
-                "transmission-capacities": MAPPING_TRANSMISSION_CAPACITIES[
-                    old_value
-                ]
-            }
-        },
-        {"optimization": ["include-split-exported-mps"]},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config["optimization"][
+        "transmission-capacities"
+    ] = MAPPING_TRANSMISSION_CAPACITIES[
+        config["optimization"].getboolean("transmission-capacities")
+    ]
+    config.remove_option("optimization", "include-split-exported-mps")
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
 
 
 def upgrade_850(study_path: Path) -> None:
-    modify_file(
-        study_path,
-        GENERAL_DATA_PATH,
-        {
-            ADEQUACY_PATCH: {
-                "price-taking-order": "DENS",
-                "include-hurdle-cost-csr": False,
-                "check-csr-cost-function": False,
-                "threshold-initiate-curtailment-sharing-rule": 0.0,
-                "threshold-display-local-matching-rule-violations": 0.0,
-                "threshold-csr-variable-bounds-relaxation": 3,
-            }
-        },
-        {},
-    )
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    adequacy_patch = cast(AntaresSectionProxy, config[ADEQUACY_PATCH])
+    adequacy_patch["price-taking-order"] = "DENS"
+    adequacy_patch["include-hurdle-cost-csr"] = False
+    adequacy_patch["check-csr-cost-function"] = False
+    adequacy_patch["threshold-initiate-curtailment-sharing-rule"] = 0.0
+    adequacy_patch["threshold-display-local-matching-rule-violations"] = 0.0
+    adequacy_patch["threshold-csr-variable-bounds-relaxation"] = 3
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
 
 
 class UpgradeMethod(NamedTuple):
