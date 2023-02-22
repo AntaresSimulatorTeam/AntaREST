@@ -2013,6 +2013,71 @@ def test_area_management(app: FastAPI):
         "nominalCapacity": 3,
     }
 
+    # Thermal form
+
+    res_thermal_config = client.put(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "group": "Lignite",
+            "name": "cluster 1 renamed",
+            "unitCount": 3,
+            "enabled": False,
+            "nominalCapacity": 3,
+            "genTs": "use global parameter",
+            "minStablePower": 3,
+            "minUpTime": 3,
+            "minDownTime": 3,
+            "mustRun": False,
+            "spinning": 3,
+            "co2": 3,
+            "volatilityForced": 3,
+            "volatilityPlanned": 3,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "marginalCost": 3,
+            "spreadCost": 3,
+            "fixedCost": 3,
+            "startupCost": 3,
+            "marketBidCost": 3,
+        },
+    )
+    assert res_thermal_config.status_code == 200
+
+    res_thermal_config = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_thermal_config_json = res_thermal_config.json()
+
+    assert res_thermal_config_json == {
+        "group": "Lignite",
+        "name": "cluster 1 renamed",
+        "unitCount": 3,
+        "enabled": False,
+        "nominalCapacity": 3,
+        "genTs": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
+        "minStablePower": 3,
+        "minUpTime": 3,
+        "minDownTime": 3,
+        "mustRun": False,
+        "spinning": 3,
+        "co2": 3,
+        "volatilityForced": 3,
+        "volatilityPlanned": 3,
+        "lawForced": LawOption.UNIFORM.value,
+        "lawPlanned": LawOption.UNIFORM.value,
+        "marginalCost": 3,
+        "spreadCost": 3,
+        "fixedCost": 3,
+        "startupCost": 3,
+        "marketBidCost": 3,
+    }
+
     # Links
 
     client.delete(
