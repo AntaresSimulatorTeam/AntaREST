@@ -430,11 +430,11 @@ def test_delete_study() -> None:
         matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
-    client.delete("/v1/studies/name")
 
-    mock_storage_service.delete_study.assert_called_once_with(
-        "name", False, PARAMS
-    )
+    study_uuid = "8319b5f8-2a35-4984-9ace-2ab072bd6eef"
+    client.delete(f"/v1/studies/{study_uuid}")
+
+    mock_storage_service.delete_study.assert_called_once_with(study_uuid, False, PARAMS)
 
 
 @pytest.mark.unit_test
