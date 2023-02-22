@@ -103,10 +103,10 @@ def test_404() -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
-    assert result.status_code == 404
+    assert result.status_code == HTTPStatus.NOT_FOUND
 
     result = client.get("/v1/studies/WRONG_STUDY/raw")
-    assert result.status_code == 404
+    assert result.status_code == HTTPStatus.NOT_FOUND
 
 
 @pytest.mark.unit_test
@@ -130,16 +130,16 @@ def test_server_with_parameters() -> None:
 
     parameters = RequestParameters(user=ADMIN)
 
-    assert result.status_code == 200
+    assert result.status_code == HTTPStatus.OK
     mock_storage_service.get.assert_called_once_with(
         "study1", "/", 4, True, parameters
     )
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
-
-    assert result.status_code == 422
+    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     result = client.get("/v1/studies/study2/raw")
+    assert result.status_code == HTTPStatus.OK
 
     excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
@@ -172,7 +172,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     result_right = client.post("/v1/studies?name=study2")
 
-    assert result_right.status_code == HTTPStatus.CREATED.value
+    assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
     storage_service.create_study.assert_called_once_with(
         "study2", "", [], PARAMS
@@ -187,7 +187,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     path_file = path_study / "study.antares"
     path_file.write_text("[antares]")
 
-    shutil.make_archive(path_study, "zip", path_study)
+    shutil.make_archive(str(path_study), "zip", path_study)
     path_zip = tmp_path / "study1.zip"
 
     mock_storage_service = Mock()
@@ -209,13 +209,13 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
 
     result = client.post("/v1/studies")
 
-    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
+    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     study_data = io.BytesIO(path_zip.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
 
     assert result.json() == study_uuid
-    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.status_code == HTTPStatus.CREATED
     mock_storage_service.import_study.assert_called_once()
 
 
@@ -247,7 +247,7 @@ def test_copy_study(tmp_path: Path) -> None:
         use_task=True,
         params=PARAMS,
     )
-    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.status_code == HTTPStatus.CREATED
 
 
 @pytest.mark.unit_test
@@ -434,7 +434,9 @@ def test_delete_study() -> None:
     study_uuid = "8319b5f8-2a35-4984-9ace-2ab072bd6eef"
     client.delete(f"/v1/studies/{study_uuid}")
 
-    mock_storage_service.delete_study.assert_called_once_with(study_uuid, False, PARAMS)
+    mock_storage_service.delete_study.assert_called_once_with(
+        study_uuid, False, PARAMS
+    )
 
 
 @pytest.mark.unit_test
@@ -601,13 +603,13 @@ def test_output_whole_download(tmp_path: Path) -> None:
     res = client.get(
         f"/v1/studies/my-uuid/outputs/{output_id}/export",
     )
-    assert res.status_code == 200
+    assert res.status_code == HTTPStatus.OK
 
 
 @pytest.mark.unit_test
 def test_sim_reference() -> None:
     mock_service = Mock()
-    study_id = "my-study-id"
+    study_id = str(uuid.uuid4())
     output_id = "my-output-id"
 
     app = FastAPI(title=__name__)
@@ -626,22 +628,22 @@ def test_sim_reference() -> None:
     mock_service.set_sim_reference.assert_called_once_with(
         study_id, output_id, True, PARAMS
     )
-    assert res.status_code == 200
+    assert res.status_code == HTTPStatus.OK
     assert res.json() == ""
 
 
 @pytest.mark.unit_test
 def test_sim_result() -> None:
     mock_service = Mock()
-    study_id = "my-study-id"
+    study_id = str(uuid.uuid4())
     settings = StudySimSettingsDTO(
-        general=dict(),
-        input=dict(),
-        output=dict(),
-        optimization=dict(),
-        otherPreferences=dict(),
-        advancedParameters=dict(),
-        seedsMersenneTwister=dict(),
+        general={},
+        input={},
+        output={},
+        optimization={},
+        otherPreferences={},
+        advancedParameters={},
+        seedsMersenneTwister={},
     )
     result_data = [
         StudySimResultDTO(
@@ -695,7 +697,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
         2,
         PARAMS,
     )
-    assert result.status_code == HTTPStatus.OK.value
+    assert result.status_code == HTTPStatus.OK
 
     result = client.put("/v1/studies/existing-study/groups/group-a")
     storage_service.add_group.assert_called_with(
@@ -703,7 +705,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
         "group-a",
         PARAMS,
     )
-    assert result.status_code == HTTPStatus.OK.value
+    assert result.status_code == HTTPStatus.OK
 
     result = client.delete("/v1/studies/existing-study/groups/group-b")
     storage_service.remove_group.assert_called_with(
@@ -711,7 +713,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
         "group-b",
         PARAMS,
     )
-    assert result.status_code == HTTPStatus.OK.value
+    assert result.status_code == HTTPStatus.OK
 
     result = client.put("/v1/studies/existing-study/public_mode/FULL")
     storage_service.set_public_mode.assert_called_with(
@@ -719,10 +721,10 @@ def test_study_permission_management(tmp_path: Path) -> None:
         PublicMode.FULL,
         PARAMS,
     )
-    assert result.status_code == HTTPStatus.OK.value
+    assert result.status_code == HTTPStatus.OK
 
     result = client.put("/v1/studies/existing-study/public_mode/UNKNOWN")
-    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
+    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.unit_test
