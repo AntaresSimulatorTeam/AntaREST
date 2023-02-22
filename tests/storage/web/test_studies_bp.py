@@ -1,51 +1,47 @@
 import io
 import shutil
+import uuid
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
-from fastapi import FastAPI
-from markupsafe import Markup
-from starlette.testclient import TestClient
-
 from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.core.exceptions import (
-    UrlNotMatchJsonDataError,
-)
+from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
     FileDownloadDTO,
+    FileDownloadTaskDTO,
 )
-from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    STUDY_REFERENCE_TEMPLATES,
+    MatrixAggregationResultDTO,
+    MatrixIndex,
+    OwnerInfo,
     PublicMode,
     StudyDownloadDTO,
-    MatrixIndex,
+    StudyDownloadLevelDTO,
+    StudyDownloadType,
+    StudyMetadataDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
-    STUDY_REFERENCE_TEMPLATES,
-    StudyDownloadType,
-    StudyDownloadLevelDTO,
-    StudyMetadataDTO,
-    OwnerInfo,
-    MatrixAggregationResultDTO,
     TimeSerie,
     TimeSeriesData,
 )
+from fastapi import FastAPI
+from markupsafe import Markup
+from starlette.testclient import TestClient
 from tests.storage.conftest import SimpleFileTransferManager
 
 ADMIN = JWTUser(
@@ -185,8 +181,6 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_import_study_zipped(tmp_path: Path, project_path) -> None:
-    tmp_path /= "tmp"
-    tmp_path.mkdir()
     study_name = "study1"
     path_study = tmp_path / study_name
     path_study.mkdir()
@@ -197,7 +191,8 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     path_zip = tmp_path / "study1.zip"
 
     mock_storage_service = Mock()
-    mock_storage_service.import_study.return_value = study_name
+    study_uuid = str(uuid.uuid4())
+    mock_storage_service.import_study.return_value = study_uuid
 
     app = FastAPI(title=__name__)
     build_study_service(
@@ -219,7 +214,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     study_data = io.BytesIO(path_zip.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
 
-    assert result.json() == study_name
+    assert result.json() == study_uuid
     assert result.status_code == HTTPStatus.CREATED.value
     mock_storage_service.import_study.assert_called_once()
 
