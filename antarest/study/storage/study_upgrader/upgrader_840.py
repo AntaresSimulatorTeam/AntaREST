@@ -10,7 +10,7 @@ MAPPING_TRANSMISSION_CAPACITIES = {
 }
 
 
-def _upgrade_840(study_path: Path) -> None:
+def upgrade_840(study_path: Path) -> None:
     config = AntaresConfigParser()
     config.read(study_path / GENERAL_DATA_PATH)
     config["optimization"][

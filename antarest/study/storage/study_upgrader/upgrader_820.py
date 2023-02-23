@@ -5,7 +5,7 @@ import numpy
 import pandas  # type: ignore
 
 
-def _upgrade_820(study_path: Path) -> None:
+def upgrade_820(study_path: Path) -> None:
     links = glob.glob(str(study_path / "input" / "links" / "*"))
     if len(links) > 0:
         for folder in links:

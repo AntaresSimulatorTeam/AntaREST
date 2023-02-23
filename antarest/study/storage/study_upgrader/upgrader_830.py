@@ -11,7 +11,7 @@ GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
 ADEQUACY_PATCH = "adequacy patch"
 
 
-def _upgrade_830(study_path: Path) -> None:
+def upgrade_830(study_path: Path) -> None:
     config = AntaresConfigParser()
     config.read(study_path / GENERAL_DATA_PATH)
     config.add_section(ADEQUACY_PATCH)

@@ -10,7 +10,7 @@ from antarest.tools.lib import (
     extract_commands,
     generate_study,
 )
-from antarest.study.storage.study_upgrader import study_version_upgrader
+from antarest.study.storage.study_upgrader import upgrade_study
 
 logging.basicConfig(level=logging.INFO)
 
@@ -162,9 +162,7 @@ def update_study(study_path: Path, target_version: str) -> None:
 
     TARGET_VERSION is the version you want your study to be at (example 8.4.0 or 840)
     """
-    study_version_upgrader.upgrade_study(
-        Path(study_path), target_version.replace(".", "")
-    )
+    upgrade_study(Path(study_path), target_version.replace(".", ""))
 
 
 if __name__ == "__main__":

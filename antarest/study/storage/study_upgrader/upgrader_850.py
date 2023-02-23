@@ -7,13 +7,12 @@ from antarest.study.storage.antares_configparser import (
 )
 
 GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
-ADEQUACY_PATCH = "adequacy patch"
 
 
-def _upgrade_850(study_path: Path) -> None:
+def upgrade_850(study_path: Path) -> None:
     config = AntaresConfigParser()
     config.read(study_path / GENERAL_DATA_PATH)
-    adequacy_patch = cast(AntaresSectionProxy, config[ADEQUACY_PATCH])
+    adequacy_patch = cast(AntaresSectionProxy, config["adequacy patch"])
     adequacy_patch["price-taking-order"] = "DENS"
     adequacy_patch["include-hurdle-cost-csr"] = False
     adequacy_patch["check-csr-cost-function"] = False

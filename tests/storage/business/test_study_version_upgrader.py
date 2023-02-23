@@ -12,10 +12,12 @@ import pytest
 
 
 from antarest.study.storage.antares_configparser import AntaresConfigParser
-from antarest.study.storage.study_upgrader import study_version_upgrader
 from antarest.study.storage.study_upgrader import (
+    upgrade_study,
     InvalidUpgrade,
     UPGRADE_METHODS,
+)
+from antarest.study.storage.study_upgrader.upgrader_840 import (
     MAPPING_TRANSMISSION_CAPACITIES,
 )
 
@@ -33,7 +35,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_areas_values = get_old_area_values(tmp_path)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "850"
-    study_version_upgrader.upgrade_study(tmp_path, target_version)
+    upgrade_study(tmp_path, target_version)
     with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
         print(f.readlines())
     assert_study_antares_file_is_updated(tmp_path, target_version)
@@ -52,21 +54,21 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         InvalidUpgrade,
         match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "600")
+        upgrade_study(tmp_path, "600")
     with pytest.raises(
         InvalidUpgrade, match="Your study is already in version '720'"
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "720")
+        upgrade_study(tmp_path, "720")
     with pytest.raises(
         InvalidUpgrade,
         match="Impossible to upgrade from version '720' to version '710'",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "710")
+        upgrade_study(tmp_path, "710")
     with pytest.raises(
         InvalidUpgrade,
         match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "820.rc")
+        upgrade_study(tmp_path, "820.rc")
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -82,7 +84,7 @@ def test_fallback_if_study_input_broken(tmp_path):
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        study_version_upgrader.upgrade_study(tmp_path, "850")
+        upgrade_study(tmp_path, "850")
     assert are_same_dir(tmp_path, tmp_dir_before_upgrade)
     shutil.rmtree(tmp_dir_before_upgrade)
 

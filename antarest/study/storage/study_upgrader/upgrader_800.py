@@ -6,14 +6,13 @@ from antarest.study.storage.antares_configparser import (
     AntaresSectionProxy,
 )
 
-OTHER_PREFERENCES = "other preferences"
 GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
 
 
-def _upgrade_800(study_path: Path) -> None:
+def upgrade_800(study_path: Path) -> None:
     config = AntaresConfigParser()
     config.read(study_path / GENERAL_DATA_PATH)
-    config[OTHER_PREFERENCES][
+    config["other preferences"][
         "hydro-heuristic-policy"
     ] = "accommodate rule curves"
     optimization = cast(AntaresSectionProxy, config["optimization"])
