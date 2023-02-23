@@ -97,7 +97,7 @@ export const MATRICES: Matrices = {
   },
   [MatrixType.RunOfRiver]: {
     title: "Run of river",
-    url: "input/hydro/common/capacity/waterValues_{areaId}",
+    url: "input/hydro/series/{areaId}/ror",
     stats: MatrixStats.STATS,
   },
 };
