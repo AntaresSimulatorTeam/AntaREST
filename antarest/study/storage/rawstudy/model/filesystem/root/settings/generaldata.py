@@ -136,6 +136,19 @@ class GeneralData(IniFileNode):
             ] = str  # none, optim-1, optim-2, both-optims
         if config.version >= 840:
             del types["optimization"]["include-split-exported-mps"]
+        if config.version >= 850:
+            types["adequacy patch"]["price-taking-order"] = str
+            types["adequacy patch"]["include-hurdle-cost-csr"] = bool
+            types["adequacy patch"]["check-csr-cost-function"] = bool
+            types["adequacy patch"][
+                "threshold-initiate-curtailment-sharing-rule"
+            ] = float
+            types["adequacy patch"][
+                "threshold-display-local-matching-rule-violations"
+            ] = float
+            types["adequacy patch"][
+                "threshold-csr-variable-bounds-relaxation"
+            ] = int
 
         IniFileNode.__init__(
             self,

@@ -43,11 +43,10 @@ STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
     "820": "empty_study_820.zip",
     "830": "empty_study_830.zip",
     "840": "empty_study_840.zip",
-    # we use the version '8.5.0-rc3'
-    "850": "empty_study_840.zip",  # todo: "empty_study_840.zip"
+    "850": "empty_study_850.zip",
 }
 
-NEW_DEFAULT_STUDY_VERSION: str = "840"
+NEW_DEFAULT_STUDY_VERSION: str = "850"
 
 
 class StudyContentStatus(enum.Enum):
