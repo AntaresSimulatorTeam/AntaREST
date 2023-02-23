@@ -1,24 +1,26 @@
 from pathlib import Path
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
+from typing import cast
+
+from antarest.study.storage.antares_configparser import (
+    AntaresConfigParser,
+    AntaresSectionProxy,
 )
 
-GENERAL_DATA_PATH = "settings/generaldata.ini"
+GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
 
 
 def upgrade_800(study_path: Path) -> None:
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    data = reader.read(study_path / GENERAL_DATA_PATH)
-    data["other preferences"][
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config["other preferences"][
         "hydro-heuristic-policy"
     ] = "accommodate rule curves"
-    data["optimization"]["include-exportstructure"] = False
-    data["optimization"][
-        "include-unfeasible-problem-behavior"
-    ] = "error-verbose"
-    data["general"]["custom-scenario"] = data["general"]["custom-ts-numbers"]
-    del data["general"]["custom-ts-numbers"]
-    writer = IniWriter(special_keys=DUPLICATE_KEYS)
-    writer.write(data, study_path / GENERAL_DATA_PATH)
+    optimization = cast(AntaresSectionProxy, config["optimization"])
+    optimization["include-exportstructure"] = False
+    optimization["include-unfeasible-problem-behavior"] = "error-verbose"
+    config["general"]["custom-scenario"] = config["general"][
+        "custom-ts-numbers"
+    ]
+    config.remove_option("general", "custom-ts-numbers")
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)

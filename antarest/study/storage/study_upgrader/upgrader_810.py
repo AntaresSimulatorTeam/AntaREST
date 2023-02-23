@@ -1,18 +1,17 @@
 from pathlib import Path
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
-)
 
-GENERAL_DATA_PATH = "settings/generaldata.ini"
+from antarest.study.storage.antares_configparser import AntaresConfigParser
+
+GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
 
 
 def upgrade_810(study_path: Path) -> None:
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
-    data = reader.read(study_path / GENERAL_DATA_PATH)
-    data["other preferences"]["renewable-generation-modelling"] = "aggregated"
-    writer = IniWriter(special_keys=DUPLICATE_KEYS)
-    writer.write(data, study_path / GENERAL_DATA_PATH)
+    config = AntaresConfigParser()
+    config.read(study_path / GENERAL_DATA_PATH)
+    config["other preferences"][
+        "renewable-generation-modelling"
+    ] = "aggregated"
+    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
+        config.write(configfile)
     study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True)
     study_path.joinpath("input", "renewables", "series").mkdir(parents=True)
