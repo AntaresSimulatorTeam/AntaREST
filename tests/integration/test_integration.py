@@ -1017,6 +1017,12 @@ def test_area_management(app: FastAPI):
         "enableAdequacyPatch": False,
         "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
         "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
+        "checkCsrCostFunction": False,
+        "includeHurdleCostCsr": False,
+        "priceTakingOrder": "DENS",
+        "thresholdInitiateCurtailmentSharingRule": 0.0,
+        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+        "thresholdCsrVariableBoundsRelaxation": 3,
     }
 
     client.put(
@@ -1055,6 +1061,12 @@ def test_area_management(app: FastAPI):
         "enableAdequacyPatch": False,
         "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
         "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
+        "checkCsrCostFunction": False,
+        "includeHurdleCostCsr": False,
+        "priceTakingOrder": "DENS",
+        "thresholdInitiateCurtailmentSharingRule": 0.0,
+        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+        "thresholdCsrVariableBoundsRelaxation": 3,
     }
 
     res_general_config = client.get(
