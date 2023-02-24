@@ -66,7 +66,7 @@ export const MATRICES: Matrices = {
   [MatrixType.Dailypower]: {
     title: "Daily power",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
-    stats: MatrixStats.TOTAL,
+    stats: MatrixStats.NOCOL,
   },
   [MatrixType.EnergyCredits]: {
     title: "Standard credit",
@@ -77,13 +77,13 @@ export const MATRICES: Matrices = {
       "Pumping Max Power(MW)",
       "Pumping Max Energy(Hours at Pmax)",
     ],
-    stats: MatrixStats.STATS,
+    stats: MatrixStats.NOCOL,
   },
   [MatrixType.ReservoirLevels]: {
     title: "Reservoir levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     cols: ["Lev Low(%)", "Lev Avg(%)", "Lev High(%)"],
-    stats: MatrixStats.TOTAL,
+    stats: MatrixStats.NOCOL,
   },
   [MatrixType.WaterValues]: {
     title: "Water values",
