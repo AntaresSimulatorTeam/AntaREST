@@ -1,4 +1,4 @@
-from antarest.study.storage.study_upgrader import _upgrade_850 as upgrade_850
+from antarest.study.storage.study_upgrader import upgrade_850 as upgrade_850
 from tests.storage.study_upgrader.conftest import StudyAssets
 
 
