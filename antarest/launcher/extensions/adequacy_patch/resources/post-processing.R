@@ -1,5 +1,6 @@
 library(AdequacyPatch)
 library(antaresRead)
+library(antaresEditObject)
 library(yaml)
 library(parallel)
 library(data.table)
@@ -11,7 +12,7 @@ print(readLayout(opts = opts))
 
 config <- read_yaml("user/adequacypatch/config.yml", fileEncoding = "UTF-8", text)
 
-areas = config$areas
+areas = setdiff(config$areas, config$exluded_areas)
 virutal_areas = config$areas
 mcYears = config$mcYears
 antaresfbzone = config$antaresfbzone
@@ -78,4 +79,4 @@ for (output in list.files("output")) {
     }
 }
 
-
+cleanUpOutput(areas = config$areas)
