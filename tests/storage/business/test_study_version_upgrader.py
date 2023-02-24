@@ -104,8 +104,8 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     optimization = config["optimization"]
     adequacy_patch = config["adequacy patch"]
     other_preferences = config["other preferences"]
-    assert general["geographic-trimming"] == old_values[0]
-    assert general["custom-scenario"] == old_values[1]
+    assert general.getboolean("geographic-trimming") == old_values[0]
+    assert general.getboolean("custom-scenario") == old_values[1]
     assert general.getboolean("geographic-trimming") is False
     assert optimization.getboolean("include-exportstructure") is False
     assert (
@@ -150,8 +150,8 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
     config = AntaresConfigParser()
     config.read(Path(general_data_path))
-    filtering_value = config["general"]["filtering"]
-    custom_ts_value = config["general"]["custom-ts-numbers"]
+    filtering_value = config["general"].getboolean("filtering")
+    custom_ts_value = config["general"].getboolean("custom-ts-numbers")
     transmission_capa_value = config["optimization"].getboolean(
         "transmission-capacities"
     )

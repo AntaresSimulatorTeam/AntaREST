@@ -1,22 +1,20 @@
 from pathlib import Path
-from typing import cast
-
-from antarest.study.storage.antares_configparser import (
-    AntaresConfigParser,
-    AntaresSectionProxy,
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    DUPLICATE_KEYS,
 )
 
-GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
+GENERAL_DATA_PATH = "settings/generaldata.ini"
 
 
 def upgrade_710(study_path: Path) -> None:
-    config = AntaresConfigParser()
-    config.read(study_path / GENERAL_DATA_PATH)
-    general = cast(AntaresSectionProxy, config["general"])
-    general["geographic-trimming"] = config["general"]["filtering"]
-    general["thematic-trimming"] = False
-    config["optimization"]["link-type"] = "local"
-    config["other preferences"]["hydro-pricing-mode"] = "fast"
-    config.remove_option("general", "filtering")
-    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
-        config.write(configfile)
+    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    data = reader.read(study_path / GENERAL_DATA_PATH)
+    data["general"]["geographic-trimming"] = data["general"]["filtering"]
+    data["general"]["thematic-trimming"] = False
+    data["optimization"]["link-type"] = "local"
+    data["other preferences"]["hydro-pricing-mode"] = "fast"
+    del data["general"]["filtering"]
+    writer = IniWriter(special_keys=DUPLICATE_KEYS)
+    writer.write(data, study_path / GENERAL_DATA_PATH)
