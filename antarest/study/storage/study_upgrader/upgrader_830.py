@@ -1,32 +1,26 @@
 import glob
 from pathlib import Path
-from typing import cast
-
-from antarest.study.storage.antares_configparser import (
-    AntaresConfigParser,
-    AntaresSectionProxy,
+from antarest.study.storage.antares_configparser import AntaresConfigParser
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    DUPLICATE_KEYS,
 )
 
-GENERAL_DATA_PATH = Path("settings") / "generaldata.ini"
-ADEQUACY_PATCH = "adequacy patch"
+GENERAL_DATA_PATH = "settings/generaldata.ini"
 
 
 def upgrade_830(study_path: Path) -> None:
-    config = AntaresConfigParser()
-    config.read(study_path / GENERAL_DATA_PATH)
-    config.add_section(ADEQUACY_PATCH)
-    adequacy_patch = cast(AntaresSectionProxy, config[ADEQUACY_PATCH])
-    adequacy_patch["include-adq-patch"] = False
-    adequacy_patch[
-        "set-to-null-ntc-between-physical-out-for-first-step"
-    ] = True
-    adequacy_patch[
-        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
-    ] = True
-    optimization = cast(AntaresSectionProxy, config["optimization"])
-    optimization["include-split-exported-mps"] = False
-    with open(study_path / GENERAL_DATA_PATH, "w") as configfile:
-        config.write(configfile)
+    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    data = reader.read(study_path / GENERAL_DATA_PATH)
+    data["adequacy patch"] = {
+        "include-adq-patch": False,
+        "set-to-null-ntc-between-physical-out-for-first-step": True,
+        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": True,
+    }
+    data["optimization"]["include-split-exported-mps"] = False
+    writer = IniWriter(special_keys=DUPLICATE_KEYS)
+    writer.write(data, study_path / GENERAL_DATA_PATH)
     areas = glob.glob(str(study_path / "input" / "areas" / "*"))
     if len(areas) > 0:
         for folder in areas:

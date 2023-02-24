@@ -7,7 +7,7 @@ from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,
     UPGRADE_METHODS,
 )
-from antarest.study.storage.study_upgrader.study_version_upgrader import (
+from antarest.study.storage.study_upgrader import (
     can_upgrade_version,
     find_next_version,
     get_current_version,
