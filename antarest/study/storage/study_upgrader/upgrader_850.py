@@ -6,18 +6,19 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 )
 
 GENERAL_DATA_PATH = "settings/generaldata.ini"
+ADEQUACY_PATCH = "adequacy patch"
 
 
 def upgrade_850(study_path: Path) -> None:
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(study_path / GENERAL_DATA_PATH)
-    data["adequacy patch"]["price-taking-order"] = "DENS"
-    data["adequacy patch"]["include-hurdle-cost-csr"] = False
-    data["adequacy patch"]["check-csr-cost-function"] = False
-    data["adequacy patch"]["threshold-initiate-curtailment-sharing-rule"] = 0.0
-    data["adequacy patch"][
+    data[ADEQUACY_PATCH]["price-taking-order"] = "DENS"
+    data[ADEQUACY_PATCH]["include-hurdle-cost-csr"] = False
+    data[ADEQUACY_PATCH]["check-csr-cost-function"] = False
+    data[ADEQUACY_PATCH]["threshold-initiate-curtailment-sharing-rule"] = 0.0
+    data[ADEQUACY_PATCH][
         "threshold-display-local-matching-rule-violations"
     ] = 0.0
-    data["adequacy patch"]["threshold-csr-variable-bounds-relaxation"] = 3
+    data[ADEQUACY_PATCH]["threshold-csr-variable-bounds-relaxation"] = 3
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, study_path / GENERAL_DATA_PATH)
