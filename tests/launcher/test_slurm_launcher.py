@@ -27,7 +27,7 @@ from antarest.tools.admin_lib import clean_locks_from_config
 
 @pytest.fixture
 def launcher_config(tmp_path: Path) -> Config:
-    config = Config(
+    return Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
                 local_workspace=tmp_path,
@@ -43,7 +43,6 @@ def launcher_config(tmp_path: Path) -> Config:
             )
         )
     )
-    return config
 
 
 @pytest.mark.unit_test

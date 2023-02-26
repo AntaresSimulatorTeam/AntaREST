@@ -1,4 +1,5 @@
 import argparse
+import copy
 import logging
 import os
 import re
@@ -6,12 +7,10 @@ import shutil
 import tempfile
 import threading
 import time
-from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict, Awaitable, List
+from typing import Awaitable, Callable, Dict, List, Optional
 
-from filelock import FileLock
-
+from antareslauncher import __version__ as slurm_launcher_version
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import (
@@ -21,27 +20,24 @@ from antareslauncher.main_option_parser import (
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    IEventBus,
-    Event,
-    EventType,
-)
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
-    LauncherInitException,
     LauncherCallbacks,
+    LauncherInitException,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import (
     JobStatus,
     LauncherParametersDTO,
-    XpansionParametersDTO,
     LogType,
+    XpansionParametersDTO,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -230,12 +226,14 @@ class SlurmLauncher(AbstractLauncher):
 
     def _delete_workspace_file(self, study_path: Path) -> None:
         logger.info(f"Deleting workspace file at {study_path}")
-        if self.local_workspace.absolute() in study_path.absolute().parents:
-            if study_path.exists():
-                if study_path.is_dir():
-                    shutil.rmtree(study_path)
-                else:
-                    os.unlink(study_path)
+        if (
+            self.local_workspace.absolute() in study_path.absolute().parents
+            and study_path.exists()
+        ):
+            if study_path.is_dir():
+                shutil.rmtree(study_path)
+            else:
+                os.unlink(study_path)
 
     def _import_study_output(
         self,
@@ -383,8 +381,9 @@ class SlurmLauncher(AbstractLauncher):
                     self.create_update_log(study.name),
                 )
 
-        # we refetch study list here because by the time the import_output is done, maybe some new studies has been added
-        # also we clean up the study after because it remove the study in the database
+        # we fetch study list again here because, by the time the import_output is done,
+        # some new studies may have been added.
+        # We also clean up the study after because it removes the study in the database
         with self.antares_launcher_lock:
             nb_studies = self.data_repo_tinydb.get_list_of_studies()
             for study_id in studies_to_cleanup:
@@ -475,7 +474,7 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: LauncherParametersDTO,
         version: str,
     ) -> None:
-        study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
+        study_path = Path(self.launcher_args.studies_in) / launch_uuid
 
         with self.antares_launcher_lock:
             try:
@@ -491,7 +490,8 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_params
                 )
                 self.callbacks.append_before_log(
-                    launch_uuid, f"Submitting study to slurm launcher"
+                    launch_uuid,
+                    f"Submitting study to SLURM launcher v{slurm_launcher_version}...",
                 )
 
                 self._call_launcher(launcher_args, self.launcher_params)
@@ -501,20 +501,20 @@ class SlurmLauncher(AbstractLauncher):
                 )
                 if launch_success:
                     self.callbacks.append_before_log(
-                        launch_uuid, f"Study submitted"
+                        launch_uuid, "Study submitted."
                     )
                     logger.info("Study exported and run with launcher")
                 else:
                     self.callbacks.append_after_log(
                         launch_uuid,
-                        f"Study not submitted. The study configuration may be incorrect",
+                        "Study not submitted. The study configuration may be incorrect",
                     )
                     logger.warning(
                         f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
                     )
 
                 self.callbacks.update_status(
-                    str(launch_uuid),
+                    launch_uuid,
                     JobStatus.RUNNING if launch_success else JobStatus.FAILED,
                     None,
                     None,
@@ -528,9 +528,9 @@ class SlurmLauncher(AbstractLauncher):
                     f"Unexpected error when launching study : {str(e)}",
                 )
                 self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.FAILED, str(e), None
+                    launch_uuid, JobStatus.FAILED, str(e), None
                 )
-                self._clean_up_study(str(launch_uuid))
+                self._clean_up_study(launch_uuid)
             finally:
                 self._delete_workspace_file(study_path)
 
@@ -544,16 +544,13 @@ class SlurmLauncher(AbstractLauncher):
 
     def _check_if_study_is_in_launcher_db(self, job_id: str) -> bool:
         studies = self.data_repo_tinydb.get_list_of_studies()
-        for s in studies:
-            if s.name == job_id:
-                return True
-        return False
+        return any(s.name == job_id for s in studies)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO
     ) -> argparse.Namespace:
         if launcher_params:
-            launcher_args = deepcopy(self.launcher_args)
+            launcher_args = copy.deepcopy(self.launcher_args)
             other_options = []
             if launcher_params.other_options:
                 options = re.split("\\s+", launcher_params.other_options)
@@ -572,12 +569,14 @@ class SlurmLauncher(AbstractLauncher):
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be higher than {MIN_TIME_LIMIT}. Using min limit."
+                        f"Invalid SLURM launcher time limit ({time_limit}),"
+                        f" should be higher than {MIN_TIME_LIMIT}. Using min limit."
                     )
                     launcher_args.time_limit = MIN_TIME_LIMIT
                 elif time_limit >= MAX_TIME_LIMIT:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be lower than {MAX_TIME_LIMIT}. Using max limit."
+                        f"Invalid SLURM launcher time limit ({time_limit}),"
+                        f" should be lower than {MAX_TIME_LIMIT}. Using max limit."
                     )
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
                 else:
@@ -591,7 +590,7 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args.n_cpu = nb_cpu
                 else:
                     logger.warning(
-                        f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
+                        f"Invalid SLURM launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
                     )
             if (
                 launcher_params.adequacy_patch is not None
@@ -631,9 +630,7 @@ class SlurmLauncher(AbstractLauncher):
             log_path = SlurmLauncher._get_log_path_from_log_dir(
                 log_dir, log_type
             )
-        if log_path:
-            return log_path.read_text()
-        return None
+        return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
         async def _listen_to_kill_job(event: Event) -> None:
@@ -642,7 +639,7 @@ class SlurmLauncher(AbstractLauncher):
         return _listen_to_kill_job
 
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
-        launcher_args = deepcopy(self.launcher_args)
+        launcher_args = copy.deepcopy(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 launcher_args.job_id_to_kill = study.job_id
