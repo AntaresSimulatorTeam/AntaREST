@@ -64,7 +64,7 @@ class MaxIteration(str, Enum):
 
 class XpansionSensitivitySettingsDTO(BaseModel):
     epsilon: float
-    projection: List[str]
+    projection: Optional[List[str]]
     capex: bool = False
 
 

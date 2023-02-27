@@ -18,6 +18,7 @@ from antarest.study.business.xpansion_management import (
     XpansionFileNotFoundError,
     XpansionResourceFileType,
     FileCurrentlyUsedInSettings,
+    XpansionSensitivitySettingsDTO,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -252,6 +253,41 @@ def test_get_xpansion_settings(
     xpansion_manager.create_xpansion_configuration(study)
 
     assert xpansion_manager.get_xpansion_settings(study) == expected_output
+
+
+@pytest.mark.unit_test
+def test_xpansion_sensitivity_settings(tmp_path: Path):
+    """
+    Test that attribute projection in sensitivity_config is optional
+    """
+
+    empty_study = make_empty_study(tmp_path, 720)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=720)
+    xpansion_manager = make_xpansion_manager(empty_study)
+
+    xpansion_manager.create_xpansion_configuration(study)
+    expected_settings = XpansionSettingsDTO.parse_obj(
+        {
+            "optimality_gap": 1,
+            "max_iteration": "+Inf",
+            "uc_type": "expansion_fast",
+            "master": "integer",
+            "yearly_weight": None,
+            "additional-constraints": None,
+            "relaxed-optimality-gap": None,
+            "cut-type": None,
+            "ampl.solver": None,
+            "ampl.presolve": None,
+            "ampl.solve_bounds_frequency": None,
+            "relative_gap": 1e-12,
+            "solver": "Cbc",
+            "sensitivity_config": XpansionSensitivitySettingsDTO(
+                epsilon=0.1, capex=False
+            ),
+        }
+    )
+    xpansion_manager.update_xpansion_settings(study, expected_settings)
+    assert xpansion_manager.get_xpansion_settings(study) == expected_settings
 
 
 @pytest.mark.unit_test
