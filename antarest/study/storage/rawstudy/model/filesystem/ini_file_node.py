@@ -1,4 +1,5 @@
 import os
+import json as js
 import tempfile
 from pathlib import Path
 from typing import List, Optional, cast, Dict, Any, Union
@@ -115,9 +116,14 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             )
         ):
             json = self.reader.read(self.path) if self.path.exists() else {}
-            formatted_data = data
+
             if isinstance(data, str):
-                formatted_data = IniReader.parse_value(data)
+                try:
+                    formatted_data = js.loads(data)
+                except Exception:
+                    formatted_data = IniReader.parse_value(data)
+            else:
+                formatted_data = data
             if len(url) == 2:
                 if url[0] not in json:
                     json[url[0]] = {}
