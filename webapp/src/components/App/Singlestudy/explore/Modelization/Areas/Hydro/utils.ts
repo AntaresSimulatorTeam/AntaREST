@@ -66,6 +66,7 @@ export const MATRICES: Matrices = {
   [MatrixType.Dailypower]: {
     title: "Daily power",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
+    cols: generateColumns(),
     stats: MatrixStats.NOCOL,
   },
   [MatrixType.EnergyCredits]: {
@@ -82,13 +83,14 @@ export const MATRICES: Matrices = {
   [MatrixType.ReservoirLevels]: {
     title: "Reservoir levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
-    cols: ["Lev Low(%)", "Lev Avg(%)", "Lev High(%)"],
+    cols: ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
     stats: MatrixStats.NOCOL,
   },
   [MatrixType.WaterValues]: {
     title: "Water values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
-    stats: MatrixStats.TOTAL,
+    cols: generateColumns("%"),
+    stats: MatrixStats.NOCOL,
   },
   [MatrixType.HydroStorage]: {
     title: "Hydro storage",
@@ -101,3 +103,20 @@ export const MATRICES: Matrices = {
     stats: MatrixStats.STATS,
   },
 };
+
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
+
+/**
+ * Generates an array of column names from 0 to 100, optionally with a suffix.
+ * @param columnSuffix The suffix to append to the column names.
+ * @returns An array of strings representing column names from 0 to 100.
+ */
+function generateColumns(columnSuffix = ""): string[] {
+  const columns: string[] = [];
+  for (let i = 0; i <= 100; i += 1) {
+    columns.push(`${i}${columnSuffix}`);
+  }
+  return columns;
+}
