@@ -6,7 +6,6 @@ import DocLink from "../../../../../../../common/DocLink";
 import Form from "../../../../../../../common/Form";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { ACTIVE_WINDOWS_DOC_PATH } from "../../../BindingConstraints/BindingConstView/utils";
-import { Root } from "../style";
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,
@@ -33,7 +32,7 @@ function ManagementOptions() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
+    <>
       <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#hydro`} isAbsolute />
       <Form
         key={studyId + areaId}
@@ -46,7 +45,7 @@ function ManagementOptions() {
       >
         <Fields />
       </Form>
-    </Root>
+    </>
   );
 }
 

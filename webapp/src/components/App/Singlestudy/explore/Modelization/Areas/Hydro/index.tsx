@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import TabWrapper from "../../../TabWrapper";
+import { Root } from "./style";
 
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -44,7 +45,11 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabWrapper study={study} tabStyle="normal" tabList={tabList} />;
+  return (
+    <Root>
+      <TabWrapper study={study} tabStyle="normal" tabList={tabList} />
+    </Root>
+  );
 }
 
 export default Hydro;
