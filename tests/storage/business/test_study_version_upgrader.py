@@ -225,11 +225,6 @@ def are_same_dir(dir1, dir2) -> bool:
         or len(dirs_cmp.funny_files) > 0
     ):
         return False
-    (_, mismatch, errors) = filecmp.cmpfiles(
-        dir1, dir2, dirs_cmp.common_files, shallow=False
-    )
-    if len(mismatch) > 0 or len(errors) > 0:
-        return False
     for common_dir in dirs_cmp.common_dirs:
         path_dir1 = Path(dir1)
         path_dir2 = Path(dir2)
