@@ -1,6 +1,8 @@
+import contextlib
 import os
-import json as js
+import json
 import tempfile
+from json import JSONDecodeError
 from pathlib import Path
 from typing import List, Optional, cast, Dict, Any, Union
 
@@ -68,24 +70,24 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         if self.config.zip_path:
             file_path, tmp_dir = self._extract_file_to_tmp_dir()
             try:
-                json = self.reader.read(file_path)
+                data = self.reader.read(file_path)
             except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e))
+                raise IniReaderError(self.__class__.__name__, str(e)) from e
             finally:
                 tmp_dir.cleanup()
         else:
             try:
-                json = self.reader.read(self.path)
+                data = self.reader.read(self.path)
             except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e))
+                raise IniReaderError(self.__class__.__name__, str(e)) from e
 
         if len(url) == 2:
-            json = json[url[0]][url[1]]
+            data = data[url[0]][url[1]]
         elif len(url) == 1:
-            json = json[url[0]]
+            data = data[url[0]]
         else:
-            json = {k: {} for k in json} if depth == 1 else json
-        return cast(SUB_JSON, json)
+            data = {k: {} for k in data} if depth == 1 else data
+        return cast(SUB_JSON, data)
 
     def get(
         self,
@@ -115,24 +117,20 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            json = self.reader.read(self.path) if self.path.exists() else {}
-
+            info = self.reader.read(self.path) if self.path.exists() else {}
+            obj = data
             if isinstance(data, str):
-                try:
-                    formatted_data = js.loads(data)
-                except Exception:
-                    formatted_data = IniReader.parse_value(data)
-            else:
-                formatted_data = data
+                with contextlib.suppress(JSONDecodeError):
+                    obj = json.loads(data)
             if len(url) == 2:
-                if url[0] not in json:
-                    json[url[0]] = {}
-                json[url[0]][url[1]] = formatted_data
+                if url[0] not in info:
+                    info[url[0]] = {}
+                info[url[0]][url[1]] = obj
             elif len(url) == 1:
-                json[url[0]] = formatted_data
+                info[url[0]] = obj
             else:
-                json = cast(JSON, formatted_data)
-            self.writer.write(json, self.path)
+                info = cast(JSON, obj)
+            self.writer.write(info, self.path)
 
     def delete(self, url: Optional[List[str]] = None) -> None:
         url = url or []
@@ -140,25 +138,21 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             if self.config.path.exists():
                 self.config.path.unlink()
         elif len(url) > 0:
-            json = self.reader.read(self.path) if self.path.exists() else {}
+            data = self.reader.read(self.path) if self.path.exists() else {}
             section_name = url[0]
             if len(url) == 1:
-                try:
-                    del json[section_name]
-                except KeyError:
-                    pass
+                with contextlib.suppress(KeyError):
+                    del data[section_name]
             elif len(url) == 2:
                 # remove dict key
                 key_name = url[1]
-                try:
-                    del json[section_name][key_name]
-                except KeyError:
-                    pass
+                with contextlib.suppress(KeyError):
+                    del data[section_name][key_name]
             else:
                 raise ValueError(
                     f"url should be fully resolved when arrives on {self.__class__.__name__}"
                 )
-            self.writer.write(json, self.path)
+            self.writer.write(data, self.path)
 
     def check_errors(
         self,
@@ -166,7 +160,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        errors = list()
+        errors = []
         for section, params in self.types.items():
             if section not in data:
                 msg = f"section {section} not in {self.__class__.__name__}"
