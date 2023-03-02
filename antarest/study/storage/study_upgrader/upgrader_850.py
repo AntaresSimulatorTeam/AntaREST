@@ -19,6 +19,7 @@ def upgrade_850(study_path: Path) -> None:
     Args:
         study_path: path to the study directory.
     """
+
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(study_path / GENERAL_DATA_PATH)
     # fmt: off

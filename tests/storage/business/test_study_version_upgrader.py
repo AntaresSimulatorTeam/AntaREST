@@ -11,7 +11,10 @@ import pandas
 import pytest
 
 
-from antarest.study.storage.antares_configparser import AntaresConfigParser
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    DUPLICATE_KEYS,
+)
 from antarest.study.storage.study_upgrader import (
     upgrade_study,
     InvalidUpgrade,
@@ -98,16 +101,16 @@ def assert_study_antares_file_is_updated(
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
-    config = AntaresConfigParser()
-    config.read(Path(general_data_path))
-    general = config["general"]
-    optimization = config["optimization"]
-    adequacy_patch = config["adequacy patch"]
-    other_preferences = config["other preferences"]
-    assert general.getboolean("geographic-trimming") == old_values[0]
-    assert general.getboolean("custom-scenario") == old_values[1]
-    assert general.getboolean("geographic-trimming") is False
-    assert optimization.getboolean("include-exportstructure") is False
+    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    data = reader.read(general_data_path)
+    general = data["general"]
+    optimization = data["optimization"]
+    adequacy_patch = data["adequacy patch"]
+    other_preferences = data["other preferences"]
+    assert general["geographic-trimming"] == old_values[0]
+    assert general["custom-scenario"] == old_values[1]
+    assert general["geographic-trimming"] is False
+    assert optimization["include-exportstructure"] is False
     assert (
         optimization["include-unfeasible-problem-behavior"] == "error-verbose"
     )
@@ -116,45 +119,36 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         == "accommodate rule curves"
     )
     assert other_preferences["renewable-generation-modelling"] == "aggregated"
-    assert adequacy_patch.getboolean("include-adq-patch") is False
+    assert adequacy_patch["include-adq-patch"] is False
     assert adequacy_patch[
         "set-to-null-ntc-between-physical-out-for-first-step"
     ]
-    assert adequacy_patch.getboolean(
+    assert adequacy_patch[
         "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
-    )
+    ]
     assert (
         optimization["transmission-capacities"]
         == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
     )
     assert "include-split-exported-mps" not in optimization
     assert adequacy_patch["price-taking-order"] == "DENS"
-    assert adequacy_patch.getboolean("include-hurdle-cost-csr") is False
-    assert adequacy_patch.getboolean("check-csr-cost-function") is False
+    assert adequacy_patch["include-hurdle-cost-csr"] is False
+    assert adequacy_patch["check-csr-cost-function"] is False
+    assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
     assert (
-        adequacy_patch.getfloat("threshold-initiate-curtailment-sharing-rule")
+        adequacy_patch["threshold-display-local-matching-rule-violations"]
         == 0.0
     )
-    assert (
-        adequacy_patch.getfloat(
-            "threshold-display-local-matching-rule-violations"
-        )
-        == 0.0
-    )
-    assert (
-        adequacy_patch.getint("threshold-csr-variable-bounds-relaxation") == 3
-    )
+    assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
-    config = AntaresConfigParser()
-    config.read(Path(general_data_path))
-    filtering_value = config["general"].getboolean("filtering")
-    custom_ts_value = config["general"].getboolean("custom-ts-numbers")
-    transmission_capa_value = config["optimization"].getboolean(
-        "transmission-capacities"
-    )
+    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    data = reader.read(general_data_path)
+    filtering_value = data["general"]["filtering"]
+    custom_ts_value = data["general"]["custom-ts-numbers"]
+    transmission_capa_value = data["optimization"]["transmission-capacities"]
     return [filtering_value, custom_ts_value, transmission_capa_value]
 
 
@@ -192,29 +186,35 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                     df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
                 )
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
-        if len(capacities) > 0:
-            for direction_txt in capacities:
-                df_capacities = pandas.read_csv(
-                    direction_txt, sep="\t", header=None
+        for direction_txt in capacities:
+            df_capacities = pandas.read_csv(
+                direction_txt, sep="\t", header=None
+            )
+            direction_path = Path(direction_txt)
+            old_txt = str(
+                Path(direction_path.parent.parent.name).joinpath(
+                    direction_path.name
                 )
-                direction_path = Path(direction_txt)
-                old_txt = str(
-                    Path(direction_path.parent.parent.name).joinpath(
-                        direction_path.name
-                    )
+            )
+            if "indirect" in old_txt:
+                new_txt = old_txt.replace("_indirect.txt", "")
+                assert (
+                    df_capacities[0].values.all()
+                    == dico[new_txt].iloc[:, 0].values.all()
                 )
-                if "indirect" in old_txt:
-                    new_txt = old_txt.replace("_indirect.txt", "")
-                    assert (
-                        df_capacities[0].values.all()
-                        == dico[new_txt].iloc[:, 0].values.all()
-                    )
-                else:
-                    new_txt = old_txt.replace("_direct.txt", "")
-                    assert (
-                        df_capacities[0].values.all()
-                        == dico[new_txt].iloc[:, 1].values.all()
-                    )
+            else:
+                new_txt = old_txt.replace("_direct.txt", "")
+                assert (
+                    df_capacities[0].values.all()
+                    == dico[new_txt].iloc[:, 1].values.all()
+                )
+    areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
+    for folder in areas:
+        folder_path = Path(folder)
+        if folder_path.is_dir():
+            reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+            data = reader.read(folder_path / "adequacy_patch.ini")
+            assert data["adequacy-patch"]["adequacy-patch-mode"] == "outside"
 
 
 def are_same_dir(dir1, dir2) -> bool:

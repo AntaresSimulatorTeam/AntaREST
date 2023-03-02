@@ -1,6 +1,6 @@
 import glob
 from pathlib import Path
-from antarest.study.storage.antares_configparser import AntaresConfigParser
+
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
@@ -11,6 +11,16 @@ GENERAL_DATA_PATH = "settings/generaldata.ini"
 
 
 def upgrade_830(study_path: Path) -> None:
+    """
+    Upgrade the study configuration to version 830.
+
+    NOTE:
+        The file `study.antares` is not upgraded here.
+
+    Args:
+        study_path: path to the study directory.
+    """
+
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(study_path / GENERAL_DATA_PATH)
     data["adequacy patch"] = {
@@ -22,13 +32,11 @@ def upgrade_830(study_path: Path) -> None:
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, study_path / GENERAL_DATA_PATH)
     areas = glob.glob(str(study_path / "input" / "areas" / "*"))
-    if len(areas) > 0:
-        for folder in areas:
-            folder_path = Path(folder)
-            if folder_path.is_dir():
-                config = AntaresConfigParser()
-                config.read(
-                    {"adequacy-patch": {"adequacy-patch-mode": "outside"}}
-                )
-                with open(folder_path / "adequacy_patch.ini", "w") as f:
-                    config.write(f)
+    for folder in areas:
+        folder_path = Path(folder)
+        if folder_path.is_dir():
+            writer = IniWriter(special_keys=DUPLICATE_KEYS)
+            writer.write(
+                {"adequacy-patch": {"adequacy-patch-mode": "outside"}},
+                folder_path / "adequacy_patch.ini",
+            )

@@ -6,6 +6,16 @@ import pandas  # type: ignore
 
 
 def upgrade_820(study_path: Path) -> None:
+    """
+    Upgrade the study configuration to version 820.
+
+    NOTE:
+        The file `study.antares` is not upgraded here.
+
+    Args:
+        study_path: path to the study directory.
+    """
+
     links = glob.glob(str(study_path / "input" / "links" / "*"))
     if len(links) > 0:
         for folder in links:
