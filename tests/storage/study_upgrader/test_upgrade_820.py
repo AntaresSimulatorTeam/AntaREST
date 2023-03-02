@@ -22,6 +22,6 @@ def test_nominal_case(study_assets: StudyAssets):
     assert actual == expected
 
     # compare links
-    actual_area_path = study_assets.study_dir.joinpath("input/links")
-    expected_area_path = study_assets.expected_dir.joinpath("input/links")
-    assert are_same_dir(actual_area_path, expected_area_path)
+    actual_link_path = study_assets.study_dir.joinpath("input/links")
+    expected_link_path = study_assets.expected_dir.joinpath("input/links")
+    assert are_same_dir(actual_link_path, expected_link_path)
