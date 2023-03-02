@@ -2,26 +2,28 @@
 
 set -e
 
-CURDIR=$(cd `dirname $0` && pwd)
+CURR_DIR=$(cd "$(dirname "$0")" && pwd)
 
-cd $CURDIR/../webapp
+cd "$CURR_DIR"/../webapp
 
+# shellcheck disable=SC2016
 if [[ "$OSTYPE" == "darwin"* ]]; then
-sed -i '' 's|"homepage".*|"homepage": "/static",|g' package.json
-sed -i '' 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
+  sed -i '' 's|"homepage".*|"homepage": "/static",|g' package.json
+  sed -i '' 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
 else
-sed -i 's|"homepage".*|"homepage": "/static",|g' package.json
-sed -i 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
+  sed -i 's|"homepage".*|"homepage": "/static",|g' package.json
+  sed -i 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
 fi
 
 ./node_modules/.bin/cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true npm run build
 
+# shellcheck disable=SC2016
 if [[ "$OSTYPE" == "darwin"* ]]; then
-sed -i '' 's|"homepage".*|"homepage": "/",|g' package.json
-sed -i '' 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
+  sed -i '' 's|"homepage".*|"homepage": "/",|g' package.json
+  sed -i '' 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
 else
-sed -i 's|"homepage".*|"homepage": "/",|g' package.json
-sed -i 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
+  sed -i 's|"homepage".*|"homepage": "/",|g' package.json
+  sed -i 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
 fi
 
 cd ..
