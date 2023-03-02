@@ -226,7 +226,7 @@ def are_same_dir(dir1, dir2) -> bool:
     ):
         return False
     (_, mismatch, errors) = filecmp.cmpfiles(
-        dir1, dir2, dirs_cmp.common_files, shallow=True
+        dir1, dir2, dirs_cmp.common_files, shallow=False
     )
     if len(mismatch) > 0 or len(errors) > 0:
         return False
