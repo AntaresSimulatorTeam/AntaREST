@@ -8,7 +8,7 @@ v2.13.0 (unreleased)
 
 *  **ui-map:** prevent duplicate layers and districts on create/update (#1239) ([eff4ca3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/eff4ca369212e9998f9ccd96a938a6f91f5dbf44))
 *  **ui-maps:** empty page (#1243) ([71f19d3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/71f19d3484bb802f645140523a7b66f321a2aec2))
-*  **api-workers:** Prevent scanning of the default workspace (#1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
+*  **api-workers:** prevent scanning of the default workspace (#1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
 *  **ui-study:** remove the create command button (#1251) ([463e7a7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/463e7a789eebd2b28c33bd18e833bbd30dc9268a))
 *  **ui-wording:** correct wording of user messages (#1271) ([7f66c1a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7f66c1aa518bea09c2db52ae87ef36e14cd5b9e0))
 *  **ui-wording:** correct french translations (#1273) ([f4f62f2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f4f62f252d8b5556ba1cb2b6027360b9066327e0))
@@ -17,7 +17,7 @@ v2.13.0 (unreleased)
 ### Features
 
 *  **ui-common:** add doc link on subsections (#1241) ([1331232](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1331232e418ebfbf3cc1a82725b95cb11cf8b9bc))
-*  **api-websocket:** Better handle the events in eventbus braodcasting (#1240) ([99f2590](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99f25906559f782bcad857650f1b8ebfcfe584c8))
+*  **api-websocket:** better handle the events in eventbus braodcasting (#1240) ([99f2590](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99f25906559f782bcad857650f1b8ebfcfe584c8))
 *  **ui-commands:** add confirm dialog on delete command (#1258) ([0be70f8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0be70f87ec03c491faf1d29c8d78b29615d1da9a))
 *  **redux:** extend left menu by default (#1266) ([1c042af](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1c042af7d4c713bcbd530062cb9e31ead45e1517))
 *  **ui-study:** add text ellipsis on study name (#1270) ([6938114](https://github.com/AntaresSimulatorTeam/AntaREST/commit/69381145ab1e4224e874a59dcec2297dae951b51))
@@ -57,4 +57,7 @@ v2.13.0 (unreleased)
 
 ### Contributors
 
-<a href="https://github.com/hdinia">hdinia</a>, <a href="https://github.com/skamril">skamril</a>, <a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>, <a href="https://github.com/pl-buiquang">pl-buiquang</a>
+<a href="https://github.com/hdinia">hdinia</a>,
+<a href="https://github.com/skamril">skamril</a>,
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/pl-buiquang">pl-buiquang</a>
