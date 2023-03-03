@@ -107,6 +107,7 @@
   "form.submit.inProgress": "The form is being submitted. Are you sure you want to leave the page?",
   "form.field.required": "Field required",
   "form.field.minLength": "{{0}} character(s) minimum",
+  "form.field.minValue": "The minimum value is {{0}}",
   "form.field.notAllowedValue": "Not allowed value",
   "matrix.graphSelector": "Columns",
   "matrix.message.importHint": "Click or drag and drop a matrix here",

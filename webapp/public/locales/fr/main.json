@@ -107,6 +107,7 @@
   "form.submit.inProgress": "Le formulaire est en cours de soumission. Etes-vous sûr de vouloir quitter la page ?",
   "form.field.required": "Champ requis",
   "form.field.minLength": "{{0}} caractère(s) minimum",
+  "form.field.minValue": "La valeur minimum est {{0}}",
   "form.field.notAllowedValue": "Valeur non autorisée",
   "matrix.graphSelector": "Colonnes",
   "matrix.message.importHint": "Cliquer ou glisser une matrice ici",
