@@ -5,6 +5,8 @@ import { MatrixStats } from "../../../../../../../common/types";
 ////////////////////////////////////////////////////////////////
 
 export enum MatrixType {
+  Allocation,
+  SpatialCorrelation,
   Dailypower,
   EnergyCredits,
   ReservoirLevels,
@@ -37,6 +39,14 @@ export interface HydroRoute {
 
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
+    path: "allocation",
+    type: MatrixType.Allocation,
+  },
+  {
+    path: "spatialcorrelation",
+    type: MatrixType.SpatialCorrelation,
+  },
+  {
     path: "dailypower",
     type: MatrixType.Dailypower,
   },
@@ -63,6 +73,16 @@ export const HYDRO_ROUTES: HydroRoute[] = [
 ];
 
 export const MATRICES: Matrices = {
+  [MatrixType.Allocation]: {
+    title: "Allocation",
+    url: "input/hydro/allocation/{areaId}",
+    stats: MatrixStats.NOCOL,
+  },
+  [MatrixType.SpatialCorrelation]: {
+    title: "Spatial correlation",
+    url: "input/hydro/allocation/{areaId}",
+    stats: MatrixStats.NOCOL,
+  },
   [MatrixType.Dailypower]: {
     title: "Daily power",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",

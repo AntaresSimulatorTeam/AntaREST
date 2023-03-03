@@ -13,6 +13,14 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/management`,
       },
       {
+        label: "Allocation",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/allocation`,
+      },
+      {
+        label: "Spatial correlation",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/spatialcorrelation`,
+      },
+      {
         label: "Daily Power",
         path: `/studies/${study?.id}/explore/modelization/area/hydro/dailypower`,
       },
