@@ -6,11 +6,10 @@ import shutil
 import tempfile
 import threading
 import time
+import traceback
 from copy import deepcopy
 from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional
-
-from filelock import FileLock
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -39,6 +38,7 @@ from antarest.launcher.model import (
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -86,24 +86,17 @@ class SlurmLauncher(AbstractLauncher):
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
-        # fixme: use an absolute path instead of `LOCK_FILE_NAME`:
-        #  local_workspace_dir = Path(self.slurm_config.local_workspace)
-        #  with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
-        #      self.local_workspace = self._init_workspace(use_private_workspace)
-        #  self.log_tail_manager = LogTailManager(local_workspace_dir)
-
-        with FileLock(LOCK_FILE_NAME):
+        # use an absolute path instead of `LOCK_FILE_NAME`:
+        local_workspace_dir = Path(self.slurm_config.local_workspace)
+        with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
             self.local_workspace = self._init_workspace(use_private_workspace)
+        self.log_tail_manager = LogTailManager(local_workspace_dir)
 
-        self.log_tail_manager = LogTailManager(
-            Path(self.slurm_config.local_workspace)
-        )
-        self.launcher_args = self._init_launcher_arguments(
-            self.local_workspace
-        )
-        self.launcher_params = self._init_launcher_parameters(
-            self.local_workspace
-        )
+        # fmt: off
+        self.launcher_args = self._init_launcher_arguments(self.local_workspace)
+        self.launcher_params = self._init_launcher_parameters(self.local_workspace)
+        # fmt: on
+
         self.data_repo_tinydb = DataRepoTinydb(
             database_file_path=(
                 self.launcher_params.json_dir
@@ -121,6 +114,7 @@ class SlurmLauncher(AbstractLauncher):
         )  # and check write permission
 
     def _init_workspace(self, use_private_workspace: bool) -> Path:
+        # sourcery skip: last-if-guard
         if use_private_workspace:
             for (
                 existing_workspace
@@ -358,27 +352,27 @@ class SlurmLauncher(AbstractLauncher):
                     self.log_tail_manager.stop_tracking(
                         SlurmLauncher._get_log_path(study)
                     )
-                    output_id: Optional[str] = None
                     try:
                         output_id = self._import_study_output(
                             study.name,
                             study.xpansion_mode,
                             study.job_log_dir,
                         )
-                    except Exception as e:
+                    except Exception:
+                        stack_trace = traceback.format_exc()
                         self.callbacks.append_after_log(
                             study.name,
-                            f"Unexpected error when importing study output : {str(e)}",
+                            f"An error occurred unexpectedly while importing the study output:"
+                            f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
+                            f" see stack trace below:\n{stack_trace}",
                         )
-                        raise e
-                    finally:
                         self.callbacks.update_status(
-                            study.name,
-                            JobStatus.FAILED
-                            if study.with_error or output_id is None
-                            else JobStatus.SUCCESS,
-                            None,
-                            output_id,
+                            study.name, JobStatus.FAILED, None, None
+                        )
+                        raise
+                    else:
+                        self.callbacks.update_status(
+                            study.name, JobStatus.SUCCESS, None, output_id
                         )
                 except Exception as e:
                     logger.error(
@@ -391,8 +385,9 @@ class SlurmLauncher(AbstractLauncher):
                     self.create_update_log(study.name),
                 )
 
-        # we refetch study list here because by the time the import_output is done, maybe some new studies has been added
-        # also we clean up the study after because it remove the study in the database
+        # Re-fetching the study list is necessary as new studies may have been added
+        # during the `import_output` process. Afterward, we clean up the list to ensure
+        # that any removed studies are removed from the database.
         with self.antares_launcher_lock:
             nb_studies = self.data_repo_tinydb.get_list_of_studies()
             for study_id in studies_to_cleanup:
