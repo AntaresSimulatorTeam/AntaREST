@@ -1,13 +1,12 @@
 import os
 import shutil
+import textwrap
 import uuid
 from argparse import Namespace
 from pathlib import Path
-from unittest.mock import Mock, ANY, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
-from sqlalchemy import create_engine
-
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
@@ -16,19 +15,20 @@ from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
-    SlurmLauncher,
-    WORKSPACE_LOCK_FILE_NAME,
     LOG_DIR_NAME,
     MAX_TIME_LIMIT,
     MIN_TIME_LIMIT,
+    WORKSPACE_LOCK_FILE_NAME,
+    SlurmLauncher,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from antarest.tools.admin_lib import clean_locks_from_config
+from sqlalchemy import create_engine
 
 
 @pytest.fixture
 def launcher_config(tmp_path: Path) -> Config:
-    config = Config(
+    return Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
                 local_workspace=tmp_path,
@@ -44,7 +44,6 @@ def launcher_config(tmp_path: Path) -> Config:
             )
         )
     )
-    return config
 
 
 @pytest.mark.unit_test
@@ -236,6 +235,7 @@ def test_extra_parameters(launcher_config: Config):
     assert launcher_params.post_processing
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.parametrize(
     "version,job_status",
     [(42, JobStatus.RUNNING), (99, JobStatus.FAILED), (45, JobStatus.FAILED)],
@@ -249,6 +249,7 @@ def test_run_study(
 ):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -262,7 +263,6 @@ def test_run_study(
     )
 
     study_uuid = "study_uuid"
-    params = Mock()
     argument = Mock()
     argument.studies_in = (
         launcher_config.launcher.slurm.local_workspace / "studies_in"
@@ -276,11 +276,15 @@ def test_run_study(
     study_dir = argument.studies_in / job_id
     study_dir.mkdir(parents=True)
     (study_dir / "study.antares").write_text(
-        """[antares]
-version=1
-    """
+        textwrap.dedent(
+            """\
+            [antares]
+            version=1
+            """
+        )
     )
 
+    # noinspection PyUnusedLocal
     def call_launcher_mock(arguments: Namespace, parameters: MainParameters):
         if version != 45:
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
@@ -340,6 +344,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 
     slurm_launcher._check_studies_state()
 
+    # noinspection PyUnresolvedReferences
     assert slurm_launcher.callbacks.update_status.call_count == 2
     assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_workspace_file.call_count == 4
@@ -351,13 +356,13 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
 
-    storage_service = Mock()
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         callbacks=Mock(),
@@ -373,6 +378,7 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
     assert not os.listdir(launcher_config.launcher.slurm.local_workspace)
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.unit_test
 def test_import_study_output(launcher_config, tmp_path):
     slurm_launcher = SlurmLauncher(
@@ -533,9 +539,9 @@ def test_launcher_workspace_init(
         retrieve_existing_jobs=True,
         cache=Mock(),
     )
-    workspaces = list(
-        filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())
-    )
+    workspaces = [
+        p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME
+    ]
     assert len(workspaces) == 1
     assert (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
 
@@ -550,30 +556,30 @@ def test_launcher_workspace_init(
     run_with_mock.assert_not_called()
 
     # will use existing private workspace
-    slurm_launcher = SlurmLauncher(
+    SlurmLauncher(
         config=launcher_config,
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
         cache=Mock(),
     )
-    assert (
-        len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
-        == 1
-    )
+    workspaces = [
+        p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME
+    ]
+    assert len(workspaces) == 1
     run_with_mock.assert_called()
 
     run_with_mock.reset_mock()
     # will create a new one since there is a lock on previous one
-    slurm_launcher = SlurmLauncher(
+    SlurmLauncher(
         config=launcher_config,
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
         cache=Mock(),
     )
-    assert (
-        len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
-        == 2
-    )
+    workspaces = [
+        p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME
+    ]
+    assert len(workspaces) == 2
     run_with_mock.assert_not_called()
