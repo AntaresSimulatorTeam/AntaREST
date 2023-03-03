@@ -10,6 +10,9 @@ PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 # fmt: on
 
+# All ZIP files have the same file tree structure because empty studies are similar.
+# There are only real differences when the user sets up the study or runs simulations
+# (e.g. the outputs are different).
 STUDY_FILES = [
     "Desktop.ini",
     "input/",
