@@ -2482,13 +2482,21 @@ class StudyService:
                         ),
                     )
                 )
-                return TaskResult(
-                    success=True,
-                    message=(
-                        f"Successfully upgraded study {study_to_upgrade.name}"
-                        f" ({study_to_upgrade.id}) to {target_version}"
-                    ),
+            except Exception as e:
+                msg = (
+                    f"Failed to upgraded study {study_to_upgrade.name}"
+                    f" ({study_to_upgrade.id}) to {target_version}:"
+                    f" {e}"
                 )
+                logger.warning(msg, exc_info=e)
+                return TaskResult(success=False, message=msg)
+            else:
+                msg = (
+                    f"Successfully upgraded study {study_to_upgrade.name}"
+                    f" ({study_to_upgrade.id}) to {target_version}"
+                )
+                logger.info(msg)
+                return TaskResult(success=True, message=msg)
             finally:
                 if is_managed(study_to_upgrade) and not is_variant:
                     file_study = self.storage_service.get_storage(
