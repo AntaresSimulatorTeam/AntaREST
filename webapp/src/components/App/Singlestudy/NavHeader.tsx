@@ -389,7 +389,9 @@ function NavHeader(props: Props) {
                     }}
                   />
                 </ListItemIcon>
-                <ListItemText>{t("global.unarchive")}</ListItemText>
+                <ListItemText title={t("global.unarchive.tooltip")}>
+                  {t("global.unarchive")}
+                </ListItemText>
               </MenuItem>
             ) : (
               <div>
@@ -408,7 +410,9 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("study.properties")}</ListItemText>
+                  <ListItemText title={t("study.properties.tooltip")}>
+                    {t("study.properties")}
+                  </ListItemText>
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -425,7 +429,9 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("study.upgrade")}</ListItemText>
+                  <ListItemText title={t("study.upgrade.tooltip")}>
+                    {t("study.upgrade")}
+                  </ListItemText>
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -442,7 +448,9 @@ function NavHeader(props: Props) {
                       }}
                     />
                   </ListItemIcon>
-                  <ListItemText>{t("global.export")}</ListItemText>
+                  <ListItemText title={t("global.export.tooltip")}>
+                    {t("global.export")}
+                  </ListItemText>
                 </MenuItem>
                 {study?.managed && (
                   <MenuItem
@@ -460,7 +468,9 @@ function NavHeader(props: Props) {
                         }}
                       />
                     </ListItemIcon>
-                    <ListItemText>{t("global.archive")}</ListItemText>
+                    <ListItemText title={t("global.archive.tooltip")}>
+                      {t("global.archive")}
+                    </ListItemText>
                   </MenuItem>
                 )}
               </div>
@@ -477,7 +487,10 @@ function NavHeader(props: Props) {
                     sx={{ color: "error.light", width: "24px", height: "24px" }}
                   />
                 </ListItemIcon>
-                <ListItemText sx={{ color: "error.light" }}>
+                <ListItemText
+                  title={t("global.delete.tooltip")}
+                  sx={{ color: "error.light" }}
+                >
                   {t("global.delete")}
                 </ListItemText>
               </MenuItem>
