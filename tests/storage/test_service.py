@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
@@ -6,7 +7,6 @@ from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
-
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
@@ -16,7 +16,7 @@ from antarest.core.model import JSON, SUB_JSON
 from antarest.core.permissions import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.login.model import Group, GroupDTO, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
@@ -1681,18 +1681,107 @@ def test_task_upgrade_study(tmp_path: Path):
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
-def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
+def test_upgrade_study__raw_study__nominal(
+    upgrade_study_mock: Mock, tmp_path: Path
+):
     service = build_study_service(
         raw_study_service=Mock(),
         repository=Mock(),
         config=Mock(),
     )
 
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
     raw_study_mock = Mock(
         spec=RawStudy,
         archived=False,
-        id="my_study",
-        name="my_study",
+        id=study_id,
+        name=study_name,
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    raw_study_mock.name = study_name
+    service.repository.get.return_value = raw_study_mock
+
+    target_version = "800"
+    actual = service._upgrade_study(study_id, target_version)
+
+    # check the result
+    upgrade_study_mock.assert_called_with(tmp_path, target_version)
+    assert actual.success
+    assert raw_study_mock.name in actual.message, f"{actual.message=}"
+    assert study_id in actual.message, f"{actual.message=}"
+    assert target_version in actual.message, f"{actual.message=}"
+
+
+@with_db_context
+@patch("antarest.study.service.upgrade_study")
+def test_upgrade_study__managed_study__nominal(
+    upgrade_study_mock: Mock, tmp_path: Path
+):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
+    raw_managed_study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id=study_id,
+        name=study_name,
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    raw_managed_study_mock.name = study_name
+    service.repository.get.return_value = raw_managed_study_mock
+    service.storage_service.raw_study_service.reset_mock()
+    file_study = Mock()
+    service.storage_service.raw_study_service.get_raw.return_value = file_study
+    file_study.tree = Mock()
+
+    target_version = "810"
+    actual = service._upgrade_study(study_id, target_version)
+
+    # check the result
+    upgrade_study_mock.assert_called_with(tmp_path, target_version)
+    file_study.tree.denormalize.assert_called_once()
+    file_study.tree.normalize.assert_called_once()
+    assert actual.success
+    assert raw_managed_study_mock.name in actual.message, f"{actual.message=}"
+    assert study_id in actual.message, f"{actual.message=}"
+    assert target_version in actual.message, f"{actual.message=}"
+
+
+@with_db_context
+@patch("antarest.study.service.upgrade_study")
+def test_upgrade_study__raw_study__failed(
+    upgrade_study_mock: Mock, tmp_path: Path
+):
+    upgrade_study_mock.side_effect = Exception("foo")
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
+    raw_study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id=study_id,
+        name=study_name,
         path=tmp_path,
         version="720",
         owner=None,
@@ -1703,46 +1792,12 @@ def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
     raw_study_mock.name = "my_study"
     service.repository.get.return_value = raw_study_mock
 
-    study_id = "my_study"
-
     target_version = "800"
     actual = service._upgrade_study(study_id, target_version)
 
+    # check the result
     upgrade_study_mock.assert_called_with(tmp_path, target_version)
-    assert actual.success
-    assert raw_study_mock.name in actual.message, f"{actual.message=}"
-    assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
-
-    raw_managed_study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id="my_study",
-        name="my_study",
-        path=tmp_path,
-        version="720",
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace=DEFAULT_WORKSPACE_NAME,
-    )
-    raw_managed_study_mock.name = "my_study"
-    service.repository.get.return_value = raw_managed_study_mock
-    service.storage_service.raw_study_service.reset_mock()
-    file_study = Mock()
-    service.storage_service.raw_study_service.get_raw.return_value = file_study
-    file_study.tree = Mock()
-
-    study_id = "my_study"
-
-    target_version = "810"
-    actual = service._upgrade_study(study_id, target_version)
-
-    upgrade_study_mock.assert_called_with(tmp_path, target_version)
-    file_study.tree.denormalize.assert_called_once()
-    file_study.tree.normalize.assert_called_once()
-
-    assert actual.success
+    assert not actual.success
     assert raw_study_mock.name in actual.message, f"{actual.message=}"
     assert study_id in actual.message, f"{actual.message=}"
     assert target_version in actual.message, f"{actual.message=}"
