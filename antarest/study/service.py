@@ -9,10 +9,6 @@ from time import time
 from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
 
-from fastapi import HTTPException, UploadFile
-from markupsafe import escape
-from starlette.responses import FileResponse, Response
-
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     CommandApplicationError,
@@ -72,14 +68,13 @@ from antarest.study.business.binding_constraint_management import (
 )
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
-from antarest.study.business.renewable_management import RenewableManager
-from antarest.study.business.thermal_management import ThermalManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.business.matrix_management import MatrixManager
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
+from antarest.study.business.renewable_management import RenewableManager
 from antarest.study.business.scenario_builder_management import (
     ScenarioBuilderManager,
 )
@@ -87,6 +82,7 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
 )
+from antarest.study.business.thermal_management import ThermalManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -175,10 +171,102 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
+from fastapi import HTTPException, UploadFile
+from markupsafe import escape
+from starlette.responses import FileResponse, Response
 
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
+
+class StudyUpgraderTask:
+    """
+    Task to perform a study upgrade.
+    """
+
+    def __init__(
+        self,
+        study_id: str,
+        target_version: str,
+        *,
+        repository: StudyMetadataRepository,
+        storage_service: StudyStorageService,
+        cache_service: ICache,
+        event_bus: IEventBus,
+    ):
+        self._study_id = study_id
+        self._target_version = target_version
+        self.repository = repository
+        self.storage_service = storage_service
+        self.cache_service = cache_service
+        self.event_bus = event_bus
+
+    def _upgrade_study(self) -> None:
+        """Run the task (lock the database)."""
+        study_id: str = self._study_id
+        target_version: str = self._target_version
+        with db():
+            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
+            study_to_upgrade = self.repository.one(study_id)
+            is_variant = isinstance(study_to_upgrade, VariantStudy)
+            if is_managed(study_to_upgrade) and not is_variant:
+                file_study = self.storage_service.get_storage(
+                    study_to_upgrade
+                ).get_raw(study_to_upgrade)
+                file_study.tree.denormalize()
+            try:
+                # sourcery skip: extract-method
+                if is_variant:
+                    self.storage_service.variant_study_service.clear_snapshot(
+                        study_to_upgrade
+                    )
+                else:
+                    study_path = Path(study_to_upgrade.path)
+                    upgrade_study(study_path, target_version)
+                remove_from_cache(self.cache_service, study_to_upgrade.id)
+                study_to_upgrade.version = target_version
+                self.repository.save(study_to_upgrade)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_to_upgrade.to_json_summary(),
+                        permissions=PermissionInfo.from_study(
+                            study_to_upgrade
+                        ),
+                    )
+                )
+            finally:
+                if is_managed(study_to_upgrade) and not is_variant:
+                    file_study = self.storage_service.get_storage(
+                        study_to_upgrade
+                    ).get_raw(study_to_upgrade)
+                    file_study.tree.normalize()
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        """
+        Run the study upgrade task.
+
+        Args:
+            notifier: function used to emit user messages.
+
+        Returns:
+            The result of the task is always `success=True`.
+        """
+        # The call to `_upgrade_study` may raise an exception, which will be
+        # handled in the task service (see: `TaskJobService._run_task`)
+        msg = f"Upgrade study '{self._study_id}' to version {self._target_version}"
+        notifier(msg)
+        self._upgrade_study()
+        msg = (
+            f"Successfully upgraded study '{self._study_id}'"
+            f" to version {self._target_version}"
+        )
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `StudyUpgraderTask` object is callable
+    __call__ = run_task
 
 
 class StudyService:
@@ -2451,59 +2539,6 @@ class StudyService:
             request_params=params,
         )
 
-    def _upgrade_study(self, study_id: str, target_version: str) -> TaskResult:
-        with db():
-            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
-            study_to_upgrade = self.get_study(study_id)
-            is_variant = isinstance(study_to_upgrade, VariantStudy)
-            if is_managed(study_to_upgrade) and not is_variant:
-                file_study = self.storage_service.get_storage(
-                    study_to_upgrade
-                ).get_raw(study_to_upgrade)
-                file_study.tree.denormalize()
-            try:
-                # sourcery skip: extract-method
-                if is_variant:
-                    self.storage_service.variant_study_service.clear_snapshot(
-                        study_to_upgrade
-                    )
-                else:
-                    study_path = Path(study_to_upgrade.path)
-                    upgrade_study(study_path, target_version)
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = target_version
-                self.repository.save(study_to_upgrade)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_to_upgrade.to_json_summary(),
-                        permissions=PermissionInfo.from_study(
-                            study_to_upgrade
-                        ),
-                    )
-                )
-            except Exception as e:
-                msg = (
-                    f"Failed to upgraded study {study_to_upgrade.name}"
-                    f" ({study_to_upgrade.id}) to {target_version}:"
-                    f" {e}"
-                )
-                logger.warning(msg, exc_info=e)
-                return TaskResult(success=False, message=msg)
-            else:
-                msg = (
-                    f"Successfully upgraded study {study_to_upgrade.name}"
-                    f" ({study_to_upgrade.id}) to {target_version}"
-                )
-                logger.info(msg)
-                return TaskResult(success=True, message=msg)
-            finally:
-                if is_managed(study_to_upgrade) and not is_variant:
-                    file_study = self.storage_service.get_storage(
-                        study_to_upgrade
-                    ).get_raw(study_to_upgrade)
-                    file_study.tree.normalize()
-
     def upgrade_study(
         self,
         study_id: str,
@@ -2530,8 +2565,17 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
+        study_upgrader_task = StudyUpgraderTask(
+            study_id,
+            target_version,
+            repository=self.repository,
+            storage_service=self.storage_service,
+            cache_service=self.cache_service,
+            event_bus=self.event_bus,
+        )
+
         return self.task_service.add_task(
-            lambda _: self._upgrade_study(study_id, target_version),
+            study_upgrader_task,
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,
