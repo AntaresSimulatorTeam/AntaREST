@@ -69,7 +69,7 @@ function EditableMatrix(props: PropTypes) {
 
   const handleSlice = (change: CellChange[], source: string) => {
     const isChanged = change.map((item) => {
-      if (parseInt(item[2], 10) === parseInt(item[3], 10)) {
+      if (parseFloat(item[2]) === parseFloat(item[3])) {
         return;
       }
       return item;
