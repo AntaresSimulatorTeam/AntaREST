@@ -9,7 +9,7 @@ import time
 import traceback
 from copy import deepcopy
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Awaitable, Callable, Dict, List, Optional, cast
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -198,8 +198,8 @@ class SlurmLauncher(AbstractLauncher):
         parser: MainOptionParser = MainOptionParser(main_options_parameters)
         parser.add_basic_arguments()
         parser.add_advanced_arguments()
-        arguments = parser.parse_args([])
 
+        arguments = cast(argparse.Namespace, parser.parse_args([]))
         arguments.wait_mode = False
         arguments.check_queue = False
         arguments.json_ssh_config = None
@@ -208,6 +208,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.version = False
         arguments.post_processing = False
         arguments.other_options = None
+
         return arguments
 
     def _init_launcher_parameters(

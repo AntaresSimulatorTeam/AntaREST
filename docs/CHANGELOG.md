@@ -43,6 +43,10 @@ v2.13.0 (unreleased)
 * remove redundant call to `mypy` in GitHub actions. ([96e2b82](https://github.com/AntaresSimulatorTeam/AntaREST/commit/96e2b824eb348d1a3fe5bacf89de35e9cb7fc0fa))
 * upgrade Black version in `requirements-dev.txt` and `.github/workflows/main.yml`. ([464c7ff](https://github.com/AntaresSimulatorTeam/AntaREST/commit/464c7ff1ea877646815a3c70891e36b976b856d8))
 
+> IMPORTANT: The `antares-launcher` project (source files) is no longer needed,
+> because the `Antares-Launcher` Python library is now declared as a dependency
+> in the `requirements.txt` file.
+
 
 ### Styles
 
