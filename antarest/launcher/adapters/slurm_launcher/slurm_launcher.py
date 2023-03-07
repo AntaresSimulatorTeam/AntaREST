@@ -114,34 +114,32 @@ class SlurmLauncher(AbstractLauncher):
         )  # and check write permission
 
     def _init_workspace(self, use_private_workspace: bool) -> Path:
-        # sourcery skip: last-if-guard
-        if use_private_workspace:
-            for (
-                existing_workspace
-            ) in self.slurm_config.local_workspace.iterdir():
-                lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
-                if (
-                    existing_workspace.is_dir()
-                    and existing_workspace
-                    != self.slurm_config.local_workspace / LOG_DIR_NAME
-                    and not lock_file.exists()
-                ):
-                    logger.info(
-                        f"Initiating slurm workspace into existing directory {existing_workspace}"
-                    )
-                    lock_file.touch()
-                    return existing_workspace
-            new_workspace = Path(
-                tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace))
-            )
-            lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
-            lock_file.touch()
-            logger.info(
-                f"Initiating slurm workspace in new directory {new_workspace}"
-            )
-            return new_workspace
-        else:
+        if not use_private_workspace:
             return Path(self.slurm_config.local_workspace)
+
+        for existing_workspace in self.slurm_config.local_workspace.iterdir():
+            lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
+            if (
+                existing_workspace.is_dir()
+                and existing_workspace
+                != self.slurm_config.local_workspace / LOG_DIR_NAME
+                and not lock_file.exists()
+            ):
+                logger.info(
+                    f"Initiating slurm workspace into existing directory {existing_workspace}"
+                )
+                lock_file.touch()
+                return existing_workspace
+
+        new_workspace = Path(
+            tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace))
+        )
+        lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
+        lock_file.touch()
+        logger.info(
+            f"Initiating slurm workspace in new directory {new_workspace}"
+        )
+        return new_workspace
 
     def _retrieve_running_jobs(self) -> None:
         if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
@@ -214,7 +212,7 @@ class SlurmLauncher(AbstractLauncher):
     def _init_launcher_parameters(
         self, local_workspace: Optional[Path] = None
     ) -> MainParameters:
-        main_parameters = MainParameters(
+        return MainParameters(
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
@@ -229,16 +227,17 @@ class SlurmLauncher(AbstractLauncher):
             },
             db_primary_key="name",
         )
-        return main_parameters
 
     def _delete_workspace_file(self, study_path: Path) -> None:
-        logger.info(f"Deleting workspace file at {study_path}")
-        if self.local_workspace.absolute() in study_path.absolute().parents:
-            if study_path.exists():
-                if study_path.is_dir():
-                    shutil.rmtree(study_path)
-                else:
-                    os.unlink(study_path)
+        if (
+            self.local_workspace.absolute() in study_path.absolute().parents
+            and study_path.exists()
+        ):
+            logger.info(f"Deleting workspace file at {study_path}")
+            if study_path.is_dir():
+                shutil.rmtree(study_path)
+            else:
+                os.unlink(study_path)
 
     def _import_study_output(
         self,
@@ -382,6 +381,7 @@ class SlurmLauncher(AbstractLauncher):
         Args:
             study: Study extracted from the SLURM database.
         """
+        # sourcery skip: extract-duplicate-method
         try:
             output_id = self._import_study_output(
                 study.name,
@@ -389,32 +389,30 @@ class SlurmLauncher(AbstractLauncher):
                 study.job_log_dir,
             )
         except FileNotFoundError:
-            self.callbacks.append_after_log(
-                study.name,
-                "Simulation failed, output results are not available",
-            )
+            msg = "Simulation failed, output results are not available"
+            self.callbacks.append_after_log(study.name, msg)
+            # see antarest.launcher.service.LauncherService.update
             self.callbacks.update_status(
-                study.name, JobStatus.FAILED, None, None
+                study.name, JobStatus.FAILED, msg, None
             )
-        except Exception:
+        except Exception as e:
             stack_trace = traceback.format_exc()
-            self.callbacks.append_after_log(
-                study.name,
+            msg = (
                 f"An error occurred unexpectedly while trying to import the study output:"
                 f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
-                f" see stack trace below:\n{stack_trace}",
+                f" see stack trace below:\n{stack_trace}"
             )
+            self.callbacks.append_after_log(study.name, msg)
             self.callbacks.update_status(
-                study.name, JobStatus.FAILED, None, None
+                study.name, JobStatus.FAILED, msg, None
             )
+            logger.error(msg, exc_info=e)
             raise
         else:
-            self.callbacks.append_after_log(
-                study.name,
-                "Simulation failed, some output results may be available",
-            )
+            msg = "Simulation failed (even if some output results may be available)"
+            self.callbacks.append_after_log(study.name, msg)
             self.callbacks.update_status(
-                study.name, JobStatus.FAILED, None, output_id
+                study.name, JobStatus.FAILED, msg, output_id
             )
 
     def _handle_success(self, study: StudyDTO) -> None:
@@ -435,17 +433,18 @@ class SlurmLauncher(AbstractLauncher):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except Exception:
+        except Exception as e:
             stack_trace = traceback.format_exc()
-            self.callbacks.append_after_log(
-                study.name,
+            msg = (
                 f"An error occurred unexpectedly while importing the study output:"
                 f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
-                f" see stack trace below:\n{stack_trace}",
+                f" see stack trace below:\n{stack_trace}"
             )
+            self.callbacks.append_after_log(study.name, msg)
             self.callbacks.update_status(
-                study.name, JobStatus.FAILED, None, None
+                study.name, JobStatus.FAILED, msg, None
             )
+            logger.error(msg, exc_info=e)
             raise
         else:
             self.callbacks.update_status(
@@ -484,16 +483,6 @@ class SlurmLauncher(AbstractLauncher):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
 
-    def _assert_study_version_is_supported(self, study_version: str) -> None:
-        if (
-            str(study_version)
-            not in self.slurm_config.antares_versions_on_remote_server
-        ):
-            raise VersionNotSupportedError(
-                f"Study version ({study_version}) is not supported. Currently supported versions are"
-                f" {', '.join(self.slurm_config.antares_versions_on_remote_server)}"
-            )
-
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
         self.data_repo_tinydb.remove_study(launch_id)
@@ -512,16 +501,6 @@ class SlurmLauncher(AbstractLauncher):
                 ):
                     self._delete_workspace_file(finished_zip)
 
-    @staticmethod
-    def _override_solver_version(study_path: Path, version: str) -> None:
-        study_info_path = study_path / "study.antares"
-        study_info = IniReader().read(study_info_path)
-        if "antares" in study_info:
-            study_info["antares"]["solver_version"] = version
-            IniWriter().write(study_info, study_info_path)
-        else:
-            logger.warning("Failed to find antares study info")
-
     def _run_study(
         self,
         study_uuid: str,
@@ -529,62 +508,71 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: LauncherParametersDTO,
         version: str,
     ) -> None:
-        study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
+        study_path = Path(self.launcher_args.studies_in) / launch_uuid
+
+        # `append_log` is a function alias for readability ;-)
+        append_log = self.callbacks.append_before_log
 
         with self.antares_launcher_lock:
+            # noinspection PyBroadException
             try:
                 # export study
+                append_log(launch_uuid, "Exporting study...")
                 self.callbacks.export_study(
                     launch_uuid, study_uuid, study_path, launcher_params
                 )
 
-                self._assert_study_version_is_supported(version)
-                SlurmLauncher._override_solver_version(study_path, version)
+                append_log(launch_uuid, "Checking study version...")
+                available_versions = (
+                    self.slurm_config.antares_versions_on_remote_server
+                )
+                if version not in available_versions:
+                    raise VersionNotSupportedError(
+                        f"Study version '{version}' is not supported. Currently supported versions are"
+                        f" {', '.join(available_versions)}"
+                    )
+                _override_solver_version(study_path, version)
 
+                append_log(launch_uuid, "Submitting study to slurm launcher")
                 launcher_args = self._check_and_apply_launcher_params(
                     launcher_params
                 )
-                self.callbacks.append_before_log(
-                    launch_uuid, f"Submitting study to slurm launcher"
-                )
-
                 self._call_launcher(launcher_args, self.launcher_params)
 
                 launch_success = self._check_if_study_is_in_launcher_db(
                     launch_uuid
                 )
                 if launch_success:
-                    self.callbacks.append_before_log(
-                        launch_uuid, f"Study submitted"
-                    )
+                    append_log(launch_uuid, "Study submitted")
                     logger.info("Study exported and run with launcher")
                 else:
                     self.callbacks.append_after_log(
                         launch_uuid,
-                        f"Study not submitted. The study configuration may be incorrect",
+                        "Study not submitted. The study configuration may be incorrect",
                     )
                     logger.warning(
                         f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
                     )
 
                 self.callbacks.update_status(
-                    str(launch_uuid),
+                    launch_uuid,
                     JobStatus.RUNNING if launch_success else JobStatus.FAILED,
                     None,
                     None,
                 )
             except Exception as e:
-                logger.error(
-                    f"Failed to launch study {study_uuid}", exc_info=e
+                stack_trace = traceback.format_exc()
+                msg = (
+                    f"Failed to launch study {study_uuid}:"
+                    f" see stack trace below:\n{stack_trace}"
                 )
-                self.callbacks.append_after_log(
-                    launch_uuid,
-                    f"Unexpected error when launching study : {str(e)}",
-                )
+                self.callbacks.append_after_log(launch_uuid, msg)
                 self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.FAILED, str(e), None
+                    launch_uuid, JobStatus.FAILED, msg, None
                 )
-                self._clean_up_study(str(launch_uuid))
+                self._clean_up_study(launch_uuid)
+                logger.error(msg, exc_info=e)
+                raise
             finally:
                 self._delete_workspace_file(study_path)
 
@@ -598,10 +586,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def _check_if_study_is_in_launcher_db(self, job_id: str) -> bool:
         studies = self.data_repo_tinydb.get_list_of_studies()
-        for s in studies:
-            if s.name == job_id:
-                return True
-        return False
+        return any(s.name == job_id for s in studies)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: LauncherParametersDTO
@@ -626,12 +611,14 @@ class SlurmLauncher(AbstractLauncher):
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be higher than {MIN_TIME_LIMIT}. Using min limit."
+                        f"Invalid slurm launcher time limit ({time_limit}),"
+                        f" should be higher than {MIN_TIME_LIMIT}. Using min limit."
                     )
                     launcher_args.time_limit = MIN_TIME_LIMIT
                 elif time_limit >= MAX_TIME_LIMIT:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be lower than {MAX_TIME_LIMIT}. Using max limit."
+                        f"Invalid slurm launcher time limit ({time_limit}),"
+                        f" should be lower than {MAX_TIME_LIMIT}. Using max limit."
                     )
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
                 else:
@@ -678,17 +665,13 @@ class SlurmLauncher(AbstractLauncher):
                 log_path = SlurmLauncher._get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
-        # when this is not the current worker handling this job (found in data_repo_tinydb)
-        log_dir = SlurmLauncher._find_log_dir(
+        if log_dir := SlurmLauncher._find_log_dir(
             Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id
-        )
-        if log_dir:
+        ):
             log_path = SlurmLauncher._get_log_path_from_log_dir(
                 log_dir, log_type
             )
-        if log_path:
-            return log_path.read_text()
-        return None
+        return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
         async def _listen_to_kill_job(event: Event) -> None:
@@ -721,3 +704,13 @@ class SlurmLauncher(AbstractLauncher):
                 None,
                 None,
             )
+
+
+def _override_solver_version(study_path: Path, version: str) -> None:
+    study_info_path = study_path / "study.antares"
+    study_info = IniReader().read(study_info_path)
+    if "antares" in study_info:
+        study_info["antares"]["solver_version"] = version
+        IniWriter().write(study_info, study_info_path)
+    else:
+        logger.warning("Failed to find antares study info")
