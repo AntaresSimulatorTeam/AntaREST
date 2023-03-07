@@ -20,6 +20,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     MIN_TIME_LIMIT,
     WORKSPACE_LOCK_FILE_NAME,
     SlurmLauncher,
+    VersionNotSupportedError,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from antarest.tools.admin_lib import clean_locks_from_config
@@ -237,7 +238,7 @@ def test_extra_parameters(launcher_config: Config):
 
 # noinspection PyUnresolvedReferences
 @pytest.mark.parametrize(
-    "version,job_status",
+    "version, job_status",
     [(42, JobStatus.RUNNING), (99, JobStatus.FAILED), (45, JobStatus.FAILED)],
 )
 @pytest.mark.unit_test
@@ -290,9 +291,16 @@ def test_run_study(
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
 
     slurm_launcher._call_launcher = call_launcher_mock
-    slurm_launcher._run_study(
-        study_uuid, job_id, LauncherParametersDTO(), str(version)
-    )
+
+    if version == 99:
+        with pytest.raises(VersionNotSupportedError):
+            slurm_launcher._run_study(
+                study_uuid, job_id, LauncherParametersDTO(), str(version)
+            )
+    else:
+        slurm_launcher._run_study(
+            study_uuid, job_id, LauncherParametersDTO(), str(version)
+        )
 
     assert (
         version
@@ -305,8 +313,8 @@ def test_run_study(
     slurm_launcher.callbacks.update_status.assert_called_once_with(
         ANY, job_status, ANY, None
     )
-    slurm_launcher.start.assert_called_once()
     if job_status == JobStatus.RUNNING:
+        slurm_launcher.start.assert_called_once()
         slurm_launcher._delete_workspace_file.assert_called_once()
 
 
