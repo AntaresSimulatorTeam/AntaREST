@@ -3,11 +3,13 @@ from pathlib import Path
 import pytest
 
 from antarest.core.exceptions import StudyValidationError
-from antarest.study.storage.study_version_upgrader import (
-    can_upgrade_version,
+from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,
-    find_next_version,
     UPGRADE_METHODS,
+)
+from antarest.study.storage.study_upgrader import (
+    can_upgrade_version,
+    find_next_version,
     get_current_version,
 )
 
