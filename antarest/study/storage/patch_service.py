@@ -27,13 +27,12 @@ class PatchService:
         self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False
     ) -> Patch:
         if not get_from_file:
-            try:
-                return Patch.parse_raw(study.additional_data.patch)
-            except Exception as e:
-                logger.warning("Failed to parse patch data", exc_info=e)
+            # the `study.additional_data.patch` field is optional
+            if patch_data := study.additional_data.patch:
+                return Patch.parse_raw(patch_data)
 
         patch = Patch()
-        patch_path = (Path(study.path)) / "patch.json"
+        patch_path = Path(study.path) / "patch.json"
         if patch_path.exists():
             patch = Patch.parse_file(patch_path)
 
