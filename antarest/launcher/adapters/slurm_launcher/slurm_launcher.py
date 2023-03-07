@@ -275,6 +275,9 @@ class SlurmLauncher(AbstractLauncher):
                 }.items()
                 if log_path
             }
+
+        # The following callback is actually calling:
+        # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
             job_id,
             self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
@@ -308,7 +311,7 @@ class SlurmLauncher(AbstractLauncher):
             if (output_path / "updated_links").exists():
                 logger.warning("Skipping updated links")
                 self.callbacks.append_after_log(
-                    job_id, f"Skipping updated links"
+                    job_id, "Skipping updated links"
                 )
             else:
                 shutil.copytree(
@@ -342,59 +345,112 @@ class SlurmLauncher(AbstractLauncher):
             logger.info("Could not get data on remote server", exc_info=e)
 
         study_list = self.data_repo_tinydb.get_list_of_studies()
-
-        nb_study_done = 0
-        studies_to_cleanup = []
         for study in study_list:
-            nb_study_done += 1 if (study.finished or study.with_error) else 0
-            if study.done:
-                try:
-                    studies_to_cleanup.append(study.name)
-                    self.log_tail_manager.stop_tracking(
-                        SlurmLauncher._get_log_path(study)
-                    )
-                    try:
-                        output_id = self._import_study_output(
-                            study.name,
-                            study.xpansion_mode,
-                            study.job_log_dir,
-                        )
-                    except Exception:
-                        stack_trace = traceback.format_exc()
-                        self.callbacks.append_after_log(
-                            study.name,
-                            f"An error occurred unexpectedly while importing the study output:"
-                            f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
-                            f" see stack trace below:\n{stack_trace}",
-                        )
-                        self.callbacks.update_status(
-                            study.name, JobStatus.FAILED, None, None
-                        )
-                        raise
-                    else:
-                        self.callbacks.update_status(
-                            study.name, JobStatus.SUCCESS, None, output_id
-                        )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to finalize study {study.name} launch",
-                        exc_info=e,
-                    )
+            log_path = SlurmLauncher._get_log_path(study)
+            if study.with_error:
+                self.log_tail_manager.stop_tracking(log_path)
+                self._handle_failure(study)
+            elif study.done:
+                self.log_tail_manager.stop_tracking(log_path)
+                self._handle_success(study)
             else:
+                # study.started => still running
+                # study.finished => waiting for ZIP + logs retrieval (or failure)
                 self.log_tail_manager.track(
-                    SlurmLauncher._get_log_path(study),
-                    self.create_update_log(study.name),
+                    log_path, self.create_update_log(study.name)
                 )
 
         # Re-fetching the study list is necessary as new studies may have been added
         # during the `import_output` process. Afterward, we clean up the list to ensure
         # that any removed studies are removed from the database.
         with self.antares_launcher_lock:
-            nb_studies = self.data_repo_tinydb.get_list_of_studies()
-            for study_id in studies_to_cleanup:
-                self._clean_up_study(study_id)
-            if nb_study_done == len(nb_studies):
+            # fmt: off
+            cleanup_list = [s for s in study_list if s.with_error or s.done]
+            for study in cleanup_list:
+                self._clean_up_study(study.name)
+            updated_list = self.data_repo_tinydb.get_list_of_studies()
+            if {s.name for s in updated_list} == {s.name for s in cleanup_list}:
                 self.stop()
+            # fmt: on
+
+    def _handle_failure(self, study: StudyDTO) -> None:
+        """
+        The simulation failed (`study.with_error == True`),
+        we can try to download output results,
+        but we expect to find no `output` directory
+
+        Args:
+            study: Study extracted from the SLURM database.
+        """
+        try:
+            output_id = self._import_study_output(
+                study.name,
+                study.xpansion_mode,
+                study.job_log_dir,
+            )
+        except FileNotFoundError:
+            self.callbacks.append_after_log(
+                study.name,
+                "Simulation failed, output results are not available",
+            )
+            self.callbacks.update_status(
+                study.name, JobStatus.FAILED, None, None
+            )
+        except Exception:
+            stack_trace = traceback.format_exc()
+            self.callbacks.append_after_log(
+                study.name,
+                f"An error occurred unexpectedly while trying to import the study output:"
+                f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
+                f" see stack trace below:\n{stack_trace}",
+            )
+            self.callbacks.update_status(
+                study.name, JobStatus.FAILED, None, None
+            )
+            raise
+        else:
+            self.callbacks.append_after_log(
+                study.name,
+                "Simulation failed, some output results may be available",
+            )
+            self.callbacks.update_status(
+                study.name, JobStatus.FAILED, None, output_id
+            )
+
+    def _handle_success(self, study: StudyDTO) -> None:
+        """
+        The simulation succeed (`study.done == True`),
+        in that case, we have the guarantee that:
+
+        - logs are downloaded,
+        - result ZIPs are downloaded and unarchived to `output`,
+        - the server is clean (a.k.a. input and output ZIPs are removed from remote)
+
+        Args:
+            study: Study extracted from the SLURM database.
+        """
+        try:
+            output_id = self._import_study_output(
+                study.name,
+                study.xpansion_mode,
+                study.job_log_dir,
+            )
+        except Exception:
+            stack_trace = traceback.format_exc()
+            self.callbacks.append_after_log(
+                study.name,
+                f"An error occurred unexpectedly while importing the study output:"
+                f" {study.name=}, {study.xpansion_mode=}, {study.job_log_dir=},"
+                f" see stack trace below:\n{stack_trace}",
+            )
+            self.callbacks.update_status(
+                study.name, JobStatus.FAILED, None, None
+            )
+            raise
+        else:
+            self.callbacks.update_status(
+                study.name, JobStatus.SUCCESS, None, output_id
+            )
 
     @staticmethod
     def _get_log_path(
@@ -405,24 +461,18 @@ class SlurmLauncher(AbstractLauncher):
 
     @staticmethod
     def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
-        if base_log_dir.exists() and base_log_dir.is_dir():
-            for fname in os.listdir(base_log_dir):
-                if fname.startswith(job_id):
-                    return base_log_dir / fname
-        return None
+        pattern = f"{job_id}*"
+        return next(iter(base_log_dir.glob(pattern)), None)
 
     @staticmethod
     def _get_log_path_from_log_dir(
         log_dir: Path, log_type: LogType = LogType.STDOUT
     ) -> Optional[Path]:
-        log_prefix = (
-            "antares-out-" if log_type == LogType.STDOUT else "antares-err-"
-        )
-        if log_dir.exists() and log_dir.is_dir():
-            for fname in os.listdir(log_dir):
-                if fname.startswith(log_prefix):
-                    return log_dir / fname
-        return None
+        pattern = {
+            LogType.STDOUT: "antares-out-*",
+            LogType.STDERR: "antares-err-*",
+        }[log_type]
+        return next(iter(log_dir.glob(pattern)), None)
 
     def _clean_local_workspace(self) -> None:
         logger.info("Cleaning up slurm workspace")
