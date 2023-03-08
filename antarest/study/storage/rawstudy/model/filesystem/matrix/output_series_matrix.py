@@ -16,6 +16,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
     FactoryDateSerializer,
@@ -44,7 +47,7 @@ class OutputSeriesMatrix(
         config: FileStudyTreeConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
-        freq: str,
+        freq: MatrixFrequency,
     ):
         super().__init__(context=context, config=config)
         self.date_serializer = date_serializer
@@ -180,7 +183,7 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
         src: str,
         dest: str,
     ):
@@ -198,7 +201,7 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
         area: str,
     ):
         super(AreaOutputSeriesMatrix, self).__init__(
@@ -215,7 +218,7 @@ class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
     ):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
             context,

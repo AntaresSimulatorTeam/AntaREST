@@ -13,6 +13,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
@@ -30,7 +33,7 @@ class InputSeriesMatrix(MatrixNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         nb_columns: Optional[int] = None,
-        freq: str = "hourly",
+        freq: MatrixFrequency = MatrixFrequency.HOURLY,
         default_empty: Optional[List[List[float]]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)

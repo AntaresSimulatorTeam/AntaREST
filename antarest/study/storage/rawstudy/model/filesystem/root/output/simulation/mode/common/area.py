@@ -11,6 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     AreaOutputSeriesMatrix,
 )
@@ -33,20 +36,20 @@ class OutputSimulationAreaItem(FolderNode):
 
         # filters = self.config.get_filters_synthesis(self.area)
         # todo get the config related to this output (now this may fail if input has changed since the launch)
-        filters = ["hourly", "daily", "weekly", "monthly", "annual"]
 
-        for freq in filters:
+        freq: MatrixFrequency
+        for freq in MatrixFrequency:
             if self.mc_all:
-                children[f"id-{freq}"] = AreaOutputSeriesMatrix(
+                children[f"id-{freq.value}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"id-{freq}.txt"),
+                    self.config.next_file(f"id-{freq.value}.txt"),
                     freq,
                     self.area,
                 )
 
-            children[f"values-{freq}"] = AreaOutputSeriesMatrix(
+            children[f"values-{freq.value}"] = AreaOutputSeriesMatrix(
                 self.context,
-                self.config.next_file(f"values-{freq}.txt"),
+                self.config.next_file(f"values-{freq.value}.txt"),
                 freq,
                 self.area,
             )
@@ -56,9 +59,9 @@ class OutputSimulationAreaItem(FolderNode):
             has_thermal_clusters = True
 
             if has_thermal_clusters:
-                children[f"details-{freq}"] = AreaOutputSeriesMatrix(
+                children[f"details-{freq.value}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"details-{freq}.txt"),
+                    self.config.next_file(f"details-{freq.value}.txt"),
                     freq,
                     self.area,
                 )
@@ -68,9 +71,9 @@ class OutputSimulationAreaItem(FolderNode):
             has_enr_clusters = True
 
             if has_enr_clusters:
-                children[f"details-res-{freq}"] = AreaOutputSeriesMatrix(
+                children[f"details-res-{freq.value}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"details-res-{freq}.txt"),
+                    self.config.next_file(f"details-res-{freq.value}.txt"),
                     freq,
                     self.area,
                 )

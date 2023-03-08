@@ -18,6 +18,9 @@ from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
     LazyNode,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    MatrixFrequency,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
     ) -> None:
         LazyNode.__init__(self, context, config)
         self.freq = freq

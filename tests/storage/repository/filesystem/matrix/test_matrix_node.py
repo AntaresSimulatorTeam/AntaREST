@@ -11,6 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
@@ -29,7 +32,9 @@ class MockMatrixNode(MatrixNode):
     def __init__(
         self, context: ContextServer, config: FileStudyTreeConfig
     ) -> None:
-        super().__init__(config=config, context=context, freq="annual")
+        super().__init__(
+            config=config, context=context, freq=MatrixFrequency.ANNUAL
+        )
 
     def parse(
         self,
