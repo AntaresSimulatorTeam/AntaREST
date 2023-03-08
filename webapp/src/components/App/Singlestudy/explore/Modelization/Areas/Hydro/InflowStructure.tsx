@@ -1,13 +1,21 @@
+import SplitLayoutView from "../../../../../../common/SplitLayoutView";
 import HydroMatrix from "./HydroMatrix";
-import { Root } from "./style";
 import { MatrixType } from "./utils";
 
 function InflowStructure() {
   return (
-    <Root sx={{ flexDirection: "column" }}>
-      <HydroMatrix type={MatrixType.InflowPattern} />
-      <HydroMatrix type={MatrixType.OverallMonthlyHydro} />
-    </Root>
+    <SplitLayoutView
+      left={<HydroMatrix type={MatrixType.InflowPattern} />}
+      right={<HydroMatrix type={MatrixType.OverallMonthlyHydro} />}
+      sx={{
+        ".SplitLayoutView__Left": {
+          width: "50%",
+        },
+        ".SplitLayoutView__Right": {
+          height: "100%",
+        },
+      }}
+    />
   );
 }
 
