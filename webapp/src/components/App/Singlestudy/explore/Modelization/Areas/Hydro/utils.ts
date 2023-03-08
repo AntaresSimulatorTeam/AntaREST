@@ -23,6 +23,7 @@ interface HydroMatrixProps {
   title: string;
   url: string;
   cols?: string[];
+  rows?: string[];
   stats: MatrixStats;
 }
 
@@ -69,6 +70,7 @@ export const MATRICES: Matrices = {
     title: "Daily power",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     cols: generateColumns(),
+    rows: ["Generating Power", "Pumping Power"],
     stats: MatrixStats.NOCOL,
   },
   [MatrixType.EnergyCredits]: {
@@ -119,6 +121,20 @@ export const MATRICES: Matrices = {
       "Min. (MWh)",
       "Max. (MWh)",
       "ROR Share",
+    ],
+    rows: [
+      "January",
+      "Febuary",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ],
     stats: MatrixStats.NOCOL,
   },
