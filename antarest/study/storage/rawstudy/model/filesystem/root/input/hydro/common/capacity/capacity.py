@@ -1,8 +1,5 @@
-from typing import Optional, TypedDict, List
+from typing import List, TypedDict
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -21,6 +18,7 @@ class MatrixInfo(TypedDict, total=False):
     start_version: int
 
 
+# noinspection SpellCheckingInspection
 MATRICES_INFO: List[MatrixInfo] = [
     {
         "name": "maxpower",
@@ -52,10 +50,10 @@ MATRICES_INFO: List[MatrixInfo] = [
 
 class InputHydroCommonCapacity(FolderNode):
     def build(self) -> TREE:
-        children: TREE = dict()
-        for area in self.config.area_names():
-            for info in MATRICES_INFO:
-                if self.config.version >= info["start_version"]:
+        children: TREE = {}
+        for info in MATRICES_INFO:
+            if self.config.version >= info["start_version"]:
+                for area in self.config.area_names():
                     name = f"{info['name']}_{area}"
                     children[name] = InputSeriesMatrix(
                         self.context,
