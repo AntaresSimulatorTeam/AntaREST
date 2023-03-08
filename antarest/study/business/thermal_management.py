@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import PurePosixPath
 from typing import Optional, Dict, Any, List
 
-from pydantic import StrictStr, StrictInt, StrictBool
+from pydantic import StrictStr, StrictBool
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -33,25 +33,25 @@ THERMAL_PATH = "input/thermal/clusters/{area}/list/{cluster}"
 class ThermalFormFields(FormFieldsBaseModel):
     group: Optional[StrictStr]
     name: Optional[StrictStr]
-    unit_count: Optional[StrictInt]
+    unit_count: Optional[int]
     enabled: Optional[StrictBool]
-    nominal_capacity: Optional[StrictInt]
+    nominal_capacity: Optional[int]
     gen_ts: Optional[TimeSeriesGenerationOption]
-    min_stable_power: Optional[StrictInt]
-    min_up_time: Optional[StrictInt]
-    min_down_time: Optional[StrictInt]
+    min_stable_power: Optional[int]
+    min_up_time: Optional[int]
+    min_down_time: Optional[int]
     must_run: Optional[StrictBool]
-    spinning: Optional[StrictInt]
-    co2: Optional[StrictInt]
-    volatility_forced: Optional[StrictInt]
-    volatility_planned: Optional[StrictInt]
+    spinning: Optional[int]
+    co2: Optional[int]
+    volatility_forced: Optional[int]
+    volatility_planned: Optional[int]
     law_forced: Optional[LawOption]
     law_planned: Optional[LawOption]
-    marginal_cost: Optional[StrictInt]
-    spread_cost: Optional[StrictInt]
-    fixed_cost: Optional[StrictInt]
-    startup_cost: Optional[StrictInt]
-    market_bid_cost: Optional[StrictInt]
+    marginal_cost: Optional[int]
+    spread_cost: Optional[int]
+    fixed_cost: Optional[int]
+    startup_cost: Optional[int]
+    market_bid_cost: Optional[int]
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {

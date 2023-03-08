@@ -1,9 +1,10 @@
+// ! Keep .js extension, because the file is used in scripts/build-front.sh
 import i18n from "i18next";
 import Backend from "i18next-xhr-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-export default function i18nInit(version = "unknown"): void {
+export default function i18nInit(version = "unknown") {
   i18n
     // load translation using xhr -> see /public/locales
     // learn more: https://github.com/i18next/i18next-xhr-backend
@@ -18,7 +19,7 @@ export default function i18nInit(version = "unknown"): void {
     .init({
       fallbackLng: "en",
       backend: {
-        loadPath: () => `/locales/{{lng}}/{{ns}}.json?v=${version}`,
+        loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,
       },
       react: {
         useSuspense: false,
