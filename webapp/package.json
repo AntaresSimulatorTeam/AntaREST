@@ -67,7 +67,7 @@
     "redux": "4.2.1",
     "redux-thunk": "2.4.2",
     "stream-http": "3.2.0",
-    "swagger-ui-react": "4.15.5",
+    "swagger-ui-react": "4.18.0",
     "ts-toolbelt": "9.6.0",
     "url": "0.11.0",
     "uuid": "9.0.0",
