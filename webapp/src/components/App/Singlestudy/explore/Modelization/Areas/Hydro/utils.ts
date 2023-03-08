@@ -11,6 +11,8 @@ export enum MatrixType {
   WaterValues,
   HydroStorage,
   RunOfRiver,
+  InflowPattern,
+  OverallMonthlyHydro,
 }
 
 ////////////////////////////////////////////////////////////////
@@ -101,6 +103,24 @@ export const MATRICES: Matrices = {
     title: "Run of river",
     url: "input/hydro/series/{areaId}/ror",
     stats: MatrixStats.STATS,
+  },
+  [MatrixType.InflowPattern]: {
+    title: "Inflow pattern",
+    url: "input/hydro/common/capacity/inflowPattern_{areaId}",
+    cols: ["Inflow Pattern (X)"],
+    stats: MatrixStats.NOCOL,
+  },
+  [MatrixType.OverallMonthlyHydro]: {
+    title: "Overall monthly hydro",
+    url: "input/hydro/prepro/{areaId}/energy",
+    cols: [
+      "Expectation (MWh)",
+      "Std Deviation (MWh)",
+      "Min. (MWh)",
+      "Max. (MWh)",
+      "ROR Share",
+    ],
+    stats: MatrixStats.NOCOL,
   },
 };
 
