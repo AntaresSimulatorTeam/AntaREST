@@ -1,7 +1,7 @@
 import logging
 
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.roles import RoleType
 
 logger = logging.getLogger(__name__)
@@ -70,8 +70,9 @@ def check_permission(
     ):
         return True
 
+    allowed_roles = permission_matrix[permission]["roles"]
     group_permission = any(
-        role in permission_matrix[permission]["roles"]  # type: ignore
+        role in allowed_roles  # type: ignore
         for role in [
             group.role
             for group in (user.groups or [])
@@ -81,4 +82,5 @@ def check_permission(
     if group_permission:
         return True
 
-    return permission_info.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore
+    allowed_public_modes = permission_matrix[permission]["public_modes"]
+    return permission_info.public_mode in allowed_public_modes  # type: ignore

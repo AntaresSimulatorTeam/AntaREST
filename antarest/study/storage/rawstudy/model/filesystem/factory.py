@@ -9,9 +9,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import (
     UriResolverService,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
@@ -63,7 +61,7 @@ class StudyFactory:
                 ).to_build_config()
                 return FileStudy(config, FileStudyTree(self.context, config))
         start_time = time.time()
-        config = ConfigPathBuilder.build(path, study_id, output_path)
+        config = build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
         result = FileStudy(config, FileStudyTree(self.context, config))

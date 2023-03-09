@@ -27,9 +27,13 @@ function BindingConstView(props: Props) {
     selector: (state) => getLinksAndClusters(state, study.id),
   });
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Box sx={{ width: 1, height: 1, overflowY: "auto" }}>
-      <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
+      <Paper sx={{ width: 1, height: 1, pt: 1, p: 2, overflow: "auto" }}>
         <UsePromiseCond
           response={mergeResponses(defaultValuesRes, optionsRes)}
           ifResolved={([defaultValues, options]) => (

@@ -66,7 +66,10 @@ class FileStudyTree(FolderNode):
         logger.info(
             f"Denormalizing (async) study data for study {self.config.study_id}"
         )
-        thread = Thread(target=self._threaded_denormalize)
+        thread = Thread(
+            target=self._threaded_denormalize,
+            name=f"{self.__class__.__name__}-Denormalizer",
+        )
         thread.start()
         return thread
 

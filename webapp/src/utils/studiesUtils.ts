@@ -3,6 +3,7 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { StudyMetadata, StudyType } from "../common/types";
 import { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
+import { isSearchMatching } from "./textUtils";
 
 ////////////////////////////////////////////////////////////////
 // Sort
@@ -49,11 +50,9 @@ const folderPredicate = R.curry(
 
 const inputValuePredicate = R.curry(
   (inputValue: StudyFilters["inputValue"], study: StudyMetadata) => {
-    if (!inputValue) {
-      return true;
-    }
-    const regex = new RegExp(inputValue, "i");
-    return study.name.search(regex) !== -1 || study.id.search(regex) !== -1;
+    return inputValue
+      ? isSearchMatching(inputValue, [study.name, study.id])
+      : true;
   }
 );
 

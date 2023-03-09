@@ -3,11 +3,10 @@ import logging
 import random
 import threading
 import time
-from typing import List, Callable, Optional, Dict, Awaitable, Any, cast
-from uuid import uuid4
+from typing import Awaitable, Callable, Dict, List, Optional
+import uuid
 
-from antarest.core.interfaces.eventbus import Event, IEventBus, EventType
-from antarest.core.utils.utils import suppress_exception
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ class EventBusService(IEventBus):
         self, listener: Callable[[Event], Awaitable[None]], queue: str
     ) -> str:
         with self.lock:
-            listener_id = str(uuid4())
+            listener_id = str(uuid.uuid4())
             if queue not in self.consumers:
                 self.consumers[queue] = {}
             self.consumers[queue][listener_id] = listener
@@ -57,7 +56,7 @@ class EventBusService(IEventBus):
         type_filter: Optional[List[EventType]] = None,
     ) -> str:
         with self.lock:
-            listener_id = str(uuid4())
+            listener_id = str(uuid.uuid4())
             types = type_filter or [EventType.ANY]
             for listener_type in types:
                 self.listeners[listener_type][listener_id] = listener
@@ -76,7 +75,7 @@ class EventBusService(IEventBus):
                 await self._on_events()
             except Exception as e:
                 logger.error(
-                    f"Unexpected error when processing events", exc_info=e
+                    "Unexpected error when processing events", exc_info=e
                 )
 
     async def _on_events(self) -> None:
@@ -125,8 +124,11 @@ class EventBusService(IEventBus):
 
     def start(self, threaded: bool = True) -> None:
         if threaded:
-            t = threading.Thread(target=self._async_loop)
-            t.setDaemon(True)
+            t = threading.Thread(
+                target=self._async_loop,
+                name=self.__class__.__name__,
+                daemon=True,
+            )
             logger.info("Starting event bus")
             t.start()
         else:

@@ -32,6 +32,7 @@ import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
+import { downloadMatrix } from "../../../utils/matrixUtils";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -114,15 +115,8 @@ function MatrixInput(props: PropsType) {
     }
   };
 
-  const handleDownload = (data: MatrixType, filename: string): void => {
-    const fileData = data.data.map((row) => row.join("\t")).join("\n");
-    const blob = new Blob([fileData], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = url;
-    link.click();
-    link.remove();
+  const handleDownload = (matrixData: MatrixType, fileName: string): void => {
+    downloadMatrix(matrixData, fileName);
   };
 
   ////////////////////////////////////////////////////////////////

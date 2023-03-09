@@ -29,6 +29,7 @@ import * as api from "../../../../../../services/api/forms/tableMode";
 
 function TableMode() {
   const { t } = useTranslation();
+
   const [templates, setTemplates] = useState(() => [
     ...DEFAULT_TABLE_TEMPLATES.map((tp) => ({
       ...tp,
@@ -38,14 +39,18 @@ function TableMode() {
       (tp) => ({ ...tp, id: uuidv4() })
     ),
   ]);
+
   const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0].id);
-  const selectedTemplate =
-    templates.find((tp) => tp.id === selectedTemplateId) || templates[0];
+
   const [dialog, setDialog] = useState<{
     type: "add" | "edit" | "delete";
     templateId: TableTemplate["id"];
   } | null>(null);
+
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+
+  const selectedTemplate =
+    templates.find((tp) => tp.id === selectedTemplateId) || templates[0];
 
   const res = usePromise(async () => {
     const { type, columns } = selectedTemplate;

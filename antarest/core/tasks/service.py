@@ -1,38 +1,36 @@
-import asyncio
 import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, Future
-from enum import Enum
+from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Callable, Optional, List, Dict, Awaitable, Union, cast
+from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import (
-    IEventBus,
     Event,
-    EventType,
     EventChannelDirectory,
+    EventType,
+    IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import PermissionInfo
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import (
-    RequestParameters,
     MustBeAuthenticatedError,
+    RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.core.tasks.model import (
-    TaskDTO,
-    TaskListFilter,
-    TaskJob,
-    TaskStatus,
-    TaskJobLog,
-    TaskResult,
     CustomTaskEventMessages,
+    TaskDTO,
     TaskEventPayload,
+    TaskJob,
+    TaskJobLog,
+    TaskListFilter,
+    TaskResult,
+    TaskStatus,
     TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
@@ -93,6 +91,7 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
 
+# noinspection PyUnusedLocal
 def noop_notifier(message: str) -> None:
     pass
 
@@ -139,7 +138,8 @@ class TaskJobService(ITaskService):
 
             return _await_task_end
 
-        def _send_worker_task(logger: TaskUpdateNotifier) -> TaskResult:
+        # todo: Is `logger_` parameter required? (consider refactoring)
+        def _send_worker_task(logger_: TaskUpdateNotifier) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
@@ -152,6 +152,8 @@ class TaskJobService(ITaskService):
                         task_type=task_type,
                         task_args=task_args,
                     ),
+                    # Use `NONE` for internal events
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 ),
                 task_type,
             )
@@ -163,10 +165,7 @@ class TaskJobService(ITaskService):
         return _send_worker_task
 
     def check_remote_worker_for_queue(self, task_queue: str) -> bool:
-        for rw in self.remote_workers:
-            if task_queue in rw.queues:
-                return True
-        return False
+        return any(task_queue in rw.queues for rw in self.remote_workers)
 
     def add_worker_task(
         self,
@@ -279,7 +278,12 @@ class TaskJobService(ITaskService):
             self.repo.save(task)
         elif dispatch:
             self.event_bus.push(
-                Event(type=EventType.TASK_CANCEL_REQUEST, payload=task_id)
+                Event(
+                    type=EventType.TASK_CANCEL_REQUEST,
+                    payload=task_id,
+                    # Use `NONE` for internal events
+                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
+                )
             )
 
     def status_task(
@@ -290,14 +294,13 @@ class TaskJobService(ITaskService):
     ) -> TaskDTO:
         if not request_params.user:
             raise MustBeAuthenticatedError()
-
-        task = self.repo.get(task_id)
-        if not task:
+        if task := self.repo.get(task_id):
+            return task.to_dto(with_logs)
+        else:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=f"Failed to retrieve task {task_id} in db",
             )
-        return task.to_dto(with_logs)
 
     def list_tasks(
         self, task_filter: TaskListFilter, request_params: RequestParameters
@@ -312,12 +315,12 @@ class TaskJobService(ITaskService):
     ) -> List[TaskJob]:
         if not request_params.user:
             raise MustBeAuthenticatedError()
-        return self.repo.list(
-            task_filter,
-            request_params.user.impersonator
-            if not request_params.user.is_site_admin()
-            else None,
+        user = (
+            None
+            if request_params.user.is_site_admin()
+            else request_params.user.impersonator
         )
+        return self.repo.list(task_filter, user)
 
     def await_task(
         self, task_id: str, timeout_sec: Optional[int] = None
@@ -357,6 +360,7 @@ class TaskJobService(ITaskService):
                     if custom_event_messages is not None
                     else f"Task {task_id} is running",
                 ).dict(),
+                permissions=PermissionInfo(public_mode=PublicMode.READ),
                 channel=EventChannelDirectory.TASK + task_id,
             )
         )
@@ -392,24 +396,32 @@ class TaskJobService(ITaskService):
                         if custom_event_messages is not None
                         else f'Task {task_id} {"completed" if result.success else "failed"}',
                     ).dict(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
-        except Exception as e:
-            logger.error(f"Exception when running task {task_id}", exc_info=e)
+        except Exception as exc:
+            err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
+            logger.error(err_msg, exc_info=exc)
             with db():
                 self._update_task_status(
-                    task_id, TaskStatus.FAILED, False, repr(e)
+                    task_id,
+                    TaskStatus.FAILED,
+                    False,
+                    f"{err_msg}\nSee the logs for detailed information and the error traceback.",
                 )
+            message = (
+                err_msg
+                if custom_event_messages is None
+                else custom_event_messages.end
+            )
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
                     payload=TaskEventPayload(
-                        id=task_id,
-                        message=custom_event_messages.end
-                        if custom_event_messages is not None
-                        else f"Task {task_id} failed",
+                        id=task_id, message=message
                     ).dict(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
@@ -453,5 +465,5 @@ class TaskJobService(ITaskService):
         task.result_status = result
         task.result = command_result
         if status.is_final():
-            task.completion_date = datetime.datetime.utcnow()
+            task.completion_date = datetime.datetime.now(datetime.timezone.utc)
         self.repo.save(task)

@@ -1,9 +1,5 @@
-from unittest.mock import patch
-
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -145,7 +141,7 @@ def test_manage_district(
     )
     assert not output_d3.status
 
-    read_config = ConfigPathBuilder.build(empty_study.config.study_path, "")
+    read_config = build(empty_study.config.study_path, "")
     assert len(read_config.sets.keys()) == 4
 
     remove_district3_command: ICommand = RemoveDistrict(

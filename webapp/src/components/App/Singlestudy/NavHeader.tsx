@@ -80,6 +80,8 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.divider,
 }));
 
+const MAX_STUDY_TITLE_LENGTH = 45;
+
 interface Props {
   study: StudyMetadata | undefined;
   parent: StudyMetadata | undefined;
@@ -101,14 +103,13 @@ function NavHeader(props: Props) {
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openMenu, setOpenMenu] = useState<string>("");
-  const [openLauncherDialog, setOpenLauncherDialog] = useState<boolean>(false);
-  const [openPropertiesDialog, setOpenPropertiesDialog] =
-    useState<boolean>(false);
-  const [openUpgradeDialog, setOpenUpgradeDialog] = useState<boolean>(false);
+  const [openMenu, setOpenMenu] = useState("");
+  const [openLauncherDialog, setOpenLauncherDialog] = useState(false);
+  const [openPropertiesDialog, setOpenPropertiesDialog] = useState(false);
+  const [openUpgradeDialog, setOpenUpgradeDialog] = useState(false);
   const [deleteChildren, setDeleteChildren] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
-  const [openExportDialog, setOpenExportDialog] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openExportDialog, setOpenExportDialog] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
@@ -214,15 +215,17 @@ function NavHeader(props: Props) {
 
   return (
     <Box
-      p={2}
-      width="100%"
-      height={`${STUDIES_HEIGHT_HEADER}px`}
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-      boxSizing="border-box"
-      overflow="hidden"
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "center",
+        width: 1,
+        height: STUDIES_HEIGHT_HEADER,
+        p: 2,
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
     >
       <Box
         width="100%"
@@ -238,7 +241,12 @@ function NavHeader(props: Props) {
           sx={{ cursor: "pointer" }}
         />
         <Button variant="text" color="secondary" onClick={onBackClick}>
-          {isExplorer === true && study ? study.name : t("global.studies")}
+          <Tooltip
+            title={isExplorer && study ? study.name : t("global.studies")}
+            followCursor
+          >
+            <Typography variant="button">{t("global.studies")}</Typography>
+          </Tooltip>
         </Button>
       </Box>
       <Box
@@ -257,8 +265,14 @@ function NavHeader(props: Props) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Tooltip title={study?.folder || ""}>
-            <Typography variant="h6" sx={{ color: "text.primary" }}>
+          <Tooltip title={study?.folder || ""} placement="bottom-start">
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{
+                width: 1,
+              }}
+            >
               {study?.name}
             </Typography>
           </Tooltip>
@@ -300,7 +314,6 @@ function NavHeader(props: Props) {
               sx={{ ml: 2, mr: 1 }}
             />
           )}
-
           {study?.tags &&
             study.tags.map((elm) => (
               <Chip
@@ -310,14 +323,6 @@ function NavHeader(props: Props) {
                 sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
               />
             ))}
-        </Box>
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="center"
-          alignItems="center"
-          boxSizing="border-box"
-        >
           {isExplorer && (
             <Button
               size="small"
@@ -341,6 +346,14 @@ function NavHeader(props: Props) {
               <HistoryOutlinedIcon />
             </Button>
           )}
+        </Box>
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="center"
+          boxSizing="border-box"
+        >
           <Button
             size="small"
             aria-controls="menu-study"
@@ -515,14 +528,22 @@ function NavHeader(props: Props) {
           </Box>
           {parent && (
             <Box
-              mx={3}
-              display="flex"
-              flexDirection="row"
-              justifyContent="flex-start"
-              alignItems="center"
+              sx={{
+                mx: 3,
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+              }}
             >
               <AltRouteOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-              <LinkText to={`/studies/${parent.id}`}>{parent.name}</LinkText>
+              <Tooltip title={parent.name}>
+                <LinkText to={`/studies/${parent.id}`}>
+                  {`${parent.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
+                </LinkText>
+              </Tooltip>
             </Box>
           )}
           {childrenTree && (
@@ -627,10 +648,5 @@ function NavHeader(props: Props) {
     </Box>
   );
 }
-
-NavHeader.defaultProps = {
-  isExplorer: undefined,
-  openCommands: undefined,
-};
 
 export default NavHeader;

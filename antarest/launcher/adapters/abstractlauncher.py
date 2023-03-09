@@ -1,23 +1,40 @@
-import logging
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional, Dict, List
+from typing import Callable, Dict, List, NamedTuple, Optional
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     Event,
-    EventType,
     EventChannelDirectory,
+    EventType,
     IEventBus,
 )
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 
 class LauncherInitException(Exception):
-    pass
+    """
+    Exception raised during local or SLURM launcher initialisation
+    when a required parameter is not set in the application configuration.
+
+    In Docker environment, the configuration path is `/resources/application.yaml`.
+    """
+
+    def __init__(self, reason: str) -> None:
+        from antarest.core.utils import utils
+
+        if config_path := (
+            os.getenv("ANTAREST_CONF") or utils.get_default_config_path()
+        ):
+            msg = f"Invalid configuration '{config_path}': {reason}"
+        else:
+            msg = f"Invalid configuration: {reason}"
+        super().__init__(msg)
 
 
 class LauncherCallbacks(NamedTuple):
@@ -74,6 +91,7 @@ class AbstractLauncher(ABC):
                         "log": log_line,
                         "job_id": job_id,
                     },
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.JOB_LOGS + job_id,
                 )
             )
@@ -99,6 +117,9 @@ class AbstractLauncher(ABC):
                             "progress": launch_progress_dto.progress,
                             "message": "",
                         },
+                        permissions=PermissionInfo(
+                            public_mode=PublicMode.READ
+                        ),
                         channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )

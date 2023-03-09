@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios from "axios";
 import debug from "debug";
 import Cookies from "js-cookie";
 import * as R from "ramda";
@@ -39,24 +39,22 @@ export function initAxiosInterceptors(): void {
     client.interceptors.request.eject(axiosInterceptor);
   }
 
-  axiosInterceptor = client.interceptors.request.use(
-    async (config): Promise<AxiosRequestConfig> => {
-      try {
-        if (config?.headers) {
-          const authUser = await store.dispatch(refresh()).unwrap();
-          if (authUser) {
-            // eslint-disable-next-line no-param-reassign
-            config.headers.Authorization = makeHeaderAuthorization(
-              authUser.accessToken
-            );
-          }
+  axiosInterceptor = client.interceptors.request.use(async (config) => {
+    try {
+      if (config?.headers) {
+        const authUser = await store.dispatch(refresh()).unwrap();
+        if (authUser) {
+          // eslint-disable-next-line no-param-reassign
+          config.headers.Authorization = makeHeaderAuthorization(
+            authUser.accessToken
+          );
         }
-      } catch (e) {
-        logError("Failed to refresh token", e);
       }
-      return config;
+    } catch (e) {
+      logError("Failed to refresh token", e);
     }
-  );
+    return config;
+  });
 }
 
 export function setAuth(token: string | null): void {

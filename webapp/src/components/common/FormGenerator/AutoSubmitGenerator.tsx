@@ -8,7 +8,7 @@ import FormGenerator, {
   IGeneratorField,
 } from ".";
 
-interface AutoSubmitGeneratorFormProps<T> {
+interface AutoSubmitGeneratorFormProps<T extends FieldValues> {
   jsonTemplate: IFormGenerator<T>;
   saveField: (
     name: IGeneratorField<T>["name"],

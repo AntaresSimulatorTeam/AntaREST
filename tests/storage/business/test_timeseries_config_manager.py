@@ -6,19 +6,13 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
     TSFormFields,
     TSFormFieldsForType,
     SeasonCorrelation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -42,7 +36,7 @@ def get_file_study(version: int, tmpdir: Path) -> FileStudy:
         cur_dir / "assets" / f"empty_study_{version}.zip"
     ) as zip_output:
         zip_output.extractall(path=study_path)
-    config = ConfigPathBuilder.build(study_path, "1")
+    config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 

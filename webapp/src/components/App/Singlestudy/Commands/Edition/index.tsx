@@ -3,7 +3,6 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { DropResult } from "react-beautiful-dnd";
 import _ from "lodash";
-import QueueIcon from "@mui/icons-material/Queue";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -23,7 +22,6 @@ import {
   updateCommandResults,
 } from "./utils";
 import {
-  appendCommand,
   deleteCommand,
   getCommand,
   getCommands,
@@ -34,9 +32,7 @@ import {
   getStudyTask,
   exportCommandsMatrices,
 } from "../../../../../services/api/variant";
-import AddCommandDialog from "./AddCommandDialog";
 import {
-  CommandDTO,
   WSEvent,
   WSMessage,
   CommandResultDTO,
@@ -47,7 +43,6 @@ import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import SimpleContent from "../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   addWsMessageListener,
@@ -56,6 +51,7 @@ import {
 } from "../../../../../services/webSockets";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
+import SimpleContent from "../../../../common/page/SimpleContent";
 
 const logError = debug("antares:variantedition:error");
 
@@ -69,14 +65,12 @@ function EditionView(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { studyId } = props;
-  const [openAddCommandDialog, setOpenAddCommandDialog] =
-    useState<boolean>(false);
-  const [openClearCommandsDialog, setOpenClearCommandsDialog] =
-    useState<boolean>(false);
+  const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
+  const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
   const [openExportCommandsDialog, setOpenExportCommandsDialog] =
-    useState<boolean>(false);
+    useState(false);
   const [exportMatrices, setExportMatrices] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
     useState<number>(-1);
@@ -126,33 +120,7 @@ function EditionView(props: Props) {
   };
 
   const onDelete = async (index: number) => {
-    try {
-      const elm = commands[index];
-      await deleteCommand(studyId, elm.id as string);
-      setCommands((commandList) =>
-        commandList
-          .filter((item, idx) => idx !== index)
-          .map((item) => ({ ...item, results: undefined }))
-      );
-      enqueueSnackbar(t("variants.success.delete"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.commandDeleted"), e as AxiosError);
-    }
-  };
-
-  const onNewCommand = async (action: string) => {
-    try {
-      const elmDTO: CommandDTO = { action, args: {} };
-      const newId = await appendCommand(studyId, elmDTO);
-      setCommands(commands.concat([{ ...elmDTO, id: newId, updated: false }]));
-      enqueueSnackbar(t("variants.success.commandAdded"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.addCommand"), e as AxiosError);
-    }
+    setOpenDeleteCommandDialog(index);
   };
 
   const onArgsUpdate = (index: number, args: object) => {
@@ -445,6 +413,25 @@ function EditionView(props: Props) {
     }
   };
 
+  const handleDeleteCommand = async () => {
+    setOpenDeleteCommandDialog(-1);
+    try {
+      const index = openDeleteCommandDialog;
+      const elm = commands[index];
+      await deleteCommand(studyId, elm.id as string);
+      setCommands((commandList) =>
+        commandList
+          .filter((item, idx) => idx !== index)
+          .map((item) => ({ ...item, results: undefined }))
+      );
+      enqueueSnackbar(t("variants.success.delete"), {
+        variant: "success",
+      });
+    } catch (e) {
+      enqueueErrorSnackbar(t("variants.error.commandDeleted"), e as AxiosError);
+    }
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -465,12 +452,6 @@ function EditionView(props: Props) {
               <CloudDownloadOutlinedIcon
                 sx={{ ...headerIconStyle }}
                 onClick={() => setOpenExportCommandsDialog(true)}
-              />
-            </Tooltip>
-            <Tooltip title={t("variants.commands.add")}>
-              <QueueIcon
-                sx={{ ...headerIconStyle }}
-                onClick={() => setOpenAddCommandDialog(true)}
               />
             </Tooltip>
             <Tooltip title={t("variants.commands.clear")}>
@@ -527,18 +508,7 @@ function EditionView(props: Props) {
         loaded && (
           <Body sx={{ alignItems: "left" }}>
             <Box height="85%">
-              <SimpleContent
-                title="variants.error.noCommands"
-                callToAction={
-                  <Button
-                    color="primary"
-                    variant="outlined"
-                    onClick={() => setOpenAddCommandDialog(true)}
-                  >
-                    {t("button.newCommand")}
-                  </Button>
-                }
-              />
+              <SimpleContent title="variants.error.noCommands" />
             </Box>
           </Body>
         )
@@ -548,13 +518,6 @@ function EditionView(props: Props) {
           <SimpleLoader color="" />
         </Body>
       )}
-      {openAddCommandDialog && (
-        <AddCommandDialog
-          open={openAddCommandDialog}
-          onClose={() => setOpenAddCommandDialog(false)}
-          onNewCommand={onNewCommand}
-        />
-      )}
       {openClearCommandsDialog && (
         <ConfirmationDialog
           open={openClearCommandsDialog}
@@ -562,6 +525,15 @@ function EditionView(props: Props) {
           onCancel={() => setOpenClearCommandsDialog(false)}
         >
           {t("variants.commands.question.deleteAll")}
+        </ConfirmationDialog>
+      )}
+      {openDeleteCommandDialog > -1 && (
+        <ConfirmationDialog
+          open
+          onConfirm={handleDeleteCommand}
+          onCancel={() => setOpenDeleteCommandDialog(-1)}
+        >
+          {t("variants.commands.question.delete")}
         </ConfirmationDialog>
       )}
       {openExportCommandsDialog && (

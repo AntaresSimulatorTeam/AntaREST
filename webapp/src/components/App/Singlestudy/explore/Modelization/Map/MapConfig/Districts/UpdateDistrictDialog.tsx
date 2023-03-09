@@ -77,7 +77,7 @@ function UpdateDistrictDialog(props: Props) {
 
   return (
     <FormDialog
-      title="Edit District"
+      title={t("study.modelization.map.districts.edit")}
       titleIcon={Edit}
       open={open}
       onCancel={onClose}
@@ -90,7 +90,7 @@ function UpdateDistrictDialog(props: Props) {
         <Fieldset fullFieldWidth>
           <SelectFE
             name="districtId"
-            label={t("Districts")}
+            label={t("study.modelization.map.districts")}
             variant="filled"
             options={districtsOptions}
             control={control}
@@ -115,14 +115,14 @@ function UpdateDistrictDialog(props: Props) {
             sx={{ mx: 0 }}
           />
           <SwitchFE
+            label={t("study.modelization.map.districts.field.outputs")}
             name="output"
-            label="Output"
             control={control}
             disabled={getValues("districtId") === ""}
             sx={{ ".MuiFormControlLabel-root": { m: 0 } }}
           />
           <StringFE
-            label="Comment"
+            label={t("study.modelization.map.districts.field.comments")}
             name="comments"
             control={control}
             fullWidth
@@ -137,7 +137,7 @@ function UpdateDistrictDialog(props: Props) {
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >
-            Delete District
+            {t("global.delete")}
           </Button>
           {openConfirmationModal && (
             <ConfirmationDialog
@@ -148,7 +148,11 @@ function UpdateDistrictDialog(props: Props) {
               alert="warning"
               open
             >
-              <Typography sx={{ p: 3 }}>Delete district ?</Typography>
+              <Typography sx={{ p: 3 }}>
+                {t("study.modelization.map.districts.delete.confirm", [
+                  districtsById[getValues("districtId")].name,
+                ])}
+              </Typography>
             </ConfirmationDialog>
           )}
         </Fieldset>

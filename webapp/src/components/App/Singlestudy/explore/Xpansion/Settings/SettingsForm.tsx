@@ -129,7 +129,7 @@ function SettingsForm(props: PropType) {
           </SelectFields>
           <TextField
             type="number"
-            label={t("xpansion.optimalyGap")}
+            label={t("xpansion.optimalityGap")}
             variant="filled"
             value={currentSettings.optimality_gap}
             onChange={(e) =>

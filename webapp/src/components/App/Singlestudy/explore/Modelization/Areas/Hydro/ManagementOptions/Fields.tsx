@@ -1,4 +1,3 @@
-import { Box } from "@mui/system";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
@@ -16,7 +15,7 @@ function Fields() {
   ] = watch(["reservoir", "useWater", "useHeuristic", "useLeeway"]);
 
   return (
-    <Box sx={{ px: 3 }}>
+    <>
       <Fieldset legend="General parameters">
         <SwitchFE
           name="followLoad"
@@ -36,56 +35,49 @@ function Fields() {
         />
       </Fieldset>
       <Fieldset legend="Reservoir management">
-        <Box>
-          <SwitchFE
-            name="reservoir"
-            label="Reservoir management"
-            control={control}
-          />
-          <SwitchFE
-            name="hardBounds"
-            label="Hard bounds on rules curves"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-          <SwitchFE
-            name="useHeuristic"
-            label="Use heuristic target"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-        </Box>
-        <Box
-          sx={{
-            alignItems: "center",
-          }}
-        >
-          <NumberFE
-            name="reservoirCapacity"
-            label="Reservoir capacity (MWh)"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-          <NumberFE
-            name="interMonthlyBreakdown"
-            label="Inter-monthly breakdown"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-          <NumberFE
-            name="pumpingEfficiency"
-            label="Pumping Efficiency Ratio"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-          <SelectFE
-            name="initializeReservoirDate"
-            options={INITIALIZE_RESERVOIR_DATE_OPTIONS}
-            label="Initialize reservoir level on"
-            control={control}
-            disabled={!reservoirDisabled}
-          />
-        </Box>
+        <SwitchFE
+          name="reservoir"
+          label="Reservoir management"
+          control={control}
+        />
+        <SwitchFE
+          name="hardBounds"
+          label="Hard bounds on rules curves"
+          control={control}
+          disabled={!reservoirDisabled}
+        />
+        <SwitchFE
+          name="useHeuristic"
+          label="Use heuristic target"
+          control={control}
+          disabled={!reservoirDisabled}
+        />
+        <NumberFE
+          name="reservoirCapacity"
+          label="Reservoir capacity (MWh)"
+          control={control}
+          disabled={!reservoirDisabled}
+        />
+        <NumberFE
+          name="interMonthlyBreakdown"
+          label="Inter-monthly breakdown"
+          control={control}
+          disabled={!reservoirDisabled}
+        />
+        <NumberFE
+          name="pumpingEfficiency"
+          label="Pumping Efficiency Ratio"
+          control={control}
+          disabled={!reservoirDisabled}
+        />
+        <SelectFE
+          name="initializeReservoirDate"
+          options={INITIALIZE_RESERVOIR_DATE_OPTIONS}
+          label="Initialize reservoir level on"
+          control={control}
+          disabled={!reservoirDisabled}
+          sx={{ alignSelf: "center" }}
+        />
       </Fieldset>
       <Fieldset legend="Water values">
         <SwitchFE name="useWater" label="Use water values" control={control} />
@@ -119,7 +111,7 @@ function Fields() {
           disabled={!waterValuesDisabled || !leeWayDisabled}
         />
       </Fieldset>
-    </Box>
+    </>
   );
 }
 

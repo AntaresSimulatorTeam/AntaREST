@@ -4,11 +4,11 @@ import os
 import shutil
 import tempfile
 import time
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Optional, Union, cast, Callable, List
+from typing import Callable, List, Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -19,17 +19,17 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
-    Study,
     STUDY_REFERENCE_TEMPLATES,
-    StudyMetadataDTO,
     MatrixIndex,
+    Study,
     StudyDownloadLevelDTO,
+    StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
@@ -208,18 +208,6 @@ def create_new_empty_study(
         zip_output.extractall(path=path_study)
 
 
-def create_permission_from_study(
-    study: Union[Study, StudyMetadataDTO]
-) -> PermissionInfo:
-    return PermissionInfo(
-        owner=study.owner.id if study.owner is not None else None,
-        groups=[g.id for g in study.groups if g.id is not None],
-        public_mode=PublicMode(study.public_mode)
-        if study.public_mode is not None
-        else PublicMode.NONE,
-    )
-
-
 def study_matcher(
     name: Optional[str], workspace: Optional[str], folder: Optional[str]
 ) -> Callable[[StudyMetadataDTO], bool]:
@@ -262,7 +250,7 @@ def assert_permission(
         logger.error("FAIL permission: study not exist")
         raise ValueError("Metadata is None")
 
-    permission_info = create_permission_from_study(study)
+    permission_info = PermissionInfo.from_study(study)
     ok = check_permission(user, permission_info, permission_type)
     if raising and not ok:
         logger.error(

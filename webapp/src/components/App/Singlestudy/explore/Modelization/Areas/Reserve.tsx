@@ -4,6 +4,8 @@ import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import { Root } from "./style";
+import DocLink from "../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../BindingConstraints/BindingConstView/utils";
 
 function Reserve() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -18,6 +20,7 @@ function Reserve() {
 
   return (
     <Root>
+      <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#reserves-dsm`} isAbsolute />
       <MatrixInput
         study={study}
         url={url}

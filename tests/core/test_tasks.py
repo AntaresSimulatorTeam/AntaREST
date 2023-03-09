@@ -1,23 +1,25 @@
 import datetime
+import time
 from pathlib import Path
 from typing import Callable, List
-from unittest.mock import Mock, ANY, call
+from unittest.mock import ANY, Mock, call
 
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config, TaskConfig, RemoteWorkerConfig
-from antarest.core.interfaces.eventbus import EventType, Event, IEventBus
+from antarest.core.config import Config, RemoteWorkerConfig, TaskConfig
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
-    TaskJob,
-    TaskStatus,
-    TaskListFilter,
-    TaskJobLog,
-    TaskResult,
     TaskDTO,
+    TaskJob,
+    TaskJobLog,
+    TaskListFilter,
+    TaskResult,
+    TaskStatus,
     TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
@@ -30,8 +32,10 @@ from tests.conftest import with_db_context
 
 
 def test_service() -> None:
+    # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -39,7 +43,7 @@ def test_service() -> None:
     )
 
     repo_mock = Mock(spec=TaskJobRepository)
-    creation_date = datetime.datetime.utcnow()
+    creation_date = datetime.datetime.now(datetime.timezone.utc)
     task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
     repo_mock.list.return_value = [task]
     repo_mock.get_or_raise.return_value = task
@@ -66,8 +70,8 @@ def test_service() -> None:
     assert tasks[0].status == TaskStatus.FAILED
     assert tasks[0].creation_date_utc == str(creation_date)
 
-    start = datetime.datetime.utcnow()
-    end = datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
+    start = datetime.datetime.now(datetime.timezone.utc)
+    end = start + datetime.timedelta(seconds=1)
     repo_mock.reset_mock()
     repo_mock.get.return_value = TaskJob(
         id="a",
@@ -91,6 +95,7 @@ def test_service() -> None:
         status=TaskStatus.COMPLETED,
     )
 
+    # noinspection PyUnusedLocal
     def action_fail(update_msg: Callable[[str], None]) -> TaskResult:
         raise NotImplementedError()
 
@@ -123,40 +128,41 @@ def test_service() -> None:
         [
             call(
                 TaskJob(
-                    name="failed action",
+                    id=None,
+                    logs=[],
                     owner_id=1,
-                )
-            ),
-            # this is not called with that because the object is mutated, and mock seems to suck..
-            # TaskJob(
-            #     id="a",
-            #     name="failed action",
-            #     owner_id=1,
-            #     status=TaskStatus.RUNNING.value,
-            #     creation_date=now,
-            # ),
-            call(
-                TaskJob(
-                    id="a",
-                    completion_date=ANY,
+                    creation_date=None,
+                    completion_date=None,
                     name="failed action",
-                    owner_id=1,
-                    status=TaskStatus.FAILED.value,
-                    result_status=False,
-                    result_msg="NotImplementedError()",
-                    creation_date=now,
+                    status=None,
+                    result_msg=None,
+                    result_status=None,
                 )
             ),
             call(
                 TaskJob(
                     id="a",
+                    logs=[],
+                    owner_id=1,
+                    creation_date=now,
                     completion_date=ANY,
                     name="failed action",
-                    owner_id=1,
-                    status=TaskStatus.FAILED.value,
+                    status=4,
+                    result_msg=ANY,  # "Task a failed: Unhandled exception [...]"
                     result_status=False,
-                    result_msg="NotImplementedError()",
+                )
+            ),
+            call(
+                TaskJob(
+                    id="a",
+                    logs=[],
+                    owner_id=1,
                     creation_date=now,
+                    completion_date=ANY,
+                    name="failed action",
+                    status=4,
+                    result_msg=ANY,  # "Task a failed: Unhandled exception [...]"
+                    result_status=False,
                 )
             ),
         ]
@@ -270,6 +276,8 @@ class DummyWorker(AbstractWorker):
         self.tmp_path = tmp_path
 
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+        # simulate a "long" task ;-)
+        time.sleep(0.01)
         relative_path = task_info.task_args["file"]
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
@@ -345,8 +353,10 @@ def test_worker_tasks(tmp_path: Path):
 
 
 def test_repository():
+    # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -354,6 +364,7 @@ def test_repository():
     )
 
     with db():
+        # sourcery skip: extract-method
         task_repository = TaskJobRepository()
 
         new_task = TaskJob(name="foo", owner_id=0, type=TaskType.COPY)
@@ -447,8 +458,10 @@ def test_repository():
 
 
 def test_cancel():
+    # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -467,8 +480,13 @@ def test_cancel():
     service.cancel_task(
         "b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
     )
+    # noinspection PyUnresolvedReferences
     service.event_bus.push.assert_called_with(
-        Event(type=EventType.TASK_CANCEL_REQUEST, payload="b")
+        Event(
+            type=EventType.TASK_CANCEL_REQUEST,
+            payload="b",
+            permissions=PermissionInfo(public_mode=PublicMode.NONE),
+        )
     )
 
     creation_date = datetime.datetime.utcnow()

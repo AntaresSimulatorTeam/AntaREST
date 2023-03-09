@@ -120,7 +120,7 @@ export const uploadFile = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
+        (progressEvent.loaded * 100) / (progressEvent.total || 1)
       );
       onProgress(percentCompleted);
     };

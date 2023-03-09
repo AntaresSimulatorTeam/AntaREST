@@ -73,9 +73,9 @@ class WorkspaceConfig:
     def from_dict(data: JSON) -> "WorkspaceConfig":
         return WorkspaceConfig(
             path=Path(data["path"]),
-            groups=data.get("groups", list()),
+            groups=data.get("groups", []),
             filter_in=data.get("filter_in", [".*"]),
-            filter_out=data.get("filter_out", list()),
+            filter_out=data.get("filter_out", []),
         )
 
 
@@ -254,7 +254,7 @@ class LoggingConfig:
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
         logging_config: Dict[str, Any] = data or {}
-        logfile: Optional[str] = logging_config.get("logfile", None)
+        logfile: Optional[str] = logging_config.get("logfile")
         return LoggingConfig(
             logfile=Path(logfile) if logfile is not None else None,
             json=logging_config.get("json", False),
@@ -287,6 +287,7 @@ class EventBusConfig:
     Sub config object dedicated to eventbus module
     """
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def from_dict(data: JSON) -> "EventBusConfig":
         return EventBusConfig()
@@ -298,7 +299,7 @@ class CacheConfig:
     Sub config object dedicated to cache module
     """
 
-    checker_delay: float = 0.2  # in ms
+    checker_delay: float = 0.2  # in seconds
 
     @staticmethod
     def from_dict(data: JSON) -> "CacheConfig":

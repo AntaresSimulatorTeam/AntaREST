@@ -287,6 +287,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     md720 = create_study("720")
     md803 = create_study("800")
     md810 = create_study("810")
+    md850 = create_study("850")
 
     path_study = path_studies / md613.id
     general_data_file = path_study / "settings" / "generaldata.ini"
@@ -380,6 +381,58 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
             flags=re.MULTILINE,
         )
         is None
+    )
+
+    path_study = path_studies / md850.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^price-taking-order = DENS",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^include-hurdle-cost-csr = false",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^check-csr-cost-function = false",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^threshold-initiate-curtailment-sharing-rule = 0.0",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^threshold-display-local-matching-rule-violations = 0.0",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^threshold-csr-variable-bounds-relaxation = 3",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
     )
 
 
