@@ -25,6 +25,7 @@ function HydroMatrix({ type }: Props) {
       <MatrixInput
         title={hydroMatrix.title}
         columnsNames={hydroMatrix.cols}
+        rowNames={hydroMatrix.rows}
         study={study}
         url={hydroMatrix.url.replace("{areaId}", areaId)}
         computStats={hydroMatrix.stats}

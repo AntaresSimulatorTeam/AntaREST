@@ -26,6 +26,7 @@ interface PropTypes {
   toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
   columnsNames?: string[];
+  rowNames?: string[];
   computStats?: MatrixStats;
 }
 
@@ -53,6 +54,7 @@ function EditableMatrix(props: PropTypes) {
     toggleView,
     onUpdate,
     columnsNames,
+    rowNames,
     computStats,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
@@ -171,6 +173,12 @@ function EditableMatrix(props: PropTypes) {
               : _.fill(Array(formatedColumns.length), 100)
           }
           columns={formatedColumns}
+          rowHeaders={rowNames}
+          modifyRowHeaderWidth={(rowNames) => {
+            if (rowNames) {
+              return 150;
+            }
+          }}
           manualColumnResize
         />
       ) : (
