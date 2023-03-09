@@ -4,16 +4,6 @@ Antares Web Changelog
 v2.13.0 (unreleased)
 --------------------
 
-### Bug Fixes
-
-*  **ui-map:** prevent duplicate layers and districts on create/update (#1239) ([eff4ca3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/eff4ca369212e9998f9ccd96a938a6f91f5dbf44))
-*  **ui-maps:** empty page (#1243) ([71f19d3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/71f19d3484bb802f645140523a7b66f321a2aec2))
-*  **api-workers:** prevent scanning of the default workspace (#1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
-*  **ui-study:** remove the create command button (#1251) ([463e7a7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/463e7a789eebd2b28c33bd18e833bbd30dc9268a))
-*  **ui-wording:** correct wording of user messages (#1271) ([7f66c1a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7f66c1aa518bea09c2db52ae87ef36e14cd5b9e0))
-*  **ui-wording:** correct french translations (#1273) ([f4f62f2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f4f62f252d8b5556ba1cb2b6027360b9066327e0))
-
-
 ### Features
 
 *  **ui-common:** add doc link on subsections (#1241) ([1331232](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1331232e418ebfbf3cc1a82725b95cb11cf8b9bc))
@@ -35,6 +25,16 @@ v2.13.0 (unreleased)
 
 * simplify the maintenance mode and service. ([1590f84](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1590f840dbec5ca4fcd1eba2c125de3e4f40ebef))
 * change the `MaintenanceMode` class to implement a conversion from/to `bool`. ([a5a5689](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a5a568984c9562e3eba67ba30c0a076b8f30190e))
+
+
+### Bug Fixes
+
+*  **api-workers:** Prevent scanning of the default workspace (#1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
+*  **ui-study:** remove the create command button (#1251) ([463e7a7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/463e7a789eebd2b28c33bd18e833bbd30dc9268a))
+*  **ui-wording:** correct wording of user messages (#1271) ([7f66c1a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7f66c1aa518bea09c2db52ae87ef36e14cd5b9e0))
+*  **ui-wording:** correct french translations (#1273) ([f4f62f2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f4f62f252d8b5556ba1cb2b6027360b9066327e0))
+*  **api:** correct the way the task completion is notified to the event bus (#1301) ([b9cea1e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9cea1ebd644869a459cbf002661c4a833389cb2))
+*  **storage:** ignore zipped output if an unzipped version exists (#1269) ([032b581](https://github.com/AntaresSimulatorTeam/AntaREST/commit/032b58134a4e2e9da50848d6de438d23a0f00086))
 
 
 ### Build System
@@ -62,6 +62,7 @@ v2.13.0 (unreleased)
 ### Contributors
 
 <a href="https://github.com/hdinia">hdinia</a>,
-<a href="https://github.com/skamril">skamril</a>,
 <a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
-<a href="https://github.com/pl-buiquang">pl-buiquang</a>
+<a href="https://github.com/pl-buiquang">pl-buiquang</a>,
+<a href="https://github.com/skamril">skamril</a>,
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
