@@ -7,6 +7,7 @@ import {
   StudiesState,
   StudyFilters,
 } from "../../redux/ducks/studies";
+import { UIState } from "../../redux/ducks/ui";
 
 export enum StorageKey {
   Version = "version",
@@ -16,6 +17,8 @@ export enum StorageKey {
   StudiesFilters = "studies.filters",
   StudiesSort = "studies.sort",
   StudiesModelTableModeTemplates = "studies.model.tableMode.templates",
+  // UI
+  UIMenuCollapsed = "ui.menuCollapsed",
 }
 
 const APP_NAME = packages.name;
@@ -28,6 +31,7 @@ interface TypeFromKey {
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesModelTableModeTemplates]: Omit<TableTemplate, "id">[];
+  [StorageKey.UIMenuCollapsed]: UIState["menuCollapsed"];
 }
 
 function formalizeKey(key: StorageKey): string {

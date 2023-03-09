@@ -141,7 +141,7 @@ export default function PropertiesForm(props: Props) {
                 <NumberFE
                   name="energyCostSpilled"
                   sx={{ mx: 1 }}
-                  label={t("study.modelization.nodeProperties.splilled")}
+                  label={t("study.modelization.nodeProperties.spilled")}
                   variant="filled"
                   control={control}
                   rules={{

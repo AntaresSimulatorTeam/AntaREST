@@ -19,6 +19,10 @@ function LinkView(props: Props) {
     [study.id, link.area1, link.area2]
   );
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
       <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>

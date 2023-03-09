@@ -18,7 +18,6 @@ from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaUI,
-    LayerInfoDTO,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.model import (
@@ -30,9 +29,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    ConfigPathBuilder,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
@@ -70,7 +67,7 @@ def empty_study(tmpdir: Path) -> FileStudy:
     os.mkdir(study_path)
     with ZipFile(cur_dir / "assets" / "empty_study_810.zip") as zip_output:
         zip_output.extractall(path=study_path)
-    config = ConfigPathBuilder.build(study_path, "1")
+    config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 

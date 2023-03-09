@@ -3,15 +3,29 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine
-
 from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.local_launcher.local_launcher import (
     LocalLauncher,
 )
 from antarest.launcher.model import JobStatus
+from sqlalchemy import create_engine
+
+
+@pytest.mark.unit_test
+def test_local_launcher__launcher_init_exception():
+    with pytest.raises(
+        LauncherInitException,
+        match="Missing parameter 'launcher.local'",
+    ):
+        LocalLauncher(
+            config=Config(launcher=LauncherConfig(local=None)),
+            callbacks=Mock(),
+            event_bus=Mock(),
+            cache=Mock(),
+        )
 
 
 @pytest.mark.unit_test

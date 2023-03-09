@@ -91,7 +91,7 @@ class Simulation(BaseModel):
     error: bool
     playlist: Optional[List[int]]
     archived: bool = False
-    xpansion: bool = False
+    xpansion: str
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}

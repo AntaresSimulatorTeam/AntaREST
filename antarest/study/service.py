@@ -6,46 +6,39 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict, Callable, Any, Tuple
+from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
-
-from fastapi import HTTPException, UploadFile
-from markupsafe import escape
-from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    CommandApplicationError,
+    NotAManagedStudyException,
+    StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
-    UnsupportedOperationOnArchivedStudy,
-    NotAManagedStudyException,
-    CommandApplicationError,
-    StudyDeletionNotAllowed,
     TaskAlreadyRunning,
+    UnsupportedOperationOnArchivedStudy,
+    UnsupportedStudyVersion,
 )
-from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import (
     JSON,
+    SUB_JSON,
+    PermissionInfo,
     PublicMode,
     StudyPermissionType,
-    SUB_JSON,
 )
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import (
-    TaskResult,
-    TaskType,
     TaskListFilter,
+    TaskResult,
     TaskStatus,
+    TaskType,
 )
 from antarest.core.tasks.service import (
     ITaskService,
@@ -60,11 +53,14 @@ from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
 from antarest.matrixstore.utils import parse_tsv_matrix
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsManager,
+)
 from antarest.study.business.area_management import (
+    AreaCreationDTO,
+    AreaInfoDTO,
     AreaManager,
     AreaType,
-    AreaInfoDTO,
-    AreaCreationDTO,
     AreaUI,
 )
 from antarest.study.business.binding_constraint_management import (
@@ -73,18 +69,12 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkManager, LinkInfoDTO
-from antarest.study.business.hydro_management import (
-    HydroManager,
-)
+from antarest.study.business.hydro_management import HydroManager
+from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.business.matrix_management import MatrixManager
-from antarest.study.business.playlist_management import (
-    PlaylistManager,
-)
 from antarest.study.business.optimization_management import OptimizationManager
-from antarest.study.business.advanced_parameters_management import (
-    AdvancedParamsManager,
-)
+from antarest.study.business.playlist_management import PlaylistManager
+from antarest.study.business.renewable_management import RenewableManager
 from antarest.study.business.scenario_builder_management import (
     ScenarioBuilderManager,
 )
@@ -92,35 +82,36 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
 )
+from antarest.study.business.thermal_management import ThermalManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
+    XpansionCandidateDTO,
     XpansionManager,
     XpansionSettingsDTO,
-    XpansionCandidateDTO,
 )
 from antarest.study.model import (
-    Study,
-    StudyContentStatus,
-    StudyFolder,
     DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyMetadataPatchDTO,
-    StudyMetadataDTO,
-    StudyDownloadDTO,
-    StudySimResultDTO,
-    CommentsDto,
-    STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
-    PatchStudy,
-    MatrixIndex,
-    PatchCluster,
-    PatchArea,
+    STUDY_REFERENCE_TEMPLATES,
+    CommentsDto,
     ExportFormat,
+    MatrixIndex,
+    PatchArea,
+    PatchCluster,
+    PatchStudy,
+    RawStudy,
+    Study,
     StudyAdditionalData,
+    StudyContentStatus,
+    StudyDownloadDTO,
     StudyDownloadLevelDTO,
+    StudyFolder,
+    StudyMetadataDTO,
+    StudyMetadataPatchDTO,
+    StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -142,22 +133,22 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import (
     StudyDownloader,
     get_output_variables_information,
 )
-from antarest.study.storage.study_version_upgrader import upgrade_study
+from antarest.study.storage.study_upgrader import (
+    find_next_version,
+    upgrade_study,
+)
 from antarest.study.storage.utils import (
+    assert_permission,
     get_default_workspace_path,
+    get_start_date,
     is_managed,
     remove_from_cache,
-    assert_permission,
-    create_permission_from_study,
-    get_start_date,
     study_matcher,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -180,10 +171,102 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
+from fastapi import HTTPException, UploadFile
+from markupsafe import escape
+from starlette.responses import FileResponse, Response
 
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
+
+class StudyUpgraderTask:
+    """
+    Task to perform a study upgrade.
+    """
+
+    def __init__(
+        self,
+        study_id: str,
+        target_version: str,
+        *,
+        repository: StudyMetadataRepository,
+        storage_service: StudyStorageService,
+        cache_service: ICache,
+        event_bus: IEventBus,
+    ):
+        self._study_id = study_id
+        self._target_version = target_version
+        self.repository = repository
+        self.storage_service = storage_service
+        self.cache_service = cache_service
+        self.event_bus = event_bus
+
+    def _upgrade_study(self) -> None:
+        """Run the task (lock the database)."""
+        study_id: str = self._study_id
+        target_version: str = self._target_version
+        with db():
+            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
+            study_to_upgrade = self.repository.one(study_id)
+            is_variant = isinstance(study_to_upgrade, VariantStudy)
+            if is_managed(study_to_upgrade) and not is_variant:
+                file_study = self.storage_service.get_storage(
+                    study_to_upgrade
+                ).get_raw(study_to_upgrade)
+                file_study.tree.denormalize()
+            try:
+                # sourcery skip: extract-method
+                if is_variant:
+                    self.storage_service.variant_study_service.clear_snapshot(
+                        study_to_upgrade
+                    )
+                else:
+                    study_path = Path(study_to_upgrade.path)
+                    upgrade_study(study_path, target_version)
+                remove_from_cache(self.cache_service, study_to_upgrade.id)
+                study_to_upgrade.version = target_version
+                self.repository.save(study_to_upgrade)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_to_upgrade.to_json_summary(),
+                        permissions=PermissionInfo.from_study(
+                            study_to_upgrade
+                        ),
+                    )
+                )
+            finally:
+                if is_managed(study_to_upgrade) and not is_variant:
+                    file_study = self.storage_service.get_storage(
+                        study_to_upgrade
+                    ).get_raw(study_to_upgrade)
+                    file_study.tree.normalize()
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        """
+        Run the study upgrade task.
+
+        Args:
+            notifier: function used to emit user messages.
+
+        Returns:
+            The result of the task is always `success=True`.
+        """
+        # The call to `_upgrade_study` may raise an exception, which will be
+        # handled in the task service (see: `TaskJobService._run_task`)
+        msg = f"Upgrade study '{self._study_id}' to version {self._target_version}"
+        notifier(msg)
+        self._upgrade_study()
+        msg = (
+            f"Successfully upgraded study '{self._study_id}'"
+            f" to version {self._target_version}"
+        )
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `StudyUpgraderTask` object is callable
+    __call__ = run_task
 
 
 class StudyService:
@@ -224,6 +307,8 @@ class StudyService:
             self.storage_service
         )
         self.hydro_manager = HydroManager(self.storage_service)
+        self.renewable_manager = RenewableManager(self.storage_service)
+        self.thermal_manager = ThermalManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
@@ -595,7 +680,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_metadata
@@ -667,7 +752,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_CREATED,
                 payload=raw.to_json_summary(),
-                permissions=create_permission_from_study(raw),
+                permissions=PermissionInfo.from_study(raw),
             )
         )
 
@@ -783,7 +868,7 @@ class StudyService:
                         Event(
                             type=EventType.STUDY_DELETED,
                             payload=study.to_json_summary(),
-                            permissions=create_permission_from_study(study),
+                            permissions=PermissionInfo.from_study(study),
                         )
                     )
                 elif study.missing < clean_up_missing_studies_threshold:
@@ -851,7 +936,7 @@ class StudyService:
                         Event(
                             type=EventType.STUDY_CREATED,
                             payload=study.to_json_summary(),
-                            permissions=create_permission_from_study(study),
+                            permissions=PermissionInfo.from_study(study),
                         )
                     )
                 except Exception as e:
@@ -904,7 +989,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_CREATED,
                     payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
+                    permissions=PermissionInfo.from_study(study),
                 )
             )
 
@@ -948,7 +1033,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1139,7 +1224,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DELETED,
                 payload=study_info,
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1182,7 +1267,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1413,7 +1498,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_CREATED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1587,7 +1672,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1628,7 +1713,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1664,7 +1749,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1707,7 +1792,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1743,7 +1828,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1777,7 +1862,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         logger.info(
@@ -1830,7 +1915,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_area
@@ -1849,7 +1934,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return new_link
@@ -1871,7 +1956,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
         return updated_area
@@ -1914,7 +1999,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1933,7 +2018,7 @@ class StudyService:
             Event(
                 type=EventType.STUDY_DATA_EDITED,
                 payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+                permissions=PermissionInfo.from_study(study),
             )
         )
 
@@ -1971,7 +2056,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_EDITED,
                     payload=study_to_archive.to_json_summary(),
-                    permissions=create_permission_from_study(study_to_archive),
+                    permissions=PermissionInfo.from_study(study_to_archive),
                 )
             )
             return TaskResult(success=True, message="ok")
@@ -2022,7 +2107,7 @@ class StudyService:
                 Event(
                     type=EventType.STUDY_EDITED,
                     payload=study.to_json_summary(),
-                    permissions=create_permission_from_study(study),
+                    permissions=PermissionInfo.from_study(study),
                 )
             )
             remove_from_cache(cache=self.cache_service, root_id=uuid)
@@ -2129,9 +2214,10 @@ class StudyService:
             logger.error(e)
             return StudyContentStatus.ERROR
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
-        return list(STUDY_REFERENCE_TEMPLATES.keys())
+        return list(STUDY_REFERENCE_TEMPLATES)
 
     def create_xpansion_configuration(
         self,
@@ -2453,61 +2539,19 @@ class StudyService:
             request_params=params,
         )
 
-    def _upgrade_study(self, study_id: str, target_version: int) -> TaskResult:
-        with db():
-            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
-            study_to_upgrade = self.get_study(study_id)
-            is_variant = isinstance(study_to_upgrade, VariantStudy)
-            if is_managed(study_to_upgrade) and not is_variant:
-                file_study = self.storage_service.get_storage(
-                    study_to_upgrade
-                ).get_raw(study_to_upgrade)
-                file_study.tree.denormalize()
-            try:
-                if is_variant:
-                    self.storage_service.variant_study_service.clear_snapshot(
-                        study_to_upgrade
-                    )
-                else:
-                    upgrade_study(study_to_upgrade.path, target_version)
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = str(target_version)
-                self.repository.save(study_to_upgrade)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_to_upgrade.to_json_summary(),
-                        permissions=create_permission_from_study(
-                            study_to_upgrade
-                        ),
-                    )
-                )
-                return TaskResult(
-                    success=True,
-                    message=f"Sucessfuly upgraded study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version}",
-                )
-            except Exception as e:
-                return TaskResult(
-                    success=False,
-                    message=f"Failed to upgrad study {study_to_upgrade.name} ({study_to_upgrade.id}) to {target_version} : {repr(e)}",
-                )
-            finally:
-                if is_managed(study_to_upgrade) and not is_variant:
-                    file_study = self.storage_service.get_storage(
-                        study_to_upgrade
-                    ).get_raw(study_to_upgrade)
-                    file_study.tree.normalize()
-
-    def upgrade_study(self, study_id: str, params: RequestParameters) -> str:
+    def upgrade_study(
+        self,
+        study_id: str,
+        target_version: str,
+        params: RequestParameters,
+    ) -> str:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        list_versions = list(STUDY_REFERENCE_TEMPLATES.keys())
-        target_version = study.version
-        for k, elt in enumerate(list_versions):
-            if elt == study.version and k < len(list_versions) - 1:
-                target_version = int(list_versions[k + 1])
-                break
+
+        target_version = target_version or find_next_version(study.version)
+        if not target_version:
+            raise UnsupportedStudyVersion(study.version)
 
         task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
         study_tasks = self.task_service.list_tasks(
@@ -2521,8 +2565,17 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
+        study_upgrader_task = StudyUpgraderTask(
+            study_id,
+            target_version,
+            repository=self.repository,
+            storage_service=self.storage_service,
+            cache_service=self.cache_service,
+            event_bus=self.event_bus,
+        )
+
         return self.task_service.add_task(
-            lambda _: self._upgrade_study(study_id, target_version),
+            study_upgrader_task,
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,

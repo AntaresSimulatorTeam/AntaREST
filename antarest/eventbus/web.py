@@ -3,19 +3,18 @@ import json
 import logging
 from enum import Enum
 from http import HTTPStatus
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional
 
-from fastapi import FastAPI, Query, HTTPException, Depends
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import Event, IEventBus
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.permissions import check_permission
+from antarest.login.auth import Auth
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus, Event
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
-from antarest.core.permissions import check_permission
-from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +62,7 @@ class ConnectionManager:
         if connection_to_remove is not None:
             self.active_connections.remove(connection_to_remove)
 
-    def process_message(
-        self, message: str, websocket: WebSocket, user: JWTUser
-    ) -> None:
+    def process_message(self, message: str, websocket: WebSocket) -> None:
         connection = self._get_connection(websocket)
         if not connection:
             return
@@ -79,17 +76,16 @@ class ConnectionManager:
                 connection.channel_subscriptions.remove(ws_message.payload)
 
     async def broadcast(
-        self, message: str, permissions: PermissionInfo, channel: Optional[str]
+        self, message: str, permissions: PermissionInfo, channel: str
     ) -> None:
         for connection in self.active_connections:
-            if channel is not None or check_permission(
+            # if is subscribed to chanel and has permission, send message to websocket
+            if (
+                not channel or channel in connection.channel_subscriptions
+            ) and check_permission(
                 connection.user, permissions, StudyPermissionType.READ
             ):
-                if (
-                    channel is None
-                    or channel in connection.channel_subscriptions
-                ):
-                    await connection.websocket.send_text(message)
+                await connection.websocket.send_text(message)
 
 
 def configure_websockets(
@@ -130,9 +126,7 @@ def configure_websockets(
             while True:
                 message = await websocket.receive_text()
                 try:
-                    manager.process_message(
-                        message, websocket, user or DEFAULT_ADMIN_USER
-                    )
+                    manager.process_message(message, websocket)
                 except Exception as e:
                     logger.error(
                         f"Failed to process websocket message {message}",

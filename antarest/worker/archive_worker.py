@@ -41,6 +41,7 @@ class ArchiveWorker(AbstractWorker):
     def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         logger.info(f"Executing task {task_info.json()}")
         try:
+            # sourcery skip: extract-method
             archive_args = ArchiveTaskArgs.parse_obj(task_info.task_args)
             dest = self.translate_path(Path(archive_args.dest))
             src = self.translate_path(Path(archive_args.src))

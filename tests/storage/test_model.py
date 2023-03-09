@@ -38,6 +38,7 @@ def test_file_study_tree_config_dto():
                 by_year=True,
                 error=True,
                 playlist=[0],
+                xpansion="",
             )
         },
         bindings=[BindingConstraintDTO(id="b1", areas=[], clusters=[])],

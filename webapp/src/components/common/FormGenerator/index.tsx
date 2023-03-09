@@ -21,7 +21,7 @@ export type GeneratorFieldType =
   | "switch"
   | "boolean";
 
-export interface IGeneratorField<T> {
+export interface IGeneratorField<T extends FieldValues> {
   type: GeneratorFieldType;
   name: Path<T> & (string | undefined);
   label: string;
@@ -41,32 +41,33 @@ export interface IGeneratorField<T> {
     | undefined;
 }
 
-export interface SelectField<T> extends IGeneratorField<T> {
+export interface SelectField<T extends FieldValues> extends IGeneratorField<T> {
   options: SelectFEProps["options"];
 }
 
-export interface BooleanField<T> extends IGeneratorField<T> {
+export interface BooleanField<T extends FieldValues>
+  extends IGeneratorField<T> {
   falseText: BooleanFEProps["falseText"];
   trueText: BooleanFEProps["trueText"];
 }
 
-export type IGeneratorFieldType<T> =
+export type IGeneratorFieldType<T extends FieldValues> =
   | IGeneratorField<T>
   | SelectField<T>
   | BooleanField<T>;
 
-export interface IFieldsetType<T> {
+export interface IFieldsetType<T extends FieldValues> {
   legend: string | ReactNode;
   fields: Array<IGeneratorFieldType<T>>;
 }
 
-export type IFormGenerator<T> = Array<IFieldsetType<T>>;
+export type IFormGenerator<T extends FieldValues> = Array<IFieldsetType<T>>;
 
-export interface FormGeneratorProps<T> {
+export interface FormGeneratorProps<T extends FieldValues> {
   jsonTemplate: IFormGenerator<T>;
 }
 
-function formateFieldset<T>(fieldset: IFieldsetType<T>) {
+function formateFieldset<T extends FieldValues>(fieldset: IFieldsetType<T>) {
   const { fields, ...otherProps } = fieldset;
   const formatedFields = fields.map((field) => ({ ...field, id: uuidv4() }));
   return { ...otherProps, fields: formatedFields, id: uuidv4() };

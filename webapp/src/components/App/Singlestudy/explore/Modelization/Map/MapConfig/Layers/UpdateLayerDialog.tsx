@@ -77,7 +77,7 @@ function UpdateLayerDialog(props: Props) {
 
   return (
     <FormDialog
-      title="Edit Layers"
+      title={t("study.modelization.map.layers.edit")}
       titleIcon={Edit}
       open={open}
       onCancel={onClose}
@@ -126,7 +126,7 @@ function UpdateLayerDialog(props: Props) {
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >
-            Delete Layer
+            {t("global.delete")}
           </Button>
           {openConfirmationModal && (
             <ConfirmationDialog
@@ -137,7 +137,11 @@ function UpdateLayerDialog(props: Props) {
               alert="warning"
               open
             >
-              <Typography sx={{ p: 3 }}>Delete layer ?</Typography>
+              <Typography sx={{ p: 3 }}>
+                {t("study.modelization.map.layers.delete.confirm", [
+                  layersById[getValues("layerId")].name,
+                ])}
+              </Typography>
             </ConfirmationDialog>
           )}
         </Fieldset>

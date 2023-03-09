@@ -3,6 +3,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
@@ -19,6 +20,7 @@ import UpdateDistrictDialog from "./UpdateDistrictDialog";
 function Districts() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
+  const [t] = useTranslation();
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const districtsById = useAppSelector(getStudyMapDistrictsById);
   const [createDistrictDialogOpen, setCreateDistrictDialogOpen] =
@@ -105,7 +107,7 @@ function Districts() {
           onClick={() => setCreateDistrictDialogOpen(true)}
           sx={{ mr: 1 }}
         >
-          Add District
+          {t("study.modelization.map.districts.add")}
         </Button>
         <Button
           color="primary"
@@ -114,7 +116,7 @@ function Districts() {
           startIcon={<Edit />}
           onClick={() => setUpdateDistrictDialogOpen(true)}
         >
-          Edit Districts
+          {t("study.modelization.map.districts.edit")}
         </Button>
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>

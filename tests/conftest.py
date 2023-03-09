@@ -1,6 +1,6 @@
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
@@ -24,16 +24,17 @@ def project_path() -> Path:
 
 def with_db_context(f):
     @wraps(f)
-    def wrapper(*args, **kwds):
+    def wrapper(*args, **kwargs):
         engine = create_engine("sqlite:///:memory:", echo=True)
         Base.metadata.create_all(engine)
+        # noinspection PyTypeChecker
         DBSessionMiddleware(
             Mock(),
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )
         with db():
-            return f(*args, **kwds)
+            return f(*args, **kwargs)
 
     return wrapper
 
@@ -80,10 +81,12 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_others(a, b)
 
 
-def autoretry_assert(func: Callable[..., bool], timeout: int) -> None:
-    threshold = datetime.utcnow() + timedelta(seconds=timeout)
-    while datetime.utcnow() < threshold:
-        if func():
+def auto_retry_assert(
+    predicate: Callable[..., bool], timeout: int = 2
+) -> None:
+    threshold = datetime.now(timezone.utc) + timedelta(seconds=timeout)
+    while datetime.now(timezone.utc) < threshold:
+        if predicate():
             return
         time.sleep(0.2)
     raise AssertionError()

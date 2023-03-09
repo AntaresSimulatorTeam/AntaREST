@@ -32,6 +32,7 @@ class LogTailManager:
             target=lambda: self._follow(
                 log_path, handler, self._stop_tracking(str(log_path))
             ),
+            name=f"{self.__class__.__name__}-LogsWatcher",
             daemon=True,
         )
         self.tracked_logs[str(log_path)] = thread

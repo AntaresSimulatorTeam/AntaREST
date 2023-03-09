@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Optional, Union, Literal, List, Any, Dict, TypedDict
+from typing import Optional, Union, List, Any, Dict
 
-from pydantic.types import StrictBool
+from pydantic.types import StrictBool, StrictFloat, StrictInt
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -45,6 +45,11 @@ class SimplexOptimizationRange(str, Enum):
     WEEK = "week"
 
 
+class PriceTakingOrder(str, Enum):
+    DENS = "DENS"
+    LOAD = "Load"
+
+
 class OptimizationFormFields(FormFieldsBaseModel):
     binding_constraints: Optional[StrictBool]
     hurdle_costs: Optional[StrictBool]
@@ -71,6 +76,13 @@ class OptimizationFormFields(FormFieldsBaseModel):
         StrictBool
     ]
     ntc_between_physical_areas_out_adequacy_patch: Optional[StrictBool]
+    # version 850
+    price_taking_order: Optional[PriceTakingOrder]
+    include_hurdle_cost_csr: Optional[StrictBool]
+    check_csr_cost_function: Optional[StrictBool]
+    threshold_initiate_curtailment_sharing_rule: Optional[StrictFloat]
+    threshold_display_local_matching_rule_violations: Optional[StrictFloat]
+    threshold_csr_variable_bounds_relaxation: Optional[StrictInt]
 
 
 OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"
@@ -151,6 +163,36 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "default_value": True,
         "start_version": 830,
     },
+    "price_taking_order": {
+        "path": f"{ADEQUACY_PATCH_PATH}/price-taking-order",
+        "default_value": "DENS",
+        "start_version": 850,
+    },
+    "include_hurdle_cost_csr": {
+        "path": f"{ADEQUACY_PATCH_PATH}/include-hurdle-cost-csr",
+        "default_value": False,
+        "start_version": 850,
+    },
+    "check_csr_cost_function": {
+        "path": f"{ADEQUACY_PATCH_PATH}/check-csr-cost-function",
+        "default_value": False,
+        "start_version": 850,
+    },
+    "threshold_initiate_curtailment_sharing_rule": {
+        "path": f"{ADEQUACY_PATCH_PATH}/threshold-initiate-curtailment-sharing-rule",
+        "default_value": 0.0,
+        "start_version": 850,
+    },
+    "threshold_display_local_matching_rule_violations": {
+        "path": f"{ADEQUACY_PATCH_PATH}/threshold-display-local-matching-rule-violations",
+        "default_value": 0.0,
+        "start_version": 850,
+    },
+    "threshold_csr_variable_bounds_relaxation": {
+        "path": f"{ADEQUACY_PATCH_PATH}/threshold-csr-variable-bounds-relaxation",
+        "default_value": 3,
+        "start_version": 850,
+    },
 }
 
 
@@ -205,7 +247,7 @@ class OptimizationManager:
                     )
                 )
 
-        if len(commands) > 0:
+        if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(
                 study, file_study, commands, self.storage_service

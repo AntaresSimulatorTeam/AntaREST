@@ -82,7 +82,7 @@ def test_lifecycle(tmp_path: Path):
                 permissions=PermissionInfo(
                     owner=1, groups=[], public_mode=PublicMode.NONE
                 ),
-                channel=None,
+                channel="",
             )
         )
         filedownload_id = filedownload.id
@@ -94,7 +94,7 @@ def test_lifecycle(tmp_path: Path):
                 permissions=PermissionInfo(
                     owner=1, groups=[], public_mode=PublicMode.NONE
                 ),
-                channel=None,
+                channel="",
             )
         )
 
@@ -106,9 +106,9 @@ def test_lifecycle(tmp_path: Path):
             params=RequestParameters(user=DEFAULT_ADMIN_USER)
         )
         assert len(downloads) == 1
-        filedownload.expiration_date = (
-            datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
-        )
+        filedownload.expiration_date = datetime.datetime.now(
+            datetime.timezone.utc
+        ) - datetime.timedelta(seconds=5)
         ftm.repository.save(filedownload)
         downloads = ftm.list_downloads(
             params=RequestParameters(user=DEFAULT_ADMIN_USER)

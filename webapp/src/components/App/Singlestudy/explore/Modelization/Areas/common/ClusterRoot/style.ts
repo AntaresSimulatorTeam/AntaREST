@@ -6,15 +6,16 @@ export const Root = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
-  padding: theme.spacing(1),
+  padding: theme.spacing(2),
 }));
 
 export const Header = styled(Box)(({ theme }) => ({
   width: "100%",
   height: "60px",
   display: "flex",
-  justifyContent: "flex-end",
+  justifyContent: "space-between",
   alignItems: "center",
+  my: 12,
 }));
 
 export const ListContainer = styled(Box)(({ theme }) => ({

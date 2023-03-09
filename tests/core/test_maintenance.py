@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 import pytest
-from fastapi import HTTPException
 from sqlalchemy import create_engine
 
 from antarest.core.config import Config
@@ -20,6 +19,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 def test_service_without_cache() -> None:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection PyTypeChecker,SpellCheckingInspection
     DBSessionMiddleware(
         Mock(),
         custom_engine=engine,
@@ -78,13 +78,14 @@ def test_service_without_cache() -> None:
 
     # Set maintenance mode
     mode = True
-    data = MaintenanceMode.to_str(mode)
+    maintenance_mode = MaintenanceMode.from_bool(mode)
     service.set_maintenance_status(
         data=mode, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
     )
-    repo_mock.save_maintenance_mode.assert_called_with(data)
+    repo_mock.save_maintenance_mode.assert_called_with(maintenance_mode.value)
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": data}
+        ConfigDataAppKeys.MAINTENANCE_MODE.value,
+        {"content": maintenance_mode.value},
     )
     event_bus.push.assert_called_with(
         Event(

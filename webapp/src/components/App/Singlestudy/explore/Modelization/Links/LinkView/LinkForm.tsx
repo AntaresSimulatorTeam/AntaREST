@@ -18,6 +18,8 @@ import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
 import { useFormContextPlus } from "../../../../../../common/Form";
+import DocLink from "../../../../../../common/DocLink";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
 
 interface Props {
   link: LinkElement;
@@ -65,7 +67,7 @@ function LinkForm(props: Props) {
     `${t(
       "study.modelization.links.matrix.columns.hurdleCostsIndirect"
     )} (${area2}->${area1})`,
-    t("study.modelization.links.matrix.columns.inpedances"),
+    t("study.modelization.links.matrix.columns.impedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
     t("study.modelization.links.matrix.columns.pShiftMin"),
     t("study.modelization.links.matrix.columns.pShiftMax"),
@@ -195,6 +197,11 @@ function LinkForm(props: Props) {
           flexDirection: "column",
         }}
       >
+        <DocLink
+          to={`${ACTIVE_WINDOWS_DOC_PATH}#links`}
+          isAbsolute
+          sx={{ top: "15px" }}
+        />
         <Fieldset legend={t("global.general")}>
           <SwitchFE
             name="hurdleCost"

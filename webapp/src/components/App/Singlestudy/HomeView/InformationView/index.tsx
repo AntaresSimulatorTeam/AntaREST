@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { StudyMetadata, VariantTree } from "../../../../../common/types";
-import CreateVariantModal from "./CreateVariantModal";
+import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 import LauncherDialog from "../../../Studies/LauncherDialog";
@@ -134,7 +134,7 @@ function InformationView(props: Props) {
         </Button>
       </Box>
       {study && tree && openVariantModal && (
-        <CreateVariantModal
+        <CreateVariantDialog
           parentId={study.id}
           open={openVariantModal}
           onClose={() => setOpenVariantModal(false)}

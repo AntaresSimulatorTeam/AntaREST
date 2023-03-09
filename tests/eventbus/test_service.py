@@ -1,13 +1,11 @@
-import asyncio
-import time
-from datetime import datetime, timedelta
-from typing import Callable, List, Awaitable
-from unittest.mock import Mock, MagicMock
+from typing import Awaitable, Callable, List
+from unittest.mock import MagicMock, Mock
 
 from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.main import build_eventbus
-from tests.conftest import autoretry_assert
+from tests.conftest import auto_retry_assert
 
 
 def test_service_factory():
@@ -41,15 +39,33 @@ def test_lifecycle():
     lid2 = event_bus.add_listener(
         append_to_bucket(test_bucket), [EventType.STUDY_CREATED]
     )
-    event_bus.push(Event(type=EventType.STUDY_JOB_STARTED, payload="foo"))
-    event_bus.push(Event(type=EventType.STUDY_CREATED, payload="foo"))
-    autoretry_assert(lambda: len(test_bucket) == 3, 2)
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_JOB_STARTED,
+            payload="foo",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        )
+    )
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_CREATED,
+            payload="foo",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        )
+    )
+    auto_retry_assert(lambda: len(test_bucket) == 3, timeout=2)
 
     event_bus.remove_listener(lid1)
     event_bus.remove_listener(lid2)
     test_bucket.clear()
-    event_bus.push(Event(type=EventType.STUDY_JOB_STARTED, payload="foo"))
-    autoretry_assert(lambda: len(test_bucket) == 0, 2)
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_JOB_STARTED,
+            payload="foo",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        )
+    )
+    auto_retry_assert(lambda: len(test_bucket) == 0, timeout=2)
 
     queue_name = "some work job"
     event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
@@ -57,6 +73,11 @@ def test_lifecycle():
         lambda event: test_bucket.append(event), queue_name
     )
     event_bus.queue(
-        Event(type=EventType.WORKER_TASK, payload="worker task"), queue_name
+        Event(
+            type=EventType.WORKER_TASK,
+            payload="worker task",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        ),
+        queue_name,
     )
-    autoretry_assert(lambda: len(test_bucket) == 1, 2)
+    auto_retry_assert(lambda: len(test_bucket) == 1, timeout=2)

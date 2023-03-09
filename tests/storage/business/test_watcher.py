@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
@@ -25,6 +26,11 @@ def build_config(root: Path) -> Config:
                 "diese": WorkspaceConfig(
                     path=root / "diese",
                     groups=["tata"],
+                    filter_out=["to_skip.*"],
+                ),
+                "test": WorkspaceConfig(
+                    path=root / "test",
+                    groups=["toto"],
                     filter_out=["to_skip.*"],
                 ),
             }
@@ -105,7 +111,7 @@ def test_partial_scan(tmp_path: Path):
 
     clean_files()
 
-    default = tmp_path / "default"
+    default = tmp_path / "test"
     default.mkdir()
     a = default / "studyA"
     a.mkdir()
@@ -122,11 +128,16 @@ def test_partial_scan(tmp_path: Path):
         build_config(tmp_path), service, task_service=SimpleSyncTaskService()
     )
 
-    watcher.scan(workspace_name="default", workspace_directory_path=default)
+    with pytest.raises(CannotScanInternalWorkspace):
+        watcher.scan(
+            workspace_name="default", workspace_directory_path=default
+        )
+
+    watcher.scan(workspace_name="test", workspace_directory_path=default)
 
     service.sync_studies_on_disk.assert_called_once_with(
         [
-            StudyFolder(a, "default", [Group(id="toto", name="toto")]),
+            StudyFolder(a, "test", [Group(id="toto", name="toto")]),
         ],
         default,
     )

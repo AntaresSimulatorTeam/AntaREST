@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Callable, cast, IO
+from typing import IO, Callable, Dict, Optional, Tuple, cast
 from uuid import UUID
 
 from antarest.core.config import Config
@@ -15,8 +15,8 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
-    LauncherInitException,
     LauncherCallbacks,
+    LauncherInitException,
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
@@ -37,6 +37,8 @@ class LocalLauncher(AbstractLauncher):
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
+        if self.config.launcher.local is None:
+            raise LauncherInitException("Missing parameter 'launcher.local'")
         self.tmpdir = config.storage.tmp_dir
         self.job_id_to_study_id: Dict[  # type: ignore
             str, Tuple[str, Path, subprocess.Popen]
@@ -44,19 +46,19 @@ class LocalLauncher(AbstractLauncher):
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
-        if self.config.launcher.local is None:
-            raise LauncherInitException()
-
-        if version in self.config.launcher.local.binaries:
-            antares_solver_path = self.config.launcher.local.binaries[version]
+        local = self.config.launcher.local
+        if local is None:
+            raise LauncherInitException("Missing parameter 'launcher.local'")
+        elif version in local.binaries:
+            antares_solver_path = local.binaries[version]
         else:
+            # sourcery skip: extract-method, max-min-default
+            # fixme: `version` must remain a string, consider using a `Version` class
             version_int = int(version)
-            keys = list(map(int, self.config.launcher.local.binaries.keys()))
+            keys = list(map(int, local.binaries.keys()))
             keys_sup = [k for k in keys if k > version_int]
             best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = self.config.launcher.local.binaries[
-                str(best_existing_version)
-            ]
+            antares_solver_path = local.binaries[str(best_existing_version)]
             logger.warning(
                 f"Version {version} is not available. Version {best_existing_version} has been selected instead"
             )
@@ -70,9 +72,6 @@ class LocalLauncher(AbstractLauncher):
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
-        if self.config.launcher.local is None:
-            raise LauncherInitException()
-
         antares_solver_path = self._select_best_binary(version)
 
         job = threading.Thread(
@@ -84,6 +83,7 @@ class LocalLauncher(AbstractLauncher):
                 job_id,
                 launcher_parameters,
             ),
+            name=f"{self.__class__.__name__}-JobRunner",
         )
         job.start()
 
@@ -144,23 +144,21 @@ class LocalLauncher(AbstractLauncher):
                     stop_reading_output,
                     None,
                 ),
+                name=f"{self.__class__.__name__}-LogsWatcher",
                 daemon=True,
             )
             thread.start()
 
-            while True:
-                if process.poll() is not None:
-                    break
+            while process.poll() is None:
                 time.sleep(1)
 
-            if launcher_parameters is not None:
-                if (
-                    launcher_parameters.post_processing
-                    or launcher_parameters.adequacy_patch is not None
-                ):
-                    subprocess.run(
-                        ["Rscript", "post-processing.R"], cwd=export_path
-                    )
+            if launcher_parameters is not None and (
+                launcher_parameters.post_processing
+                or launcher_parameters.adequacy_patch is not None
+            ):
+                subprocess.run(
+                    ["Rscript", "post-processing.R"], cwd=export_path
+                )
 
             output_id: Optional[str] = None
             try:

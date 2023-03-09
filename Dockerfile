@@ -13,10 +13,15 @@ COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
-COPY ./antares-launcher /antares-launcher
-RUN ln -s /antares-launcher/antareslauncher /antareslauncher
-RUN mkdir /conf/antares-launcher
-RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.txt
+# > IMPORTANT: The `antares-launcher` project (source files) is no longer needed,
+# > because the `Antares-Launcher` Python library is now declared as a dependency
+# > in the `requirements.txt` file.
+# > In other words, we can dispense with the creation of the symbolic link.
+
+# COPY ./antares-launcher /antares-launcher
+# RUN ln -s /antares-launcher/antareslauncher /antareslauncher
+# RUN mkdir /conf/antares-launcher
+# RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.txt
 
 RUN ./scripts/install-debug.sh
 

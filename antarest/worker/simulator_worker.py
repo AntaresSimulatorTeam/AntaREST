@@ -118,13 +118,12 @@ class SimulatorWorker(AbstractWorker):
                     stop_reading,
                     None,
                 ),
+                name=f"{self.__class__.__name__}-TS-Generator",
                 daemon=True,
             )
             thread.start()
 
-            while True:
-                if process.poll() is not None:
-                    break
+            while process.poll() is None:
                 time.sleep(1)
 
             result.success = process.returncode == 0

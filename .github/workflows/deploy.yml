@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-20.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -46,18 +46,13 @@ jobs:
       - name: Install Windows dependencies
         if: matrix.os == 'windows-latest'
         run: pip install -r requirements-windows.txt
-      - name: Fix symlink for windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          rm antareslauncher
-          ln -s antares-launcher\antareslauncher antareslauncher
       - name: Generate Windows binary
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller AntaresWebWin.spec
       - name: Generate linux binary
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller AntaresWebLinux.spec
@@ -67,7 +62,7 @@ jobs:
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
       - name: Generate Linux worker binary
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources

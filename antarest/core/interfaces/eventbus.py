@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Optional, List, Awaitable
-
-from pydantic import BaseModel
+from typing import Any, Awaitable, Callable, List, Optional
 
 from antarest.core.model import PermissionInfo
+from pydantic import BaseModel
 
 
 class EventType(str, Enum):
@@ -49,8 +48,8 @@ class EventChannelDirectory:
 class Event(BaseModel):
     type: EventType
     payload: Any
-    permissions: PermissionInfo = PermissionInfo()
-    channel: Optional[str] = None
+    permissions: PermissionInfo
+    channel: str = ""
 
 
 class IEventBus(ABC):
@@ -79,13 +78,22 @@ class IEventBus(ABC):
         type_filter: Optional[List[EventType]] = None,
     ) -> str:
         """
-        Add an event listener listener
-        @param listener listener callback
-        @param type_filter list of event types to listen to (or None to catch all)
+        Add a new event listener in the event bus.
 
-        Beware of the fact that in gunicorn, listeners will be called on the same event as many as there is workers
+        The listener can listen to several types of events, depending on the filter
+        list. If not specified, the listener will listen to all event types.
+
+        Note:
+            Be aware that in `gunicorn`, the listeners will be called on the same
+            event as many times as there are workers.
+
+        Args:
+            listener: callback of the listener
+            type_filter: list of event types to listen to (or `None` to catch everything).
+
+        Returns:
+            Listener registration ID (usually a UUID).
         """
-        pass
 
     @abstractmethod
     def remove_listener(self, listener_id: str) -> None:

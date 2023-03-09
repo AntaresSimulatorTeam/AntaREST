@@ -6,7 +6,6 @@ from typing import List, Optional, cast
 from redis.client import Redis
 
 from antarest.core.interfaces.eventbus import Event
-from antarest.core.model import PermissionInfo
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)

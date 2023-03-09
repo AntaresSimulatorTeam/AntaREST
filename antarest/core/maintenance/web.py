@@ -1,11 +1,10 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.requests import RequestParameters
 from antarest.login.auth import Auth

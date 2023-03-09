@@ -2,9 +2,10 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import DocLink from "../../../../../../../common/DocLink";
 import Form from "../../../../../../../common/Form";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { Root } from "../style";
+import { ACTIVE_WINDOWS_DOC_PATH } from "../../../BindingConstraints/BindingConstView/utils";
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,
@@ -31,7 +32,8 @@ function ManagementOptions() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
+    <>
+      <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#hydro`} isAbsolute />
       <Form
         key={studyId + areaId}
         config={{
@@ -43,7 +45,7 @@ function ManagementOptions() {
       >
         <Fields />
       </Form>
-    </Root>
+    </>
   );
 }
 
