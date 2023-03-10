@@ -30,8 +30,8 @@ class InputSeriesMatrix(MatrixNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        nb_columns: Optional[int] = None,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
+        nb_columns: Optional[int] = None,
         default_empty: Optional[List[List[float]]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
