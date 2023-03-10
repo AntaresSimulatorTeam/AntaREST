@@ -28,25 +28,29 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.ar
 )
 
 
-AFTER_650 = {
+BEFORE_650 = {
     "mod": {
-        "freq": MatrixFrequency.DAILY,
-        "default_empty": default_scenario_daily,
+        "default_empty": default_scenario_monthly,
+        "freq": MatrixFrequency.MONTHLY,
+        "nb_columns": None,
     },
     "ror": {
-        "freq": MatrixFrequency.HOURLY,
         "default_empty": default_scenario_hourly,
+        "freq": MatrixFrequency.HOURLY,
+        "nb_columns": None,
     },
 }
 
-BEFORE_650 = {
+AFTER_650 = {
     "mod": {
-        "freq": MatrixFrequency.MONTHLY,
-        "default_empty": default_scenario_monthly,
+        "default_empty": default_scenario_daily,
+        "freq": MatrixFrequency.DAILY,
+        "nb_columns": None,
     },
     "ror": {
-        "freq": MatrixFrequency.HOURLY,
         "default_empty": default_scenario_hourly,
+        "freq": MatrixFrequency.HOURLY,
+        "nb_columns": None,
     },
 }
 
@@ -59,7 +63,7 @@ class TestInputHydroSeriesArea:
             pytest.param("650", AFTER_650, id="after-650"),
         ],
     )
-    def test_build_input_hydro_common_capacity(
+    def test_build_input_hydro_series_area(
         self,
         version: str,
         expected: dict,
@@ -87,8 +91,9 @@ class TestInputHydroSeriesArea:
         value: InputSeriesMatrix
         actual_obj = {
             key: {
-                "freq": value.freq,
                 "default_empty": value.default_empty,
+                "freq": value.freq,
+                "nb_columns": value.nb_columns,
             }
             for key, value in actual.items()
         }
