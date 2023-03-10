@@ -1,5 +1,3 @@
-from typing import cast
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -31,7 +29,7 @@ class OutputSimulationSet(FolderNode):
         self.mc_all = mc_all
 
     def build(self) -> TREE:
-        children: TREE = dict()
+        children: TREE = {}
 
         # filters = self.config.get_filters_synthesis(self.set)
         # todo get the config related to this output (now this may fail if input has changed since the launch)
