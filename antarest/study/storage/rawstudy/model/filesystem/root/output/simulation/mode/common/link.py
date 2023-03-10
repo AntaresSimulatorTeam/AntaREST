@@ -1,5 +1,3 @@
-from typing import cast
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -40,17 +38,17 @@ class OutputSimulationLinkItem(FolderNode):
 
         freq: MatrixFrequency
         for freq in MatrixFrequency:
-            children[f"values-{freq.value}"] = LinkOutputSeriesMatrix(
+            children[f"values-{freq}"] = LinkOutputSeriesMatrix(
                 self.context,
-                self.config.next_file(f"values-{freq.value}.txt"),
+                self.config.next_file(f"values-{freq}.txt"),
                 freq,
                 self.area,
                 self.link,
             )
             if self.mc_all:
-                children[f"id-{freq.value}"] = LinkOutputSeriesMatrix(
+                children[f"id-{freq}"] = LinkOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"id-{freq.value}.txt"),
+                    self.config.next_file(f"id-{freq}.txt"),
                     freq,
                     self.area,
                     self.link,
