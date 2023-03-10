@@ -1,7 +1,4 @@
-from typing import cast
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
@@ -32,7 +29,7 @@ class OutputSimulationAreaItem(FolderNode):
         self.mc_all = mc_all
 
     def build(self) -> TREE:
-        children: TREE = dict()
+        children: TREE = {}
 
         # filters = self.config.get_filters_synthesis(self.area)
         # todo get the config related to this output (now this may fail if input has changed since the launch)
@@ -40,16 +37,16 @@ class OutputSimulationAreaItem(FolderNode):
         freq: MatrixFrequency
         for freq in MatrixFrequency:
             if self.mc_all:
-                children[f"id-{freq.value}"] = AreaOutputSeriesMatrix(
+                children[f"id-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"id-{freq.value}.txt"),
+                    self.config.next_file(f"id-{freq}.txt"),
                     freq,
                     self.area,
                 )
 
-            children[f"values-{freq.value}"] = AreaOutputSeriesMatrix(
+            children[f"values-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
-                self.config.next_file(f"values-{freq.value}.txt"),
+                self.config.next_file(f"values-{freq}.txt"),
                 freq,
                 self.area,
             )
@@ -59,21 +56,22 @@ class OutputSimulationAreaItem(FolderNode):
             has_thermal_clusters = True
 
             if has_thermal_clusters:
-                children[f"details-{freq.value}"] = AreaOutputSeriesMatrix(
+                children[f"details-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"details-{freq.value}.txt"),
+                    self.config.next_file(f"details-{freq}.txt"),
                     freq,
                     self.area,
                 )
 
-            # has_enr_clusters = self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value and len(self.config.get_renewable_names(self.area, only_enabled=True)) > 0
+            # has_enr_clusters = self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value and
+            # len(self.config.get_renewable_names(self.area, only_enabled=True)) > 0
             # todo get the config related to this output (now this may fail if input has changed since the launch)
             has_enr_clusters = True
 
             if has_enr_clusters:
-                children[f"details-res-{freq.value}"] = AreaOutputSeriesMatrix(
+                children[f"details-res-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"details-res-{freq.value}.txt"),
+                    self.config.next_file(f"details-res-{freq}.txt"),
                     freq,
                     self.area,
                 )
