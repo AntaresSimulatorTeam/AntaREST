@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, cast, Union, Any
+from typing import Any, List, Optional, Union, cast
 
 import pandas as pd  # type: ignore
 from pandas import DataFrame
@@ -17,14 +17,17 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    IDateMatrixSerializer,
     FactoryDateSerializer,
+    IDateMatrixSerializer,
     rename_unnamed,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
+    AreaHeadWriter,
     HeadWriter,
     LinkHeadWriter,
-    AreaHeadWriter,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,9 +45,9 @@ class OutputSeriesMatrix(
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
+        freq: MatrixFrequency,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
-        freq: str,
     ):
         super().__init__(context=context, config=config)
         self.date_serializer = date_serializer
@@ -152,12 +155,12 @@ class OutputSeriesMatrix(
                 return b""
 
             if not file_path.exists():
-                raise KeyError
+                raise FileNotFoundError(file_path)
             return self.parse(file_path, tmp_dir)
-        except KeyError:
+        except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file {self.config.path.name} not found in study {self.config.study_id}"
-            )
+            ) from e
 
     def dump(
         self, data: Union[bytes, JSON], url: Optional[List[str]] = None
@@ -180,16 +183,16 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
         src: str,
         dest: str,
     ):
         super(LinkOutputSeriesMatrix, self).__init__(
             context=context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, src),
             head_writer=LinkHeadWriter(src, dest, freq),
-            freq=freq,
         )
 
 
@@ -198,15 +201,15 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
         area: str,
     ):
         super(AreaOutputSeriesMatrix, self).__init__(
             context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, area),
             head_writer=AreaHeadWriter(area, config.path.name[:2], freq),
-            freq=freq,
         )
 
 
@@ -215,12 +218,12 @@ class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
     ):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
             context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, "system"),
             head_writer=AreaHeadWriter("system", config.path.name[:2], freq),
-            freq=freq,
         )
