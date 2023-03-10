@@ -83,19 +83,6 @@ class InputSeriesMatrix(MatrixNode):
             default = self._format_default_matrix()
             return pd.DataFrame(default) if return_dataframe else default
 
-    def _dump_json(self, data: JSON) -> None:
-        df = pd.DataFrame(**data)
-        if not df.empty:
-            df.to_csv(
-                self.config.path,
-                sep="\t",
-                header=False,
-                index=False,
-                float_format="%.6f",
-            )
-        else:
-            self.config.path.write_bytes(b"")
-
     def check_errors(
         self,
         data: JSON,
