@@ -9,9 +9,24 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     AreaHeadWriter,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     OutputSeriesMatrix,
 )
+
+MATRIX_DAILY_DATA = """\
+DE	area	va	hourly
+\tVARIABLES\tBEGIN\tEND
+\t2\t1\t2
+
+DE\thourly\t\t\t\t01_solar\t02_wind_on
+\t\t\t\t\tMWh\tMWh
+\tindex\tday\tmonth\thourly\tEXP\tEXP
+\t1\t1\tJAN\t00:00\t27000\t600
+\t2\t1\tJAN\t01:00\t48000\t34400
+"""
 
 
 def test_get(tmp_path: Path):
@@ -45,9 +60,9 @@ def test_get(tmp_path: Path):
     node = OutputSeriesMatrix(
         context=Mock(),
         config=config,
+        freq=MatrixFrequency.DAILY,
         date_serializer=serializer,
         head_writer=AreaHeadWriter(area="", data_type="", freq=""),
-        freq="",
     )
     assert node.load() == matrix.to_dict(orient="split")
 
@@ -72,9 +87,9 @@ def test_save(tmp_path: Path):
     node = OutputSeriesMatrix(
         context=Mock(),
         config=config,
+        freq=MatrixFrequency.DAILY,
         date_serializer=serializer,
         head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
-        freq="",
     )
 
     matrix = pd.DataFrame(
@@ -86,17 +101,5 @@ def test_save(tmp_path: Path):
     )
 
     node.dump(matrix.to_dict(orient="split"))
-    print(file.read_text())
-    assert (
-        file.read_text()
-        == """DE	area	va	hourly
-	VARIABLES	BEGIN	END
-	2	1	2
-
-DE	hourly				01_solar	02_wind_on
-					MWh	MWh
-	index	day	month	hourly	EXP	EXP
-	1	1	JAN	00:00	27000	600
-	2	1	JAN	01:00	48000	34400
-"""
-    )
+    actual = file.read_text()
+    assert actual == MATRIX_DAILY_DATA

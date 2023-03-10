@@ -45,9 +45,9 @@ class OutputSeriesMatrix(
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
+        freq: MatrixFrequency,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
-        freq: MatrixFrequency,
     ):
         super().__init__(context=context, config=config)
         self.date_serializer = date_serializer
@@ -155,12 +155,12 @@ class OutputSeriesMatrix(
                 return b""
 
             if not file_path.exists():
-                raise KeyError
+                raise FileNotFoundError(file_path)
             return self.parse(file_path, tmp_dir)
-        except KeyError:
+        except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file {self.config.path.name} not found in study {self.config.study_id}"
-            )
+            ) from e
 
     def dump(
         self, data: Union[bytes, JSON], url: Optional[List[str]] = None
@@ -190,9 +190,9 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
         super(LinkOutputSeriesMatrix, self).__init__(
             context=context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, src),
             head_writer=LinkHeadWriter(src, dest, freq),
-            freq=freq,
         )
 
 
@@ -207,9 +207,9 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
         super(AreaOutputSeriesMatrix, self).__init__(
             context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, area),
             head_writer=AreaHeadWriter(area, config.path.name[:2], freq),
-            freq=freq,
         )
 
 
@@ -223,7 +223,7 @@ class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
             context,
             config=config,
+            freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, "system"),
             head_writer=AreaHeadWriter("system", config.path.name[:2], freq),
-            freq=freq,
         )
