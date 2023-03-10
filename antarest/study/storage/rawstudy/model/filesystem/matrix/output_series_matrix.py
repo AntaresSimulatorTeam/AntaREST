@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, cast, Union, Any
+from typing import Any, List, Optional, Union, cast
 
 import pandas as pd  # type: ignore
 from pandas import DataFrame
@@ -16,18 +16,18 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    MatrixFrequency,
-)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    IDateMatrixSerializer,
     FactoryDateSerializer,
+    IDateMatrixSerializer,
     rename_unnamed,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
+    AreaHeadWriter,
     HeadWriter,
     LinkHeadWriter,
-    AreaHeadWriter,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
 )
 
 logger = logging.getLogger(__name__)

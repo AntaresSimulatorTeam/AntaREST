@@ -4,12 +4,12 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixFrequency,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    LinkOutputSeriesMatrix,
     BindingConstraintOutputSeriesMatrix,
+    LinkOutputSeriesMatrix,
 )
 
 

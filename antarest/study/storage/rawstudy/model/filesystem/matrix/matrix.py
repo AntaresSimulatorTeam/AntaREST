@@ -1,7 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union, Any
+from typing import Any, List, Optional, Union
 
 import pandas as pd  # type: ignore
 
@@ -15,14 +16,22 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
     DenormalizationException,
 )
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
-    LazyNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    MatrixFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
+
+
+class MatrixFrequency(str, Enum):
+    """
+    An enumeration of matrix frequencies.
+
+    Each frequency corresponds to a specific time interval for a matrix's data.
+    """
+    ANNUAL = "annual"
+    MONTHLY = "monthly"
+    WEEKLY = "weekly"
+    DAILY = "daily"
+    HOURLY = "hourly"
 
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
@@ -109,12 +118,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
 
         Args:
             data: new data to save
-            url: data path to change
-
-        Returns:
-
         """
-
         raise NotImplementedError()
 
     def dump(

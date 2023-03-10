@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List
+from typing import List, Optional
 from unittest.mock import Mock
 
 from antarest.core.model import JSON
@@ -11,11 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    MatrixFrequency,
-)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
+    MatrixFrequency,
 )
 
 MOCK_MATRIX_JSON = {
@@ -33,7 +31,9 @@ class MockMatrixNode(MatrixNode):
         self, context: ContextServer, config: FileStudyTreeConfig
     ) -> None:
         super().__init__(
-            config=config, context=context, freq=MatrixFrequency.ANNUAL
+            config=config,
+            context=context,
+            freq=MatrixFrequency.ANNUAL,
         )
 
     def parse(
