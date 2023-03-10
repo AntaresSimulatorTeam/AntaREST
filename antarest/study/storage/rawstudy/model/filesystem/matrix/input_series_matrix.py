@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Any, Union, cast, Dict
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -14,6 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
     MatrixNode,
 )
 
@@ -29,8 +30,8 @@ class InputSeriesMatrix(MatrixNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
+        freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        freq: str = "hourly",
         default_empty: Optional[List[List[float]]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
@@ -45,6 +46,7 @@ class InputSeriesMatrix(MatrixNode):
     ) -> Union[JSON, pd.DataFrame]:
         file_path = file_path or self.config.path
         try:
+            # sourcery skip: extract-method
             stopwatch = StopWatch()
             if self.get_link_path().exists():
                 link = self.get_link_path().read_text()
@@ -79,22 +81,7 @@ class InputSeriesMatrix(MatrixNode):
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
             default = self._format_default_matrix()
-            if return_dataframe:
-                return pd.DataFrame(default)
-            return default
-
-    def _dump_json(self, data: JSON) -> None:
-        df = pd.DataFrame(**data)
-        if not df.empty:
-            df.to_csv(
-                self.config.path,
-                sep="\t",
-                header=False,
-                index=False,
-                float_format="%.6f",
-            )
-        else:
-            self.config.path.write_bytes(b"")
+            return pd.DataFrame(default) if return_dataframe else default
 
     def check_errors(
         self,
@@ -123,8 +110,8 @@ class InputSeriesMatrix(MatrixNode):
                 if column_count > 0:
                     logger.info("Using preset default matrix")
                     return {
-                        "index": list(range(0, index_count)),
-                        "columns": list(range(0, column_count)),
+                        "index": list(range(index_count)),
+                        "columns": list(range(column_count)),
                         "data": self.default_empty,
                     }
         return {}
