@@ -1,5 +1,7 @@
+import contextlib
 import os
-from datetime import datetime, timedelta
+import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Union
 from unittest.mock import ANY, Mock, call, patch, seal
@@ -11,12 +13,14 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
-from antarest.core.model import JSON, SUB_JSON
+from antarest.core.model import JSON, SUB_JSON, PermissionInfo
 from antarest.core.permissions import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
@@ -43,6 +47,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import (
     MAX_MISSING_STUDY_TIMEOUT,
     StudyService,
+    StudyUpgraderTask,
     UserHasNotPermissionError,
 )
 from antarest.study.storage.patch_service import PatchService
@@ -1681,68 +1686,259 @@ def test_task_upgrade_study(tmp_path: Path):
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
-def test_upgrade_study(upgrade_study_mock: Mock, tmp_path: Path):
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-
-    raw_study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id="my_study",
-        name="my_study",
-        path=tmp_path,
-        version="720",
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-    )
-    raw_study_mock.name = "my_study"
-    service.repository.get.return_value = raw_study_mock
-
-    study_id = "my_study"
-
+@pytest.mark.parametrize(
+    "workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME]
+)
+def test_upgrade_study__raw_study__nominal(
+    upgrade_study_mock: Mock,
+    tmp_path: Path,
+    workspace: str,
+):
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
     target_version = "800"
-    actual = service._upgrade_study(study_id, target_version)
 
-    upgrade_study_mock.assert_called_with(tmp_path, target_version)
-    assert actual.success
-    assert raw_study_mock.name in actual.message, f"{actual.message=}"
-    assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
-
-    raw_managed_study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id="my_study",
-        name="my_study",
-        path=tmp_path,
+    # Prepare a RAW study
+    # noinspection PyArgumentList
+    raw_study = RawStudy(
+        id=study_id,
+        name=study_name,
+        workspace=workspace,
+        path=str(tmp_path),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         version="720",
+        additional_data=StudyAdditionalData(),
+        archived=False,
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        workspace=DEFAULT_WORKSPACE_NAME,
     )
-    raw_managed_study_mock.name = "my_study"
-    service.repository.get.return_value = raw_managed_study_mock
-    service.storage_service.raw_study_service.reset_mock()
-    file_study = Mock()
-    service.storage_service.raw_study_service.get_raw.return_value = file_study
-    file_study.tree = Mock()
 
-    study_id = "my_study"
+    # Make sure the session is closed to avoid reusing DB objects
+    with contextlib.closing(db.session):
+        db.session.add(raw_study)
+        db.session.commit()
 
-    target_version = "810"
-    actual = service._upgrade_study(study_id, target_version)
+    # The `ICache` is used to invalidate the cache of the study with `invalidate_all`
+    cache_service = Mock()
 
+    # The `StudyMetadataRepository` is used to store the study in database.
+    repository = StudyMetadataRepository(cache_service)
+
+    # The `StudyStorageService` is used to retrieve:
+    # - the `RawStudyService` of a RAW study, or
+    # - the `VariantStudyService` of a variant study.
+    # It is used to `denormalize`/`normalize` the study.
+    # For a variant study, the  `clear_snapshot` is also called
+    storage_service = Mock()
+
+    # The `IEventBus` service is used to send event notifications.
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event_bus = Mock()
+
+    # Prepare the task for an upgrade
+    task = StudyUpgraderTask(
+        study_id,
+        target_version,
+        repository=repository,
+        storage_service=storage_service,
+        cache_service=cache_service,
+        event_bus=event_bus,
+    )
+
+    # The task is called with a `TaskUpdateNotifier` a parameter.
+    # Some messages could be emitted using the notifier (not a requirement).
+    notifier = Mock()
+    actual = task(notifier)
+
+    # The `upgrade_study()` function must be called with the right parameters
     upgrade_study_mock.assert_called_with(tmp_path, target_version)
-    file_study.tree.denormalize.assert_called_once()
-    file_study.tree.normalize.assert_called_once()
 
+    # The study must be updated in the database
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    assert actual_study is not None, "Not in database"
+    assert actual_study.version == target_version
+
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event = Event(
+        type=EventType.STUDY_EDITED,
+        payload={"id": study_id, "name": study_name},
+        permissions=PermissionInfo(
+            owner=None,
+            groups=[],
+            public_mode=PublicMode.NONE,
+        ),
+    )
+    event_bus.push.assert_called_once_with(event)
+
+    # The function must return a successful result
     assert actual.success
-    assert raw_study_mock.name in actual.message, f"{actual.message=}"
     assert study_id in actual.message, f"{actual.message=}"
     assert target_version in actual.message, f"{actual.message=}"
+
+
+@with_db_context
+@patch("antarest.study.service.upgrade_study")
+def test_upgrade_study__variant_study__nominal(
+    upgrade_study_mock: Mock,
+    tmp_path: Path,
+):
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
+    target_version = "800"
+
+    # Prepare a RAW study
+    # noinspection PyArgumentList
+    variant_study = VariantStudy(
+        id=study_id,
+        name=study_name,
+        path=str(tmp_path),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        version="720",
+        additional_data=StudyAdditionalData(),
+        archived=False,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    # Make sure the session is closed to avoid reusing DB objects
+    with contextlib.closing(db.session):
+        db.session.add(variant_study)
+        db.session.commit()
+
+    # The `ICache` is used to invalidate the cache of the study with `invalidate_all`
+    cache_service = Mock()
+
+    # The `StudyMetadataRepository` is used to store the study in database.
+    repository = StudyMetadataRepository(cache_service)
+
+    # The `StudyStorageService` is used to retrieve:
+    # - the `RawStudyService` of a RAW study, or
+    # - the `VariantStudyService` of a variant study.
+    # It is used to `denormalize`/`normalize` the study.
+    # For a variant study, the  `clear_snapshot` is also called
+    storage_service = Mock()
+
+    # The `IEventBus` service is used to send event notifications.
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event_bus = Mock()
+
+    # Prepare the task for an upgrade
+    task = StudyUpgraderTask(
+        study_id,
+        target_version,
+        repository=repository,
+        storage_service=storage_service,
+        cache_service=cache_service,
+        event_bus=event_bus,
+    )
+
+    # The task is called with a `TaskUpdateNotifier` a parameter.
+    # Some messages could be emitted using the notifier (not a requirement).
+    notifier = Mock()
+    actual = task(notifier)
+
+    # The `upgrade_study()` function is not called for a variant study.
+    upgrade_study_mock.assert_not_called()
+
+    # The study must be updated in the database
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    assert actual_study is not None, "Not in database"
+    assert actual_study.version == target_version
+
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event = Event(
+        type=EventType.STUDY_EDITED,
+        payload={"id": study_id, "name": study_name},
+        permissions=PermissionInfo(
+            owner=None,
+            groups=[],
+            public_mode=PublicMode.NONE,
+        ),
+    )
+    event_bus.push.assert_called_once_with(event)
+
+    # The function must return a successful result
+    assert actual.success
+    assert study_id in actual.message, f"{actual.message=}"
+    assert target_version in actual.message, f"{actual.message=}"
+
+
+@with_db_context
+@patch("antarest.study.service.upgrade_study")
+def test_upgrade_study__raw_study__failed(
+    upgrade_study_mock: Mock, tmp_path: Path
+):
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
+    target_version = "800"
+    old_version = "720"
+
+    # Prepare a RAW study
+    # noinspection PyArgumentList
+    raw_study = RawStudy(
+        id=study_id,
+        name=study_name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(tmp_path),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        version=old_version,
+        additional_data=StudyAdditionalData(),
+        archived=False,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    # Make sure the session is closed to avoid reusing DB objects
+    with contextlib.closing(db.session):
+        db.session.add(raw_study)
+        db.session.commit()
+
+    # The `ICache` is used to invalidate the cache of the study with `invalidate_all`
+    cache_service = Mock()
+
+    # The `StudyMetadataRepository` is used to store the study in database.
+    repository = StudyMetadataRepository(cache_service)
+
+    # The `StudyStorageService` is used to retrieve:
+    # - the `RawStudyService` of a RAW study, or
+    # - the `VariantStudyService` of a variant study.
+    # It is used to `denormalize`/`normalize` the study.
+    # For a variant study, the  `clear_snapshot` is also called
+    storage_service = Mock()
+
+    # The `IEventBus` service is used to send event notifications.
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event_bus = Mock()
+
+    # The `upgrade_study()` function raise an exception
+    upgrade_study_mock.side_effect = Exception("INVALID_UPGRADE")
+
+    # Prepare the task for an upgrade
+    task = StudyUpgraderTask(
+        study_id,
+        target_version,
+        repository=repository,
+        storage_service=storage_service,
+        cache_service=cache_service,
+        event_bus=event_bus,
+    )
+
+    # The task is called with a `TaskUpdateNotifier` a parameter.
+    # Some messages could be emitted using the notifier (not a requirement).
+    notifier = Mock()
+    with pytest.raises(Exception, match="INVALID_UPGRADE"):
+        task(notifier)
+
+    # The study must not be updated in the database
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    assert actual_study is not None, "Not in database"
+    assert actual_study.version == old_version
+
+    # No event must be emitted
+    event_bus.push.assert_not_called()

@@ -70,20 +70,27 @@ function CreateCandidateDialog(props: PropType) {
               label={t("global.name")}
               name="name"
               control={control}
+              rules={{ required: t("form.field.required") }}
               sx={{ mx: 0 }}
             />
             <SelectFE
               label={t("xpansion.link")}
               options={links.map((link) => `${link.area1} - ${link.area2}`)}
               name="link"
-              required
               control={control}
+              rules={{ required: t("form.field.required") }}
               fullWidth
             />
             <NumberFE
               label={t("xpansion.annualCost")}
               name="annual-cost-per-mw"
               control={control}
+              rules={{
+                min: {
+                  value: 1,
+                  message: t("form.field.minValue", [1]),
+                },
+              }}
               sx={{ mx: 0 }}
             />
           </Fieldset>

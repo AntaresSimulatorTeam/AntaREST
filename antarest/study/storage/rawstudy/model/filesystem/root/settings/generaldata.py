@@ -106,49 +106,48 @@ class GeneralData(IniFileNode):
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         types = deepcopy(GeneralData.TYPES)
+        general = types["general"]
+        optimization = types["optimization"]
+        other_preferences = types["other preferences"]
         if config.version >= 650:
-            types["other preferences"]["initial-reservoir-levels"] = str
+            other_preferences["initial-reservoir-levels"] = str
         if config.version >= 700:
-            types["optimization"]["link-type"] = str
+            optimization["link-type"] = str
         if config.version >= 710:
-            types["general"]["thematic-trimming"] = bool
-            types["general"]["geographic-trimming"] = bool
-            del types["general"]["filtering"]
+            general["thematic-trimming"] = bool
+            general["geographic-trimming"] = bool
+            del general["filtering"]
         if config.version >= 720:
-            types["other preferences"]["hydro-pricing-mode"] = str
+            other_preferences["hydro-pricing-mode"] = str
         if config.version >= 800:
-            types["other preferences"]["hydro-heuristic-policy"] = str
-            types["optimization"]["include-exportstructure"] = bool
-            types["optimization"]["include-unfeasible-problem-behavior"] = str
-            types["general"]["custom-scenario"] = bool
-            del types["general"]["custom-ts-numbers"]
+            other_preferences["hydro-heuristic-policy"] = str
+            optimization["include-exportstructure"] = bool
+            optimization["include-unfeasible-problem-behavior"] = str
+            general["custom-scenario"] = bool
+            del general["custom-ts-numbers"]
         if config.version >= 810:
-            types["other preferences"]["renewable-generation-modelling"] = str
+            other_preferences["renewable-generation-modelling"] = str
         if config.version >= 830:
             types["adequacy patch"] = {
                 "include-adq-patch": bool,
                 "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": bool,
                 "set-to-null-ntc-between-physical-out-for-first-step": bool,
             }
-            types["optimization"]["include-split-exported-mps"] = bool
-            types["optimization"][
-                "include-exportmps"
-            ] = str  # none, optim-1, optim-2, both-optims
+            optimization["include-split-exported-mps"] = bool
+            # include-exportmps: none, optim-1, optim-2, both-optims
+            optimization["include-exportmps"] = str
         if config.version >= 840:
-            del types["optimization"]["include-split-exported-mps"]
+            del optimization["include-split-exported-mps"]
         if config.version >= 850:
-            types["adequacy patch"]["price-taking-order"] = str
-            types["adequacy patch"]["include-hurdle-cost-csr"] = bool
-            types["adequacy patch"]["check-csr-cost-function"] = bool
-            types["adequacy patch"][
-                "threshold-initiate-curtailment-sharing-rule"
-            ] = float
-            types["adequacy patch"][
-                "threshold-display-local-matching-rule-violations"
-            ] = float
-            types["adequacy patch"][
-                "threshold-csr-variable-bounds-relaxation"
-            ] = int
+            # fmt: off
+            adequacy = types["adequacy patch"]
+            adequacy["price-taking-order"] = str
+            adequacy["include-hurdle-cost-csr"] = bool
+            adequacy["check-csr-cost-function"] = bool
+            adequacy["threshold-initiate-curtailment-sharing-rule"] = float
+            adequacy["threshold-display-local-matching-rule-violations"] = float
+            adequacy["threshold-csr-variable-bounds-relaxation"] = int
+            # fmt: on
 
         IniFileNode.__init__(
             self,

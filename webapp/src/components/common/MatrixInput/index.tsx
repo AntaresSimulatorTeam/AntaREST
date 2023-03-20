@@ -40,12 +40,13 @@ interface PropsType {
   study: StudyMetadata;
   url: string;
   columnsNames?: string[];
+  rowNames?: string[];
   title?: string;
   computStats: MatrixStats;
 }
 
 function MatrixInput(props: PropsType) {
-  const { study, url, columnsNames, title, computStats } = props;
+  const { study, url, columnsNames, rowNames, title, computStats } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -194,9 +195,10 @@ function MatrixInput(props: PropsType) {
         {!isLoading && data?.columns?.length >= 1 ? (
           <EditableMatrix
             matrix={data}
-            matrixTime
+            matrixTime={!rowNames}
             matrixIndex={matrixIndex}
             columnsNames={columnsNames}
+            rowNames={rowNames}
             readOnly={false}
             toggleView={toggleView}
             onUpdate={handleUpdate}
@@ -243,10 +245,5 @@ function MatrixInput(props: PropsType) {
     </Root>
   );
 }
-
-MatrixInput.defaultProps = {
-  columnsNames: undefined,
-  title: undefined,
-};
 
 export default MatrixInput;

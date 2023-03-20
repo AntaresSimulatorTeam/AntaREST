@@ -1,12 +1,13 @@
 from typing import Optional
 
+from fastapi import FastAPI
+from redis import Redis
+
 from antarest.core.config import Config
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.business.redis_eventbus import RedisEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.eventbus.web import configure_websockets
-from fastapi import FastAPI
-from redis import Redis
 
 
 def build_eventbus(

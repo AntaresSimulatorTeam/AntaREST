@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import _ from "lodash";
 import debug from "debug";
 import HotTable from "@handsontable/react";
 import { CellChange } from "handsontable/common";
+import { ColumnSettings } from "handsontable/settings";
 import {
   MatrixIndex,
   MatrixEditDTO,
@@ -26,11 +26,11 @@ interface PropTypes {
   toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
   columnsNames?: string[];
+  rowNames?: string[];
   computStats?: MatrixStats;
 }
 
 type CellType = Array<number | string | boolean>;
-type ColumnsType = { title: string; readOnly: boolean };
 
 const formatColumnName = (col: string) => {
   try {
@@ -53,14 +53,13 @@ function EditableMatrix(props: PropTypes) {
     toggleView,
     onUpdate,
     columnsNames,
+    rowNames,
     computStats,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formatedColumns, setFormatedColumns] = useState<Array<ColumnsType>>(
-    []
-  );
+  const [formatedColumns, setFormatedColumns] = useState<ColumnSettings[]>([]);
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
@@ -69,7 +68,7 @@ function EditableMatrix(props: PropTypes) {
 
   const handleSlice = (change: CellChange[], source: string) => {
     const isChanged = change.map((item) => {
-      if (parseInt(item[2], 10) === parseInt(item[3], 10)) {
+      if (parseFloat(item[2]) === parseFloat(item[3])) {
         return;
       }
       return item;
@@ -101,7 +100,7 @@ function EditableMatrix(props: PropTypes) {
 
   useEffect(() => {
     setFormatedColumns([
-      ...(prependIndex ? [{ title: "Time", readOnly: true }] : []),
+      ...(prependIndex ? [{ title: "Time", readOnly: true, width: 130 }] : []),
       ...columns.map((col, index) => ({
         title: columnsNames?.[index] || formatColumnName(col),
         readOnly,
@@ -122,9 +121,7 @@ function EditableMatrix(props: PropTypes) {
       let tmpRow = row as (string | number)[];
       if (prependIndex) {
         if (matrixIndex) {
-          tmpRow = [
-            createDateFromIndex(i, matrixIndex.start_date, matrixIndex.level),
-          ].concat(row);
+          tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
         }
       }
       if (computStats) {
@@ -161,16 +158,13 @@ function EditableMatrix(props: PropTypes) {
           stretchH="all"
           className="editableMatrix"
           colHeaders
+          rowHeaderWidth={rowNames ? 150 : undefined}
           afterChange={(change, source) =>
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
-          colWidths={
-            prependIndex
-              ? [220].concat(_.fill(Array(formatedColumns.length), 100))
-              : _.fill(Array(formatedColumns.length), 100)
-          }
           columns={formatedColumns}
+          rowHeaders={rowNames || true}
           manualColumnResize
         />
       ) : (

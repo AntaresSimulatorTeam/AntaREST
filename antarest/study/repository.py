@@ -45,8 +45,14 @@ class StudyMetadataRepository:
         db.session.refresh(metadata)
 
     def get(self, id: str) -> Optional[Study]:
+        """Get the study by ID or return `None` if not found in database."""
         metadata: Study = db.session.query(Study).get(id)
         return metadata
+
+    def one(self, id: str) -> Study:
+        """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
+        study: Study = db.session.query(Study).filter_by(id=id).one()
+        return study
 
     def get_list(self, study_id: List[str]) -> List[Study]:
         studies: List[Study] = (
