@@ -3,7 +3,7 @@ import contextlib
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 
 from antarest.core.model import JSON, SUB_JSON
 
@@ -14,7 +14,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: Path) -> JSON:
+    def read(self, path: Any) -> JSON:
         """
         Parse .ini file to json
         Args:
@@ -65,10 +65,12 @@ class IniReader(IReader):
             key: IniReader.parse_value(value) for key, value in json.items()
         }
 
-    def read(self, path: Path) -> JSON:
+    def read(self, path: Any) -> JSON:
         config = IniConfigParser()
-        config.read(path)
-
+        if isinstance(path, Path):
+            config.read(path)
+        else:
+            config.read_file(path)
         return {
             key: IniReader._parse_json(config[key])
             for key in config
@@ -108,10 +110,11 @@ class SimpleKeyValueReader(IReader):
             for key, value in json.items()
         }
 
-    def read(self, path: Path) -> JSON:
+    def read(self, path: Any) -> JSON:
         json = {}
-        with open(path, "r") as fd:
-            for line in fd:
+        ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
+        with ini_file:
+            for line in ini_file:
                 line = line.strip()
                 if line and not line.startswith("#"):
                     key, value = line.split("=")
@@ -143,11 +146,12 @@ class MultipleSameKeysIniReader(IReader):
         self.special_keys = special_keys or []
         super().__init__()
 
-    def read(self, path: Path) -> JSON:
+    def read(self, path: Any) -> JSON:
         data: JSON = {}
         section = ""
-        with path.open(encoding="utf-8") as lines:
-            for line in lines:
+        ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
+        with ini_file:
+            for line in ini_file:
                 line = line.strip()
                 if match := re.fullmatch(r"\[(.*)]", line):
                     section = match[1]
