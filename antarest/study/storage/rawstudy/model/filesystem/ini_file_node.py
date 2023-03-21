@@ -1,7 +1,9 @@
 import contextlib
+import io
 import os
 import json
 import tempfile
+import zipfile
 from json import JSONDecodeError
 from pathlib import Path
 from typing import List, Optional, cast, Dict, Any, Union
@@ -68,13 +70,21 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
 
         if self.config.zip_path:
-            file_path, tmp_dir = self._extract_file_to_tmp_dir()
-            try:
-                data = self.reader.read(file_path)
-            except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e)) from e
-            finally:
-                tmp_dir.cleanup()
+            with zipfile.ZipFile(
+                self.config.zip_path, mode="r"
+            ) as zipped_folder:
+                inside_zip_path = str(self.config.path)[
+                    len(str(self.config.zip_path)[:-4]) + 1 :
+                ].replace("\\", "/")
+                with io.TextIOWrapper(
+                    zipped_folder.open(inside_zip_path)
+                ) as f:
+                    try:
+                        data = self.reader.read(f)
+                    except Exception as e:
+                        raise IniReaderError(
+                            self.__class__.__name__, str(e)
+                        ) from e
         else:
             try:
                 data = self.reader.read(self.path)
