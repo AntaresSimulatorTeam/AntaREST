@@ -4,6 +4,12 @@ Antares Web Changelog
 v2.13.0 (unreleased)
 --------------------
 
+### Bug Fixes
+
+
+v2.13.0 (2023-03-09)
+--------------------
+
 ### Features
 
 *  **ui-common:** add doc link on subsections (#1241) ([1331232](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1331232e418ebfbf3cc1a82725b95cb11cf8b9bc))
