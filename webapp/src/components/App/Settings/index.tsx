@@ -13,6 +13,7 @@ import {
   isAuthUserAdmin,
   isAuthUserInGroupAdmin,
 } from "../../../redux/selectors";
+import { tuple } from "../../../utils/tsUtils";
 
 /**
  * Component
@@ -26,14 +27,12 @@ function Settings() {
 
   const tabList = useMemo(() => {
     return [
-      isUserAdmin && [t("global.users"), () => <Users />],
-      (isUserAdmin || isUserInGroupAdmin) && [
-        t("global.group"),
-        () => <Groups />,
-      ],
-      [t("global.tokens"), () => <Tokens />],
-      isUserAdmin && [t("global.maintenance"), () => <Maintenance />],
-    ].filter(Boolean) as Array<[string, () => JSX.Element]>;
+      isUserAdmin && tuple(t("global.users"), () => <Users />),
+      (isUserAdmin || isUserInGroupAdmin) &&
+        tuple(t("global.group"), () => <Groups />),
+      tuple(t("global.tokens"), () => <Tokens />),
+      isUserAdmin && tuple(t("global.maintenance"), () => <Maintenance />),
+    ].filter(Boolean);
   }, [isUserAdmin, isUserInGroupAdmin, t]);
 
   ////////////////////////////////////////////////////////////////
