@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 'master'
-
+      - 'hotfix/v2.13.1-fix-exec-perms-antares-desktop'
 
 jobs:
   binary:
@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [windows-latest, ubuntu-20.04]
+        os: [ windows-latest, ubuntu-20.04 ]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -70,7 +70,7 @@ jobs:
         run: bash ./package_antares_web.sh
         working-directory: scripts
       - name: install changelog requirements
-        run : npm install -g auto-changelog
+        run: npm install -g auto-changelog
       - name: generate changelog file
         run: |
           auto-changelog -l false --hide-empty-releases
