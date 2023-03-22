@@ -38,6 +38,8 @@ def get_commit_id(resources_dir: Path) -> str:
     except FileNotFoundError:
         command = "git log -1 HEAD --format=%H"
         try:
-            return subprocess.check_output(command, encoding="utf-8", shell=True).strip()
+            return subprocess.check_output(
+                command, encoding="utf-8", shell=True
+            ).strip()
         except (subprocess.CalledProcessError, FileNotFoundError):
             return ""
