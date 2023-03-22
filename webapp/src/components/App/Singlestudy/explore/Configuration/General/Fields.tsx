@@ -108,7 +108,7 @@ function Fields(props: Props) {
 
   return (
     <>
-      <Fieldset legend={t("study.configuration.general.simulation")}>
+      <Fieldset legend={t("study.configuration.general.legend.simulation")}>
         <SelectFE
           name="mode"
           label={t("study.configuration.general.mode")}
@@ -136,7 +136,7 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
-      <Fieldset legend={t("study.configuration.general.calendar")}>
+      <Fieldset legend={t("study.configuration.general.legend.calendar")}>
         <StringFE
           name="horizon"
           label="Horizon"
@@ -173,7 +173,7 @@ function Fields(props: Props) {
       </Fieldset>
       <Box sx={{ display: "flex" }}>
         <Fieldset
-          legend={t("study.configuration.general.monteCarloScenarios")}
+          legend={t("study.configuration.general.legend.monteCarloScenarios")}
           sx={{
             flex: 1,
           }}
@@ -235,7 +235,7 @@ function Fields(props: Props) {
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
         <Fieldset
-          legend={t("study.configuration.general.outputProfile")}
+          legend={t("study.configuration.general.legend.outputProfile")}
           sx={{
             flex: 1,
           }}

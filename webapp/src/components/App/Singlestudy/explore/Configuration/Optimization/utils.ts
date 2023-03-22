@@ -1,14 +1,11 @@
+import * as R from "ramda";
+
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
 
 import { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
-
-enum LinkType {
-  Local = "local",
-  AC = "ac",
-}
 
 enum UnfeasibleProblemBehavior {
   WarningDry = "warning-dry",
@@ -47,7 +44,6 @@ export interface OptimizationFormFields {
     | boolean
     | LegacyTransmissionCapacities.Infinite
     | TransmissionCapacities;
-  linkType: LinkType;
   thermalClustersMinStablePower: boolean;
   thermalClustersMinUdTime: boolean;
   dayAheadReserve: boolean;
@@ -57,21 +53,12 @@ export interface OptimizationFormFields {
   exportMps: boolean;
   unfeasibleProblemBehavior: UnfeasibleProblemBehavior;
   simplexOptimizationRange: SimplexOptimizationRange;
-  // version 830
-  splitExportedMps?: boolean;
-  enableAdequacyPatch?: boolean;
-  ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch?: boolean;
-  ntcBetweenPhysicalAreasOutAdequacyPatch?: boolean;
 }
 
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const LINK_TYPE_OPTIONS = [
-  { label: "Local", value: LinkType.Local },
-  { label: "AC", value: LinkType.AC },
-];
 export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(
   UnfeasibleProblemBehavior
 );
@@ -106,3 +93,9 @@ export function setOptimizationFormFields(
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }
+
+export const toBooleanIfNeeded = R.cond([
+  [R.equals("true"), R.T],
+  [R.equals("false"), R.F],
+  [R.T, R.identity],
+]);

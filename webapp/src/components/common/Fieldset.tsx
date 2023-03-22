@@ -34,7 +34,7 @@ function Fieldset(props: FieldsetProps) {
             flexWrap: "wrap",
             gap: 2,
             ".MuiFormControl-root": {
-              width: fullFieldWidth ? "100%" : 220,
+              width: fullFieldWidth ? 1 : 220,
             },
           },
         },
@@ -62,5 +62,9 @@ function Fieldset(props: FieldsetProps) {
     </Box>
   );
 }
+
+Fieldset.Break = function Break() {
+  return <Box sx={{ flexBasis: "100%" }} />;
+};
 
 export default Fieldset;
