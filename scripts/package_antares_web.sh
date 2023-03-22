@@ -1,60 +1,82 @@
 #!/bin/bash
 
+# Antares Web Packaging -- Desktop Version
+#
+# This script is launch by the GitHub Workflow `.github/workflows/deploy.yml`
+
+set -e
+
 ANTARES_SOLVER_VERSION="8.5"
-ANTARES_SOLVER_FULL_VERSION="8.5.1"
-ANTARES_SOLVER_FULL_VERSION_INT=$(echo $ANTARES_SOLVER_FULL_VERSION | sed 's/\.//g')
+ANTARES_SOLVER_FULL_VERSION="8.5.0"
+ANTARES_SOLVER_FULL_VERSION_INT="850"
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+PROJECT_DIR=$(dirname -- "${SCRIPT_DIR}")
+DIST_DIR="${PROJECT_DIR}/dist"
+RESOURCES_DIR="${PROJECT_DIR}/resources"
+ANTARES_SOLVER_DIR="${DIST_DIR}/AntaresWeb/antares_solver"
 
 if [[ "$OSTYPE" == "msys"* ]]; then
   ANTARES_SOLVER_FOLDER_NAME="rte-antares-$ANTARES_SOLVER_FULL_VERSION-installer-64bits"
   ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.zip"
 else
-  ANTARES_SOLVER_FOLDER_NAME="antares-$ANTARES_SOLVER_FULL_VERSION-Ubuntu-20.04"
-  ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.tar.gz"
+  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
 fi
 
 LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v$ANTARES_SOLVER_FULL_VERSION/$ANTARES_SOLVER_ZIPFILE_NAME"
-DESTINATION="../dist/AntaresWeb/antares_solver"
 
-echo "Downloading AntaresSimulator from $LINK"
+echo "INFO: Creating destination directory '${ANTARES_SOLVER_DIR}'..."
+mkdir -p "${ANTARES_SOLVER_DIR}"
+
+echo "INFO: Downloading '$ANTARES_SOLVER_ZIPFILE_NAME' in '$ANTARES_SOLVER_DIR'..."
+cd "$ANTARES_SOLVER_DIR" || exit
 wget $LINK
 
-echo "Unzipping $ANTARES_SOLVER_ZIPFILE_NAME and move Antares solver to $DESTINATION"
-7z x $ANTARES_SOLVER_ZIPFILE_NAME
-if [[ "$OSTYPE" != "msys"* ]]; then
-  7z x "$ANTARES_SOLVER_FOLDER_NAME.tar"
+echo "INFO: Uncompressing '$ANTARES_SOLVER_ZIPFILE_NAME'..."
+if [[ "$OSTYPE" == "msys"* ]]; then
+  7z x $ANTARES_SOLVER_ZIPFILE_NAME
+else
+  tar xzf $ANTARES_SOLVER_ZIPFILE_NAME
 fi
-
-mkdir $DESTINATION
+rm $ANTARES_SOLVER_ZIPFILE_NAME
 
 if [[ "$OSTYPE" == "msys"* ]]; then
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" $DESTINATION
-  mv $ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll $DESTINATION
-  mv $ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll $DESTINATION
-else
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver" $DESTINATION
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/libsirius_solver.so" $DESTINATION
+  echo "INFO: Moving executables in '$ANTARES_SOLVER_DIR'..."
+  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" "$ANTARES_SOLVER_DIR"
+  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll" "$ANTARES_SOLVER_DIR"
+  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll" "$ANTARES_SOLVER_DIR"
+  rm -rf $ANTARES_SOLVER_FOLDER_NAME
 fi
 
-echo "Copy basic configuration files"
-cp -r ../resources/deploy/* ../dist/
+echo "INFO: Copying basic configuration files..."
+rm -rf "${DIST_DIR}/examples" # in case of replay
+cp -r "${RESOURCES_DIR}"/deploy/* "${DIST_DIR}"
 if [[ "$OSTYPE" == "msys"* ]]; then
-  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" ../dist/config.yaml
+  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
 else
-  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" ../dist/config.yaml
+  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" "${DIST_DIR}/config.yaml"
 fi
 
-echo "Creating shortcuts"
+echo "INFO: Creating shortcuts..."
 if [[ "$OSTYPE" == "msys"* ]]; then
-  cp ../resources/AntaresWebServerShortcut.lnk ../dist/
+  cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
-  ln -s ../dist/AntaresWeb/AntaresWebServer ../dist/AntaresWebServer
+  # Create a relative link to `AntaresWebServer`
+  cd "${DIST_DIR}"
+  if [[ -f "AntaresWeb/AntaresWebServer" ]]; then
+    ln -s "AntaresWeb/AntaresWebServer" "AntaresWebServer"
+  else
+    echo >&2 "WARNING: pyinstaller package 'AntaresWeb/AntaresWebServer' is missing"
+  fi
 fi
 
-echo "Unzipping example study"
-cd ../dist/examples/studies || exit
-7z x example_study.zip
+echo "INFO: Unzipping example study..."
+cd "${DIST_DIR}/examples/studies" || exit
+if [[ "$OSTYPE" == "msys"* ]]; then
+  7z x example_study.zip
+else
+  unzip -q example_study.zip
+fi
 rm example_study.zip
 
-echo "Cleaning up"
-rm $ANTARES_SOLVER_ZIPFILE_NAME
-rm -rf $ANTARES_SOLVER_FOLDER_NAME
+echo "INFO: Antares Web Packaging DONE."
