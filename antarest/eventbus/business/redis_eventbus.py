@@ -35,8 +35,8 @@ class RedisEventBus(IEventBusBackend):
             event = self.pubsub.get_message(ignore_subscribe_messages=True)
             if event is not None:
                 return [Event.parse_raw(event["data"])]
-        except Exception as e:
-            logger.error("Failed to retrieve or parse event !", exc_info=e)
+        except Exception:
+            logger.error("Failed to retrieve or parse event !", exc_info=True)
 
         return []
 
