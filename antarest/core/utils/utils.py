@@ -1,36 +1,16 @@
 import logging
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 from glob import escape
 from pathlib import Path
-from typing import (
-    IO,
-    Any,
-    Optional,
-    Callable,
-    TypeVar,
-    List,
-    Union,
-    Awaitable,
-    Tuple,
-)
-from zipfile import (
-    ZipFile,
-    BadZipFile,
-    ZIP_STORED,
-    ZIP_DEFLATED,
-    ZIP_BZIP2,
-    ZIP_LZMA,
-)
+from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
+from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 import redis
-
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
-
 
 logger = logging.getLogger(__name__)
 
@@ -103,28 +83,6 @@ def get_local_path() -> Path:
     # https: // pyinstaller.readthedocs.io / en / stable / runtime - information.html
     filepath = Path(__file__).parent.parent.parent.parent
     return filepath
-
-
-def get_commit_id(path_resources: Path) -> Optional[str]:
-    commit_id = None
-
-    path_commit_id = path_resources / "commit_id"
-    if path_commit_id.exists():
-        commit_id = path_commit_id.read_text()[:-1]
-    else:
-        command = "git log -1 HEAD --format=%H"
-        process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
-        if process.returncode == 0:
-            commit_id = process.stdout.decode("utf-8")
-
-    if commit_id is not None:
-
-        def remove_carriage_return(value: str) -> str:
-            return value[:-1]
-
-        commit_id = remove_carriage_return(commit_id)
-
-    return commit_id
 
 
 def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore

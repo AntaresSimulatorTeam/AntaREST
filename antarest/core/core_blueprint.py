@@ -1,27 +1,18 @@
 import logging
-import subprocess
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-
-from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.utils import get_commit_id
 from antarest.core.utils.web import APITag
+from antarest.core.version_info import VersionInfoDTO, get_commit_id
 from antarest.login.auth import Auth
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 
 class StatusDTO(BaseModel):
     status: str
-
-
-class VersionDTO(BaseModel):
-    version: str
-    gitcommit: Optional[str]
 
 
 def create_utils_routes(config: Config) -> APIRouter:
@@ -29,11 +20,7 @@ def create_utils_routes(config: Config) -> APIRouter:
     Utility endpoints
 
     Args:
-        storage_service: study service facade to handle request
         config: main server configuration
-
-    Returns:
-
     """
     bp = APIRouter()
     auth = Auth(config)
@@ -46,11 +33,24 @@ def create_utils_routes(config: Config) -> APIRouter:
         "/version",
         tags=[APITag.misc],
         summary="Get application version",
-        response_model=VersionDTO,
+        response_model=VersionInfoDTO,
     )
-    def version() -> Any:
-        return VersionDTO(
-            version=__version__, gitcommit=get_commit_id(config.resources_path)
+    def version_info() -> Any:
+        """
+        Returns the current version of the application, along with relevant dependency information.
+
+        - `version`: The current version of the application.
+        - `gitcommit`: The commit ID of the current version's Git repository.
+        - `dependencies`: A dictionary of dependencies, where the key is
+          the dependency name and the value is its version number.
+        """
+        from antareslauncher import __version__ as antares_launcher_version
+        from antarest import __version__ as antarest_version
+
+        return VersionInfoDTO(
+            version=antarest_version,
+            gitcommit=get_commit_id(config.resources_path),
+            dependencies={"Antares_Launcher": antares_launcher_version},
         )
 
     @bp.get("/kill", include_in_schema=False)
