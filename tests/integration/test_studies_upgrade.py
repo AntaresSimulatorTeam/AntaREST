@@ -109,6 +109,7 @@ class TestStudyUpgrade:
         assert res.status_code == 200
         task_id = res.json()
         assert task_id
+        time.sleep(0.1)
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
         assert (
