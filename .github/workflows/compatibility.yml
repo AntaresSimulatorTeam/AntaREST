@@ -10,7 +10,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [windows-latest, ubuntu-latest, macOS-latest]
+        os: [windows-latest, ubuntu-20.04, macOS-latest]
         python-version: [ 3.8 ]
 
     steps:
@@ -35,7 +35,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [ windows-latest, ubuntu-latest, macOS-latest ]
+        os: [ windows-latest, ubuntu-20.04, macOS-latest ]
         node-version: [ 10.x, 14.x ]
     steps:
       - name: Checkout github repo

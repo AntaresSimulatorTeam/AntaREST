@@ -6,7 +6,7 @@ on:
 
 jobs:
   python-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
         uses: actions/checkout@v2
@@ -36,7 +36,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-20.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -60,11 +60,11 @@ jobs:
         run: |
           pytest --cov antarest --cov-report xml
       - name: Fix code coverage paths
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           sed -i 's/\/home\/runner\/work\/AntaREST\/AntaREST/\/github\/workspace/g' coverage.xml
       - name: Archive code coverage results
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         uses: actions/upload-artifact@v3
         with:
           name: python-code-coverage-report
@@ -74,7 +74,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-20.04 ]
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v1
@@ -106,7 +106,7 @@ jobs:
           path: webapp/coverage/lcov.info
 
   sonarcloud:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: [python-test, npm-test]
     steps:
     - uses: actions/checkout@v2
