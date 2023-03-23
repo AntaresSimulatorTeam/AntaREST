@@ -122,8 +122,6 @@ function ScenarioPlaylistDialog(props: Props) {
             tableProps={{
               rowHeaders: (row) => `MC Year ${row.id}`,
               tableRef,
-              height: "100%",
-              width: 500,
               stretchH: "all",
               className: "htCenter",
               cells: handleCellsRender,

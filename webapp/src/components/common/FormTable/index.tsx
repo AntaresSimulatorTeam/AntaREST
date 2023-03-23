@@ -85,7 +85,15 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
       onSubmit={onSubmit}
       onSubmitError={onSubmitError}
       autoSubmit
-      sx={mergeSxProp({ width: 1, height: 1, pt: 0 }, sx)}
+      sx={mergeSxProp(
+        {
+          width: 1,
+          height: 1,
+          pt: 0,
+          overflow: "hidden", // https://handsontable.com/docs/12.0/grid-size/#define-the-size-in-css-styles
+        },
+        sx
+      )}
       apiRef={formApiRef}
     >
       <Table
