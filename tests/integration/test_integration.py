@@ -5,8 +5,14 @@ from typing import Callable
 from unittest.mock import ANY
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
+from antarest.study.business.optimization_management import (
+    TransmissionCapacities,
+    UnfeasibleProblemBehavior,
+    SimplexOptimizationRange,
+)
 from antarest.study.business.table_mode_management import (
     FIELDS_INFO_BY_TYPE,
     AdequacyPatchMode,
@@ -992,6 +998,8 @@ def test_area_management(app: FastAPI):
     )
     assert res.status_code == 200
 
+    # Optimization form
+
     res_optimization_config = client.get(
         f"/v1/studies/{study_id}/config/optimization/form",
         headers={
@@ -1002,8 +1010,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": "local-values",
-        "linkType": "local",
+        "transmissionCapacities": TransmissionCapacities.LOCAL_VALUES.value,
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,
         "dayAheadReserve": True,
@@ -1011,18 +1018,8 @@ def test_area_management(app: FastAPI):
         "strategicReserve": True,
         "spinningReserve": True,
         "exportMps": False,
-        "unfeasibleProblemBehavior": "error-verbose",
-        "simplexOptimizationRange": "week",
-        "splitExportedMps": False,
-        "enableAdequacyPatch": False,
-        "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
-        "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
-        "checkCsrCostFunction": False,
-        "includeHurdleCostCsr": False,
-        "priceTakingOrder": "DENS",
-        "thresholdInitiateCurtailmentSharingRule": 0.0,
-        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
-        "thresholdCsrVariableBoundsRelaxation": 3,
+        "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.ERROR_VERBOSE.value,
+        "simplexOptimizationRange": SimplexOptimizationRange.WEEK.value,
     }
 
     client.put(
@@ -1032,8 +1029,8 @@ def test_area_management(app: FastAPI):
         },
         json={
             "strategicReserve": False,
-            "unfeasibleProblemBehavior": "warning-verbose",
-            "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
+            "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.WARNING_VERBOSE.value,
+            "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
         },
     )
     res_optimization_config = client.get(
@@ -1046,8 +1043,7 @@ def test_area_management(app: FastAPI):
     assert res_optimization_config_json == {
         "bindingConstraints": True,
         "hurdleCosts": True,
-        "transmissionCapacities": "local-values",
-        "linkType": "local",
+        "transmissionCapacities": TransmissionCapacities.LOCAL_VALUES.value,
         "thermalClustersMinStablePower": True,
         "thermalClustersMinUdTime": True,
         "dayAheadReserve": True,
@@ -1055,19 +1051,62 @@ def test_area_management(app: FastAPI):
         "strategicReserve": False,
         "spinningReserve": True,
         "exportMps": False,
-        "unfeasibleProblemBehavior": "warning-verbose",
-        "simplexOptimizationRange": "week",
-        "splitExportedMps": False,
+        "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.WARNING_VERBOSE.value,
+        "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
+    }
+
+    # Adequacy patch form
+
+    res_adequacy_patch_config = client.get(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_adequacy_patch_config_json = res_adequacy_patch_config.json()
+    assert res_adequacy_patch_config_json == {
+        "enableAdequacyPatch": False,
+        "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
+        "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
+        "checkCsrCostFunction": False,
+        "includeHurdleCostCsr": False,
+        "priceTakingOrder": PriceTakingOrder.DENS.value,
+        "thresholdInitiateCurtailmentSharingRule": 0.0,
+        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+        "thresholdCsrVariableBoundsRelaxation": 3,
+    }
+
+    client.put(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
+            "priceTakingOrder": PriceTakingOrder.LOAD.value,
+            "thresholdDisplayLocalMatchingRuleViolations": 1.1,
+        },
+    )
+    res_adequacy_patch_config = client.get(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_adequacy_patch_config_json = res_adequacy_patch_config.json()
+    assert res_adequacy_patch_config_json == {
         "enableAdequacyPatch": False,
         "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
         "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
         "checkCsrCostFunction": False,
         "includeHurdleCostCsr": False,
-        "priceTakingOrder": "DENS",
+        "priceTakingOrder": PriceTakingOrder.LOAD.value,
         "thresholdInitiateCurtailmentSharingRule": 0.0,
-        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+        "thresholdDisplayLocalMatchingRuleViolations": 1.1,
         "thresholdCsrVariableBoundsRelaxation": 3,
     }
+
+    # General form
 
     res_general_config = client.get(
         f"/v1/studies/{study_id}/config/general/form",
@@ -1131,6 +1170,8 @@ def test_area_management(app: FastAPI):
         "geographicTrimming": False,
         "thematicTrimming": False,
     }
+
+    # Thematic trimming form
 
     res_thematic_trimming_config = client.get(
         f"/v1/studies/{study_id}/config/thematictrimming/form",

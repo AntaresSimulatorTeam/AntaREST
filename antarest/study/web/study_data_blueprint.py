@@ -12,6 +12,9 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
+from antarest.study.business.adequacy_patch_management import (
+    AdequacyPatchFormFields,
+)
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
 )
@@ -683,7 +686,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
-        summary="Get Optimization config values for form",
+        summary="Get optimization config values for form",
         response_model=OptimizationFormFields,
         response_model_exclude_none=True,
     )
@@ -692,7 +695,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> OptimizationFormFields:
         logger.info(
-            msg=f"Getting Optimization management config for study {uuid}",
+            msg=f"Getting optimization config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -705,7 +708,7 @@ def create_study_data_routes(
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
-        summary="Set Optimization config with values from form",
+        summary="Set optimization config with values from form",
     )
     def set_optimization_form_values(
         uuid: str,
@@ -713,7 +716,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
-            f"Updating Optimization management config for study {uuid}",
+            f"Updating optimization config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -722,6 +725,51 @@ def create_study_data_routes(
         )
 
         study_service.optimization_manager.set_field_values(
+            study, field_values
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/adequacypatch/form",
+        tags=[APITag.study_data],
+        summary="Get adequacy patch config values for form",
+        response_model=AdequacyPatchFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_adequacy_patch_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AdequacyPatchFormFields:
+        logger.info(
+            msg=f"Getting adequacy patch config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.adequacy_patch_manager.get_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/adequacypatch/form",
+        tags=[APITag.study_data],
+        summary="Set adequacy patch config with values from form",
+    )
+    def set_adequacy_patch_form_values(
+        uuid: str,
+        field_values: AdequacyPatchFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating adequacy patch config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.adequacy_patch_manager.set_field_values(
             study, field_values
         )
 

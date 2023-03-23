@@ -53,6 +53,9 @@ from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
 from antarest.matrixstore.utils import parse_tsv_matrix
+from antarest.study.business.adequacy_patch_management import (
+    AdequacyPatchManager,
+)
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
 )
@@ -303,6 +306,9 @@ class StudyService:
             self.storage_service
         )
         self.optimization_manager = OptimizationManager(self.storage_service)
+        self.adequacy_patch_manager = AdequacyPatchManager(
+            self.storage_service
+        )
         self.advanced_parameters_manager = AdvancedParamsManager(
             self.storage_service
         )
