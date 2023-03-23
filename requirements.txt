@@ -1,7 +1,4 @@
--r antares-launcher/requirements.txt
-# freezed
-mistune~=0.8.4
-m2r~=0.2.1
+Antares-Launcher~=1.1.6
 
 aiofiles~=0.8.0
 alembic~=1.7.5
