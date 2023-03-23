@@ -45,7 +45,7 @@ from antarest.study.business.optimization_management import (
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.renewable_management import RenewableFormFields
 from antarest.study.business.table_mode_management import (
-    ColumnModelTypes,
+    ColumnsModelTypes,
     TableTemplateType,
 )
 from antarest.study.business.thematic_trimming_management import (
@@ -829,7 +829,7 @@ def create_study_data_routes(
         table_type: TableTemplateType,
         columns: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Dict[str, ColumnModelTypes]:
+    ) -> Dict[str, ColumnsModelTypes]:
         logger.info(
             f"Getting template table data for study {uuid}",
             extra={"user": current_user.id},
@@ -851,7 +851,7 @@ def create_study_data_routes(
     def set_table_data(
         uuid: str,
         table_type: TableTemplateType,
-        data: Dict[str, ColumnModelTypes],
+        data: Dict[str, ColumnsModelTypes],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
