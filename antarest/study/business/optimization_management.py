@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, Union, List, Any, Dict
 
-from pydantic.types import StrictBool, StrictFloat, StrictInt
+from pydantic.types import StrictBool
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -14,11 +14,6 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-
-
-class LinkType(str, Enum):
-    LOCAL = "local"
-    AC = "ac"
 
 
 class LegacyTransmissionCapacities(str, Enum):
@@ -45,11 +40,6 @@ class SimplexOptimizationRange(str, Enum):
     WEEK = "week"
 
 
-class PriceTakingOrder(str, Enum):
-    DENS = "DENS"
-    LOAD = "Load"
-
-
 class OptimizationFormFields(FormFieldsBaseModel):
     binding_constraints: Optional[StrictBool]
     hurdle_costs: Optional[StrictBool]
@@ -59,7 +49,6 @@ class OptimizationFormFields(FormFieldsBaseModel):
             Union[LegacyTransmissionCapacities, TransmissionCapacities],
         ]
     ]
-    link_type: Optional[LinkType]
     thermal_clusters_min_stable_power: Optional[StrictBool]
     thermal_clusters_min_ud_time: Optional[StrictBool]
     day_ahead_reserve: Optional[StrictBool]
@@ -69,24 +58,9 @@ class OptimizationFormFields(FormFieldsBaseModel):
     export_mps: Optional[Union[bool, str]]
     unfeasible_problem_behavior: Optional[UnfeasibleProblemBehavior]
     simplex_optimization_range: Optional[SimplexOptimizationRange]
-    # version 830
-    split_exported_mps: Optional[StrictBool]
-    enable_adequacy_patch: Optional[StrictBool]
-    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: Optional[
-        StrictBool
-    ]
-    ntc_between_physical_areas_out_adequacy_patch: Optional[StrictBool]
-    # version 850
-    price_taking_order: Optional[PriceTakingOrder]
-    include_hurdle_cost_csr: Optional[StrictBool]
-    check_csr_cost_function: Optional[StrictBool]
-    threshold_initiate_curtailment_sharing_rule: Optional[StrictFloat]
-    threshold_display_local_matching_rule_violations: Optional[StrictFloat]
-    threshold_csr_variable_bounds_relaxation: Optional[StrictInt]
 
 
 OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"
-ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -101,10 +75,6 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "transmission_capacities": {
         "path": f"{OPTIMIZATION_PATH}/transmission-capacities",
         "default_value": True,
-    },
-    "link_type": {
-        "path": f"{OPTIMIZATION_PATH}/link-type",
-        "default_value": LinkType.LOCAL,
     },
     "thermal_clusters_min_stable_power": {
         "path": f"{OPTIMIZATION_PATH}/include-tc-minstablepower",
@@ -136,62 +106,11 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "unfeasible_problem_behavior": {
         "path": f"{OPTIMIZATION_PATH}/include-unfeasible-problem-behavior",
-        "default_value": UnfeasibleProblemBehavior.ERROR_VERBOSE,
+        "default_value": UnfeasibleProblemBehavior.ERROR_VERBOSE.value,
     },
     "simplex_optimization_range": {
         "path": f"{OPTIMIZATION_PATH}/simplex-range",
-        "default_value": SimplexOptimizationRange.WEEK,
-    },
-    "split_exported_mps": {
-        "path": f"{OPTIMIZATION_PATH}/include-split-exported-mps",
-        "default_value": False,
-        "start_version": 830,
-        "end_version": 840,
-    },
-    "enable_adequacy_patch": {
-        "path": f"{ADEQUACY_PATCH_PATH}/include-adq-patch",
-        "default_value": False,
-        "start_version": 830,
-    },
-    "ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch": {
-        "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-from-physical-out-to-physical-in-for-first-step",
-        "default_value": True,
-        "start_version": 830,
-    },
-    "ntc_between_physical_areas_out_adequacy_patch": {
-        "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-between-physical-out-for-first-step",
-        "default_value": True,
-        "start_version": 830,
-    },
-    "price_taking_order": {
-        "path": f"{ADEQUACY_PATCH_PATH}/price-taking-order",
-        "default_value": "DENS",
-        "start_version": 850,
-    },
-    "include_hurdle_cost_csr": {
-        "path": f"{ADEQUACY_PATCH_PATH}/include-hurdle-cost-csr",
-        "default_value": False,
-        "start_version": 850,
-    },
-    "check_csr_cost_function": {
-        "path": f"{ADEQUACY_PATCH_PATH}/check-csr-cost-function",
-        "default_value": False,
-        "start_version": 850,
-    },
-    "threshold_initiate_curtailment_sharing_rule": {
-        "path": f"{ADEQUACY_PATCH_PATH}/threshold-initiate-curtailment-sharing-rule",
-        "default_value": 0.0,
-        "start_version": 850,
-    },
-    "threshold_display_local_matching_rule_violations": {
-        "path": f"{ADEQUACY_PATCH_PATH}/threshold-display-local-matching-rule-violations",
-        "default_value": 0.0,
-        "start_version": 850,
-    },
-    "threshold_csr_variable_bounds_relaxation": {
-        "path": f"{ADEQUACY_PATCH_PATH}/threshold-csr-variable-bounds-relaxation",
-        "default_value": 3,
-        "start_version": 850,
+        "default_value": SimplexOptimizationRange.WEEK.value,
     },
 }
 
@@ -202,21 +121,18 @@ class OptimizationManager:
 
     def get_field_values(self, study: Study) -> OptimizationFormFields:
         """
-        Get Optimization field values for the webapp form
+        Get optimization field values for the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         general_data = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
-        optimization = general_data.get("optimization", {})
-        adequacy_patch = general_data.get("adequacy patch", {})
+        parent = general_data.get("optimization", {})
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             start_version = field_info.get("start_version", -1)
             target_name = path.split("/")[-1]
             is_in_version = file_study.config.version >= start_version  # type: ignore
-            parent = (
-                optimization if OPTIMIZATION_PATH in path else adequacy_patch
-            )
+
             return (
                 parent.get(target_name, field_info["default_value"])
                 if is_in_version
@@ -231,7 +147,7 @@ class OptimizationManager:
         self, study: Study, field_values: OptimizationFormFields
     ) -> None:
         """
-        Set Optimization config from the webapp form
+        Set optimization config from the webapp form
         """
         commands: List[UpdateConfig] = []
 
