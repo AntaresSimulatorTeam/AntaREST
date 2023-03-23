@@ -42,7 +42,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 def storage_service(
     tmp_path: Path, project_path: Path, sta_mini_zip_path: Path
 ) -> StudyService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection PyTypeChecker,SpellCheckingInspection
     DBSessionMiddleware(

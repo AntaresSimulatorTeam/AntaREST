@@ -49,7 +49,7 @@ def clean_files() -> None:
 
 @pytest.mark.unit_test
 def test_scan(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -101,7 +101,7 @@ def test_scan(tmp_path: Path):
 
 @pytest.mark.unit_test
 def test_partial_scan(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

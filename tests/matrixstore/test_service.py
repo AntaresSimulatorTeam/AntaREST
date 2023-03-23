@@ -31,7 +31,7 @@ from antarest.matrixstore.service import MatrixService
 
 
 def test_save():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

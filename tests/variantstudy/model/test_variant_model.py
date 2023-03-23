@@ -46,7 +46,7 @@ def test_commands_service(
 ) -> VariantStudyService:
     engine = create_engine(
         "sqlite:///:memory:",
-        echo=True,
+        echo=False,
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
@@ -164,7 +164,7 @@ def test_smart_generation(
 ) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
-        echo=True,
+        echo=False,
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)

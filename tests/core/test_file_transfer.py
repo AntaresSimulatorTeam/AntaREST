@@ -41,7 +41,7 @@ def test_file_request():
 
 
 def test_lifecycle(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

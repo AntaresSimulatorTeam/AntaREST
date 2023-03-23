@@ -94,7 +94,7 @@ def test_job_result() -> None:
 
 @pytest.mark.unit_test
 def test_update_object():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -126,7 +126,7 @@ def test_update_object():
 
 
 def test_logs():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

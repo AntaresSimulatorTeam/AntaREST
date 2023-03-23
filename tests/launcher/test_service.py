@@ -440,7 +440,7 @@ def test_append_logs(tmp_path: Path):
     job_result_mock.logs = []
     launcher_service.job_result_repository.get.return_value = job_result_mock
 
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -530,7 +530,7 @@ def test_get_logs(tmp_path: Path):
 
 
 def test_manage_output(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
