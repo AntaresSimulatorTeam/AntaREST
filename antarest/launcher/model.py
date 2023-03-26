@@ -144,9 +144,9 @@ class JobResult(DTO, Base):  # type: ignore
         )
 
     def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, JobResult):
-            return False
-        return o.to_dto().dict() == self.to_dto().dict()
+        if isinstance(o, JobResult):
+            return o.to_dto().dict() == self.to_dto().dict()
+        return NotImplemented
 
     def __str__(self) -> str:
         return str(self.to_dto().dict())

@@ -9,6 +9,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
+from antarest.launcher.launcher_form import AntaresLauncherForm
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
@@ -28,6 +29,24 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1")
 
     auth = Auth(config)
+
+    @bp.get(
+        "/launcher/run",
+        tags=[APITag.launcher],
+        summary="Run study",
+        response_model=AntaresLauncherForm,
+    )
+    def run_form(
+        study_uuids: List[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_service = service.study_service
+        study_info_list = [
+            study_service.get_study_information(uuid=uuid, params=params)
+            for uuid in study_uuids
+        ]
+        return AntaresLauncherForm()
 
     @bp.post(
         "/launcher/run/{study_id}",
