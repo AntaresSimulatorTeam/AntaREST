@@ -27,7 +27,7 @@ from antarest.login.repository import (
 
 @pytest.mark.unit_test
 def test_users():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -59,7 +59,7 @@ def test_users():
 
 @pytest.mark.unit_test
 def test_users_ldap():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -82,7 +82,7 @@ def test_users_ldap():
 
 @pytest.mark.unit_test
 def test_bots():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -112,7 +112,7 @@ def test_bots():
 
 @pytest.mark.unit_test
 def test_groups():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -138,7 +138,7 @@ def test_groups():
 
 @pytest.mark.unit_test
 def test_roles():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

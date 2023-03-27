@@ -25,7 +25,7 @@ def project_path() -> Path:
 def with_db_context(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        engine = create_engine("sqlite:///:memory:", echo=True)
+        engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection PyTypeChecker
         DBSessionMiddleware(

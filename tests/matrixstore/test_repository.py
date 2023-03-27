@@ -24,7 +24,7 @@ from antarest.matrixstore.repository import (
 
 
 def test_db_cyclelife():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -72,7 +72,7 @@ def test_bucket_cyclelife(tmp_path: Path):
 
 
 def test_dataset():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
@@ -142,7 +142,7 @@ def test_dataset():
 
 
 def test_datastore_query():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),
