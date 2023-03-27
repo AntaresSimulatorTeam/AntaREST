@@ -30,7 +30,7 @@ def test_local_launcher__launcher_init_exception():
 
 @pytest.mark.unit_test
 def test_compute(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

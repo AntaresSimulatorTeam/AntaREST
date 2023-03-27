@@ -897,17 +897,22 @@ class StudyService:
             if study.missing is not None
         }
         for folder in folders:
-            study_path = str(folder.path)
-            if study_path not in study_paths:
+            folder_path = folder.path
+            study_path = str(folder_path)
+            if (
+                study_path not in study_paths
+                and folder_path.suffix != "tmp"
+                and folder_path.name.startswith("~") is False
+            ):
                 try:
                     if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[
                             folder.workspace
                         ].path
-                        dir_name = folder.path.relative_to(base_path)
+                        dir_name = folder_path.relative_to(base_path)
                         study = RawStudy(
                             id=str(uuid4()),
-                            name=folder.path.name,
+                            name=folder_path.name,
                             path=study_path,
                             folder=str(dir_name),
                             workspace=folder.workspace,

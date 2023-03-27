@@ -77,6 +77,17 @@ class TestStudyUpgrade:
             "/v1/studies",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
+        cpt = 0
+        max_calls = 10
+        while res.json() == {} and cpt < max_calls:
+            cpt += 1
+            time.sleep(0.1)
+            res = client.get(
+                "/v1/studies",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+            )
+        if cpt == max_calls:
+            raise TimeoutError(f"{max_calls} calls")
         assert res.status_code == 200
         study_ids = res.json()
         return next(iter(study_ids))
