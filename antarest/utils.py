@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Tuple, Any, Optional, Dict
+from typing import Any, Dict, Optional, Tuple
 
 import redis
 import sqlalchemy.ext.baked  # type: ignore
@@ -26,11 +26,7 @@ from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.utils import (
-    get_default_config_path,
-    get_local_path,
-    new_redis_instance,
-)
+from antarest.core.utils.utils import get_local_path, new_redis_instance
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
@@ -59,15 +55,6 @@ class Module(str, Enum):
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
     SIMULATOR_WORKER = "simulator_worker"
-
-
-def get_default_config_path_or_raise() -> Path:
-    config_path = get_default_config_path()
-    if not config_path:
-        raise ValueError(
-            "Config file not found. Set it by '-c' with command line or place it at ./config.yaml, ../config.yaml or ~/.antares/config.yaml"
-        )
-    return config_path
 
 
 def init_db(
