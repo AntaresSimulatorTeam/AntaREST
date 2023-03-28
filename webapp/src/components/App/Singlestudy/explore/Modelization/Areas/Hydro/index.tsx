@@ -20,6 +20,10 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/inflowstructure`,
       },
       {
+        label: "Allocation",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/allocation`,
+      },
+      {
         label: "Daily Power",
         path: `/studies/${study?.id}/explore/modelization/area/hydro/dailypower`,
       },
