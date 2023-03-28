@@ -9,6 +9,7 @@ export interface AllocationField {
   areaId: string;
   coefficient: number;
 }
+
 export interface AllocationFormFields {
   allocation: AllocationField[];
 }

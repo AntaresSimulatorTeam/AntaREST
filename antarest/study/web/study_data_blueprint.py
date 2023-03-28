@@ -18,6 +18,7 @@ from antarest.study.business.adequacy_patch_management import (
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
 )
+from antarest.study.business.allocation_management import AllocationFormFields
 from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaInfoDTO,
@@ -1018,6 +1019,50 @@ def create_study_data_routes(
         )
         study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
+        tags=[APITag.study_data],
+        summary="Get allocation options for a given area",
+        response_model=AllocationFormFields,
+    )
+    def get_allocation_form_values(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationFormFields:
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = study_service.get_all_areas(
+            uuid, area_type=AreaType.AREA, ui=False, params=params
+        )
+        return study_service.allocation_manager.get_field_values(
+            study, area_id, all_areas
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
+        tags=[APITag.study_data],
+        summary="Set allocation options for a given area",
+    )
+    def set_allocation_form_values(
+        uuid: str,
+        area_id: str,
+        data: AllocationFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = study_service.get_all_areas(
+            uuid, area_type=AreaType.AREA, ui=False, params=params
+        )
+        return study_service.allocation_manager.set_field_values(
+            study, area_id, data, all_areas
         )
 
     @bp.get(

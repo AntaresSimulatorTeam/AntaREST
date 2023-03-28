@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Optional
+from typing import Optional, Set
 
 from fastapi import HTTPException
 
@@ -211,6 +211,18 @@ class DistrictAlreadyExist(HTTPException):
             2: f"{count} districts already exist: {ids}",
         }[min(count, 2)]
         super().__init__(HTTPStatus.CONFLICT, msg)
+
+
+class AllocationDataNotFound(HTTPException):
+    def __init__(self, area_id: str):
+        msg = f"No allocation data found for area {area_id}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class InvalidAllocationData(HTTPException):
+    def __init__(self, invalid_ids: Set[str]):
+        msg = f"Invalid areas: {', '.join(invalid_ids)}"
+        super().__init__(HTTPStatus.BAD_REQUEST, msg)
 
 
 class BadEditInstructionException(HTTPException):

@@ -1,18 +1,15 @@
 import { Box } from "@mui/material";
 import { t } from "i18next";
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import { Area } from "../../../../../../../../common/types";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 
 interface Props {
   filteredAreas: Array<Area & { id: string }>;
-  appendField: (obj: { areaId: string; coefficient: number }) => void;
+  append: (obj: { areaId: string; coefficient: number }) => void;
 }
 
-export default memo(function AllocationSelect({
-  filteredAreas,
-  appendField,
-}: Props) {
+function AllocationSelect({ filteredAreas, append }: Props) {
   const options = useMemo(
     () =>
       filteredAreas.map((area) => ({
@@ -39,7 +36,7 @@ export default memo(function AllocationSelect({
           label={t("study.modelization.hydro.allocation.select")}
           options={options}
           onChange={(e) => {
-            appendField({ areaId: e.target.value as string, coefficient: 0 });
+            append({ areaId: e.target.value as string, coefficient: 0 });
           }}
           size="small"
           sx={{ minWidth: 180 }}
@@ -47,4 +44,6 @@ export default memo(function AllocationSelect({
       )}
     </Box>
   );
-});
+}
+
+export default AllocationSelect;

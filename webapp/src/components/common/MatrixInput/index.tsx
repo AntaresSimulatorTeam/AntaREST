@@ -88,7 +88,6 @@ function MatrixInput(props: PropsType) {
   ////////////////////////////////////////////////////////////////
 
   const handleUpdate = async (change: MatrixEditDTO[], source: string) => {
-    console.log("change", change);
     if (source !== "loadData" && source !== "updateData") {
       try {
         if (change.length > 0) {

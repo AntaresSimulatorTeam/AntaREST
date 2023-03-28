@@ -1,5 +1,7 @@
 import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
+import { t } from "i18next";
+import { AxiosError } from "axios";
 import Form from "../../../../../../../common/Form";
 import Fields from "./Fields";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -11,21 +13,30 @@ import {
   setAllocationFormFields,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 function Allocation() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<AllocationFormFields>) => {
-    setAllocationFormFields(studyId, areaId, {
-      allocation: data.values.allocation,
-    });
+    try {
+      setAllocationFormFields(studyId, areaId, {
+        allocation: data.values.allocation,
+      });
+    } catch (e) {
+      enqueueErrorSnackbar(
+        t("study.modelization.hydro.allocation.error.field.delete"),
+        e as AxiosError
+      );
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -38,6 +49,7 @@ function Allocation() {
         width: 1,
         height: 1,
         py: 1,
+        overflowX: "auto",
       }}
     >
       <Form
@@ -46,7 +58,6 @@ function Allocation() {
           asyncDefaultValues: () => getAllocationFormFields(studyId, areaId),
         }}
         onSubmit={handleSubmit}
-        autoSubmit
       >
         <Fields />
       </Form>

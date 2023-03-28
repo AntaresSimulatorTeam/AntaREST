@@ -1,9 +1,10 @@
 import { Paper, Typography, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { memo } from "react";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { AllocationFormFields } from "./utils";
+import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 
 interface Props {
   field: {
@@ -12,17 +13,13 @@ interface Props {
     coefficient: number;
   };
   index: number;
-  removeField: (index: number) => void;
-  getAreaLabel: (areaId: string) => string | undefined;
+  label: string;
+  remove: (index: number) => void;
 }
 
-export default memo(function AllocationField({
-  field,
-  index,
-  removeField,
-  getAreaLabel,
-}: Props) {
+function AllocationField({ field, index, label, remove }: Props) {
   const { control } = useFormContextPlus<AllocationFormFields>();
+  const currentAreaId = useAppSelector(getCurrentAreaId);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -35,19 +32,14 @@ export default memo(function AllocationField({
         display: "flex",
         alignContent: "center",
         alignItems: "center",
+        justifyContent: "strech",
         px: 2,
         borderRadius: 0,
         backgroundImage:
           "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
       }}
     >
-      <Typography
-        sx={{
-          flex: 1,
-        }}
-      >
-        {getAreaLabel(field.areaId)}
-      </Typography>
+      <Typography sx={{ flex: 1 }}>{label}</Typography>
       <NumberFE
         key={field.id}
         name={`allocation.${index}.coefficient`}
@@ -64,9 +56,18 @@ export default memo(function AllocationField({
           },
         }}
       />
-      <IconButton onClick={() => removeField(index)}>
+
+      <IconButton
+        onClick={() => remove(index)}
+        disabled={field.areaId === currentAreaId}
+        style={{
+          visibility: field.areaId === currentAreaId ? "hidden" : "visible",
+        }}
+      >
         <DeleteIcon />
       </IconButton>
     </Paper>
   );
-});
+}
+
+export default AllocationField;
