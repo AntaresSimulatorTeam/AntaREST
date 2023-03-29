@@ -1,20 +1,17 @@
 import logging
 import logging.config
-import os
 import re
 import uuid
-from pythonjsonlogger.jsonlogger import JsonFormatter
 from contextvars import ContextVar, Token
-from typing import Optional, Type, Any, Dict
+from typing import Any, Dict, Optional, Type
 
+from antarest.core.config import Config
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     RequestResponseEndpoint,
 )
 from starlette.requests import Request
 from starlette.responses import Response
-
-from antarest.core.config import Config
 
 _request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
 _request_id: ContextVar[Optional[str]] = ContextVar(
@@ -41,11 +38,29 @@ def configure_logger(config: Config) -> None:
         "formatters": {
             "console": {
                 "class": "antarest.core.logging.utils.CustomDefaultFormatter",
-                "format": "%(asctime)s - %(trace_id)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
+                "format": (
+                    "[%(asctime)s] [%(process)s] [%(name)s]"
+                    " - %(trace_id)s"
+                    " - %(threadName)s"
+                    " - %(ip)s"
+                    " - %(user)s"
+                    " - %(levelname)s"
+                    " - %(message)s"
+                ),
             },
             "json": {
-                "class": f"{JsonFormatter.__module__}.{JsonFormatter.__name__}",
-                "format": "%(asctime)s - %(trace_id)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": (
+                    "%(asctime)s"
+                    " - %(process)s"
+                    " - %(name)s"
+                    " - %(trace_id)s"
+                    " - %(threadName)s"
+                    " - %(ip)s"
+                    " - %(user)s"
+                    " - %(levelname)s"
+                    " - %(message)s"
+                ),
             },
         },
         "handlers": {
@@ -110,9 +125,8 @@ class ContextFilter(logging.Filter):
         request: Optional[Request] = _request.get()
         request_id: Optional[str] = _request_id.get()
         if request is not None:
-            record.ip = request.scope.get("client", ("undefined"))[0]
+            record.ip = request.scope.get("client", "undefined")[0]
         record.trace_id = request_id
-        record.pid = os.getpid()
         return True
 
 

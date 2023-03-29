@@ -1,10 +1,12 @@
 import argparse
+import copy
 import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, cast
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
+import uvicorn.config  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
@@ -333,6 +335,24 @@ def fastapi_app(
     return application, services
 
 
+LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
+    # fmt: off
+    "[%(asctime)s] [%(process)s]"
+    " %(levelprefix)s"
+    "  %(message)s"
+    # fmt: on
+)
+LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
+    # fmt: off
+    "[%(asctime)s] [%(process)s] [%(name)s]"
+    " %(levelprefix)s"
+    " %(client_addr)s - \"%(request_line)s\""
+    " %(status_code)s"
+    # fmt: on
+)
+
+
 def main() -> None:
     arguments = parse_arguments()
     if arguments.module == Module.APP:
@@ -343,7 +363,7 @@ def main() -> None:
             auto_upgrade_db=arguments.auto_upgrade_db,
         )[0]
         # noinspection PyTypeChecker
-        uvicorn.run(app, host="0.0.0.0", port=8080)
+        uvicorn.run(app, host="0.0.0.0", port=8080, log_config=LOGGING_CONFIG)
     else:
         services = SingletonServices(arguments.config_file, [arguments.module])
         services.start()
