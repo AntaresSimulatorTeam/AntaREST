@@ -36,28 +36,52 @@ cd ..
 NODE_OPTIONS="--max-old-space-size=8192" ./scripts/build-front.sh
 ```
 
+### Using PyInstaller
 
-### Using pyinstaller
+[PyInstaller](https://pyinstaller.org/en/stable/) is a tool for bundling Antares Web application and its dependencies
+into a standalone executable file that can be run on a target machine without requiring a Python interpreter or any
+additional software. It is used to create a desktop version of the application.
 
-Linux system:
+#### On Linux System
+
+Build Antares Web desktop version:
 
 ```shell script
 git log -1 HEAD --format=%H > ./resources/commit_id
 pyinstaller -F antarest/main.py -n server --additional-hooks-dir extra-hooks --add-data resources:resources
 ```
 
-Windows system:
+Print the version:
+
+```shell script
+dist/server --version  # or -v
+```
+
+Print help message:
+
+```shell script
+dist/server --help
+```
+
+#### On Windows System
+
+Build Antares Web desktop version:
 
 ```shell script
 git log -1 HEAD --format=%H > .\resources\commit_id
-pyinstaller -F api_iso_antares\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
+pyinstaller -F antares\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
 ```
 
-You can test the build is ok using:
+Print the version:
 
 ```shell script
-dist/server -v       # Linux based system
-dist\server.exe -v   # Windows system
+dist\server --version  # or -v
+```
+
+Print help message:
+
+```shell script
+dist\server --help
 ```
 
 ### Using docker
@@ -65,8 +89,12 @@ dist\server.exe -v   # Windows system
 To build the docker image, use the following command:
 
 ```shell script
-docker build --tag antarest -f docker/Dockerfile .
+docker build --tag antarest -f Dockerfile .
 ```
+
+This command will use the instructions in the `Dockerfile` located in the current directory to build a Docker image
+named "antarest". The resulting image can be used to run a container based on the configuration specified in the
+Dockerfile.
 
 ## Start the API
 
@@ -103,7 +131,7 @@ docker run \
 ```shell script
 pip install -r ./requirements.txt
 export PYTHONPATH=$PYTHONPATH:.
-python ./api_iso_antares/main.py -s $STUDIES_ABSOLUTE_PATH
+python ./antares/main.py -s $STUDIES_ABSOLUTE_PATH
 ```
 
 * $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
