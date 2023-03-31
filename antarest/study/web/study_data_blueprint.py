@@ -1,7 +1,6 @@
 import logging
-from typing import Any, Dict, List, Optional, Union
-
-from fastapi import APIRouter, Body, Depends
+from http import HTTPStatus
+from typing import Any, Dict, List, Optional, Union, cast
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -56,6 +55,8 @@ from antarest.study.business.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body
 
 logger = logging.getLogger(__name__)
 
@@ -65,12 +66,13 @@ def create_study_data_routes(
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
+
     Args:
         study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
-
+        The FastAPI route for Study data management
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -1024,7 +1026,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
         tags=[APITag.study_data],
-        summary="Get allocation options for a given area",
+        summary="Get the hydraulic allocation of a given area",
         response_model=AllocationFormFields,
     )
     def get_allocation_form_values(
@@ -1032,37 +1034,77 @@ def create_study_data_routes(
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationFormFields:
+        """
+        Get, for a given production area, the electrical energy consumption
+        coefficients to consider for the other areas.
+
+        Parameters:
+
+        - `uuid`: Study UUID, e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b'
+        - `area_id`: Production area ID, e.g.: 'EAST'
+
+        Returns form fields used for the allocation table:
+        The list of electrical energy consumption coefficients
+        to consider for each area.
+        """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        all_areas = study_service.get_all_areas(
-            uuid, area_type=AreaType.AREA, ui=False, params=params
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
         )
         return study_service.allocation_manager.get_field_values(
-            study, area_id, all_areas
+            all_areas, study, area_id
         )
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
         tags=[APITag.study_data],
-        summary="Set allocation options for a given area",
+        summary="Update the hydraulic allocation of a given area",
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def set_allocation_form_values(
         uuid: str,
         area_id: str,
-        data: AllocationFormFields,
+        data: AllocationFormFields = Body(
+            ...,
+            example=AllocationFormFields(
+                allocation=[
+                    {"areaId": "EAST", "coefficient": 1},
+                    {"areaId": "NORTH", "coefficient": 0.20},
+                ]
+            ),
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """
+        Update, for a given production area, the electrical energy consumption
+        coefficients to consider for the other areas.
+
+        Parameters:
+
+        - `uuid`: Study UUID, e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b'
+        - `area_id`: Production area ID, e.g.: 'EAST'
+        - `data`: Hydraulic allocation of the production area:
+              The list of electrical energy consumption coefficients
+              to consider for each area.
+        """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        all_areas = study_service.get_all_areas(
-            uuid, area_type=AreaType.AREA, ui=False, params=params
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
         )
-        return study_service.allocation_manager.set_field_values(
-            study, area_id, data, all_areas
+        study_service.allocation_manager.set_field_values(
+            all_areas, study, area_id, data
         )
 
     @bp.get(

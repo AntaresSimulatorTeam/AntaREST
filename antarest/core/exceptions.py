@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Optional, Set
+from typing import Iterable, Optional
 
 from fastapi import HTTPException
 
@@ -214,14 +214,25 @@ class DistrictAlreadyExist(HTTPException):
 
 
 class AllocationDataNotFound(HTTPException):
+    """
+    Exception raised if no hydraulic allocation
+    is defined for the given production area (the `.ini` file may be missing).
+    """
+
     def __init__(self, area_id: str):
-        msg = f"No allocation data found for area {area_id}"
+        msg = f"No allocation data found for area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class InvalidAllocationData(HTTPException):
-    def __init__(self, invalid_ids: Set[str]):
-        msg = f"Invalid areas: {', '.join(invalid_ids)}"
+    """
+    Exception raised if at least one area
+    of the hydraulic allocation table is not an existing area.
+    """
+
+    def __init__(self, invalid_ids: Iterable[str]):
+        areas = ", ".join([f"'{a}'" for a in invalid_ids])
+        msg = f"Invalid areas: {areas}"
         super().__init__(HTTPStatus.BAD_REQUEST, msg)
 
 
