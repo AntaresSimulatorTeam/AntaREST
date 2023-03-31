@@ -1,14 +1,12 @@
-import { Box } from "@mui/material";
+import { Box, Divider, Paper } from "@mui/material";
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
 import { useMemo } from "react";
-import { t } from "i18next";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
   getAreas,
-  getCurrentAreaId,
   getStudySynthesis,
 } from "../../../../../../../../redux/selectors";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -25,12 +23,10 @@ function Fields() {
     control,
     name: "allocation",
   });
-  const areaId = useAppSelector(getCurrentAreaId);
   const areas = useAppSelector((state) => getAreas(state, studyId));
   const areasById = useAppSelector(
     (state) => getStudySynthesis(state, studyId)?.areas
   );
-  const areaName = areasById?.[areaId]?.name ?? "";
 
   const filteredAreas = useMemo(() => {
     const allocatedAreaIds = fields.map((field) => field.areaId);
@@ -50,29 +46,36 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Fieldset
-      legend={t("study.modelization.hydro.allocation.areaName", { areaName })}
-      fullFieldWidth
-    >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column-reverse",
-          gap: 2,
-        }}
-      >
-        <AllocationSelect filteredAreas={filteredAreas} append={append} />
-        <Box>
-          {fields.map((field, index) => (
-            <AllocationField
-              key={field.id}
-              field={field}
-              index={index}
-              label={getAreaLabel(field.areaId)}
-              remove={remove}
-            />
-          ))}
-        </Box>
+    <Fieldset>
+      <Box sx={{ width: 1, height: 1 }}>
+        <Paper
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            p: 2,
+            backgroundImage:
+              "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          }}
+        >
+          <Box>
+            {fields.map((field, index) => (
+              <AllocationField
+                key={field.id}
+                field={field}
+                index={index}
+                label={getAreaLabel(field.areaId)}
+                remove={remove}
+              />
+            ))}
+          </Box>
+          <Divider
+            orientation="horizontal"
+            flexItem
+            sx={{ width: "95%", alignSelf: "center" }}
+          />
+          <AllocationSelect filteredAreas={filteredAreas} append={append} />
+        </Paper>
       </Box>
     </Fieldset>
   );

@@ -1,5 +1,5 @@
-import { Paper, Typography, IconButton } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Typography, IconButton, Box } from "@mui/material";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { AllocationFormFields } from "./utils";
@@ -26,26 +26,30 @@ function AllocationField({ field, index, label, remove }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Paper
+    <Box
       key={field.id}
       sx={{
         display: "flex",
         alignContent: "center",
         alignItems: "center",
-        justifyContent: "strech",
-        px: 2,
-        borderRadius: 0,
-        backgroundImage:
-          "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
       }}
     >
-      <Typography sx={{ flex: 1 }}>{label}</Typography>
+      <Typography
+        sx={{
+          width: "20%",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </Typography>
       <NumberFE
         key={field.id}
         name={`allocation.${index}.coefficient`}
         control={control}
         size="small"
-        sx={{ maxWidth: 80 }}
+        sx={{ maxWidth: 150 }}
         rules={{
           validate: {
             required: (value) => {
@@ -56,7 +60,6 @@ function AllocationField({ field, index, label, remove }: Props) {
           },
         }}
       />
-
       <IconButton
         onClick={() => remove(index)}
         disabled={field.areaId === currentAreaId}
@@ -64,9 +67,9 @@ function AllocationField({ field, index, label, remove }: Props) {
           visibility: field.areaId === currentAreaId ? "hidden" : "visible",
         }}
       >
-        <DeleteIcon />
+        <RemoveCircleOutlineIcon />
       </IconButton>
-    </Paper>
+    </Box>
   );
 }
 

@@ -24,13 +24,7 @@ function AllocationSelect({ filteredAreas, append }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
+    <Box>
       {filteredAreas.length > 0 && (
         <SelectFE
           label={t("study.modelization.hydro.allocation.select")}
@@ -39,7 +33,7 @@ function AllocationSelect({ filteredAreas, append }: Props) {
             append({ areaId: e.target.value as string, coefficient: 0 });
           }}
           size="small"
-          sx={{ minWidth: 180 }}
+          variant="outlined"
         />
       )}
     </Box>

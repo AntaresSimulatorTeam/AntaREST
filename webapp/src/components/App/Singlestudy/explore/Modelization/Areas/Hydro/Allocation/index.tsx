@@ -48,7 +48,7 @@ function Allocation() {
       sx={{
         width: 1,
         height: 1,
-        py: 1,
+        p: 1,
         overflowX: "auto",
       }}
     >
