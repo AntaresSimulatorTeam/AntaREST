@@ -224,18 +224,6 @@ class AllocationDataNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
-class InvalidAllocationData(HTTPException):
-    """
-    Exception raised if at least one area
-    of the hydraulic allocation table is not an existing area.
-    """
-
-    def __init__(self, invalid_ids: Iterable[str]):
-        areas = ", ".join([f"'{a}'" for a in invalid_ids])
-        msg = f"Invalid areas: {areas}"
-        super().__init__(HTTPStatus.BAD_REQUEST, msg)
-
-
 class BadEditInstructionException(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)

@@ -1,9 +1,8 @@
-from typing import List
+from typing import List, Union
 
-from antarest.core.exceptions import (
-    AllocationDataNotFound,
-    InvalidAllocationData,
-)
+import numpy
+import numpy as np
+from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -14,7 +13,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import NonNegativeFloat
+from pydantic import NonNegativeFloat, validator, BaseModel
 
 
 class AllocationField(FormFieldsBaseModel):
@@ -32,6 +31,37 @@ class AllocationFormFields(FormFieldsBaseModel):
 
     allocation: List[AllocationField]
 
+    # noinspection PyMethodParameters
+    @validator("allocation")
+    def validate_hydro_allocation_table(cls, fields: List[AllocationField]):
+        """
+        Validate hydraulic allocation table.
+
+        Args:
+            fields: A list of validated allocation fields containing
+            the coefficients to be validated.
+
+        Raises:
+            ValueError:
+                If the coefficients array is empty or has no non-null values.
+
+        Returns:
+            The allocation fields.
+        """
+        array = np.array([f.coefficient for f in fields])
+        if array.size == 0:
+            raise ValueError("coefficients array is empty")
+        elif np.any(array == 0):
+            raise ValueError("coefficients array has no non-null values")
+        else:
+            return fields
+
+
+class AllocationMatrix(BaseModel):
+    index: List[str]
+    columns: List[str]
+    data: List[List[NonNegativeFloat]]
+
 
 class AllocationManager:
     """
@@ -44,23 +74,34 @@ class AllocationManager:
 
     def get_field_values(
         self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
-    ) -> AllocationFormFields:
+    ) -> Union[AllocationFormFields, AllocationMatrix]:
         """
-        Get the hydraulic allocation table of the given production area.
+        Get the hydraulic allocation table of the given production area (or areas).
 
         Get, for a given production area, the electrical energy consumption
         coefficients to consider for the other areas.
         Those values are used to fill in the allocation table form.
 
+        If several areas are selected (with a comma-separated list of area IDs),
+        it returns the hydraulic allocation matrix of the selected areas.
+
+        If the star symbol "*" is used, it returns the hydraulic allocation
+        matrix of the all the areas.
+
         Args:
             study: the current study
-            area_id: Production area ID from which we want to retrieve the allocation table.
+            area_id:
+                A production area ID (e.g.: 'EAST'),
+                a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'), or
+                the star symbol '*' (all areas).
             all_areas: The complete list of study areas.
 
         Returns:
             Hydraulic allocation of the production area:
             The list of electrical energy consumption coefficients
             to consider for each area.
+
+            Or, returns the hydraulic allocation matrix of several areas
 
         Raises:
             AllocationDataNotFound: exception raised if no hydraulic allocation
@@ -72,17 +113,31 @@ class AllocationManager:
         )
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
-
-        areas_ids = {area.id for area in all_areas}
-        area, values = allocation_data.popitem()
-
-        return AllocationFormFields.construct(
-            allocation=[
-                AllocationField.construct(areaId=area, coefficient=value)
-                for area, value in values.items()
-                if area in areas_ids  # filter invalid areas
-            ]
-        )
+        if len(allocation_data) == 1:
+            # single-column allocation table
+            areas_ids = {area.id for area in all_areas}
+            allocations = allocation_data["[allocation]"]
+            return AllocationFormFields.construct(
+                allocation=[
+                    AllocationField.construct(areaId=area, coefficient=value)
+                    for area, value in allocations.items()
+                    if area in areas_ids  # filter invalid areas
+                ]
+            )
+        else:
+            # allocation matrix
+            rows = sorted(area.id for area in all_areas)
+            columns = sorted(allocation_data)
+            array = numpy.zeros((len(rows), len(columns)), dtype=numpy.float)
+            for prod_area, allocation_dict in allocation_data.items():
+                allocations = allocation_dict["[allocation]"]
+                for cons_area, coefficient in allocations.items():
+                    row_idx = rows.index(cons_area)
+                    col_idx = columns.index(prod_area)
+                    array[row_idx][col_idx] = coefficient
+            return AllocationMatrix.construct(
+                index=rows, columns=columns, data=array.tolist()
+            )
 
     def set_field_values(
         self,
@@ -103,13 +158,14 @@ class AllocationManager:
                 to consider for each area.
 
         Raises:
-            InvalidAllocationData: exception raised if at least one area
+            AreaNotFound: exception raised if at least one area
             of the hydraulic allocation table is not an existing area.
         """
         allocation_ids = {field.area_id for field in data.allocation}
         areas_ids = {area.id for area in all_areas}
         if invalid_ids := allocation_ids - areas_ids:
-            raise InvalidAllocationData(invalid_ids)
+            # sorting is mandatory for unit tests
+            raise AreaNotFound(*sorted(invalid_ids))
 
         command_context = (
             self.storage_service.variant_study_service.command_factory.command_context

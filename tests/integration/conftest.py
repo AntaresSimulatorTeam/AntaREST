@@ -24,7 +24,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
         Mock(),

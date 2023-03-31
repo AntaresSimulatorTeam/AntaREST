@@ -17,7 +17,10 @@ from antarest.study.business.adequacy_patch_management import (
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
 )
-from antarest.study.business.allocation_management import AllocationFormFields
+from antarest.study.business.allocation_management import (
+    AllocationFormFields,
+    AllocationMatrix,
+)
 from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaInfoDTO,
@@ -1026,26 +1029,40 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
         tags=[APITag.study_data],
-        summary="Get the hydraulic allocation of a given area",
-        response_model=AllocationFormFields,
+        summary=(
+            "Get the hydraulic allocation of a given area,"
+            " or the allocation matrix of several areas"
+        ),
+        response_model=Union[AllocationFormFields, AllocationMatrix],
     )
     def get_allocation_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> AllocationFormFields:
+    ) -> Union[AllocationFormFields, AllocationMatrix]:
         """
         Get, for a given production area, the electrical energy consumption
         coefficients to consider for the other areas.
 
+        If several areas are selected (with a comma-separated list of area IDs),
+        it returns the hydraulic allocation matrix of the selected areas.
+
+        If the star symbol "*" is used, it returns the hydraulic allocation
+        matrix of the all the areas.
+
         Parameters:
 
-        - `uuid`: Study UUID, e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b'
-        - `area_id`: Production area ID, e.g.: 'EAST'
+        - `uuid`: Study UUID (e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b')
+        - `area_id`:
+            A production area ID (e.g.: 'EAST'),
+            a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'), or
+            the star symbol '*' (all areas).
 
         Returns form fields used for the allocation table:
         The list of electrical energy consumption coefficients
         to consider for each area.
+
+        Or, returns the hydraulic allocation matrix of several areas
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
@@ -1087,8 +1104,8 @@ def create_study_data_routes(
 
         Parameters:
 
-        - `uuid`: Study UUID, e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b'
-        - `area_id`: Production area ID, e.g.: 'EAST'
+        - `uuid`: Study UUID (e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b')
+        - `area_id`: Production area ID (e.g.: 'EAST')
         - `data`: Hydraulic allocation of the production area:
               The list of electrical energy consumption coefficients
               to consider for each area.
