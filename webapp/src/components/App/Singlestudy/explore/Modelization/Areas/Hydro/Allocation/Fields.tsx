@@ -20,16 +20,17 @@ function Fields() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
-  const areas = useAppSelector((state) => getAreas(state, studyId));
-  const areasById = useAppSelector(
-    (state) => getStudySynthesis(state, studyId)?.areas
-  );
   const { control } = useFormContextPlus<AllocationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "allocation",
   });
+  const areaId = useAppSelector(getCurrentAreaId);
+  const areas = useAppSelector((state) => getAreas(state, studyId));
+  const areasById = useAppSelector(
+    (state) => getStudySynthesis(state, studyId)?.areas
+  );
+  const areaName = areasById?.[areaId]?.name ?? "";
 
   const filteredAreas = useMemo(() => {
     const allocatedAreaIds = fields.map((field) => field.areaId);
@@ -50,7 +51,7 @@ function Fields() {
 
   return (
     <Fieldset
-      legend={t("study.modelization.hydro.allocation.areaId", { areaId })}
+      legend={t("study.modelization.hydro.allocation.areaName", { areaName })}
       fullFieldWidth
     >
       <Box

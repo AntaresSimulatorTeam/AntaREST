@@ -393,7 +393,7 @@
   "study.modelization.load": "Conso",
   "study.modelization.thermal": "Clus. Thermiques",
   "study.modelization.hydro": "Hydro",
-  "study.modelization.hydro.allocation.areaId": "Allocation pour la zone {{areaId}}",
+  "study.modelization.hydro.allocation.areaName": "Allocation pour la zone {{areaName}}",
   "study.modelization.hydro.allocation.select": "Choisir une zone",
   "study.modelization.hydro.allocation.error.field.delete": "Erreur lors de la suppression de l'allocation",
   "study.modelization.wind": "Éolien",
