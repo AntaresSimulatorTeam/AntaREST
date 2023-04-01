@@ -1,8 +1,8 @@
-from typing import List, Union
+from typing import List
 
 import numpy
 import numpy as np
-from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
+from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound, MultipleAllocationDataFound
 from antarest.study.business.area_management import AreaInfoDTO
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -72,36 +72,27 @@ class AllocationManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_field_values(
+    def get_allocation_matrix(
         self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
-    ) -> Union[AllocationFormFields, AllocationMatrix]:
+    ) -> AllocationMatrix:
         """
-        Get the hydraulic allocation table of the given production area (or areas).
-
-        Get, for a given production area, the electrical energy consumption
-        coefficients to consider for the other areas.
-        Those values are used to fill in the allocation table form.
-
-        If several areas are selected (with a comma-separated list of area IDs),
-        it returns the hydraulic allocation matrix of the selected areas.
-
-        If the star symbol "*" is used, it returns the hydraulic allocation
-        matrix of the all the areas.
+        Get the electrical energy consumption matrix for a given production area,
+        a selected list of production areas or all areas.
 
         Args:
+            all_areas: The complete list of study areas.
             study: the current study
             area_id:
                 A production area ID (e.g.: 'EAST'),
-                a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'), or
-                the star symbol '*' (all areas).
-            all_areas: The complete list of study areas.
+                a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'),
+                or all areas using the star symbol (e.g.: '*').
 
         Returns:
-            Hydraulic allocation of the production area:
-            The list of electrical energy consumption coefficients
-            to consider for each area.
+            Returns the data frame matrix, where:
 
-            Or, returns the hydraulic allocation matrix of several areas
+            - `columns`: is the list of selected production areas (given by `area_id`),
+            - `index`: is the list of all study areas,
+            - `data`: is the 2D-array matrix of consumption coefficients.
 
         Raises:
             AllocationDataNotFound: exception raised if no hydraulic allocation
@@ -113,6 +104,44 @@ class AllocationManager:
         )
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
+        rows = sorted(area.id for area in all_areas)
+        columns = sorted(allocation_data)
+        array = numpy.zeros((len(rows), len(columns)), dtype=numpy.float)
+        for prod_area, allocation_dict in allocation_data.items():
+            allocations = allocation_dict["[allocation]"]
+            for cons_area, coefficient in allocations.items():
+                row_idx = rows.index(cons_area)
+                col_idx = columns.index(prod_area)
+                array[row_idx][col_idx] = coefficient
+        return AllocationMatrix.construct(
+            index=rows, columns=columns, data=array.tolist()
+        )
+
+    def get_field_values(
+        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+    ) -> AllocationFormFields:
+        """
+        Get the hydraulic allocation table of the given production area (or areas).
+
+        Args:
+            all_areas: The complete list of study areas.
+            study: the current study
+            area_id: A production area ID (e.g.: 'EAST').
+
+        Returns:
+            Hydraulic allocation of the production area:
+            The list of electrical energy consumption coefficients
+            to consider for each area.
+
+        Raises:
+            MultipleAllocationDataFound: exception raised if no hydraulic allocation
+            is defined for the given production area (the `.ini` file may be missing),
+            or if several production areas are requested.
+        """
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        allocation_data = file_study.tree.get(
+            f"input/hydro/allocation/{area_id}".split("/"), depth=2
+        )
         if len(allocation_data) == 1:
             # single-column allocation table
             areas_ids = {area.id for area in all_areas}
@@ -124,20 +153,7 @@ class AllocationManager:
                     if area in areas_ids  # filter invalid areas
                 ]
             )
-        else:
-            # allocation matrix
-            rows = sorted(area.id for area in all_areas)
-            columns = sorted(allocation_data)
-            array = numpy.zeros((len(rows), len(columns)), dtype=numpy.float)
-            for prod_area, allocation_dict in allocation_data.items():
-                allocations = allocation_dict["[allocation]"]
-                for cons_area, coefficient in allocations.items():
-                    row_idx = rows.index(cons_area)
-                    col_idx = columns.index(prod_area)
-                    array[row_idx][col_idx] = coefficient
-            return AllocationMatrix.construct(
-                index=rows, columns=columns, data=array.tolist()
-            )
+        raise MultipleAllocationDataFound(*allocation_data)
 
     def set_field_values(
         self,

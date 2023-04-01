@@ -215,13 +215,36 @@ class DistrictAlreadyExist(HTTPException):
 
 class AllocationDataNotFound(HTTPException):
     """
-    Exception raised if no hydraulic allocation
-    is defined for the given production area (the `.ini` file may be missing).
+    Exception raised if no hydraulic allocation is defined for the given
+    production area (the `.ini` file may be missing).
     """
 
-    def __init__(self, area_id: str):
-        msg = f"No allocation data found for area '{area_id}'"
+    def __init__(self, *area_ids: str) -> None:
+        count = len(area_ids)
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        msg = {
+            0: "Hydraulic allocation found",
+            1: f"{count} hydraulic allocation is not found: {ids}",
+            2: f"{count} hydraulic allocations are not found: {ids}",
+        }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class MultipleAllocationDataFound(HTTPException):
+    """
+    Exception raised if several hydraulic allocation are requested when only
+    one can be processed (several production area).
+    """
+
+    def __init__(self, *area_ids: str) -> None:
+        count = len(area_ids)
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        msg = {
+            0: "No hydraulic allocation found",
+            1: f"{count} hydraulic allocation is found: {ids}",
+            2: f"{count} hydraulic allocations are found: {ids}",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.CONFLICT, msg)
 
 
 class BadEditInstructionException(HTTPException):

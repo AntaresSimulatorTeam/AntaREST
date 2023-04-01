@@ -72,7 +72,7 @@ class TestHydroAllocation:
         expected: List[List[float]],
     ):
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation",
+            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation.df",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK
