@@ -1,7 +1,7 @@
 from http import HTTPStatus
-from typing import Iterable, Optional
+from typing import Optional
 
-from fastapi import HTTPException
+from fastapi.exceptions import HTTPException
 
 
 class ShouldNotHappenException(Exception):

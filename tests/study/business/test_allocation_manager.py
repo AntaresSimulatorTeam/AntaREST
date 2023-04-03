@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import uuid
-from unittest.mock import Mock, patch, ANY, call
+from unittest.mock import Mock, patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -288,10 +288,11 @@ class TestAllocationManager:
         ]
         area_id = "*"  # all areas
         manager = AllocationManager(study_storage_service)
-        with pytest.raises(AllocationDataNotFound):
+        with pytest.raises(AllocationDataNotFound) as ctx:
             manager.get_allocation_matrix(
                 all_areas=all_areas, study=study, area_id=area_id
             )
+        assert "'*'" in ctx.value.detail
 
     def test_get_field_values__nominal_case(
         self, db_session, study_storage_service, study_uuid
@@ -355,10 +356,12 @@ class TestAllocationManager:
         ]
         area_id = "n,s"  # North + South
         manager = AllocationManager(study_storage_service)
-        with pytest.raises(MultipleAllocationDataFound):
+        with pytest.raises(MultipleAllocationDataFound) as ctx:
             manager.get_field_values(
                 all_areas=all_areas, study=study, area_id=area_id
             )
+        assert "'n'" in ctx.value.detail
+        assert "'s'" in ctx.value.detail
 
     def test_set_field_values__nominal_case(
         self, db_session, study_storage_service, study_uuid
@@ -418,7 +421,7 @@ class TestAllocationManager:
         manager = AllocationManager(study_storage_service)
 
         with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            with pytest.raises(AreaNotFound):
+            with pytest.raises(AreaNotFound) as ctx:
                 manager.set_field_values(
                     all_areas=all_areas,
                     study=study,
@@ -431,4 +434,5 @@ class TestAllocationManager:
                         ]
                     ),
                 )
+            assert "'UNKNOWN'" in ctx.value.detail
         exe.assert_not_called()
