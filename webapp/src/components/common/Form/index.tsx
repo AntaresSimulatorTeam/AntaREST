@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import {
+  BatchFieldArrayUpdate,
   DeepPartial,
   FieldPath,
   FieldValues,
@@ -47,6 +48,7 @@ import {
   UseFormRegisterPlus,
   UseFormReturnPlus,
 } from "./types";
+import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
@@ -134,7 +136,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
   // To use it in wrapper functions without need to add the value in `useCallback`'s deps
-  const isSubmittingRef = useRef(isSubmitting);
+  const isSubmittingRef = useAutoUpdateRef(isSubmitting);
+  const isAutoSubmitEnabledRef = useAutoUpdateRef(autoSubmitConfig.enable);
 
   useAsyncDefaultValues(asyncDefaultValues, (values) => {
     reset(values);
@@ -146,8 +149,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
     if (isSubmitting) {
       setShowLoader.flush();
     }
-
-    isSubmittingRef.current = isSubmitting;
   }, [isSubmitting]);
 
   useUpdateEffect(
@@ -266,7 +267,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         ...options,
         onChange: (event: unknown) => {
           options?.onChange?.(event);
-          if (autoSubmitConfig.enable) {
+          if (isAutoSubmitEnabledRef.current) {
             if (
               isSubmittingRef.current &&
               !fieldsChangeDuringAutoSubmitting.current.includes(name)
@@ -281,7 +282,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       return register(name, newOptions);
     },
-    [autoSubmitConfig.enable, register, requestSubmit]
+    [isAutoSubmitEnabledRef, isSubmittingRef, register, requestSubmit]
   );
 
   const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
@@ -300,11 +301,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const setValueWrapper = useCallback<UseFormSetValue<TFieldValues>>(
     (name, value, options) => {
       const newOptions: typeof options = {
-        shouldDirty: autoSubmitConfig.enable, // Option false by default
+        shouldDirty: isAutoSubmitEnabledRef.current, // Option false by default
         ...options,
       };
 
-      if (autoSubmitConfig.enable && newOptions.shouldDirty) {
+      if (isAutoSubmitEnabledRef.current && newOptions.shouldDirty) {
         if (isSubmittingRef.current) {
           fieldsChangeDuringAutoSubmitting.current.push(name);
         }
@@ -316,7 +317,13 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
       setValue(name, value, newOptions);
     },
-    [autoSubmitConfig.enable, setValue, getValues, requestSubmit]
+    [
+      getValues,
+      isAutoSubmitEnabledRef,
+      isSubmittingRef,
+      requestSubmit,
+      setValue,
+    ]
   );
 
   const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
@@ -326,8 +333,25 @@ function Form<TFieldValues extends FieldValues, TContext>(
     controlPlus.unregister = unregisterWrapper;
     controlPlus._showSkeleton = showSkeleton;
 
+    const updateFieldArrayOriginal = control._updateFieldArray.bind(control);
+    const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
+      updateFieldArrayOriginal(...args);
+      if (isAutoSubmitEnabledRef.current) {
+        requestSubmit();
+      }
+    };
+    // Used by `useFieldArray` hook's methods (`append`, `remove`...)
+    controlPlus._updateFieldArray = updateFieldArrayWrapper;
+
     return controlPlus;
-  }, [control, registerWrapper, unregisterWrapper, showSkeleton]);
+  }, [
+    control,
+    isAutoSubmitEnabledRef,
+    registerWrapper,
+    requestSubmit,
+    showSkeleton,
+    unregisterWrapper,
+  ]);
 
   ////////////////////////////////////////////////////////////////
   // Form API Plus
