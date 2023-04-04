@@ -1,5 +1,6 @@
+import contextlib
 import logging
-from typing import Any, List, Tuple, Dict
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -13,12 +14,12 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -36,11 +37,12 @@ class RemoveArea(ICommand):
     def _remove_area_from_links_in_config(
         self, study_data_config: FileStudyTreeConfig
     ) -> None:
-        link_to_remove = []
-        for area_name, area in study_data_config.areas.items():
-            for link in area.links.keys():
-                if link == self.id:
-                    link_to_remove.append((area_name, link))
+        link_to_remove = [
+            (area_name, link)
+            for area_name, area in study_data_config.areas.items()
+            for link in area.links
+            if link == self.id
+        ]
         for area_name, link in link_to_remove:
             del study_data_config.areas[area_name].links[link]
 
@@ -49,11 +51,9 @@ class RemoveArea(ICommand):
     ) -> None:
         for id, set in study_data_config.sets.items():
             if set.areas and self.id in set.areas:
-                try:
+                with contextlib.suppress(ValueError):
                     set.areas.remove(self.id)
                     study_data_config.sets[id] = set
-                except ValueError:
-                    pass
 
     def _apply_config(
         self, study_data_config: FileStudyTreeConfig
@@ -69,98 +69,87 @@ class RemoveArea(ICommand):
 
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
-            dict(),
+            {},
         )
 
     def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
-            for link in area.links.keys():
+            for link in area.links:
                 if link == self.id:
                     study_data.tree.delete(
                         ["input", "links", area_name, "properties", self.id]
                     )
                     try:
+                        # fmt: off
                         if study_data.config.version < 820:
-                            study_data.tree.delete(
-                                ["input", "links", area_name, self.id]
-                            )
+                            study_data.tree.delete(["input", "links", area_name, self.id])
                         else:
-                            study_data.tree.delete(
-                                [
-                                    "input",
-                                    "links",
-                                    area_name,
-                                    f"{self.id}_parameters",
-                                ]
-                            )
-                            study_data.tree.delete(
-                                [
-                                    "input",
-                                    "links",
-                                    area_name,
-                                    "capacities",
-                                    f"{self.id}_indirect",
-                                ]
-                            )
-                            study_data.tree.delete(
-                                [
-                                    "input",
-                                    "links",
-                                    area_name,
-                                    "capacities",
-                                    f"{self.id}_direct",
-                                ]
-                            )
+                            study_data.tree.delete(["input", "links", area_name, f"{self.id}_parameters"])
+                            study_data.tree.delete(["input", "links", area_name, "capacities", f"{self.id}_indirect"])
+                            study_data.tree.delete(["input", "links", area_name, "capacities", f"{self.id}_direct"])
+                        # fmt: on
                     except ChildNotFoundError as e:
                         logger.warning(
-                            f"Failed to clean link data when deleting area {self.id} in study {study_data.config.study_id}",
+                            f"Failed to clean link data when deleting area {self.id}"
+                            f" in study {study_data.config.study_id}",
                             exc_info=e,
                         )
 
     def _remove_area_from_binding_constraints(
         self, study_data: FileStudy
     ) -> None:
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        # fmt: off
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        id_to_remove = set()
+        id_to_remove = {
+            bc_id
+            for bc_id, bc in binding_constraints.items()
+            for key in bc
+            if self.id in key
+        }
 
-        for id, bc in binding_constraints.items():
-            for key in bc.keys():
-                if self.id in key:
-                    id_to_remove.add(id)
-
-        for id in id_to_remove:
+        for bc_id in id_to_remove:
             study_data.tree.delete(
-                [
-                    "input",
-                    "bindingconstraints",
-                    binding_constraints[id]["id"],
-                ]
+                ["input", "bindingconstraints", binding_constraints[bc_id]["id"]]
             )
-            del binding_constraints[id]
+            del binding_constraints[bc_id]
 
-        study_data.tree.save(
-            binding_constraints,
-            ["input", "bindingconstraints", "bindingconstraints"],
+        study_data.tree.save(binding_constraints, ["input", "bindingconstraints", "bindingconstraints"])
+        # fmt: on
+
+    def _remove_area_from_hydro_allocation(
+        self, study_data: FileStudy
+    ) -> None:
+        """
+        Delete the column for the hydraulic production area
+        and updates the rows for the other areas.
+
+        Args:
+            study_data: file study
+        """
+        study_data.tree.delete(["input", "hydro", "allocation", self.id])
+        allocation_cfg = study_data.tree.get(
+            ["input", "hydro", "allocation", "*"]
         )
+        if len(allocation_cfg) == 1:
+            # IMPORTANT: when there is only one element left the function returns
+            # the allocation of the element in place of the dictionary by zone
+            allocation_cfg = {self.id: allocation_cfg}
+        allocation_cfg.pop(self.id, None)  # ensure allocation is removed
+        for prod_area, allocation_dict in allocation_cfg.items():
+            for name, allocations in allocation_dict.items():
+                allocations.pop(self.id, None)
+        study_data.tree.save(allocation_cfg, ["input", "hydro", "allocation"])
 
     def _remove_area_from_districts(self, study_data: FileStudy) -> None:
         districts = study_data.tree.get(["input", "areas", "sets"])
-        for id, district in districts.items():
+        for district in districts.values():
             if district.get("+", None):
-                try:
+                with contextlib.suppress(ValueError):
                     district["+"].remove(self.id)
-                except ValueError:
-                    pass
             elif district.get("-", None):
-                try:
+                with contextlib.suppress(ValueError):
                     district["-"].remove(self.id)
-                except ValueError:
-                    pass
-
-            districts[id] = district
 
         study_data.tree.save(districts, ["input", "areas", "sets"])
 
@@ -170,113 +159,45 @@ class RemoveArea(ICommand):
     def _remove_area_from_time_series(self, study_data: FileStudy) -> None:
         study_data.tree.delete(["input", "thermal", "series", self.id])
 
+    # noinspection SpellCheckingInspection
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        # fmt: off
         study_data.tree.delete(["input", "areas", self.id])
-
-        study_data.tree.delete(["input", "hydro", "allocation", self.id])
-        study_data.tree.delete(
-            ["input", "hydro", "common", "capacity", f"maxpower_{self.id}"]
-        )
-        study_data.tree.delete(
-            ["input", "hydro", "common", "capacity", f"reservoir_{self.id}"]
-        )
+        study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
+        study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
         study_data.tree.delete(["input", "hydro", "prepro", self.id])
         study_data.tree.delete(["input", "hydro", "series", self.id])
-        study_data.tree.delete(
-            ["input", "hydro", "hydro", "inter-daily-breakdown", self.id]
-        )
-        study_data.tree.delete(
-            ["input", "hydro", "hydro", "intra-daily-modulation", self.id]
-        )
-        study_data.tree.delete(
-            ["input", "hydro", "hydro", "inter-monthly-breakdown", self.id]
-        )
+        study_data.tree.delete(["input", "hydro", "hydro", "inter-daily-breakdown", self.id])
+        study_data.tree.delete(["input", "hydro", "hydro", "intra-daily-modulation", self.id])
+        study_data.tree.delete(["input", "hydro", "hydro", "inter-monthly-breakdown", self.id])
         study_data.tree.delete(["input", "load", "prepro", self.id])
         study_data.tree.delete(["input", "load", "series", f"load_{self.id}"])
         study_data.tree.delete(["input", "misc-gen", f"miscgen-{self.id}"])
         study_data.tree.delete(["input", "reserves", self.id])
         study_data.tree.delete(["input", "solar", "prepro", self.id])
-        study_data.tree.delete(
-            ["input", "solar", "series", f"solar_{self.id}"]
-        )
+        study_data.tree.delete(["input", "solar", "series", f"solar_{self.id}"])
         study_data.tree.delete(["input", "thermal", "clusters", self.id])
-        study_data.tree.delete(
-            ["input", "thermal", "areas", "unserverdenergycost", self.id]
-        )
-        study_data.tree.delete(
-            ["input", "thermal", "areas", "spilledenergycost", self.id]
-        )
+        study_data.tree.delete(["input", "thermal", "areas", "unserverdenergycost", self.id])
+        study_data.tree.delete(["input", "thermal", "areas", "spilledenergycost", self.id])
         study_data.tree.delete(["input", "wind", "prepro", self.id])
         study_data.tree.delete(["input", "wind", "series", f"wind_{self.id}"])
         study_data.tree.delete(["input", "links", self.id])
+        # fmt: on
 
         if study_data.config.version > 650:
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "hydro",
-                    "initialize reservoir date",
-                    self.id,
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "hydro",
-                    "leeway low",
-                    self.id,
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "hydro",
-                    "leeway up",
-                    self.id,
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "hydro",
-                    "pumping efficiency",
-                    self.id,
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "common",
-                    "capacity",
-                    f"creditmodulations_{self.id}",
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "common",
-                    "capacity",
-                    f"inflowPattern_{self.id}",
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "hydro",
-                    "common",
-                    "capacity",
-                    f"waterValues_{self.id}",
-                ]
-            )
+            # fmt: off
+            study_data.tree.delete(["input", "hydro", "hydro", "initialize reservoir date", self.id])
+            study_data.tree.delete(["input", "hydro", "hydro", "leeway low", self.id])
+            study_data.tree.delete(["input", "hydro", "hydro", "leeway up", self.id])
+            study_data.tree.delete(["input", "hydro", "hydro", "pumping efficiency", self.id])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"creditmodulations_{self.id}"])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{self.id}"])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
+            # fmt: on
 
         self._remove_area_from_links(study_data)
         self._remove_area_from_binding_constraints(study_data)
+        self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
         self._remove_area_from_cluster(study_data)
         self._remove_area_from_time_series(study_data)
@@ -310,9 +231,7 @@ class RemoveArea(ICommand):
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveArea):
-            return False
-        return self.id == other.id
+        return isinstance(other, RemoveArea) and self.id == other.id
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

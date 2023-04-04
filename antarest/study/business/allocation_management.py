@@ -173,6 +173,8 @@ class AllocationManager:
         if not allocation_cfg:
             raise AllocationDataNotFound(area_id)
         elif len(allocation_cfg) == 1:
+            # IMPORTANT: when there is only one element left the function returns
+            # the allocation of the element in place of the dictionary by zone
             allocation_cfg = {area_id: allocation_cfg}
         # Preserve the order of `all_areas`
         rows = [area.id for area in all_areas]
