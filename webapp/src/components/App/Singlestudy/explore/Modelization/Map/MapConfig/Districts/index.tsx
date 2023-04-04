@@ -1,5 +1,4 @@
 import { Box, Button } from "@mui/material";
-import AutoSizer from "react-virtualized-auto-sizer";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
@@ -121,22 +120,16 @@ function Districts() {
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
         {columns.length > 0 && (
-          <AutoSizer>
-            {({ height, width }) => (
-              <Box sx={{ height, width, position: "relative" }}>
-                <FormTable
-                  key={JSON.stringify(defaultValues)}
-                  defaultValues={defaultValues}
-                  tableProps={{
-                    columns,
-                    colHeaders: (_, colName) => districtsById[colName].name,
-                    selectionMode: "single",
-                  }}
-                  onSubmit={handleSubmit}
-                />
-              </Box>
-            )}
-          </AutoSizer>
+          <FormTable
+            key={JSON.stringify(defaultValues)}
+            defaultValues={defaultValues}
+            tableProps={{
+              columns,
+              colHeaders: (_, colName) => districtsById[colName].name,
+              selectionMode: "single",
+            }}
+            onSubmit={handleSubmit}
+          />
         )}
       </Box>
 

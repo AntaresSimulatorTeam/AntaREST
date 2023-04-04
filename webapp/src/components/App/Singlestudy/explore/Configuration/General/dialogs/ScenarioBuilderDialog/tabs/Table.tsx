@@ -132,7 +132,6 @@ function Table(props: Props) {
           `${t("study.configuration.general.mcScenarioBuilder.year")} ${
             index + 1
           }`,
-        height: "100%",
         stretchH: "all",
         className: "htCenter",
       }}
