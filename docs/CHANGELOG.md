@@ -1,10 +1,22 @@
 Antares Web Changelog
 =====================
 
-v2.13.0 (unreleased)
+v2.13.1 (unreleased)
 --------------------
 
 ### Bug Fixes
+
+*  **desktop:** use Antares Solver v8.5 for Antares Web Desktop version (#1414) ([6979e87](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6979e871dac39a34e76fe6a72b2ccf4502e8a288))
+*  **launcher:** improved reliability of task state retrieval sent to SLUM (#1417) ([101dd8c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/101dd8c2a149c5112669d557d0851a9b1659d683))
+*  **api:** show Antares Launcher version in the `/version` end point (#1415) ([12bfa84](https://github.com/AntaresSimulatorTeam/AntaREST/commit/12bfa849e2232ea275851ad11407faf70bb91d2c))
+*  **desktop:** use Antares Solver v8.5.0 for Antares Web Desktop version (#1419) ([8f55667](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8f55667b52eea39a7d0e646811f16ef024afbbe0))
+*  **api:** better handling of exception to catch the stacktrace (#1422) ([a2d0de0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a2d0de073582070282131b3bcd346e6fbe7315ab))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">Laurent LAPORTE</a>, and
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
 
 
 v2.13.0 (2023-03-09)
@@ -68,7 +80,7 @@ v2.13.0 (2023-03-09)
 ### Contributors
 
 <a href="https://github.com/hdinia">hdinia</a>,
-<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/laurent-laporte-pro">Laurent LAPORTE</a>,
 <a href="https://github.com/pl-buiquang">pl-buiquang</a>,
 <a href="https://github.com/skamril">skamril</a>,
 <a href="https://github.com/MartinBelthle">MartinBelthle</a>
