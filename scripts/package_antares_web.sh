@@ -12,7 +12,7 @@ ANTARES_SOLVER_FULL_VERSION_INT="850"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 PROJECT_DIR=$(dirname -- "${SCRIPT_DIR}")
-DIST_DIR="${PROJECT_DIR}/dist"
+DIST_DIR="${PROJECT_DIR}/dist/package"
 RESOURCES_DIR="${PROJECT_DIR}/resources"
 ANTARES_SOLVER_DIR="${DIST_DIR}/AntaresWeb/antares_solver"
 

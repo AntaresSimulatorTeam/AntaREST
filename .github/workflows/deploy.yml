@@ -1,3 +1,4 @@
+#file: noinspection YAMLSchemaValidation
 name: deploy
 on:
   push:
@@ -14,69 +15,92 @@ jobs:
         os: [ windows-latest, ubuntu-20.04 ]
 
     steps:
-      - name: Checkout github repo (+ download lfs dependencies)
+      - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
         uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Install wget for windows
+
+      - name: 🔗 Install wget for Windows
         if: matrix.os == 'windows-latest'
         run: choco install wget --no-progress
-      - name: Set up Node.js
-        uses: actions/setup-node@v1
+
+      - name: 💚 Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '14.x'
-      - name: Install dependencies
+
+      - name: 💚 Install dependencies
         run: npm install
         working-directory: webapp
-      - name: Build
+
+      - name: 💚 Build webapp
         run: bash ./build-front.sh
         working-directory: scripts
         env:
           NODE_OPTIONS: --max-old-space-size=8192
-      - name: Set up Python
+
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
-      - name: Install dependencies
+
+      - name: 🐍 Install development dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
-      - name: Install Windows dependencies
+
+      - name: 🐍 Install Windows dependencies
         if: matrix.os == 'windows-latest'
         run: pip install -r requirements-windows.txt
-      - name: Generate Windows binary
+
+      - name: 🔧 Generate Antares Desktop for Windows
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller AntaresWebWin.spec
-      - name: Generate linux binary
+          pyinstaller --distpath dist/package AntaresWebWin.spec
+
+      - name: 🔧 Generate Antares Desktop for Ubuntu
         if: matrix.os == 'ubuntu-20.04'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller AntaresWebLinux.spec
-      - name: Generate Windows worker binary
+          pyinstaller --distpath dist/package AntaresWebLinux.spec
+
+      - name: 🔧 Generate Antares Worker for Windows
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
-      - name: Generate Linux worker binary
+          pyinstaller --distpath dist/package -F antarest\worker\archive_worker_service.py -n AntaresWebWorker --add-data ".\resources;.\resources"
+
+      - name: 🔧 Generate Antares Worker for Ubuntu
         if: matrix.os == 'ubuntu-20.04'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources
-      - name: Packaging
+          pyinstaller --distpath dist/package -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources
+
+      - name: 📦 Packaging
         run: bash ./package_antares_web.sh
         working-directory: scripts
-      - name: install changelog requirements
+
+      - name: 📜 Install changelog requirements
         run: npm install -g auto-changelog
-      - name: generate changelog file
+
+      - name: 📜️ Generate changelog file
         run: |
           auto-changelog -l false --hide-empty-releases
-          cp CHANGELOG.md dist/CHANGELOG.md
-      - name: Archive binaries
-        uses: actions/upload-artifact@v2
+          mv CHANGELOG.md dist/package/CHANGELOG.md
+
+      - name: 📦 Archive Antares Desktop/Worker for Windows
+        if: matrix.os == 'windows-latest'
+        run: 7z dist/AntaresWeb-${{ matrix.os }}.zip dist/package/*
+
+      - name: 📦 Archive Antares Desktop/Worker for Ubuntu
+        if: matrix.os == 'ubuntu-20.04'
+        run: zip --symlinks dist/AntaresWeb-${{ matrix.os }}.zip dist/package/*
+
+      - name: 🚀 Upload binaries
+        uses: actions/upload-artifact@v3
         with:
           name: AntaresWeb-${{ matrix.os }}
-          path: dist/*
+          path: dist/AntaresWeb-${{ matrix.os }}.zip
