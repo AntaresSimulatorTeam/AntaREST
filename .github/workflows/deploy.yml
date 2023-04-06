@@ -91,16 +91,19 @@ jobs:
           auto-changelog -l false --hide-empty-releases
           mv CHANGELOG.md dist/package/CHANGELOG.md
 
-      - name: 📦 Archive Antares Desktop/Worker for Windows
+      - name: 📦 Archive Antares Desktop + Worker for Windows
         if: matrix.os == 'windows-latest'
-        run: 7z a dist/AntaresWeb-${{ matrix.os }}.zip dist\package\
+        run: 7z a AntaresWeb.zip *
+        working-directory: dist/package
 
-      - name: 📦 Archive Antares Desktop/Worker for Ubuntu
+      - name: 📦 Archive Antares Desktop + Worker for Ubuntu
+        # this is the only way to preserve file permission and symlinks
         if: matrix.os == 'ubuntu-20.04'
-        run: zip --symlinks dist/AntaresWeb-${{ matrix.os }}.zip dist/package/*
+        run: zip -r --symlinks AntaresWeb.zip *
+        working-directory: dist/package
 
       - name: 🚀 Upload binaries
         uses: actions/upload-artifact@v3
         with:
           name: AntaresWeb-${{ matrix.os }}
-          path: dist/AntaresWeb-${{ matrix.os }}.zip
+          path: dist/package/AntaresWeb.zip
