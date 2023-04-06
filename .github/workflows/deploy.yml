@@ -93,7 +93,7 @@ jobs:
 
       - name: 📦 Archive Antares Desktop/Worker for Windows
         if: matrix.os == 'windows-latest'
-        run: 7z dist/AntaresWeb-${{ matrix.os }}.zip dist/package/*
+        run: 7z a dist/AntaresWeb-${{ matrix.os }}.zip dist\package\
 
       - name: 📦 Archive Antares Desktop/Worker for Ubuntu
         if: matrix.os == 'ubuntu-20.04'
