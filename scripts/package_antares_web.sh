@@ -61,13 +61,17 @@ echo "INFO: Creating shortcuts..."
 if [[ "$OSTYPE" == "msys"* ]]; then
   cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
-  # Create a relative link to `AntaresWebServer`
+  # Create a relative link to `AntaresWebServer` executable
   cd "${DIST_DIR}"
   if [[ -f "AntaresWeb/AntaresWebServer" ]]; then
     ln -s "AntaresWeb/AntaresWebServer" "AntaresWebServer"
   else
     echo >&2 "WARNING: pyinstaller package 'AntaresWeb/AntaresWebServer' is missing"
   fi
+  echo "INFO: Updating executable permissions..."
+  for excutable in "AntaresWeb/AntaresWebServer" "AntaresWeb/AntaresTool" "AntaresWebWorker"; do
+    chmod +x "${excutable}"
+  done
 fi
 
 echo "INFO: Unzipping example study..."
