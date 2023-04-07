@@ -33,8 +33,7 @@ function ManagementOptions() {
     <Form
       key={studyId + areaId}
       config={{
-        asyncDefaultValues: () =>
-          getManagementOptionsFormFields(studyId, areaId),
+        defaultValues: () => getManagementOptionsFormFields(studyId, areaId),
       }}
       onSubmit={handleSubmit}
       autoSubmit

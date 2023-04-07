@@ -57,7 +57,7 @@ function ThematicTrimmingDialog(props: Props) {
       open={open}
       title="Thematic Trimming"
       config={{
-        asyncDefaultValues: () => getThematicTrimmingFormFields(study.id),
+        defaultValues: () => getThematicTrimmingFormFields(study.id),
       }}
       autoSubmit
       onSubmit={handleSubmit}

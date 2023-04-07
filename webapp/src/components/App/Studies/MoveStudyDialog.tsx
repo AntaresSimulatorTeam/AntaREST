@@ -1,7 +1,7 @@
 import { DialogProps } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { useSnackbar } from "notistack";
-import { dropLast, join, split } from "ramda";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { usePromise } from "react-use";
 import { StudyMetadata } from "../../../common/types";
@@ -22,12 +22,17 @@ function MoveStudyDialog(props: Props) {
   const mounted = usePromise();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const defaultValues = {
+    folder: R.join("/", R.dropLast(1, R.split("/", study.folder || ""))),
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus) => {
+  const handleSubmit = async (
+    data: SubmitHandlerPlus<typeof defaultValues>
+  ) => {
     const { folder } = data.values;
     try {
       await mounted(moveStudy(study.id, folder));
@@ -53,11 +58,7 @@ function MoveStudyDialog(props: Props) {
   return (
     <FormDialog
       open={open}
-      config={{
-        defaultValues: {
-          folder: join("/", dropLast(1, split("/", study.folder || ""))),
-        },
-      }}
+      config={{ defaultValues }}
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
@@ -71,7 +72,7 @@ function MoveStudyDialog(props: Props) {
           placeholder={t("studies.movefolderplaceholder") as string}
           InputLabelProps={
             // Allow to show placeholder when field is empty
-            formObj.defaultValues?.folder ? { shrink: true } : {}
+            formObj.formState.defaultValues?.folder ? { shrink: true } : {}
           }
           fullWidth
           {...formObj.register("folder", {

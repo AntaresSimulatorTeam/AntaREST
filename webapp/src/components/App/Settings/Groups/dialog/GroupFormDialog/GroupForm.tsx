@@ -41,8 +41,7 @@ function GroupForm(props: UseFormReturnPlus) {
     control,
     register,
     getValues,
-    formState: { errors },
-    defaultValues,
+    formState: { errors, defaultValues },
   } = props;
 
   const userLabelId = useRef(uuidv4()).current;

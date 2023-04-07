@@ -22,7 +22,7 @@ import {
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any) => boolean;
+  preValidate?: (value: any, formValues: any) => boolean;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -140,14 +140,23 @@ function reactHookFormSupport<TValue>(
       >(() => {
         if (preValidate) {
           if (RA.isFunction(validate)) {
-            return (v) => preValidate?.(v) && validate(v);
+            return (value, formValues) => {
+              return (
+                preValidate?.(value, formValues) && validate(value, formValues)
+              );
+            };
           }
 
           if (RA.isPlainObj(validate)) {
             return Object.keys(validate).reduce((acc, key) => {
-              acc[key] = (v) => preValidate?.(v) && validate[key](v);
+              acc[key] = (value, formValues) => {
+                return (
+                  preValidate?.(value, formValues) &&
+                  validate[key](value, formValues)
+                );
+              };
               return acc;
-            }, {} as Record<string, Validate<FieldPathValue<TFieldValues, TFieldName>>>);
+            }, {} as Record<string, Validate<FieldPathValue<TFieldValues, TFieldName>, TFieldValues>>);
           }
 
           return preValidate;
@@ -194,7 +203,7 @@ function reactHookFormSupport<TValue>(
           />
         );
 
-        return control._showSkeleton ? (
+        return control._formState.isLoading ? (
           <Skeleton variant="rectangular" sx={{ borderRadius: "5px" }}>
             {field}
           </Skeleton>
