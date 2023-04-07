@@ -30,7 +30,7 @@ function AdequacyPatch() {
     <Form
       key={study.id}
       config={{
-        asyncDefaultValues: () => getAdequacyPatchFormFields(study.id),
+        defaultValues: () => getAdequacyPatchFormFields(study.id),
       }}
       onSubmit={handleSubmit}
       autoSubmit

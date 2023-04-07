@@ -18,7 +18,7 @@ function Properties() {
       <Form
         key={study.id + currentArea}
         config={{
-          asyncDefaultValues: () => getDefaultValues(study.id, currentArea, t),
+          defaultValues: () => getDefaultValues(study.id, currentArea, t),
         }}
         autoSubmit
       >

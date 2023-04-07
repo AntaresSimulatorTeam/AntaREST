@@ -1,7 +1,6 @@
 import * as RA from "ramda-adjunct";
 import { ColumnSettings } from "handsontable/settings";
 import { startCase } from "lodash";
-import { DefaultValues } from "react-hook-form";
 import * as R from "ramda";
 import type { SxProps } from "@mui/material";
 import type { Theme } from "@mui/system";
@@ -12,6 +11,7 @@ import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import useMemoLocked from "../../../hooks/useMemoLocked";
+import { DefaultValuesFix } from "../Form/types";
 
 type TableFieldValuesByRow = Record<
   IdType,
@@ -21,7 +21,7 @@ type TableFieldValuesByRow = Record<
 export interface FormTableProps<
   TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow
 > {
-  defaultValues: DefaultValues<TFieldValues>;
+  defaultValues: DefaultValuesFix<TFieldValues>;
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
   onSubmitError?: FormProps<TFieldValues>["onSubmitError"];
   formApiRef?: FormProps<TFieldValues>["apiRef"];

@@ -43,7 +43,7 @@ function GeneralParameters() {
     <>
       <Form
         key={study.id}
-        config={{ asyncDefaultValues: () => getGeneralFormFields(study.id) }}
+        config={{ defaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
         autoSubmit
         apiRef={apiRef}

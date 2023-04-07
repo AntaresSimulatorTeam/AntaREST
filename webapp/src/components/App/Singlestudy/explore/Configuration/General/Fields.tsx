@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useEffect } from "react";
 import * as RA from "ramda-adjunct";
+import { Validate } from "react-hook-form";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -30,8 +31,7 @@ interface Props {
 function Fields(props: Props) {
   const { setDialog } = props;
   const [t] = useTranslation();
-  const { control, setValue, watch, getValues } =
-    useFormContextPlus<GeneralFormFields>();
+  const { control, setValue, watch } = useFormContextPlus<GeneralFormFields>();
   const [
     buildingMode,
     selectionMode,
@@ -79,17 +79,35 @@ function Fields(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDayValidation = (v: number) => {
-    if (v < 1 || Number.isNaN(v)) {
+  const handleDayValidation: Validate<number, GeneralFormFields> = (
+    value,
+    formValues
+  ) => {
+    if (value < 1 || Number.isNaN(value)) {
       return "Minimum is 1";
     }
-    if (getValues("firstDay") > getValues("lastDay")) {
+    if (formValues.firstDay > formValues.lastDay) {
       return false;
     }
-    if (getValues("leapYear")) {
-      return v <= 366 ? true : "Maximum is 366 for a leap year";
+    if (formValues.leapYear) {
+      return value <= 366 ? true : "Maximum is 366 for a leap year";
     }
-    return v <= 365 ? true : "Maximum is 365 for a non-leap year";
+    return value <= 365 ? true : "Maximum is 365 for a non-leap year";
+  };
+
+  const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
+    value,
+    formValues
+  ) => {
+    if (formValues.buildingMode === BuildingMode.Derated) {
+      return value === 1
+        ? true
+        : "Value must be 1 when building mode is derated";
+    }
+    if (value < 1) {
+      return "Minimum is 1";
+    }
+    return value <= 50000 ? true : "Maximum is 50000";
   };
 
   ////////////////////////////////////////////////////////////////
@@ -187,17 +205,7 @@ function Fields(props: Props) {
             variant="filled"
             control={control}
             rules={{
-              validate: (v) => {
-                if (buildingMode === BuildingMode.Derated) {
-                  return v === 1
-                    ? true
-                    : "Value must be 1 when building mode is derated";
-                }
-                if (v < 1) {
-                  return "Minimum is 1";
-                }
-                return v <= 50000 ? true : "Maximum is 50000";
-              },
+              validate: handleNbYearsValidation,
             }}
           />
           <FieldWithButton>

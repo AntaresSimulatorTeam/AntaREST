@@ -1,12 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   BatchFieldArrayUpdate,
   DeepPartial,
@@ -18,6 +11,7 @@ import {
   SubmitErrorHandler,
   useForm,
   useFormContext as useFormContextOriginal,
+  UseFormProps,
   UseFormSetValue,
   UseFormUnregister,
 } from "react-hook-form";
@@ -40,11 +34,10 @@ import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
-import useAsyncDefaultValues from "./useAsyncDefaultValues";
 import {
   ControlPlus,
+  DefaultValuesFix,
   SubmitHandlerPlus,
-  UseFormPropsPlus,
   UseFormRegisterPlus,
   UseFormReturnPlus,
 } from "./types";
@@ -56,7 +49,14 @@ export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
 > extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
-  config?: UseFormPropsPlus<TFieldValues, TContext>;
+  config?: Omit<UseFormProps<TFieldValues, TContext>, "defaultValues"> & {
+    // Workaround to fix issue related to the use of an async function for the default values:
+    // without that all props that use `TFieldValues` will have a wrong type,
+    // `TFieldValues` will be equal to `() => Promise<TFieldValues>`
+    defaultValues?:
+      | DefaultValuesFix<TFieldValues>
+      | (() => Promise<TFieldValues>);
+  };
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
@@ -110,13 +110,16 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
-  const { asyncDefaultValues, ...restConfig } = config || {};
-  const [showSkeleton, setShowSkeleton] = useState(!!asyncDefaultValues);
 
   const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
-    ...restConfig,
+    ...config,
+    // TS issue caused by the used of `DefaultValuesFix` instead of original `DefaultValues`
+    defaultValues: config?.defaultValues as UseFormProps<
+      TFieldValues,
+      TContext
+    >["defaultValues"],
   });
 
   const {
@@ -138,11 +141,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // To use it in wrapper functions without need to add the value in `useCallback`'s deps
   const isSubmittingRef = useAutoUpdateRef(isSubmitting);
   const isAutoSubmitEnabledRef = useAutoUpdateRef(autoSubmitConfig.enable);
-
-  useAsyncDefaultValues(asyncDefaultValues, (values) => {
-    reset(values);
-    setShowSkeleton(false);
-  });
 
   useUpdateEffect(() => {
     setShowLoader(isSubmitting);
@@ -331,7 +329,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
     const controlPlus = control as ControlPlus<TFieldValues, TContext>;
     controlPlus.register = registerWrapper;
     controlPlus.unregister = unregisterWrapper;
-    controlPlus._showSkeleton = showSkeleton;
 
     const updateFieldArrayOriginal = control._updateFieldArray.bind(control);
     const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
@@ -349,7 +346,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
     isAutoSubmitEnabledRef,
     registerWrapper,
     requestSubmit,
-    showSkeleton,
     unregisterWrapper,
   ]);
 
