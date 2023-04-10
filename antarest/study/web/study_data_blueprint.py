@@ -2,9 +2,6 @@ import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union, cast
 
-from fastapi import APIRouter, Body, Depends
-from fastapi.params import Body
-
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
@@ -35,6 +32,11 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
+from antarest.study.business.correlation_management import (
+    CorrelationFormFields,
+    CorrelationManager,
+    CorrelationMatrix,
+)
 from antarest.study.business.district_manager import (
     DistrictCreationDTO,
     DistrictInfoDTO,
@@ -61,6 +63,8 @@ from antarest.study.business.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
 
@@ -1139,6 +1143,191 @@ def create_study_data_routes(
             ),
         )
         return study_service.allocation_manager.set_allocation_form_fields(
+            all_areas, study, area_id, data
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/hydro/correlation/matrix",
+        tags=[APITag.study_data],
+        summary="Get the hydraulic/load/solar/wind correlation matrix of a study",
+        response_model=CorrelationMatrix,
+    )
+    def get_correlation_matrix(
+        uuid: str,
+        columns: Optional[str] = Query(
+            None,
+            examples={
+                "all areas": {
+                    "description": "get the correlation matrix for all areas (by default)",
+                    "value": "",
+                },
+                "single area": {
+                    "description": "get the correlation column for a single area",
+                    "value": "north",
+                },
+                "selected areas": {
+                    "description": "get the correlation columns for a selected list of areas",
+                    "value": "north,east",
+                },
+            },
+        ),  # type: ignore
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationMatrix:
+        """
+        Get the hydraulic/load/solar/wind correlation matrix of a study.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `columns`: A filter on the area identifiers:
+          - Use no parameter to select all areas.
+          - Use an area identifier to select a single area.
+          - Use a comma-separated list of areas to select those areas.
+
+        Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
+        - `index`: A list of all study areas.
+        - `columns`: A list of selected production areas.
+        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.get_correlation_matrix(
+            all_areas,
+            study,
+            columns.split(",") if columns else [],
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/hydro/correlation/matrix",
+        tags=[APITag.study_data],
+        summary="Set the hydraulic/load/solar/wind correlation matrix of a study",
+        status_code=HTTPStatus.OK,
+        response_model=CorrelationMatrix,
+    )
+    def set_correlation_matrix(
+        uuid: str,
+        matrix: CorrelationMatrix = Body(
+            ...,
+            example={
+                "columns": ["north", "east", "south", "west"],
+                "data": [
+                    [0.0, 0.0, 0.25, 0.0],
+                    [0.0, 0.0, 0.75, 0.12],
+                    [0.25, 0.75, 0.0, 0.75],
+                    [0.0, 0.12, 0.75, 0.0],
+                ],
+                "index": ["north", "east", "south", "west"],
+            },
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationMatrix:
+        """
+        Set the hydraulic/load/solar/wind correlation matrix of a study.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `index`: A list of all study areas.
+        - `columns`: A list of selected production areas.
+        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+
+        Returns the hydraulic/load/solar/wind correlation matrix updated
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.set_correlation_matrix(all_areas, study, matrix)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
+        tags=[APITag.study_data],
+        summary="Get the form fields used for the correlation form",
+        response_model=CorrelationFormFields,
+    )
+    def get_correlation_form_fields(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationFormFields:
+        """
+        Get the form fields used for the correlation form.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns the correlation form fields in percentage.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.get_correlation_form_fields(all_areas, study, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
+        tags=[APITag.study_data],
+        summary="Set the form fields used for the correlation form",
+        status_code=HTTPStatus.OK,
+        response_model=CorrelationFormFields,
+    )
+    def set_correlation_form_fields(
+        uuid: str,
+        area_id: str,
+        data: CorrelationFormFields = Body(
+            ...,
+            example=CorrelationFormFields(
+                correlation=[
+                    {"areaId": "east", "coefficient": 80},
+                    {"areaId": "north", "coefficient": 20},
+                ]
+            ),
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationFormFields:
+        """
+        Update the hydraulic/load/solar/wind correlation of a given area.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns the correlation form fields in percentage.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.set_correlation_form_fields(
             all_areas, study, area_id, data
         )
 

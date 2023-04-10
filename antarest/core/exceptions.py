@@ -189,8 +189,8 @@ class AreaNotFound(HTTPException):
         ids = ", ".join(f"'{a}'" for a in area_ids)
         msg = {
             0: "All areas are found",
-            1: f"{count} area is not found: {ids}",
-            2: f"{count} areas are not found: {ids}",
+            1: f"Area is not found: {ids}",
+            2: f"Areas are not found: {ids}",
         }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
