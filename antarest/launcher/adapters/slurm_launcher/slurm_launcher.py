@@ -334,35 +334,34 @@ class SlurmLauncher(AbstractLauncher):
             logger.warning("Output path in xpansion result not found")
 
     def _check_studies_state(self) -> None:
-        try:
-            with self.antares_launcher_lock:
+        with self.antares_launcher_lock:
+            try:
                 self._call_launcher(
                     arguments=self.launcher_args,
                     parameters=self.launcher_params,
                 )
-        except Exception as e:
-            logger.info("Could not get data on remote server", exc_info=e)
+            except Exception as e:
+                logger.info("Could not get data on remote server", exc_info=e)
 
-        study_list = self.data_repo_tinydb.get_list_of_studies()
-        for study in study_list:
-            log_path = SlurmLauncher._get_log_path(study)
-            if study.with_error:
-                self.log_tail_manager.stop_tracking(log_path)
-                self._handle_failure(study)
-            elif study.done:
-                self.log_tail_manager.stop_tracking(log_path)
-                self._handle_success(study)
-            else:
-                # study.started => still running
-                # study.finished => waiting for ZIP + logs retrieval (or failure)
-                self.log_tail_manager.track(
-                    log_path, self.create_update_log(study.name)
-                )
+            study_list = self.data_repo_tinydb.get_list_of_studies()
+            for study in study_list:
+                log_path = SlurmLauncher._get_log_path(study)
+                if study.with_error:
+                    self.log_tail_manager.stop_tracking(log_path)
+                    self._handle_failure(study)
+                elif study.done:
+                    self.log_tail_manager.stop_tracking(log_path)
+                    self._handle_success(study)
+                else:
+                    # study.started => still running
+                    # study.finished => waiting for ZIP + logs retrieval (or failure)
+                    self.log_tail_manager.track(
+                        log_path, self.create_update_log(study.name)
+                    )
 
-        # Re-fetching the study list is necessary as new studies may have been added
-        # during the `import_output` process. Afterward, we clean up the list to ensure
-        # that any removed studies are removed from the database.
-        with self.antares_launcher_lock:
+            # Re-fetching the study list is necessary as new studies may have been added
+            # during the `import_output` process. Afterward, we clean up the list to ensure
+            # that any removed studies are removed from the database.
             # fmt: off
             cleanup_list = [s for s in study_list if s.with_error or s.done]
             for study in cleanup_list:
