@@ -22,7 +22,7 @@ function makeRequestURL(
   studyId: StudyMetadata["id"],
   areaId: Area["name"]
 ): string {
-  return `v1/studies/${studyId}/areas/${areaId}/hydro/allocation`;
+  return `v1/studies/${studyId}/areas/${areaId}/hydro/allocation/form`;
 }
 
 export async function getAllocationFormFields(
@@ -33,10 +33,11 @@ export async function getAllocationFormFields(
   return res.data;
 }
 
-export function setAllocationFormFields(
+export async function setAllocationFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  values: Partial<AllocationFormFields>
-): Promise<void> {
-  return client.put(makeRequestURL(studyId, areaId), values);
+  values: AllocationFormFields
+): Promise<AllocationFormFields> {
+  const res = await client.put(makeRequestURL(studyId, areaId), values);
+  return res.data;
 }

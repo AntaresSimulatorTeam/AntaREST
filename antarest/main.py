@@ -7,6 +7,8 @@ from typing import Tuple, Any, Optional, Dict, cast
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
@@ -219,6 +221,22 @@ def fastapi_app(
                 "exception": exc.__class__.__name__,
             },
             status_code=exc.status_code,
+        )
+
+    @application.exception_handler(RequestValidationError)
+    async def handle_validation_exception(
+        request: Request, exc: RequestValidationError
+    ) -> Any:
+        error_message = exc.errors()[0]["msg"]
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder(
+                {
+                    "description": error_message,
+                    "exception": "RequestValidationError",
+                    "body": exc.body,
+                }
+            ),
         )
 
     @application.exception_handler(Exception)

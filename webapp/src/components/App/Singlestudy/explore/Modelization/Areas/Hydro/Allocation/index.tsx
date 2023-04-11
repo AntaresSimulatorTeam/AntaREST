@@ -1,7 +1,5 @@
-import { Box } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { t } from "i18next";
-import { AxiosError } from "axios";
 import Form from "../../../../../../../common/Form";
 import Fields from "./Fields";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -13,30 +11,21 @@ import {
   setAllocationFormFields,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 function Allocation() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<AllocationFormFields>) => {
-    try {
-      setAllocationFormFields(studyId, areaId, {
-        allocation: data.values.allocation,
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("study.modelization.hydro.allocation.error.field.delete"),
-        e as AxiosError
-      );
-    }
+    return setAllocationFormFields(studyId, areaId, {
+      allocation: data.values.allocation,
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -48,19 +37,27 @@ function Allocation() {
       sx={{
         width: 1,
         height: 1,
-        p: 1,
-        overflowX: "auto",
+        p: 2,
+        overflow: "auto",
       }}
     >
-      <Form
-        key={studyId + areaId}
-        config={{
-          asyncDefaultValues: () => getAllocationFormFields(studyId, areaId),
+      <Paper
+        sx={{
+          backgroundImage:
+            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
-        onSubmit={handleSubmit}
       >
-        <Fields />
-      </Form>
+        <Form
+          key={studyId + areaId}
+          config={{
+            defaultValues: () => getAllocationFormFields(studyId, areaId),
+          }}
+          onSubmit={handleSubmit}
+          sx={{ p: 3 }}
+        >
+          <Fields />
+        </Form>
+      </Paper>
     </Box>
   );
 }

@@ -1,8 +1,7 @@
-import { Box, Divider, Paper } from "@mui/material";
+import { Divider, Grid } from "@mui/material";
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
 import { useMemo } from "react";
-import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import {
@@ -46,38 +45,26 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Fieldset>
-      <Box sx={{ width: 1, height: 1 }}>
-        <Paper
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            p: 2,
-            backgroundImage:
-              "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-          }}
-        >
-          <Box>
-            {fields.map((field, index) => (
-              <AllocationField
-                key={field.id}
-                field={field}
-                index={index}
-                label={getAreaLabel(field.areaId)}
-                remove={remove}
-              />
-            ))}
-          </Box>
-          <Divider
-            orientation="horizontal"
-            flexItem
-            sx={{ width: "95%", alignSelf: "center" }}
+    <Grid container direction="column" spacing={2}>
+      <Grid item>
+        {fields.map((field, index) => (
+          <AllocationField
+            key={field.id}
+            field={field}
+            index={index}
+            label={getAreaLabel(field.areaId)}
+            remove={remove}
+            fieldsLength={fields.length}
           />
-          <AllocationSelect filteredAreas={filteredAreas} append={append} />
-        </Paper>
-      </Box>
-    </Fieldset>
+        ))}
+      </Grid>
+      <Grid item>
+        <Divider orientation="horizontal" />
+      </Grid>
+      <Grid item width={1} sx={{ mb: 2 }}>
+        <AllocationSelect filteredAreas={filteredAreas} append={append} />
+      </Grid>
+    </Grid>
   );
 }
 

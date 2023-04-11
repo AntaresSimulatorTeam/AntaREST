@@ -24,7 +24,7 @@ class TestHydroAllocation:
         """Check `get_allocation_form_values` end point"""
         area_id = "de"
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation",
+            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -89,7 +89,7 @@ class TestHydroAllocation:
     ):
         """Check `get_allocation_matrix` end point"""
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation.df",
+            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -104,20 +104,20 @@ class TestHydroAllocation:
     ):
         """Check `set_allocation_form_values` end point"""
         area_id = "de"
-        obj = {
+        expected = {
             "allocation": [
                 {"areaId": "de", "coefficient": 3},
                 {"areaId": "es", "coefficient": 1.0},
             ]
         }
         res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation",
+            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=obj,
+            json=expected,
         )
-        assert res.status_code == HTTPStatus.NO_CONTENT, res.json()
+        assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        assert not actual
+        assert actual == expected
 
         # check that the values are updated
         res = client.get(
@@ -153,7 +153,7 @@ class TestHydroAllocation:
         assert res.status_code == HTTPStatus.OK, res.json()
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/*/hydro/allocation.df",
+            f"/v1/studies/{study_id}/areas/*/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK
@@ -205,7 +205,7 @@ class TestHydroAllocation:
         # Check that the "fr" column is removed from the hydraulic allocation matrix.
         # The row corresponding to "fr" must also be deleted.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/*/hydro/allocation.df",
+            f"/v1/studies/{study_id}/areas/*/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()

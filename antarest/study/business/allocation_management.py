@@ -1,10 +1,13 @@
 from typing import List, Dict
 
+import numpy
 import numpy as np
+from pydantic import root_validator
+from pydantic import validator, conlist
+
 from antarest.core.exceptions import (
     AllocationDataNotFound,
     AreaNotFound,
-    MultipleAllocationDataFound,
 )
 from antarest.study.business.area_management import AreaInfoDTO
 from antarest.study.business.utils import (
@@ -16,73 +19,56 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import NonNegativeFloat, validator, BaseModel, conlist
 
 
 class AllocationField(FormFieldsBaseModel):
-    """Consumption coefficient of a given area."""
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = "forbid"
+    """Model for consumption coefficients of a given area."""
 
     area_id: str
-    coefficient: NonNegativeFloat
+    coefficient: float
 
 
 class AllocationFormFields(FormFieldsBaseModel):
-    """
-    Hydraulic allocation of a production area:
-    electrical energy consumption coefficients to consider for each area.
-    """
-
-    class Config:
-        extra = "forbid"
+    """Model for a list of consumption coefficients for each area."""
 
     allocation: List[AllocationField]
 
-    # noinspection PyMethodParameters
-    @validator("allocation")
-    def validate_hydro_allocation_column(
-        cls, fields: List[AllocationField]
-    ) -> List[AllocationField]:
-        """
-        Validate hydraulic allocation column.
+    @root_validator
+    def check_allocation(
+        cls, values: Dict[str, List[AllocationField]]
+    ) -> Dict[str, List[AllocationField]]:
+        allocation = values.get("allocation", [])
 
-        Args:
-            fields: A list of validated allocation fields containing
-            the coefficients to be validated.
+        if not allocation:
+            raise ValueError("allocation must not be empty")
 
-        Raises:
-            ValueError:
-                If the coefficients array is empty or has no non-null values.
+        if len(allocation) != len(set(a.area_id for a in allocation)):
+            raise ValueError("allocation must not contain duplicate area IDs")
 
-        Returns:
-            The allocation fields.
-        """
-        array = np.array([f.coefficient for f in fields])
-        if array.size == 0:
-            raise ValueError("ensure coefficients colum is non-empty")
-        elif np.any(array == 0):
-            raise ValueError("ensure coefficients column is not nul")
-        else:
-            return fields
+        for a in allocation:
+            if a.coefficient < 0:
+                raise ValueError(
+                    "allocation must not contain negative coefficients"
+                )
+
+            if numpy.isnan(a.coefficient):
+                raise ValueError(
+                    "allocation must not contain NaN coefficients"
+                )
+
+        if sum(a.coefficient for a in allocation) <= 0:
+            raise ValueError("sum of allocation coefficients must be positive")
+
+        return values
 
 
-class AllocationMatrix(BaseModel):
+class AllocationMatrix(FormFieldsBaseModel):
     """
     Hydraulic allocation matrix.
-
-    Data frame matrix, where:
-
-    - `columns`: is the list of selected production areas (given by `area_id`),
-    - `index`: is the list of all study areas,
-    - `data`: is the 2D-array matrix of consumption coefficients.
+    index: List of all study areas
+    columns: List of selected production areas
+    data: 2D-array matrix of consumption coefficients
     """
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = "forbid"
 
     index: conlist(str, min_items=1)  # type: ignore
     columns: conlist(str, min_items=1)  # type: ignore
@@ -90,81 +76,186 @@ class AllocationMatrix(BaseModel):
 
     # noinspection PyMethodParameters
     @validator("data")
-    def validate_hydro_allocation_table(
+    def validate_hydro_allocation_matrix(
         cls, data: List[List[float]], values: Dict[str, List[str]]
     ) -> List[List[float]]:
         """
-        Validate hydraulic allocation table.
-
+        Validate the hydraulic allocation matrix.
         Args:
-            data: Hydraulic allocation matrix containing
-                the coefficients to be validated.
-            values: a dict containing the name-to-value mapping
-                of the `index` and `columns` fields (if they are validated).
-            values: dictionary that maps names to corresponding fields.
-                If the `index` and `columns` fields are validated,
-                they are included in this dictionary.
-
+            data: the allocation matrix to validate.
+            values: the allocation matrix fields.
         Raises:
             ValueError:
                 If the coefficients columns are empty or has no non-null values.
-
         Returns:
             The allocation fields.
         """
+
         array = np.array(data)
-        rows = len(values["index"]) if "index" in values else 0
-        cols = len(values["columns"]) if "columns" in values else 0
+        rows = len(values.get("index", []))
+        cols = len(values.get("columns", []))
+
         if array.size == 0:
-            raise ValueError("ensure coefficients matrix is a non-empty array")
-        elif array.shape != (rows, cols):
+            raise ValueError("allocation matrix must not be empty")
+        if array.shape != (rows, cols):
+            raise ValueError(f"allocation matrix must have square shape")
+        if np.any(array < 0):
             raise ValueError(
-                f"ensure coefficients matrix is an array of shape {rows}×{cols}"
+                "allocation matrix must not contain negative coefficients"
             )
-        elif np.any(array < 0):
+        if np.any(array.sum(axis=0) == 0):
             raise ValueError(
-                "ensure coefficients matrix has positive or nul coefficients"
+                "allocation matrix must not contain empty columns"
             )
-        elif np.any(array.sum(axis=0) == 0):
-            raise ValueError("ensure coefficients matrix has non-nul columns")
-        else:
-            return data
+        if np.any(np.isnan(array)):
+            raise ValueError(
+                "allocation matrix must not contain NaN coefficients"
+            )
+        if np.all(array == 0):
+            raise ValueError(
+                "allocation matrix must not contain only null values"
+            )
+
+        return data
 
 
 class AllocationManager:
     """
-    Provides functionality for getting and updating hydraulic allocation
-    coefficients for a given production area.
+    Manage hydraulic allocation coefficients.
     """
 
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
+    def get_allocation_data(
+        self, study: Study, area_id: str
+    ) -> Dict[str, List[AllocationField]]:
+        """
+        Get hydraulic allocation data.
+
+        Args:
+            study: study to get the allocation data from
+            area_id: area to get the allocation data from
+
+        Returns:
+            The allocation data.
+
+        Raises:
+            AllocationDataNotFound: if the allocation data is not found.
+        """
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        allocation_data = file_study.tree.get(
+            f"input/hydro/allocation/{area_id}".split("/"), depth=2
+        )
+
+        if not allocation_data:
+            raise AllocationDataNotFound(area_id)
+
+        return allocation_data.get("[allocation]", {})
+
+    def get_allocation_form_fields(
+        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+    ) -> AllocationFormFields:
+        """
+        Get hydraulic allocation coefficients.
+
+        Args:
+            all_areas: list of all areas in the study
+            study: study to get the allocation coefficients from
+            area_id: area to get the allocation coefficients from
+
+        Returns:
+            The allocation coefficients.
+
+        Raises:
+            AllocationDataNotFound: if the allocation data is not found.
+        """
+
+        areas_ids = {area.id for area in all_areas}
+        allocations = self.get_allocation_data(study, area_id)
+
+        return AllocationFormFields.construct(
+            allocation=[
+                AllocationField.construct(area_id=area, coefficient=value)
+                for area, value in allocations.items()
+                if area in areas_ids  # filter invalid areas
+            ]
+        )
+
+    def set_allocation_form_fields(
+        self,
+        all_areas: List[AreaInfoDTO],
+        study: Study,
+        area_id: str,
+        data: AllocationFormFields,
+    ) -> AllocationFormFields:
+        """
+        Set hydraulic allocation coefficients.
+
+        Args:
+            all_areas: list of all areas in the study
+            study: study to set the allocation coefficients to
+            area_id: area to set the allocation coefficients to
+            data: allocation coefficients to set
+
+        Raises:
+            AreaNotFound: if the area is not found.
+        """
+
+        allocation_ids = {field.area_id for field in data.allocation}
+        areas_ids = {area.id for area in all_areas}
+
+        if invalid_ids := allocation_ids - areas_ids:
+            # sort for deterministic error message and testing
+            raise AreaNotFound(*sorted(invalid_ids))
+
+        filtered_allocations = [
+            f
+            for f in data.allocation
+            if f.coefficient > 0 and f.area_id in areas_ids
+        ]
+
+        command_context = (
+            self.storage_service.variant_study_service.command_factory.command_context
+        )
+        command = UpdateConfig(
+            target=f"input/hydro/allocation/{area_id}/[allocation]",
+            data={f.area_id: f.coefficient for f in filtered_allocations},
+            command_context=command_context,
+        )
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
+
+        updated_allocations = self.get_allocation_data(study, area_id)
+
+        return AllocationFormFields.construct(
+            allocation=[
+                AllocationField.construct(area_id=area, coefficient=value)
+                for area, value in updated_allocations.items()
+            ]
+        )
+
     def get_allocation_matrix(
         self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
     ) -> AllocationMatrix:
         """
-        Get the electrical energy consumption matrix for a given production area,
-        a selected list of production areas or all areas.
+        Get the hydraulic allocation matrix.
 
         Args:
-            all_areas: The complete list of study areas.
-            study: the current study
-            area_id:
-                A production area ID (e.g.: 'EAST'),
-                a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'),
-                or all areas using the star symbol (e.g.: '*').
+            all_areas: list of all areas in the study
+            study: study to get the allocation matrix from
+            area_id: area to get the allocation matrix from
 
         Returns:
-            Returns the data frame matrix, where:
-
-            - `columns`: is the list of selected production areas (given by `area_id`),
-            - `index`: is the list of all study areas,
-            - `data`: is the 2D-array matrix of consumption coefficients.
+            The allocation matrix.
 
         Raises:
-            AllocationDataNotFound: exception raised if no hydraulic allocation
-            is defined for the given production area (the `.ini` file may be missing).
+            AllocationDataNotFound: if the allocation data is not found.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_cfg = file_study.tree.get(
@@ -189,89 +280,4 @@ class AllocationManager:
                 array[row_idx][col_idx] = coefficient
         return AllocationMatrix.construct(
             index=rows, columns=columns, data=array.tolist()
-        )
-
-    def get_field_values(
-        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
-    ) -> AllocationFormFields:
-        """
-        Get the hydraulic allocation table of the given production area (or areas).
-
-        Args:
-            all_areas: The complete list of study areas.
-            study: the current study
-            area_id: A production area ID (e.g.: 'EAST').
-
-        Returns:
-            Hydraulic allocation of the production area:
-            The list of electrical energy consumption coefficients
-            to consider for each area.
-
-        Raises:
-            MultipleAllocationDataFound: exception raised if no hydraulic allocation
-            is defined for the given production area (the `.ini` file may be missing),
-            or if several production areas are requested.
-        """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        allocation_data = file_study.tree.get(
-            f"input/hydro/allocation/{area_id}".split("/"), depth=2
-        )
-        if len(allocation_data) == 1:
-            # single-column allocation table
-            allocations = allocation_data["[allocation]"]
-            areas_ids = {area.id for area in all_areas}
-            return AllocationFormFields.construct(
-                allocation=[
-                    # IMPORTANT: use snake_case args because validation is not called,
-                    # so field names aliasing is not done.
-                    # NOTE: the conversion to JSON uses camelCase names (aliases).
-                    AllocationField.construct(area_id=area, coefficient=value)
-                    for area, value in allocations.items()
-                    if area in areas_ids  # filter invalid areas
-                ]
-            )
-        raise MultipleAllocationDataFound(*allocation_data)
-
-    def set_field_values(
-        self,
-        all_areas: List[AreaInfoDTO],
-        study: Study,
-        area_id: str,
-        data: AllocationFormFields,
-    ) -> None:
-        """
-        Update the hydraulic allocation table of the given production area.
-
-        Args:
-            study: the current study
-            area_id: Production area ID from which we want to update the allocation table.
-            all_areas: The complete list of study areas.
-            data: Hydraulic allocation of the production area:
-                The list of electrical energy consumption coefficients
-                to consider for each area.
-
-        Raises:
-            AreaNotFound: exception raised if at least one area
-            of the hydraulic allocation table is not an existing area.
-        """
-        allocation_ids = {field.area_id for field in data.allocation}
-        areas_ids = {area.id for area in all_areas}
-        if invalid_ids := allocation_ids - areas_ids:
-            # sorting is mandatory for unit tests
-            raise AreaNotFound(*invalid_ids)
-        elif area_id not in areas_ids:
-            raise AreaNotFound(area_id)
-
-        command_context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
-        command = UpdateConfig(
-            target=f"input/hydro/allocation/{area_id}/[allocation]",
-            data={f.area_id: f.coefficient for f in data.allocation},
-            command_context=command_context,
-        )
-
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
         )

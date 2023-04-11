@@ -1028,7 +1028,7 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/hydro/allocation.df",
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/matrix",
         tags=[APITag.study_data],
         summary="Get the hydraulic allocation matrix of a given area",
         response_model=AllocationMatrix,
@@ -1039,22 +1039,16 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationMatrix:
         """
-        Get the electrical energy consumption matrix for a given production area,
-        a selected list of production areas or all areas.
+        Get the hydraulic allocation matrix of a given area.
 
         Parameters:
-
-        - `uuid`: Study UUID (e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b')
-        - `area_id`:
-          A production area ID (e.g.: 'EAST'),
-          a comma-separated list of production area IDs (e.g.: 'EAST,SOUTH'),
-          or all areas using the star symbol (e.g.: '*').
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
 
         Returns the data frame matrix, where:
-
-        - `columns`: is the list of selected production areas (given by `area_id`),
-        - `index`: is the list of all study areas,
-        - `data`: is the 2D-array matrix of consumption coefficients.
+        - the rows are the areas,
+        - the columns are the hydraulic structures,
+        - the values are the allocation factors.
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
@@ -1071,28 +1065,24 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
-        summary="Get the hydraulic allocation of a given area",
+        summary="Get the form fields used for the allocation form",
         response_model=AllocationFormFields,
     )
-    def get_allocation_form_values(
+    def get_allocation_form_fields(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationFormFields:
         """
-        Get, for a given production area, the electrical energy consumption
-        coefficients to consider for the other areas.
+        Get the form fields used for the allocation form.
 
         Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
 
-        - `uuid`: Study UUID (e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b')
-        - `area_id`: A production area ID (e.g.: 'EAST').
-
-        Returns form fields used for the allocation table:
-        The list of electrical energy consumption coefficients
-        to consider for each area.
+        Returns the allocation form fields.
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
@@ -1104,17 +1094,18 @@ def create_study_data_routes(
                 uuid, area_type=AreaType.AREA, ui=False, params=params
             ),
         )
-        return study_service.allocation_manager.get_field_values(
+        return study_service.allocation_manager.get_allocation_form_fields(
             all_areas, study, area_id
         )
 
     @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/hydro/allocation",
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
-        summary="Update the hydraulic allocation of a given area",
-        status_code=HTTPStatus.NO_CONTENT,
+        summary="Update the form fields used for the allocation form",
+        status_code=HTTPStatus.OK,
+        response_model=AllocationFormFields,
     )
-    def set_allocation_form_values(
+    def set_allocation_form_fields(
         uuid: str,
         area_id: str,
         data: AllocationFormFields = Body(
@@ -1127,18 +1118,15 @@ def create_study_data_routes(
             ),
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> AllocationFormFields:
         """
-        Update, for a given production area, the electrical energy consumption
-        coefficients to consider for the other areas.
+        Update the hydraulic allocation of a given area.
 
         Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
 
-        - `uuid`: Study UUID (e.g.: '7cdc506c-808e-4bd5-8a6a-493e1f028c3b')
-        - `area_id`: Production area ID (e.g.: 'EAST')
-        - `data`: Hydraulic allocation of the production area:
-              The list of electrical energy consumption coefficients
-              to consider for each area.
+        Returns the updated allocation form fields.
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
@@ -1150,7 +1138,7 @@ def create_study_data_routes(
                 uuid, area_type=AreaType.AREA, ui=False, params=params
             ),
         )
-        study_service.allocation_manager.set_field_values(
+        return study_service.allocation_manager.set_allocation_form_fields(
             all_areas, study, area_id, data
         )
 
