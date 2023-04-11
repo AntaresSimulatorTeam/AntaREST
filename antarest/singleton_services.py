@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, List
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -10,12 +10,12 @@ from antarest.core.utils.utils import get_local_path
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.utils import (
     Module,
-    init_db,
-    create_watcher,
-    create_matrix_gc,
     create_archive_worker,
     create_core_services,
+    create_matrix_gc,
     create_simulator_worker,
+    create_watcher,
+    init_db,
 )
 
 logger = logging.getLogger(__name__)
