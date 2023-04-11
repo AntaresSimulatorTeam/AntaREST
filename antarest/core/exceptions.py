@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from typing import Optional
 
-from fastapi import HTTPException
+from fastapi.exceptions import HTTPException
 
 
 class ShouldNotHappenException(Exception):
@@ -175,6 +175,12 @@ class LayerNotAllowedToBeDeleted(HTTPException):
 
 class StudyOutputNotFoundError(Exception):
     pass
+
+
+class AllocationDataNotFound(HTTPException):
+    def __init__(self, area_id: str) -> None:
+        msg = f"Allocation data for area: {area_id} is not found"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class AreaNotFound(HTTPException):

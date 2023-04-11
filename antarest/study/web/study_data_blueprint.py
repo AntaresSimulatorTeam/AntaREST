@@ -1,7 +1,9 @@
 import logging
-from typing import Any, Dict, List, Optional, Union
+from http import HTTPStatus
+from typing import Any, Dict, List, Optional, Union, cast
 
 from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -17,6 +19,10 @@ from antarest.study.business.adequacy_patch_management import (
 )
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
+)
+from antarest.study.business.allocation_management import (
+    AllocationFormFields,
+    AllocationMatrix,
 )
 from antarest.study.business.area_management import (
     AreaCreationDTO,
@@ -64,12 +70,13 @@ def create_study_data_routes(
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
+
     Args:
         study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
-
+        The FastAPI route for Study data management
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -1018,6 +1025,121 @@ def create_study_data_routes(
         )
         study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/matrix",
+        tags=[APITag.study_data],
+        summary="Get the hydraulic allocation matrix of a given area",
+        response_model=AllocationMatrix,
+    )
+    def get_allocation_matrix(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationMatrix:
+        """
+        Get the hydraulic allocation matrix of a given area.
+
+        Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
+
+        Returns the data frame matrix, where:
+        - the rows are the areas,
+        - the columns are the hydraulic structures,
+        - the values are the allocation factors.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.get_allocation_matrix(
+            all_areas, study, area_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
+        tags=[APITag.study_data],
+        summary="Get the form fields used for the allocation form",
+        response_model=AllocationFormFields,
+    )
+    def get_allocation_form_fields(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationFormFields:
+        """
+        Get the form fields used for the allocation form.
+
+        Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
+
+        Returns the allocation form fields.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.get_allocation_form_fields(
+            all_areas, study, area_id
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
+        tags=[APITag.study_data],
+        summary="Update the form fields used for the allocation form",
+        status_code=HTTPStatus.OK,
+        response_model=AllocationFormFields,
+    )
+    def set_allocation_form_fields(
+        uuid: str,
+        area_id: str,
+        data: AllocationFormFields = Body(
+            ...,
+            example=AllocationFormFields(
+                allocation=[
+                    {"areaId": "EAST", "coefficient": 1},
+                    {"areaId": "NORTH", "coefficient": 0.20},
+                ]
+            ),
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationFormFields:
+        """
+        Update the hydraulic allocation of a given area.
+
+        Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
+
+        Returns the updated allocation form fields.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.set_allocation_form_fields(
+            all_areas, study, area_id, data
         )
 
     @bp.get(

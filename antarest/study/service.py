@@ -59,6 +59,7 @@ from antarest.study.business.adequacy_patch_management import (
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsManager,
 )
+from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaInfoDTO,
@@ -313,6 +314,7 @@ class StudyService:
             self.storage_service
         )
         self.hydro_manager = HydroManager(self.storage_service)
+        self.allocation_manager = AllocationManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
         self.thermal_manager = ThermalManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
