@@ -149,25 +149,23 @@ class RemoveArea(ICommand):
 
         This function can update the following configurations:
         - ["input", "hydro", "prepro", "correlation"]
-        - ["input", "load", "prepro", "correlation"]
-        - ["input", "solar", "prepro", "correlation"]
-        - ["input", "wind", "prepro", "correlation"]
 
         Args:
             study_data:File Study to update.
         """
-        # Update the correlation matrices
-        for generator in "hydro", "load", "solar", "wind":
-            url = ["input", generator, "prepro", "correlation"]
-            correlation_cfg = study_data.tree.get(url)
-            for section, correlation in correlation_cfg.items():
-                if section == "general":
-                    continue
-                for key in list(correlation):
-                    a1, a2 = key.split("%")
-                    if a1 == self.id or a2 == self.id:
-                        del correlation[key]
-            study_data.tree.save(correlation_cfg, url)
+        # Today, only the 'hydro' category is fully supported, but
+        # we could also manage the 'load' 'solar' and 'wind'
+        # categories but the usage is deprecated.
+        url = ["input", "hydro", "prepro", "correlation"]
+        correlation_cfg = study_data.tree.get(url)
+        for section, correlation in correlation_cfg.items():
+            if section == "general":
+                continue
+            for key in list(correlation):
+                a1, a2 = key.split("%")
+                if a1 == self.id or a2 == self.id:
+                    del correlation[key]
+        study_data.tree.save(correlation_cfg, url)
 
     def _remove_area_from_districts(self, study_data: FileStudy) -> None:
         districts = study_data.tree.get(["input", "areas", "sets"])

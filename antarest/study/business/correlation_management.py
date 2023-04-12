@@ -188,20 +188,13 @@ class CorrelationManager:
     correlation matrices of a raw study or a variant.
     """
 
-    def __init__(
-        self,
-        storage_service: StudyStorageService,
-        gen_cat: str = "hydro",
-    ) -> None:
+    # Today, only the 'hydro' category is fully supported, but
+    # we could also manage the 'load' 'solar' and 'wind'
+    # categories but the usage is deprecated.
+    url = ["input", "hydro", "prepro", "correlation", "annual"]
+
+    def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
-        if gen_cat not in {"hydro", "load", "solar", "wind"}:
-            raise ValueError(
-                f"The generator category '{gen_cat}' is not supported."
-                f" Today, only the 'hydro' category is fully supported,"
-                f" we also keep the possibility to manage the 'load',"
-                f" 'solar' and 'wind' categories but the usage is deprecated."
-            )
-        self.url = ["input", gen_cat, "prepro", "correlation", "annual"]
 
     def _get_array(
         self,
