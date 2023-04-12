@@ -352,7 +352,7 @@ class TestCorrelationManager:
         cmd: UpdateConfig = actual_cmds[0]
         assert cmd.command_name == CommandName.UPDATE_CONFIG
         assert cmd.target == "input/hydro/prepro/correlation/annual"
-        assert cmd.data == {"e%s": "0.3", "n%s": "0.4"}
+        assert cmd.data == {"e%s": 0.3, "n%s": 0.4}
 
     def test_set_field_values__area_not_found(
         self, db_session, study_storage_service, study_uuid

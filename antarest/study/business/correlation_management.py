@@ -3,7 +3,6 @@ Management of spatial correlations between the different generators.
 The generators are of the same category and can be hydraulic, wind, load or solar.
 """
 import collections
-import enum
 from typing import Dict, List, Sequence
 
 import numpy as np
@@ -158,7 +157,7 @@ def _config_to_array(
         if i == j:
             # ignored: values from the diagonal are always == 1.0
             continue
-        coefficient = float(value)
+        coefficient = value
         array[i][j] = coefficient
         array[j][i] = coefficient
     return array
@@ -179,7 +178,7 @@ def _array_to_config(
                 continue
             a1 = area_ids[i]
             a2 = area_ids[j]
-            correlation_cfg[f"{a1}%{a2}"] = str(coefficient)
+            correlation_cfg[f"{a1}%{a2}"] = coefficient
     return correlation_cfg
 
 
