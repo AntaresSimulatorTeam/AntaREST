@@ -3,14 +3,14 @@ import { useMemo } from "react";
 import { UseFieldArrayAppend } from "react-hook-form";
 import { Area } from "../../../../../../../../common/types";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import { AllocationFormFields } from "./utils";
+import { CorrelationFormFields } from "./utils";
 
 interface Props {
   filteredAreas: Array<Area & { id: string }>;
-  append: UseFieldArrayAppend<AllocationFormFields, "allocation">;
+  append: UseFieldArrayAppend<CorrelationFormFields, "correlation">;
 }
 
-function AllocationSelect({ filteredAreas, append }: Props) {
+function CorrelationSelect({ filteredAreas, append }: Props) {
   const options = useMemo(
     () =>
       filteredAreas.map((area) => ({
@@ -38,4 +38,4 @@ function AllocationSelect({ filteredAreas, append }: Props) {
   ) : null;
 }
 
-export default AllocationSelect;
+export default CorrelationSelect;

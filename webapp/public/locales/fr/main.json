@@ -393,7 +393,7 @@
   "study.modelization.load": "Conso",
   "study.modelization.thermal": "Clus. Thermiques",
   "study.modelization.hydro": "Hydro",
-  "study.modelization.hydro.allocation.select": "Ajouter une zone",
+  "study.modelization.hydro.area.add": "Ajouter une zone",
   "study.modelization.hydro.allocation.error.field.delete": "Erreur lors de la suppression de l'allocation",
   "study.modelization.wind": "Éolien",
   "study.modelization.solar": "Solaire",

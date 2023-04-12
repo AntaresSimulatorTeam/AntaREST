@@ -393,7 +393,7 @@
   "study.modelization.load": "Load",
   "study.modelization.thermal": "Thermal Clus.",
   "study.modelization.hydro": "Hydro",
-  "study.modelization.hydro.allocation.select": "Add an area",
+  "study.modelization.hydro.area.add": "Add an area",
   "study.modelization.hydro.allocation.error.field.delete": "Error when deleting the allocation", 
   "study.modelization.wind": "Wind",
   "study.modelization.solar": "Solar",
