@@ -1,12 +1,10 @@
 import json
-import os
 import uuid
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import (
@@ -14,36 +12,34 @@ from antarest.matrixstore.service import (
     SimpleMatrixService,
 )
 from antarest.study.business.area_management import (
+    AreaCreationDTO,
     AreaManager,
     AreaType,
-    AreaCreationDTO,
     AreaUI,
 )
-from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.model import (
-    RawStudy,
     Patch,
     PatchArea,
     PatchCluster,
+    RawStudy,
     StudyAdditionalData,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
-    DistrictSet,
-    Link,
     Cluster,
+    DistrictSet,
+    FileStudyTreeConfig,
+    Link,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -57,14 +53,13 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from tests.conftest import with_db_context
 
 
 @pytest.fixture
-def empty_study(tmpdir: Path) -> FileStudy:
+def empty_study(tmp_path: Path) -> FileStudy:
     cur_dir: Path = Path(__file__).parent
-    study_path = Path(tmpdir / str(uuid.uuid4()))
-    os.mkdir(study_path)
+    study_path = tmp_path.joinpath(str(uuid.uuid4()))
+    study_path.mkdir()
     with ZipFile(cur_dir / "assets" / "empty_study_810.zip") as zip_output:
         zip_output.extractall(path=study_path)
     config = build(study_path, "1")
@@ -72,9 +67,9 @@ def empty_study(tmpdir: Path) -> FileStudy:
 
 
 @pytest.fixture
-def matrix_service(tmpdir: Path) -> ISimpleMatrixService:
-    matrix_path = Path(tmpdir / "matrix_store")
-    os.mkdir(matrix_path)
+def matrix_service(tmp_path: Path) -> ISimpleMatrixService:
+    matrix_path = tmp_path.joinpath("matrix_store")
+    matrix_path.mkdir()
     return SimpleMatrixService(matrix_path)
 
 
@@ -94,6 +89,7 @@ def test_area_crud(
             raw_study_service, variant_study_service
         )
     )
+    # noinspection PyArgumentList
     study = RawStudy(
         id="1",
         path=empty_study.config.study_path,
@@ -143,6 +139,7 @@ def test_area_crud(
     area_manager.delete_area(study, "test2")
     assert len(empty_study.config.areas.keys()) == 0
 
+    # noinspection PyArgumentList
     study = VariantStudy(
         id="2",
         path=empty_study.config.study_path,
@@ -421,8 +418,6 @@ def test_get_all_area():
         {"area1": "a2", "area2": "a3", "ui": None},
     ] == [link.dict() for link in links]
 
-    pass
-
 
 def test_update_area():
     raw_study_service = Mock(spec=RawStudyService)
@@ -523,4 +518,4 @@ def test_update_clusters():
     )
     assert len(new_area_info.thermals) == 1
     assert new_area_info.thermals[0].type == "a"
-    assert new_area_info.thermals[0].code_oi == None
+    assert new_area_info.thermals[0].code_oi is None
