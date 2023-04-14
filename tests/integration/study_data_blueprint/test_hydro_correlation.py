@@ -50,8 +50,9 @@ class TestHydroCorrelation:
         obj = {
             "correlation": [
                 {"areaId": "de", "coefficient": 20},
-                {"areaId": "es", "coefficient": -80},
+                {"areaId": "es", "coefficient": -82.8},
                 {"areaId": "it", "coefficient": 0},
+                {"areaId": "fr", "coefficient": 100.0},
             ]
         }
         res = client.put(
@@ -64,9 +65,44 @@ class TestHydroCorrelation:
         expected = {
             "correlation": [
                 {"areaId": "de", "coefficient": 20.0},
-                {"areaId": "es", "coefficient": -80.0},
+                {"areaId": "es", "coefficient": -82.8},
                 {"areaId": "fr", "coefficient": 100.0},
             ]
+        }
+        assert actual == expected
+
+        # check that the form is updated correctly
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/hydro/correlation/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == HTTPStatus.OK, res.json()
+        actual = res.json()
+        expected = {
+            "correlation": [
+                {"areaId": "de", "coefficient": 20.0},
+                {"areaId": "es", "coefficient": -82.8},
+                {"areaId": "fr", "coefficient": 100.0},
+            ]
+        }
+        assert actual == expected
+
+        # check that the matrix is symmetric
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/hydro/correlation/matrix",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == HTTPStatus.OK, res.json()
+        actual = res.json()
+        expected = {
+            "columns": ["de", "es", "fr", "it"],
+            "data": [
+                [1.0, 0.0, 0.2, 0.0],
+                [0.0, 1.0, -0.828, 0.12],
+                [0.2, -0.828, 1.0, 0.0],
+                [0.0, 0.12, 0.0, 1.0],
+            ],
+            "index": ["de", "es", "fr", "it"],
         }
         assert actual == expected
 
@@ -160,6 +196,24 @@ class TestHydroCorrelation:
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = obj
+        assert actual == expected
+
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/hydro/correlation/matrix",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == HTTPStatus.OK, res.json()
+        actual = res.json()
+        expected = {
+            "columns": ["de", "es", "fr", "it"],
+            "data": [
+                [1.0, 0.0, -0.79332875, -0.96830414],
+                [0.0, 1.0, -0.23220568, -0.158783],
+                [-0.79332875, -0.23220568, 1.0, 0.82],
+                [-0.96830414, -0.158783, 0.82, 1.0],
+            ],
+            "index": ["de", "es", "fr", "it"],
+        }
         assert actual == expected
 
     def test_create_area(
