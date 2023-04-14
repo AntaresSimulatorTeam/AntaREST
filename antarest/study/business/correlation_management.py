@@ -272,18 +272,22 @@ class CorrelationManager:
         Returns:
             The updated correlation coefficients.
         """
-        correlation_ids = {field.area_id for field in data.correlation}
         area_ids = [area.id for area in all_areas]
-        if invalid_ids := correlation_ids - set(area_ids):
+        correlation_values = collections.OrderedDict.fromkeys(area_ids, 0.0)
+        correlation_values.update(
+            {field.area_id: field.coefficient for field in data.correlation}
+        )
+
+        if invalid_ids := set(correlation_values) - set(area_ids):
             # sort for deterministic error message and testing
             raise AreaNotFound(*sorted(invalid_ids))
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         array = self._get_array(file_study, area_ids)
-        for field in data.correlation:
-            i = area_ids.index(field.area_id)
-            j = area_ids.index(area_id)
-            array[i][j] = field.coefficient / 100
+        j = area_ids.index(area_id)
+        for i, coefficient in enumerate(correlation_values.values()):
+            array[i][j] = coefficient / 100
+            array[j][i] = coefficient / 100
         self._set_array(study, file_study, area_ids, array)
 
         column = array[:, area_ids.index(area_id)] * 100
