@@ -3,16 +3,14 @@ import logging
 from http import HTTPStatus
 from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, File, Depends, Body
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param
 from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -27,13 +25,14 @@ def create_raw_study_routes(
     config: Config,
 ) -> APIRouter:
     """
-    Endpoint implementation for studies management
+    Endpoint implementation for studies management.
+
     Args:
-        study_service: study service facade to handle request
-        config: main server configuration
+        study_service: study service facade to handle request.
+        config: main server configuration.
 
     Returns:
-
+        The FastAPI route for studies management.
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -44,7 +43,7 @@ def create_raw_study_routes(
         summary="Read data",
         response_model=JSON,
     )
-    def get_study(
+    async def get_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
@@ -80,7 +79,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update data by posting formatted data",
     )
-    def edit_study(
+    async def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: SUB_JSON = Body(default=""),
@@ -101,7 +100,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update data by posting a raw file",
     )
-    def replace_study_file(
+    async def replace_study_file(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         file: bytes = File(...),
@@ -124,7 +123,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
+    async def validate(
         uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
         logger.info(

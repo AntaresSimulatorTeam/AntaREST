@@ -2,19 +2,19 @@ import json
 import logging
 from typing import Any, List, Optional, Union
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import StudyPermissionType, JSON
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
-    XpansionSettingsDTO,
     XpansionCandidateDTO,
     XpansionResourceFileType,
+    XpansionSettingsDTO,
 )
 from antarest.study.service import StudyService
 
@@ -25,14 +25,14 @@ def create_xpansion_routes(
     study_service: StudyService, config: Config
 ) -> APIRouter:
     """
-    Endpoint implementation for xpansion studies management
+    Endpoint implementation for xpansion studies management.
+
     Args:
-        study_service: study service facade to handle request
-        ftm: file transfer manager
-        config: main server configuration
+        study_service: study service facade to handle request.
+        config: main server configuration.
 
     Returns:
-
+        The FastAPI route for xpansion studies management.
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -42,7 +42,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Configuration",
     )
-    def create_xpansion_configuration(
+    async def create_xpansion_configuration(
         uuid: str,
         file: Optional[UploadFile] = File(None),
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -61,7 +61,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion Configuration",
     )
-    def delete_xpansion_configuration(
+    async def delete_xpansion_configuration(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -78,7 +78,7 @@ def create_xpansion_routes(
         summary="Get Xpansion Settings",
         response_model=XpansionSettingsDTO,
     )
-    def get_settings(
+    async def get_settings(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -95,7 +95,7 @@ def create_xpansion_routes(
         summary="Update Xpansion Settings",
         response_model=XpansionSettingsDTO,
     )
-    def update_settings(
+    async def update_settings(
         uuid: str,
         xpansion_settings_dto: XpansionSettingsDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -114,7 +114,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings Additional Constraints",
     )
-    def update_additional_constraints_settings(
+    async def update_additional_constraints_settings(
         uuid: str,
         filename: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -133,7 +133,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Candidate",
     )
-    def add_candidate(
+    async def add_candidate(
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -153,7 +153,7 @@ def create_xpansion_routes(
         summary="Get Xpansion Candidate",
         response_model=XpansionCandidateDTO,
     )
-    def get_candidate(
+    async def get_candidate(
         uuid: str,
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -168,7 +168,7 @@ def create_xpansion_routes(
         summary="Get Xpansion Candidates",
         response_model=List[XpansionCandidateDTO],
     )
-    def get_candidates(
+    async def get_candidates(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -181,7 +181,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Candidate",
     )
-    def update_candidate(
+    async def update_candidate(
         uuid: str,
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
@@ -201,7 +201,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion Candidate",
     )
-    def delete_candidate(
+    async def delete_candidate(
         uuid: str,
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -220,7 +220,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Add Xpansion resource file",
     )
-    def add_resource(
+    async def add_resource(
         uuid: str,
         resource_type: XpansionResourceFileType,
         file: UploadFile = File(...),
@@ -244,7 +244,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion resource file",
     )
-    def delete_resource(
+    async def delete_resource(
         uuid: str,
         resource_type: XpansionResourceFileType,
         filename: str,
@@ -268,7 +268,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Getting Xpansion resource file content",
     )
-    def get_resource_content(
+    async def get_resource_content(
         uuid: str,
         resource_type: XpansionResourceFileType,
         filename: str,
@@ -310,7 +310,7 @@ def create_xpansion_routes(
         tags=[APITag.xpansion_study_management],
         summary="Getting all Xpansion resources files",
     )
-    def list_resources(
+    async def list_resources(
         uuid: str,
         resource_type: Optional[XpansionResourceFileType] = None,
         current_user: JWTUser = Depends(auth.get_current_user),

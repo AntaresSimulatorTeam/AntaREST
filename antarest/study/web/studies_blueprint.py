@@ -2,32 +2,28 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Request
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
+    CommentsDto,
+    ExportFormat,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
-    StudyMetadataDTO,
-    CommentsDto,
-    StudyDownloadDTO,
-    MatrixIndex,
-    ExportFormat,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -41,14 +37,15 @@ def create_study_routes(
     study_service: StudyService, ftm: FileTransferManager, config: Config
 ) -> APIRouter:
     """
-    Endpoint implementation for studies management
+    Endpoint implementation for studies management.
+
     Args:
-        study_service: study service facade to handle request
-        ftm: file transfer manager
-        config: main server configuration
+        study_service: study service facade to handle request.
+        ftm: file transfer manager.
+        config: main server configuration.
 
     Returns:
-
+        The FastAPI route for studies management.
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -59,7 +56,7 @@ def create_study_routes(
         summary="Get Studies",
         response_model=Dict[str, StudyMetadataDTO],
     )
-    def get_studies(
+    async def get_studies(
         managed: bool = False,
         name: str = "",
         folder: str = "",
@@ -78,7 +75,7 @@ def create_study_routes(
         tags=[APITag.study_management],
         summary="Get comments",
     )
-    def get_comments(
+    async def get_comments(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -95,7 +92,7 @@ def create_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update comments",
     )
-    def edit_comments(
+    async def edit_comments(
         uuid: str,
         data: CommentsDto,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -120,7 +117,7 @@ def create_study_routes(
         summary="Import Study",
         response_model=str,
     )
-    def import_study(
+    async def import_study(
         study: bytes = File(...),
         groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -141,7 +138,7 @@ def create_study_routes(
         tags=[APITag.study_management],
         summary="Upgrade study to the target version (or next version if not specified)",
     )
-    def upgrade_study(
+    async def upgrade_study(
         uuid: str,
         target_version: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -177,7 +174,7 @@ def create_study_routes(
         summary="Copy Study",
         response_model=str,
     )
-    def copy_study(
+    async def copy_study(
         uuid: str,
         dest: str,
         with_outputs: bool = False,
@@ -212,7 +209,7 @@ def create_study_routes(
         tags=[APITag.study_management],
         summary="Move study",
     )
-    def move_study(
+    async def move_study(
         uuid: str,
         folder_dest: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -231,7 +228,7 @@ def create_study_routes(
         summary="Create a new empty study",
         response_model=str,
     )
-    def create_study(
+    async def create_study(
         name: str,
         version: str = "",
         groups: str = "",
@@ -257,7 +254,7 @@ def create_study_routes(
         summary="Return study synthesis",
         response_model=FileStudyTreeConfigDTO,
     )
-    def get_study_synthesis(
+    async def get_study_synthesis(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -275,7 +272,7 @@ def create_study_routes(
         summary="Return study input matrix start date index",
         response_model=MatrixIndex,
     )
-    def get_study_matrix_index(
+    async def get_study_matrix_index(
         uuid: str,
         path: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -294,7 +291,7 @@ def create_study_routes(
         summary="Export Study",
         response_model=FileDownloadTaskDTO,
     )
-    def export_study(
+    async def export_study(
         uuid: str,
         no_output: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -313,7 +310,7 @@ def create_study_routes(
         tags=[APITag.study_management],
         summary="Delete Study",
     )
-    def delete_study(
+    async def delete_study(
         uuid: str,
         children: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -333,7 +330,7 @@ def create_study_routes(
         summary="Import Output",
         response_model=str,
     )
-    def import_output(
+    async def import_output(
         uuid: str,
         output: bytes = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -357,7 +354,7 @@ def create_study_routes(
         tags=[APITag.study_permissions],
         summary="Change study owner",
     )
-    def change_owner(
+    async def change_owner(
         uuid: str,
         user_id: int,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -377,7 +374,7 @@ def create_study_routes(
         tags=[APITag.study_permissions],
         summary="Add a group association",
     )
-    def add_group(
+    async def add_group(
         uuid: str,
         group_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -398,7 +395,7 @@ def create_study_routes(
         tags=[APITag.study_permissions],
         summary="Remove a group association",
     )
-    def remove_group(
+    async def remove_group(
         uuid: str,
         group_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -420,7 +417,7 @@ def create_study_routes(
         tags=[APITag.study_permissions],
         summary="Set study public mode",
     )
-    def set_public_mode(
+    async def set_public_mode(
         uuid: str,
         mode: PublicMode,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -440,7 +437,7 @@ def create_study_routes(
         tags=[APITag.study_management],
         summary="Show available study versions",
     )
-    def get_studies_version(
+    async def get_studies_version(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
@@ -453,7 +450,7 @@ def create_study_routes(
         summary="Get Study information",
         response_model=StudyMetadataDTO,
     )
-    def get_study_metadata(
+    async def get_study_metadata(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -470,7 +467,7 @@ def create_study_routes(
         summary="Update Study information",
         response_model=StudyMetadataDTO,
     )
-    def update_study_metadata(
+    async def update_study_metadata(
         uuid: str,
         study_metadata_patch: StudyMetadataPatchDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -490,7 +487,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Get outputs data variables",
     )
-    def output_variables_information(
+    async def output_variables_information(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -512,7 +509,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
-    def output_export(
+    async def output_export(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -534,7 +531,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
-    def output_download(
+    async def output_download(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
@@ -569,7 +566,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Delete a simulation output",
     )
-    def delete_output(
+    async def delete_output(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -592,7 +589,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Archive output",
     )
-    def archive_output(
+    async def archive_output(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -617,7 +614,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Unarchive output",
     )
-    def unarchive_output(
+    async def unarchive_output(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -644,7 +641,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         response_model=List[StudySimResultDTO],
     )
-    def sim_result(
+    async def sim_result(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -662,7 +659,7 @@ def create_study_routes(
         summary="Set simulation as the reference output",
         tags=[APITag.study_outputs],
     )
-    def set_sim_reference(
+    async def set_sim_reference(
         study_id: str,
         output_id: str,
         status: bool = True,
@@ -683,7 +680,7 @@ def create_study_routes(
         summary="Archive a study",
         tags=[APITag.study_management],
     )
-    def archive_study(
+    async def archive_study(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -699,7 +696,7 @@ def create_study_routes(
         summary="Dearchive a study",
         tags=[APITag.study_management],
     )
-    def unarchive_study(
+    async def unarchive_study(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -715,7 +712,7 @@ def create_study_routes(
         summary="Invalidate the study listing cache",
         tags=[APITag.study_management],
     )
-    def invalidate_study_listing_cache(
+    async def invalidate_study_listing_cache(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(

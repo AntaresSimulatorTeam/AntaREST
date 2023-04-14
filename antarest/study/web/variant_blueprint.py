@@ -1,27 +1,21 @@
 import logging
 from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,13 +26,14 @@ def create_study_variant_routes(
     config: Config,
 ) -> APIRouter:
     """
-    Endpoint implementation for studies area management
+    Endpoint implementation for study variants management.
+
     Args:
-        study_service: study service facade to handle request
-        config: main server configuration
+        study_service: study service facade to handle request.
+        config: main server configuration.
 
     Returns:
-
+        The FastAPI route for study variants management.
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -54,7 +49,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def create_variant(
+    async def create_variant(
         uuid: str,
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -82,7 +77,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def get_variants(
+    async def get_variants(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> VariantTreeDTO:
@@ -107,7 +102,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def get_parents(
+    async def get_parents(
         uuid: str,
         direct: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -119,9 +114,9 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return (
-            variant_study_service.get_variants_parents(sanitized_uuid, params)
-            if not direct
-            else variant_study_service.get_direct_parent(
+            variant_study_service.get_direct_parent(sanitized_uuid, params)
+            if direct
+            else variant_study_service.get_variants_parents(
                 sanitized_uuid, params
             )
         )
@@ -137,7 +132,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def list_commands(
+    async def list_commands(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[CommandDTO]:
@@ -155,7 +150,7 @@ def create_study_variant_routes(
         summary="Export a variant's commands matrices",
         response_model=FileDownloadTaskDTO,
     )
-    def export_matrices(
+    async def export_matrices(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileDownloadTaskDTO:
@@ -179,7 +174,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_commands(
+    async def append_commands(
         uuid: str,
         commands: List[CommandDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -202,7 +197,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def replace_commands(
+    async def replace_commands(
         uuid: str,
         commands: List[CommandDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -227,7 +222,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_command(
+    async def append_command(
         uuid: str,
         command: CommandDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -253,7 +248,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def get_command(
+    async def get_command(
         uuid: str,
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -274,7 +269,7 @@ def create_study_variant_routes(
         tags=[APITag.study_variant_management],
         summary="Move a command to an other index",
     )
-    def move_command(
+    async def move_command(
         uuid: str,
         cid: str,
         index: int,
@@ -296,7 +291,7 @@ def create_study_variant_routes(
         tags=[APITag.study_variant_management],
         summary="Move a command to an other index",
     )
-    def update_command(
+    async def update_command(
         uuid: str,
         cid: str,
         command: CommandDTO,
@@ -318,7 +313,7 @@ def create_study_variant_routes(
         tags=[APITag.study_variant_management],
         summary="Remove a command",
     )
-    def remove_command(
+    async def remove_command(
         uuid: str,
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -339,7 +334,7 @@ def create_study_variant_routes(
         tags=[APITag.study_variant_management],
         summary="Clear variant's commands",
     )
-    def remove_all_commands(
+    async def remove_all_commands(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
@@ -357,7 +352,7 @@ def create_study_variant_routes(
         summary="Generate variant snapshot",
         response_model=str,
     )
-    def generate_variant(
+    async def generate_variant(
         uuid: str,
         denormalize: bool = False,
         from_scratch: bool = False,
@@ -379,7 +374,7 @@ def create_study_variant_routes(
         summary="Get study generation task",
         response_model=TaskDTO,
     )
-    def get_study_generation_task(
+    async def get_study_generation_task(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TaskDTO:
@@ -399,7 +394,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def create_from_variant(
+    async def create_from_variant(
         uuid: str,
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),

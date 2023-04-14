@@ -208,7 +208,7 @@ def fastapi_app(
         templates = Jinja2Templates(directory=str(res / "templates"))
 
         @application.get("/", include_in_schema=False)
-        def home(request: Request) -> Any:
+        async def home(request: Request) -> Any:
             """
             Home ui
             ---
@@ -227,7 +227,7 @@ def fastapi_app(
     else:
 
         @application.get("/", include_in_schema=False)
-        def home(request: Request) -> Any:
+        async def home(request: Request) -> Any:
             """
             Home ui
             ---

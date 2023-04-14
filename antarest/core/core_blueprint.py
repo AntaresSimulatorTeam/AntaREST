@@ -1,14 +1,15 @@
 import logging
 from typing import Any
 
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id
 from antarest.login.auth import Auth
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 
 class StatusDTO(BaseModel):
@@ -17,16 +18,19 @@ class StatusDTO(BaseModel):
 
 def create_utils_routes(config: Config) -> APIRouter:
     """
-    Utility endpoints
+    Endpoint implementation for utilities.
 
     Args:
-        config: main server configuration
+        config: main server configuration.
+
+    Returns:
+        The FastAPI route for utilities.
     """
     bp = APIRouter()
     auth = Auth(config)
 
     @bp.get("/health", tags=[APITag.misc], response_model=StatusDTO)
-    def health() -> Any:
+    async def health() -> Any:
         return StatusDTO(status="available")
 
     @bp.get(
@@ -35,7 +39,7 @@ def create_utils_routes(config: Config) -> APIRouter:
         summary="Get application version",
         response_model=VersionInfoDTO,
     )
-    def version_info() -> Any:
+    async def version_info() -> Any:
         """
         Returns the current version of the application, along with relevant dependency information.
 
@@ -45,6 +49,7 @@ def create_utils_routes(config: Config) -> APIRouter:
           the dependency name and the value is its version number.
         """
         from antareslauncher import __version__ as antares_launcher_version
+
         from antarest import __version__ as antarest_version
 
         return VersionInfoDTO(
@@ -54,7 +59,7 @@ def create_utils_routes(config: Config) -> APIRouter:
         )
 
     @bp.get("/kill", include_in_schema=False)
-    def kill_worker(
+    async def kill_worker(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         if not current_user.is_site_admin():

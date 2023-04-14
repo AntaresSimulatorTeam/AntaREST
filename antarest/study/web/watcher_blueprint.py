@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 from http.client import HTTPException
-from typing import List, Any
+from typing import Any, List
 
 from fastapi import APIRouter, Depends
 
@@ -25,13 +25,14 @@ def create_watcher_routes(
     config: Config,
 ) -> APIRouter:
     """
-    Endpoint implementation for watcher management
+    Endpoint implementation for watcher management.
+
     Args:
-        watcher: watcher service facade to handle request
-        config: main server configuration
+        watcher: watcher service facade to handle request.
+        config: main server configuration.
 
     Returns:
-
+        The FastAPI route for watcher management.
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -42,7 +43,7 @@ def create_watcher_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def scan_dir(
+    async def scan_dir(
         path: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -62,7 +63,7 @@ def create_watcher_routes(
                     "Bad path format. Expected <workspace>/<path/to/folder>"
                 )
             logger.info(
-                f"Scanning directory {relative_path} of worskpace {workspace}",
+                f"Scanning directory {relative_path} of workspace {workspace}",
                 extra={"user": current_user.id},
             )
         else:
