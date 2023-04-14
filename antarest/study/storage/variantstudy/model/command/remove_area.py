@@ -141,6 +141,32 @@ class RemoveArea(ICommand):
                 allocations.pop(self.id, None)
         study_data.tree.save(allocation_cfg, ["input", "hydro", "allocation"])
 
+    def _remove_area_from_correlation_matrices(
+        self, study_data: FileStudy
+    ) -> None:
+        """
+        Removes the values from the correlation matrix that match the current area.
+
+        This function can update the following configurations:
+        - ["input", "hydro", "prepro", "correlation"]
+
+        Args:
+            study_data:File Study to update.
+        """
+        # Today, only the 'hydro' category is fully supported, but
+        # we could also manage the 'load' 'solar' and 'wind'
+        # categories but the usage is deprecated.
+        url = ["input", "hydro", "prepro", "correlation"]
+        correlation_cfg = study_data.tree.get(url)
+        for section, correlation in correlation_cfg.items():
+            if section == "general":
+                continue
+            for key in list(correlation):
+                a1, a2 = key.split("%")
+                if a1 == self.id or a2 == self.id:
+                    del correlation[key]
+        study_data.tree.save(correlation_cfg, url)
+
     def _remove_area_from_districts(self, study_data: FileStudy) -> None:
         districts = study_data.tree.get(["input", "areas", "sets"])
         for district in districts.values():
@@ -197,6 +223,7 @@ class RemoveArea(ICommand):
 
         self._remove_area_from_links(study_data)
         self._remove_area_from_binding_constraints(study_data)
+        self._remove_area_from_correlation_matrices(study_data)
         self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
         self._remove_area_from_cluster(study_data)
