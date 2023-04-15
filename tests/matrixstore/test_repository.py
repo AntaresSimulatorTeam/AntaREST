@@ -3,27 +3,28 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import Mock
 
-from sqlalchemy import create_engine
+import pytest
 
 from antarest.core.config import Config, SecurityConfig, StorageConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User, Password, Group
-from antarest.login.repository import UserRepository, GroupRepository
+from antarest.login.model import Group, Password, User
+from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import (
     Matrix,
+    MatrixContent,
     MatrixDataSet,
     MatrixDataSetRelation,
-    MatrixContent,
 )
 from antarest.matrixstore.repository import (
-    MatrixRepository,
     MatrixContentRepository,
     MatrixDataSetRepository,
+    MatrixRepository,
 )
+from sqlalchemy import create_engine
 
 
-def test_db_cyclelife():
+def test_db_lifecycle():
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -34,6 +35,7 @@ def test_db_cyclelife():
     )
 
     with db():
+        # sourcery skip: extract-method
         repo = MatrixRepository()
         m = Matrix(
             id="hello",
@@ -47,17 +49,14 @@ def test_db_cyclelife():
         assert repo.get(m.id) is None
 
 
-def test_bucket_cyclelife(tmp_path: Path):
-    config = Config(storage=StorageConfig(matrixstore=tmp_path))
-    repo = MatrixContentRepository(config)
+def test_bucket_lifecycle(tmp_path: Path):
+    repo = MatrixContentRepository(tmp_path)
 
     a = [[1, 2], [3, 4]]
     b = [[5, 6], [7, 8]]
 
-    matrix_content_a = MatrixContent(data=a)
-    matrix_content_b = MatrixContent(data=b)
-    MatrixContentRepository.initialize_matrix_content(matrix_content_a)
-    MatrixContentRepository.initialize_matrix_content(matrix_content_b)
+    matrix_content_a = MatrixContent(data=a, index=[0, 1], columns=[0, 1])
+    matrix_content_b = MatrixContent(data=b, index=[0, 1], columns=[0, 1])
 
     aid = repo.save(a)
     assert aid == repo.save(a)
@@ -69,7 +68,8 @@ def test_bucket_cyclelife(tmp_path: Path):
     assert matrix_content_b == repo.get(bid)
 
     repo.delete(aid)
-    assert repo.get(aid) is None
+    with pytest.raises(FileNotFoundError):
+        repo.get(aid)
 
 
 def test_dataset():
@@ -83,6 +83,7 @@ def test_dataset():
     )
 
     with db():
+        # sourcery skip: extract-method
         repo = MatrixRepository()
 
         user_repo = UserRepository(Config(security=SecurityConfig()))
@@ -154,6 +155,7 @@ def test_datastore_query():
     )
 
     with db():
+        # sourcery skip: extract-method
         user_repo = UserRepository(Config(security=SecurityConfig()))
         user1 = user_repo.save(User(name="foo", password=Password("bar")))
         user2 = user_repo.save(User(name="hello", password=Password("world")))

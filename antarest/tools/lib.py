@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional, Set
 from zipfile import ZipFile
 
+import numpy as np
 import requests
 from requests import Session
 
@@ -86,26 +87,19 @@ class RemoteVariantGenerator(IVariantGenerator):
         matrices_dir: Path,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
-        study = self.session.get(
-            self.build_url(f"/v1/studies/{self.study_id}")
-        ).json()
-        assert_this(study is not None)
 
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
-        for matrix_file in os.listdir(matrices_dir):
-            with open(matrices_dir / matrix_file, "r", newline="") as fh:
-                tsv_data = csv.reader(fh, delimiter="\t")
-                matrix_data = [
-                    [MatrixData(s) for s in l] for l in list(tsv_data)
-                ]
-                res = self.session.post(
-                    self.build_url(f"/v1/matrix"), json=matrix_data
-                )
-                assert_this(res.status_code == 200)
-                matrix_id = res.json()
-                assert_this(matrix_id == matrix_file.split(".")[0])
-                matrix_dataset.append(matrix_id)
+        for matrix_file in matrices_dir.iterdir():
+            matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+            matrix_data = matrix.tolist()
+            res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
+            res.raise_for_status()
+            matrix_id = res.json()
+            file_name = matrix_file.with_suffix("").name
+            # assert matrix_id == file_name, f"{matrix_id} != {file_name}"
+            matrix_dataset.append(matrix_id)
+
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
         stopwatch.log_elapsed(
@@ -116,28 +110,30 @@ class RemoteVariantGenerator(IVariantGenerator):
             self.build_url(f"/v1/studies/{self.study_id}/commands"),
             json=[command.dict() for command in commands],
         )
+        res.raise_for_status()
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command upload done in {x}s")
         )
-        assert_this(res.status_code == 200)
 
         res = self.session.put(
             self.build_url(
                 f"/v1/studies/{self.study_id}/generate?denormalize=true"
             )
         )
-        assert_this(res.status_code == 200)
+        res.raise_for_status()
+
         task_id = res.json()
         res = self.session.get(
             self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true")
         )
+        res.raise_for_status()
+
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Generation done in {x}s")
         )
-        print(res.status_code)
-        assert_this(res.status_code == 200)
         task_result = TaskDTO.parse_obj(res.json())
         assert task_result.result is not None
+
         return GenerationResultInfoDTO.parse_raw(
             task_result.result.return_value or ""
         )

@@ -1,10 +1,9 @@
 import logging
-import os
-import shutil
 import tempfile
 import time
 from abc import abstractmethod, ABC
 from datetime import datetime
+from datetime import timezone
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional, Tuple, Sequence
@@ -12,7 +11,7 @@ from zipfile import ZipFile
 
 from fastapi import UploadFile
 
-from antarest.core.config import StorageConfig, Config
+from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
@@ -26,7 +25,7 @@ from antarest.core.tasks.service import (
     ITaskService,
 )
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, assert_this, zip_dir
+from antarest.core.utils.utils import StopWatch, zip_dir
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -60,50 +59,42 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_hash: str) -> Optional[MatrixDTO]:
         raise NotImplementedError()
 
     @abstractmethod
-    def exists(self, id: str) -> bool:
+    def exists(self, matrix_hash: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, id: str) -> None:
+    def delete(self, matrix_hash: str) -> None:
         raise NotImplementedError()
 
 
 class SimpleMatrixService(ISimpleMatrixService):
-    def __init__(self, matrix_path: Path):
-        self.matrix_path = matrix_path
-        assert_this(matrix_path.exists() and matrix_path.is_dir())
-        config = Config(storage=StorageConfig(matrixstore=matrix_path))
-        self.matrix_content_repository = MatrixContentRepository(config)
+    def __init__(self, bucket_dir: Path):
+        self.bucket_dir = bucket_dir
+        self.content_repo = MatrixContentRepository(bucket_dir)
 
     def create(self, data: List[List[MatrixData]]) -> str:
-        matrix_hash = self.matrix_content_repository.save(data)
-        return matrix_hash
+        return self.content_repo.save(data)
 
-    def get(self, id: str) -> Optional[MatrixDTO]:
-        data = self.matrix_content_repository.get(id)
-        if data:
-            assert data.columns is not None
-            assert data.index is not None
-            return MatrixDTO.construct(
-                id=id,
-                width=len(data.columns),
-                height=len(data.index),
-                index=data.index,
-                columns=data.columns,
-                data=data.data,
-            )
-        else:
-            return None
+    def get(self, matrix_hash: str) -> MatrixDTO:
+        data = self.content_repo.get(matrix_hash)
+        return MatrixDTO.construct(
+            id=matrix_hash,
+            width=len(data.columns),
+            height=len(data.index),
+            index=data.index,
+            columns=data.columns,
+            data=data.data,
+        )
 
-    def exists(self, id: str) -> bool:
-        return self.matrix_content_repository.exists(id)
+    def exists(self, matrix_hash: str) -> bool:
+        return self.content_repo.exists(matrix_hash)
 
-    def delete(self, id: str) -> None:
-        self.matrix_content_repository.delete(id)
+    def delete(self, matrix_hash: str) -> None:
+        self.content_repo.delete(matrix_hash)
 
 
 class MatrixService(ISimpleMatrixService):
@@ -154,16 +145,19 @@ class MatrixService(ISimpleMatrixService):
 
     def create(self, data: List[List[MatrixData]]) -> str:
         matrix_hash = self.matrix_content_repository.save(data)
-        with db():
-            if not self.repo.get(matrix_hash):
-                self.repo.save(
-                    Matrix(
-                        id=matrix_hash,
-                        width=len(data[0] if len(data) > 0 else []),
-                        height=len(data),
-                        created_at=datetime.utcnow(),
-                    )
+        try:
+            with db():
+                matrix = Matrix(
+                    id=matrix_hash,
+                    width=len(data[0]) if data else 0,
+                    height=len(data),
+                    created_at=datetime.now(timezone.utc),
                 )
+                self.repo.save(matrix)
+        except Exception:
+            # delete the file so as not to leave unreferenced files lying around
+            self.matrix_content_repository.delete(matrix_hash)
+            raise
         return matrix_hash
 
     def create_by_importation(
@@ -178,7 +172,7 @@ class MatrixService(ISimpleMatrixService):
                     if not info.is_dir()
                 }
                 matrix_info: List[MatrixInfoDTO] = []
-                for name in files.keys():
+                for name in files:
                     if all(
                         [
                             not name.startswith("__MACOSX/"),
@@ -195,9 +189,8 @@ class MatrixService(ISimpleMatrixService):
     def file_importation(self, file: bytes, is_json: bool = False) -> str:
         if is_json:
             return self.create(MatrixContent.parse_raw(file).data)
-        else:
-            data = parse_tsv_matrix(file)
-            return self.create(data)
+        data = parse_tsv_matrix(file)
+        return self.create(data)
 
     def get_dataset(
         self,
@@ -324,23 +317,21 @@ class MatrixService(ISimpleMatrixService):
         self.repo_dataset.delete(id)
         return id
 
-    def get(self, id: str) -> Optional[MatrixDTO]:
-        matrix_content = self.matrix_content_repository.get(id)
-        matrix = self.repo.get(id)
-
-        if matrix_content and matrix:
-            return MatrixService._to_dto(matrix, matrix_content)
-        else:
+    def get(self, matrix_hash: str) -> Optional[MatrixDTO]:
+        matrix_content = self.matrix_content_repository.get(matrix_hash)
+        matrix = self.repo.get(matrix_hash)
+        if matrix is None:
             return None
+        return MatrixService._to_dto(matrix, matrix_content)
 
-    def exists(self, id: str) -> bool:
-        return self.matrix_content_repository.exists(id) and self.repo.exists(
-            id
-        )
+    def exists(self, matrix_hash: str) -> bool:
+        return self.matrix_content_repository.exists(
+            matrix_hash
+        ) and self.repo.exists(matrix_hash)
 
-    def delete(self, id: str) -> None:
-        self.matrix_content_repository.delete(id)
-        self.repo.delete(id)
+    def delete(self, matrix_hash: str) -> None:
+        self.matrix_content_repository.delete(matrix_hash)
+        self.repo.delete(matrix_hash)
 
     @staticmethod
     def check_access_permission(
@@ -366,7 +357,6 @@ class MatrixService(ISimpleMatrixService):
     def create_matrix_files(
         self, matrix_ids: Sequence[str], export_path: Path
     ) -> str:
-        assert_this(export_path.name.endswith(".zip"))
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
