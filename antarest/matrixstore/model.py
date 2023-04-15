@@ -150,7 +150,8 @@ class MatrixDataSet(Base):  # type: ignore
 # https://github.com/samuelcolvin/pydantic/issues/1423
 # https://github.com/samuelcolvin/pydantic/issues/1599
 # https://github.com/samuelcolvin/pydantic/issues/1930
-# Reverting to only float because Any cause problem retrieving data from a node will have pandas forcing all to float anyway...
+# Reverting to only float because Any cause problem retrieving data from a node
+# will have pandas forcing all to float anyway...
 # this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
 MatrixData = float
 
@@ -166,9 +167,18 @@ class MatrixDTO(BaseModel):
 
 
 class MatrixContent(BaseModel):
+    """
+    Matrix content (Data Frame array)
+
+    Attributes:
+        data: A 2D-array matrix of floating point values.
+        index: A list of row indexes or names.
+        columns: A list of columns indexes or names.
+    """
+
     data: List[List[MatrixData]]
-    index: Optional[List[Union[int, str]]]
-    columns: Optional[List[Union[int, str]]]
+    index: List[Union[int, str]]
+    columns: List[Union[int, str]]
 
 
 class MatrixDataSetUpdateDTO(BaseModel):

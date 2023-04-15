@@ -1,32 +1,23 @@
-import csv
 import json
 import logging
 import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
+import numpy as np
 import requests
-from requests import Session
-
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
-from antarest.core.utils.utils import (
-    StopWatch,
-    get_local_path,
-    assert_this,
-)
-from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import (
-    SimpleMatrixService,
-)
+from antarest.core.utils.utils import StopWatch, get_local_path
+from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import (
-    STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
+    STUDY_REFERENCE_TEMPLATES,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
@@ -48,6 +39,7 @@ from antarest.study.storage.variantstudy.variant_command_extractor import (
 from antarest.study.storage.variantstudy.variant_command_generator import (
     VariantCommandGenerator,
 )
+from requests import Session
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
@@ -86,26 +78,23 @@ class RemoteVariantGenerator(IVariantGenerator):
         matrices_dir: Path,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
-        study = self.session.get(
-            self.build_url(f"/v1/studies/{self.study_id}")
-        ).json()
-        assert_this(study is not None)
 
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
-        for matrix_file in os.listdir(matrices_dir):
-            with open(matrices_dir / matrix_file, "r", newline="") as fh:
-                tsv_data = csv.reader(fh, delimiter="\t")
-                matrix_data = [
-                    [MatrixData(s) for s in l] for l in list(tsv_data)
-                ]
-                res = self.session.post(
-                    self.build_url(f"/v1/matrix"), json=matrix_data
-                )
-                assert_this(res.status_code == 200)
-                matrix_id = res.json()
-                assert_this(matrix_id == matrix_file.split(".")[0])
-                matrix_dataset.append(matrix_id)
+        for matrix_file in matrices_dir.iterdir():
+            matrix = np.loadtxt(
+                matrix_file, delimiter="\t", dtype=np.float64, ndmin=2
+            )
+            matrix_data = matrix.tolist()
+            res = self.session.post(
+                self.build_url("/v1/matrix"), json=matrix_data
+            )
+            res.raise_for_status()
+            matrix_id = res.json()
+            # file_name = matrix_file.with_suffix("").name
+            # assert matrix_id == file_name, f"{matrix_id} != {file_name}"
+            matrix_dataset.append(matrix_id)
+
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
         stopwatch.log_elapsed(
@@ -116,42 +105,56 @@ class RemoteVariantGenerator(IVariantGenerator):
             self.build_url(f"/v1/studies/{self.study_id}/commands"),
             json=[command.dict() for command in commands],
         )
+        res.raise_for_status()
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command upload done in {x}s")
         )
-        assert_this(res.status_code == 200)
 
         res = self.session.put(
             self.build_url(
                 f"/v1/studies/{self.study_id}/generate?denormalize=true"
             )
         )
-        assert_this(res.status_code == 200)
+        res.raise_for_status()
+
         task_id = res.json()
         res = self.session.get(
             self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true")
         )
+        res.raise_for_status()
+
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Generation done in {x}s")
         )
-        print(res.status_code)
-        assert_this(res.status_code == 200)
         task_result = TaskDTO.parse_obj(res.json())
         assert task_result.result is not None
+
         return GenerationResultInfoDTO.parse_raw(
             task_result.result.return_value or ""
         )
 
     def build_url(self, url: str) -> str:
-        if self.host is not None:
-            return f"{self.host.strip('/')}/{url.strip('/')}"
-        return url
+        return (
+            url
+            if self.host is None
+            else f"{self.host.strip('/')}/{url.strip('/')}"
+        )
 
 
 class LocalVariantGenerator(IVariantGenerator):
     def __init__(self, output_path: Path):
         self.output_path = output_path
-        self.init_dest_path()
+
+    def render_template(
+        self, study_version: str = NEW_DEFAULT_STUDY_VERSION
+    ) -> None:
+        version_template = STUDY_REFERENCE_TEMPLATES[study_version]
+        empty_study_zip = get_local_path() / "resources" / version_template
+        with ZipFile(empty_study_zip) as zip_output:
+            zip_output.extractall(path=self.output_path)
+            # remove preexisting sets
+            sets_ini = self.output_path.joinpath("input/areas/sets.ini")
+            sets_ini.write_bytes(b"")
 
     def apply_commands(
         self, commands: List[CommandDTO], matrices_dir: Path
@@ -176,8 +179,10 @@ class LocalVariantGenerator(IVariantGenerator):
 
         command_objs: List[List[ICommand]] = []
         logger.info("Parsing command objects")
-        for command_block in commands:
-            command_objs.append(command_factory.to_icommand(command_block))
+        command_objs.extend(
+            command_factory.to_icommand(command_block)
+            for command_block in commands
+        )
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command objects parsed in {x}s")
         )
@@ -185,6 +190,7 @@ class LocalVariantGenerator(IVariantGenerator):
             command_objs, self.output_path, delete_on_failure=False
         )
         if result.success:
+            # sourcery skip: extract-method
             logger.info("Building new study tree")
             study = study_factory.create_from_fs(
                 self.output_path, study_id="", use_cache=False
@@ -196,19 +202,6 @@ class LocalVariantGenerator(IVariantGenerator):
                 lambda x: logger.info(f"Denormalized done in {x}s")
             )
         return result
-
-    def init_dest_path(self) -> None:
-        if not os.listdir(self.output_path):
-            version_template = STUDY_REFERENCE_TEMPLATES[
-                NEW_DEFAULT_STUDY_VERSION
-            ]
-            empty_study_zip = get_local_path() / "resources" / version_template
-            with ZipFile(empty_study_zip) as zip_output:
-                zip_output.extractall(path=self.output_path)
-                # remove preexisting sets
-                (
-                    self.output_path / "input" / "areas" / "sets.ini"
-                ).write_bytes(b"")
 
 
 def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
@@ -235,17 +228,40 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     )
     command_list = extractor.extract(study)
 
-    with open(commands_output_dir / COMMAND_FILE, "w") as fh:
-        json.dump(
+    (commands_output_dir / COMMAND_FILE).write_text(
+        json.dumps(
             [command.dict(exclude={"id"}) for command in command_list],
-            fh,
             indent=2,
         )
+    )
 
 
 def generate_diff(
-    base: Path, variant: Path, output_dir: Path, version: Optional[str] = None
+    base: Path,
+    variant: Path,
+    output_dir: Path,
+    study_version: str = NEW_DEFAULT_STUDY_VERSION,
 ) -> None:
+    """
+    Generate variant script commands from two variant script directories.
+
+    This function generates a set of commands that can be used to transform
+    the base study into the variant study, based on the differences between the two.
+    It does this by comparing the command files in each study directory
+    and extracting the differences between them.
+
+    Args:
+        base: The directory of the base study.
+        variant: The directory of the variant study.
+        output_dir: The output directory where the generated commands will be saved.
+        study_version: The version of the generated study.
+
+    Raises:
+        FileNotFoundError: If the base or variant study's command file is missing.
+
+    Returns:
+        None. The generated commands are written to a JSON file in the specified output directory.
+    """
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
     matrices_dir = output_dir / MATRIX_STORE_DIR
@@ -253,15 +269,6 @@ def generate_diff(
 
     study_id = "empty_base"
     path_study = output_dir / study_id
-    version = version or NEW_DEFAULT_STUDY_VERSION
-    # metadata = RawStudy(
-    #     id=study_id,
-    #     workspace=DEFAULT_WORKSPACE_NAME,
-    #     path=path_study,
-    #     version=version or NEW_DEFAULT_STUDY_VERSION,
-    #     created_at=datetime.utcnow(),
-    #     updated_at=datetime.utcnow(),
-    # )
 
     local_matrix_service = SimpleMatrixService(matrices_dir)
     resolver = UriResolverService(matrix_service=local_matrix_service)
@@ -272,7 +279,7 @@ def generate_diff(
     )
 
     create_new_empty_study(
-        version=version,
+        version=study_version,
         path_study=path_study,
         path_resources=get_local_path() / "resources",
     )
@@ -281,10 +288,10 @@ def generate_diff(
 
     base_command_file = base / COMMAND_FILE
     if not base_command_file.exists():
-        raise ValueError(f"Missing {COMMAND_FILE}")
+        raise FileNotFoundError(f"Missing {COMMAND_FILE}")
     variant_command_file = variant / COMMAND_FILE
     if not variant_command_file.exists():
-        raise ValueError(f"Missing {COMMAND_FILE}")
+        raise FileNotFoundError(f"Missing {COMMAND_FILE}")
 
     stopwatch = StopWatch()
     logger.info("Copying input matrices")
@@ -316,14 +323,16 @@ def generate_diff(
         empty_study=empty_study,
     )
 
-    with open(output_dir / COMMAND_FILE, "w") as fh:
-        json.dump(
+    (output_dir / COMMAND_FILE).write_text(
+        json.dumps(
             [
                 command.to_dto().dict(exclude={"id"})
                 for command in diff_commands
             ],
-            fh,
+            indent=2,
         )
+    )
+
     needed_matrices: Set[str] = set()
     for command in diff_commands:
         for matrix in command.get_inner_matrices():
@@ -340,9 +349,9 @@ def parse_commands(file: Path) -> List[CommandDTO]:
         json_commands = json.load(fh)
     stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
-    commands: List[CommandDTO] = []
-    for command in json_commands:
-        commands.append(CommandDTO.parse_obj(command))
+    commands: List[CommandDTO] = [
+        CommandDTO.parse_obj(command) for command in json_commands
+    ]
     stopwatch.log_elapsed(
         lambda x: logger.info(f"Script commands parsed in {x}s")
     )
@@ -350,35 +359,49 @@ def parse_commands(file: Path) -> List[CommandDTO]:
     return commands
 
 
-def apply_commands_from_dir(
-    command_dir: Path, generator: IVariantGenerator
-) -> GenerationResultInfoDTO:
-    matrix_dir: Path = command_dir / MATRIX_STORE_DIR
-    command_file = command_dir / COMMAND_FILE
-    if matrix_dir and not matrix_dir.exists():
-        matrix_dir.mkdir()
-    if not command_file.exists():
-        raise ValueError(f"Missing {COMMAND_FILE}")
-
-    commands = parse_commands(command_file)
-    return generator.apply_commands(commands, matrix_dir)
-
-
 def generate_study(
-    input: Path,
+    commands_dir: Path,
     study_id: Optional[str],
     output: Optional[str] = None,
     host: Optional[str] = None,
     token: Optional[str] = None,
+    study_version: str = NEW_DEFAULT_STUDY_VERSION,
 ) -> GenerationResultInfoDTO:
+    """
+    Generate a new study or update an existing study by applying commands.
+
+    Args:
+        commands_dir: The directory containing the command file and input matrices.
+        study_id: The ID of the base study to use for generating the new study.
+            If `host` is provided, this is ignored.
+        output: The output directory where the new study will be generated.
+            If `study_id` and `host` are not provided, this must be specified.
+        host: The URL of the Antares server to use for generating the new study.
+            If `study_id` is not provided, this is ignored.
+        token: The authentication token to use when connecting to the Antares server.
+            If `host` is not provided, this is ignored.
+        study_version: The target version of the generated study.
+
+    Returns:
+        GenerationResultInfoDTO: A data transfer object containing information about the generation result.
+    """
+    generator: Union[RemoteVariantGenerator, LocalVariantGenerator]
     if study_id is not None and host is not None:
-        generator: IVariantGenerator = RemoteVariantGenerator(
-            study_id, host, token
-        )
+        generator = RemoteVariantGenerator(study_id, host, token)
+    elif output is None:
+        raise TypeError("'output' must be set")
     else:
-        assert output is not None
         output_dir = Path(output)
+        generator = LocalVariantGenerator(output_dir)
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
-        generator = LocalVariantGenerator(output_dir)
-    return apply_commands_from_dir(input, generator)
+            generator.render_template(study_version)
+    # Apply commands from the commands dir
+    matrix_dir: Path = commands_dir / MATRIX_STORE_DIR
+    command_file = commands_dir / COMMAND_FILE
+    if matrix_dir and not matrix_dir.exists():
+        matrix_dir.mkdir()
+    if not command_file.exists():
+        raise FileNotFoundError(f"Missing {COMMAND_FILE}")
+    commands = parse_commands(command_file)
+    return generator.apply_commands(commands, matrix_dir)

@@ -26,34 +26,32 @@ class InputLinkArea(FolderNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.area = area
 
     def build(self) -> TREE:
-        children: TREE = {}
-        if self.config.version < 820:
+        children: TREE
+        ctx = self.context
+        cfg = self.config
+        if cfg.version < 820:
             children = {
-                l: InputSeriesMatrix(
-                    self.context, self.config.next_file(f"{l}.txt")
-                )
-                for l in self.config.get_links(self.area)
+                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"))
+                for link in cfg.get_links(self.area)
             }
         else:
             children = {
-                f"{l}_parameters": InputSeriesMatrix(
-                    self.context, self.config.next_file(f"{l}_parameters.txt")
+                f"{link}_parameters": InputSeriesMatrix(
+                    ctx, cfg.next_file(f"{link}_parameters.txt")
                 )
-                for l in self.config.get_links(self.area)
+                for link in cfg.get_links(self.area)
             }
             children["capacities"] = InputLinkAreaCapacities(
-                self.context,
-                self.config.next_file("capacities"),
-                area=self.area,
+                ctx, cfg.next_file("capacities"), area=self.area
             )
 
         children["properties"] = InputLinkAreaProperties(
-            self.context,
-            self.config.next_file("properties.ini"),
+            ctx,
+            cfg.next_file("properties.ini"),
             area=self.area,
         )
 
