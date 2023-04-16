@@ -1,14 +1,12 @@
 import os
 import urllib.parse
+import zipfile
 from pathlib import Path
 from typing import List, Tuple
-from zipfile import ZipFile
 
 import numpy as np
 from fastapi import FastAPI
 from starlette.testclient import TestClient
-from typing import List, Tuple
-import zipfile
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
@@ -17,6 +15,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_daily,
     default_scenario_hourly,
 )
+from antarest.study.storage.study_upgrader import get_current_version
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
@@ -33,8 +32,6 @@ from antarest.tools.lib import (
     generate_study,
     parse_commands,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 TEST_DIR: Path = Path(__file__).parent
 
@@ -172,6 +169,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         "input/reserves/hub w.txt",
         "input/reserves/hub e.txt",
     ]
+    # noinspection SpellCheckingInspection
     fixed_8_cols_empty_items = [
         "input/misc-gen/miscgen-hub w.txt",
         "input/misc-gen/miscgen-hub e.txt",
@@ -215,57 +213,75 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
 
 
 def test_diff_local(tmp_path: Path):
-    base_study = "base_study"
-    variant_study = "variant_study"
-    export_path = tmp_path.joinpath("generation_result")
-    output_study_commands = export_path.joinpath("output_study_commands")
-    base_study_commands = export_path.joinpath(base_study)
-    variant_study_commands = export_path.joinpath(variant_study)
+    # Extract resources in `assets`
+    assets_dir = tmp_path.joinpath("assets")
+    assets_dir.mkdir()
+    raw_study_dir = assets_dir.joinpath("raw_study")
+    variant_study_dir = assets_dir.joinpath("variant_study")
+    for src in [
+        TEST_DIR.joinpath("assets/base_study.zip"),
+        TEST_DIR.joinpath("assets/variant_study.zip"),
+    ]:
+        with zipfile.ZipFile(src) as zip_output:
+            zip_output.extractall(path=assets_dir)
+    assets_dir.joinpath("base_study").replace(raw_study_dir)
 
-    output_study_path = tmp_path.joinpath(base_study)
-    variant_study_path = tmp_path.joinpath(variant_study)
+    # Extract the commands used to "regenerate" the studies
+    results_dir = tmp_path.joinpath("results")
+    commands_dir = results_dir.joinpath("commands")
+    raw_study_commands = commands_dir.joinpath("raw_study")
+    variant_study_commands = commands_dir.joinpath("variant_study")
+    extract_commands(raw_study_dir, raw_study_commands)
+    extract_commands(variant_study_dir, variant_study_commands),
 
-    assets_dir = TEST_DIR.joinpath("assets")
-    for study in [base_study, variant_study]:
-        with zipfile.ZipFile(assets_dir.joinpath(f"{study}.zip")) as zip_output:
-            zip_output.extractall(path=tmp_path)
-        extract_commands(tmp_path.joinpath(study), export_path.joinpath(study))
+    study_version = get_current_version(raw_study_dir)
 
+    raw_generated_dir = results_dir.joinpath("raw_generated")
     res = generate_study(
-        base_study_commands,
-        None,
-        str(export_path.joinpath("base_generated")),
+        raw_study_commands,
+        "raw1",
+        output=str(raw_generated_dir),
+        study_version=study_version,
     )
     assert res.success
+    variant_generated_dir = results_dir.joinpath("variant_generated")
     res = generate_study(
         variant_study_commands,
-        None,
-        str(export_path.joinpath("variant_generated")),
+        "variant1",
+        output=str(variant_generated_dir),
+        study_version=study_version,
     )
     assert res.success
+    # Calculates the differences between the RAW study and the variant study.
     generate_diff(
-        base_study_commands,
+        raw_study_commands,
         variant_study_commands,
-        output_study_commands,
+        commands_dir,
+        study_version=study_version,
     )
+    # After calculating the differences, the `generate_diff` function generates a list
+    # of commands that only contains the differences between the two studies.
+    # These differences are then applied to the original RAW study to regenerate
+    # a study in the final state.
     res = generate_study(
-        output_study_commands,
-        None,
-        output=str(output_study_path),
+        commands_dir,
+        "diff1",
+        output=str(raw_generated_dir),
+        study_version=study_version,
     )
     assert res.success
 
-    assert output_study_path.is_dir()
-    for root, dirs, files in os.walk(variant_study_path):
-        rel_path = root[len(str(variant_study_path)) + 1 :]
-        for item in files:
-            if item in [
-                "comments.txt",
-                "study.antares",
-                "Desktop.ini",
-                "study.ico",
-            ]:
-                continue
-            assert (variant_study_path / rel_path / item).read_text() == (
-                output_study_path / rel_path / item
-            ).read_text()
+    # Quick compare generated raw and variant
+    for raw_path in raw_generated_dir.glob("**/*"):
+        if raw_path.is_dir() or raw_path.name in [
+            "comments.txt",
+            "study.antares",
+            "Desktop.ini",
+            "study.ico",
+        ]:
+            continue
+        relpath = raw_path.relative_to(raw_generated_dir)
+        variant_path = variant_generated_dir.joinpath(relpath)
+        raw_text = raw_path.read_text(encoding="utf-8")
+        variant_text = variant_path.read_text(encoding="utf-8")
+        assert raw_text == variant_text, f"Invalid path '{relpath}'"
