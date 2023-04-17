@@ -18,10 +18,9 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 class JsonReader(IReader):
     def read(self, path: Any) -> JSON:
-        if not isinstance(path, Path):
-            return cast(JSON, json.load(path))
-        with open(path, "r") as fh:
-            return cast(JSON, json.load(fh))
+        if isinstance(path, Path):
+            return cast(JSON, path.read_text(encoding="utf-8"))
+        return cast(JSON, json.loads(path))
 
 
 class JsonWriter(IniWriter):

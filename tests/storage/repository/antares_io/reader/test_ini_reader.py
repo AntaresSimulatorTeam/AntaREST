@@ -36,8 +36,9 @@ def test_read(tmp_path: Path) -> None:
     }
     assert actual == expected
 
-    actual_from_bytes = reader.read(path.open())
-    assert actual_from_bytes == expected
+    with path.open() as f:
+        actual_from_bytes = reader.read(f)
+        assert actual_from_bytes == expected
 
 
 def test_read_sets_init(tmp_path: Path) -> None:
@@ -67,8 +68,9 @@ def test_read_sets_init(tmp_path: Path) -> None:
 
     assert actual == expected
 
-    actual_from_bytes = reader.read(path.open())
-    assert actual_from_bytes == expected
+    with path.open() as f:
+        actual_from_bytes = reader.read(f)
+        assert actual_from_bytes == expected
 
 
 def test_read__with_special_keys(tmp_path: Path) -> None:
@@ -92,5 +94,6 @@ def test_read__with_special_keys(tmp_path: Path) -> None:
 
     assert actual == expected
 
-    actual_from_bytes = reader.read(path.open())
-    assert actual_from_bytes == expected
+    with path.open() as f:
+        actual_from_bytes = reader.read(f)
+        assert actual_from_bytes == expected
