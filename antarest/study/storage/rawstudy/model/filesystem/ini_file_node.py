@@ -27,15 +27,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import (
 )
 
 
-class IniReaderError(Exception):
-    """
-    Left node to handle .ini file behavior
-    """
-
-    def __init__(self, name: str, mes: str):
-        super(IniReaderError, self).__init__(f"Error read node {name} = {mes}")
-
-
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
@@ -73,23 +64,15 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             with zipfile.ZipFile(
                 self.config.zip_path, mode="r"
             ) as zipped_folder:
-                inside_zip_path = str(self.config.path)[
-                    len(str(self.config.zip_path)[:-4]) + 1 :
-                ].replace("\\", "/")
+                inside_zip_path = self.config.path.relative_to(
+                    self.config.zip_path.with_suffix("")
+                ).as_posix()
                 with io.TextIOWrapper(
                     zipped_folder.open(inside_zip_path)
                 ) as f:
-                    try:
-                        data = self.reader.read(f)
-                    except Exception as e:
-                        raise IniReaderError(
-                            self.__class__.__name__, str(e)
-                        ) from e
+                    data = self.reader.read(f)
         else:
-            try:
-                data = self.reader.read(self.path)
-            except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e)) from e
+            data = self.reader.read(self.path)
 
         if len(url) == 2:
             data = data[url[0]][url[1]]
@@ -204,9 +187,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 if raising:
                     raise ValueError(msg)
                 errors.append(msg)
-            else:
-                if not isinstance(data[param], typing):
-                    msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                    if raising:
-                        raise ValueError(msg)
-                    errors.append(msg)
+            elif not isinstance(data[param], typing):
+                msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
+                if raising:
+                    raise ValueError(msg)
+                errors.append(msg)
