@@ -24,6 +24,10 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/allocation`,
       },
       {
+        label: "Correlation",
+        path: `/studies/${study?.id}/explore/modelization/area/hydro/correlation`,
+      },
+      {
         label: "Daily Power",
         path: `/studies/${study?.id}/explore/modelization/area/hydro/dailypower`,
       },
