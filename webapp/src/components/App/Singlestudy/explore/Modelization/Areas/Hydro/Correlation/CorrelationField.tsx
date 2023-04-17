@@ -1,8 +1,11 @@
 import { Typography, IconButton, Grid } from "@mui/material";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import { FieldArrayWithId, UseFieldArrayRemove } from "react-hook-form";
+import {
+  Control,
+  FieldArrayWithId,
+  UseFieldArrayRemove,
+} from "react-hook-form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "../../../../../../../common/Form";
 import { CorrelationFormFields } from "./utils";
 
 interface Props {
@@ -10,11 +13,10 @@ interface Props {
   index: number;
   label: string;
   remove: UseFieldArrayRemove;
+  control: Control<CorrelationFormFields>;
 }
 
-function CorrelationField({ field, index, label, remove }: Props) {
-  const { control } = useFormContextPlus<CorrelationFormFields>();
-
+function CorrelationField({ field, index, label, remove, control }: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -36,8 +38,8 @@ function CorrelationField({ field, index, label, remove }: Props) {
         <NumberFE
           key={field.id}
           name={`correlation.${index}.coefficient`}
-          control={control}
           size="small"
+          control={control}
           rules={{
             min: {
               value: -100,

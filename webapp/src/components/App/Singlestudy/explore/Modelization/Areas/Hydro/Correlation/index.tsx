@@ -1,22 +1,48 @@
 import { Box, Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import Form from "../../../../../../../common/Form";
+import { useMemo } from "react";
+import { useFieldArray } from "react-hook-form";
+import Form, { useFormContextPlus } from "../../../../../../../common/Form";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import {
+  getAreas,
+  getCurrentAreaId,
+} from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import {
   CorrelationFormFields,
   getCorrelationFormFields,
   setCorrelationFormFields,
 } from "./utils";
-import Fields from "./Fields";
+import DynamicList from "../../../../../../../common/DynamicList";
+import CorrelationField from "./CorrelationField";
 
 function Correlation() {
+  const areaId = useAppSelector(getCurrentAreaId);
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
+  const { control } = useFormContextPlus<CorrelationFormFields>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "correlation",
+  });
+  const areas = useAppSelector((state) => getAreas(state, studyId));
+
+  const filteredAreas = useMemo(() => {
+    const areaIds = fields.map((field) => field.areaId);
+    return areas.filter((area) => !areaIds.includes(area.id));
+  }, [areas, fields]);
+
+  const options = useMemo(
+    () =>
+      filteredAreas.map((area) => ({
+        label: area.name,
+        value: area.id,
+      })),
+    [filteredAreas]
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -55,7 +81,26 @@ function Correlation() {
           onSubmit={handleSubmit}
           sx={{ p: 3 }}
         >
-          <Fields />
+          <DynamicList
+            items={fields}
+            renderItem={(item, index) => (
+              <CorrelationField
+                key={item.id}
+                field={item}
+                index={index}
+                label={`${item.areaId}`}
+                remove={remove}
+                control={control}
+              />
+            )}
+            options={options}
+            onAdd={(value: string) =>
+              append({
+                areaId: value,
+                coefficient: 0,
+              })
+            }
+          />
         </Form>
       </Paper>
     </Box>
