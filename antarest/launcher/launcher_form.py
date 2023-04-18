@@ -1,111 +1,14 @@
 """
 Launcher Dialog Box Object Model
 """
-from typing import List, NamedTuple, Union
+from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel
-
-from pydantic.types import PositiveFloat, PositiveInt
-
-
-class Version(NamedTuple):
-    """
-    Represents an Antares Solver or Study version.
-
-    Attributes:
-        major: The major version number.
-        minor: The minor version number.
-        patch: The patch version number.
-    """
-
-    major: int
-    minor: int
-    patch: int
-
-    @classmethod
-    def construct(cls, *args: Union[str, int]) -> "Version":
-        """
-        Constructs a Version instance from a variable number of arguments.
-
-        If only one argument is provided, it is treated as a string and each
-        character is parsed as a separate component of the version number.
-        Any missing components are filled with zeros.
-
-        Args:
-            A variable number of arguments representing the version number.
-            Each argument can be either a string or an integer.
-
-        Returns:
-            A new Version instance.
-
-        Raises:
-            TypeError: if the number of arguments is incorrect.
-
-        Usage:
-            >>> from antarest.launcher.launcher_form import Version
-
-            >>> Version.construct()
-            Version(major=0, minor=0, patch=0)
-
-            >>> Version.construct(841)
-            Version(major=8, minor=4, patch=1)
-            >>> Version.construct(8, 4, 1)
-            Version(major=8, minor=4, patch=1)
-
-            >>> Version.construct(85)
-            Version(major=8, minor=5, patch=0)
-            >>> Version.construct("85")
-            Version(major=8, minor=5, patch=0)
-            >>> Version.construct("8", "5")
-            Version(major=8, minor=5, patch=0)
-        """
-        if len(args) == 1:
-            args = tuple(str(args[0]))
-        parts = tuple(int(p) for p in args) + (0,) * (3 - len(args))
-        return cls(*parts)
-
-    def __str__(self) -> str:
-        """Returns a string representation of the Version object."""
-        return ".".join(map(str, self))
-
-    def __format__(self, format_spec: str) -> str:
-        """
-        Returns a formatted string representation of the Version object.
-
-        The `patch` component is ignored if nul.
-
-        Args:
-            format_spec:
-                A string specifying the format of the output:
-                "s" for the short format, or "d" for the dotted format.
-                Default is "s" (no dot).
-
-        Returns:
-            A formatted string representing the version number.
-
-        Usage:
-            >>> from antarest.launcher.launcher_form import Version
-
-            >>> v841 = Version.construct(8, 4, 1)
-            >>> f"{v841:s}"
-            '841'
-            >>> f"v{v841:d}"
-            'v8.4.1'
-
-            >>> v850 = Version.construct(8, 5, 0)
-            >>> f"{v850}"
-            '85'
-            >>> f"v{v850:d}"
-            'v8.5'
-        """
-        # separator: "." => "d" (dotted), "" => "s" (short)
-        separators = {"": "", "s": "", "d": "."}
-        sep = separators[format_spec]
-        values = self if self.patch else [self.major, self.minor]
-        return sep.join(map(str, values))
+from antarest.launcher.version_info import VersionInfo
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Extra, Field, root_validator, validator
 
 
-class _CamelCaseModel(BaseModel):
+class BaseModel(PydanticBaseModel):
     class Config:
         @classmethod
         def alias_generator(cls, string: str) -> str:
@@ -113,56 +16,125 @@ class _CamelCaseModel(BaseModel):
             return v[0].lower() + v[1:] if v else ""
 
         allow_population_by_field_name = True
+        extra = Extra.forbid
 
 
-class XpansionConfig(_CamelCaseModel):
+class XpansionConfig(BaseModel):
     """Specific configuration for Xpansion"""
 
     use_sensibility_analysis: bool = False
     selected_output: str = ""
-    available_outputs: List[str] = []
+    available_outputs: List[str] = Field(
+        default_factory=list, unique_items=True
+    )
+
+    # noinspection PyMethodParameters
+    @root_validator(pre=True)
+    def validate_form(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("use_sensibility_analysis", False):
+            if not (available_outputs := values.get("available_outputs", [])):
+                raise ValueError(
+                    "At least one simulation output is required"
+                    " to use Xpansion with sensibility analysis"
+                )
+            available_outputs.sort(reverse=True)
+            selected_output: bool = values.get("selected_output", "")
+            if not selected_output:
+                values["selected_output"] = available_outputs[0]
+        return values
+
+    class Config:
+        @staticmethod
+        def schema_extra(
+            schema: Dict[str, Any], model: Type["XpansionConfig"]
+        ) -> None:
+            schema["example"] = model(
+                use_sensibility_analysis=True,
+                selected_output="2023-04-19_out3",
+                available_outputs=[
+                    "2023-04-18_out2",
+                    "2023-04-19_out3",
+                    "2023-04-17_out1",
+                ],
+            ).dict(by_alias=True)
 
 
-class SelectedStudy(_CamelCaseModel):
+class AdequacyPatchConfig(BaseModel):
+    """Specific configuration for Adequacy Patch"""
+
+    use_non_linearized_adp: bool = False
+
+
+class SelectedStudy(XpansionConfig, AdequacyPatchConfig, BaseModel):
     """Selected Study (uuid, name, version)"""
 
     uuid: str
     name: str
     version: str
     use_xpansion: bool = False
-    xpansion_config: XpansionConfig
+    use_adequacy_patch: bool = False
+
+    # noinspection PyMethodParameters
+    @validator("version")
+    def validate_version(cls, version: str) -> str:
+        VersionInfo.construct(version)
+        return version
+
+    class Config:
+        @staticmethod
+        def schema_extra(
+            schema: Dict[str, Any], model: Type["SelectedStudy"]
+        ) -> None:
+            schema["example"] = model(
+                uuid="2f74a451-ddad-4ca4-a7c2-d3931f005b4a",
+                name="foo",
+                version="850",
+                use_xpansion=True,
+                use_sensibility_analysis=False,
+                selected_output="",
+                use_adequacy_patch=True,
+                use_non_linearized_adp=True,
+            ).dict(by_alias=True)
 
 
-class NbrOfCores(PositiveInt):
-    """Number of cores used by the simulator"""
-
-    lt = 64
-
-
-class AdvancedConfig(_CamelCaseModel):
+class AdvancedConfig(BaseModel):
     """Advanced configuration of the simulation"""
 
     auto_uncompress: bool = True
     use_xpress_solver: bool = False
-    solver_version: str = ""
+    solver_version: str
+
+    # noinspection PyMethodParameters
+    @validator("solver_version")
+    def validate_version(cls, solver_version: str) -> str:
+        VersionInfo.construct(solver_version)
+        return solver_version
 
 
-class AdequacyPatchConfig(_CamelCaseModel):
-    """Specific configuration for Adequacy Patch"""
-
-    use_non_linearized_adp: bool = False
-
-
-class AntaresLauncherForm(_CamelCaseModel):
+class AntaresLauncherForm(AdvancedConfig, BaseModel):
     """Antares' Simulation dialog box used to launch studies"""
 
     selected_studies: List[SelectedStudy]
-    output_suffix = str
-    simu_timeout: PositiveFloat
-    nbr_of_cores: NbrOfCores
-    advanced_config: AdvancedConfig
-    use_adequacy_patch: bool = False
-    adequacy_patch_config: AdequacyPatchConfig
+    output_suffix: str
+    simu_timeout: float = Field(..., gt=0)  # type: ignore
+    nbr_of_cores: int = Field(..., lt=64)  # type: ignore
+
+    # noinspection PyMethodParameters
+    @root_validator()
+    def validate_versions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # fmt: off
+        selected_studies: List[SelectedStudy] = values.get("selected_studies", [])
+        solver_version = VersionInfo.construct(values.get("solver_version", ""))
+        # fmt: on
+        for study in selected_studies:
+            version = VersionInfo.construct(study.version)
+            if version > solver_version:
+                raise ValueError(
+                    f"Can't use Antares Solver v{solver_version:d}"
+                    f" with study '{study.name}' in v{version:d},"
+                    f" you must use a more recent Solver version."
+                )
+        return values
 
 
 if __name__ == "__main__":
@@ -170,17 +142,32 @@ if __name__ == "__main__":
 
     launcher = AntaresLauncherForm(
         selected_studies=[
-            {
-                "uuid": str(uuid.uuid4()),
-                "name": "foo",
-                "version": "850",
-            }
+            SelectedStudy(
+                uuid=str(uuid.uuid4()),
+                name="foo",
+                version="850",
+                use_xpansion=False,
+                use_adequacy_patch=True,
+                use_non_linearized_adp=True,
+            ),
+            SelectedStudy(
+                uuid=str(uuid.uuid4()),
+                name="bar",
+                version="840",
+                use_xpansion=True,
+                use_sensibility_analysis=True,
+                selected_output="",
+                available_outputs=[
+                    "2023-04-18_out2",
+                    "2023-04-19_out3",
+                    "2023-04-17_out1",
+                ],
+                use_adequacy_patch=False,
+            ),
         ],
         output_suffix="foo",
         simu_timeout=0.1,
         nbr_of_cores=1,
-        advanced_config={},
-        xpansion_config={},
-        adequacy_patch_config={},
+        solver_version="850",
     )
     print(launcher.json(by_alias=True, indent=True))
