@@ -69,6 +69,16 @@ function Fields() {
           control={control}
         />
         <NumberFE
+          label={t("study.modelization.clusters.unitcount")}
+          name="unitCount"
+          control={control}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.nominalCapacity")}
+          name="nominalCapacity"
+          control={control}
+        />
+        <NumberFE
           label={t("study.modelization.clusters.minStablePower")}
           name="minStablePower"
           control={control}
