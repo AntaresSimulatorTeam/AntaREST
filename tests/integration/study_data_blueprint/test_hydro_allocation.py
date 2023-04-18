@@ -2,8 +2,10 @@ from http import HTTPStatus
 from typing import List
 
 import pytest
-from antarest.study.business.area_management import AreaInfoDTO
 from starlette.testclient import TestClient
+
+from antarest.study.business.area_management import AreaInfoDTO
+from tests.integration.utils import wait_for
 
 
 @pytest.mark.unit_test
@@ -28,6 +30,62 @@ class TestHydroAllocation:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
+        actual = res.json()
+        expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
+        assert actual == expected
+
+    def test_get_allocation_form_values__variant(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        study_id: str,
+    ):
+        """
+        The purpose of this test is to check that we can get the form parameters from a study variant.
+        To prepare this test, we start from a RAW study, copy it to the managed study workspace
+        and then create a variant from this managed workspace.
+        """
+        # Execute the job to copy the study to the workspace
+        res = client.post(
+            f"/v1/studies/{study_id}/copy?dest=Clone&with_outputs=false",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        task_id = res.json()
+
+        # wait for the job to finish
+        def copy_task_done() -> bool:
+            r = client.get(
+                f"/v1/tasks/{task_id}",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+            )
+            return r.json()["status"] == 3
+
+        wait_for(copy_task_done, sleep_time=0.2)
+
+        # Get the job result to retrieve the study ID
+        res = client.get(
+            f"/v1/tasks/{task_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        managed_id = res.json()["result"]["return_value"]
+
+        # create a variant study from the managed study
+        res = client.post(
+            f"/v1/studies/{managed_id}/variants?name=foo",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        variant_id = res.json()
+
+        # get allocation form
+        area_id = "de"
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/hydro/allocation/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
         actual = res.json()
         expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
         assert actual == expected
