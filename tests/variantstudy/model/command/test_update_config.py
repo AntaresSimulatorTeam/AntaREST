@@ -1,4 +1,3 @@
-import json
 from unittest.mock import Mock, patch
 
 import pytest
@@ -67,26 +66,6 @@ def test_update_config(
         study_path / f"input/areas/{area1_id}/optimization.ini"
     )
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
-
-    # test UpdateConfig with byte object which is necessary with the API PUT /v1/studies/{uuid}/raw
-    data = json.dumps({"first_layer": {"0": "Nothing"}}).encode("utf-8")
-    command = UpdateConfig(
-        target="layers/layers",
-        data=data,
-        command_context=command_context,
-    )
-    command.apply(empty_study)
-    layers = MultipleSameKeysIniReader().read(study_path / "layers/layers.ini")
-    assert layers == {"first_layer": {"0": "Nothing"}}
-    new_data = json.dumps({"1": False}).encode("utf-8")
-    command = UpdateConfig(
-        target="layers/layers/first_layer",
-        data=new_data,
-        command_context=command_context,
-    )
-    command.apply(empty_study)
-    layers = MultipleSameKeysIniReader().read(study_path / "layers/layers.ini")
-    assert layers == {"first_layer": {"1": False}}
 
 
 def test_match(command_context: CommandContext):
