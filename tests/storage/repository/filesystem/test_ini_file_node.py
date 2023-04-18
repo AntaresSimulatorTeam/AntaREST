@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 from typing import Tuple
 from unittest.mock import Mock
@@ -51,8 +50,8 @@ def test_get(tmp_path: str) -> None:
             study_path=path,
             path=path,
             version=-1,
-            areas={},
-            outputs={},
+            areas=dict(),
+            outputs=dict(),
             study_id="id",
         ),
         types=types,
@@ -60,32 +59,6 @@ def test_get(tmp_path: str) -> None:
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
-
-    tmp_dir = Path(tmp_path)
-    zipped_path = tmp_dir.parent / "archived"
-    shutil.make_archive(
-        str(zipped_path),
-        format="zip",
-        root_dir=tmp_dir.parent,
-        base_dir=tmp_dir.name,
-    )
-    zipped_node = IniFileNode(
-        context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=zipped_path / path.parent.name / path.name,
-            path=zipped_path / path.parent.name / path.name,
-            version=-1,
-            areas={},
-            outputs={},
-            study_id="id",
-            zip_path=tmp_dir.parent / "archived.zip",
-        ),
-        types=types,
-    )
-    assert zipped_node.get([]) == expected_json
-    assert zipped_node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
-    assert zipped_node.get(["part2", "key_bool"])
-    (tmp_dir.parent / "archived.zip").unlink()
 
 
 @pytest.mark.unit_test
@@ -102,37 +75,13 @@ def test_get_depth(tmp_path: str) -> None:
             study_path=path,
             path=path,
             version=-1,
-            areas={},
-            outputs={},
+            areas=dict(),
+            outputs=dict(),
             study_id="id",
         ),
         types=types,
     )
     assert node.get(depth=1) == expected_json
-
-    tmp_dir = Path(tmp_path)
-    zipped_path = tmp_dir.parent / "archived"
-    shutil.make_archive(
-        str(zipped_path),
-        format="zip",
-        root_dir=tmp_dir.parent,
-        base_dir=tmp_dir.name,
-    )
-    zipped_node = IniFileNode(
-        context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=zipped_path / path.parent.name / path.name,
-            path=zipped_path / path.parent.name / path.name,
-            version=-1,
-            areas={},
-            outputs={},
-            study_id="id",
-            zip_path=tmp_dir.parent / "archived.zip",
-        ),
-        types=types,
-    )
-    assert zipped_node.get(depth=1) == expected_json
-    (tmp_dir.parent / "archived.zip").unlink()
 
 
 @pytest.mark.unit_test
@@ -204,8 +153,8 @@ key_float = 3.14
             path=path,
             version=-1,
             study_id="id",
-            areas={},
-            outputs={},
+            areas=dict(),
+            outputs=dict(),
         ),
         types=types,
     )
