@@ -224,3 +224,12 @@ class CannotScanInternalWorkspace(HTTPException):
             HTTPStatus.BAD_REQUEST,
             "You cannot scan the default internal workspace",
         )
+
+
+class ConfigurationError(Exception):
+    """
+    Raised when some configuration is invalid.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)

@@ -49,9 +49,13 @@ services:
     volumes:
       - ./resources/deploy/db:/var/lib/postgresql/data
     command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
+    ports:
+      - 5432:5432
   redis:
     image: redis:latest
     container_name : redis
+    ports:
+      - 6379:6379
   nginx:
     image: nginx:latest
     container_name: nginx

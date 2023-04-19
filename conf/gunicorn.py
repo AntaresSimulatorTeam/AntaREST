@@ -2,6 +2,7 @@
 
 import multiprocessing
 import os
+from prometheus_client import multiprocess
 
 bind = "0.0.0.0:5000"
 
@@ -28,3 +29,17 @@ loglevel = "info"
 errorlog = "-"
 accesslog = "-"
 preload_app = False
+
+
+def post_fork(server, worker):
+    """
+    Put the worker_id into an env variable for further use within the app.
+    """
+    os.environ["APP_WORKER_ID"] = str(worker.age)
+
+
+def child_exit(server, worker):
+    """
+    Notify prometheus that this worker stops
+    """
+    multiprocess.mark_process_dead(worker.pid)

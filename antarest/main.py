@@ -21,6 +21,7 @@ from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
+from antarest.core.metrics import add_metrics
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.utils.utils import get_local_path
@@ -134,6 +135,8 @@ def fastapi_app(
     init_db(config_file, config, auto_upgrade_db, application)
 
     application.add_middleware(LoggingMiddleware)
+
+    add_metrics(application, config)
 
     if mount_front:
         application.mount(
@@ -273,7 +276,7 @@ def fastapi_app(
     return application, services
 
 
-if __name__ == "__main__":
+def main():
     (
         config_file,
         display_version,
@@ -297,3 +300,7 @@ if __name__ == "__main__":
         else:
             services = SingletonServices(config_file, [module])
             services.start()
+
+
+if __name__ == "__main__":
+    main()
