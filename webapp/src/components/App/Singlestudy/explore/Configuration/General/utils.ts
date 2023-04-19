@@ -1,3 +1,4 @@
+import * as R from "ramda";
 import { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
 
@@ -131,3 +132,15 @@ export function setGeneralFormFields(
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }
+
+export const hasDayField = R.anyPass([
+  R.has("firstDay"),
+  R.has("lastDay"),
+  R.has("leapYear"),
+]);
+
+export const pickDayFields = (
+  values: GeneralFormFields
+): Pick<GeneralFormFields, "firstDay" | "lastDay" | "leapYear"> => {
+  return R.pickAll(["firstDay", "lastDay", "leapYear"], values);
+};

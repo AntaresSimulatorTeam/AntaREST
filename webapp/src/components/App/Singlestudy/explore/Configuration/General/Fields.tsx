@@ -18,7 +18,6 @@ import {
 } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
@@ -57,22 +56,24 @@ function Fields(props: Props) {
     }
   }, [buildingMode, setValue]);
 
-  useDebouncedEffect(
+  useEffect(
     () => {
-      if (firstDay > 0 && firstDay > lastDay) {
+      if (firstDay > 0 && firstDay <= 366 && firstDay > lastDay) {
         setValue("lastDay", firstDay);
       }
     },
-    { wait: 500, deps: [firstDay] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [firstDay]
   );
 
-  useDebouncedEffect(
+  useEffect(
     () => {
-      if (lastDay > 0 && lastDay < firstDay) {
+      if (lastDay > 0 && lastDay <= 366 && lastDay < firstDay) {
         setValue("firstDay", lastDay);
       }
     },
-    { wait: 500, deps: [lastDay] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lastDay]
   );
 
   ////////////////////////////////////////////////////////////////
@@ -84,7 +85,7 @@ function Fields(props: Props) {
     formValues
   ) => {
     if (value < 1 || Number.isNaN(value)) {
-      return "Minimum is 1";
+      return t("form.field.minValue", [1]);
     }
     if (formValues.firstDay > formValues.lastDay) {
       return false;
