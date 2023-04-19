@@ -127,7 +127,14 @@ class SimpleKeyValueReader(IReader):
         return self._parse_json(json)
 
 
+# noinspection SpellCheckingInspection
 class IniConfigParser(configparser.RawConfigParser):
+
+    # The regex to match a section is modified so that it can parse
+    # a section name in square brackets, such as "[[allocation]]"
+    _SECT_TMPL = r"\[ (?P<header>.+) \]"
+    SECTCRE = re.compile(_SECT_TMPL, re.VERBOSE)
+
     # noinspection SpellCheckingInspection
     def optionxform(self, optionstr: str) -> str:
         return optionstr
