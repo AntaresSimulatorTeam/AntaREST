@@ -1,25 +1,18 @@
-import logging
 import os
 import urllib.parse
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import List, Tuple
 from zipfile import ZipFile
-
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_scenario_hourly,
     default_4_fixed_hourly,
     default_8_fixed_hourly,
     default_scenario_daily,
+    default_scenario_hourly,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
 )
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -28,12 +21,14 @@ from antarest.study.storage.variantstudy.model.model import (
 from antarest.tools.lib import (
     COMMAND_FILE,
     MATRIX_STORE_DIR,
-    parse_commands,
-    extract_commands,
     RemoteVariantGenerator,
+    extract_commands,
     generate_diff,
     generate_study,
+    parse_commands,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 test_dir: Path = Path(__file__).parent
 
