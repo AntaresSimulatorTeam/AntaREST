@@ -40,6 +40,12 @@ do
     fi
 done
 
+if [[ -v PROMETHEUS_MULTIPROC_DIR ]]; then
+  rm ${PROMETHEUS_MULTIPROC_DIR}/*.db
+  mkdir -p ${PROMETHEUS_MULTIPROC_DIR}
+  echo "Concatenating metrics into ${PROMETHEUS_MULTIPROC_DIR}"
+fi
+
 if [ -z "$1" ] ; then
   sh $CUR_DIR/pre-start.sh
   gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
