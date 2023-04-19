@@ -71,9 +71,15 @@ function reactHookFormSupport<TValue>(
 ) {
   const { preValidate, setValueAs = R.identity } = options;
 
+  /**
+   * Wrap in a higher component the specified field editor component
+   */
   function wrapWithReactHookFormSupport<
     TProps extends FieldEditorProps<TValue>
   >(FieldEditor: React.ComponentType<TProps>) {
+    /**
+     * The wrapper component
+     */
     function ReactHookFormSupport<
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
