@@ -5,7 +5,11 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.web import APITag
-from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
+from antarest.core.version_info import (
+    VersionInfoDTO,
+    get_commit_id,
+    get_dependencies,
+)
 from antarest.login.auth import Auth
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel

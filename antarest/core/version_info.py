@@ -46,8 +46,15 @@ def get_commit_id(resources_dir: Path) -> str:
 
 
 def get_dependencies() -> Dict[str, str]:
+    """
+    Returns the list of installed dependencies and their versions.
+    """
     dict_dependencies = {}
-    list_dependencies = subprocess.check_output("pip freeze", shell=True).decode('utf-8').split("\n")
+    list_dependencies = (
+        subprocess.check_output("pip freeze", shell=True)
+        .decode("utf-8")
+        .split("\n")
+    )
     for dependency in list_dependencies:
         key_value = dependency.split("==")
         if len(key_value) == 2 and key_value[0] != "AntaREST":
