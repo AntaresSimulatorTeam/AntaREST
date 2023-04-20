@@ -3,7 +3,7 @@ Python module that is dedicated to printing application version and dependencies
 """
 import subprocess
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from pydantic import BaseModel
 
@@ -43,3 +43,13 @@ def get_commit_id(resources_dir: Path) -> str:
             ).strip()
         except (subprocess.CalledProcessError, FileNotFoundError):
             return ""
+
+
+def get_dependencies() -> Dict[str, str]:
+    dict_dependencies = {}
+    list_dependencies = subprocess.check_output("pip freeze", shell=True).decode('utf-8').split("\n")
+    for dependency in list_dependencies:
+        key_value = dependency.split("==")
+        if len(key_value) == 2 and key_value[0] != "AntaREST":
+            dict_dependencies[key_value[0]] = key_value[1]
+    return dict_dependencies

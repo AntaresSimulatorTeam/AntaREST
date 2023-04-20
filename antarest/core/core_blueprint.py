@@ -5,7 +5,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.web import APITag
-from antarest.core.version_info import VersionInfoDTO, get_commit_id
+from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
 from antarest.login.auth import Auth
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -45,20 +45,11 @@ def create_utils_routes(config: Config) -> APIRouter:
           the dependency name and the value is its version number.
         """
         from antarest import __version__ as antarest_version
-        from pip._internal.operations.freeze import freeze
-
-        dependencies = freeze()
-        dict_of_dependencies = {}
-        for dependency in dependencies:
-            for k in range(len(dependency)):
-                if dependency[k] == "=":
-                    dict_of_dependencies[dependency[:k]] = dependency[k+2:]
-                    break
 
         return VersionInfoDTO(
             version=antarest_version,
             gitcommit=get_commit_id(config.resources_path),
-            dependencies=dict_of_dependencies,
+            dependencies=get_dependencies(),
         )
 
     @bp.get("/kill", include_in_schema=False)
