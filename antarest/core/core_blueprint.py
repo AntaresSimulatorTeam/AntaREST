@@ -44,13 +44,21 @@ def create_utils_routes(config: Config) -> APIRouter:
         - `dependencies`: A dictionary of dependencies, where the key is
           the dependency name and the value is its version number.
         """
-        from antareslauncher import __version__ as antares_launcher_version
         from antarest import __version__ as antarest_version
+        from pip._internal.operations.freeze import freeze
+
+        dependencies = freeze()
+        dict_of_dependencies = {}
+        for dependency in dependencies:
+            for k in range(len(dependency)):
+                if dependency[k] == "=":
+                    dict_of_dependencies[dependency[:k]] = dependency[k+2:]
+                    break
 
         return VersionInfoDTO(
             version=antarest_version,
             gitcommit=get_commit_id(config.resources_path),
-            dependencies={"Antares_Launcher": antares_launcher_version},
+            dependencies=dict_of_dependencies,
         )
 
     @bp.get("/kill", include_in_schema=False)
