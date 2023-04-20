@@ -1,46 +1,36 @@
-import contextlib
 import time
 from pathlib import Path
-from typing import Callable
 from unittest.mock import ANY
+
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
+    SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
-    SimplexOptimizationRange,
 )
 from antarest.study.business.table_mode_management import (
     FIELDS_INFO_BY_TYPE,
     AdequacyPatchMode,
     AssetType,
+    BindingConstraintOperator,
+    BindingConstraintType,
     LawOption,
     TableTemplateType,
     TimeSeriesGenerationOption,
-    TransmissionCapacity,
     TimeSeriesInterpretation,
-    BindingConstraintType,
-    BindingConstraintOperator,
+    TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
-
-def wait_for(predicate: Callable[[], bool], timeout=10):
-    end = time.time() + timeout
-    while time.time() < end:
-        with contextlib.suppress(Exception):
-            if predicate():
-                return
-        time.sleep(1)
-    raise TimeoutError()
+from tests.integration.utils import wait_for
 
 
 def init_test(app: FastAPI):
