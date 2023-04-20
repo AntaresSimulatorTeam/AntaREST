@@ -1,18 +1,20 @@
 import { Typography, Grid } from "@mui/material";
-import { t } from "i18next";
 import { FieldArrayWithId } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
+import { CorrelationFormFields } from "./utils";
 import { useFormContextPlus } from "../../../../../../../common/Form";
-import { AllocationFormFields } from "./utils";
 
 interface Props {
-  field: FieldArrayWithId<AllocationFormFields, "allocation">;
+  field: FieldArrayWithId<CorrelationFormFields, "correlation">;
   index: number;
   label: string;
 }
 
-function AllocationField({ field, index, label }: Props) {
-  const { control } = useFormContextPlus<AllocationFormFields>();
+// TODO merge with AllocationField
+function CorrelationField({ field, index, label }: Props) {
+  const { control } = useFormContextPlus<CorrelationFormFields>();
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -34,13 +36,17 @@ function AllocationField({ field, index, label }: Props) {
       <Grid item xs={4} md={2}>
         <NumberFE
           key={field.id}
-          name={`allocation.${index}.coefficient`}
-          control={control}
+          name={`correlation.${index}.coefficient`}
           size="small"
+          control={control}
           rules={{
             min: {
-              value: 0,
-              message: t("form.field.minValue", [0]),
+              value: -100,
+              message: t("form.field.minValue", [-100]),
+            },
+            max: {
+              value: 100,
+              message: t("form.field.minValue", [100]),
             },
           }}
         />
@@ -49,4 +55,4 @@ function AllocationField({ field, index, label }: Props) {
   );
 }
 
-export default AllocationField;
+export default CorrelationField;

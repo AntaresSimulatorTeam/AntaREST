@@ -6,8 +6,8 @@ import { AreaCoefficientItem } from "../utils";
 // Types
 ////////////////////////////////////////////////////////////////
 
-export interface AllocationFormFields {
-  allocation: AreaCoefficientItem[];
+export interface CorrelationFormFields {
+  correlation: AreaCoefficientItem[];
 }
 
 ////////////////////////////////////////////////////////////////
@@ -18,22 +18,22 @@ function makeRequestURL(
   studyId: StudyMetadata["id"],
   areaId: Area["name"]
 ): string {
-  return `v1/studies/${studyId}/areas/${areaId}/hydro/allocation/form`;
+  return `v1/studies/${studyId}/areas/${areaId}/hydro/correlation/form`;
 }
 
-export async function getAllocationFormFields(
+export async function getCorrelationFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"]
-): Promise<AllocationFormFields> {
+): Promise<CorrelationFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId));
   return res.data;
 }
 
-export async function setAllocationFormFields(
+export async function setCorrelationFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  values: AllocationFormFields
-): Promise<AllocationFormFields> {
+  values: CorrelationFormFields
+): Promise<CorrelationFormFields> {
   const res = await client.put(makeRequestURL(studyId, areaId), values);
   return res.data;
 }

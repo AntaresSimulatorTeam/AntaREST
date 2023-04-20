@@ -214,6 +214,16 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   return [];
 });
 
+export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    return Object.keys(synthesis.areas).reduce((acc, id) => {
+      acc[id] = { ...synthesis.areas[id], id };
+      return acc;
+    }, {} as Record<string, Area & { id: string }>);
+  }
+  return {};
+});
+
 export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
