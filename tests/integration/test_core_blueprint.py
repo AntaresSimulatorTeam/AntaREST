@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from http import HTTPStatus
 from starlette.testclient import TestClient
 
+from antarest.core import version_info
 from antarest.core.version_info import get_dependencies, get_commit_id
 
 
@@ -58,5 +59,7 @@ class TestVersionInfo:
                 "git log -1 HEAD --format=%H", encoding="utf-8", shell=True
             ).strip()
         )
-        # Add a subprocess mock to complete the test
-        # print(git_repo.run("git log -1 --HEAD --format=%H")) fails with the right Exception but not enough
+        version_info.get_last_commit_from_git = mock.MagicMock(
+            return_value="mock commit"
+        )
+        assert get_commit_id(resources_path) == "mock commit"
