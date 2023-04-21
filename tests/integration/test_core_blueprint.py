@@ -46,7 +46,7 @@ class TestVersionInfo:
             assert key.split("[")[0] in dict_dependencies
             assert pattern.match(dict_dependencies[key.split("[")[0]])
 
-    def test_get_commit_id(self, git_repo):
+    def test_get_commit_id(self):
         resources_path = self.antarest_path.joinpath("resources")
         path_commit_id = resources_path.joinpath("commit_id")
         with open(path_commit_id, "w") as f:
