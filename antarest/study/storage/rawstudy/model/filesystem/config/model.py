@@ -205,6 +205,17 @@ class FileStudyTreeConfig(DTO):
             ],
         )
 
+    def get_short_term_storage_names(self, area: str, only_enabled: bool = False
+    ) -> List[str]:
+        return self.cache.get(
+            f"%st-storage%{area}%{only_enabled}%{area}",
+            [
+                thermal.id
+                for thermal in self.areas[area].thermals
+                if not only_enabled or thermal.enabled
+            ],
+        )
+
     def get_renewable_names(
         self,
         area: str,
