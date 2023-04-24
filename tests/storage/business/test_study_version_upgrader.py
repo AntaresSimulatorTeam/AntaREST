@@ -37,7 +37,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "850"
+    target_version = "860"
     upgrade_study(tmp_path, target_version)
     with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
         print(f.readlines())
@@ -168,9 +168,11 @@ def get_old_area_values(tmp_path: Path) -> dict:
 
 def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
     input_path = tmp_path / "input"
-    assert (input_path / "renewables").is_dir()
-    assert (input_path / "renewables" / "clusters").is_dir()
-    assert (input_path / "renewables" / "series").is_dir()
+
+    # tests 8.1 upgrade
+    assert_folder_is_created(input_path / "renewables")
+
+    # tests 8.2 upgrade
     links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     for folder in links:
         folder_path = Path(folder)
@@ -208,6 +210,8 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                     df_capacities[0].values.all()
                     == dico[new_txt].iloc[:, 1].values.all()
                 )
+
+    # tests 8.3 upgrade
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
     for folder in areas:
         folder_path = Path(folder)
@@ -215,6 +219,27 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
             data = reader.read(folder_path / "adequacy_patch.ini")
             assert data["adequacy-patch"]["adequacy-patch-mode"] == "outside"
+
+    # tests 8.6 upgrade
+    assert_folder_is_created(input_path / "st-storage")
+    list_areas = (
+        (input_path / "areas" / "list.txt")
+        .read_text(encoding="utf-8")
+        .split("\n")
+    )
+    if list_areas != [""]:
+        for folder in list_areas:
+            folder_path = (
+                input_path / "st-storage" / "clusters" / f"{Path(folder).stem}"
+            )
+            assert folder_path.is_dir()
+            assert (folder_path / "list.ini").exists()
+
+
+def assert_folder_is_created(path: Path) -> None:
+    assert path.is_dir()
+    assert (path / "clusters").is_dir()
+    assert (path / "series").is_dir()
 
 
 def are_same_dir(dir1, dir2) -> bool:
