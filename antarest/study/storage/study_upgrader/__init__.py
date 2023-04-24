@@ -40,7 +40,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("820", "830", upgrade_830),
     UpgradeMethod("830", "840", upgrade_840),
     UpgradeMethod("840", "850", upgrade_850),
-    UpgradeMethod("850", "860", upgrade_860),
+    UpgradeMethod("850", "860", upgrade_860)
 ]
 
 
