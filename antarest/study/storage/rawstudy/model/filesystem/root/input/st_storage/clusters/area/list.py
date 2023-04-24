@@ -16,14 +16,5 @@ class InputShortTermStorageAreaList(IniFileNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        section = {
-            "name": str,
-            "group": str,
-            "unitcount": int,
-            "nominalcapacity": float,
-            "market-bid-cost": float,
-        }
-        types = {ther: section for ther in config.get_short_term_storage_names(area)}
+        types = {st_storage: {} for st_storage in config.get_short_term_storage_names(area)}
         IniFileNode.__init__(self, context, config, types)
-
-        # TODO A quoi sert la section si de base il n'y a pas tout et qu'on peut ajouter plus de trucs que ce qui est écrit ?
