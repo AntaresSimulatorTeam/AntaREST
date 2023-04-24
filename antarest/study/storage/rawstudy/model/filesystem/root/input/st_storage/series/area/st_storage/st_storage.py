@@ -20,5 +20,3 @@ class InputShortTermStorageAreaStorage(FolderNode):
             ),
         }
         return children
-
-    # TODO A modifier

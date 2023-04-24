@@ -25,9 +25,9 @@ class InputShortTermStorageSeriesArea(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            ther: InputShortTermStorageAreaStorage(
-                self.context, self.config.next_file(ther)
+            st_storage: InputShortTermStorageAreaStorage(
+                self.context, self.config.next_file(st_storage)
             )
-            for ther in self.config.get_thermal_names(self.area)
+            for st_storage in self.config.get_short_term_storage_names(self.area)
         }
         return children
