@@ -249,7 +249,7 @@ class CreateArea(ICommand):
 
         if version >= 860:
             new_area_data["input"]["st-storage"] = {
-                "clusters": {area_id: {"list": {}}}
+                "clusters": {area_id: {"list": ""}}
             }
 
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
