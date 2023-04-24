@@ -18,7 +18,7 @@ from .upgrader_820 import upgrade_820
 from .upgrader_830 import upgrade_830
 from .upgrader_840 import upgrade_840
 from .upgrader_850 import upgrade_850
-
+from .upgrader_860 import upgrade_860
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("820", "830", upgrade_830),
     UpgradeMethod("830", "840", upgrade_840),
     UpgradeMethod("840", "850", upgrade_850),
+    UpgradeMethod("850", "860", upgrade_860)
 ]
 
 
