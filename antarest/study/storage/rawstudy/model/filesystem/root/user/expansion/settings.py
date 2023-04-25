@@ -59,6 +59,7 @@ class ExpansionSettings(IniFileNode):
         if self.config.version > 800:
             types["relative-gap"] = float
             types["solver"] = str
+            types["batch-size"] = int
             del types["relaxed-optimality-gap"]
             del types["cut-type"]
             del types["ampl.solver"]

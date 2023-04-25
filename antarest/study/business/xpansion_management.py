@@ -87,6 +87,7 @@ class XpansionSettingsDTO(BaseModel):
         None, alias="ampl.solve_bounds_frequency"
     )
     relative_gap: Optional[float] = None
+    batch_size: Optional[int] = 0
     solver: Optional[Solver] = None
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
@@ -259,6 +260,7 @@ class XpansionManager:
             else:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
+                xpansion_settings["batch-size"] = 0
 
             xpansion_configuration_data = {
                 "user": {
@@ -367,6 +369,10 @@ class XpansionManager:
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
+            )
+        if new_xpansion_settings_dto.batch_size is not None:
+            self._assert_is_positive(
+                "batch size", new_xpansion_settings_dto.batch_size
             )
 
         file_study.tree.save(
