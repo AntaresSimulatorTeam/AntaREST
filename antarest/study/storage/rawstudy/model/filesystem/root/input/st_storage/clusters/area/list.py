@@ -16,5 +16,8 @@ class InputShortTermStorageAreaList(IniFileNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        types = {st_storage: {} for st_storage in config.get_short_term_storage_names(area)}
+        types = {
+            st_storage: {}
+            for st_storage in config.get_short_term_storage_names(area)
+        }
         IniFileNode.__init__(self, context, config, types)
