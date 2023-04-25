@@ -17,7 +17,7 @@ class InputShortTermStorageAreaList(IniFileNode):
         area: str,
     ):
         types = {
-            st_storage: {}
+            st_storage: dict
             for st_storage in config.get_short_term_storage_names(area)
         }
         IniFileNode.__init__(self, context, config, types)
