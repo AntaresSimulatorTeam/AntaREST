@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.13.1",
+  "version": "2.13.2",
   "private": true,
   "dependencies": {
     "@emotion/react": "11.10.6",
