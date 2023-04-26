@@ -105,3 +105,30 @@ class TestOutputSimulationAreaItem:
             key: {"freq": value.freq} for key, value in actual.items()
         }
         assert actual_obj == expected
+
+        new_config = FileStudyTreeConfig(
+            study_path=Path("path/to/study"),
+            path=Path("path/to/study"),
+            study_id=study_id,
+            version=860,  # will become a `str` in the future
+            areas={},
+        )
+
+        new_node = area.OutputSimulationAreaItem(
+            context=context,
+            config=new_config,
+            area="fr",
+            mc_all=mc_all,
+        )
+        new_actual = new_node.build()
+        # check the result
+        actual_obj = {
+            key: {"freq": value.freq} for key, value in new_actual.items()
+        }
+        expected["st-details-annual"] = {"freq": MatrixFrequency.ANNUAL}
+        expected["st-details-daily"] = {"freq": MatrixFrequency.DAILY}
+        expected["st-details-hourly"] = {"freq": MatrixFrequency.HOURLY}
+        expected["st-details-monthly"] = {"freq": MatrixFrequency.MONTHLY}
+        expected["st-details-weekly"] = {"freq": MatrixFrequency.WEEKLY}
+
+        assert actual_obj == expected
