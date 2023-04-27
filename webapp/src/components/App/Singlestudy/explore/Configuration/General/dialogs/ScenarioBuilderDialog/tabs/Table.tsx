@@ -15,7 +15,6 @@ import FormTable from "../../../../../../../../common/FormTable";
 import ConfigContext from "../ConfigContext";
 import { updateScenarioBuilderConfig } from "../utils";
 import { SubmitHandlerPlus } from "../../../../../../../../common/Form/types";
-import useEnqueueErrorSnackbar from "../../../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 type ElementList = Array<{
   id: string;
@@ -41,7 +40,6 @@ function Table(props: Props) {
   const { nbYears, symbol, rowType, areaId } = props;
   const { config, setConfig, reloadConfig, activeRuleset, studyId } =
     useContext(ConfigContext);
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   const valuesFromConfig = R.path(
@@ -101,13 +99,14 @@ function Table(props: Props) {
 
     setConfig(R.mergeDeepLeft(newData));
 
-    updateScenarioBuilderConfig(studyId, newData).catch((err) => {
+    return updateScenarioBuilderConfig(studyId, newData).catch((err) => {
       reloadConfig();
-      enqueueErrorSnackbar(
+
+      throw new Error(
         t("study.configuration.general.mcScenarioBuilder.error.table", [
           `${activeRuleset}.${symbol}`,
         ]),
-        err
+        { cause: err }
       );
     });
   };

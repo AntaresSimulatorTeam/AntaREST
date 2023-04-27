@@ -22,7 +22,7 @@ function ManagementOptions() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<HydroFormFields>) => {
-    setManagementOptionsFormFields(studyId, areaId, data.dirtyValues);
+    return setManagementOptionsFormFields(studyId, areaId, data.dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
