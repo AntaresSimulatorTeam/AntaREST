@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
-from pydantic import StrictBool, conint, PositiveInt
+from pydantic import StrictBool, conint, PositiveInt, root_validator
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -57,7 +57,7 @@ class BuildingMode(str, Enum):
     DERATED = "Derated"
 
 
-DayNumberType = conint(ge=1, le=365)
+DayNumberType = conint(ge=1, le=366)
 
 
 class GeneralFormFields(FormFieldsBaseModel):
@@ -81,6 +81,33 @@ class GeneralFormFields(FormFieldsBaseModel):
     # For study versions >= 710
     geographic_trimming: Optional[StrictBool]
     thematic_trimming: Optional[StrictBool]
+
+    @root_validator
+    def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        first_day = values.get("first_day")
+        last_day = values.get("last_day")
+        leap_year = values.get("leap_year")
+
+        if any(v is None for v in [first_day, last_day, leap_year]):
+            raise ValueError(
+                "First day, last day and leap year fields must be defined together"
+            )
+
+        first_day = cast(int, first_day)
+        last_day = cast(int, last_day)
+        leap_year = cast(bool, leap_year)
+        num_days_in_year = 366 if leap_year else 365
+
+        if first_day > last_day:
+            raise ValueError(
+                "Last day must be greater than or equal to the first day"
+            )
+        if last_day > num_days_in_year:
+            raise ValueError(
+                f"Last day cannot be greater than {num_days_in_year}"
+            )
+
+        return values
 
 
 GENERAL = "general"

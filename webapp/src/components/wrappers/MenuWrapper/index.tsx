@@ -153,8 +153,8 @@ function MenuWrapper(props: Props) {
 
     if (elm.id === "tasks.title") {
       return (
-        <Tooltip title={tooltipTitle} placement="right-end">
-          <NavListItem link key={elm.id}>
+        <Tooltip title={tooltipTitle} placement="right-end" key={elm.id}>
+          <NavListItem link>
             <NavInternalLink
               to={elm.link}
               end={elm.strict}

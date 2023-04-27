@@ -71,9 +71,15 @@ function reactHookFormSupport<TValue>(
 ) {
   const { preValidate, setValueAs = R.identity } = options;
 
+  /**
+   * Wrap in a higher component the specified field editor component
+   */
   function wrapWithReactHookFormSupport<
     TProps extends FieldEditorProps<TValue>
   >(FieldEditor: React.ComponentType<TProps>) {
+    /**
+     * The wrapper component
+     */
     function ReactHookFormSupport<
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -164,7 +170,7 @@ function reactHookFormSupport<TValue>(
         return validate;
       }, [validate]);
 
-      const getDefaultValuesFromOptions = () => {
+      const getDefaultValueFromOptions = () => {
         const { defaultValue } = options;
         return RA.isFunction(defaultValue)
           ? defaultValue(feProps)
@@ -182,7 +188,7 @@ function reactHookFormSupport<TValue>(
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
             defaultValue={
-              (feProps.defaultValue ?? getDefaultValuesFromOptions()) as any
+              (feProps.defaultValue ?? getDefaultValueFromOptions()) as any
             }
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}

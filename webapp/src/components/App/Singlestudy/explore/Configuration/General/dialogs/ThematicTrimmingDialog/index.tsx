@@ -44,7 +44,7 @@ function ThematicTrimmingDialog(props: Props) {
   const handleSubmit = (
     data: SubmitHandlerPlus<ThematicTrimmingFormFields>
   ) => {
-    setThematicTrimmingConfig(study.id, data.values);
+    return setThematicTrimmingConfig(study.id, data.values);
   };
 
   ////////////////////////////////////////////////////////////////

@@ -60,7 +60,7 @@ export interface FormProps<
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
-  ) => any | Promise<any>;
+  ) => void | Promise<any>;
   onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
@@ -198,7 +198,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   ////////////////////////////////////////////////////////////////
 
   const submit = () => {
-    const callback = handleSubmit(function onValid(data, e) {
+    const callback = handleSubmit(function onValid(data, event) {
       lastSubmittedData.current = data;
 
       const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
@@ -220,19 +220,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       if (onSubmit) {
-        res.push(onSubmit({ values: data, dirtyValues }, e));
+        res.push(onSubmit({ values: data, dirtyValues }, event));
       }
 
-      return Promise.all(res);
+      return Promise.all(res)
+        .catch((error) => {
+          enqueueErrorSnackbar(t("form.submit.error"), error);
+        })
+        .finally(() => {
+          preventClose.current = false;
+        });
     }, onSubmitError);
 
-    return callback()
-      .catch((error) => {
-        enqueueErrorSnackbar(t("form.submit.error"), error);
-      })
-      .finally(() => {
-        preventClose.current = false;
-      });
+    return callback();
   };
 
   const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);

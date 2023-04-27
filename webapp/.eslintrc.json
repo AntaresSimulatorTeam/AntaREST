@@ -59,6 +59,7 @@
       }
     ],
     "no-shadow": "off",
+    "no-throw-literal": "error",
     "no-underscore-dangle": "off",
     "no-unused-vars": "off",
     "no-use-before-define": ["error", { "functions": false }],

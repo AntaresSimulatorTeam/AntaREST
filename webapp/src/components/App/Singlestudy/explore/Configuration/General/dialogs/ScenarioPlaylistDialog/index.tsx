@@ -56,7 +56,7 @@ function ScenarioPlaylistDialog(props: Props) {
   };
 
   const handleSubmit = (data: SubmitHandlerPlus<PlaylistData>) => {
-    setPlaylist(study.id, data.values);
+    return setPlaylist(study.id, data.values);
   };
 
   const handleCellsRender: HandsontableProps["cells"] = function cells(
