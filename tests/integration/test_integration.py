@@ -1131,6 +1131,7 @@ def test_area_management(app: FastAPI):
         },
         json={
             "mode": Mode.ADEQUACY.value,
+            "firstDay": 2,
             "lastDay": 299,
             "leapYear": True,
         },
@@ -1144,7 +1145,7 @@ def test_area_management(app: FastAPI):
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": Mode.ADEQUACY.value,
-        "firstDay": 1,
+        "firstDay": 2,
         "lastDay": 299,
         "horizon": "",
         "firstMonth": "january",
