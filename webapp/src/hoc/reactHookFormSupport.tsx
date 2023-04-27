@@ -170,7 +170,7 @@ function reactHookFormSupport<TValue>(
         return validate;
       }, [validate]);
 
-      const getDefaultValuesFromOptions = () => {
+      const getDefaultValueFromOptions = () => {
         const { defaultValue } = options;
         return RA.isFunction(defaultValue)
           ? defaultValue(feProps)
@@ -188,7 +188,7 @@ function reactHookFormSupport<TValue>(
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
             defaultValue={
-              (feProps.defaultValue ?? getDefaultValuesFromOptions()) as any
+              (feProps.defaultValue ?? getDefaultValueFromOptions()) as any
             }
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
