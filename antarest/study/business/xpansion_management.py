@@ -69,6 +69,21 @@ class XpansionSensitivitySettingsDTO(BaseModel):
 
 
 class XpansionSettingsDTO(BaseModel):
+    """
+    optimality_gap: Tolerance on absolute gap
+    max_iteration: Maximum number of Benders iterations
+    uc_type: Unit-commitment type used by Antares
+    master: Resolution mode of the master problem
+    yearly_weights: Path of the Monte-Carlo weights file
+    additional_constraints: Path of the additional constraints file
+    relaxed_optimality_gap: Threshold to switch from relaxed to integer master
+    relative_gap: Tolerance on relative gap
+    batch_size: Amount of batches in the Benders by batch decomposition
+    solver: Solver that is used to solve the master and the subproblems in the Benders decomposition.
+    timelimit: Timelimit (in seconds) of the Benders step
+    log_level: Solver's log severity
+    """
+
     optimality_gap: Optional[float] = 1
     max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
     uc_type: UcType = UcType.EXPANSION_FAST
