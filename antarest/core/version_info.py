@@ -54,14 +54,10 @@ def get_dependencies() -> Dict[str, str]:
     """
     Returns the list of installed dependencies and their versions.
     """
-    dict_dependencies = {}
-    list_dependencies = (
-        subprocess.check_output("pip freeze", shell=True)
+    return dict(
+        line.split("==", 1)
+        for line in subprocess.check_output("pip freeze", shell=True)
         .decode("utf-8")
-        .split("\n")
+        .splitlines(keepends=False)
+        if "==" in line and "antarest" not in line.lower()
     )
-    for dependency in list_dependencies:
-        key_value = dependency.split("==")
-        if len(key_value) == 2 and key_value[0] != "AntaREST":
-            dict_dependencies[key_value[0]] = key_value[1]
-    return dict_dependencies
