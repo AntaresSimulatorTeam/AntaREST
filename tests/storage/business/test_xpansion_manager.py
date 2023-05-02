@@ -6,19 +6,16 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from fastapi import UploadFile
-from pandas.errors import ParserError
-
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
-    XpansionManager,
-    XpansionSettingsDTO,
-    XpansionCandidateDTO,
-    LinkNotFound,
-    XpansionFileNotFoundError,
-    XpansionResourceFileType,
     FileCurrentlyUsedInSettings,
+    LinkNotFound,
+    XpansionCandidateDTO,
+    XpansionFileNotFoundError,
+    XpansionManager,
+    XpansionResourceFileType,
     XpansionSensitivitySettingsDTO,
+    XpansionSettingsDTO,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -43,6 +40,8 @@ from antarest.study.storage.variantstudy.model.command_context import (
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
+from fastapi import UploadFile
+from pandas.errors import ParserError
 
 
 def make_empty_study(tmpdir: Path, version: int) -> FileStudy:

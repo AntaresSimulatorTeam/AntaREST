@@ -1,11 +1,10 @@
 from io import StringIO
 from pathlib import Path
 
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.study.business.area_management import AreaType
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 
 def test_integration_xpansion(app: FastAPI, tmp_path: str):
