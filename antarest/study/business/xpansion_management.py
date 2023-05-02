@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
 from fastapi import HTTPException, UploadFile
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, confloat, conint, validator
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +95,8 @@ class XpansionSettingsDTO(BaseModel):
         or a string ending with "%" and a valid float.
     """
 
-    optimality_gap: Optional[float] = 1
-    max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
+    optimality_gap: Optional[confloat(ge=0)] = 1
+    max_iteration: Optional[Union[conint(ge=0), MaxIteration]] = MaxIteration.INF
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
     yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
@@ -112,8 +112,8 @@ class XpansionSettingsDTO(BaseModel):
     ampl_solve_bounds_frequency: Optional[int] = Field(
         None, alias="ampl.solve_bounds_frequency"
     )
-    relative_gap: Optional[float] = None
-    batch_size: Optional[int] = 0
+    relative_gap: Optional[confloat(ge=0)] = None
+    batch_size: Optional[conint(ge=0)] = Field(0, alias="batch-size")
     solver: Optional[Solver] = None
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
@@ -378,27 +378,9 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        if new_xpansion_settings_dto.optimality_gap is not None:
-            self._assert_is_positive(
-                "optimality_gap", new_xpansion_settings_dto.optimality_gap
-            )
-        if new_xpansion_settings_dto.relative_gap is not None:
-            self._assert_is_positive(
-                "relative_gap", new_xpansion_settings_dto.relative_gap
-            )
-        if new_xpansion_settings_dto.max_iteration is not None and isinstance(
-            new_xpansion_settings_dto.max_iteration, int
-        ):
-            self._assert_is_positive(
-                "max_iteration", new_xpansion_settings_dto.max_iteration
-            )
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
-            )
-        if new_xpansion_settings_dto.batch_size is not None:
-            self._assert_is_positive(
-                "batch size", new_xpansion_settings_dto.batch_size
             )
 
         file_study.tree.save(
