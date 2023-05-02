@@ -43,6 +43,7 @@ def create_utils_routes(config: Config) -> APIRouter:
         """
         Returns the current version of the application, along with relevant dependency information.
 
+        - `name`: The name of the application.
         - `version`: The current version of the application.
         - `gitcommit`: The commit ID of the current version's Git repository.
         - `dependencies`: A dictionary of dependencies, where the key is
