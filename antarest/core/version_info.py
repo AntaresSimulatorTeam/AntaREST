@@ -52,12 +52,24 @@ def get_last_commit_from_git() -> str:
 
 def get_dependencies() -> Dict[str, str]:
     """
-    Returns the list of installed dependencies and their versions.
+    Retrieve the list of installed dependencies and their versions.
+
+    Returns:
+        A dictionary containing the package names and their corresponding versions installed in the
+        current Python environment. The dictionary keys are the package names (as strings), and the
+        values are the corresponding version numbers (also as strings).
+
+    Raises:
+        subprocess.CalledProcessError:
+            If the `pip freeze` command fails for some reason.
     """
-    return dict(
-        line.split("==", 1)
-        for line in subprocess.check_output("pip freeze", shell=True)
-        .decode("utf-8")
-        .splitlines(keepends=False)
-        if "==" in line and "antarest" not in line.lower()
+    # fmt: off
+    output = subprocess.check_output("pip freeze", encoding="utf-8", shell=True)
+    lines = (
+        line
+        for line in output.splitlines(keepends=False)
+        if line.lower() != "antarest" and "==" in line
     )
+    # noinspection PyTypeChecker
+    return dict(line.split("==", 1) for line in lines)
+    # fmt: on
