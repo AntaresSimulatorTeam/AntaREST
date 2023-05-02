@@ -1,6 +1,17 @@
 Antares Web Changelog
 =====================
 
+v2.13.2 (2023-04-25)
+--------------------
+
+### Bug Fixes
+
+*  **api:** fix uncaught exceptions stopping slurm launcher loop (#1477) ([2737914](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27379146cfa12cc90e38f2f0d77009d80f3164db))
+
+### Contributors
+
+<a href="https://github.com/sylvlecl">Sylvain LECLERC</a>
+
 v2.13.1 (2023-04-11)
 --------------------
 
