@@ -14,6 +14,22 @@ class VersionInfoDTO(BaseModel):
     gitcommit: str
     dependencies: Dict[str, str]
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "AntaREST",
+                "version": "2.13.2",
+                "gitcommit": "879d9d641fc2e7e30e626084b431ce014de63532",
+                "dependencies": {
+                    "click": "8.0.4",
+                    "Deprecated": "1.2.13",
+                    "fastapi": "0.73.0",
+                    "Flask": "2.1.3",
+                    "gunicorn": "20.1.0",
+                },
+            }
+        }
+
 
 def get_commit_id(resources_dir: Path) -> str:
     """
@@ -68,8 +84,10 @@ def get_dependencies() -> Dict[str, str]:
     lines = (
         line
         for line in output.splitlines(keepends=False)
-        if line.lower() != "antarest" and "==" in line
+        if "==" in line
     )
     # noinspection PyTypeChecker
-    return dict(line.split("==", 1) for line in lines)
+    packages = dict(line.split("==", 1) for line in lines)
+    # AntaREST is not a dependency of AntaREST
+    return {k: v for k, v in packages.items() if k.lower() != "antarest"}
     # fmt: on

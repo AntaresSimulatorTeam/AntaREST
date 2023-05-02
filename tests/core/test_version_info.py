@@ -10,6 +10,8 @@ class TestVersionInfo:
     def test_get_dependencies(self) -> None:
         dependencies = get_dependencies()
         assert isinstance(dependencies, dict)
+        # AntaREST is not a dependency of AntaREST
+        assert "AntaREST" not in dependencies
         # lazy checking: we only check that FastAPI exist ;-)
         assert "fastapi" in dependencies
         assert all(
