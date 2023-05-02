@@ -148,7 +148,16 @@ class SlurmLauncher(AbstractLauncher):
 
     def _loop(self) -> None:
         while self.check_state:
-            self._check_studies_state()
+            # noinspection PyBroadException
+            try:
+                self._check_studies_state()
+            except Exception:
+                # To keep the SLURM processing monitoring loop active, exceptions
+                # are caught and a message is simply displayed in the logs.
+                logger.error(
+                    "An uncaught exception occurred in slurm_launcher loop",
+                    exc_info=True,
+                )
             time.sleep(2)
 
     def start(self) -> None:
@@ -406,7 +415,6 @@ class SlurmLauncher(AbstractLauncher):
                 study.name, JobStatus.FAILED, msg, None
             )
             logger.error(msg, exc_info=e)
-            raise
         else:
             msg = "Simulation failed (even if some output results may be available)"
             self.callbacks.append_after_log(study.name, msg)
@@ -444,7 +452,6 @@ class SlurmLauncher(AbstractLauncher):
                 study.name, JobStatus.FAILED, msg, None
             )
             logger.error(msg, exc_info=e)
-            raise
         else:
             self.callbacks.update_status(
                 study.name, JobStatus.SUCCESS, None, output_id
