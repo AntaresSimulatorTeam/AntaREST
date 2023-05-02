@@ -3,11 +3,8 @@ import shutil
 from enum import Enum
 from http import HTTPStatus
 from io import BytesIO
-from typing import Optional, Union, List, cast
-from zipfile import ZipFile, BadZipFile
-
-from fastapi import HTTPException, UploadFile
-from pydantic import Field, BaseModel, validator
+from typing import List, Optional, Union, cast
+from zipfile import BadZipFile, ZipFile
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
@@ -26,6 +23,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
 )
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
+from fastapi import HTTPException, UploadFile
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -70,18 +69,30 @@ class XpansionSensitivitySettingsDTO(BaseModel):
 
 class XpansionSettingsDTO(BaseModel):
     """
-    optimality_gap: Tolerance on absolute gap
-    max_iteration: Maximum number of Benders iterations
-    uc_type: Unit-commitment type used by Antares
-    master: Resolution mode of the master problem
-    yearly_weights: Path of the Monte-Carlo weights file
-    additional_constraints: Path of the additional constraints file
-    relaxed_optimality_gap: Threshold to switch from relaxed to integer master
-    relative_gap: Tolerance on relative gap
-    batch_size: Amount of batches in the Benders by batch decomposition
-    solver: Solver that is used to solve the master and the subproblems in the Benders decomposition.
-    timelimit: Timelimit (in seconds) of the Benders step
-    log_level: Solver's log severity
+    A data transfer object representing the general settings used for Xpansion.
+
+    Attributes:
+        optimality_gap: Tolerance on absolute gap for the solution.
+        max_iteration: Maximum number of Benders iterations for the solver.
+        uc_type: Unit-commitment type used by Antares for the solver.
+        master: Resolution mode of the master problem for the solver.
+        yearly_weights: Path of the Monte-Carlo weights file for the solution.
+        additional_constraints: Path of the additional constraints file for the solution.
+        relaxed_optimality_gap: Threshold to switch from relaxed to integer master.
+        cut_type: The type of cut used in the Benders decomposition.
+        ampl_solver: The solver used by AMPL.
+        ampl_presolve: The pre-solve setting used by AMPL.
+        ampl_solve_bounds_frequency: The frequency with which to solve bounds using AMPL.
+        relative_gap: Tolerance on relative gap for the solution.
+        batch_size: Amount of batches in the Benders decomposition.
+        solver: The solver used to solve the master and the sub-problems in the Benders decomposition.
+        timelimit: The timelimit (in seconds) of the Benders step.
+        log_level: The severity of the solver's log.
+        sensitivity_config: The sensitivity configuration for Xpansion.
+
+    Raises:
+        ValueError: If the `relaxed_optimality_gap` attribute is not a float
+        or a string ending with "%" and a valid float.
     """
 
     optimality_gap: Optional[float] = 1
