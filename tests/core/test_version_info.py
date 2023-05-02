@@ -15,7 +15,8 @@ class TestVersionInfo:
         # lazy checking: we only check that FastAPI exist ;-)
         assert "fastapi" in dependencies
         assert all(
-            re.fullmatch(r"\d+(?:\.\d+)+", ver)
+            # match at least one number. eg: "pywin32 == 306"
+            re.fullmatch(r"\d+(?:\.\d+)*", ver)
             for ver in dependencies.values()
         )
 
