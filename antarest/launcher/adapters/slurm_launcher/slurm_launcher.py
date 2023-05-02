@@ -148,9 +148,12 @@ class SlurmLauncher(AbstractLauncher):
 
     def _loop(self) -> None:
         while self.check_state:
+            # noinspection PyBroadException
             try:
                 self._check_studies_state()
             except Exception:
+                # To keep the SLURM processing monitoring loop active, exceptions
+                # are caught and a message is simply displayed in the logs.
                 logger.error(
                     "An uncaught exception occurred in slurm_launcher loop",
                     exc_info=True,
