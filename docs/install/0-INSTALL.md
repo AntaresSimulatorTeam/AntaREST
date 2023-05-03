@@ -14,8 +14,6 @@ Requirements :
 ```
 git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
-git submodule init
-git submodule update
 ```
 
 2. Install back dependencies

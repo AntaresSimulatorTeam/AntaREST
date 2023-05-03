@@ -28,8 +28,8 @@ Requirements:
 
 These steps should work on any linux system with docker and docker-compose installed.
 
-1. First, the steps 1 and 3 of the [quick start build](0-INSTALL.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST)
-   (don't forget the git submodule), the frontend built and that your working directory is at the root of the project.
+1. First, the steps 1 and 3 of the [quick start build](0-INSTALL.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST),
+   the frontend built and that your working directory is at the root of the project.
 
 2. Then download and unzip AntaresSimulator binaries:
 
