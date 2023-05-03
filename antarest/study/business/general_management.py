@@ -87,8 +87,12 @@ class GeneralFormFields(FormFieldsBaseModel):
         first_day = values.get("first_day")
         last_day = values.get("last_day")
         leap_year = values.get("leap_year")
+        day_fields = [first_day, last_day, leap_year]
 
-        if any(v is None for v in [first_day, last_day, leap_year]):
+        if all(v is None for v in day_fields):
+            return values
+
+        if any(v is None for v in day_fields):
             raise ValueError(
                 "First day, last day and leap year fields must be defined together"
             )
