@@ -16,6 +16,7 @@ export interface DynamicListProps<T extends { id: string } = { id: string }> {
   onAdd: (value: string) => void;
   onDelete: (index: number) => void;
   allowEmpty?: boolean;
+  disableDelete?: (item: T) => boolean;
 }
 
 function DynamicList<T extends { id: string }>({
@@ -25,9 +26,8 @@ function DynamicList<T extends { id: string }>({
   onAdd,
   onDelete,
   allowEmpty = true,
+  disableDelete,
 }: DynamicListProps<T>) {
-  const disableDelete = items.length === 1 && !allowEmpty;
-
   return (
     <Grid container direction="column" spacing={2}>
       <Grid item>
@@ -38,7 +38,11 @@ function DynamicList<T extends { id: string }>({
               <Grid item xs={2} md={1}>
                 <IconButton
                   onClick={() => onDelete(index)}
-                  disabled={disableDelete}
+                  disabled={
+                    // Disable the delete based on the provided disableDelete function or if there's only one item and allowEmpty is false
+                    (disableDelete && disableDelete(item)) ||
+                    (items.length === 1 && !allowEmpty)
+                  }
                 >
                   <RemoveCircleOutlineIcon />
                 </IconButton>

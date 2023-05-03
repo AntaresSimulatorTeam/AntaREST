@@ -1,5 +1,6 @@
-import { Box, Paper } from "@mui/material";
+import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
+import { useState } from "react";
 import Form from "../../../../../../../common/Form";
 import Fields from "./Fields";
 import { StudyMetadata } from "../../../../../../../../common/types";
@@ -11,11 +12,16 @@ import {
   setAllocationFormFields,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import HydroMatrixDialog from "../HydroMatrixDialog";
+import { HydroMatrixType } from "../utils";
+import { FormBox, FormPaper } from "../style";
+import ViewMatrixButton from "../ViewMatrixButton";
 
 function Allocation() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
+  const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
   const areaId = useAppSelector(getCurrentAreaId);
 
   ////////////////////////////////////////////////////////////////
@@ -33,32 +39,42 @@ function Allocation() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        width: 1,
-        height: 1,
-        p: 2,
-        overflow: "auto",
-      }}
-    >
-      <Paper
+    <FormBox>
+      <FormPaper
         sx={{
           backgroundImage:
             "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
-        <Form
-          key={studyId + areaId}
-          config={{
-            defaultValues: () => getAllocationFormFields(studyId, areaId),
-          }}
-          onSubmit={handleSubmit}
-          sx={{ p: 3 }}
-        >
-          <Fields />
-        </Form>
-      </Paper>
-    </Box>
+        <Grid container justifyContent="flex-end" alignItems="flex-start">
+          <Grid item xs>
+            <Form
+              key={studyId + areaId}
+              config={{
+                defaultValues: () => getAllocationFormFields(studyId, areaId),
+              }}
+              onSubmit={handleSubmit}
+              sx={{ p: 3 }}
+            >
+              <Fields />
+            </Form>
+          </Grid>
+          <Grid item>
+            <ViewMatrixButton
+              label="study.modelization.hydro.allocation.view"
+              onClick={() => setMatrixDialogOpen(true)}
+            />
+          </Grid>
+        </Grid>
+      </FormPaper>
+      {matrixDialogOpen && (
+        <HydroMatrixDialog
+          type={HydroMatrixType.Allocation}
+          open={matrixDialogOpen}
+          onClose={() => setMatrixDialogOpen(false)}
+        />
+      )}
+    </FormBox>
   );
 }
 

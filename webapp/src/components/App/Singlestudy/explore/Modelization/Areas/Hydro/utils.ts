@@ -1,10 +1,12 @@
-import { MatrixStats } from "../../../../../../../common/types";
+import { MatrixStats, MatrixType } from "../../../../../../../common/types";
+import { getAllocationMatrix } from "./Allocation/utils";
+import { getCorrelationMatrix } from "./Correlation/utils";
 
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export enum MatrixType {
+export enum HydroMatrixType {
   Dailypower,
   EnergyCredits,
   ReservoirLevels,
@@ -13,21 +15,27 @@ export enum MatrixType {
   RunOfRiver,
   InflowPattern,
   OverallMonthlyHydro,
+  Allocation,
+  Correlation,
 }
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface HydroMatrixProps {
+export type fetchMatrixFn = (studyId: string) => Promise<MatrixType>;
+
+export interface HydroMatrixProps {
   title: string;
   url: string;
   cols?: string[];
   rows?: string[];
   stats: MatrixStats;
+  fetchFn?: fetchMatrixFn;
+  disableEdit?: boolean;
 }
 
-type Matrices = Record<MatrixType, HydroMatrixProps>;
+type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
 
 export interface HydroRoute {
   path: string;
@@ -46,39 +54,39 @@ export interface AreaCoefficientItem {
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
     path: "dailypower",
-    type: MatrixType.Dailypower,
+    type: HydroMatrixType.Dailypower,
   },
   {
     path: "energycredits",
-    type: MatrixType.EnergyCredits,
+    type: HydroMatrixType.EnergyCredits,
   },
   {
     path: "reservoirlevels",
-    type: MatrixType.ReservoirLevels,
+    type: HydroMatrixType.ReservoirLevels,
   },
   {
     path: "watervalues",
-    type: MatrixType.WaterValues,
+    type: HydroMatrixType.WaterValues,
   },
   {
     path: "hydrostorage",
-    type: MatrixType.HydroStorage,
+    type: HydroMatrixType.HydroStorage,
   },
   {
     path: "ror",
-    type: MatrixType.RunOfRiver,
+    type: HydroMatrixType.RunOfRiver,
   },
 ];
 
 export const MATRICES: Matrices = {
-  [MatrixType.Dailypower]: {
+  [HydroMatrixType.Dailypower]: {
     title: "Daily power",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     cols: generateColumns(),
     rows: ["Generating Power", "Pumping Power"],
     stats: MatrixStats.NOCOL,
   },
-  [MatrixType.EnergyCredits]: {
+  [HydroMatrixType.EnergyCredits]: {
     title: "Standard credit",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
     cols: [
@@ -89,35 +97,35 @@ export const MATRICES: Matrices = {
     ],
     stats: MatrixStats.NOCOL,
   },
-  [MatrixType.ReservoirLevels]: {
+  [HydroMatrixType.ReservoirLevels]: {
     title: "Reservoir levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     cols: ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
     stats: MatrixStats.NOCOL,
   },
-  [MatrixType.WaterValues]: {
+  [HydroMatrixType.WaterValues]: {
     title: "Water values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
     cols: generateColumns("%"),
     stats: MatrixStats.NOCOL,
   },
-  [MatrixType.HydroStorage]: {
+  [HydroMatrixType.HydroStorage]: {
     title: "Hydro storage",
     url: "input/hydro/series/{areaId}/mod",
     stats: MatrixStats.STATS,
   },
-  [MatrixType.RunOfRiver]: {
+  [HydroMatrixType.RunOfRiver]: {
     title: "Run of river",
     url: "input/hydro/series/{areaId}/ror",
     stats: MatrixStats.STATS,
   },
-  [MatrixType.InflowPattern]: {
+  [HydroMatrixType.InflowPattern]: {
     title: "Inflow pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
     cols: ["Inflow Pattern (X)"],
     stats: MatrixStats.NOCOL,
   },
-  [MatrixType.OverallMonthlyHydro]: {
+  [HydroMatrixType.OverallMonthlyHydro]: {
     title: "Overall monthly hydro",
     url: "input/hydro/prepro/{areaId}/energy",
     cols: [
@@ -129,7 +137,7 @@ export const MATRICES: Matrices = {
     ],
     rows: [
       "January",
-      "Febuary",
+      "February",
       "March",
       "April",
       "May",
@@ -142,6 +150,20 @@ export const MATRICES: Matrices = {
       "December",
     ],
     stats: MatrixStats.NOCOL,
+  },
+  [HydroMatrixType.Allocation]: {
+    title: "Allocation",
+    url: "",
+    stats: MatrixStats.NOCOL,
+    fetchFn: getAllocationMatrix,
+    disableEdit: true,
+  },
+  [HydroMatrixType.Correlation]: {
+    title: "Correlation",
+    url: "",
+    stats: MatrixStats.NOCOL,
+    fetchFn: getCorrelationMatrix,
+    disableEdit: true,
   },
 };
 

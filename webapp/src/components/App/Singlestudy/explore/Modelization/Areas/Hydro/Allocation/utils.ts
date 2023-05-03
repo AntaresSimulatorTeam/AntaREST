@@ -1,4 +1,8 @@
-import { StudyMetadata, Area } from "../../../../../../../../common/types";
+import {
+  StudyMetadata,
+  Area,
+  MatrixType,
+} from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 import { AreaCoefficientItem } from "../utils";
 
@@ -37,3 +41,12 @@ export async function setAllocationFormFields(
   const res = await client.put(makeRequestURL(studyId, areaId), values);
   return res.data;
 }
+
+export const getAllocationMatrix = async (
+  studyId: StudyMetadata["id"]
+): Promise<MatrixType> => {
+  const res = await client.get(
+    `v1/studies/${studyId}/areas/hydro/allocation/matrix`
+  );
+  return res.data;
+};
