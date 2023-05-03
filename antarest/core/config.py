@@ -373,9 +373,9 @@ class PrometheusConfig:
 
     multiprocess: bool = False
 
-    @staticmethod
-    def from_dict(data: JSON) -> "PrometheusConfig":
-        return PrometheusConfig(multiprocess=bool(data["multiprocess"]))
+    @classmethod
+    def from_dict(cls, data: JSON) -> "PrometheusConfig":
+        return cls(multiprocess=bool(data["multiprocess"]))
 
 
 @dataclass(frozen=True)
@@ -386,9 +386,9 @@ class MetricsConfig:
 
     prometheus: Optional[PrometheusConfig] = None
 
-    @staticmethod
-    def from_dict(data: JSON) -> "MetricsConfig":
-        return MetricsConfig(
+    @classmethod
+    def from_dict(cls, data: JSON) -> "MetricsConfig":
+        return cls(
             prometheus=PrometheusConfig.from_dict(data["prometheus"])
             if "prometheus" in data
             else None
