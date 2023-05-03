@@ -1032,22 +1032,20 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/matrix",
+        path="/studies/{uuid}/areas/hydro/allocation/matrix",
         tags=[APITag.study_data],
-        summary="Get the hydraulic allocation matrix of a given area",
+        summary="Get the hydraulic allocation matrix for all areas",
         response_model=AllocationMatrix,
     )
     def get_allocation_matrix(
         uuid: str,
-        area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationMatrix:
         """
-        Get the hydraulic allocation matrix of a given area.
+        Get the hydraulic allocation matrix for all areas.
 
         Parameters:
-        - `uuid`: the study UUID,
-        - `area_id`: the area ID.
+        - `uuid`: the study UUID.
 
         Returns the data frame matrix, where:
         - the rows are the areas,
@@ -1065,7 +1063,7 @@ def create_study_data_routes(
             ),
         )
         return study_service.allocation_manager.get_allocation_matrix(
-            all_areas, study, area_id
+            study, all_areas
         )
 
     @bp.get(

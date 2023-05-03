@@ -103,10 +103,6 @@ class AllocationMatrix(FormFieldsBaseModel):
             raise ValueError(
                 "allocation matrix must not contain negative coefficients"
             )
-        if np.any(array.sum(axis=0) == 0):
-            raise ValueError(
-                "allocation matrix must not contain empty columns"
-            )
         if np.any(np.isnan(array)):
             raise ValueError(
                 "allocation matrix must not contain NaN coefficients"
@@ -175,11 +171,16 @@ class AllocationManager:
         areas_ids = {area.id for area in all_areas}
         allocations = self.get_allocation_data(study, area_id)
 
+        filtered_allocations = {
+            area: value
+            for area, value in allocations.items()
+            if area in areas_ids
+        }
+
         return AllocationFormFields.construct(
             allocation=[
                 AllocationField.construct(area_id=area, coefficient=value)
-                for area, value in allocations.items()
-                if area in areas_ids  # filter invalid areas
+                for area, value in filtered_allocations.items()
             ]
         )
 
@@ -241,15 +242,14 @@ class AllocationManager:
         )
 
     def get_allocation_matrix(
-        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+        self, study: Study, all_areas: List[AreaInfoDTO]
     ) -> AllocationMatrix:
         """
-        Get the hydraulic allocation matrix.
+        Get the hydraulic allocation matrix for all areas in the study.
 
         Args:
             all_areas: list of all areas in the study
             study: study to get the allocation matrix from
-            area_id: area to get the allocation matrix from
 
         Returns:
             The allocation matrix.
@@ -257,27 +257,26 @@ class AllocationManager:
         Raises:
             AllocationDataNotFound: if the allocation data is not found.
         """
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_cfg = file_study.tree.get(
-            f"input/hydro/allocation/{area_id}".split("/"), depth=2
+            f"input/hydro/allocation/*".split("/"), depth=2
         )
+
         if not allocation_cfg:
-            raise AllocationDataNotFound(area_id)
-        elif len(allocation_cfg) == 1:
-            # IMPORTANT: when there is only one element left the function returns
-            # the allocation of the element in place of the dictionary by zone
-            allocation_cfg = {area_id: allocation_cfg}
-        # Preserve the order of `all_areas`
+            raise AllocationDataNotFound("*")
+
         rows = [area.id for area in all_areas]
-        # IMPORTANT: keep the same order for columns
         columns = [area.id for area in all_areas if area.id in allocation_cfg]
         array = np.zeros((len(rows), len(columns)), dtype=np.float64)
+
         for prod_area, allocation_dict in allocation_cfg.items():
             allocations = allocation_dict["[allocation]"]
             for cons_area, coefficient in allocations.items():
                 row_idx = rows.index(cons_area)
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
+
         return AllocationMatrix.construct(
             index=rows, columns=columns, data=array.tolist()
         )
