@@ -82,11 +82,17 @@ class GeneralFormFields(FormFieldsBaseModel):
     geographic_trimming: Optional[StrictBool]
     thematic_trimming: Optional[StrictBool]
 
+    @classmethod
     @root_validator
     def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         first_day = values.get("first_day")
         last_day = values.get("last_day")
         leap_year = values.get("leap_year")
+
+        if all(v is None for v in [first_day, last_day, leap_year]):
+            # The user wishes to update another field than these three.
+            # no need to validate anything:
+            return values
 
         if any(v is None for v in [first_day, last_day, leap_year]):
             raise ValueError(
@@ -260,7 +266,7 @@ class GeneralManager:
                     )
                 )
 
-        if len(commands) > 0:
+        if commands:
             execute_or_add_commands(
                 study, file_study, commands, self.storage_service
             )
