@@ -90,6 +90,8 @@ class GeneralFormFields(FormFieldsBaseModel):
         day_fields = [first_day, last_day, leap_year]
 
         if all(v is None for v in day_fields):
+            # The user wishes to update another field than these three.
+            # no need to validate anything:
             return values
 
         if any(v is None for v in day_fields):
@@ -264,7 +266,7 @@ class GeneralManager:
                     )
                 )
 
-        if len(commands) > 0:
+        if commands:
             execute_or_add_commands(
                 study, file_study, commands, self.storage_service
             )
