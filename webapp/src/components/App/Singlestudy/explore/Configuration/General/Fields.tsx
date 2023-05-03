@@ -91,9 +91,13 @@ function Fields(props: Props) {
       return false;
     }
     if (formValues.leapYear) {
-      return value <= 366 ? true : "Maximum is 366 for a leap year";
+      return value <= 366
+        ? true
+        : t("study.configuration.general.day.error.leapYearMax");
     }
-    return value <= 365 ? true : "Maximum is 365 for a non-leap year";
+    return value <= 365
+      ? true
+      : t("study.configuration.general.day.error.nonLeapYearMax");
   };
 
   const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
@@ -103,12 +107,12 @@ function Fields(props: Props) {
     if (formValues.buildingMode === BuildingMode.Derated) {
       return value === 1
         ? true
-        : "Value must be 1 when building mode is derated";
+        : t("study.configuration.general.nbYears.error.derated");
     }
     if (value < 1) {
-      return "Minimum is 1";
+      return t("form.field.minValue", [1]);
     }
-    return value <= 50000 ? true : "Maximum is 50000";
+    return value <= 50000 ? true : t("form.field.maxValue", [50000]);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -202,7 +206,7 @@ function Fields(props: Props) {
         >
           <NumberFE
             name="nbYears"
-            label={t("global.number")}
+            label={t("study.configuration.general.nbYears")}
             variant="filled"
             control={control}
             rules={{
