@@ -226,10 +226,8 @@ class CannotScanInternalWorkspace(HTTPException):
         )
 
 
-class ConfigurationError(Exception):
+class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.
     """
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    pass
