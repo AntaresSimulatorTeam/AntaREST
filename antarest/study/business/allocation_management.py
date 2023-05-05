@@ -265,7 +265,8 @@ class AllocationManager:
         )
 
         if not allocation_cfg:
-            raise AllocationDataNotFound("*")
+            areas_ids = {area.id for area in all_areas}
+            raise AllocationDataNotFound(*areas_ids)
 
         rows = [area.id for area in all_areas]
         columns = [area.id for area in all_areas if area.id in allocation_cfg]

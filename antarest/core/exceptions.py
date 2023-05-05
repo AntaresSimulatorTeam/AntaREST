@@ -178,8 +178,14 @@ class StudyOutputNotFoundError(Exception):
 
 
 class AllocationDataNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        msg = f"Allocation data for area: {area_id} is not found"
+    def __init__(self, *area_ids: str) -> None:
+        count = len(area_ids)
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        msg = {
+            0: "Allocation data is found",
+            1: f"Allocation data for area {area_ids} is not found",
+            2: f"Allocation data for areas {area_ids} is not found",
+        }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
