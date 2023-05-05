@@ -42,7 +42,7 @@ class AllocationFormFields(FormFieldsBaseModel):
         if not allocation:
             raise ValueError("allocation must not be empty")
 
-        if len(allocation) != len(set(a.area_id for a in allocation)):
+        if len(allocation) != len({a.area_id for a in allocation}):
             raise ValueError("allocation must not contain duplicate area IDs")
 
         for a in allocation:
@@ -98,7 +98,7 @@ class AllocationMatrix(FormFieldsBaseModel):
         if array.size == 0:
             raise ValueError("allocation matrix must not be empty")
         if array.shape != (rows, cols):
-            raise ValueError(f"allocation matrix must have square shape")
+            raise ValueError("allocation matrix must have square shape")
         if np.any(array < 0):
             raise ValueError(
                 "allocation matrix must not contain negative coefficients"
@@ -130,8 +130,8 @@ class AllocationManager:
         Get hydraulic allocation data.
 
         Args:
-            study: study to get the allocation data from
-            area_id: area to get the allocation data from
+            study: study to get the allocation data from.
+            area_id: area to get the allocation data from.
 
         Returns:
             The allocation data.
@@ -139,6 +139,7 @@ class AllocationManager:
         Raises:
             AllocationDataNotFound: if the allocation data is not found.
         """
+        # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_data = file_study.tree.get(
@@ -157,9 +158,9 @@ class AllocationManager:
         Get hydraulic allocation coefficients.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to get the allocation coefficients from
-            area_id: area to get the allocation coefficients from
+            all_areas: list of all areas in the study.
+            study: study to get the allocation coefficients from.
+            area_id: area to get the allocation coefficients from.
 
         Returns:
             The allocation coefficients.
@@ -195,10 +196,10 @@ class AllocationManager:
         Set hydraulic allocation coefficients.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to set the allocation coefficients to
-            area_id: area to set the allocation coefficients to
-            data: allocation coefficients to set
+            all_areas: list of all areas in the study.
+            study: study to set the allocation coefficients to.
+            area_id: area to set the allocation coefficients to.
+            data: allocation coefficients to set.
 
         Raises:
             AreaNotFound: if the area is not found.
@@ -248,8 +249,8 @@ class AllocationManager:
         Get the hydraulic allocation matrix for all areas in the study.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to get the allocation matrix from
+            study: study to get the allocation matrix from.
+            all_areas: list of all areas in the study.
 
         Returns:
             The allocation matrix.
@@ -260,7 +261,7 @@ class AllocationManager:
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_cfg = file_study.tree.get(
-            f"input/hydro/allocation/*".split("/"), depth=2
+                "input/hydro/allocation/*".split("/"), depth=2
         )
 
         if not allocation_cfg:
