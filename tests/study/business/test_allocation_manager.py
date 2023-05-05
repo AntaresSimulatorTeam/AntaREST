@@ -1,5 +1,6 @@
 import contextlib
 import datetime
+import re
 import uuid
 from unittest.mock import Mock, patch
 
@@ -273,9 +274,7 @@ class TestAllocationManager:
         manager = AllocationManager(study_storage_service)
 
         # run
-        matrix = manager.get_allocation_matrix(
-            all_areas=all_areas, study=study, area_id=area_id
-        )
+        matrix = manager.get_allocation_matrix(study, all_areas)
 
         # Check
         assert matrix == AllocationMatrix(
@@ -315,10 +314,8 @@ class TestAllocationManager:
         manager = AllocationManager(study_storage_service)
 
         with pytest.raises(AllocationDataNotFound) as ctx:
-            manager.get_allocation_matrix(
-                all_areas=all_areas, study=study, area_id=area_id
-            )
-        assert "*" in ctx.value.detail
+            manager.get_allocation_matrix(study, all_areas)
+        assert re.fullmatch(r"Allocation data.*is not found", ctx.value.detail)
 
     def test_get_allocation_form_fields__nominal_case(
         self, db_session, study_storage_service, study_uuid
