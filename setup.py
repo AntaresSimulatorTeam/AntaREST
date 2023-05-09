@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="AntaREST",
-    version="2.13.2",
+    version="2.14.0",
     description="Antares Server",
     long_description=long_description,
     long_description_content_type="text/markdown",
