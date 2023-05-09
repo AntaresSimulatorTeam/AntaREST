@@ -11,7 +11,7 @@ from antarest.dbmodel import Base
 from antarest.login.model import Group, User
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
 from antarest.study.business.correlation_management import (
-    CorrelationField,
+    AreaCoefficientItem,
     CorrelationFormFields,
     CorrelationManager,
     CorrelationMatrix,
@@ -42,12 +42,12 @@ from sqlalchemy.orm import sessionmaker
 
 class TestCorrelationField:
     def test_init__nominal_case(self):
-        field = CorrelationField(area_id="NORTH", coefficient=100)
+        field = AreaCoefficientItem(area_id="NORTH", coefficient=100)
         assert field.area_id == "NORTH"
         assert field.coefficient == 100
 
     def test_init__camel_case_args(self):
-        field = CorrelationField(areaId="NORTH", coefficient=100)
+        field = AreaCoefficientItem(areaId="NORTH", coefficient=100)
         assert field.area_id == "NORTH"
         assert field.coefficient == 100
 
@@ -61,8 +61,8 @@ class TestCorrelationFormFields:
             ]
         )
         assert fields.correlation == [
-            CorrelationField(area_id="NORTH", coefficient=75),
-            CorrelationField(area_id="SOUTH", coefficient=25),
+            AreaCoefficientItem(area_id="NORTH", coefficient=75),
+            AreaCoefficientItem(area_id="SOUTH", coefficient=25),
         ]
 
     def test_validation__coefficients_not_empty(self):
@@ -299,8 +299,8 @@ class TestCorrelationManager:
         )
         assert fields == CorrelationFormFields(
             correlation=[
-                CorrelationField(area_id="n", coefficient=20.0),
-                CorrelationField(area_id="s", coefficient=100.0),
+                AreaCoefficientItem(area_id="s", coefficient=100.0),
+                AreaCoefficientItem(area_id="n", coefficient=20.0),
             ]
         )
 
@@ -335,9 +335,9 @@ class TestCorrelationManager:
                 area_id=area_id,
                 data=CorrelationFormFields(
                     correlation=[
-                        CorrelationField(area_id="s", coefficient=100),
-                        CorrelationField(area_id="e", coefficient=30),
-                        CorrelationField(area_id="n", coefficient=40),
+                        AreaCoefficientItem(area_id="s", coefficient=100),
+                        AreaCoefficientItem(area_id="e", coefficient=30),
+                        AreaCoefficientItem(area_id="n", coefficient=40),
                     ]
                 ),
             )
@@ -387,7 +387,7 @@ class TestCorrelationManager:
                     area_id=area_id,
                     data=CorrelationFormFields(
                         correlation=[
-                            CorrelationField(
+                            AreaCoefficientItem(
                                 area_id="UNKNOWN", coefficient=3.14
                             ),
                         ]

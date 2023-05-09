@@ -56,7 +56,7 @@ function Correlation() {
           </Grid>
           <Grid item>
             <ViewMatrixButton
-              label="study.modelization.hydro.correlation.view"
+              label="study.modelization.hydro.correlation.viewMatrix"
               onClick={() => setMatrixDialogOpen(true)}
             />
           </Grid>

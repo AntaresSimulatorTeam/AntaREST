@@ -37,7 +37,7 @@ import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/
 
 const logErr = debug("antares:createimportform:error");
 
-interface MatrixInputProps {
+interface Props {
   study: StudyMetadata;
   url: string;
   columnsNames?: string[];
@@ -57,7 +57,7 @@ function MatrixInput({
   computStats,
   fetchFn,
   disableEdit,
-}: MatrixInputProps) {
+}: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -88,12 +88,6 @@ function MatrixInput({
     }
   );
 
-  /**
-   * This hook fetches the matrix index either from the matrixData or from the API.
-   * If the fetchFn is provided, it means that we have custom row names (area names),
-   * instead of the default row numbers and timestamps.
-   * In this case, we get the row names from the matrixData's index property.
-   */
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     async () => {
       if (fetchFn) {
@@ -108,10 +102,8 @@ function MatrixInput({
   );
 
   /**
-   * The rowNames variable determines which row names to display in the EditableMatrix component.
-   * If the fetchFn is provided, it means we have custom row names (area names), so we use
-   * the matrixIndex fetched from the matrixData to display area names.
-   * Otherwise, we use the initialRowNames to display the default row numbers and timestamps.
+   * If fetchFn is provided, custom row names (area names) are used from the matrixData's index property.
+   * Otherwise, default row numbers and timestamps are displayed using initialRowNames.
    */
   const rowNames = fetchFn ? matrixIndex : initialRowNames;
 
@@ -194,6 +186,7 @@ function MatrixInput({
                 <InventoryIcon />
               </Tooltip>
             </Button>
+
             <Button
               variant="outlined"
               color="primary"
@@ -202,6 +195,7 @@ function MatrixInput({
             >
               {t("global.import")}
             </Button>
+
             {matrixData?.columns?.length >= 1 && (
               <Button
                 sx={{

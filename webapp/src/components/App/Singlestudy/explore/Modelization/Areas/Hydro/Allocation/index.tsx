@@ -61,7 +61,7 @@ function Allocation() {
           </Grid>
           <Grid item>
             <ViewMatrixButton
-              label="study.modelization.hydro.allocation.view"
+              label="study.modelization.hydro.allocation.viewMatrix"
               onClick={() => setMatrixDialogOpen(true)}
             />
           </Grid>

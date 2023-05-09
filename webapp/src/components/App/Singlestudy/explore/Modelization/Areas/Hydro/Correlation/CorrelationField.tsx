@@ -39,7 +39,7 @@ function CorrelationField({ field, index, label }: Props) {
       <Grid item xs={4} md={2}>
         <NumberFE
           key={field.id}
-          label="coeff. (%)"
+          label={t("study.modelization.hydro.correlation.coefficient")}
           name={`correlation.${index}.coefficient`}
           size="small"
           control={control}

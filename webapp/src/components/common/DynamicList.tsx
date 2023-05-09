@@ -39,9 +39,7 @@ function DynamicList<T extends { id: string }>({
                 <IconButton
                   onClick={() => onDelete(index)}
                   disabled={
-                    // Disable the delete based on the provided disableDelete function or if there's only one item and allowEmpty is false
-                    (disableDelete && disableDelete(item)) ||
-                    (items.length === 1 && !allowEmpty)
+                    disableDelete?.(item) ?? (items.length === 1 && !allowEmpty)
                   }
                 >
                   <RemoveCircleOutlineIcon />

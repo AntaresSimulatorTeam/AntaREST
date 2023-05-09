@@ -6,13 +6,13 @@ import BasicDialog, {
 import HydroMatrix from "./HydroMatrix";
 import { HydroMatrixType } from "./utils";
 
-interface HydroMatrixDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
   type: HydroMatrixType;
 }
 
-function HydroMatrixDialog({ open, onClose, type }: HydroMatrixDialogProps) {
+function HydroMatrixDialog({ open, onClose, type }: Props) {
   const { t } = useTranslation();
   const dialogProps: BasicDialogProps = {
     open,

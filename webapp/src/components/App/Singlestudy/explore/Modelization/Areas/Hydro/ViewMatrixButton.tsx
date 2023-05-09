@@ -1,12 +1,12 @@
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-interface ViewMatrixButtonProps {
+interface Props {
   label: string;
   onClick: () => void;
 }
 
-function ViewMatrixButton({ label, onClick }: ViewMatrixButtonProps) {
+function ViewMatrixButton({ label, onClick }: Props) {
   const { t } = useTranslation();
 
   return (

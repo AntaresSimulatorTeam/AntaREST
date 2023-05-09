@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from pydantic import conlist, validator
 
 
-class CorrelationField(FormFieldsBaseModel):
+class AreaCoefficientItem(FormFieldsBaseModel):
     """
     Model for correlation coefficients of a given area.
 
@@ -46,13 +46,13 @@ class CorrelationFormFields(FormFieldsBaseModel):
         correlation: A list of non-null correlation coefficients in percentage.
     """
 
-    correlation: List[CorrelationField]
+    correlation: List[AreaCoefficientItem]
 
     # noinspection PyMethodParameters
     @validator("correlation")
     def check_correlation(
-        cls, correlation: List[CorrelationField]
-    ) -> List[CorrelationField]:
+        cls, correlation: List[AreaCoefficientItem]
+    ) -> List[AreaCoefficientItem]:
         if not correlation:
             raise ValueError("correlation must not be empty")
         counter = collections.Counter(field.area_id for field in correlation)
@@ -239,16 +239,26 @@ class CorrelationManager:
             The correlation coefficients.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
+
         area_ids = [area.id for area in all_areas]
         array = self._get_array(file_study, area_ids)
         column = array[:, area_ids.index(area_id)] * 100
-        return CorrelationFormFields.construct(
-            correlation=[
-                CorrelationField.construct(area_id=a, coefficient=c)
-                for a, c in zip(area_ids, column)
-                if c
-            ]
+
+        correlation_field = [
+            AreaCoefficientItem.construct(area_id=a, coefficient=c)
+            for a, c in zip(area_ids, column)
+            if a != area_id and c
+        ]
+
+        current_area_coefficient = column[area_ids.index(area_id)]
+        correlation_field.insert(
+            0,
+            AreaCoefficientItem.construct(
+                area_id=area_id, coefficient=current_area_coefficient
+            ),
         )
+
+        return CorrelationFormFields.construct(correlation=correlation_field)
 
     def set_correlation_form_fields(
         self,
@@ -293,7 +303,7 @@ class CorrelationManager:
         column = array[:, area_ids.index(area_id)] * 100
         return CorrelationFormFields.construct(
             correlation=[
-                CorrelationField.construct(area_id=a, coefficient=c)
+                AreaCoefficientItem.construct(area_id=a, coefficient=c)
                 for a, c in zip(area_ids, column)
                 if c
             ]
