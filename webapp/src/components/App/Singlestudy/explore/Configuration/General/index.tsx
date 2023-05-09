@@ -54,7 +54,6 @@ function GeneralParameters() {
         key={study.id}
         config={{ defaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
-        autoSubmit
         apiRef={apiRef}
       >
         <Fields setDialog={setDialog} />

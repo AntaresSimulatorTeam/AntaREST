@@ -25,7 +25,7 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TableContainer>
+    <TableContainer sx={{ mb: 1 }}>
       <Table sx={{ minWidth: "1050px" }} size="small">
         <TableHead>
           <TableRow sx={{ th: { py: 1, borderBottom: "none" } }}>
@@ -100,7 +100,8 @@ function Fields() {
                       onChange={(_, checked) => {
                         setValue(
                           `${type}.stochasticTsStatus`,
-                          !checked as never
+                          !checked as never,
+                          { shouldDirty: true }
                         );
                       }}
                     />

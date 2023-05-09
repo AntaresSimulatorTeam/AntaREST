@@ -54,7 +54,6 @@ function AdvancedParameters() {
         defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields version={Number(study.version)} />
     </Form>

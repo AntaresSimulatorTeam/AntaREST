@@ -31,7 +31,6 @@ function Optimization() {
       key={study.id}
       config={{ defaultValues: () => getOptimizationFormFields(study.id) }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields study={study} />
     </Form>

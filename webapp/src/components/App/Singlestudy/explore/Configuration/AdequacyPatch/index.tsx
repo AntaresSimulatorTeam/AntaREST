@@ -33,7 +33,6 @@ function AdequacyPatch() {
         defaultValues: () => getAdequacyPatchFormFields(study.id),
       }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields />
     </Form>

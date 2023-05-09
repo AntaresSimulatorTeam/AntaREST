@@ -36,7 +36,7 @@ function ManagementOptions() {
         defaultValues: () => getManagementOptionsFormFields(studyId, areaId),
       }}
       onSubmit={handleSubmit}
-      autoSubmit
+      sx={{ pb: 2 }}
     >
       <Fields />
     </Form>
