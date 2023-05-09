@@ -119,10 +119,8 @@ function EditableMatrix(props: PropTypes) {
 
     const tmpData = data.map((row, i) => {
       let tmpRow = row as (string | number)[];
-      if (prependIndex) {
-        if (matrixIndex) {
-          tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
-        }
+      if (prependIndex && matrixIndex) {
+        tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
@@ -143,6 +141,9 @@ function EditableMatrix(props: PropTypes) {
     computStats,
   ]);
 
+  const matrixRowNames =
+    rowNames || (matrixIndex && index.map((i) => String(i)));
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -158,13 +159,13 @@ function EditableMatrix(props: PropTypes) {
           stretchH="all"
           className="editableMatrix"
           colHeaders
-          rowHeaderWidth={rowNames ? 150 : undefined}
+          rowHeaderWidth={matrixRowNames ? 150 : undefined}
           afterChange={(change, source) =>
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
           columns={formatedColumns}
-          rowHeaders={rowNames || true}
+          rowHeaders={matrixRowNames || true}
           manualColumnResize
         />
       ) : (

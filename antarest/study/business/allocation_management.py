@@ -42,7 +42,7 @@ class AllocationFormFields(FormFieldsBaseModel):
         if not allocation:
             raise ValueError("allocation must not be empty")
 
-        if len(allocation) != len(set(a.area_id for a in allocation)):
+        if len(allocation) != len({a.area_id for a in allocation}):
             raise ValueError("allocation must not contain duplicate area IDs")
 
         for a in allocation:
@@ -98,14 +98,10 @@ class AllocationMatrix(FormFieldsBaseModel):
         if array.size == 0:
             raise ValueError("allocation matrix must not be empty")
         if array.shape != (rows, cols):
-            raise ValueError(f"allocation matrix must have square shape")
+            raise ValueError("allocation matrix must have square shape")
         if np.any(array < 0):
             raise ValueError(
                 "allocation matrix must not contain negative coefficients"
-            )
-        if np.any(array.sum(axis=0) == 0):
-            raise ValueError(
-                "allocation matrix must not contain empty columns"
             )
         if np.any(np.isnan(array)):
             raise ValueError(
@@ -134,8 +130,8 @@ class AllocationManager:
         Get hydraulic allocation data.
 
         Args:
-            study: study to get the allocation data from
-            area_id: area to get the allocation data from
+            study: study to get the allocation data from.
+            area_id: area to get the allocation data from.
 
         Returns:
             The allocation data.
@@ -143,6 +139,7 @@ class AllocationManager:
         Raises:
             AllocationDataNotFound: if the allocation data is not found.
         """
+        # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_data = file_study.tree.get(
@@ -161,9 +158,9 @@ class AllocationManager:
         Get hydraulic allocation coefficients.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to get the allocation coefficients from
-            area_id: area to get the allocation coefficients from
+            all_areas: list of all areas in the study.
+            study: study to get the allocation coefficients from.
+            area_id: area to get the allocation coefficients from.
 
         Returns:
             The allocation coefficients.
@@ -175,11 +172,16 @@ class AllocationManager:
         areas_ids = {area.id for area in all_areas}
         allocations = self.get_allocation_data(study, area_id)
 
+        filtered_allocations = {
+            area: value
+            for area, value in allocations.items()
+            if area in areas_ids
+        }
+
         return AllocationFormFields.construct(
             allocation=[
                 AllocationField.construct(area_id=area, coefficient=value)
-                for area, value in allocations.items()
-                if area in areas_ids  # filter invalid areas
+                for area, value in filtered_allocations.items()
             ]
         )
 
@@ -194,10 +196,10 @@ class AllocationManager:
         Set hydraulic allocation coefficients.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to set the allocation coefficients to
-            area_id: area to set the allocation coefficients to
-            data: allocation coefficients to set
+            all_areas: list of all areas in the study.
+            study: study to set the allocation coefficients to.
+            area_id: area to set the allocation coefficients to.
+            data: allocation coefficients to set.
 
         Raises:
             AreaNotFound: if the area is not found.
@@ -241,15 +243,14 @@ class AllocationManager:
         )
 
     def get_allocation_matrix(
-        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+        self, study: Study, all_areas: List[AreaInfoDTO]
     ) -> AllocationMatrix:
         """
-        Get the hydraulic allocation matrix.
+        Get the hydraulic allocation matrix for all areas in the study.
 
         Args:
-            all_areas: list of all areas in the study
-            study: study to get the allocation matrix from
-            area_id: area to get the allocation matrix from
+            study: study to get the allocation matrix from.
+            all_areas: list of all areas in the study.
 
         Returns:
             The allocation matrix.
@@ -257,27 +258,27 @@ class AllocationManager:
         Raises:
             AllocationDataNotFound: if the allocation data is not found.
         """
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
         allocation_cfg = file_study.tree.get(
-            f"input/hydro/allocation/{area_id}".split("/"), depth=2
+            "input/hydro/allocation/*".split("/"), depth=2
         )
+
         if not allocation_cfg:
-            raise AllocationDataNotFound(area_id)
-        elif len(allocation_cfg) == 1:
-            # IMPORTANT: when there is only one element left the function returns
-            # the allocation of the element in place of the dictionary by zone
-            allocation_cfg = {area_id: allocation_cfg}
-        # Preserve the order of `all_areas`
+            areas_ids = {area.id for area in all_areas}
+            raise AllocationDataNotFound(*areas_ids)
+
         rows = [area.id for area in all_areas]
-        # IMPORTANT: keep the same order for columns
         columns = [area.id for area in all_areas if area.id in allocation_cfg]
         array = np.zeros((len(rows), len(columns)), dtype=np.float64)
+
         for prod_area, allocation_dict in allocation_cfg.items():
             allocations = allocation_dict["[allocation]"]
             for cons_area, coefficient in allocations.items():
                 row_idx = rows.index(cons_area)
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
+
         return AllocationMatrix.construct(
             index=rows, columns=columns, data=array.tolist()
         )

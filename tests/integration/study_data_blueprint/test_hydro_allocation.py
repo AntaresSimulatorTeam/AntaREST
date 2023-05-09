@@ -4,7 +4,7 @@ from typing import List
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.area_management import AreaInfoDTO, AreaType
 from tests.integration.utils import wait_for
 
 
@@ -107,34 +107,6 @@ class TestHydroAllocation:
                 },
                 id="all-areas",
             ),
-            pytest.param(
-                "fr,de",
-                {
-                    "columns": ["de", "fr"],
-                    "data": [
-                        [1.0, 0.0],
-                        [0.0, 0.0],
-                        [0.0, 1.0],
-                        [0.0, 0.0],
-                    ],
-                    "index": ["de", "es", "fr", "it"],
-                },
-                id="some-areas",
-            ),
-            pytest.param(
-                "fr",
-                {
-                    "columns": ["fr"],
-                    "data": [
-                        [0.0],
-                        [0.0],
-                        [1.0],
-                        [0.0],
-                    ],
-                    "index": ["de", "es", "fr", "it"],
-                },
-                id="one-area",
-            ),
         ],
     )
     def test_get_allocation_matrix(
@@ -147,7 +119,7 @@ class TestHydroAllocation:
     ):
         """Check `get_allocation_matrix` end point"""
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/matrix",
+            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -202,7 +174,7 @@ class TestHydroAllocation:
         - the coefficient == 0 for the other areas.
         Other columns must not be changed.
         """
-        area_info = AreaInfoDTO(id="north", name="NORTH", type="AREA")
+        area_info = AreaInfoDTO(id="north", name="NORTH", type=AreaType.AREA)
         res = client.post(
             f"/v1/studies/{study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -211,7 +183,7 @@ class TestHydroAllocation:
         assert res.status_code == HTTPStatus.OK, res.json()
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/*/hydro/allocation/matrix",
+            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK
@@ -263,7 +235,7 @@ class TestHydroAllocation:
         # Check that the "fr" column is removed from the hydraulic allocation matrix.
         # The row corresponding to "fr" must also be deleted.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/*/hydro/allocation/matrix",
+            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()

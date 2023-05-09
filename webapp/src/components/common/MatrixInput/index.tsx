@@ -33,20 +33,31 @@ import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
 import { downloadMatrix } from "../../../utils/matrixUtils";
+import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 
 const logErr = debug("antares:createimportform:error");
 
-interface PropsType {
+interface Props {
   study: StudyMetadata;
   url: string;
   columnsNames?: string[];
   rowNames?: string[];
   title?: string;
   computStats: MatrixStats;
+  fetchFn?: fetchMatrixFn;
+  disableEdit?: boolean;
 }
 
-function MatrixInput(props: PropsType) {
-  const { study, url, columnsNames, rowNames, title, computStats } = props;
+function MatrixInput({
+  study,
+  url,
+  columnsNames,
+  rowNames: initialRowNames,
+  title,
+  computStats,
+  fetchFn,
+  disableEdit,
+}: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
@@ -55,12 +66,14 @@ function MatrixInput(props: PropsType) {
   const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
 
   const {
-    data,
+    data: matrixData,
     isLoading,
     reload: reloadMatrix,
   } = usePromiseWithSnackbarError(
     async () => {
-      const res = await getStudyData(study.id, url);
+      const res = fetchFn
+        ? await fetchFn(study.id)
+        : await getStudyData(study.id, url);
       if (typeof res === "string") {
         const fixed = res
           .replace(/NaN/g, '"NaN"')
@@ -76,12 +89,23 @@ function MatrixInput(props: PropsType) {
   );
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    () => getStudyMatrixIndex(study.id, url),
+    async () => {
+      if (fetchFn) {
+        return matrixData?.index;
+      }
+      return getStudyMatrixIndex(study.id, url);
+    },
     {
       errorMessage: t("matrix.error.failedToretrieveIndex"),
-      deps: [study, url],
+      deps: [study, url, fetchFn, matrixData],
     }
   );
+
+  /**
+   * If fetchFn is provided, custom row names (area names) are used from the matrixData's index property.
+   * Otherwise, default row numbers and timestamps are displayed using initialRowNames.
+   */
+  const rowNames = fetchFn ? matrixIndex : initialRowNames;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -139,7 +163,7 @@ function MatrixInput(props: PropsType) {
             {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {!isLoading && data?.columns?.length >= 1 && (
+            {!isLoading && matrixData?.columns?.length >= 1 && (
               <ButtonGroup variant="contained">
                 <StyledButton onClick={() => setToggleView((prev) => !prev)}>
                   {toggleView ? (
@@ -162,6 +186,7 @@ function MatrixInput(props: PropsType) {
                 <InventoryIcon />
               </Tooltip>
             </Button>
+
             <Button
               variant="outlined"
               color="primary"
@@ -170,7 +195,8 @@ function MatrixInput(props: PropsType) {
             >
               {t("global.import")}
             </Button>
-            {data?.columns?.length >= 1 && (
+
+            {matrixData?.columns?.length >= 1 && (
               <Button
                 sx={{
                   ml: 2,
@@ -180,7 +206,7 @@ function MatrixInput(props: PropsType) {
                 startIcon={<DownloadOutlinedIcon />}
                 onClick={() =>
                   handleDownload(
-                    data,
+                    matrixData,
                     `matrix_${study.id}_${url.replace("/", "_")}`
                   )
                 }
@@ -192,14 +218,14 @@ function MatrixInput(props: PropsType) {
         </Header>
         <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && data?.columns?.length >= 1 ? (
+        {!isLoading && matrixData?.columns?.length >= 1 && matrixIndex ? (
           <EditableMatrix
-            matrix={data}
+            matrix={matrixData}
             matrixTime={!rowNames}
             matrixIndex={matrixIndex}
             columnsNames={columnsNames}
             rowNames={rowNames}
-            readOnly={false}
+            readOnly={!!disableEdit}
             toggleView={toggleView}
             onUpdate={handleUpdate}
             computStats={computStats}

@@ -2,7 +2,10 @@ import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getAreasById } from "../../../../../../../../redux/selectors";
+import {
+  getAreasById,
+  getCurrentArea,
+} from "../../../../../../../../redux/selectors";
 import DynamicList from "../../../../../../../common/DynamicList";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { useAreasOptions } from "../hooks/useAreasOptions";
@@ -14,6 +17,7 @@ function Fields() {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
   const areasById = useAppSelector((state) => getAreasById(state, studyId));
+  const currentArea = useAppSelector(getCurrentArea);
   const { control } = useFormContextPlus<CorrelationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -38,7 +42,7 @@ function Fields() {
         />
       )}
       options={options}
-      onAdd={(value: string) =>
+      onAdd={(value) =>
         append({
           areaId: value,
           coefficient: 0,
@@ -46,6 +50,7 @@ function Fields() {
       }
       onDelete={remove}
       allowEmpty={false}
+      disableDelete={(item) => item.areaId === currentArea?.id}
     />
   );
 }
