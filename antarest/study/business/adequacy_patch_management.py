@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, Union
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
@@ -32,9 +32,15 @@ class AdequacyPatchFormFields(FormFieldsBaseModel):
     price_taking_order: Optional[PriceTakingOrder]
     include_hurdle_cost_csr: Optional[StrictBool]
     check_csr_cost_function: Optional[StrictBool]
-    threshold_initiate_curtailment_sharing_rule: Optional[StrictFloat]
-    threshold_display_local_matching_rule_violations: Optional[StrictFloat]
-    threshold_csr_variable_bounds_relaxation: Optional[StrictInt]
+    threshold_initiate_curtailment_sharing_rule: Optional[
+        Union[StrictFloat, StrictInt]
+    ]
+    threshold_display_local_matching_rule_violations: Optional[
+        Union[StrictFloat, StrictInt]
+    ]
+    threshold_csr_variable_bounds_relaxation: Optional[
+        Union[StrictFloat, StrictInt]
+    ]
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"
