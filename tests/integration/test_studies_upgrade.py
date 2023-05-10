@@ -84,7 +84,9 @@ class TestStudyUpgrade:
         study_ids = res.json()
         return next(iter(study_ids))
 
-    @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
+    @pytest.mark.skipif(
+        RUN_ON_WINDOWS, reason="This test runs randomly on Windows"
+    )
     def test_upgrade_study__next_version(
         self, client: TestClient, user_access_token: str, study_id: str
     ):
@@ -101,7 +103,9 @@ class TestStudyUpgrade:
             "710" in task.result.message
         ), f"Version not in {task.result.message=}"
 
-    @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
+    @pytest.mark.skipif(
+        RUN_ON_WINDOWS, reason="This test runs randomly on Windows"
+    )
     def test_upgrade_study__target_version(
         self, client: TestClient, user_access_token: str, study_id: str
     ):
@@ -120,7 +124,9 @@ class TestStudyUpgrade:
             target_version in task.result.message
         ), f"Version not in {task.result.message=}"
 
-    @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
+    @pytest.mark.skipif(
+        RUN_ON_WINDOWS, reason="This test runs randomly on Windows"
+    )
     def test_upgrade_study__bad_target_version(
         self, client: TestClient, user_access_token: str, study_id: str
     ):
