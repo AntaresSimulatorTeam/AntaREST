@@ -17,18 +17,18 @@ import TimeSeriesManagement from "./TimeSeriesManagement";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [currentElementIndex, setCurrentElementIndex] = useState(0);
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
   // TODO i18n
-  const listElement = useMemo(
+  const tabList = useMemo(
     () =>
       [
-        { name: "General" },
-        { name: "Time-series management" },
-        { name: "Regional districts" },
-        { name: "Optimization preferences" },
-        Number(study.version) >= 830 && { name: "Adequacy Patch" },
-        { name: "Advanced parameters" },
+        { id: 0, name: "General" },
+        { id: 1, name: "Time-series management" },
+        { id: 2, name: "Regional districts" },
+        { id: 3, name: "Optimization preferences" },
+        Number(study.version) >= 830 && { id: 4, name: "Adequacy Patch" },
+        { id: 5, name: "Advanced parameters" },
       ].filter(Boolean),
     [study.version]
   );
@@ -39,10 +39,10 @@ function Configuration() {
         <PropertiesView
           mainContent={
             <ListElement
-              list={listElement}
-              currentElement={listElement[currentElementIndex].name}
+              list={tabList}
+              currentElement={tabList[currentTabIndex].name}
               setSelectedItem={(_, index) => {
-                setCurrentElementIndex(index);
+                setCurrentTabIndex(index);
               }}
             />
           }
@@ -58,7 +58,7 @@ function Configuration() {
             [R.equals(3), () => <Optimization />],
             [R.equals(4), () => <AdequacyPatch />],
             [R.equals(5), () => <AdvancedParameters />],
-          ])(currentElementIndex)}
+          ])(tabList[currentTabIndex].id)}
         </Paper>
       }
     />
