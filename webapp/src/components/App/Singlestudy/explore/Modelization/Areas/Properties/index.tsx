@@ -20,7 +20,6 @@ function Properties() {
         config={{
           defaultValues: () => getDefaultValues(study.id, currentArea, t),
         }}
-        autoSubmit
       >
         {(formApi) => (
           <PropertiesForm

@@ -59,7 +59,6 @@ function ThematicTrimmingDialog(props: Props) {
       config={{
         defaultValues: () => getThematicTrimmingFormFields(study.id),
       }}
-      autoSubmit
       onSubmit={handleSubmit}
       onCancel={onClose}
       PaperProps={{
