@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoistNonReactStatics from "hoist-non-react-statics";
-import React, { useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import {
   Controller,
   ControllerRenderProps,
@@ -18,6 +18,7 @@ import {
   ControlPlus,
   RegisterOptionsPlus,
 } from "../components/common/Form/types";
+import FormContext from "../components/common/Form/FormContext";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
@@ -95,6 +96,8 @@ function reactHookFormSupport<TValue>(
         setValueAs: setValueAsFromRules = R.identity,
         ...restRules
       } = rules;
+
+      const { isAutoSubmitEnabled } = useContext(FormContext);
 
       ////////////////////////////////////////////////////////////////
       // Event Handlers
@@ -204,6 +207,10 @@ function reactHookFormSupport<TValue>(
                 inputRef={ref}
                 error={!!error}
                 helperText={error?.message}
+                disabled={
+                  (control._formState.isSubmitting && !isAutoSubmitEnabled) ||
+                  feProps.disabled
+                }
               />
             )}
           />

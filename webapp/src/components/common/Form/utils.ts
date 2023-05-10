@@ -3,7 +3,7 @@ import { AutoSubmitConfig, FormProps } from ".";
 
 export function toAutoSubmitConfig(
   value: FormProps["autoSubmit"]
-): Required<AutoSubmitConfig> {
+): AutoSubmitConfig {
   return {
     wait: 500,
     ...(RA.isPlainObj(value) ? value : { enable: !!value }),

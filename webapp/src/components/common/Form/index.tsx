@@ -35,13 +35,13 @@ import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import {
-  ControlPlus,
   DefaultValuesFix,
   SubmitHandlerPlus,
   UseFormRegisterPlus,
   UseFormReturnPlus,
 } from "./types";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import FormContext from "./FormContext";
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
@@ -110,8 +110,12 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
+  const contextValue = useMemo(
+    () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
+    [autoSubmitConfig.enable]
+  );
 
-  const formApi = useForm<TFieldValues, TContext>({
+  const formApiOriginal = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
     ...config,
@@ -131,14 +135,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
     handleSubmit,
     formState,
     reset,
-  } = formApi;
+  } = formApiOriginal;
 
   // * /!\ `formState` is a proxy
   const { isSubmitting, isDirty, dirtyFields } = formState;
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
-  // To use it in wrapper functions without need to add the value in `useCallback`'s deps
+  // To use it in form API wrapper functions without need to add the value in `useMemo`'s deps
   const isSubmittingRef = useAutoUpdateRef(isSubmitting);
   const isAutoSubmitEnabledRef = useAutoUpdateRef(autoSubmitConfig.enable);
 
@@ -255,113 +259,106 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // API
   ////////////////////////////////////////////////////////////////
 
-  const registerWrapper = useCallback<UseFormRegisterPlus<TFieldValues>>(
-    (name, options) => {
-      if (options?.onAutoSubmit) {
-        fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
+  const formApiShared = useMemo(
+    () => {
+      if (!isAutoSubmitEnabledRef.current) {
+        return formApiOriginal;
       }
 
-      const newOptions: typeof options = {
-        ...options,
-        onChange: (event: unknown) => {
-          options?.onChange?.(event);
-          if (isAutoSubmitEnabledRef.current) {
-            if (
-              isSubmittingRef.current &&
-              !fieldsChangeDuringAutoSubmitting.current.includes(name)
-            ) {
-              fieldsChangeDuringAutoSubmitting.current.push(name);
-            }
+      const registerWrapper: UseFormRegisterPlus<TFieldValues> = (
+        name,
+        options
+      ) => {
+        if (options?.onAutoSubmit) {
+          fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
+        }
 
+        const newOptions: typeof options = {
+          ...options,
+          onChange: (event: unknown) => {
+            options?.onChange?.(event);
+            if (isAutoSubmitEnabledRef.current) {
+              if (
+                isSubmittingRef.current &&
+                !fieldsChangeDuringAutoSubmitting.current.includes(name)
+              ) {
+                fieldsChangeDuringAutoSubmitting.current.push(name);
+              }
+
+              requestSubmit();
+            }
+          },
+        };
+
+        return register(name, newOptions);
+      };
+
+      const unregisterWrapper: UseFormUnregister<TFieldValues> = (
+        name,
+        options
+      ) => {
+        if (name) {
+          const names = RA.ensureArray(name) as Path<TFieldValues>[];
+          names.forEach((n) => {
+            delete fieldAutoSubmitListeners.current[n];
+          });
+        }
+        return unregister(name, options);
+      };
+
+      const setValueWrapper: UseFormSetValue<TFieldValues> = (
+        name,
+        value,
+        options
+      ) => {
+        const newOptions: typeof options = {
+          shouldDirty: isAutoSubmitEnabledRef.current, // Option false by default
+          ...options,
+        };
+
+        if (isAutoSubmitEnabledRef.current && newOptions.shouldDirty) {
+          if (isSubmittingRef.current) {
+            fieldsChangeDuringAutoSubmitting.current.push(name);
+          }
+          // If it's a new value
+          if (value !== getValues(name)) {
             requestSubmit();
           }
-        },
+        }
+
+        setValue(name, value, newOptions);
       };
 
-      return register(name, newOptions);
-    },
-    [isAutoSubmitEnabledRef, isSubmittingRef, register, requestSubmit]
-  );
+      // Mutate the `control` object.
+      // Spreading cannot be used because getters and setters would be removed.
+      (() => {
+        control.register = registerWrapper;
+        control.unregister = unregisterWrapper;
 
-  const unregisterWrapper = useCallback<UseFormUnregister<TFieldValues>>(
-    (name, options) => {
-      if (name) {
-        const names = RA.ensureArray(name) as Path<TFieldValues>[];
-        names.forEach((n) => {
-          delete fieldAutoSubmitListeners.current[n];
-        });
-      }
-      return unregister(name, options);
-    },
-    [unregister]
-  );
+        const updateFieldArrayOriginal =
+          control._updateFieldArray.bind(control);
+        const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
+          updateFieldArrayOriginal(...args);
+          if (isAutoSubmitEnabledRef.current) {
+            requestSubmit();
+          }
+        };
+        // Used by `useFieldArray` hook's methods (`append`, `remove`...)
+        control._updateFieldArray = updateFieldArrayWrapper;
+      })();
 
-  const setValueWrapper = useCallback<UseFormSetValue<TFieldValues>>(
-    (name, value, options) => {
-      const newOptions: typeof options = {
-        shouldDirty: isAutoSubmitEnabledRef.current, // Option false by default
-        ...options,
+      return {
+        ...formApiOriginal,
+        register: registerWrapper,
+        unregister: unregisterWrapper,
+        setValue: setValueWrapper,
       };
-
-      if (isAutoSubmitEnabledRef.current && newOptions.shouldDirty) {
-        if (isSubmittingRef.current) {
-          fieldsChangeDuringAutoSubmitting.current.push(name);
-        }
-        // If it's a new value
-        if (value !== getValues(name)) {
-          requestSubmit();
-        }
-      }
-
-      setValue(name, value, newOptions);
     },
-    [
-      getValues,
-      isAutoSubmitEnabledRef,
-      isSubmittingRef,
-      requestSubmit,
-      setValue,
-    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [formApiOriginal, requestSubmit]
   );
 
-  const controlWrapper = useMemo<ControlPlus<TFieldValues, TContext>>(() => {
-    // Don't use spread to keep getters and setters
-    const controlPlus = control as ControlPlus<TFieldValues, TContext>;
-    controlPlus.register = registerWrapper;
-    controlPlus.unregister = unregisterWrapper;
-
-    const updateFieldArrayOriginal = control._updateFieldArray.bind(control);
-    const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
-      updateFieldArrayOriginal(...args);
-      if (isAutoSubmitEnabledRef.current) {
-        requestSubmit();
-      }
-    };
-    // Used by `useFieldArray` hook's methods (`append`, `remove`...)
-    controlPlus._updateFieldArray = updateFieldArrayWrapper;
-
-    return controlPlus;
-  }, [
-    control,
-    isAutoSubmitEnabledRef,
-    registerWrapper,
-    requestSubmit,
-    unregisterWrapper,
-  ]);
-
-  ////////////////////////////////////////////////////////////////
-  // Form API Plus
-  ////////////////////////////////////////////////////////////////
-
-  const formApiPlus: UseFormReturnPlus<TFieldValues, TContext> = {
-    ...formApi,
-    register: registerWrapper,
-    unregister: unregisterWrapper,
-    setValue: setValueWrapper,
-    control: controlWrapper,
-  };
-
-  useEffect(() => setRef(apiRef, formApiPlus));
+  useEffect(() => setRef(apiRef, formApiShared));
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -389,11 +386,13 @@ function Form<TFieldValues extends FieldValues, TContext>(
           <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
         </Box>
       )}
-      {RA.isFunction(children) ? (
-        children(formApiPlus)
-      ) : (
-        <FormProvider {...formApiPlus}>{children}</FormProvider>
-      )}
+      <FormContext.Provider value={contextValue}>
+        {RA.isFunction(children) ? (
+          children(formApiShared)
+        ) : (
+          <FormProvider {...formApiShared}>{children}</FormProvider>
+        )}
+      </FormContext.Provider>
       {!hideSubmitButton && !autoSubmitConfig.enable && (
         <Button
           type="submit"
