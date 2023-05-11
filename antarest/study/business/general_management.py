@@ -175,7 +175,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": 700,
+        "end_version": 710,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
@@ -217,10 +217,10 @@ class GeneralManager:
 
             path = field_info["path"]
             study_ver = file_study.config.version
-            start_ver = field_info.get("start_version", -1)
-            end_ver = field_info.get("end_version", study_ver)
+            start_ver = cast(int, field_info.get("start_version", -1))
+            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
             target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver <= end_ver  # type: ignore
+            is_in_version = start_ver <= study_ver < end_ver
             parent = general if GENERAL_PATH in path else output
 
             return (

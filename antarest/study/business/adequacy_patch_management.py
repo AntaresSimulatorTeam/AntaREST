@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Optional, List, Any, Dict, Union
+from typing import Optional, List, Any, Dict
 
-from pydantic.types import StrictBool, StrictFloat, StrictInt
+from pydantic.types import StrictBool, confloat
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -21,6 +21,9 @@ class PriceTakingOrder(str, Enum):
     LOAD = "Load"
 
 
+ThresholdType = confloat(ge=0)
+
+
 class AdequacyPatchFormFields(FormFieldsBaseModel):
     # version 830
     enable_adequacy_patch: Optional[StrictBool]
@@ -32,15 +35,9 @@ class AdequacyPatchFormFields(FormFieldsBaseModel):
     price_taking_order: Optional[PriceTakingOrder]
     include_hurdle_cost_csr: Optional[StrictBool]
     check_csr_cost_function: Optional[StrictBool]
-    threshold_initiate_curtailment_sharing_rule: Optional[
-        Union[StrictFloat, StrictInt]
-    ]
-    threshold_display_local_matching_rule_violations: Optional[
-        Union[StrictFloat, StrictInt]
-    ]
-    threshold_csr_variable_bounds_relaxation: Optional[
-        Union[StrictFloat, StrictInt]
-    ]
+    threshold_initiate_curtailment_sharing_rule: Optional[ThresholdType]  # type: ignore
+    threshold_display_local_matching_rule_violations: Optional[ThresholdType]  # type: ignore
+    threshold_csr_variable_bounds_relaxation: Optional[ThresholdType]  # type: ignore
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"

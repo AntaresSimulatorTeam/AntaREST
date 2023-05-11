@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Union, List, Any, Dict
+from typing import Optional, Union, List, Any, Dict, cast
 
 from pydantic.types import StrictBool
 
@@ -129,9 +129,10 @@ class OptimizationManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
-            start_version = field_info.get("start_version", -1)
+            study_ver = file_study.config.version
+            start_ver = cast(int, field_info.get("start_version", -1))
             target_name = path.split("/")[-1]
-            is_in_version = file_study.config.version >= start_version  # type: ignore
+            is_in_version = start_ver <= study_ver
 
             return (
                 parent.get(target_name, field_info["default_value"])
