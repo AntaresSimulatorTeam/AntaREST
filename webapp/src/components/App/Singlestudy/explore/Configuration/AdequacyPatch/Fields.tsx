@@ -70,7 +70,7 @@ function Fields() {
 
           <Fieldset
             legend={t("study.configuration.adequacyPatch.legend.advanced")}
-        fullFieldWidth
+            fieldWidth={390}
           >
             <NumberFE
               label={t(
