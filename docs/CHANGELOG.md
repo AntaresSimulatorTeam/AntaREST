@@ -1,7 +1,7 @@
 Antares Web Changelog
 =====================
 
-v2.14.0 (unreleased)
+v2.14.0 (2023-05-12)
 --------------------
 
 ### Features
