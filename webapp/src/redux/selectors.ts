@@ -1,4 +1,5 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import { last } from "ramda";
 import {
   AllClustersAndLinks,
   Area,
@@ -122,6 +123,12 @@ export const getStudyVersions = (
   state: AppState
 ): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;
+};
+
+export const getLatestStudyVersion = (
+  state: AppState
+): StudyMetadata["version"] | null => {
+  return last(getStudyVersions(state)) ?? null;
 };
 
 export const getStudyVersionsFormatted = createSelector(

@@ -52,7 +52,10 @@ import {
   displayVersionName,
 } from "../../../services/utils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { isCurrentStudyFavorite } from "../../../redux/selectors";
+import {
+  getLatestStudyVersion,
+  isCurrentStudyFavorite,
+} from "../../../redux/selectors";
 import ExportDialog from "../Studies/ExportModal";
 import StarToggle from "../../common/StarToggle";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
@@ -102,6 +105,9 @@ function NavHeader(props: Props) {
   } = props;
   const [t, i18n] = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
+  const latestVersion = useAppSelector(getLatestStudyVersion);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState("");
   const [openLauncherDialog, setOpenLauncherDialog] = useState(false);
@@ -112,9 +118,7 @@ function NavHeader(props: Props) {
   const [openExportDialog, setOpenExportDialog] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
-  const dispatch = useAppDispatch();
-
+  const isLatestVersion = study?.version === latestVersion;
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
 
@@ -410,23 +414,25 @@ function NavHeader(props: Props) {
                   </ListItemIcon>
                   <ListItemText>{t("study.properties")}</ListItemText>
                 </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    setOpenUpgradeDialog(true);
-                    handleClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <ErrorIcon
-                      sx={{
-                        color: "primary.main",
-                        width: "24px",
-                        height: "24px",
-                      }}
-                    />
-                  </ListItemIcon>
-                  <ListItemText>{t("study.upgrade")}</ListItemText>
-                </MenuItem>
+                {!isLatestVersion && (
+                  <MenuItem
+                    onClick={() => {
+                      setOpenUpgradeDialog(true);
+                      handleClose();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <ErrorIcon
+                        sx={{
+                          color: "primary.main",
+                          width: "24px",
+                          height: "24px",
+                        }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText>{t("study.upgrade")}</ListItemText>
+                  </MenuItem>
+                )}
                 <MenuItem
                   onClick={() => {
                     setOpenExportDialog(true);

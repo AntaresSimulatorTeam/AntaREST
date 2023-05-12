@@ -20,7 +20,10 @@ import {
 } from "../../../services/api/variant";
 import TabWrapper from "./explore/TabWrapper";
 import HomeView from "./HomeView";
-import { setCurrentStudy } from "../../../redux/ducks/studies";
+import {
+  fetchStudyVersions,
+  setCurrentStudy,
+} from "../../../redux/ducks/studies";
 import { findNodeInTree } from "../../../services/utils";
 import CommandDrawer from "./Commands";
 import { addWsMessageListener } from "../../../services/webSockets";
@@ -106,6 +109,7 @@ function SingleStudy(props: Props) {
     const init = async () => {
       if (studyId) {
         dispatch(setCurrentStudy(studyId));
+        dispatch(fetchStudyVersions());
         updateStudyData();
       }
     };
