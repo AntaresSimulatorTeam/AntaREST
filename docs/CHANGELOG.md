@@ -1,6 +1,57 @@
 Antares Web Changelog
 =====================
 
+v2.14.0 (2023-05-12)
+--------------------
+
+### Features
+
+*  **api-hydro:** add allocation form endpoints ([b2bee0e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b2bee0ed8e9817da2ed642474504fb25a95a8360))
+*  **api:** update optimization form endpoint and add adequacy patch form endpoint ([dfa1b27](https://github.com/AntaresSimulatorTeam/AntaREST/commit/dfa1b2729ddb3e46f3b7f65a4a0079211da2c69c))
+*  **ui-config:** update optimization form and add adequacy patch form ([f68c54b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f68c54b9b846d32e65d32c14c8931c625a6bd498))
+*  **ui-hydro:** add allocation form ([5dbb85f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/5dbb85fdc733731c5fc16a258666869486b5cddf))
+*  **ui-hydro:** add inflow structure tab ([a466e34](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a466e3459e25ece8f2d80c8eb501ba05c717d5fa))
+*  **ui-hydro:** add row names ([94dc38c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/94dc38c1fe2f5163f6b44dc31cc3639e63cd2131))
+*  **ui-hydro:** display area name instead of ID ([0df0b21](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0df0b2121e761a91946452874d70bc80dbe07647))
+*  **ui-hydro:** update allocation form styles ([ac470c1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac470c19410bf2d13b57ecc0bab650b24b77c495))
+*  **ui-matrix:** update "Time" column and add index row headers ([3d50bf9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3d50bf9617367fe8d1fcd21e6a9835834456a10f))
+*  **ui:** add @total-typescript/ts-reset lib and tsUtils (#1408) ([aa5e3e8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/aa5e3e87d95b8b5061030025e89443e1fc71823d))
+*  **ui:** update react-hook-form lib and use the new API (#1444) ([1d129d9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d129d9d6bac97deee9ebc98d3334117fe837444))
+
+
+### Bug Fixes
+
+*  **common:** field array change doesn't trigger on auto submit (#1439) ([910db64](https://github.com/AntaresSimulatorTeam/AntaREST/commit/910db64ca872468a1f01ced99083962022daa05c))
+*  **matrix:** correct the frequency of some matrices (#1384) ([2644416](https://github.com/AntaresSimulatorTeam/AntaREST/commit/26444169b9ab60f54e8ee7a2d16fb10dbc4d537e))
+*  **ui-common:** add matrices float handling ([99ba81f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99ba81fce26bbd99340990d0207761463558d4a7))
+*  **ui-hydro:** correct column names ([e529a79](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e529a799071e9c5485e2cba35eb5a7c2c18c25e7))
+*  **ui-hydro:** update hydro matrices columns ([56641d7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/56641d7ad995d8b7dd6755b13f1689b32b6296d8))
+*  **ui:** fix typo on error page (#1390) ([da00131](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da0013190d7e31e1afe9d8f5c3b03c378ca41507))
+*  **ui:** size issue with HandsonTable ([f63edda](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f63edda65345bf9848fb44a8a067a885ca5fbd83))
+
+
+### Styles
+
+*  **api-tablemode:** fix typo ([5e5e4e7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/5e5e4e7efcfc93e4682825a9c514417679fba89b))
+*  **ui:** fix filename ([ad9f9c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ad9f9c055713ef81a94b8c7bb01caae783ab8de9))
+
+
+### Documentation
+
+*  **api:** add API documentation for the hydraulic allocation (and fix minor awkwardness) ([08680af](https://github.com/AntaresSimulatorTeam/AntaREST/commit/08680af4344b7dd9aa365267a0deb8d9094f0294))
+*  **study-upgrade:** add the "How to upgrade a study?" topic in the documentation (#1400) ([2d03bef](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2d03befe999e558c989e1cce1f51186beff5502b))
+
+> IMPORTANT: The `antares-launcher` Git submodule is dropped.
+
+
+### Contributors
+
+<a href="https://github.com/hdinia">hdinia</a>,
+<a href="https://github.com/skamril">skamril</a>,
+<a href="https://github.com/flomnes">flomnes</a>,
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>
+
+
 v2.13.2 (2023-04-25)
 --------------------
 
