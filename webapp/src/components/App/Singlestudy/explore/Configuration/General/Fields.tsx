@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useEffect } from "react";
 import * as RA from "ramda-adjunct";
+import { Validate } from "react-hook-form";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
@@ -17,7 +18,6 @@ import {
 } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import useDebouncedEffect from "../../../../../../hooks/useDebouncedEffect";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import Fieldset from "../../../../../common/Fieldset";
@@ -30,8 +30,7 @@ interface Props {
 function Fields(props: Props) {
   const { setDialog } = props;
   const [t] = useTranslation();
-  const { control, setValue, watch, getValues } =
-    useFormContextPlus<GeneralFormFields>();
+  const { control, setValue, watch } = useFormContextPlus<GeneralFormFields>();
   const [
     buildingMode,
     selectionMode,
@@ -57,39 +56,63 @@ function Fields(props: Props) {
     }
   }, [buildingMode, setValue]);
 
-  useDebouncedEffect(
+  useEffect(
     () => {
-      if (firstDay > 0 && firstDay > lastDay) {
+      if (firstDay > 0 && firstDay <= 366 && firstDay > lastDay) {
         setValue("lastDay", firstDay);
       }
     },
-    { wait: 500, deps: [firstDay] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [firstDay]
   );
 
-  useDebouncedEffect(
+  useEffect(
     () => {
-      if (lastDay > 0 && lastDay < firstDay) {
+      if (lastDay > 0 && lastDay <= 366 && lastDay < firstDay) {
         setValue("firstDay", lastDay);
       }
     },
-    { wait: 500, deps: [lastDay] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lastDay]
   );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDayValidation = (v: number) => {
-    if (v < 1 || Number.isNaN(v)) {
-      return "Minimum is 1";
+  const handleDayValidation: Validate<number, GeneralFormFields> = (
+    value,
+    formValues
+  ) => {
+    if (value < 1 || Number.isNaN(value)) {
+      return t("form.field.minValue", [1]);
     }
-    if (getValues("firstDay") > getValues("lastDay")) {
+    if (formValues.firstDay > formValues.lastDay) {
       return false;
     }
-    if (getValues("leapYear")) {
-      return v <= 366 ? true : "Maximum is 366 for a leap year";
+    if (formValues.leapYear) {
+      return value <= 366
+        ? true
+        : t("study.configuration.general.day.error.leapYearMax");
     }
-    return v <= 365 ? true : "Maximum is 365 for a non-leap year";
+    return value <= 365
+      ? true
+      : t("study.configuration.general.day.error.nonLeapYearMax");
+  };
+
+  const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
+    value,
+    formValues
+  ) => {
+    if (formValues.buildingMode === BuildingMode.Derated) {
+      return value === 1
+        ? true
+        : t("study.configuration.general.nbYears.error.derated");
+    }
+    if (value < 1) {
+      return t("form.field.minValue", [1]);
+    }
+    return value <= 50000 ? true : t("form.field.maxValue", [50000]);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -108,7 +131,7 @@ function Fields(props: Props) {
 
   return (
     <>
-      <Fieldset legend={t("study.configuration.general.simulation")}>
+      <Fieldset legend={t("study.configuration.general.legend.simulation")}>
         <SelectFE
           name="mode"
           label={t("study.configuration.general.mode")}
@@ -136,7 +159,7 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
-      <Fieldset legend={t("study.configuration.general.calendar")}>
+      <Fieldset legend={t("study.configuration.general.legend.calendar")}>
         <StringFE
           name="horizon"
           label="Horizon"
@@ -173,7 +196,7 @@ function Fields(props: Props) {
       </Fieldset>
       <Box sx={{ display: "flex" }}>
         <Fieldset
-          legend={t("study.configuration.general.monteCarloScenarios")}
+          legend={t("study.configuration.general.legend.monteCarloScenarios")}
           sx={{
             flex: 1,
           }}
@@ -183,21 +206,11 @@ function Fields(props: Props) {
         >
           <NumberFE
             name="nbYears"
-            label={t("global.number")}
+            label={t("study.configuration.general.nbYears")}
             variant="filled"
             control={control}
             rules={{
-              validate: (v) => {
-                if (buildingMode === BuildingMode.Derated) {
-                  return v === 1
-                    ? true
-                    : "Value must be 1 when building mode is derated";
-                }
-                if (v < 1) {
-                  return "Minimum is 1";
-                }
-                return v <= 50000 ? true : "Maximum is 50000";
-              },
+              validate: handleNbYearsValidation,
             }}
           />
           <FieldWithButton>
@@ -235,7 +248,7 @@ function Fields(props: Props) {
         </Fieldset>
         <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
         <Fieldset
-          legend={t("study.configuration.general.outputProfile")}
+          legend={t("study.configuration.general.legend.outputProfile")}
           sx={{
             flex: 1,
           }}

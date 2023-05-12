@@ -29,9 +29,8 @@ function Optimization() {
   return (
     <Form
       key={study.id}
-      config={{ asyncDefaultValues: () => getOptimizationFormFields(study.id) }}
+      config={{ defaultValues: () => getOptimizationFormFields(study.id) }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields study={study} />
     </Form>

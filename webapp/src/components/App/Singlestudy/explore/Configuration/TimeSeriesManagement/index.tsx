@@ -27,9 +27,8 @@ function TimeSeriesManagement() {
   return (
     <Form
       key={study.id}
-      config={{ asyncDefaultValues: () => getTimeSeriesFormFields(study.id) }}
+      config={{ defaultValues: () => getTimeSeriesFormFields(study.id) }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields />
     </Form>

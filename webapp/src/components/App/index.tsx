@@ -50,6 +50,9 @@ import {
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
+import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
+import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
+import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
 
 function App() {
   return (
@@ -86,6 +89,18 @@ function App() {
                               <Route
                                 path="management"
                                 element={<ManagementOptions />}
+                              />
+                              <Route
+                                path="inflowstructure"
+                                element={<InflowStructure />}
+                              />
+                              <Route
+                                path="allocation"
+                                element={<Allocation />}
+                              />
+                              <Route
+                                path="correlation"
+                                element={<Correlation />}
                               />
                               {HYDRO_ROUTES.map((route: HydroRoute) => (
                                 <Route

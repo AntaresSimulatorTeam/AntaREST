@@ -60,7 +60,7 @@ function Renewables() {
           <Form
             key={study.id + cluster + area}
             config={{
-              asyncDefaultValues: () => {
+              defaultValues: () => {
                 return getRenewableFormFields(study.id, area, cluster);
               },
             }}

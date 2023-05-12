@@ -1,4 +1,5 @@
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import { last } from "ramda";
 import {
   AllClustersAndLinks,
   Area,
@@ -124,6 +125,12 @@ export const getStudyVersions = (
   return getStudiesState(state).versionList;
 };
 
+export const getLatestStudyVersion = (
+  state: AppState
+): StudyMetadata["version"] | null => {
+  return last(getStudyVersions(state)) ?? null;
+};
+
 export const getStudyVersionsFormatted = createSelector(
   getStudyVersions,
   convertVersions
@@ -212,6 +219,16 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
     })) as Array<Area & { id: string }>;
   }
   return [];
+});
+
+export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    return Object.keys(synthesis.areas).reduce((acc, id) => {
+      acc[id] = { ...synthesis.areas[id], id };
+      return acc;
+    }, {} as Record<string, Area & { id: string }>);
+  }
+  return {};
 });
 
 export const getArea = createSelector(

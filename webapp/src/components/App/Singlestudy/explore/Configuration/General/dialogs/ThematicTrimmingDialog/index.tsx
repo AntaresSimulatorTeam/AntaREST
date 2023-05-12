@@ -44,7 +44,7 @@ function ThematicTrimmingDialog(props: Props) {
   const handleSubmit = (
     data: SubmitHandlerPlus<ThematicTrimmingFormFields>
   ) => {
-    setThematicTrimmingConfig(study.id, data.values);
+    return setThematicTrimmingConfig(study.id, data.values);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -57,9 +57,8 @@ function ThematicTrimmingDialog(props: Props) {
       open={open}
       title="Thematic Trimming"
       config={{
-        asyncDefaultValues: () => getThematicTrimmingFormFields(study.id),
+        defaultValues: () => getThematicTrimmingFormFields(study.id),
       }}
-      autoSubmit
       onSubmit={handleSubmit}
       onCancel={onClose}
       PaperProps={{

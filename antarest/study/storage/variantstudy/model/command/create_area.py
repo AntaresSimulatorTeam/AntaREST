@@ -91,16 +91,12 @@ class CreateArea(ICommand):
         area_id = data["area_id"]
         version = study_data.config.version
 
+        # fmt: off
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        get_or_create_section(hydro_config, "inter-daily-breakdown")[
-            area_id
-        ] = 1
-        get_or_create_section(hydro_config, "intra-daily-modulation")[
-            area_id
-        ] = 24
-        get_or_create_section(hydro_config, "inter-monthly-breakdown")[
-            area_id
-        ] = 1
+        get_or_create_section(hydro_config, "inter-daily-breakdown")[area_id] = 1
+        get_or_create_section(hydro_config, "intra-daily-modulation")[area_id] = 24
+        get_or_create_section(hydro_config, "inter-monthly-breakdown")[area_id] = 1
+        # fmt: on
 
         new_area_data: JSON = {
             "input": {
@@ -229,30 +225,22 @@ class CreateArea(ICommand):
         }
 
         if version > 650:
-            get_or_create_section(hydro_config, "initialize reservoir date")[
-                area_id
-            ] = 0
+            # fmt: off
+            get_or_create_section(hydro_config, "initialize reservoir date")[area_id] = 0
             get_or_create_section(hydro_config, "leeway low")[area_id] = 1
             get_or_create_section(hydro_config, "leeway up")[area_id] = 1
-            get_or_create_section(hydro_config, "pumping efficiency")[
-                area_id
-            ] = 1
+            get_or_create_section(hydro_config, "pumping efficiency")[area_id] = 1
 
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"creditmodulations_{area_id}"
-            ] = (
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
             )
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"inflowPattern_{area_id}"
-            ] = (
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             )
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"waterValues_{area_id}"
-            ] = (
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_null_matrix()
             )
+            # fmt: on
 
         if version >= 830:
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
@@ -260,6 +248,15 @@ class CreateArea(ICommand):
             }
 
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
+
+        # NOTE regarding the following configurations:
+        # - ["input", "hydro", "prepro", "correlation"]
+        # - ["input", "load", "prepro", "correlation"]
+        # - ["input", "solar", "prepro", "correlation"]
+        # - ["input", "wind", "prepro", "correlation"]
+        # When creating a new area, we should not add a new correlation
+        # value to the configuration because it does not store the values
+        # of the diagonal (always equal to 1).
 
         study_data.tree.save(new_area_data)
 

@@ -9,6 +9,8 @@ import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
 import {
   GeneralFormFields,
   getGeneralFormFields,
+  hasDayField,
+  pickDayFields,
   SetDialogStateType,
   setGeneralFormFields,
 } from "./utils";
@@ -27,13 +29,20 @@ function GeneralParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<GeneralFormFields>) => {
-    return setGeneralFormFields(study.id, data.dirtyValues);
+  const handleSubmit = (data: SubmitHandlerPlus<GeneralFormFields>) => {
+    const { values, dirtyValues } = data;
+    const newValues = hasDayField(dirtyValues)
+      ? {
+          ...dirtyValues,
+          // Required by server to validate values
+          ...pickDayFields(values),
+        }
+      : dirtyValues;
+
+    return setGeneralFormFields(study.id, newValues);
   };
 
-  const handleCloseDialog = () => {
-    setDialog("");
-  };
+  const handleCloseDialog = () => setDialog("");
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -43,9 +52,8 @@ function GeneralParameters() {
     <>
       <Form
         key={study.id}
-        config={{ asyncDefaultValues: () => getGeneralFormFields(study.id) }}
+        config={{ defaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
-        autoSubmit
         apiRef={apiRef}
       >
         <Fields setDialog={setDialog} />

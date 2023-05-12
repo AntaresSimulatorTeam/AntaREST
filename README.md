@@ -17,8 +17,6 @@ First clone the projet:
 ```shell script
 git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
-git submodule init
-git submodule update
 ```
 
 Install back dependencies

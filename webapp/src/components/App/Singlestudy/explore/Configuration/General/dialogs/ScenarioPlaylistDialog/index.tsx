@@ -56,7 +56,7 @@ function ScenarioPlaylistDialog(props: Props) {
   };
 
   const handleSubmit = (data: SubmitHandlerPlus<PlaylistData>) => {
-    setPlaylist(study.id, data.values);
+    return setPlaylist(study.id, data.values);
   };
 
   const handleCellsRender: HandsontableProps["cells"] = function cells(
@@ -122,8 +122,6 @@ function ScenarioPlaylistDialog(props: Props) {
             tableProps={{
               rowHeaders: (row) => `MC Year ${row.id}`,
               tableRef,
-              height: "100%",
-              width: 500,
               stretchH: "all",
               className: "htCenter",
               cells: handleCellsRender,

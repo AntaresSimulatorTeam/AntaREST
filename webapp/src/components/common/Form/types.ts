@@ -2,17 +2,17 @@
 import {
   Control,
   DeepPartial,
-  DefaultValues,
   FieldPath,
   FieldPathValue,
   FieldValues,
   RegisterOptions,
-  UseFormProps,
   UseFormRegisterReturn,
   UseFormReturn,
 } from "react-hook-form";
+import { O } from "ts-toolbelt";
 
 export interface SubmitHandlerPlus<
+  // TODO Make parameter required
   TFieldValues extends FieldValues = FieldValues
 > {
   values: TFieldValues;
@@ -24,19 +24,12 @@ export type AutoSubmitHandler<
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = (value: FieldPathValue<TFieldValues, TFieldName>) => any | Promise<any>;
 
-export interface RegisterOptionsPlus<
+export type RegisterOptionsPlus<
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> extends RegisterOptions<TFieldValues, TFieldName> {
+> = RegisterOptions<TFieldValues, TFieldName> & {
   onAutoSubmit?: AutoSubmitHandler<TFieldValues, TFieldName>;
-}
-
-export interface UseFormPropsPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TContext = any
-> extends UseFormProps<TFieldValues, TContext> {
-  asyncDefaultValues?: () => Promise<DefaultValues<TFieldValues>>;
-}
+};
 
 export type UseFormRegisterPlus<
   TFieldValues extends FieldValues = FieldValues
@@ -50,7 +43,6 @@ export interface ControlPlus<
   TContext = any
 > extends Control<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
-  _showSkeleton: boolean;
 }
 
 export interface UseFormReturnPlus<
@@ -59,8 +51,9 @@ export interface UseFormReturnPlus<
 > extends UseFormReturn<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
   control: ControlPlus<TFieldValues, TContext>;
-  /**
-   * @deprecated
-   */
-  defaultValues?: UseFormProps<TFieldValues, TContext>["defaultValues"];
 }
+
+export type DefaultValuesFix<TFieldValues extends FieldValues> = O.Partial<
+  TFieldValues,
+  "deep"
+>;

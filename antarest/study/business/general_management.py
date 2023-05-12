@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
-from pydantic import StrictBool, conint, PositiveInt
+from pydantic import StrictBool, conint, PositiveInt, root_validator
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -57,7 +57,7 @@ class BuildingMode(str, Enum):
     DERATED = "Derated"
 
 
-DayNumberType = conint(ge=1, le=365)
+DayNumberType = conint(ge=1, le=366)
 
 
 class GeneralFormFields(FormFieldsBaseModel):
@@ -81,6 +81,39 @@ class GeneralFormFields(FormFieldsBaseModel):
     # For study versions >= 710
     geographic_trimming: Optional[StrictBool]
     thematic_trimming: Optional[StrictBool]
+
+    @root_validator
+    def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        first_day = values.get("first_day")
+        last_day = values.get("last_day")
+        leap_year = values.get("leap_year")
+        day_fields = [first_day, last_day, leap_year]
+
+        if all(v is None for v in day_fields):
+            # The user wishes to update another field than these three.
+            # no need to validate anything:
+            return values
+
+        if any(v is None for v in day_fields):
+            raise ValueError(
+                "First day, last day and leap year fields must be defined together"
+            )
+
+        first_day = cast(int, first_day)
+        last_day = cast(int, last_day)
+        leap_year = cast(bool, leap_year)
+        num_days_in_year = 366 if leap_year else 365
+
+        if first_day > last_day:
+            raise ValueError(
+                "Last day must be greater than or equal to the first day"
+            )
+        if last_day > num_days_in_year:
+            raise ValueError(
+                f"Last day cannot be greater than {num_days_in_year}"
+            )
+
+        return values
 
 
 GENERAL = "general"
@@ -142,7 +175,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": 700,
+        "end_version": 710,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
@@ -184,10 +217,10 @@ class GeneralManager:
 
             path = field_info["path"]
             study_ver = file_study.config.version
-            start_ver = field_info.get("start_version", -1)
-            end_ver = field_info.get("end_version", study_ver)
+            start_ver = cast(int, field_info.get("start_version", -1))
+            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
             target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver <= end_ver  # type: ignore
+            is_in_version = start_ver <= study_ver < end_ver
             parent = general if GENERAL_PATH in path else output
 
             return (
@@ -233,7 +266,7 @@ class GeneralManager:
                     )
                 )
 
-        if len(commands) > 0:
+        if commands:
             execute_or_add_commands(
                 study, file_study, commands, self.storage_service
             )

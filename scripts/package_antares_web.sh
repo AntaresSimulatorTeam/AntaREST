@@ -46,8 +46,6 @@ fi
 echo "Creating shortcuts"
 if [[ "$OSTYPE" == "msys"* ]]; then
   cp ../resources/AntaresWebServerShortcut.lnk ../dist/
-else
-  ln -s ../dist/AntaresWeb/AntaresWebServer ../dist/AntaresWebServer
 fi
 
 echo "Unzipping example study"

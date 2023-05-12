@@ -1,5 +1,4 @@
 import { Box } from "@mui/material";
-import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../common/types";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
@@ -8,9 +7,9 @@ import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import {
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
-  LINK_TYPE_OPTIONS,
   OptimizationFormFields,
   SIMPLEX_OPTIMIZATION_RANGE_OPTIONS,
+  toBooleanIfNeeded,
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
 } from "./utils";
@@ -24,12 +23,25 @@ function Fields(props: Props) {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<OptimizationFormFields>();
   const version = Number(study.version);
-  const isVer830OrAbove = version >= 830;
-  const isVer840OrAbove = version >= 840;
 
   return (
     <Box>
-      <Fieldset legend={t("study.configuration.optimization.optimization")}>
+      <Fieldset legend={t("study.configuration.optimization.legend.general")}>
+        <SelectFE
+          label={t(
+            "study.configuration.optimization.unfeasibleProblemBehavior"
+          )}
+          options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
+          name="unfeasibleProblemBehavior"
+          control={control}
+        />
+        <SelectFE
+          label={t("study.configuration.optimization.simplexOptimizationRange")}
+          options={SIMPLEX_OPTIMIZATION_RANGE_OPTIONS}
+          name="simplexOptimizationRange"
+          control={control}
+        />
+        <Fieldset.Break />
         <SwitchFE
           label={t("study.configuration.optimization.bindingConstraints")}
           name="bindingConstraints"
@@ -40,29 +52,28 @@ function Fields(props: Props) {
           name="hurdleCosts"
           control={control}
         />
+        <SwitchFE
+          label={t("study.configuration.optimization.exportMps")}
+          name="exportMps"
+          control={control}
+        />
+      </Fieldset>
+      <Fieldset legend={t("study.configuration.optimization.legend.links")}>
         <SelectFE
           label={t("study.configuration.optimization.transmissionCapacities")}
           options={
-            isVer840OrAbove
+            version >= 840
               ? TRANSMISSION_CAPACITIES_OPTIONS
               : LEGACY_TRANSMISSION_CAPACITIES_OPTIONS
           }
           name="transmissionCapacities"
           control={control}
-          rules={{
-            setValueAs: R.cond([
-              [R.equals("true"), R.T],
-              [R.equals("false"), R.F],
-              [R.T, R.identity],
-            ]),
-          }}
+          rules={{ setValueAs: toBooleanIfNeeded }}
         />
-        <SelectFE
-          label={t("study.configuration.optimization.linkType")}
-          options={LINK_TYPE_OPTIONS}
-          name="linkType"
-          control={control}
-        />
+      </Fieldset>
+      <Fieldset
+        legend={t("study.configuration.optimization.legend.thermalClusters")}
+      >
         <SwitchFE
           label={t(
             "study.configuration.optimization.thermalClustersMinStablePower"
@@ -75,6 +86,8 @@ function Fields(props: Props) {
           name="thermalClustersMinUdTime"
           control={control}
         />
+      </Fieldset>
+      <Fieldset legend={t("study.configuration.optimization.legend.reserve")}>
         <SwitchFE
           label={t("study.configuration.optimization.dayAheadReserve")}
           name="dayAheadReserve"
@@ -95,56 +108,7 @@ function Fields(props: Props) {
           name="spinningReserve"
           control={control}
         />
-        <SwitchFE
-          label={t("study.configuration.optimization.exportMps")}
-          name="exportMps"
-          control={control}
-        />
-        {isVer830OrAbove && (
-          <SwitchFE
-            label={t("study.configuration.optimization.splitExportedMps")}
-            name="splitExportedMps"
-            control={control}
-          />
-        )}
-        <SelectFE
-          label={t(
-            "study.configuration.optimization.unfeasibleProblemBehavior"
-          )}
-          options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
-          name="unfeasibleProblemBehavior"
-          control={control}
-        />
-        <SelectFE
-          label={t("study.configuration.optimization.simplexOptimizationRange")}
-          options={SIMPLEX_OPTIMIZATION_RANGE_OPTIONS}
-          name="simplexOptimizationRange"
-          control={control}
-        />
       </Fieldset>
-      {isVer830OrAbove && (
-        <Fieldset legend={t("study.configuration.optimization.adequacyPatch")}>
-          <SwitchFE
-            label={t("study.configuration.optimization.enableAdequacyPatch")}
-            name="enableAdequacyPatch"
-            control={control}
-          />
-          <SwitchFE
-            label={t(
-              "study.configuration.optimization.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
-            )}
-            name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
-            control={control}
-          />
-          <SwitchFE
-            label={t(
-              "study.configuration.optimization.ntcBetweenPhysicalAreasOutAdequacyPatch"
-            )}
-            name="ntcBetweenPhysicalAreasOutAdequacyPatch"
-            control={control}
-          />
-        </Fieldset>
-      )}
     </Box>
   );
 }

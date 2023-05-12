@@ -51,6 +51,7 @@ def matrix_service() -> MatrixService:
 
 @pytest.fixture
 def command_context(matrix_service: MatrixService) -> CommandContext:
+    # sourcery skip: inline-immediately-returned-variable
     command_context = CommandContext(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service
@@ -75,10 +76,10 @@ def command_factory(matrix_service: MatrixService) -> CommandFactory:
 
 
 @pytest.fixture
-def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
+def empty_study(tmp_path: Path, matrix_service: MatrixService) -> FileStudy:
     project_dir: Path = Path(__file__).parent.parent.parent
     empty_study_path: Path = project_dir / "resources" / "empty_study_720.zip"
-    empty_study_destination_path = Path(tmp_path) / "empty-study"
+    empty_study_destination_path = tmp_path.joinpath("empty-study")
     with zipfile.ZipFile(empty_study_path, "r") as zip_empty_study:
         zip_empty_study.extractall(empty_study_destination_path)
 
@@ -90,6 +91,7 @@ def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
         areas={},
         sets={},
     )
+    # sourcery skip: inline-immediately-returned-variable
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(

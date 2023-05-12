@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from typing import Optional
 
-from fastapi import HTTPException
+from fastapi.exceptions import HTTPException
 
 
 class ShouldNotHappenException(Exception):
@@ -177,14 +177,26 @@ class StudyOutputNotFoundError(Exception):
     pass
 
 
+class AllocationDataNotFound(HTTPException):
+    def __init__(self, *area_ids: str) -> None:
+        count = len(area_ids)
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        msg = {
+            0: "Allocation data is found",
+            1: f"Allocation data for area {area_ids} is not found",
+            2: f"Allocation data for areas {area_ids} is not found",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 class AreaNotFound(HTTPException):
     def __init__(self, *area_ids: str) -> None:
         count = len(area_ids)
         ids = ", ".join(f"'{a}'" for a in area_ids)
         msg = {
             0: "All areas are found",
-            1: f"{count} area is not found: {ids}",
-            2: f"{count} areas are not found: {ids}",
+            1: f"Area is not found: {ids}",
+            2: f"Areas are not found: {ids}",
         }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 

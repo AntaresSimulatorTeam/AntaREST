@@ -22,7 +22,27 @@ logger = logging.getLogger(__name__)
 
 
 class CustomDefaultFormatter(logging.Formatter):
+    """
+    A custom logging formatter that ensures all fields specified
+    in the format string are available in the log record.
+
+    This formatter uses a regular expression pattern to extract
+    field names from the format string, and adds any missing
+    fields to the log record with a value of `None`.
+    """
+
     def format(self, record: logging.LogRecord) -> str:
+        """
+        Formats the specified log record using the custom formatter,
+        ensuring all fields specified in the format string are available
+        in the record. Returns the formatted string.
+
+        Args:
+            record: The logging record to format.
+
+        Returns:
+            The formatted message.
+        """
         arg_pattern = re.compile(r"%\((\w+)\)")
         arg_names = [x.group(1) for x in arg_pattern.finditer(self._fmt or "")]
         for field in arg_names:
@@ -31,7 +51,17 @@ class CustomDefaultFormatter(logging.Formatter):
         return super().format(record)
 
 
-def configure_logger(config: Config) -> None:
+def configure_logger(
+    config: Config, handler_cls: str = "logging.FileHandler"
+) -> None:
+    """
+    Set up the logging configuration based on the input `config` object
+    and an optional `handler_cls` argument.
+
+    Args:
+        config: A `Config` object that contains the logging configuration parameters.
+        handler_cls: A string representing the class of the logging handler.
+    """
     logging_config: Dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -91,13 +121,32 @@ def configure_logger(config: Config) -> None:
         },
     }
     if config.logging.logfile is not None:
-        logging_config["handlers"]["default"] = {
-            "class": "logging.FileHandler",
-            "formatter": "console",
-            "level": "INFO",
-            "filename": config.logging.logfile,
-            "filters": ["context"],
-        }
+        if handler_cls == "logging.FileHandler":
+            logging_config["handlers"]["default"] = {
+                "class": handler_cls,
+                "formatter": "console",
+                "level": "INFO",
+                "filename": config.logging.logfile,
+                "filters": ["context"],
+            }
+        elif handler_cls == "logging.handlers.TimedRotatingFileHandler":
+            logging_config["handlers"]["default"] = {
+                "class": handler_cls,
+                "filename": config.logging.logfile,
+                "when": "D",  # D = day
+                "interval": 90,  # 90 days = 3 months
+                "backupCount": 1,  # keep only 1 backup (0 means keep all)
+                "encoding": "utf-8",
+                "delay": False,
+                "utc": False,
+                "atTime": None,
+                "formatter": "console",
+                "level": "INFO",
+                "filters": ["context"],
+            }
+        else:  # pragma: no cover
+            raise NotImplementedError(handler_cls)
+
     if config.logging.level is not None and config.logging.level in [
         "INFO",
         "WARNING",

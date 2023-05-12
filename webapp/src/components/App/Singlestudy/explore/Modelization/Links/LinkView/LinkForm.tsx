@@ -46,7 +46,10 @@ function LinkForm(props: Props) {
     return getLinkPath(area1, area2);
   }, [area1, area2]);
 
-  const { control, defaultValues } = useFormContextPlus<LinkFields>();
+  const {
+    control,
+    formState: { defaultValues },
+  } = useFormContextPlus<LinkFields>();
 
   const optionTransCap = ["infinite", "ignore", "enabled"].map((item) => ({
     label: t(`study.modelization.links.transmissionCapa.${item}`),

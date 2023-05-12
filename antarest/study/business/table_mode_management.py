@@ -379,7 +379,7 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     },
 }
 
-COLUMN_MODELS_BY_TYPE = {
+COLUMNS_MODELS_BY_TYPE = {
     TableTemplateType.AREA: AreaColumns,
     TableTemplateType.LINK: LinkColumns,
     TableTemplateType.CLUSTER: ClusterColumns,
@@ -387,7 +387,7 @@ COLUMN_MODELS_BY_TYPE = {
     TableTemplateType.BINDING_CONSTRAINT: BindingConstraintColumns,
 }
 
-ColumnModelTypes = Union[
+ColumnsModelTypes = Union[
     AreaColumns,
     LinkColumns,
     ClusterColumns,
@@ -405,9 +405,9 @@ class TableModeManager:
         study: RawStudy,
         table_type: TableTemplateType,
         columns: List[str],
-    ) -> Dict[str, ColumnModelTypes]:
+    ) -> Dict[str, ColumnsModelTypes]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        column_model = COLUMN_MODELS_BY_TYPE[table_type]
+        columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
         fields_info = FIELDS_INFO_BY_TYPE[table_type]
         glob_object = TableModeManager.__get_glob_object(
             file_study, table_type
@@ -426,7 +426,7 @@ class TableModeManager:
 
         if table_type == TableTemplateType.AREA:
             return {
-                area_id: column_model.construct(
+                area_id: columns_model.construct(
                     **{col: get_column_value(col, data) for col in columns}
                 )  # type: ignore
                 for area_id, data in glob_object.items()
@@ -434,7 +434,7 @@ class TableModeManager:
 
         if table_type == TableTemplateType.BINDING_CONSTRAINT:
             return {
-                data["id"]: column_model.construct(
+                data["id"]: columns_model.construct(
                     **{col: get_column_value(col, data) for col in columns}
                 )  # type: ignore
                 for data in glob_object.values()
@@ -443,7 +443,7 @@ class TableModeManager:
         obj: Dict[str, Any] = {}
         for id_1, value_1 in glob_object.items():
             for id_2, value_2 in value_1.items():
-                obj[f"{id_1} / {id_2}"] = column_model.construct(
+                obj[f"{id_1} / {id_2}"] = columns_model.construct(
                     **{col: get_column_value(col, value_2) for col in columns}
                 )
 
@@ -453,7 +453,7 @@ class TableModeManager:
         self,
         study: RawStudy,
         table_type: TableTemplateType,
-        data: Dict[str, ColumnModelTypes],
+        data: Dict[str, ColumnsModelTypes],
     ) -> None:
         commands: List[ICommand] = []
         bindings_by_id = None

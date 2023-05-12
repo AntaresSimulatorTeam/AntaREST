@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
 from pydantic.types import StrictBool
 
@@ -235,10 +235,9 @@ class ThematicTrimmingManager:
 
         keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
         for name, info in FIELDS_INFO.items():
-            start_ver = info.get("start_version", 0)
-            end_ver = info.get("end_version", study_ver)
+            start_ver = cast(int, info.get("start_version", 0))
 
-            if start_ver <= study_ver <= end_ver:  # type: ignore
+            if start_ver <= study_ver:
                 keys_by_bool[field_values_dict[name]].append(info["path"])
 
         config_data: Dict[str, Any]

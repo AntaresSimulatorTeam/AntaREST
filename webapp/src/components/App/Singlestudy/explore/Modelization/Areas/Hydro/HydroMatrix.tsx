@@ -4,10 +4,10 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import { Root } from "./style";
-import { MATRICES, MatrixType } from "./utils";
+import { MATRICES, HydroMatrixType } from "./utils";
 
 interface Props {
-  type: MatrixType;
+  type: HydroMatrixType;
 }
 
 function HydroMatrix({ type }: Props) {
@@ -25,9 +25,12 @@ function HydroMatrix({ type }: Props) {
       <MatrixInput
         title={hydroMatrix.title}
         columnsNames={hydroMatrix.cols}
+        rowNames={hydroMatrix.rows}
         study={study}
         url={hydroMatrix.url.replace("{areaId}", areaId)}
         computStats={hydroMatrix.stats}
+        fetchFn={hydroMatrix.fetchFn}
+        disableEdit={hydroMatrix.disableEdit}
       />
     </Root>
   );

@@ -7,7 +7,6 @@ import * as RA from "ramda-adjunct";
 import { LoadingButton } from "@mui/lab";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import AddIcon from "@mui/icons-material/Add";
-import { AxiosError } from "axios";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import ConfigContext from "./ConfigContext";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
@@ -35,15 +34,6 @@ function Rulesets() {
   const allowDelete = activeRuleset && Object.keys(config).length > 1;
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const catchError = (message: string) => (err: AxiosError) => {
-    reloadConfig();
-    enqueueErrorSnackbar(message, err);
-  };
-
-  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
@@ -54,17 +44,20 @@ function Rulesets() {
     );
     setActiveRuleset(name);
 
-    updateScenarioBuilderConfig(studyId, {
+    return updateScenarioBuilderConfig(studyId, {
       [activeRuleset]: "",
       [name]: activeRuleset,
-    }).catch(
-      catchError(
+    }).catch((err) => {
+      reloadConfig();
+
+      throw new Error(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.rename",
           [activeRuleset]
-        )
-      )
-    );
+        ),
+        { cause: err }
+      );
+    });
   };
 
   const handleAdd = ({ values: { name } }: SubmitHandlerType) => {
@@ -72,15 +65,18 @@ function Rulesets() {
     setConfig((prev) => ({ [name]: {}, ...prev }));
     setActiveRuleset(name);
 
-    updateScenarioBuilderConfig(studyId, {
+    return updateScenarioBuilderConfig(studyId, {
       [name]: {},
-    }).catch(
-      catchError(
+    }).catch((err) => {
+      reloadConfig();
+
+      throw new Error(
         t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", [
           name,
-        ])
-      )
-    );
+        ]),
+        { cause: err }
+      );
+    });
   };
 
   const handleDelete = () => {
@@ -91,14 +87,17 @@ function Rulesets() {
 
     updateScenarioBuilderConfig(studyId, {
       [activeRuleset]: "",
-    }).catch(
-      catchError(
+    }).catch((err) => {
+      reloadConfig();
+
+      enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.delete",
           [activeRuleset]
-        )
-      )
-    );
+        ),
+        err
+      );
+    });
   };
 
   const handleDuplicate = () => {
@@ -108,14 +107,17 @@ function Rulesets() {
 
     updateScenarioBuilderConfig(studyId, {
       [newRulesetName]: activeRuleset,
-    }).catch(
-      catchError(
+    }).catch((err) => {
+      reloadConfig();
+
+      enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.duplicate",
           [activeRuleset]
-        )
-      )
-    );
+        ),
+        err
+      );
+    });
   };
 
   ////////////////////////////////////////////////////////////////

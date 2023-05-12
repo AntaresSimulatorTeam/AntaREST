@@ -51,10 +51,9 @@ function AdvancedParameters() {
     <Form
       key={study.id}
       config={{
-        asyncDefaultValues: () => getAdvancedParamsFormFields(study.id),
+        defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
       onSubmit={handleSubmit}
-      autoSubmit
     >
       <Fields version={Number(study.version)} />
     </Form>

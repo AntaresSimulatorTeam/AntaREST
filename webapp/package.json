@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.13.2",
+  "version": "2.14.0",
   "private": true,
   "dependencies": {
     "@emotion/react": "11.10.6",
@@ -48,11 +48,11 @@
     "ramda-adjunct": "3.4.0",
     "react": "18.2.0",
     "react-beautiful-dnd": "13.1.1",
-    "react-color": "^2.19.3",
+    "react-color": "2.19.3",
     "react-d3-graph": "2.6.0",
     "react-dom": "18.2.0",
     "react-dropzone": "14.2.3",
-    "react-hook-form": "7.34.0",
+    "react-hook-form": "7.43.9",
     "react-i18next": "12.1.5",
     "react-json-view": "1.21.3",
     "react-plotly.js": "2.6.0",
@@ -96,6 +96,7 @@
   "proxy": "http://localhost:8080",
   "homepage": "/",
   "devDependencies": {
+    "@total-typescript/ts-reset": "0.4.2",
     "@types/debug": "4.1.7",
     "@types/js-cookie": "3.0.3",
     "@types/lodash": "4.14.191",

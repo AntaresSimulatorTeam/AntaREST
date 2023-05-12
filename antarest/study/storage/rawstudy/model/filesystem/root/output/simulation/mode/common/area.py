@@ -1,8 +1,5 @@
-from typing import cast
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
-    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
@@ -11,6 +8,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     AreaOutputSeriesMatrix,
 )
@@ -29,13 +29,13 @@ class OutputSimulationAreaItem(FolderNode):
         self.mc_all = mc_all
 
     def build(self) -> TREE:
-        children: TREE = dict()
+        children: TREE = {}
 
         # filters = self.config.get_filters_synthesis(self.area)
         # todo get the config related to this output (now this may fail if input has changed since the launch)
-        filters = ["hourly", "daily", "weekly", "monthly", "annual"]
 
-        for freq in filters:
+        freq: MatrixFrequency
+        for freq in MatrixFrequency:
             if self.mc_all:
                 children[f"id-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
@@ -63,7 +63,8 @@ class OutputSimulationAreaItem(FolderNode):
                     self.area,
                 )
 
-            # has_enr_clusters = self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value and len(self.config.get_renewable_names(self.area, only_enabled=True)) > 0
+            # has_enr_clusters = self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value and
+            # len(self.config.get_renewable_names(self.area, only_enabled=True)) > 0
             # todo get the config related to this output (now this may fail if input has changed since the launch)
             has_enr_clusters = True
 

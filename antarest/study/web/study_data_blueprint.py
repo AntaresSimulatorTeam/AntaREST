@@ -1,7 +1,6 @@
 import logging
-from typing import Any, Dict, List, Optional, Union
-
-from fastapi import APIRouter, Body, Depends
+from http import HTTPStatus
+from typing import Any, Dict, List, Optional, Union, cast
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -12,8 +11,15 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
+from antarest.study.business.adequacy_patch_management import (
+    AdequacyPatchFormFields,
+)
 from antarest.study.business.advanced_parameters_management import (
     AdvancedParamsFormFields,
+)
+from antarest.study.business.allocation_management import (
+    AllocationFormFields,
+    AllocationMatrix,
 )
 from antarest.study.business.area_management import (
     AreaCreationDTO,
@@ -25,6 +31,11 @@ from antarest.study.business.area_management import (
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
+)
+from antarest.study.business.correlation_management import (
+    CorrelationFormFields,
+    CorrelationManager,
+    CorrelationMatrix,
 )
 from antarest.study.business.district_manager import (
     DistrictCreationDTO,
@@ -42,7 +53,7 @@ from antarest.study.business.optimization_management import (
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.renewable_management import RenewableFormFields
 from antarest.study.business.table_mode_management import (
-    ColumnModelTypes,
+    ColumnsModelTypes,
     TableTemplateType,
 )
 from antarest.study.business.thematic_trimming_management import (
@@ -52,6 +63,8 @@ from antarest.study.business.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
 
@@ -61,12 +74,13 @@ def create_study_data_routes(
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
+
     Args:
         study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
-
+        The FastAPI route for Study data management
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -683,7 +697,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
-        summary="Get Optimization config values for form",
+        summary="Get optimization config values for form",
         response_model=OptimizationFormFields,
         response_model_exclude_none=True,
     )
@@ -692,7 +706,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> OptimizationFormFields:
         logger.info(
-            msg=f"Getting Optimization management config for study {uuid}",
+            msg=f"Getting optimization config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -705,7 +719,7 @@ def create_study_data_routes(
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
-        summary="Set Optimization config with values from form",
+        summary="Set optimization config with values from form",
     )
     def set_optimization_form_values(
         uuid: str,
@@ -713,7 +727,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
-            f"Updating Optimization management config for study {uuid}",
+            f"Updating optimization config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -722,6 +736,51 @@ def create_study_data_routes(
         )
 
         study_service.optimization_manager.set_field_values(
+            study, field_values
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/config/adequacypatch/form",
+        tags=[APITag.study_data],
+        summary="Get adequacy patch config values for form",
+        response_model=AdequacyPatchFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_adequacy_patch_form_values(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AdequacyPatchFormFields:
+        logger.info(
+            msg=f"Getting adequacy patch config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.adequacy_patch_manager.get_field_values(study)
+
+    @bp.put(
+        path="/studies/{uuid}/config/adequacypatch/form",
+        tags=[APITag.study_data],
+        summary="Set adequacy patch config with values from form",
+    )
+    def set_adequacy_patch_form_values(
+        uuid: str,
+        field_values: AdequacyPatchFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating adequacy patch config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+
+        study_service.adequacy_patch_manager.set_field_values(
             study, field_values
         )
 
@@ -781,7 +840,7 @@ def create_study_data_routes(
         table_type: TableTemplateType,
         columns: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Dict[str, ColumnModelTypes]:
+    ) -> Dict[str, ColumnsModelTypes]:
         logger.info(
             f"Getting template table data for study {uuid}",
             extra={"user": current_user.id},
@@ -803,7 +862,7 @@ def create_study_data_routes(
     def set_table_data(
         uuid: str,
         table_type: TableTemplateType,
-        data: Dict[str, ColumnModelTypes],
+        data: Dict[str, ColumnsModelTypes],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -970,6 +1029,304 @@ def create_study_data_routes(
         )
         study_service.binding_constraint_manager.remove_constraint_term(
             study, binding_constraint_id, term_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/hydro/allocation/matrix",
+        tags=[APITag.study_data],
+        summary="Get the hydraulic allocation matrix for all areas",
+        response_model=AllocationMatrix,
+    )
+    def get_allocation_matrix(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationMatrix:
+        """
+        Get the hydraulic allocation matrix for all areas.
+
+        Parameters:
+        - `uuid`: the study UUID.
+
+        Returns the data frame matrix, where:
+        - the rows are the areas,
+        - the columns are the hydraulic structures,
+        - the values are the allocation factors.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.get_allocation_matrix(
+            study, all_areas
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
+        tags=[APITag.study_data],
+        summary="Get the form fields used for the allocation form",
+        response_model=AllocationFormFields,
+    )
+    def get_allocation_form_fields(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationFormFields:
+        """
+        Get the form fields used for the allocation form.
+
+        Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
+
+        Returns the allocation form fields.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.get_allocation_form_fields(
+            all_areas, study, area_id
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
+        tags=[APITag.study_data],
+        summary="Update the form fields used for the allocation form",
+        status_code=HTTPStatus.OK,
+        response_model=AllocationFormFields,
+    )
+    def set_allocation_form_fields(
+        uuid: str,
+        area_id: str,
+        data: AllocationFormFields = Body(
+            ...,
+            example=AllocationFormFields(
+                allocation=[
+                    {"areaId": "EAST", "coefficient": 1},
+                    {"areaId": "NORTH", "coefficient": 0.20},
+                ]
+            ),
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> AllocationFormFields:
+        """
+        Update the hydraulic allocation of a given area.
+
+        Parameters:
+        - `uuid`: the study UUID,
+        - `area_id`: the area ID.
+
+        Returns the updated allocation form fields.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        return study_service.allocation_manager.set_allocation_form_fields(
+            all_areas, study, area_id, data
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/hydro/correlation/matrix",
+        tags=[APITag.study_data],
+        summary="Get the hydraulic/load/solar/wind correlation matrix of a study",
+        response_model=CorrelationMatrix,
+    )
+    def get_correlation_matrix(
+        uuid: str,
+        columns: Optional[str] = Query(
+            None,
+            examples={
+                "all areas": {
+                    "description": "get the correlation matrix for all areas (by default)",
+                    "value": "",
+                },
+                "single area": {
+                    "description": "get the correlation column for a single area",
+                    "value": "north",
+                },
+                "selected areas": {
+                    "description": "get the correlation columns for a selected list of areas",
+                    "value": "north,east",
+                },
+            },
+        ),  # type: ignore
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationMatrix:
+        """
+        Get the hydraulic/load/solar/wind correlation matrix of a study.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `columns`: A filter on the area identifiers:
+          - Use no parameter to select all areas.
+          - Use an area identifier to select a single area.
+          - Use a comma-separated list of areas to select those areas.
+
+        Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
+        - `index`: A list of all study areas.
+        - `columns`: A list of selected production areas.
+        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.get_correlation_matrix(
+            all_areas,
+            study,
+            columns.split(",") if columns else [],
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/hydro/correlation/matrix",
+        tags=[APITag.study_data],
+        summary="Set the hydraulic/load/solar/wind correlation matrix of a study",
+        status_code=HTTPStatus.OK,
+        response_model=CorrelationMatrix,
+    )
+    def set_correlation_matrix(
+        uuid: str,
+        matrix: CorrelationMatrix = Body(
+            ...,
+            example={
+                "columns": ["north", "east", "south", "west"],
+                "data": [
+                    [0.0, 0.0, 0.25, 0.0],
+                    [0.0, 0.0, 0.75, 0.12],
+                    [0.25, 0.75, 0.0, 0.75],
+                    [0.0, 0.12, 0.75, 0.0],
+                ],
+                "index": ["north", "east", "south", "west"],
+            },
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationMatrix:
+        """
+        Set the hydraulic/load/solar/wind correlation matrix of a study.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `index`: A list of all study areas.
+        - `columns`: A list of selected production areas.
+        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+
+        Returns the hydraulic/load/solar/wind correlation matrix updated
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.set_correlation_matrix(all_areas, study, matrix)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
+        tags=[APITag.study_data],
+        summary="Get the form fields used for the correlation form",
+        response_model=CorrelationFormFields,
+    )
+    def get_correlation_form_fields(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationFormFields:
+        """
+        Get the form fields used for the correlation form.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns the correlation form fields in percentage.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.get_correlation_form_fields(all_areas, study, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
+        tags=[APITag.study_data],
+        summary="Set the form fields used for the correlation form",
+        status_code=HTTPStatus.OK,
+        response_model=CorrelationFormFields,
+    )
+    def set_correlation_form_fields(
+        uuid: str,
+        area_id: str,
+        data: CorrelationFormFields = Body(
+            ...,
+            example=CorrelationFormFields(
+                correlation=[
+                    {"areaId": "east", "coefficient": 80},
+                    {"areaId": "north", "coefficient": 20},
+                ]
+            ),
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> CorrelationFormFields:
+        """
+        Update the hydraulic/load/solar/wind correlation of a given area.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns the correlation form fields in percentage.
+        """
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        all_areas = cast(
+            List[AreaInfoDTO],  # because `ui=False`
+            study_service.get_all_areas(
+                uuid, area_type=AreaType.AREA, ui=False, params=params
+            ),
+        )
+        manager = CorrelationManager(study_service.storage_service)
+        return manager.set_correlation_form_fields(
+            all_areas, study, area_id, data
         )
 
     @bp.get(

@@ -1,7 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union, Any
+from typing import Any, List, Optional, Union
 
 import pandas as pd  # type: ignore
 
@@ -15,11 +16,23 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
     DenormalizationException,
 )
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
-    LazyNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
+
+
+class MatrixFrequency(str, Enum):
+    """
+    An enumeration of matrix frequencies.
+
+    Each frequency corresponds to a specific time interval for a matrix's data.
+    """
+
+    ANNUAL = "annual"
+    MONTHLY = "monthly"
+    WEEKLY = "weekly"
+    DAILY = "daily"
+    HOURLY = "hourly"
 
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
@@ -27,7 +40,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        freq: str,
+        freq: MatrixFrequency,
     ) -> None:
         LazyNode.__init__(self, context, config)
         self.freq = freq
@@ -99,26 +112,35 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def _dump_json(self, data: JSON) -> None:
+    def dump(
+        self,
+        data: Union[bytes, JSON],
+        url: Optional[List[str]] = None,
+    ) -> None:
         """
-        Store data on tree.
+        Write matrix data to file.
+
+        If the input data is of type bytes, write the data to file as is.
+        Otherwise, convert the data to a Pandas DataFrame and write it to file as a tab-separated CSV.
+        If the resulting DataFrame is empty, write an empty bytes object to file.
 
         Args:
-            data: new data to save
-            url: data path to change
-
-        Returns:
-
+            data: The data to write to file. If data is bytes, it will be written directly to file,
+                otherwise it will be converted to a Pandas DataFrame and then written to file.
+            url: node URL (not used here).
         """
-
-        raise NotImplementedError()
-
-    def dump(
-        self, data: Union[bytes, JSON], url: Optional[List[str]] = None
-    ) -> None:
+        self.config.path.parent.mkdir(exist_ok=True, parents=True)
         if isinstance(data, bytes):
-            self.config.path.parent.mkdir(exist_ok=True, parents=True)
             self.config.path.write_bytes(data)
         else:
-            self._dump_json(data)
+            df = pd.DataFrame(**data)
+            if df.empty:
+                self.config.path.write_bytes(b"")
+            else:
+                df.to_csv(
+                    self.config.path,
+                    sep="\t",
+                    header=False,
+                    index=False,
+                    float_format="%.6f",
+                )

@@ -48,7 +48,7 @@ function Thermal() {
         <Form
           key={study.id + cluster + area}
           config={{
-            asyncDefaultValues: () => {
+            defaultValues: () => {
               return getThermalFormFields(study.id, area, cluster);
             },
           }}

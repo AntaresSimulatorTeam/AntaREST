@@ -47,7 +47,7 @@ function GlobalPageLoadingError() {
             boxSizing="border-box"
           >
             <Typography variant="h4" component="h4" color="primary" my={2}>
-              Oups, an unexpected error happened.
+              Oops, an unexpected error happened.
               <br />
               Please try to refresh the page.
             </Typography>

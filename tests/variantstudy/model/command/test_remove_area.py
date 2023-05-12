@@ -1,10 +1,10 @@
-from checksumdir import dirhash
+import pytest
 
-from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.study_upgrader import upgrade_study
 from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
     BindingConstraintOperator,
@@ -41,25 +41,14 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 
 class TestRemoveArea:
-    def test_validation(self, empty_study: FileStudy):
-        pass
-
+    @pytest.mark.parametrize("version", [810, 840])
     def test_apply(
         self,
         empty_study: FileStudy,
         command_context: CommandContext,
+        version: int,
     ):
-        bd_config = IniReader().read(
-            empty_study.config.study_path
-            / "input"
-            / "bindingconstraints"
-            / "bindingconstraints.ini"
-        )
-
-        area_name = "Area"
-        area_id = transform_name_to_id(area_name)
-        area_name2 = "Area2"
-        area_id2 = transform_name_to_id(area_name2)
+        # noinspection SpellCheckingInspection
         empty_study.tree.save(
             {
                 "input": {
@@ -84,6 +73,8 @@ class TestRemoveArea:
             }
         )
 
+        area_name = "Area"
+        area_id = transform_name_to_id(area_name)
         create_area_command: ICommand = CreateArea.parse_obj(
             {
                 "area_name": area_name,
@@ -92,14 +83,6 @@ class TestRemoveArea:
         )
         output = create_area_command.apply(study_data=empty_study)
         assert output.status
-
-        parameters = {
-            "group": "Other",
-            "unitcount": "1",
-            "nominalcapacity": "1000000",
-            "marginal-cost": "30",
-            "market-bid-cost": "30",
-        }
 
         create_district_command = CreateDistrict(
             name="foo",
@@ -112,85 +95,99 @@ class TestRemoveArea:
 
         ########################################################################################
 
-        empty_study_hash = dirhash(empty_study.config.study_path, "md5")
+        upgrade_study(empty_study.config.study_path, str(version))
 
-        for version in [810, 840]:
-            empty_study.config.version = version
-            create_area_command: ICommand = CreateArea.parse_obj(
-                {
-                    "area_name": area_name2,
-                    "command_context": command_context,
-                }
-            )
-            output = create_area_command.apply(study_data=empty_study)
-            assert output.status
+        empty_study_cfg = empty_study.tree.get(depth=999)
+        if version >= 830:
+            empty_study_cfg["input"]["areas"][area_id]["adequacy_patch"] = {
+                "adequacy-patch": {"adequacy-patch-mode": "outside"}
+            }
+            empty_study_cfg["input"]["links"][area_id]["capacities"] = {}
 
-            create_link_command: ICommand = CreateLink(
-                area1=area_id,
-                area2=area_id2,
-                parameters={},
-                command_context=command_context,
-                series=[[0]],
-            )
-            output = create_link_command.apply(study_data=empty_study)
-            assert output.status
+        area_name2 = "Area2"
+        area_id2 = transform_name_to_id(area_name2)
 
-            create_cluster_command = CreateCluster.parse_obj(
-                {
-                    "area_id": area_id2,
-                    "cluster_name": "cluster",
-                    "parameters": parameters,
-                    "prepro": [[0]],
-                    "modulation": [[0]],
-                    "command_context": command_context,
-                }
-            )
-            output = create_cluster_command.apply(study_data=empty_study)
-            assert output.status
+        empty_study.config.version = version
+        create_area_command: ICommand = CreateArea.parse_obj(
+            {
+                "area_name": area_name2,
+                "command_context": command_context,
+            }
+        )
+        output = create_area_command.apply(study_data=empty_study)
+        assert output.status
 
-            bind1_cmd = CreateBindingConstraint(
-                name="BD 2",
-                time_step=TimeStep.HOURLY,
-                operator=BindingConstraintOperator.LESS,
-                coeffs={
-                    f"{area_id}%{area_id2}": [400, 30],
-                    f"{area_id2}.cluster": [400, 30],
+        create_link_command: ICommand = CreateLink(
+            area1=area_id,
+            area2=area_id2,
+            parameters={},
+            command_context=command_context,
+            series=[[0]],
+        )
+        output = create_link_command.apply(study_data=empty_study)
+        assert output.status
+
+        # noinspection SpellCheckingInspection
+        create_cluster_command = CreateCluster.parse_obj(
+            {
+                "area_id": area_id2,
+                "cluster_name": "cluster",
+                "parameters": {
+                    "group": "Other",
+                    "unitcount": "1",
+                    "nominalcapacity": "1000000",
+                    "marginal-cost": "30",
+                    "market-bid-cost": "30",
                 },
-                comments="Hello",
-                command_context=command_context,
-            )
-            output = bind1_cmd.apply(study_data=empty_study)
-            assert output.status
+                "prepro": [[0]],
+                "modulation": [[0]],
+                "command_context": command_context,
+            }
+        )
+        output = create_cluster_command.apply(study_data=empty_study)
+        assert output.status
 
-            remove_district_command = RemoveDistrict(
-                id="foo",
-                command_context=command_context,
-            )
-            output = remove_district_command.apply(study_data=empty_study)
-            assert output.status
+        bind1_cmd = CreateBindingConstraint(
+            name="BD 2",
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.LESS,
+            coeffs={
+                f"{area_id}%{area_id2}": [400, 30],
+                f"{area_id2}.cluster": [400, 30],
+            },
+            comments="Hello",
+            command_context=command_context,
+        )
+        output = bind1_cmd.apply(study_data=empty_study)
+        assert output.status
 
-            create_district_command = CreateDistrict(
-                name="foo",
-                base_filter=DistrictBaseFilter.add_all,
-                filter_items=[area_id, area_id2],
-                command_context=command_context,
-            )
-            output = create_district_command.apply(study_data=empty_study)
-            assert output.status
+        remove_district_command = RemoveDistrict(
+            id="foo",
+            command_context=command_context,
+        )
+        output = remove_district_command.apply(study_data=empty_study)
+        assert output.status
 
-            remove_area_command: ICommand = RemoveArea.parse_obj(
-                {
-                    "id": transform_name_to_id(area_name2),
-                    "command_context": command_context,
-                }
-            )
-            output = remove_area_command.apply(study_data=empty_study)
-            assert output.status
+        create_district_command = CreateDistrict(
+            name="foo",
+            base_filter=DistrictBaseFilter.add_all,
+            filter_items=[area_id, area_id2],
+            command_context=command_context,
+        )
+        output = create_district_command.apply(study_data=empty_study)
+        assert output.status
 
-            assert (
-                dirhash(empty_study.config.study_path, "md5")
-                == empty_study_hash
-            )
+        remove_area_command: ICommand = RemoveArea.parse_obj(
+            {
+                "id": transform_name_to_id(area_name2),
+                "command_context": command_context,
+            }
+        )
+        output = remove_area_command.apply(study_data=empty_study)
+        assert output.status
+
+        actual_cfg = empty_study.tree.get(depth=999)
+        assert actual_cfg == empty_study_cfg
 
 
 def test_match(command_context: CommandContext):

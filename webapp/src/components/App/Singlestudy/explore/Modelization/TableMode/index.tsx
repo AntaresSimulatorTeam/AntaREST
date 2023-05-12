@@ -151,11 +151,7 @@ function TableMode() {
               <FormTable
                 defaultValues={data}
                 onSubmit={handleSubmit}
-                tableProps={{
-                  columns: selectedTemplate.columns,
-                  height: "100%",
-                  width: "100%",
-                }}
+                tableProps={{ columns: selectedTemplate.columns }}
               />
             )}
           />

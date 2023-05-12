@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoistNonReactStatics from "hoist-non-react-statics";
-import React, { useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import {
   Controller,
   ControllerRenderProps,
@@ -18,11 +18,12 @@ import {
   ControlPlus,
   RegisterOptionsPlus,
 } from "../components/common/Form/types";
+import FormContext from "../components/common/Form/FormContext";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any) => boolean;
+  preValidate?: (value: any, formValues: any) => boolean;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -71,9 +72,15 @@ function reactHookFormSupport<TValue>(
 ) {
   const { preValidate, setValueAs = R.identity } = options;
 
+  /**
+   * Wrap in a higher component the specified field editor component
+   */
   function wrapWithReactHookFormSupport<
     TProps extends FieldEditorProps<TValue>
   >(FieldEditor: React.ComponentType<TProps>) {
+    /**
+     * The wrapper component
+     */
     function ReactHookFormSupport<
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -89,6 +96,8 @@ function reactHookFormSupport<TValue>(
         setValueAs: setValueAsFromRules = R.identity,
         ...restRules
       } = rules;
+
+      const { isAutoSubmitEnabled } = useContext(FormContext);
 
       ////////////////////////////////////////////////////////////////
       // Event Handlers
@@ -140,14 +149,23 @@ function reactHookFormSupport<TValue>(
       >(() => {
         if (preValidate) {
           if (RA.isFunction(validate)) {
-            return (v) => preValidate?.(v) && validate(v);
+            return (value, formValues) => {
+              return (
+                preValidate?.(value, formValues) && validate(value, formValues)
+              );
+            };
           }
 
           if (RA.isPlainObj(validate)) {
             return Object.keys(validate).reduce((acc, key) => {
-              acc[key] = (v) => preValidate?.(v) && validate[key](v);
+              acc[key] = (value, formValues) => {
+                return (
+                  preValidate?.(value, formValues) &&
+                  validate[key](value, formValues)
+                );
+              };
               return acc;
-            }, {} as Record<string, Validate<FieldPathValue<TFieldValues, TFieldName>>>);
+            }, {} as Record<string, Validate<FieldPathValue<TFieldValues, TFieldName>, TFieldValues>>);
           }
 
           return preValidate;
@@ -155,7 +173,7 @@ function reactHookFormSupport<TValue>(
         return validate;
       }, [validate]);
 
-      const getDefaultValuesFromOptions = () => {
+      const getDefaultValueFromOptions = () => {
         const { defaultValue } = options;
         return RA.isFunction(defaultValue)
           ? defaultValue(feProps)
@@ -173,7 +191,7 @@ function reactHookFormSupport<TValue>(
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
             defaultValue={
-              (feProps.defaultValue ?? getDefaultValuesFromOptions()) as any
+              (feProps.defaultValue ?? getDefaultValueFromOptions()) as any
             }
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
@@ -189,12 +207,16 @@ function reactHookFormSupport<TValue>(
                 inputRef={ref}
                 error={!!error}
                 helperText={error?.message}
+                disabled={
+                  (control._formState.isSubmitting && !isAutoSubmitEnabled) ||
+                  feProps.disabled
+                }
               />
             )}
           />
         );
 
-        return control._showSkeleton ? (
+        return control._formState.isLoading ? (
           <Skeleton variant="rectangular" sx={{ borderRadius: "5px" }}>
             {field}
           </Skeleton>

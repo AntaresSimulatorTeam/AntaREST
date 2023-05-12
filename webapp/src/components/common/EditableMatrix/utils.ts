@@ -3,6 +3,7 @@ import moment, { DurationInputArg2 } from "moment";
 import { CellChange } from "handsontable/common";
 import {
   MatrixEditDTO,
+  MatrixIndex,
   MatrixStats,
   Operator,
   StudyOutputDownloadLevelDTO,
@@ -68,14 +69,17 @@ const convertLevelDate = (
 
 export const createDateFromIndex = (
   indexDate: string | number,
-  startDate: string,
-  levelDate: StudyOutputDownloadLevelDTO
+  matrixIndex: MatrixIndex
 ): string | number => {
   const date = moment
-    .utc(startDate)
-    .add(indexDate, convertLevelDate(levelDate))
-    .format("(ww) - ddd DD MMM HH:mm");
-  return `${indexDate.toString().padStart(4, "0")} ${date}`.toUpperCase();
+    .utc(matrixIndex.start_date)
+    .add(indexDate, convertLevelDate(matrixIndex.level))
+    .format(
+      matrixIndex.level === StudyOutputDownloadLevelDTO.HOURLY
+        ? "ddd DD MMM HH:mm"
+        : "ddd DD MMM"
+    );
+  return date;
 };
 
 export const slice = (tab: CellChange[]): MatrixEditDTO[] => {

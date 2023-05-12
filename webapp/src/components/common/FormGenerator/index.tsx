@@ -1,7 +1,7 @@
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { v4 as uuidv4 } from "uuid";
-import { DeepPartial, FieldValues, Path } from "react-hook-form";
+import { FieldValues, FormState, Path } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SxProps, Theme } from "@mui/material";
 import { Fragment, ReactNode, useMemo } from "react";
@@ -32,7 +32,7 @@ export interface IGeneratorField<T extends FieldValues> {
     name: IGeneratorField<T>["name"],
     path: string,
     required?: boolean | string,
-    defaultValues?: DeepPartial<T>
+    defaultValues?: FormState<T>["defaultValues"]
   ) =>
     | Omit<
         RegisterOptionsPlus<T, Path<T> & (string | undefined)>,
@@ -82,7 +82,10 @@ export default function FormGenerator<T extends FieldValues>(
     [jsonTemplate]
   );
   const [t] = useTranslation();
-  const { control, defaultValues } = useFormContextPlus<T>();
+  const {
+    control,
+    formState: { defaultValues },
+  } = useFormContextPlus<T>();
 
   return (
     <>
