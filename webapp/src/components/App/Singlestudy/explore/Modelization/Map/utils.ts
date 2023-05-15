@@ -13,7 +13,9 @@ export type RGB = [number, number, number];
 ////////////////////////////////////////////////////////////////
 
 export const NODE_HEIGHT = 400;
-export const INITIAL_ZOOM = 1;
+export const INITIAL_ZOOM = 0.8;
+export const MAX_ZOOM_LEVEL = 8;
+export const MIN_ZOOM_LEVEL = 0.1;
 export const NODE_COLOR = "rgb(230, 108, 44)";
 
 ////////////////////////////////////////////////////////////////
