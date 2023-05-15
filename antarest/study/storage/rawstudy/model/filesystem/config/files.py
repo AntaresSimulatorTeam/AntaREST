@@ -233,12 +233,19 @@ def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
 
 
 def parse_simulation_zip(path: Path) -> Simulation:
+    xpansion_path = "expansion/out.json"
+    ini_path = "about-the-study/parameters.ini"
+    integrity_path = "checkIntegrity.txt"
     with tempfile.TemporaryDirectory(
         dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp"
     ) as output_dir:
         try:
             with zipfile.ZipFile(path) as zf:
-                zf.extractall(output_dir)
+                zf.extract(ini_path, output_dir)
+                if xpansion_path in zf.namelist():
+                    zf.extract(xpansion_path, output_dir)
+                if integrity_path in zf.namelist():
+                    zf.extract(integrity_path, output_dir)
         except zipfile.BadZipFile as exc:
             raise SimulationParsingError(path, f"Bad ZIP file: {exc}") from exc
         simulation = parse_simulation(
