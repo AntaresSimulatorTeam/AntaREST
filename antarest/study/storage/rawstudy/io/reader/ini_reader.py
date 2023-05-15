@@ -129,7 +129,6 @@ class SimpleKeyValueReader(IReader):
 
 # noinspection SpellCheckingInspection
 class IniConfigParser(configparser.RawConfigParser):
-
     # The regex to match a section is modified so that it can parse
     # a section name in square brackets, such as "[[allocation]]"
     _SECT_TMPL = r"\[ (?P<header>.+) \]"
