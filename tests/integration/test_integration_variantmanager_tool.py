@@ -4,6 +4,11 @@ from pathlib import Path
 from typing import List, Tuple
 from zipfile import ZipFile
 
+import numpy as np
+from numpy import typing as npt
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_4_fixed_hourly,
@@ -33,7 +38,7 @@ from starlette.testclient import TestClient
 test_dir: Path = Path(__file__).parent
 
 
-def generate_csv_string(data: List[List[float]]) -> str:
+def generate_csv_string(data: npt.NDArray[np.float64]) -> str:
     csv_str = ""
     for row in data:
         csv_str += "\t".join(["{:.6f}".format(v) for v in row]) + "\n"
@@ -179,12 +184,12 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}misc-gen{os.sep}miscgen-hub s.txt",
         f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
     ]
-    single_column_empty_data = generate_csv_string(default_scenario_hourly.tolist())
+    single_column_empty_data = generate_csv_string(default_scenario_hourly)
     single_column_daily_empty_data = generate_csv_string(
-        default_scenario_daily.tolist()
+        default_scenario_daily
     )
-    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly.tolist())
-    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly.tolist())
+    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
+    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
     for root, dirs, files in os.walk(study_path):
         rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
