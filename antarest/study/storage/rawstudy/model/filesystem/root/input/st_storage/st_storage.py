@@ -11,6 +11,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.seri
 
 
 class InputShortTermStorage(FolderNode):
+    # Short-term storage objects are introduced in the v8.6 of AntaresSimulator.
+    # This new object simplifies the previously complex modeling of short-term storage such as batteries or STEPs.
     def build(self) -> TREE:
         children: TREE = {
             "clusters": InputShortTermStorageClusters(

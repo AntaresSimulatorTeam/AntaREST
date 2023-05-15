@@ -8,6 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.seri
 
 
 class InputShortTermStorageSeries(FolderNode):
+    # For each short-term storage, a time-series matrix is created after the name of the cluster.
+    # This matrix is created inside the folder's area corresponding to the cluster.
     def build(self) -> TREE:
         children: TREE = {
             a: InputShortTermStorageSeriesArea(

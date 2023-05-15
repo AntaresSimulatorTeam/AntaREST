@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.clus
 
 
 class InputShortTermStorageClusters(FolderNode):
+    # Each area has it own folder named after the area id.
     def build(self) -> TREE:
         children: TREE = {
             a: InputShortTermStorageArea(
