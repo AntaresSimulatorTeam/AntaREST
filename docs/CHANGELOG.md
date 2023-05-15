@@ -1,6 +1,14 @@
 Antares Web Changelog
 =====================
 
+v2.14.1 (2023-05-15)
+--------------------
+
+### Bug Fixes
+
+*  **storage:** performs a partial unzip to read the config of the simulation results ([61e019d2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/61e019d27d5015ba009f527381dab59ce330ce0e))
+
+
 v2.14.0 (2023-05-12)
 --------------------
 
