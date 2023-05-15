@@ -27,7 +27,7 @@ class InputLoad(FolderNode):
                 self.config.next_file("series"),
                 "load_",
                 additional_matrix_params={
-                    "default_empty": default_scenario_hourly
+                    "default_empty": default_scenario_hourly.tolist()
                 },
             ),
         }

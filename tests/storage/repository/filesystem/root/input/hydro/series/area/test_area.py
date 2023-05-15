@@ -30,12 +30,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.ar
 
 BEFORE_650 = {
     "mod": {
-        "default_empty": default_scenario_monthly,
+        "default_empty": default_scenario_monthly.tolist(),
         "freq": MatrixFrequency.MONTHLY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly,
+        "default_empty": default_scenario_hourly.tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -43,12 +43,12 @@ BEFORE_650 = {
 
 AFTER_650 = {
     "mod": {
-        "default_empty": default_scenario_daily,
+        "default_empty": default_scenario_daily.tolist(),
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly,
+        "default_empty": default_scenario_hourly.tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },

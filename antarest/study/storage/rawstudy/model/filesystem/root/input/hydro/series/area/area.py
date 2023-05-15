@@ -32,13 +32,13 @@ class InputHydroSeriesArea(FolderNode):
                 self.context,
                 self.config.next_file("mod.txt"),
                 freq=freq,
-                default_empty=default_empty,
+                default_empty=default_empty.tolist(),
             ),
             # Run of River
             "ror": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("ror.txt"),
                 freq=MatrixFrequency.HOURLY,
-                default_empty=default_scenario_hourly,
+                default_empty=default_scenario_hourly.tolist(),
             ),
         }

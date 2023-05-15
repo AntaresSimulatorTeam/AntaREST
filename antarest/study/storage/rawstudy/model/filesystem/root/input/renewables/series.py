@@ -23,7 +23,7 @@ class ClusteredRenewableSeries(FolderNode):
             "series": InputSeriesMatrix(
                 self.context,
                 series_config,
-                default_empty=default_scenario_hourly,
+                default_empty=default_scenario_hourly.tolist(),
             )
         }
         return children

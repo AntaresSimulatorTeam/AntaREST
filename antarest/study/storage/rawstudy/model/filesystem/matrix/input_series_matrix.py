@@ -2,7 +2,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
+import numpy
 import pandas as pd  # type: ignore
+from numpy import typing
 from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.core.model import JSON

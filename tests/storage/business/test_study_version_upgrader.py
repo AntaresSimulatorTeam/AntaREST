@@ -225,9 +225,9 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
     list_areas = (
         (input_path / "areas" / "list.txt")
         .read_text(encoding="utf-8")
-        .split("\n")
+        .splitlines(keepends=False)
     )
-    if list_areas != [""]:
+    if len(list_areas) != 0:  # filter out empty studies
         for folder in list_areas:
             folder_path = (
                 input_path / "st-storage" / "clusters" / f"{Path(folder).stem}"

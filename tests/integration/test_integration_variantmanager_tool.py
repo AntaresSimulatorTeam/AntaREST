@@ -179,12 +179,12 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}misc-gen{os.sep}miscgen-hub s.txt",
         f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
     ]
-    single_column_empty_data = generate_csv_string(default_scenario_hourly)
+    single_column_empty_data = generate_csv_string(default_scenario_hourly.tolist())
     single_column_daily_empty_data = generate_csv_string(
-        default_scenario_daily
+        default_scenario_daily.tolist()
     )
-    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
-    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
+    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly.tolist())
+    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly.tolist())
     for root, dirs, files in os.walk(study_path):
         rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
