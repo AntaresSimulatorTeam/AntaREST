@@ -32,6 +32,7 @@ IT
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
             "de": Area(
                 name="DE",
@@ -40,6 +41,7 @@ IT
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
             "it": Area(
                 name="IT",
@@ -48,6 +50,7 @@ IT
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
         },
     )

@@ -29,6 +29,7 @@ def test_lifecycle():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             )
         },
     )

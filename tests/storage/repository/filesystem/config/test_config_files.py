@@ -9,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_thermal,
     _parse_sets,
     _parse_links,
+    _parse_st_storage,
 )
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -251,6 +252,7 @@ def test_parse_area(tmp_path: Path) -> None:
                 links={},
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
+                st_storage=[],
             )
         },
     )
@@ -275,6 +277,34 @@ def test_parse_thermal(tmp_path: Path) -> None:
     (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
 
     assert _parse_thermal(study_path, "fr") == [
+        Cluster(id="t1", name="t1", enabled=True),
+        Cluster(id="t2", name="t2", enabled=False),
+        Cluster(id="t3", name="t3", enabled=True),
+    ]
+
+
+def test_parse_st_storage(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    study_path.joinpath("input", "st-storage", "clusters", "fr").mkdir(
+        parents=True
+    )
+    content = """
+        [t1]
+        name = t1
+
+        [t2]
+        name = t2
+        enabled = false
+
+        [t3]
+        name = t3
+        enabled = true
+        """
+    study_path.joinpath(
+        "input", "st-storage", "clusters", "fr", "list.ini"
+    ).write_text(content)
+
+    assert _parse_st_storage(study_path, "fr") == [
         Cluster(id="t1", name="t1", enabled=True),
         Cluster(id="t2", name="t2", enabled=False),
         Cluster(id="t3", name="t3", enabled=True),

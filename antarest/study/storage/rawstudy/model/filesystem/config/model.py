@@ -56,6 +56,7 @@ class Area(BaseModel):
     renewables: List[Cluster]
     filters_synthesis: List[str]
     filters_year: List[str]
+    st_storage: List[Cluster]
 
 
 class DistrictSet(BaseModel):
@@ -205,16 +206,15 @@ class FileStudyTreeConfig(DTO):
             ],
         )
 
-    # TODO : Modify this to return short term storage names
     def get_short_term_storage_names(
         self, area: str, only_enabled: bool = False
     ) -> List[str]:
         return self.cache.get(
             f"%st-storage%{area}%{only_enabled}%{area}",
             [
-                thermal.id
-                for thermal in self.areas[area].thermals
-                if not only_enabled or thermal.enabled
+                storage.id
+                for storage in self.areas[area].st_storage
+                if not only_enabled or storage.enabled
             ],
         )
 

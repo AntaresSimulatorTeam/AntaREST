@@ -91,6 +91,7 @@ def test_get(tmp_path: Path):
             renewables=[],
             filters_year=[],
             filters_synthesis=[],
+            st_storage=[],
         )
         for n in ["de", "fr", "es", "it"]
     }

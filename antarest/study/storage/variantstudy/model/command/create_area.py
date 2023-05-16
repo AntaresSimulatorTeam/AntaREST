@@ -76,6 +76,7 @@ class CreateArea(ICommand):
             renewables=[],
             filters_synthesis=[],
             filters_year=[],
+            st_storage=[],
         )
         return (
             CommandOutput(

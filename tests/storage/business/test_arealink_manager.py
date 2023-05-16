@@ -270,6 +270,7 @@ def test_get_all_area():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
             "a2": Area(
                 name="a2",
@@ -278,6 +279,7 @@ def test_get_all_area():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
             "a3": Area(
                 name="a3",
@@ -286,6 +288,7 @@ def test_get_all_area():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
         },
         sets={"s1": DistrictSet(areas=["a1"])},
@@ -440,6 +443,7 @@ def test_update_area():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
             "a2": Area(
                 name="a2",
@@ -448,6 +452,7 @@ def test_update_area():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             ),
         },
         sets={"s1": DistrictSet(areas=["a1"])},

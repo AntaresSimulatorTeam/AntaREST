@@ -221,6 +221,12 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
             # fmt: on
 
+        if study_data.config.version >= 860:
+            study_data.tree.delete(
+                ["input", "st-storage", "clusters", self.id]
+            )
+            study_data.tree.delete(["input", "st-storage", "series", self.id])
+
         self._remove_area_from_links(study_data)
         self._remove_area_from_binding_constraints(study_data)
         self._remove_area_from_correlation_matrices(study_data)

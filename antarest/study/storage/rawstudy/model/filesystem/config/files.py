@@ -352,6 +352,7 @@ def parse_area(root: Path, area: str) -> "Area":
         renewables=_parse_renewables(root, area_id),
         filters_synthesis=_parse_filters_synthesis(root, area_id),
         filters_year=_parse_filters_year(root, area_id),
+        st_storage=_parse_st_storage(root, area_id),
     )
 
 
@@ -359,6 +360,22 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
     list_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/thermal/clusters/{area}/list.ini"),
+        file_type=FileType.SIMPLE_INI,
+    )
+    return [
+        Cluster(
+            id=transform_name_to_id(key),
+            enabled=list_ini.get(key, {}).get("enabled", True),
+            name=list_ini.get(key, {}).get("name", key),
+        )
+        for key in list(list_ini.keys())
+    ]
+
+
+def _parse_st_storage(root: Path, area: str) -> List[Cluster]:
+    list_ini = _extract_data_from_file(
+        root=root,
+        inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
         file_type=FileType.SIMPLE_INI,
     )
     return [
