@@ -24,12 +24,6 @@ export const MapHeader = styled(Box)(() => ({
   top: "10px",
 }));
 
-export const MapFooter = styled(Box)(() => ({
-  position: "absolute",
-  right: "15px",
-  bottom: "15px",
-}));
-
 ////////////////////////////////////////////////////////////////
 // Node
 ////////////////////////////////////////////////////////////////
