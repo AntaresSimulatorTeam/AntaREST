@@ -205,6 +205,7 @@ class FileStudyTreeConfig(DTO):
             ],
         )
 
+    # TODO : Modify this to return short term storage names
     def get_short_term_storage_names(
         self, area: str, only_enabled: bool = False
     ) -> List[str]:

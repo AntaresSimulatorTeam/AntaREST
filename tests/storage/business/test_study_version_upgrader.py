@@ -39,8 +39,6 @@ def test_end_to_end_upgrades(tmp_path: Path):
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "860"
     upgrade_study(tmp_path, target_version)
-    with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
-        print(f.readlines())
     assert_study_antares_file_is_updated(tmp_path, target_version)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -140,6 +138,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         == 0.0
     )
     assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
+    assert adequacy_patch["enable-first-step"]
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
@@ -228,12 +227,15 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         .splitlines(keepends=False)
     )
     if len(list_areas) != 0:  # filter out empty studies
-        for folder in list_areas:
-            folder_path = (
-                input_path / "st-storage" / "clusters" / f"{Path(folder).stem}"
+        for area in list_areas:
+            st_storage_path = input_path.joinpath(
+                "st-storage", "clusters", f"{Path(area).stem}"
             )
-            assert folder_path.is_dir()
-            assert (folder_path / "list.ini").exists()
+            assert st_storage_path.is_dir()
+            assert (st_storage_path / "list.ini").exists()
+            assert input_path.joinpath(
+                "hydro", "series", f"{Path(area).stem}", "mingen.txt"
+            ).exists()
 
 
 def assert_folder_is_created(path: Path) -> None:

@@ -23,9 +23,8 @@ class InputShortTermStorageAreaList(IniFileNode):
         # - an efficiency coefficient (double in range 0-1)
         # - a reservoir capacity (double > 0)
         # - an initial level (double in range 0-1)
-        # - a withdrawal nominal capacity (double in range 0-1)
-        # - an injection nominal capacity (double in range 0-1)
-        # - a storage cycle (int in range 24-268)
+        # - a withdrawal nominal capacity (double > 0)
+        # - an injection nominal capacity (double > 0)
         types = {
             st_storage: dict
             for st_storage in config.get_short_term_storage_names(area)
