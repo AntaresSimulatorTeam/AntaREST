@@ -1,9 +1,10 @@
+import shutil
+import textwrap
 from pathlib import Path
 from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
-
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -13,9 +14,10 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 )
 
 
-def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:
-    path = Path(tmp_path) / "test.ini"
-    ini_content = """
+def build_dataset(study_dir: Path) -> Tuple[Path, JSON]:
+    ini_path = study_dir.joinpath("test.ini")
+    ini_content = textwrap.dedent(
+        """\
         [part1]
         key_int = 1
         key_float = 2.1
@@ -24,21 +26,28 @@ def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:
         [part2]
         key_bool = True
         key_bool2 = False
-    """
-    types = {
-        "part1": {"key_int": int, "key_float": float, "key_str": str},
+        """
+    )
+    section_types = {
+        "part1": {
+            "key_int": int,
+            "key_float": float,
+            "key_str": str,
+        },
         "part2": {
             "key_bool": bool,
             "key_bool2": bool,
         },
     }
-    path.write_text(ini_content)
-    return path, types
+    ini_path.write_text(ini_content)
+    return ini_path, section_types
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str) -> None:
-    path, types = build_dataset(tmp_path)
+def test_get(tmp_path: Path) -> None:
+    study_dir = tmp_path.joinpath("my_study")
+    study_dir.mkdir()
+    ini_path, types = build_dataset(study_dir)
 
     expected_json = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
@@ -47,11 +56,11 @@ def test_get(tmp_path: str) -> None:
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=path,
-            path=path,
+            study_path=ini_path,
+            path=ini_path,
             version=-1,
-            areas=dict(),
-            outputs=dict(),
+            areas={},
+            outputs={},
             study_id="id",
         ),
         types=types,
@@ -60,10 +69,38 @@ def test_get(tmp_path: str) -> None:
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
 
+    base_name = str(tmp_path.joinpath("archived"))
+    zipped_path = Path(
+        shutil.make_archive(
+            base_name,
+            format="zip",
+            root_dir=study_dir,
+        )
+    )
+
+    zipped_node = IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=tmp_path.joinpath("archived", ini_path.name),
+            path=tmp_path.joinpath("archived", ini_path.name),
+            version=-1,
+            areas={},
+            outputs={},
+            study_id="id",
+            zip_path=zipped_path,
+        ),
+        types=types,
+    )
+    assert zipped_node.get([]) == expected_json
+    assert zipped_node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
+    assert zipped_node.get(["part2", "key_bool"])
+
 
 @pytest.mark.unit_test
-def test_get_depth(tmp_path: str) -> None:
-    path, types = build_dataset(tmp_path)
+def test_get_depth(tmp_path: Path) -> None:
+    study_dir = tmp_path.joinpath("my_study")
+    study_dir.mkdir()
+    ini_path, types = build_dataset(study_dir)
 
     expected_json = {
         "part1": {},
@@ -72,16 +109,40 @@ def test_get_depth(tmp_path: str) -> None:
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=path,
-            path=path,
+            study_path=ini_path,
+            path=ini_path,
             version=-1,
-            areas=dict(),
-            outputs=dict(),
+            areas={},
+            outputs={},
             study_id="id",
         ),
         types=types,
     )
     assert node.get(depth=1) == expected_json
+
+    base_name = str(tmp_path.joinpath("archived"))
+    zipped_path = Path(
+        shutil.make_archive(
+            base_name,
+            format="zip",
+            root_dir=study_dir,
+        )
+    )
+
+    zipped_node = IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=tmp_path.joinpath("archived", ini_path.name),
+            path=tmp_path.joinpath("archived", ini_path.name),
+            version=-1,
+            areas={},
+            outputs={},
+            study_id="id",
+            zip_path=zipped_path,
+        ),
+        types=types,
+    )
+    assert zipped_node.get(depth=1) == expected_json
 
 
 @pytest.mark.unit_test
@@ -127,40 +188,56 @@ def test_validate_section():
 
 
 @pytest.mark.unit_test
-def test_save(tmp_path: str) -> None:
-    path = Path(tmp_path) / "test.ini"
+def test_save(tmp_path: Path) -> None:
+    ini_path = tmp_path.joinpath("test.ini")
 
-    ini_content = """[part1]
-key_int = 1
-key_float = 2.1
-key_str = value1
-    """
-    path.write_text(ini_content)
+    ini_content = textwrap.dedent(
+        """\
+        [part1]
+        key_float = 2.1
+        key_int = 1
+        key_str = value1
+        """
+    )
+    ini_path.write_text(ini_content)
 
-    exp = """[part1]
-key_int = 10
-key_str = value10
-key_float = 3.14
-
-"""
-
-    types = {"part1": {"key_int": int, "key_float": float, "key_str": str}}
+    types = {
+        "part1": {
+            "key_int": int,
+            "key_float": float,
+            "key_str": str,
+        }
+    }
 
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=path,
-            path=path,
+            study_path=ini_path,
+            path=ini_path,
             version=-1,
             study_id="id",
-            areas=dict(),
-            outputs=dict(),
+            areas={},
+            outputs={},
         ),
         types=types,
     )
+    # note: the order of the keys is preserved in the output
     data = {
-        "part1": {"key_int": 10, "key_str": "value10", "key_float": 2.1},
+        "part1": {
+            "key_int": 10,
+            "key_str": "value10",
+            "key_float": 2.1,
+        },
     }
     node.save(data)
     node.save(3.14, url=["part1", "key_float"])
-    assert exp == path.read_text()
+
+    expected = textwrap.dedent(
+        """\
+        [part1]
+        key_int = 10
+        key_str = value10
+        key_float = 3.14
+        """
+    )
+    assert ini_path.read_text().strip() == expected.strip()
