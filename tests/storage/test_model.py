@@ -25,6 +25,7 @@ def test_file_study_tree_config_dto():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             )
         },
         sets={"s": DistrictSet()},

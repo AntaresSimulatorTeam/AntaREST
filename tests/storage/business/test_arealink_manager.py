@@ -494,6 +494,7 @@ def test_update_clusters():
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
+                st_storage=[],
             )
         },
     )
