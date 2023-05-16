@@ -54,6 +54,24 @@ AFTER_650 = {
     },
 }
 
+AFTER_860 = {
+    "mod": {
+        "default_empty": default_scenario_daily.tolist(),
+        "freq": MatrixFrequency.DAILY,
+        "nb_columns": None,
+    },
+    "ror": {
+        "default_empty": default_scenario_hourly.tolist(),
+        "freq": MatrixFrequency.HOURLY,
+        "nb_columns": None,
+    },
+    "mingen": {
+        "default_empty": default_scenario_hourly.tolist(),
+        "freq": MatrixFrequency.HOURLY,
+        "nb_columns": None,
+    },
+}
+
 
 class TestInputHydroSeriesArea:
     @pytest.mark.parametrize(
@@ -61,6 +79,7 @@ class TestInputHydroSeriesArea:
         [
             pytest.param("000", BEFORE_650, id="before-650"),
             pytest.param("650", AFTER_650, id="after-650"),
+            pytest.param("860", AFTER_860, id="after-860"),
         ],
     )
     def test_build_input_hydro_series_area(
