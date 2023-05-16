@@ -9,12 +9,6 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_4_fixed_hourly,
-    default_8_fixed_hourly,
-    default_scenario_daily,
-    default_scenario_hourly,
-)
 from antarest.study.storage.study_upgrader import get_current_version
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -80,6 +74,7 @@ def test_variant_manager(app: FastAPI, tmp_path: str):
 
 
 def test_parse_commands(tmp_path: str, app: FastAPI):
+    # sourcery skip: low-code-quality
     base_dir = TEST_DIR / "assets"
     export_path = Path(tmp_path) / "commands"
     study = "base_study"
@@ -107,7 +102,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     )
     assert generated_study_path.exists() and generated_study_path.is_dir()
 
-    single_column_empty_items = [
+    single_column_empty_items = {
         "input/load/series/load_hub w.txt",
         "input/load/series/load_south.txt",
         "input/load/series/load_hub n.txt",
@@ -152,8 +147,8 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         "input/hydro/series/hub n/ror.txt",
         "input/hydro/series/north/ror.txt",
         "input/hydro/series/east/ror.txt",
-    ]
-    single_column_daily_empty_items = [
+    }
+    single_column_daily_empty_items = {
         "input/hydro/series/hub e/mod.txt",
         "input/hydro/series/south/mod.txt",
         "input/hydro/series/hub w/mod.txt",
@@ -162,54 +157,86 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         "input/hydro/series/hub n/mod.txt",
         "input/hydro/series/north/mod.txt",
         "input/hydro/series/east/mod.txt",
-    ]
-    fixed_4_cols_empty_items = [
+    }
+    fixed_4_cols_empty_items = {
         "input/reserves/hub s.txt",
         "input/reserves/hub n.txt",
         "input/reserves/hub w.txt",
         "input/reserves/hub e.txt",
-    ]
+    }
     # noinspection SpellCheckingInspection
-    fixed_8_cols_empty_items = [
+    fixed_8_cols_empty_items = {
         "input/misc-gen/miscgen-hub w.txt",
         "input/misc-gen/miscgen-hub e.txt",
         "input/misc-gen/miscgen-hub s.txt",
         "input/misc-gen/miscgen-hub n.txt",
-    ]
+    }
+    matrix_items = (
+        single_column_empty_items
+        | single_column_daily_empty_items
+        | fixed_4_cols_empty_items
+        | fixed_8_cols_empty_items
+    )
+
+    ignorable_items = {
+        "Desktop.ini",
+        "study.antares",
+        "settings/comments.txt",
+        "settings/resources/study.ico",
+    }
+
+    # fmt: off
+    single_column_empty_matrix = np.zeros((8760, 1), dtype=np.float64)
+    single_column_daily_empty_matrix = np.zeros((365, 1), dtype=np.float64)
+    fixed_4_columns_empty_matrix = np.zeros((8760, 4), dtype=np.float64)
+    fixed_8_columns_empty_matrix = np.zeros((8760, 8), dtype=np.float64)
+    # fmt: on
+
     for root, dirs, files in os.walk(study_path):
-        rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
-            if item in [
-                "comments.txt",
-                "study.antares",
-                "Desktop.ini",
-                "study.ico",
-            ]:
+            cfg_path = Path(root).joinpath(item)
+            cfg_relpath = cfg_path.relative_to(study_path).as_posix()
+
+            if cfg_relpath in ignorable_items:
                 continue
-            elif f"{rel_path}/{item}" in single_column_empty_items:
-                assert (
-                    np.loadtxt(generated_study_path / rel_path / item)
-                    == default_scenario_hourly
-                ).all()
-            elif f"{rel_path}/{item}" in single_column_daily_empty_items:
-                assert (
-                    np.loadtxt(generated_study_path / rel_path / item)
-                    == default_scenario_daily
-                ).all()
-            elif f"{rel_path}/{item}" in fixed_4_cols_empty_items:
-                assert (
-                    np.loadtxt(generated_study_path / rel_path / item)
-                    == default_4_fixed_hourly
-                ).all()
-            elif f"{rel_path}/{item}" in fixed_8_cols_empty_items:
-                assert (
-                    np.loadtxt(generated_study_path / rel_path / item)
-                    == default_8_fixed_hourly
-                ).all()
+
+            # print(f"Reading config data '{cfg_relpath}'...", file=sys.stderr)
+            actual_cfg_path = generated_study_path / cfg_relpath
+            if cfg_relpath in matrix_items:
+                data = np.loadtxt(
+                    actual_cfg_path,
+                    delimiter="\t",
+                    dtype=np.float64,
+                    ndmin=2,
+                )
             else:
-                assert (study_path / rel_path / item).read_text() == (
-                    generated_study_path / rel_path / item
-                ).read_text()
+                data = actual_cfg_path.read_text()
+
+            if cfg_relpath in single_column_empty_items:
+                assert (
+                    data.all() == single_column_empty_matrix.all(),
+                    f"Invalid single_column_empty_matrix '{actual_cfg_path}'",
+                )
+            elif cfg_relpath in single_column_daily_empty_items:
+                assert (
+                    data.all() == single_column_daily_empty_matrix.all(),
+                    f"Invalid single_column_daily_empty_matrix '{actual_cfg_path}'",
+                )
+            elif cfg_relpath in fixed_4_cols_empty_items:
+                assert (
+                    data.all() == fixed_4_columns_empty_matrix.all(),
+                    f"Invalid fixed_4_columns_empty_matrix '{actual_cfg_path}'",
+                )
+            elif cfg_relpath in fixed_8_cols_empty_items:
+                assert (
+                    data.all() == fixed_8_columns_empty_matrix.all(),
+                    f"Invalid fixed_8_columns_empty_matrix '{actual_cfg_path}'",
+                )
+            else:
+                assert (
+                    data == cfg_path.read_text(),
+                    f"Invalid config '{actual_cfg_path}'",
+                )
 
 
 def test_diff_local(tmp_path: Path):
