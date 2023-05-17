@@ -82,9 +82,9 @@ class OutputSimulationAreaItem(FolderNode):
 
             has_short_term_storage = self.config.version >= 860
             if has_short_term_storage:
-                children[f"st-details-{freq}"] = AreaOutputSeriesMatrix(
+                children[f"details-STstorage-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    self.config.next_file(f"st-details-{freq}.txt"),
+                    self.config.next_file(f"details-STstorage-{freq}.txt"),
                     freq,
                     self.area,
                 )
