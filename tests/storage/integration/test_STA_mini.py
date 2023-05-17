@@ -1,5 +1,4 @@
 import io
-import os
 import shutil
 from datetime import datetime
 from http import HTTPStatus
@@ -17,7 +16,6 @@ from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
-import numpy as np
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
