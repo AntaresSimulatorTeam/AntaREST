@@ -34,14 +34,14 @@ class InputHydroSeriesArea(FolderNode):
                 self.context,
                 self.config.next_file("mod.txt"),
                 freq=freq,
-                default_empty=default_empty.tolist(),
+                default_empty=default_empty,
             ),
             # Run of River
             "ror": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("ror.txt"),
                 freq=MatrixFrequency.HOURLY,
-                default_empty=default_scenario_hourly.tolist(),
+                default_empty=default_scenario_hourly,
             ),
         }
         if self.config.version >= 860:
@@ -49,6 +49,6 @@ class InputHydroSeriesArea(FolderNode):
                 self.context,
                 self.config.next_file("mingen.txt"),
                 freq=MatrixFrequency.HOURLY,
-                default_empty=default_scenario_hourly.tolist(),
+                default_empty=default_scenario_hourly,
             )
         return hydro_series_matrices

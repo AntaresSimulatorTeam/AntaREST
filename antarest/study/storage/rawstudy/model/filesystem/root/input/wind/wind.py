@@ -27,7 +27,7 @@ class InputWind(FolderNode):
                 self.config.next_file("series"),
                 prefix="wind_",
                 additional_matrix_params={
-                    "default_empty": default_scenario_hourly.tolist()
+                    "default_empty": default_scenario_hourly
                 },
             ),
         }

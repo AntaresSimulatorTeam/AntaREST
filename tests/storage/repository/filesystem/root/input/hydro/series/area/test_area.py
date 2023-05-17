@@ -30,12 +30,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.ar
 
 BEFORE_650 = {
     "mod": {
-        "default_empty": default_scenario_monthly.tolist(),
+        "default_empty": default_scenario_monthly,
         "freq": MatrixFrequency.MONTHLY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly,
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -43,12 +43,12 @@ BEFORE_650 = {
 
 AFTER_650 = {
     "mod": {
-        "default_empty": default_scenario_daily.tolist(),
+        "default_empty": default_scenario_daily,
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly,
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -56,17 +56,17 @@ AFTER_650 = {
 
 AFTER_860 = {
     "mod": {
-        "default_empty": default_scenario_daily.tolist(),
+        "default_empty": default_scenario_daily,
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly,
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
     "mingen": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly,
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },

@@ -16,27 +16,27 @@ class InputShortTermStorageAreaStorage(FolderNode):
             "PMAX-injection": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("PMAX-injection.txt"),
-                default_empty=series.pmax_injection.tolist(),
+                default_empty=series.pmax_injection,
             ),
             "PMAX-withdrawal": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("PMAX-withdrawal.txt"),
-                default_empty=series.pmax_withdrawal.tolist(),
+                default_empty=series.pmax_withdrawal,
             ),
             "inflow": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("inflow.txt"),
-                default_empty=series.inflow.tolist(),
+                default_empty=series.inflow,
             ),
             "lower-rule-curve": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("lower-rule-curve.txt"),
-                default_empty=series.lower_rule_curve.tolist(),
+                default_empty=series.lower_rule_curve,
             ),
             "upper-rule-curve": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("upper-rule-curve.txt"),
-                default_empty=series.upper_rule_curve.tolist(),
+                default_empty=series.upper_rule_curve,
             ),
         }
         return children

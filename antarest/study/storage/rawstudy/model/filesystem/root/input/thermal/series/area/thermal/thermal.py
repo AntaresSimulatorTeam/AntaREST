@@ -16,7 +16,7 @@ class InputThermalSeriesAreaThermal(FolderNode):
             "series": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("series.txt"),
-                default_empty=default_scenario_hourly.tolist(),
+                default_empty=default_scenario_hourly,
             ),
         }
         return children

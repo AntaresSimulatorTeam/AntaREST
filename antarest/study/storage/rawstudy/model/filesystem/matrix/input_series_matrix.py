@@ -2,9 +2,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
-import numpy
+import numpy as np
 import pandas as pd  # type: ignore
-from numpy import typing
+from numpy import typing as npt
 from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.core.model import JSON
@@ -34,7 +34,7 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        default_empty: Optional[List[List[float]]] = None,
+        default_empty: Optional[npt.NDArray[np.float64]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
@@ -105,15 +105,13 @@ class InputSeriesMatrix(MatrixNode):
         return errors
 
     def _format_default_matrix(self) -> Dict[str, Any]:
-        if self.default_empty:
-            index_count = len(self.default_empty)
-            if index_count > 0:
-                column_count = len(self.default_empty[0])
-                if column_count > 0:
-                    logger.info("Using preset default matrix")
-                    return {
-                        "index": list(range(index_count)),
-                        "columns": list(range(column_count)),
-                        "data": self.default_empty,
-                    }
+        if isinstance(self.default_empty, np.ndarray):
+            index_count, column_count = self.default_empty.shape
+            if index_count > 0 and column_count > 0:
+                logger.info("Using preset default matrix")
+                return {
+                    "index": list(range(index_count)),
+                    "columns": list(range(column_count)),
+                    "data": self.default_empty,
+                }
         return {}

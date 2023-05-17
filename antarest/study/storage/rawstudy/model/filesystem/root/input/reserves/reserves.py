@@ -16,7 +16,7 @@ class InputReserves(FolderNode):
             a: InputSeriesMatrix(
                 self.context,
                 self.config.next_file(f"{a}.txt"),
-                default_empty=default_4_fixed_hourly.tolist(),
+                default_empty=default_4_fixed_hourly,
             )
             for a in self.config.area_names()
         }

@@ -2,6 +2,9 @@ import base64
 import logging
 from typing import Optional, List, Tuple, Union, cast
 
+import numpy as np
+from numpy import typing as npt
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch, assert_this
 from antarest.matrixstore.model import MatrixData
@@ -587,6 +590,8 @@ class CommandExtractor(ICommandExtractor):
     ) -> ICommand:
         data = study_tree.get(url)
         matrix = CommandExtractor.get_matrix(data, default_value is None)
+        if isinstance(matrix, np.ndarray):
+            matrix = cast(List[List[MatrixData]], matrix.tolist())
         return ReplaceMatrix(
             target="/".join(url),
             matrix=matrix or default_value,
@@ -596,12 +601,12 @@ class CommandExtractor(ICommandExtractor):
     @staticmethod
     def get_matrix(
         data: Union[JSON, str], raise_on_missing: Optional[bool] = False
-    ) -> Optional[Union[str, List[List[MatrixData]]]]:
+    ) -> Optional[Union[str, List[List[MatrixData]], npt.NDArray[np.float64]]]:
         if isinstance(data, str):
             return data
         elif isinstance(data, dict):
             if "data" in data:
-                assert isinstance(data["data"], list)
+                assert isinstance(data["data"], (list, np.ndarray))
                 return data["data"]
             else:
                 return [[]]

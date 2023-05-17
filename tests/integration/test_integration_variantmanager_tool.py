@@ -6,8 +6,6 @@ from zipfile import ZipFile
 
 import numpy as np
 from numpy import typing as npt
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (

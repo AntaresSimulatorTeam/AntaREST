@@ -3,9 +3,10 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, List, cast
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 from sqlalchemy import create_engine
 
@@ -65,6 +66,11 @@ def _assert_others(a: Any, b: Any) -> None:
         raise AssertionError(f"element in study not the same {a} != {b}")
 
 
+def _assert_array(a: np.ndarray, b: np.ndarray) -> None:
+    if not (a == b).all():
+        raise AssertionError(f"element in study not the same {a} != {b}")
+
+
 def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     if isinstance(a, dict) and isinstance(b, dict):
         _assert_dict(a, b)
@@ -77,6 +83,12 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         and "studyfile://" in b
     ):
         _assert_pointer_path(a, b)
+    elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        _assert_array(a, b)
+    elif isinstance(a, np.ndarray) and isinstance(b, list):
+        _assert_list(cast(List, a.tolist()), b)
+    elif isinstance(a, list) and isinstance(b, np.ndarray):
+        _assert_list(a, cast(List, b.tolist()))
     else:
         _assert_others(a, b)
 
