@@ -1,4 +1,15 @@
-from typing import List, Sequence, TypedDict, Any, Optional, Callable
+import json
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypedDict,
+    TypeVar,
+)
 
 from pydantic import BaseModel, Extra
 
@@ -6,7 +17,7 @@ from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.string import to_camel_case
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
@@ -15,6 +26,7 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
+# noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
 
 
@@ -58,6 +70,11 @@ def execute_or_add_commands(
         )
 
 
+# A variable annotated with T can only be an instance of `FormFieldsBaseModel`
+# or an instance of a class inheriting from `FormFieldsBaseModel`.
+M = TypeVar("M", bound="FormFieldsBaseModel")
+
+
 class FormFieldsBaseModel(BaseModel):
     """
     Pydantic Model for webapp form
@@ -66,6 +83,67 @@ class FormFieldsBaseModel(BaseModel):
     class Config:
         alias_generator = to_camel_case
         extra = Extra.forbid
+
+    @classmethod
+    def from_ini(cls: Type[M], ini_attrs: Dict[str, Any]) -> M:
+        """
+        Creates an instance of `FormFieldsBaseModel` from the given INI attributes.
+
+        The conversion between the attribute names and the field names is ensured
+        by the presence of an `ini_alias` attribute when defining each field:
+
+        Example:
+
+            class ThermalFormFields(FormFieldsBaseModel):
+                ...
+                must_run: bool = Field(False, ini_alias="must-run")
+
+        Args:
+            cls: The class itself, or any subclass.
+            ini_attrs: A dictionary containing the INI attributes to use for constructing the instance.
+
+        Returns:
+            An instance of `FormFieldsBaseModel`.
+
+        Raises:
+            ValidationError: If there are extra fields not permitted.
+        """
+        aliases = {
+            field.field_info.extra.get("ini_alias", name): name
+            for name, field in cls.__fields__.items()
+        }
+        fields_values = {
+            aliases.get(ini_name, ini_name): value
+            for ini_name, value in ini_attrs.items()
+        }
+        return cls.construct(**fields_values)
+
+    def to_ini(self) -> Dict[str, Any]:
+        """
+        Converts the instance of `FormFieldsBaseModel` to a dictionary of INI attributes.
+
+        In the INI file, there are only required values or non-default values.
+
+        The conversion between the field names and the attribute names is ensured
+        by the presence of an `ini_alias` attribute when defining each field.
+
+        Example:
+
+            class ThermalFormFields(FormFieldsBaseModel):
+                ...
+                must_run: bool = Field(False, ini_alias="must-run")
+
+        Returns:
+            A dictionary of INI attributes.
+        """
+        fields_values = json.loads(self.json(by_alias=False))
+        ini_attrs = {}
+        for name, field in self.__fields__.items():
+            ini_alias = field.field_info.extra.get("ini_alias", name)
+            value = fields_values[name]
+            if field.required or value != field.get_default():
+                ini_attrs[ini_alias] = value
+        return ini_attrs
 
 
 class FieldInfo(TypedDict, total=False):
