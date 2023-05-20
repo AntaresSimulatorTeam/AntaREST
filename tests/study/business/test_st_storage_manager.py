@@ -9,6 +9,7 @@ from antarest.login.model import Group, User
 from antarest.study.business.st_storage_manager import (
     STStorageConfigNotFoundError,
     STStorageFields,
+    STStorageFieldsNotFoundError,
     STStorageGroup,
     STStorageGroupFields,
     STStorageManager,
@@ -222,3 +223,95 @@ class TestSTStorageManager:
         err_msg = str(ctx.value)
         assert study.id in err_msg
         assert "West" in err_msg
+
+    def test_get_st_storage__nominal_case(
+        self, db_session, study_storage_service, study_uuid
+    ):
+        """
+        Test the `get_st_storage` method of the `STStorageManager` class under nominal conditions.
+
+        This test verifies that the `get_st_storage` method returns the expected storage fields
+        for a specific study, area, and cluster ID combination.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=LIST_CFG["cluster1"]),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested
+        groups = manager.get_st_storage(
+            study, area_id="West", cluster_id="cluster1"
+        )
+
+        # Define the expected storage fields
+        expected = STStorageFields(
+            id="cluster1",
+            name="Cluster1",
+            injection_nominal_capacity=1500,
+            withdrawal_nominal_capacity=1500,
+            reservoir_capacity=20000,
+            group=STStorageGroup.BATTERY,
+            efficiency=0.94,
+            initial_level=0,
+            initial_level_optim=True,
+        )
+
+        # Assert that the returned storage fields match the expected fields
+        assert groups == expected
+
+    def test_get_st_storage__config_not_found(
+        self, db_session, study_storage_service, study_uuid
+    ):
+        """
+        Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
+
+        This test verifies that the `get_st_storage` method raises an `STStorageFieldsNotFoundError`
+        exception when the configuration for the provided study, area, and cluster ID combination is not found.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(side_effect=KeyError("Oops!")),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested and expect an exception
+        with pytest.raises(
+            STStorageFieldsNotFoundError, match="not found"
+        ) as ctx:
+            manager.get_st_storage(
+                study, area_id="West", cluster_id="cluster1"
+            )
+        # ensure the error message contains at least the study ID, area ID and cluster ID
+        err_msg = str(ctx.value)
+        assert study.id in err_msg
+        assert "West" in err_msg
+        assert "cluster1" in err_msg

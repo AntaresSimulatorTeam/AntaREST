@@ -13,7 +13,8 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator, root_validator
+
 
 # =============
 #  Form fields
@@ -49,6 +50,8 @@ class STStorageBaseModel(FormFieldsBaseModel):
     class Config:
         allow_population_by_field_name = True
 
+    # NOTE: The `id` attribute refers to the INI section,
+    # while the `name` attribute pertains to the `name` option within that section.
     id: str = Field(
         ...,
         description="Short-term storage ID (mandatory)",
@@ -116,6 +119,14 @@ class STStorageGroupFields(STStorageBaseModel):
         default_factory=list, description="List of short-term storage clusters"
     )
 
+    # @root_validator(pre=True)
+    # def calculate_sum_values(cls, values):
+    #     if 'sum_values' in values:
+    #         return values  # Return early if sum_values is already provided
+    #
+    #     if 'values' in values:
+    #         values['sum_values'] = sum(values['values'])
+    #     return values
 
 # =============
 #  Time series
@@ -209,10 +220,10 @@ class STStorageManager:
         """
         # NOTE: The form field names are in camelCase,
         # while the configuration field names are in snake_case.
-        thermal_config = field_values.to_ini()
+        config = field_values.to_ini()
         command = CreateSTStorage(
             target=ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id),
-            data=thermal_config,
+            data=config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -254,10 +265,10 @@ class STStorageManager:
             )
             all_groups = []
             group: STStorageGroup
-            for group, children in itertools.groupby(
+            for group, grp_iter in itertools.groupby(
                 clusters, key=operator.attrgetter("group")
             ):
-                children = list(children)  # iterator -> list
+                children = list(grp_iter)  # iterator -> list
                 group_fields = STStorageGroupFields(
                     id=group.value.lower(),
                     name=group.value,
@@ -296,14 +307,16 @@ class STStorageManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         # fmt: off
         try:
-            thermal_config = file_study.tree.get(
+            config = file_study.tree.get(
                 ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id).split("/"),
                 depth=1,
             )
         except KeyError:
             raise STStorageFieldsNotFoundError(study.id, area_id, cluster_id) from None
         else:
-            return STStorageFields.from_ini(thermal_config)
+            config["id"] = cluster_id
+            config["group"] = STStorageGroup(config["group"])
+            return STStorageFields.from_ini(config)
         # fmt: on
 
     def update_st_storage(
@@ -324,10 +337,10 @@ class STStorageManager:
         """
         # NOTE: The form field names are in camelCase,
         # while the configuration field names are in snake_case.
-        thermal_config = field_values.to_ini()
+        config = field_values.to_ini()
         command = UpdateConfig(
             target=ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id),
-            data=thermal_config,
+            data=config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
