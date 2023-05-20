@@ -1,5 +1,7 @@
+import itertools
+import operator
 from enum import Enum
-from typing import Any, Dict, List, Type
+from typing import List
 
 import numpy as np
 from antarest.study.business.utils import (
@@ -38,46 +40,53 @@ class STStorageGroup(str, Enum):
 
 
 # noinspection SpellCheckingInspection
-class STStorageFields(FormFieldsBaseModel):
+class STStorageBaseModel(FormFieldsBaseModel):
     """
-    This class represents a form for short-term storage configuration.
+    This base class represents a group or a cluster
+    for short-term storage configuration.
     """
 
     class Config:
         allow_population_by_field_name = True
 
-        @staticmethod
-        def schema_extra(
-            schema: Dict[str, Any], model: Type["STStorageFields"]
-        ) -> None:
-            name: str
-            for name, prop in schema.get("properties", {}).items():
-                prop["title"] = name.replace("_", " ").title().replace(" ", "")
-                prop["ini_alias"] = name.replace("_", "")
-
+    id: str = Field(
+        ...,
+        description="Short-term storage ID (mandatory)",
+        regex=r"\w+",
+    )
     name: str = Field(
         ...,
         description="Short-term storage name (mandatory)",
         regex=r"\w+",
     )
-    group: STStorageGroup = Field(
-        ...,
-        description="Energy storage system group (mandatory)",
-    )
     injection_nominal_capacity: float = Field(
         0,
         description="Injection nominal capacity (MW)",
         ge=0,
+        ini_alias="injectionnominalcapacity",
     )
     withdrawal_nominal_capacity: float = Field(
         0,
         description="Withdrawal nominal capacity (MW)",
         ge=0,
+        ini_alias="withdrawalnominalcapacity",
     )
     reservoir_capacity: float = Field(
         0,
         description="Reservoir capacity (MWh)",
         ge=0,
+        ini_alias="reservoircapacity",
+    )
+
+
+class STStorageFields(STStorageBaseModel):
+    """
+    This class represents a form for short-term storage configuration.
+    """
+
+    group: STStorageGroup = Field(
+        ...,
+        description="Energy storage system group (mandatory)",
     )
     efficiency: float = Field(
         1,
@@ -89,11 +98,22 @@ class STStorageFields(FormFieldsBaseModel):
         0,
         description="Initial level of the storage system",
         ge=0,
-        le=1,
+        ini_alias="initiallevel",
     )
     initial_level_optim: bool = Field(
         True,
         description="Flag indicating if the initial level is optimized",
+        ini_alias="initialleveloptim",
+    )
+
+
+class STStorageGroupFields(STStorageBaseModel):
+    """
+    This class represents a group of clusters.
+    """
+
+    clusters: List[STStorageFields] = Field(
+        default_factory=list, description="List of short-term storage clusters"
     )
 
 
@@ -135,8 +155,32 @@ class STStorageTimeSeries(BaseModel):
 ST_STORAGE_PATH = "input/thermal/clusters/{area}/list/{cluster}"
 
 
-class STStorageFieldsNotFoundError(Exception):
+class STStorageManagerError(Exception):
+    """Base class of STStorageManager"""
+
+    def __init__(self, study_id: str, area_id: str, reason: str) -> None:
+        msg = (
+            f"Error in the study '{study_id}',"
+            f" the 'short-term storage' configuration of area '{area_id}' is invalid:"
+            f" {reason}."
+        )
+        super().__init__(msg)
+
+
+class STStorageFieldsNotFoundError(STStorageManagerError):
     """Fields of the short-term storage cluster are not found"""
+
+    def __init__(self, study_id: str, area_id: str, cluster_id: str) -> None:
+        super().__init__(
+            study_id, area_id, f"Fields of cluster '{cluster_id}' not found"
+        )
+
+
+class STStorageConfigNotFoundError(STStorageManagerError):
+    """Configuration for short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str) -> None:
+        super().__init__(study_id, area_id, "missing configuration")
 
 
 class STStorageManager:
@@ -176,20 +220,60 @@ class STStorageManager:
             study, file_study, [command], self.storage_service
         )
 
-    def list_st_storage(
+    def get_st_storge_groups(
         self,
         study: Study,
         area_id: str,
-    ) -> STStorageFields:
+    ) -> List[STStorageGroupFields]:
         """
         List of short-term storages grouped by cluster types
 
         Args:
-            study:
-            area_id:
+            study: The study object.
+            area_id: The area ID of the short-term storage cluster.
 
         Returns:
+            The list of short-term storage groups.
         """
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        try:
+            config = file_study.tree.get(ST_STORAGE_PATH.split("/"), depth=3)
+        except KeyError:
+            raise STStorageConfigNotFoundError(study.id, area_id) from None
+        else:
+            # sourcery skip: extract-method
+            for section, value in config.items():
+                value["id"] = section
+                value["group"] = STStorageGroup(value["group"])
+            clusters = sorted(
+                (
+                    STStorageFields.from_ini(value)
+                    for key, value in config.items()
+                ),
+                key=operator.attrgetter("group", "id"),
+            )
+            all_groups = []
+            group: STStorageGroup
+            for group, children in itertools.groupby(
+                clusters, key=operator.attrgetter("group")
+            ):
+                children = list(children)  # iterator -> list
+                group_fields = STStorageGroupFields(
+                    id=group.value.lower(),
+                    name=group.value,
+                    injection_nominal_capacity=sum(
+                        child.injection_nominal_capacity for child in children
+                    ),
+                    withdrawal_nominal_capacity=sum(
+                        child.withdrawal_nominal_capacity for child in children
+                    ),
+                    reservoir_capacity=sum(
+                        child.reservoir_capacity for child in children
+                    ),
+                    clusters=children,
+                )
+                all_groups.append(group_fields)
+            return all_groups
 
     def get_st_storage(
         self,
@@ -217,9 +301,7 @@ class STStorageManager:
                 depth=1,
             )
         except KeyError:
-            raise STStorageFieldsNotFoundError(
-                f"Fields of short-term storage cluster '{cluster_id}' not found in '{area_id}'"
-            ) from None
+            raise STStorageFieldsNotFoundError(study.id, area_id, cluster_id) from None
         else:
             return STStorageFields.from_ini(thermal_config)
         # fmt: on
