@@ -137,7 +137,6 @@ class TestSTStorageManager:
         # Check
         expected = [
             STStorageGroupFields(
-                id="battery",
                 name="Battery",
                 injection_nominal_capacity=1500.0,
                 withdrawal_nominal_capacity=1500.0,
@@ -157,7 +156,6 @@ class TestSTStorageManager:
                 ],
             ),
             STStorageGroupFields(
-                id="psp_closed",
                 name="PSP_closed",
                 injection_nominal_capacity=3500.0,
                 withdrawal_nominal_capacity=3000.0,
