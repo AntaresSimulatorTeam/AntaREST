@@ -1,7 +1,7 @@
 import itertools
 import operator
 from enum import Enum
-from typing import List
+from typing import List, Dict, Any
 
 import numpy as np
 from antarest.study.business.utils import (
@@ -50,13 +50,6 @@ class STStorageBaseModel(FormFieldsBaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    # NOTE: The `id` attribute refers to the INI section,
-    # while the `name` attribute pertains to the `name` option within that section.
-    id: str = Field(
-        ...,
-        description="Short-term storage ID (mandatory)",
-        regex=r"\w+",
-    )
     name: str = Field(
         ...,
         description="Short-term storage name (mandatory)",
@@ -82,11 +75,19 @@ class STStorageBaseModel(FormFieldsBaseModel):
     )
 
 
+# noinspection SpellCheckingInspection
 class STStorageFields(STStorageBaseModel):
     """
     This class represents a form for short-term storage configuration.
     """
 
+    # NOTE: The `id` attribute refers to the INI section,
+    # while the `name` attribute pertains to the `name` option within that section.
+    id: str = Field(
+        ...,
+        description="Short-term storage ID (mandatory)",
+        regex=r"\w+",
+    )
     group: STStorageGroup = Field(
         ...,
         description="Energy storage system group (mandatory)",
@@ -116,17 +117,29 @@ class STStorageGroupFields(STStorageBaseModel):
     """
 
     clusters: List[STStorageFields] = Field(
-        default_factory=list, description="List of short-term storage clusters"
+        default_factory=list,
+        description="List of short-term storage clusters",
     )
 
-    # @root_validator(pre=True)
-    # def calculate_sum_values(cls, values):
-    #     if 'sum_values' in values:
-    #         return values  # Return early if sum_values is already provided
-    #
-    #     if 'values' in values:
-    #         values['sum_values'] = sum(values['values'])
-    #     return values
+    @root_validator(pre=True)
+    def calculate_sums(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if "clusters" not in values:
+            # Return early if `clusters` is not provided (due to error)
+            return values
+        # convert iterator -> list
+        values["clusters"] = clusters = list(values["clusters"])
+        field_names = (
+            "injection_nominal_capacity",
+            "withdrawal_nominal_capacity",
+            "reservoir_capacity",
+        )
+        for field_name in field_names:
+            if field_name not in values:
+                values[field_name] = sum(
+                    getattr(cluster, field_name) for cluster in clusters
+                )
+        return values
+
 
 # =============
 #  Time series
@@ -268,20 +281,9 @@ class STStorageManager:
             for group, grp_iter in itertools.groupby(
                 clusters, key=operator.attrgetter("group")
             ):
-                children = list(grp_iter)  # iterator -> list
                 group_fields = STStorageGroupFields(
-                    id=group.value.lower(),
                     name=group.value,
-                    injection_nominal_capacity=sum(
-                        child.injection_nominal_capacity for child in children
-                    ),
-                    withdrawal_nominal_capacity=sum(
-                        child.withdrawal_nominal_capacity for child in children
-                    ),
-                    reservoir_capacity=sum(
-                        child.reservoir_capacity for child in children
-                    ),
-                    clusters=children,
+                    clusters=grp_iter,
                 )
                 all_groups.append(group_fields)
             return all_groups
