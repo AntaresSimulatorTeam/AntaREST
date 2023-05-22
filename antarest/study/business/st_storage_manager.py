@@ -7,6 +7,8 @@ import numpy as np
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
+    Field,
+    AllOptionalMetaclass,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -237,7 +239,9 @@ class STStorageManager:
         # while the configuration field names are in snake_case.
         config = field_values.to_ini()
         command = CreateSTStorage(
-            target=ST_STORAGE_PATH.format(area_id=area_id, storage_id=storage_id),
+            target=ST_STORAGE_PATH.format(
+                area_id=area_id, storage_id=storage_id
+            ),
             data=config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
@@ -270,10 +274,11 @@ class STStorageManager:
             # sourcery skip: extract-method
             for section, value in config.items():
                 value["id"] = section
-                value["group"] = STStorageGroup(value["group"])
             storages = sorted(
                 (
-                    STStorageFields.from_ini(value, study_version=int(study.version))
+                    STStorageFields.from_ini(
+                        value, study_version=int(study.version)
+                    )
                     for key, value in config.items()
                 ),
                 key=operator.attrgetter("group", "id"),
@@ -302,7 +307,7 @@ class STStorageManager:
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            storage_id: Th ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
 
         Returns:
             STStorageFields object containing the short-term storage configuration.
