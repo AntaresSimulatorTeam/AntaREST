@@ -105,7 +105,7 @@ class STStorageFields(STStorageBaseModel):
         ini_alias="initiallevel",
     )
     initial_level_optim: bool = Field(
-        True,
+        False,
         description="Flag indicating if the initial level is optimized",
         ini_alias="initialleveloptim",
     )
