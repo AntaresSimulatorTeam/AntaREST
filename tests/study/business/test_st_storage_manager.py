@@ -49,7 +49,6 @@ withdrawalnominalcapacity = 1500
 reservoircapacity = 20000
 efficiency = 0.78
 initiallevel = 10000
-initialleveloptim = false
 
 [cluster3]
 name = Cluster3
@@ -59,7 +58,6 @@ withdrawalnominalcapacity = 1500
 reservoircapacity = 21000
 efficiency = 0.72
 initiallevel = 20000
-initialleveloptim = false
 """
 
 LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
