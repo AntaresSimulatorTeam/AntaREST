@@ -6,6 +6,12 @@ v2.14.5 (unreleased)
 
 ### Bug Fixes
 
+*  **web:** change API response_model to avoid ValidationError (#1526) ([47b5346](https://github.com/AntaresSimulatorTeam/AntaREST/commit/47b5346069f58c2634647625056a1b339da37c72))
+
+
+### Contributors
+
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
 
 
 v2.14.4 (2023-06-28)
