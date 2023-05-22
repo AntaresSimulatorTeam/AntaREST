@@ -43,7 +43,7 @@ class STStorageGroup(str, Enum):
 # noinspection SpellCheckingInspection
 class STStorageBaseModel(FormFieldsBaseModel):
     """
-    This base class represents a group or a cluster
+    This base class represents a group or a storage
     for short-term storage configuration.
     """
 
@@ -113,21 +113,21 @@ class STStorageFields(STStorageBaseModel):
 
 class STStorageGroupFields(STStorageBaseModel):
     """
-    This class represents a group of clusters.
+    This class represents a group of storages.
     """
 
-    clusters: List[STStorageFields] = Field(
+    storages: List[STStorageFields] = Field(
         default_factory=list,
-        description="List of short-term storage clusters",
+        description="List of short-term storages",
     )
 
     @root_validator(pre=True)
     def calculate_sums(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if "clusters" not in values:
-            # Return early if `clusters` is not provided (due to error)
+        if "storages" not in values:
+            # Return early if `storages` is not provided (due to error)
             return values
         # convert iterator -> list
-        values["clusters"] = clusters = list(values["clusters"])
+        values["storages"] = storages = list(values["storages"])
         field_names = (
             "injection_nominal_capacity",
             "withdrawal_nominal_capacity",
@@ -136,7 +136,7 @@ class STStorageGroupFields(STStorageBaseModel):
         for field_name in field_names:
             if field_name not in values:
                 values[field_name] = sum(
-                    getattr(cluster, field_name) for cluster in clusters
+                    getattr(storage, field_name) for storage in storages
                 )
         return values
 
@@ -176,7 +176,9 @@ class STStorageTimeSeries(BaseModel):
 #  Short-term storage manager
 # ============================
 
-ST_STORAGE_PATH = "input/thermal/clusters/{area}/list/{cluster}"
+# Note: in the directory tree, there are directories called "clusters",
+# but in reality they are short term storage.
+ST_STORAGE_PATH = "input/thermal/clusters/{area_id}/list/{storage_id}"
 
 
 class STStorageManagerError(Exception):
@@ -192,11 +194,11 @@ class STStorageManagerError(Exception):
 
 
 class STStorageFieldsNotFoundError(STStorageManagerError):
-    """Fields of the short-term storage cluster are not found"""
+    """Fields of the short-term storage are not found"""
 
-    def __init__(self, study_id: str, area_id: str, cluster_id: str) -> None:
+    def __init__(self, study_id: str, area_id: str, storage_id: str) -> None:
         super().__init__(
-            study_id, area_id, f"Fields of cluster '{cluster_id}' not found"
+            study_id, area_id, f"Fields of storage '{storage_id}' not found"
         )
 
 
@@ -209,7 +211,7 @@ class STStorageConfigNotFoundError(STStorageManagerError):
 
 class STStorageManager:
     """
-    Manage short-term storage clusters configuration in a study
+    Manage short-term storage configuration in a study
     """
 
     def __init__(self, storage_service: StudyStorageService):
@@ -219,23 +221,23 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
         field_values: STStorageFields,
     ) -> None:
         """
-        Create a new short-term storage cluster configuration for the given `study`, `area_id`, and `cluster_id`.
+        Create a new short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster.
-            field_values: STStorageFields object containing the short-term storage cluster configuration.
+            area_id: The area ID of the short-term storage.
+            storage_id: The short-term storage ID (section in the INI file).
+            field_values: STStorageFields object containing the short-term storage configuration.
         """
         # NOTE: The form field names are in camelCase,
         # while the configuration field names are in snake_case.
         config = field_values.to_ini()
         command = CreateSTStorage(
-            target=ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id),
+            target=ST_STORAGE_PATH.format(area_id=area_id, storage_id=storage_id),
             data=config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
@@ -250,11 +252,11 @@ class STStorageManager:
         area_id: str,
     ) -> List[STStorageGroupFields]:
         """
-        List of short-term storages grouped by cluster types
+        List of short-term storages grouped by types
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
+            area_id: The area ID of the short-term storage.
 
         Returns:
             The list of short-term storage groups.
@@ -269,7 +271,7 @@ class STStorageManager:
             for section, value in config.items():
                 value["id"] = section
                 value["group"] = STStorageGroup(value["group"])
-            clusters = sorted(
+            storages = sorted(
                 (
                     STStorageFields.from_ini(value)
                     for key, value in config.items()
@@ -279,11 +281,11 @@ class STStorageManager:
             all_groups = []
             group: STStorageGroup
             for group, grp_iter in itertools.groupby(
-                clusters, key=operator.attrgetter("group")
+                storages, key=operator.attrgetter("group")
             ):
                 group_fields = STStorageGroupFields(
                     name=group.value,
-                    clusters=grp_iter,
+                    storages=grp_iter,
                 )
                 all_groups.append(group_fields)
             return all_groups
@@ -292,31 +294,31 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
     ) -> STStorageFields:
         """
-        Get short-term storage cluster configuration for the given `study`, `area_id`, and `cluster_id`.
+        Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster.
+            area_id: The area ID of the short-term storage.
+            storage_id: Th ID of the short-term storage.
 
         Returns:
-            STStorageFields object containing the short-term storage cluster configuration.
+            STStorageFields object containing the short-term storage configuration.
         """
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         # fmt: off
         try:
             config = file_study.tree.get(
-                ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id).split("/"),
+                ST_STORAGE_PATH.format(area_id=area_id, storage_id=storage_id).split("/"),
                 depth=1,
             )
         except KeyError:
-            raise STStorageFieldsNotFoundError(study.id, area_id, cluster_id) from None
+            raise STStorageFieldsNotFoundError(study.id, area_id, storage_id) from None
         else:
-            config["id"] = cluster_id
+            config["id"] = storage_id
             config["group"] = STStorageGroup(config["group"])
             return STStorageFields.from_ini(config)
         # fmt: on
@@ -325,23 +327,23 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
         field_values: STStorageFields,
     ) -> None:
         """
-        Set short-term storage cluster configuration for the given `study`, `area_id`, and `cluster_id`.
+        Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster.
-            field_values: STStorageFields object containing the short-term storage cluster configuration.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
+            field_values: STStorageFields object containing the short-term storage configuration.
         """
         # NOTE: The form field names are in camelCase,
         # while the configuration field names are in snake_case.
         config = field_values.to_ini()
         command = UpdateConfig(
-            target=ST_STORAGE_PATH.format(area=area_id, cluster=cluster_id),
+            target=ST_STORAGE_PATH.format(area_id=area_id, storage=storage_id),
             data=config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
@@ -354,19 +356,19 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
     ) -> None:
         """
-        Delete a short-term storage cluster configuration form the given study and area_id.
+        Delete a short-term storage configuration form the given study and area_id.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster to remove.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage to remove.
         """
         command = RemoveSTStorage(
             area_id=area_id,
-            cluster_id=cluster_id,
+            storage_id=storage_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -378,20 +380,20 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
         ts_name: str,
     ) -> STStorageTimeSeries:
         """
-        Get the time series `ts_name` for the given `study`, `area_id`, and `cluster_id`.
+        Get the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
             ts_name: Name of the time series to get.
 
         Returns:
-            STStorageTimeSeries object containing the short-term storage cluster configuration.
+            STStorageTimeSeries object containing the short-term storage configuration.
         """
         return STStorageTimeSeries()
 
@@ -399,17 +401,17 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        cluster_id: str,
+        storage_id: str,
         ts_name: str,
         ts: STStorageTimeSeries,
     ) -> None:
         """
-        Update the time series `ts_name` for the given `study`, `area_id`, and `cluster_id`.
+        Update the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage cluster.
-            cluster_id: The cluster ID of the short-term storage cluster.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
             ts_name: Name of the time series to update.
             ts: Matrix of the time series to update.
         """

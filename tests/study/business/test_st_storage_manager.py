@@ -32,8 +32,8 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 
 # noinspection SpellCheckingInspection
 LIST_INI = """
-[cluster1]
-name = Cluster1
+[storage1]
+name = Storage1
 group = Battery
 injectionnominalcapacity = 1500
 withdrawalnominalcapacity = 1500
@@ -41,8 +41,8 @@ reservoircapacity = 20000
 efficiency = 0.94
 initialleveloptim = true
 
-[cluster2]
-name = Cluster2
+[storage2]
+name = Storage2
 group = PSP_closed
 injectionnominalcapacity = 2000
 withdrawalnominalcapacity = 1500
@@ -50,8 +50,8 @@ reservoircapacity = 20000
 efficiency = 0.78
 initiallevel = 10000
 
-[cluster3]
-name = Cluster3
+[storage3]
+name = Storage3
 group = PSP_closed
 injectionnominalcapacity = 1500
 withdrawalnominalcapacity = 1500
@@ -139,10 +139,10 @@ class TestSTStorageManager:
                 injection_nominal_capacity=1500.0,
                 withdrawal_nominal_capacity=1500.0,
                 reservoir_capacity=20000.0,
-                clusters=[
+                storages=[
                     STStorageFields(
-                        id="cluster1",
-                        name="Cluster1",
+                        id="storage1",
+                        name="Storage1",
                         injection_nominal_capacity=1500,
                         withdrawal_nominal_capacity=1500,
                         reservoir_capacity=20000,
@@ -158,10 +158,10 @@ class TestSTStorageManager:
                 injection_nominal_capacity=3500.0,
                 withdrawal_nominal_capacity=3000.0,
                 reservoir_capacity=41000.0,
-                clusters=[
+                storages=[
                     STStorageFields(
-                        id="cluster2",
-                        name="Cluster2",
+                        id="storage2",
+                        name="Storage2",
                         injection_nominal_capacity=2000,
                         withdrawal_nominal_capacity=1500,
                         reservoir_capacity=20000,
@@ -171,8 +171,8 @@ class TestSTStorageManager:
                         initial_level_optim=False,
                     ),
                     STStorageFields(
-                        id="cluster3",
-                        name="Cluster3",
+                        id="storage3",
+                        name="Storage3",
                         injection_nominal_capacity=1500,
                         withdrawal_nominal_capacity=1500,
                         reservoir_capacity=21000,
@@ -227,7 +227,7 @@ class TestSTStorageManager:
         Test the `get_st_storage` method of the `STStorageManager` class under nominal conditions.
 
         This test verifies that the `get_st_storage` method returns the expected storage fields
-        for a specific study, area, and cluster ID combination.
+        for a specific study, area, and storage ID combination.
 
         Args:
             db_session: A database session fixture.
@@ -243,7 +243,7 @@ class TestSTStorageManager:
         file_study = storage.get_raw(study)
         file_study.tree = Mock(
             spec=FileStudyTree,
-            get=Mock(return_value=LIST_CFG["cluster1"]),
+            get=Mock(return_value=LIST_CFG["storage1"]),
         )
 
         # Given the following arguments
@@ -251,13 +251,13 @@ class TestSTStorageManager:
 
         # Run the method being tested
         groups = manager.get_st_storage(
-            study, area_id="West", cluster_id="cluster1"
+            study, area_id="West", storage_id="storage1"
         )
 
         # Define the expected storage fields
         expected = STStorageFields(
-            id="cluster1",
-            name="Cluster1",
+            id="storage1",
+            name="Storage1",
             injection_nominal_capacity=1500,
             withdrawal_nominal_capacity=1500,
             reservoir_capacity=20000,
@@ -277,7 +277,7 @@ class TestSTStorageManager:
         Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
 
         This test verifies that the `get_st_storage` method raises an `STStorageFieldsNotFoundError`
-        exception when the configuration for the provided study, area, and cluster ID combination is not found.
+        exception when the configuration for the provided study, area, and storage ID combination is not found.
 
         Args:
             db_session: A database session fixture.
@@ -304,10 +304,10 @@ class TestSTStorageManager:
             STStorageFieldsNotFoundError, match="not found"
         ) as ctx:
             manager.get_st_storage(
-                study, area_id="West", cluster_id="cluster1"
+                study, area_id="West", storage_id="storage1"
             )
-        # ensure the error message contains at least the study ID, area ID and cluster ID
+        # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
         assert study.id in err_msg
         assert "West" in err_msg
-        assert "cluster1" in err_msg
+        assert "storage1" in err_msg
