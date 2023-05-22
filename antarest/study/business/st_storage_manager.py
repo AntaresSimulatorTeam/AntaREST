@@ -13,7 +13,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, Field, validator, root_validator
+from pydantic import BaseModel, Extra, validator, root_validator
 
 
 # =============
@@ -76,7 +76,7 @@ class STStorageBaseModel(FormFieldsBaseModel):
 
 
 # noinspection SpellCheckingInspection
-class STStorageFields(STStorageBaseModel):
+class STStorageFields(STStorageBaseModel, metaclass=AllOptionalMetaclass):
     """
     This class represents a form for short-term storage configuration.
     """
@@ -273,7 +273,7 @@ class STStorageManager:
                 value["group"] = STStorageGroup(value["group"])
             storages = sorted(
                 (
-                    STStorageFields.from_ini(value)
+                    STStorageFields.from_ini(value, study_version=int(study.version))
                     for key, value in config.items()
                 ),
                 key=operator.attrgetter("group", "id"),
@@ -319,8 +319,7 @@ class STStorageManager:
             raise STStorageFieldsNotFoundError(study.id, area_id, storage_id) from None
         else:
             config["id"] = storage_id
-            config["group"] = STStorageGroup(config["group"])
-            return STStorageFields.from_ini(config)
+            return STStorageFields.from_ini(config, study_version=int(study.version))
         # fmt: on
 
     def update_st_storage(
