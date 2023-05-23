@@ -241,6 +241,13 @@ def test_area_crud(
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
+    with pytest.raises(
+        ValueError,
+        match="Area name : %% only contains forbidden characters",
+    ):
+        area_manager.create_area(
+            study, AreaCreationDTO(name="%%", type=AreaType.AREA)
+        )
 
 
 def test_get_all_area():

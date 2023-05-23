@@ -334,6 +334,11 @@ class AreaManager:
     def create_area(
         self, study: Study, area_creation_info: AreaCreationDTO
     ) -> AreaInfoDTO:
+        area_id = transform_name_to_id(area_creation_info.name)
+        if area_id == "":
+            raise ValueError(
+                f"Area name : {area_creation_info.name} only contains forbidden characters"
+            )
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = CreateArea(
             area_name=area_creation_info.name,
@@ -342,7 +347,6 @@ class AreaManager:
         execute_or_add_commands(
             study, file_study, [command], self.storage_service
         )
-        area_id = transform_name_to_id(area_creation_info.name)
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
         patch.areas[area_id] = area_creation_info.metadata or PatchArea()

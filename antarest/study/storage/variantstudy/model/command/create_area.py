@@ -59,14 +59,21 @@ class CreateArea(ICommand):
             raise ValueError()
 
         area_id = transform_name_to_id(self.area_name)
-
+        if area_id == "":
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area name '{self.area_name}' only contains forbidden characters",
+                ),
+                {},
+            )
         if area_id in study_data.areas.keys():
             return (
                 CommandOutput(
                     status=False,
                     message=f"Area '{self.area_name}' already exists and could not be created",
                 ),
-                dict(),
+                {},
             )
 
         study_data.areas[area_id] = Area(

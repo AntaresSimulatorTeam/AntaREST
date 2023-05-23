@@ -643,6 +643,24 @@ def test_area_management(app: FastAPI):
         "exception": "CommandApplicationError",
     }
 
+    res = client.post(
+        f"/v1/studies/{study_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=[
+            {
+                "action": CommandName.CREATE_AREA.value,
+                "args": {"area_name": "%%%"},
+            }
+        ],
+    )
+    assert res.status_code == 500
+    assert res.json() == {
+        "description": "Area name '%%%' only contains forbidden characters",
+        "exception": "CommandApplicationError",
+    }
+
     client.post(
         f"/v1/studies/{study_id}/areas",
         headers={

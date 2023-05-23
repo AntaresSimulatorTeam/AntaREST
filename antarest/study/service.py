@@ -1918,14 +1918,22 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_area = self.areas.create_area(study, area_creation_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
+        try:
+            new_area = self.areas.create_area(study, area_creation_dto)
+        except Exception as e:
+            logger.error(
+                f"Exception occurs while creating the area : {e}",
+                exc_info=True,
             )
-        )
+            raise
+        else:
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_DATA_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study),
+                )
+            )
         return new_area
 
     def create_link(
