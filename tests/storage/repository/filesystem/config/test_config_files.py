@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     Cluster,
     BindingConstraintDTO,
+    Storage,
 )
 from tests.storage.business.assets import ASSETS_DIR
 
@@ -252,7 +253,6 @@ def test_parse_area(tmp_path: Path) -> None:
                 links={},
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
-                st_storage=[],
             )
         },
     )
@@ -294,21 +294,23 @@ def test_parse_st_storage(tmp_path: Path) -> None:
 
         [t2]
         name = t2
-        enabled = false
 
         [t3]
         name = t3
-        enabled = true
         """
     study_path.joinpath(
         "input", "st-storage", "clusters", "fr", "list.ini"
     ).write_text(content)
 
     assert _parse_st_storage(study_path, "fr") == [
-        Cluster(id="t1", name="t1", enabled=True),
-        Cluster(id="t2", name="t2", enabled=False),
-        Cluster(id="t3", name="t3", enabled=True),
+        Storage(id="t1", name="t1"),
+        Storage(id="t2", name="t2"),
+        Storage(id="t3", name="t3"),
     ]
+
+
+def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
+    assert _parse_st_storage(tmp_path, "") == []
 
 
 def test_parse_links(tmp_path: Path) -> None:

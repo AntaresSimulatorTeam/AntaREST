@@ -26,6 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Simulation,
     transform_name_to_id,
+    Storage,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
@@ -372,19 +373,21 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
     ]
 
 
-def _parse_st_storage(root: Path, area: str) -> List[Cluster]:
-    list_ini = _extract_data_from_file(
+def _parse_st_storage(root: Path, area: str) -> List[Storage]:
+    """
+    Parse the short-term storage INI file, return an empty list if missing.
+    """
+    list_ini: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
         file_type=FileType.SIMPLE_INI,
     )
     return [
-        Cluster(
+        Storage(
             id=transform_name_to_id(key),
-            enabled=list_ini.get(key, {}).get("enabled", True),
-            name=list_ini.get(key, {}).get("name", key),
+            name=values.get("name", key),
         )
-        for key in list(list_ini.keys())
+        for key, values in list_ini.items()
     ]
 
 

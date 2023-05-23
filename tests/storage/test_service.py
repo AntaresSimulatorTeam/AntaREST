@@ -576,7 +576,6 @@ def test_download_output() -> None:
         renewables=[],
         filters_synthesis=[],
         filters_year=[],
-        st_storage=[],
     )
 
     sim = Simulation(

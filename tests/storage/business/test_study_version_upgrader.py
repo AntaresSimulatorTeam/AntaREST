@@ -226,16 +226,13 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         .read_text(encoding="utf-8")
         .splitlines(keepends=False)
     )
-    if len(list_areas) != 0:  # filter out empty studies
-        for area in list_areas:
-            st_storage_path = input_path.joinpath(
-                "st-storage", "clusters", f"{Path(area).stem}"
-            )
-            assert st_storage_path.is_dir()
-            assert (st_storage_path / "list.ini").exists()
-            assert input_path.joinpath(
-                "hydro", "series", f"{Path(area).stem}", "mingen.txt"
-            ).exists()
+    for area in list_areas:
+        st_storage_path = input_path.joinpath("st-storage", "clusters", area)
+        assert st_storage_path.is_dir()
+        assert (st_storage_path / "list.ini").exists()
+        assert input_path.joinpath(
+            "hydro", "series", area, "mingen.txt"
+        ).exists()
 
 
 def assert_folder_is_created(path: Path) -> None:

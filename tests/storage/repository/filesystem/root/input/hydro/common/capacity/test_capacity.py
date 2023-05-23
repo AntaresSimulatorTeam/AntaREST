@@ -81,7 +81,6 @@ class TestInputHydroCommonCapacity:
                     renewables=[],
                     filters_synthesis=[],
                     filters_year=[],
-                    st_storage=[],
                 )
                 for name in ["fr", "en"]
             },

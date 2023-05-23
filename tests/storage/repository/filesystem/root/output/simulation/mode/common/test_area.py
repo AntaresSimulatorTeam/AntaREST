@@ -125,10 +125,12 @@ class TestOutputSimulationAreaItem:
         actual_obj = {
             key: {"freq": value.freq} for key, value in new_actual.items()
         }
-        expected["st-details-annual"] = {"freq": MatrixFrequency.ANNUAL}
-        expected["st-details-daily"] = {"freq": MatrixFrequency.DAILY}
-        expected["st-details-hourly"] = {"freq": MatrixFrequency.HOURLY}
-        expected["st-details-monthly"] = {"freq": MatrixFrequency.MONTHLY}
-        expected["st-details-weekly"] = {"freq": MatrixFrequency.WEEKLY}
+        expected["details-STstorage-annual"] = {"freq": MatrixFrequency.ANNUAL}
+        expected["details-STstorage-daily"] = {"freq": MatrixFrequency.DAILY}
+        expected["details-STstorage-hourly"] = {"freq": MatrixFrequency.HOURLY}
+        expected["details-STstorage-monthly"] = {
+            "freq": MatrixFrequency.MONTHLY
+        }
+        expected["details-STstorage-weekly"] = {"freq": MatrixFrequency.WEEKLY}
 
         assert actual_obj == expected

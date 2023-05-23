@@ -23,6 +23,15 @@ class Cluster(BaseModel):
     enabled: bool = True
 
 
+class Storage(BaseModel):
+    """
+    Short-term storage model used in Area creation
+    """
+
+    id: str
+    name: str
+
+
 class Link(BaseModel):
     """
     Object linked to /input/links/<link>/properties.ini information
@@ -56,7 +65,8 @@ class Area(BaseModel):
     renewables: List[Cluster]
     filters_synthesis: List[str]
     filters_year: List[str]
-    st_storage: List[Cluster]
+    # since v8.6
+    storages: List[Storage] = []
 
 
 class DistrictSet(BaseModel):
@@ -206,16 +216,12 @@ class FileStudyTreeConfig(DTO):
             ],
         )
 
-    def get_short_term_storage_names(
+    def get_st_storage_names(
         self, area: str, only_enabled: bool = False
     ) -> List[str]:
         return self.cache.get(
             f"%st-storage%{area}%{only_enabled}%{area}",
-            [
-                storage.id
-                for storage in self.areas[area].st_storage
-                if not only_enabled or storage.enabled
-            ],
+            [storage.id for storage in self.areas[area].storages],
         )
 
     def get_renewable_names(

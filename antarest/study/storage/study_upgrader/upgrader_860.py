@@ -24,15 +24,14 @@ def upgrade_860(study_path: Path) -> None:
         .read_text(encoding="utf-8")
         .splitlines(keepends=False)
     )
-    if len(list_areas) != 0:  # filter out empty studies
-        for area in list_areas:
-            st_storage_path = study_path.joinpath(
-                "input", "st-storage", "clusters", f"{Path(area).stem}"
-            )
-            st_storage_path.mkdir(parents=True)
-            (st_storage_path / "list.ini").touch()
+    for area in list_areas:
+        st_storage_path = study_path.joinpath(
+            "input", "st-storage", "clusters", area
+        )
+        st_storage_path.mkdir(parents=True)
+        (st_storage_path / "list.ini").touch()
 
-            hydro_series_path = study_path.joinpath(
-                "input", "hydro", "series", f"{Path(area).stem}"
-            )
-            (hydro_series_path / "mingen.txt").touch()
+        hydro_series_path = study_path.joinpath(
+            "input", "hydro", "series", area
+        )
+        (hydro_series_path / "mingen.txt").touch()

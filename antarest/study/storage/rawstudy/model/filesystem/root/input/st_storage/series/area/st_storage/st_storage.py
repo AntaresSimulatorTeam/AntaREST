@@ -10,7 +10,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.st_storage im
 )
 
 
-class InputShortTermStorageAreaStorage(FolderNode):
+class InputSTStorageAreaStorage(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "PMAX-injection": InputSeriesMatrix(

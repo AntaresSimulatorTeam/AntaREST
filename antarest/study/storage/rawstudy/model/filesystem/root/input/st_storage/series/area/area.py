@@ -9,7 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.series.area.st_storage.st_storage import (
-    InputShortTermStorageAreaStorage,
+    InputSTStorageAreaStorage,
 )
 
 
@@ -25,11 +25,9 @@ class InputShortTermStorageSeriesArea(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            st_storage: InputShortTermStorageAreaStorage(
+            st_storage: InputSTStorageAreaStorage(
                 self.context, self.config.next_file(st_storage)
             )
-            for st_storage in self.config.get_short_term_storage_names(
-                self.area
-            )
+            for st_storage in self.config.get_st_storage_names(self.area)
         }
         return children

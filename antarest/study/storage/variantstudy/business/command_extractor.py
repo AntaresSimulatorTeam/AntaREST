@@ -605,11 +605,7 @@ class CommandExtractor(ICommandExtractor):
         if isinstance(data, str):
             return data
         elif isinstance(data, dict):
-            if "data" in data:
-                assert isinstance(data["data"], (list, np.ndarray))
-                return data["data"]
-            else:
-                return [[]]
+            return data["data"] if "data" in data else [[]]
         elif raise_on_missing:
             raise ValueError("Invalid matrix")
         return None
