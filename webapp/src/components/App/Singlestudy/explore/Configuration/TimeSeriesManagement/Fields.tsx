@@ -100,8 +100,7 @@ function Fields() {
                       onChange={(_, checked) => {
                         setValue(
                           `${type}.stochasticTsStatus`,
-                          !checked as never,
-                          { shouldDirty: true }
+                          !checked as never
                         );
                       }}
                     />
