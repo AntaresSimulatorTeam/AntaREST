@@ -9,7 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 )
 
 
-class InputShortTermStorageAreaList(IniFileNode):
+class InputSTStorageAreaList(IniFileNode):
     def __init__(
         self,
         context: ContextServer,

@@ -589,7 +589,11 @@ class CommandExtractor(ICommandExtractor):
         default_value: Optional[str] = None,
     ) -> ICommand:
         data = study_tree.get(url)
-        matrix = CommandExtractor.get_matrix(data, default_value is None)
+        matrix = None
+        if isinstance(data, str):
+            matrix = data
+        elif isinstance(data, dict):
+            matrix = data["data"] if "data" in data else [[]]
         if isinstance(matrix, np.ndarray):
             matrix = cast(List[List[MatrixData]], matrix.tolist())
         return ReplaceMatrix(
@@ -597,18 +601,6 @@ class CommandExtractor(ICommandExtractor):
             matrix=matrix or default_value,
             command_context=self.command_context,
         )
-
-    @staticmethod
-    def get_matrix(
-        data: Union[JSON, str], raise_on_missing: Optional[bool] = False
-    ) -> Optional[Union[str, List[List[MatrixData]], npt.NDArray[np.float64]]]:
-        if isinstance(data, str):
-            return data
-        elif isinstance(data, dict):
-            return data["data"] if "data" in data else [[]]
-        elif raise_on_missing:
-            raise ValueError("Invalid matrix")
-        return None
 
     def generate_update_district(
         self,

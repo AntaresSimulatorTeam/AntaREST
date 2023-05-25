@@ -33,7 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.solar imp
     InputSolar,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.st_storage import (
-    InputShortTermStorage,
+    InputSTStorage,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.thermal import (
     InputThermal,
@@ -71,7 +71,7 @@ class Input(FolderNode):
                 self.context, self.config.next_file("renewables")
             )
         if self.config.version >= 860:
-            children["st-storage"] = InputShortTermStorage(
+            children["st-storage"] = InputSTStorage(
                 self.context, self.config.next_file("st-storage")
             )
 

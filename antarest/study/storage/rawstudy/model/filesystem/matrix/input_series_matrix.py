@@ -105,7 +105,7 @@ class InputSeriesMatrix(MatrixNode):
         return errors
 
     def _format_default_matrix(self) -> Dict[str, Any]:
-        if isinstance(self.default_empty, np.ndarray):
+        if self.default_empty is not None:
             index_count, column_count = self.default_empty.shape
             if index_count > 0 and column_count > 0:
                 logger.info("Using preset default matrix")

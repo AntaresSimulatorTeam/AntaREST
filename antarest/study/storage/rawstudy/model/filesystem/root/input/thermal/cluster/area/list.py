@@ -16,5 +16,12 @@ class InputThermalClustersAreaList(IniFileNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        types = {ther: dict for ther in config.get_thermal_names(area)}
-        IniFileNode.__init__(self, context, config, types)
+        section = {
+            "name": str,
+            "group": str,
+            "unitcount": int,
+            "nominalcapacity": float,
+            "market-bid-cost": float,
+        }
+        types = {ther: section for ther in config.get_thermal_names(area)}
+        super().__init__(context, config, types)

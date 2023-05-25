@@ -13,7 +13,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.seri
 )
 
 
-class InputShortTermStorageSeriesArea(FolderNode):
+class InputSTStorageSeriesArea(FolderNode):
     def __init__(
         self,
         context: ContextServer,
