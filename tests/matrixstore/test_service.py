@@ -82,10 +82,10 @@ class TestMatrixService:
             data = [[1, 2, 3], [4, 5, 6]]
             matrix_service.create(data)
 
-        # The matrix is not saved in the content repository
+        # the associated matrix file must not be deleted
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         tsv_files = list(bucket_dir.glob("*.tsv"))
-        assert not tsv_files
+        assert tsv_files
 
         # Nothing is stored in the database
         with db():

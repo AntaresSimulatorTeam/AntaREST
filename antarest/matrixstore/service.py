@@ -143,10 +143,11 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash for the new matrix object.
             This identifier can be used to retrieve the matrix later.
 
-        Raises:
-            Exception: If an error occurs while creating or saving the matrix object,
-                the method will attempt to clean up by deleting the associated data file
-                before re-raising the exception.
+        Important:
+            If an error occurs while creating or saving the matrix object,
+            the associated data file will not (and should not) be deleted.
+            The `MatrixGarbageCollector` class is responsible for removing
+            unreferenced matrices to avoid leaving unused files lying around.
         """
         matrix_id = self.matrix_content_repository.save(data)
         shape = (
@@ -154,19 +155,14 @@ class MatrixService(ISimpleMatrixService):
             if isinstance(data, np.ndarray)
             else (len(data), len(data[0]) if data else 0)
         )
-        try:
-            with db():
-                matrix = Matrix(
-                    id=matrix_id,
-                    width=shape[1],
-                    height=shape[0],
-                    created_at=datetime.now(timezone.utc),
-                )
-                self.repo.save(matrix)
-        except Exception:
-            # delete the file so as not to leave unreferenced files lying around
-            self.matrix_content_repository.delete(matrix_id)
-            raise
+        with db():
+            matrix = Matrix(
+                id=matrix_id,
+                width=shape[1],
+                height=shape[0],
+                created_at=datetime.now(timezone.utc),
+            )
+            self.repo.save(matrix)
         return matrix_id
 
     def create_by_importation(
