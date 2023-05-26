@@ -204,6 +204,7 @@ class TestMatrixContentRepository:
         Saves the content of a matrix as a TSV file in the directory
         and returns its SHA256 hash.
         """
+        # sourcery skip: extract-duplicate-method
         # when the data is saved in the repo
         data = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
@@ -218,6 +219,13 @@ class TestMatrixContentRepository:
 
         # when the data is saved again with same float values
         data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        matrix_content_repo.save(data)
+        # then no new TSV file is created
+        matrix_files = list(matrix_content_repo.bucket_dir.glob("*.tsv"))
+        assert matrix_files == [matrix_file]
+
+        # when the data is saved again as NumPy array
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
         matrix_content_repo.save(data)
         # then no new TSV file is created
         matrix_files = list(matrix_content_repo.bucket_dir.glob("*.tsv"))

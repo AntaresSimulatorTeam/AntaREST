@@ -1,7 +1,8 @@
+from numpy import typing as npt
 import hashlib
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -160,16 +161,29 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         return matrix_file.exists()
 
-    def save(self, content: List[List[MatrixData]]) -> str:
+    def save(
+        self, content: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
         """
-        Saves the content of a matrix as a TSV file in the directory
+        Saves the content of a matrix as a TSV file in the bucket directory
         and returns its SHA256 hash.
 
+        The matrix content will be saved in a TSV file format, where each row represents
+        a line in the file and the values are separated by tabs. The file will be saved
+        in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
+        is returned as a string.
+
         Args:
-            content: matrix data
+            content:
+                The matrix content to be saved. It can be either a nested list of floats
+                or a NumPy array of type np.float64.
 
         Returns:
-            SHA256 hash
+            The SHA256 hash of the saved TSV file.
+
+        Raises:
+            ValueError:
+                If the provided content is not a valid matrix or cannot be saved.
         """
         # IMPLEMENTATION DETAIL:
         # We chose to calculate the hash value from the binary data of the array buffer,
@@ -181,7 +195,11 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        matrix = np.array(content, dtype=np.float64)
+        matrix = (
+            content
+            if isinstance(content, np.ndarray)
+            else np.array(content, dtype=np.float64)
+        )
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         # noinspection PyTypeChecker
