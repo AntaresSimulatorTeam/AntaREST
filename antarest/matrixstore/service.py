@@ -1,4 +1,3 @@
-from numpy import typing as npt
 import contextlib
 import logging
 import tempfile
@@ -6,7 +5,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple, cast, Union
+from typing import List, Optional, Sequence, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
@@ -38,6 +37,7 @@ from antarest.matrixstore.repository import (
     MatrixRepository,
 )
 from fastapi import UploadFile
+from numpy import typing as npt
 
 logger = logging.getLogger(__name__)
 
@@ -214,8 +214,7 @@ class MatrixService(ISimpleMatrixService):
         matrix = np.loadtxt(
             BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2
         )
-        matrix_data = cast(List[List[float]], matrix.tolist())
-        return self.create(matrix_data)
+        return self.create(matrix)
 
     def get_dataset(
         self,
