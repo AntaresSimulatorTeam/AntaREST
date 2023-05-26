@@ -9,7 +9,7 @@ import {
   UseFormUnregister,
 } from "react-hook-form";
 import * as RA from "ramda-adjunct";
-import { MutableRefObject, useEffect, useMemo } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import {
   UseFormRegisterPlus,
@@ -37,13 +37,34 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
     fieldsChangeDuringAutoSubmitting,
     ...data
   } = params;
-  const { register, unregister, getValues, setValue, control } = formApi;
+  const { register, unregister, getValues, setValue, control, formState } =
+    formApi;
+  const { isSubmitting, isLoading, defaultValues } = formState;
+
+  const getDefaultValues = (): TFieldValues => ({
+    ...(control._formValues as TFieldValues), // Because `formState.defaultValues` can be partial
+    ...defaultValues,
+  });
+
+  const initialDefaultValues = useRef(
+    isLoading ? undefined : getDefaultValues()
+  );
+
   // Prevent to add the values in `useMemo`'s deps
   const dataRef = useAutoUpdateRef({
     ...data,
     // Don't read `formState` in `useMemo`. See `useEffect`'s comment below.
-    isSubmitting: formApi.formState.isSubmitting,
+    isSubmitting,
   });
+
+  // In case async default values has been given to the form.
+  useEffect(
+    () => {
+      initialDefaultValues.current = getDefaultValues();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isLoading]
+  );
 
   const formApiPlus = useMemo(
     () => {
@@ -150,6 +171,11 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
         unregister: unregisterWrapper,
         setValue: setValueWrapper,
         control: controlPlus,
+        _internal: {
+          get initialDefaultValues(): Readonly<TFieldValues> | undefined {
+            return initialDefaultValues.current;
+          },
+        },
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,8 +185,8 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
   // `formState` is wrapped with a Proxy and updated in batch.
   // The API is updated here to keep reference, like `useForm` return.
   useEffect(() => {
-    formApiPlus.formState = formApi.formState;
-  }, [formApiPlus, formApi.formState]);
+    formApiPlus.formState = formState;
+  }, [formApiPlus, formState]);
 
   return formApiPlus;
 }

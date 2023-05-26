@@ -57,6 +57,9 @@ export interface UseFormReturnPlus<
   register: UseFormRegisterPlus<TFieldValues>;
   control: ControlPlus<TFieldValues, TContext>;
   setValues: UseFormSetValues<TFieldValues>;
+  _internal: {
+    initialDefaultValues: Readonly<TFieldValues> | undefined;
+  };
 }
 
 export type DefaultValuesFix<TFieldValues extends FieldValues> = O.Partial<

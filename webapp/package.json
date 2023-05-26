@@ -70,6 +70,7 @@
     "swagger-ui-react": "4.15.5",
     "ts-toolbelt": "9.6.0",
     "url": "0.11.0",
+    "use-undo": "1.1.1",
     "uuid": "9.0.0",
     "xml-js": "1.6.11"
   },

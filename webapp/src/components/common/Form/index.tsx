@@ -13,12 +13,23 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { Box, CircularProgress, setRef, SxProps, Theme } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Divider,
+  IconButton,
+  setRef,
+  SxProps,
+  Theme,
+  Tooltip,
+} from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
 import { LoadingButton } from "@mui/lab";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
 import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
@@ -32,6 +43,7 @@ import {
 } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
+import useFormUndoRedo from "./useFormUndoRedo";
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
@@ -80,7 +92,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     hideSubmitButton,
     onStateChange,
     autoSubmit,
-    disableLoader,
+    enableUndoRedo,
     className,
     sx,
     apiRef,
@@ -124,6 +136,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
+  const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
+  const showFooter = showSubmitButton || enableUndoRedo;
+
+  const formApiPlus = useFormApiPlus({
+    formApi,
+    isAutoSubmitEnabled: autoSubmitConfig.enable,
+    fieldAutoSubmitListeners,
+    fieldsChangeDuringAutoSubmitting,
+    // eslint-disable-next-line no-use-before-define
+    submit: () => requestSubmit(),
+  });
+
+  const { set, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
 
   // Auto Submit Loader
   useEffect(
@@ -147,13 +172,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
   useEffect(
     () => {
-      if (isSubmitSuccessful) {
+      if (isSubmitSuccessful && lastSubmittedData.current) {
         const valuesToSetAfterReset = getValues(
           fieldsChangeDuringAutoSubmitting.current
         );
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
+        set(lastSubmittedData.current);
 
         fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {
           setValue(fieldName, valuesToSetAfterReset[index], {
@@ -167,8 +193,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [isSubmitSuccessful]
   );
-
-  useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
   // Prevent browser close if a submit is pending
   useEffect(() => {
@@ -185,6 +209,10 @@ function Form<TFieldValues extends FieldValues, TContext>(
       window.removeEventListener("beforeunload", listener);
     };
   }, [t]);
+
+  useUpdateEffect(() => onStateChange?.(formState), [formState]);
+
+  useEffect(() => setRef(apiRef, formApiPlus));
 
   usePrompt(t("form.submit.inProgress"), preventClose.current);
 
@@ -251,20 +279,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   };
 
   ////////////////////////////////////////////////////////////////
-  // API
-  ////////////////////////////////////////////////////////////////
-
-  const formApiPlus = useFormApiPlus({
-    formApi,
-    isAutoSubmitEnabled: autoSubmitConfig.enable,
-    fieldAutoSubmitListeners,
-    fieldsChangeDuringAutoSubmitting,
-    submit: requestSubmit,
-  });
-
-  useEffect(() => setRef(apiRef, formApiPlus));
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -297,17 +311,44 @@ function Form<TFieldValues extends FieldValues, TContext>(
           <FormProvider {...formApiPlus}>{children}</FormProvider>
         )}
       </FormContext.Provider>
-      {!hideSubmitButton && !autoSubmitConfig.enable && (
-        <LoadingButton
-          type="submit"
-          variant="contained"
-          disabled={!isSubmitAllowed}
-          loading={isSubmitting}
-          loadingPosition="start"
-          startIcon={<SaveIcon />}
-        >
-          {submitButtonText || t("global.save")}
-        </LoadingButton>
+      {showFooter && (
+        <Box sx={{ display: "flex" }}>
+          {showSubmitButton && (
+            <>
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                disabled={!isSubmitAllowed}
+                loading={isSubmitting}
+                loadingPosition="start"
+                startIcon={<SaveIcon />}
+              >
+                {submitButtonText || t("global.save")}
+              </LoadingButton>
+              {enableUndoRedo && (
+                <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+              )}
+            </>
+          )}
+          {enableUndoRedo && (
+            <>
+              <Tooltip title={t("global.undo")}>
+                <span>
+                  <IconButton onClick={undo} disabled={!canUndo}>
+                    <UndoIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={t("global.redo")}>
+                <span>
+                  <IconButton onClick={redo} disabled={!canRedo}>
+                    <RedoIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
+        </Box>
       )}
     </Box>
   );
