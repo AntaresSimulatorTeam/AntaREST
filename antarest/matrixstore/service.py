@@ -1,3 +1,4 @@
+from numpy import typing as npt
 import contextlib
 import logging
 import tempfile
@@ -5,7 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import List, Optional, Sequence, Tuple, cast, Union
 from zipfile import ZipFile
 
 import numpy as np
@@ -43,7 +44,9 @@ logger = logging.getLogger(__name__)
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def create(self, data: List[List[MatrixData]]) -> str:
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -64,7 +67,9 @@ class SimpleMatrixService(ISimpleMatrixService):
         self.bucket_dir = bucket_dir
         self.content_repo = MatrixContentRepository(bucket_dir)
 
-    def create(self, data: List[List[MatrixData]]) -> str:
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
         return self.content_repo.save(data)
 
     def get(self, matrix_id: str) -> MatrixDTO:
@@ -119,7 +124,9 @@ class MatrixService(ISimpleMatrixService):
 
         return matrix, content
 
-    def create(self, data: List[List[MatrixData]]) -> str:
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -128,7 +135,9 @@ class MatrixService(ISimpleMatrixService):
           height, and creation time.
 
         Parameters:
-            data: The matrix data to be saved.
+            data:
+                The matrix content to be saved. It can be either a nested list of floats
+                or a NumPy array of type np.float64.
 
         Returns:
             A SHA256 hash for the new matrix object.
@@ -140,12 +149,17 @@ class MatrixService(ISimpleMatrixService):
                 before re-raising the exception.
         """
         matrix_id = self.matrix_content_repository.save(data)
+        shape = (
+            data.shape
+            if isinstance(data, np.ndarray)
+            else (len(data), len(data[0]) if data else 0)
+        )
         try:
             with db():
                 matrix = Matrix(
                     id=matrix_id,
-                    width=len(data[0]) if data else 0,
-                    height=len(data),
+                    width=shape[1],
+                    height=shape[0],
                     created_at=datetime.now(timezone.utc),
                 )
                 self.repo.save(matrix)

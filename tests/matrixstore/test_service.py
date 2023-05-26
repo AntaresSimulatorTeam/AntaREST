@@ -49,6 +49,30 @@ class TestMatrixService:
         now = datetime.datetime.utcnow()
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
+    def test_create__from_numpy_array(self, matrix_service: MatrixService):
+        """Creates a new matrix object with the specified data."""
+        # when a matrix is created (inserted) in the service
+        data = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64)
+        matrix_id = matrix_service.create(data)
+
+        # A "real" hash value is calculated
+        assert matrix_id, "ID can't be empty"
+
+        # The matrix is saved in the content repository as a TSV file
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
+        array = np.loadtxt(content_path)
+        assert array.all() == data.all()
+
+        # A matrix object is stored in the database
+        with db():
+            obj = matrix_service.repo.get(matrix_id)
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
+        assert obj.width == data.shape[1]
+        assert obj.height == data.shape[0]
+        now = datetime.datetime.utcnow()
+        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+
     def test_create__side_effect(self, matrix_service: MatrixService):
         """Creates a new matrix object with the specified data, but fail during saving."""
         # if the matrix can't be created in the service
