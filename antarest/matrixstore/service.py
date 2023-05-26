@@ -48,15 +48,15 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_hash: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         raise NotImplementedError()
 
     @abstractmethod
-    def exists(self, matrix_hash: str) -> bool:
+    def exists(self, matrix_id: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, matrix_hash: str) -> None:
+    def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
 
@@ -68,10 +68,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     def create(self, data: List[List[MatrixData]]) -> str:
         return self.content_repo.save(data)
 
-    def get(self, matrix_hash: str) -> MatrixDTO:
-        data = self.content_repo.get(matrix_hash)
+    def get(self, matrix_id: str) -> MatrixDTO:
+        data = self.content_repo.get(matrix_id)
         return MatrixDTO.construct(
-            id=matrix_hash,
+            id=matrix_id,
             width=len(data.columns),
             height=len(data.index),
             index=data.index,
@@ -79,11 +79,11 @@ class SimpleMatrixService(ISimpleMatrixService):
             data=data.data,
         )
 
-    def exists(self, matrix_hash: str) -> bool:
-        return self.content_repo.exists(matrix_hash)
+    def exists(self, matrix_id: str) -> bool:
+        return self.content_repo.exists(matrix_id)
 
-    def delete(self, matrix_hash: str) -> None:
-        self.content_repo.delete(matrix_hash)
+    def delete(self, matrix_id: str) -> None:
+        self.content_repo.delete(matrix_id)
 
 
 class MatrixService(ISimpleMatrixService):
@@ -140,11 +140,11 @@ class MatrixService(ISimpleMatrixService):
                 the method will attempt to clean up by deleting the associated data file
                 before re-raising the exception.
         """
-        matrix_hash = self.matrix_content_repository.save(data)
+        matrix_id = self.matrix_content_repository.save(data)
         try:
             with db():
                 matrix = Matrix(
-                    id=matrix_hash,
+                    id=matrix_id,
                     width=len(data[0]) if data else 0,
                     height=len(data),
                     created_at=datetime.now(timezone.utc),
@@ -152,9 +152,9 @@ class MatrixService(ISimpleMatrixService):
                 self.repo.save(matrix)
         except Exception:
             # delete the file so as not to leave unreferenced files lying around
-            self.matrix_content_repository.delete(matrix_hash)
+            self.matrix_content_repository.delete(matrix_id)
             raise
-        return matrix_hash
+        return matrix_id
 
     def create_by_importation(
         self, file: UploadFile, json: bool = False
@@ -175,14 +175,14 @@ class MatrixService(ISimpleMatrixService):
                             not name.startswith(".DS_Store"),
                         ]
                     ):
-                        matrix_hash = self._file_importation(files[name], json)
+                        matrix_id = self._file_importation(files[name], json)
                         matrix_info.append(
-                            MatrixInfoDTO(id=matrix_hash, name=name)
+                            MatrixInfoDTO(id=matrix_id, name=name)
                         )
                 return matrix_info
             else:
-                matrix_hash = self._file_importation(f.read(), json)
-                return [MatrixInfoDTO(id=matrix_hash, name=file.filename)]
+                matrix_id = self._file_importation(f.read(), json)
+                return [MatrixInfoDTO(id=matrix_id, name=file.filename)]
 
     def _file_importation(self, file: bytes, is_json: bool = False) -> str:
         """
@@ -329,21 +329,21 @@ class MatrixService(ISimpleMatrixService):
         self.repo_dataset.delete(id)
         return id
 
-    def get(self, matrix_hash: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         """
         Get a matrix object from the database and the matrix content repository.
 
         Args:
-            matrix_hash: The SHA256 hash of the matrix object to search for.
+            matrix_id: The SHA256 hash of the matrix object to search for.
 
         Returns:
             A Data Transfer Object (DTO) of the matrix and its content,
             or `None` if the matrix is not found in the database.
         """
-        matrix = self.repo.get(matrix_hash)
+        matrix = self.repo.get(matrix_id)
         if matrix is None:
             return None
-        content = self.matrix_content_repository.get(matrix_hash)
+        content = self.matrix_content_repository.get(matrix_id)
         return MatrixDTO.construct(
             id=matrix.id,
             width=matrix.width,
@@ -354,26 +354,26 @@ class MatrixService(ISimpleMatrixService):
             data=content.data,
         )
 
-    def exists(self, matrix_hash: str) -> bool:
+    def exists(self, matrix_id: str) -> bool:
         """
         Check if a matrix object exists in both the matrix content repository and the database.
 
         Args:
-            matrix_hash: The SHA256 hash of the matrix object to check for existence.
+            matrix_id: The SHA256 hash of the matrix object to check for existence.
 
         Returns:
             bool: `True` if the matrix object exists in both repositories, `False` otherwise.
         """
         return self.matrix_content_repository.exists(
-            matrix_hash
-        ) and self.repo.exists(matrix_hash)
+            matrix_id
+        ) and self.repo.exists(matrix_id)
 
-    def delete(self, matrix_hash: str) -> None:
+    def delete(self, matrix_id: str) -> None:
         """
         Delete a matrix object from the matrix content repository and the database.
 
         Args:
-            matrix_hash: The SHA256 hash of the matrix object to delete.
+            matrix_id: The SHA256 hash of the matrix object to delete.
         """
         # Matrix deletion is done exclusively when the `MatrixGarbageCollector`
         # service collects deprecated matrices (matrices that are no longer
@@ -385,9 +385,9 @@ class MatrixService(ISimpleMatrixService):
         # in order to have a rollback in case of failure, and to start with the
         # database deletion and finish with the file deletion (considered as atomic).
         with db():
-            self.repo.delete(matrix_hash)
+            self.repo.delete(matrix_id)
             with contextlib.suppress(FileNotFoundError):
-                self.matrix_content_repository.delete(matrix_hash)
+                self.matrix_content_repository.delete(matrix_id)
 
     @staticmethod
     def check_access_permission(
@@ -503,7 +503,7 @@ class MatrixService(ISimpleMatrixService):
 
     def download_matrix(
         self,
-        matrix_hash: str,
+        matrix_id: str,
         filepath: Path,
         params: RequestParameters,
     ) -> None:
@@ -511,13 +511,13 @@ class MatrixService(ISimpleMatrixService):
         Prepare the matrix download if the user has permissions to do it.
 
         Args:
-            matrix_hash: The SHA256 hash of the matrix object to download.
+            matrix_id: The SHA256 hash of the matrix object to download.
             filepath: File path of the TSV file to write.
             params: Request parameters.
         """
         if not params.user:
             raise UserHasNotPermissionError()
-        if matrix := self.get(matrix_hash):
+        if matrix := self.get(matrix_id):
             array = np.array(matrix.data, dtype=np.float64)
             # noinspection PyTypeChecker
             np.savetxt(filepath, array, delimiter="\t", fmt="%.18g")

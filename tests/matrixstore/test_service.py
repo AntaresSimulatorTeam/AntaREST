@@ -29,21 +29,21 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
         data = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_service.create(data)
+        matrix_id = matrix_service.create(data)
 
         # A "real" hash value is calculated
-        assert matrix_hash, "ID can't be empty"
+        assert matrix_id, "ID can't be empty"
 
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        content_path = bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
         array = np.loadtxt(content_path)
         assert array.all() == np.array(data).all()
 
         # A matrix object is stored in the database
         with db():
-            obj = matrix_service.repo.get(matrix_hash)
-        assert obj is not None, f"Missing Matrix object {matrix_hash}"
+            obj = matrix_service.repo.get(matrix_id)
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
         assert obj.width == len(data[0])
         assert obj.height == len(data)
         now = datetime.datetime.utcnow()
@@ -71,13 +71,13 @@ class TestMatrixService:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
         data = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_service.create(data)
+        matrix_id = matrix_service.create(data)
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
-            obj = matrix_service.get(matrix_hash)
+            obj = matrix_service.get(matrix_id)
 
-        assert obj is not None, f"Missing Matrix object {matrix_hash}"
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
         assert obj.width == len(data[0])
         assert obj.height == len(data)
         now = datetime.datetime.utcnow()
@@ -97,11 +97,11 @@ class TestMatrixService:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
         data = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_service.create(data)
+        matrix_id = matrix_service.create(data)
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
-            assert matrix_service.exists(matrix_hash)
+            assert matrix_service.exists(matrix_id)
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             assert not matrix_service.exists(missing_hash)
 
@@ -109,11 +109,11 @@ class TestMatrixService:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
         data = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_service.create(data)
+        matrix_id = matrix_service.create(data)
 
         # When the matrix id deleted
         with db():
-            matrix_service.delete(matrix_hash)
+            matrix_service.delete(matrix_id)
 
         # The matrix in no more available in the content repository
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
