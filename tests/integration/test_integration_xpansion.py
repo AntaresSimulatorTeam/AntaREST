@@ -1,11 +1,10 @@
 from io import StringIO
 from pathlib import Path
 
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.study.business.area_management import AreaType
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 
 def test_integration_xpansion(app: FastAPI, tmp_path: str):
@@ -99,6 +98,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relative_gap": 1e-12,
         "relaxed-optimality-gap": None,
         "solver": "Cbc",
+        "batch-size": 0,
         "uc_type": "expansion_fast",
         "yearly-weights": None,
         "timelimit": 1e12,
@@ -124,6 +124,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relative_gap": None,
         "relaxed-optimality-gap": None,
         "solver": None,
+        "batch-size": 0,
         "uc_type": "expansion_fast",
         "yearly-weights": None,
         "timelimit": 1e12,

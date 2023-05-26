@@ -3,11 +3,8 @@ import shutil
 from enum import Enum
 from http import HTTPStatus
 from io import BytesIO
-from typing import Optional, Union, List, cast
-from zipfile import ZipFile, BadZipFile
-
-from fastapi import HTTPException, UploadFile
-from pydantic import Field, BaseModel, validator
+from typing import List, Optional, Union, cast
+from zipfile import BadZipFile, ZipFile
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
@@ -26,6 +23,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
 )
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
+from fastapi import HTTPException, UploadFile
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +68,37 @@ class XpansionSensitivitySettingsDTO(BaseModel):
 
 
 class XpansionSettingsDTO(BaseModel):
-    optimality_gap: Optional[float] = 1
-    max_iteration: Optional[Union[int, MaxIteration]] = MaxIteration.INF
+    """
+    A data transfer object representing the general settings used for Xpansion.
+
+    Attributes:
+        optimality_gap: Tolerance on absolute gap for the solution.
+        max_iteration: Maximum number of Benders iterations for the solver.
+        uc_type: Unit-commitment type used by Antares for the solver.
+        master: Resolution mode of the master problem for the solver.
+        yearly_weights: Path of the Monte-Carlo weights file for the solution.
+        additional_constraints: Path of the additional constraints file for the solution.
+        relaxed_optimality_gap: Threshold to switch from relaxed to integer master.
+        cut_type: The type of cut used in the Benders decomposition.
+        ampl_solver: The solver used by AMPL.
+        ampl_presolve: The pre-solve setting used by AMPL.
+        ampl_solve_bounds_frequency: The frequency with which to solve bounds using AMPL.
+        relative_gap: Tolerance on relative gap for the solution.
+        batch_size: Amount of batches in the Benders decomposition.
+        solver: The solver used to solve the master and the sub-problems in the Benders decomposition.
+        timelimit: The timelimit (in seconds) of the Benders step.
+        log_level: The severity of the solver's log.
+        sensitivity_config: The sensitivity configuration for Xpansion.
+
+    Raises:
+        ValueError: If the `relaxed_optimality_gap` attribute is not a float
+        or a string ending with "%" and a valid float.
+    """
+
+    optimality_gap: Optional[float] = Field(default=1, ge=0)
+    # fmt: off
+    max_iteration: Optional[Union[int, MaxIteration]] = Field(default=MaxIteration.INF, ge=0)
+    # fmt: on
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
     yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
@@ -86,7 +114,8 @@ class XpansionSettingsDTO(BaseModel):
     ampl_solve_bounds_frequency: Optional[int] = Field(
         None, alias="ampl.solve_bounds_frequency"
     )
-    relative_gap: Optional[float] = None
+    relative_gap: Optional[float] = Field(default=None, ge=0)
+    batch_size: Optional[int] = Field(default=0, alias="batch-size", ge=0)
     solver: Optional[Solver] = None
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
@@ -113,12 +142,12 @@ class XpansionCandidateDTO(BaseModel):
     # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
-    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw")
-    unit_size: Optional[float] = Field(None, alias="unit-size")
-    max_units: Optional[int] = Field(None, alias="max-units")
-    max_investment: Optional[float] = Field(None, alias="max-investment")
+    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
+    unit_size: Optional[float] = Field(None, alias="unit-size", ge=0)
+    max_units: Optional[int] = Field(None, alias="max-units", ge=0)
+    max_investment: Optional[float] = Field(None, alias="max-investment", ge=0)
     already_installed_capacity: Optional[int] = Field(
-        None, alias="already-installed-capacity"
+        None, alias="already-installed-capacity", ge=0
     )
     # this is obsolete (replaced by direct/indirect)
     link_profile: Optional[str] = Field(None, alias="link-profile")
@@ -259,6 +288,7 @@ class XpansionManager:
             else:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
+                xpansion_settings["batch-size"] = 0
 
             xpansion_configuration_data = {
                 "user": {
@@ -301,8 +331,8 @@ class XpansionManager:
         )
         return XpansionSettingsDTO.parse_obj(json)
 
+    @staticmethod
     def _assert_xpansion_settings_additional_constraints_is_valid(
-        self,
         file_study: FileStudy,
         additional_constraints: str,
     ) -> None:
@@ -321,28 +351,6 @@ class XpansionManager:
                     f"The 'additional-constraints' file '{additional_constraints}' does not exist"
                 )
 
-    def _assert_is_positive(
-        self,
-        name: str,
-        param: Union[float, int],
-    ) -> None:
-        if param < 0:
-            raise WrongTypeFormat(
-                f"'{name}' must be a float greater than or equal to 0"
-            )
-
-    def _assert_max_iteration_is_valid(
-        self, max_iteration: Union[int, MaxIteration]
-    ) -> None:
-        if (
-            isinstance(max_iteration, int)
-            and max_iteration < 0
-            or cast(str, max_iteration) != MaxIteration.INF
-        ):
-            raise WrongTypeFormat(
-                "'max_iteration' must be an integer greater than or equal to 0 OR '+Inf'"
-            )
-
     def update_xpansion_settings(
         self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
@@ -350,20 +358,6 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        if new_xpansion_settings_dto.optimality_gap is not None:
-            self._assert_is_positive(
-                "optimality_gap", new_xpansion_settings_dto.optimality_gap
-            )
-        if new_xpansion_settings_dto.relative_gap is not None:
-            self._assert_is_positive(
-                "relative_gap", new_xpansion_settings_dto.relative_gap
-            )
-        if new_xpansion_settings_dto.max_iteration is not None and isinstance(
-            new_xpansion_settings_dto.max_iteration, int
-        ):
-            self._assert_is_positive(
-                "max_iteration", new_xpansion_settings_dto.max_iteration
-            )
         if new_xpansion_settings_dto.additional_constraints:
             self._assert_xpansion_settings_additional_constraints_is_valid(
                 file_study, new_xpansion_settings_dto.additional_constraints
@@ -387,8 +381,8 @@ class XpansionManager:
             )
         return new_xpansion_settings_dto
 
+    @staticmethod
     def _assert_link_profile_are_files(
-        self,
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
@@ -427,8 +421,8 @@ class XpansionManager:
                     f"The '{fieldname}' file '{filename}' does not exist"
                 )
 
+    @staticmethod
     def _assert_link_exist(
-        self,
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
@@ -443,8 +437,9 @@ class XpansionManager:
                 f"The link from '{area_from}' to '{area_to}' not found"
             )
 
+    @staticmethod
     def _assert_no_illegal_character_is_in_candidate_name(
-        self, xpansion_candidate_name: str
+        xpansion_candidate_name: str,
     ) -> None:
         illegal_chars = [
             " ",
@@ -470,8 +465,9 @@ class XpansionManager:
                     f"The character '{char}' is not allowed in the candidate name"
                 )
 
+    @staticmethod
     def _assert_candidate_name_is_not_already_taken(
-        self, candidates: JSON, xpansion_candidate_name: str
+        candidates: JSON, xpansion_candidate_name: str
     ) -> None:
         for candidate in candidates.values():
             if candidate["name"] == xpansion_candidate_name:
@@ -479,8 +475,8 @@ class XpansionManager:
                     f"The candidate '{xpansion_candidate_name}' already exists"
                 )
 
+    @staticmethod
     def _assert_investment_candidate_is_valid(
-        self,
         max_investment: Optional[float],
         max_units: Optional[int],
         unit_size: Optional[float],
@@ -523,31 +519,7 @@ class XpansionManager:
             xpansion_candidate_dto.max_units,
             xpansion_candidate_dto.unit_size,
         )
-        if xpansion_candidate_dto.annual_cost_per_mw:
-            self._assert_is_positive(
-                "annual_cost_per_mw", xpansion_candidate_dto.annual_cost_per_mw
-            )
-        else:
-            raise BadCandidateFormatError(
-                "The candidate is not well formatted.\nIt should contain annual-cost-per-mw."
-            )
-        if xpansion_candidate_dto.unit_size is not None:
-            self._assert_is_positive(
-                "unit_size", xpansion_candidate_dto.unit_size
-            )
-        if xpansion_candidate_dto.max_investment is not None:
-            self._assert_is_positive(
-                "max_investment", xpansion_candidate_dto.max_investment
-            )
-        if xpansion_candidate_dto.already_installed_capacity is not None:
-            self._assert_is_positive(
-                "already_installed_capacity",
-                xpansion_candidate_dto.already_installed_capacity,
-            )
-        if xpansion_candidate_dto.max_units is not None:
-            self._assert_is_positive(
-                "max_units", xpansion_candidate_dto.max_units
-            )
+        assert xpansion_candidate_dto.annual_cost_per_mw
 
     def add_candidate(
         self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
@@ -628,12 +600,12 @@ class XpansionManager:
         )
 
         logger.info(f"Checking candidate {candidate_name} exists")
-        for id, candidate in candidates.items():
+        for candidate_id, candidate in candidates.items():
             if candidate["name"] == candidate_name:
                 logger.info(
                     f"Updating candidate '{candidate_name}' of study '{study.id}'"
                 )
-                candidates[id] = xpansion_candidate_dto.dict(
+                candidates[candidate_id] = xpansion_candidate_dto.dict(
                     by_alias=True, exclude_none=True
                 )
                 file_study.tree.save(
@@ -651,8 +623,8 @@ class XpansionManager:
 
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         candidate_id = next(
-            id
-            for id, candidate in candidates.items()
+            candidate_id
+            for candidate_id, candidate in candidates.items()
             if candidate["name"] == candidate_name
         )
 
@@ -829,8 +801,9 @@ class XpansionManager:
         ]
         return root_files
 
+    @staticmethod
     def _is_constraints_file_used(
-        self, file_study: FileStudy, filename: str
+        file_study: FileStudy, filename: str
     ) -> bool:
         try:
             return (
@@ -849,9 +822,8 @@ class XpansionManager:
         except KeyError:
             return False
 
-    def _is_weights_file_used(
-        self, file_study: FileStudy, filename: str
-    ) -> bool:
+    @staticmethod
+    def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:
         try:
             return (
                 str(
@@ -869,7 +841,8 @@ class XpansionManager:
         except KeyError:
             return False
 
-    def _is_capa_file_used(self, file_study: FileStudy, filename: str) -> bool:
+    @staticmethod
+    def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
         logger.info(
             f"Checking xpansion capacities file '{filename}' is not used in study '{file_study.config.study_id}'"
         )

@@ -31,9 +31,10 @@ class ExpansionSettings(IniFileNode):
         ampl.solver:str = "cbc"
         ampl.presolve:int = 0
         ampl.solve_bounds_frequency:int = 1000000
-    version >= 800 only:
+    version > 800 only:
         relative_gap:float = 1e-12
         solver:str = "Cbc" or "Coin". default="Cbc"
+        batch-size:int = 0
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
@@ -59,6 +60,7 @@ class ExpansionSettings(IniFileNode):
         if self.config.version > 800:
             types["relative-gap"] = float
             types["solver"] = str
+            types["batch-size"] = int
             del types["relaxed-optimality-gap"]
             del types["cut-type"]
             del types["ampl.solver"]
