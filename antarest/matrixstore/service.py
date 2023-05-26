@@ -431,7 +431,7 @@ class MatrixService(ISimpleMatrixService):
                 filepath = f"{tmpdir}/{name}"
                 array = np.array(mtx.data, dtype=np.float64)
                 # noinspection PyTypeChecker
-                np.savetxt(filepath, array, delimiter="\t", fmt="%.18g")
+                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(
                 lambda x: logger.info(
@@ -528,4 +528,4 @@ class MatrixService(ISimpleMatrixService):
         if matrix := self.get(matrix_id):
             array = np.array(matrix.data, dtype=np.float64)
             # noinspection PyTypeChecker
-            np.savetxt(filepath, array, delimiter="\t", fmt="%.18g")
+            np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
