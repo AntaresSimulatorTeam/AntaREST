@@ -1,10 +1,14 @@
-from numpy import typing as npt
 import hashlib
 import logging
 from pathlib import Path
 from typing import List, Optional, Union
 
 import numpy as np
+from filelock import FileLock
+from numpy import typing as npt
+from sqlalchemy import and_, exists  # type: ignore
+from sqlalchemy.orm import aliased  # type: ignore
+
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
@@ -12,8 +16,6 @@ from antarest.matrixstore.model import (
     MatrixData,
     MatrixDataSet,
 )
-from sqlalchemy import and_, exists  # type: ignore
-from sqlalchemy.orm import aliased  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -205,16 +207,36 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         # Avoid having to save the matrix again (that's the whole point of using a hash).
         if not matrix_file.exists():
-            # noinspection PyTypeChecker
-            np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
+            # Ensure exclusive access to the matrix file between multiple processes (or threads).
+            lock_file = matrix_file.with_suffix(".tsv.lock")
+            with FileLock(lock_file, timeout=15):
+                # noinspection PyTypeChecker
+                np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
+
+            # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+            # See https://github.com/tox-dev/py-filelock/issues/31
+            # However, this deletion is possible when the matrix is no longer in use.
+            # This is done in `MatrixGarbageCollector` when matrix files are deleted.
+
         return matrix_hash
 
     def delete(self, matrix_hash: str) -> None:
         """
-        Deletes the tsv file containing the content of a matrix with a given SHA256 hash.
+        Deletes the TSV file containing the content of a matrix with the given SHA256 hash.
 
         Parameters:
-            matrix_hash: SHA256 hash
+            matrix_hash: The SHA256 hash of the matrix.
+
+        Raises:
+            FileNotFoundError: If the TSV file does not exist.
+
+        Note:
+            This method also deletes any abandoned lock file.
         """
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         matrix_file.unlink()
+
+        # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+        # Abandoned lock files are deleted here to maintain consistent behavior.
+        lock_file = matrix_file.with_suffix(".tsv.lock")
+        lock_file.unlink(missing_ok=True)
