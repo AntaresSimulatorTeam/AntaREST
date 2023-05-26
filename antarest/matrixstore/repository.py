@@ -203,8 +203,10 @@ class MatrixContentRepository:
         )
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        # noinspection PyTypeChecker
-        np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
+        # Avoid having to save the matrix again (that's the whole point of using a hash).
+        if not matrix_file.exists():
+            # noinspection PyTypeChecker
+            np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
         return matrix_hash
 
     def delete(self, matrix_hash: str) -> None:
