@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import tempfile
-import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from io import BytesIO
@@ -284,7 +283,7 @@ class MatrixService(ISimpleMatrixService):
         """
         List matrix user metadata
 
-        Args:
+        Parameters:
             dataset_name: the dataset name search query
             filter_own: indicate if only the current user datasets should be returned
             params: The request parameter containing user information
@@ -333,7 +332,7 @@ class MatrixService(ISimpleMatrixService):
         """
         Get a matrix object from the database and the matrix content repository.
 
-        Args:
+        Parameters:
             matrix_id: The SHA256 hash of the matrix object to search for.
 
         Returns:
@@ -358,7 +357,7 @@ class MatrixService(ISimpleMatrixService):
         """
         Check if a matrix object exists in both the matrix content repository and the database.
 
-        Args:
+        Parameters:
             matrix_id: The SHA256 hash of the matrix object to check for existence.
 
         Returns:
@@ -372,7 +371,7 @@ class MatrixService(ISimpleMatrixService):
         """
         Delete a matrix object from the matrix content repository and the database.
 
-        Args:
+        Parameters:
             matrix_id: The SHA256 hash of the matrix object to delete.
         """
         # Matrix deletion is done exclusively when the `MatrixGarbageCollector`
@@ -439,7 +438,7 @@ class MatrixService(ISimpleMatrixService):
     ) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
-        Args:
+        Parameters:
             dataset_id: matrix dataset id
             params: request parameters
         """
@@ -510,7 +509,7 @@ class MatrixService(ISimpleMatrixService):
         """
         Prepare the matrix download if the user has permissions to do it.
 
-        Args:
+        Parameters:
             matrix_id: The SHA256 hash of the matrix object to download.
             filepath: File path of the TSV file to write.
             params: Request parameters.

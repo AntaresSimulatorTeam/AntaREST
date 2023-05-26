@@ -54,8 +54,9 @@ class MatrixDataSetRepository:
         owner: Optional[int] = None,
     ) -> List[MatrixDataSet]:
         """
-        Query a list of MatrixUserMetadata by searching for each one separatly if a set of filter match
-        Args:
+        Query a list of MatrixUserMetadata by searching for each one separately if a set of filter match
+
+        Parameters:
             name: the partial name of dataset
             owner: owner id to filter the result with
 
@@ -133,7 +134,7 @@ class MatrixContentRepository:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
-        Args:
+        Parameters:
             matrix_hash: SHA256 hash
 
         Returns:
@@ -152,7 +153,7 @@ class MatrixContentRepository:
         """
         Checks if a matrix with a given SHA256 hash exists in the directory.
 
-        Args:
+        Parameters:
             matrix_hash: SHA256 hash
 
         Returns:
@@ -173,7 +174,7 @@ class MatrixContentRepository:
         in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
         is returned as a string.
 
-        Args:
+        Parameters:
             content:
                 The matrix content to be saved. It can be either a nested list of floats
                 or a NumPy array of type np.float64.
@@ -210,7 +211,7 @@ class MatrixContentRepository:
         """
         Deletes the tsv file containing the content of a matrix with a given SHA256 hash.
 
-        Args:
+        Parameters:
             matrix_hash: SHA256 hash
         """
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
