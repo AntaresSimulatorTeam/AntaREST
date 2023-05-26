@@ -348,7 +348,7 @@ class MatrixService(ISimpleMatrixService):
             id=matrix.id,
             width=matrix.width,
             height=matrix.height,
-            created_at=int(time.mktime(datetime.timetuple(matrix.created_at))),
+            created_at=int(matrix.created_at.timestamp()),
             index=content.index,
             columns=content.columns,
             data=content.data,
