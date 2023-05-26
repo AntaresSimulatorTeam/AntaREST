@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import List, Tuple
 from zipfile import ZipFile
 
+import numpy as np
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_4_fixed_hourly,
@@ -27,17 +31,8 @@ from antarest.tools.lib import (
     generate_study,
     parse_commands,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 test_dir: Path = Path(__file__).parent
-
-
-def generate_csv_string(data: List[List[float]]) -> str:
-    csv_str = ""
-    for row in data:
-        csv_str += "\t".join(["{:.6f}".format(v) for v in row]) + "\n"
-    return csv_str
 
 
 def generate_study_with_server(
@@ -179,12 +174,6 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}misc-gen{os.sep}miscgen-hub s.txt",
         f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
     ]
-    single_column_empty_data = generate_csv_string(default_scenario_hourly)
-    single_column_daily_empty_data = generate_csv_string(
-        default_scenario_daily
-    )
-    fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
-    fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
     for root, dirs, files in os.walk(study_path):
         rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
@@ -197,22 +186,26 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
                 continue
             elif f"{rel_path}{os.sep}{item}" in single_column_empty_items:
                 assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == single_column_empty_data
+                    np.loadtxt(generated_study_path / rel_path / item)
+                    == default_scenario_hourly
+                ).all()
             elif (
                 f"{rel_path}{os.sep}{item}" in single_column_daily_empty_items
             ):
                 assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == single_column_daily_empty_data
+                    np.loadtxt(generated_study_path / rel_path / item)
+                    == default_scenario_daily
+                ).all()
             elif f"{rel_path}{os.sep}{item}" in fixed_4_cols_empty_items:
                 assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == fixed_4_columns_empty_data
+                    np.loadtxt(generated_study_path / rel_path / item)
+                    == default_4_fixed_hourly
+                ).all()
             elif f"{rel_path}{os.sep}{item}" in fixed_8_cols_empty_items:
                 assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == fixed_8_columns_empty_data
+                    np.loadtxt(generated_study_path / rel_path / item)
+                    == default_8_fixed_hourly
+                ).all()
             else:
                 assert (study_path / rel_path / item).read_text() == (
                     generated_study_path / rel_path / item

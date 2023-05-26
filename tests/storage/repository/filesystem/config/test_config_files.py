@@ -9,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_thermal,
     _parse_sets,
     _parse_links,
+    _parse_st_storage,
 )
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -19,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     Cluster,
     BindingConstraintDTO,
+    Storage,
 )
 from tests.storage.business.assets import ASSETS_DIR
 
@@ -279,6 +281,36 @@ def test_parse_thermal(tmp_path: Path) -> None:
         Cluster(id="t2", name="t2", enabled=False),
         Cluster(id="t3", name="t3", enabled=True),
     ]
+
+
+def test_parse_st_storage(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    study_path.joinpath("input", "st-storage", "clusters", "fr").mkdir(
+        parents=True
+    )
+    content = """
+        [t1]
+        name = t1
+
+        [t2]
+        name = t2
+
+        [t3]
+        name = t3
+        """
+    study_path.joinpath(
+        "input", "st-storage", "clusters", "fr", "list.ini"
+    ).write_text(content)
+
+    assert _parse_st_storage(study_path, "fr") == [
+        Storage(id="t1", name="t1"),
+        Storage(id="t2", name="t2"),
+        Storage(id="t3", name="t3"),
+    ]
+
+
+def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
+    assert _parse_st_storage(tmp_path, "") == []
 
 
 def test_parse_links(tmp_path: Path) -> None:

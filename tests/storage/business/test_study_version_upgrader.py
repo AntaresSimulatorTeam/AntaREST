@@ -9,16 +9,17 @@ from zipfile import ZipFile
 
 import pandas
 import pytest
-
-
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
 from antarest.study.storage.study_upgrader import (
-    upgrade_study,
-    InvalidUpgrade,
     UPGRADE_METHODS,
+    InvalidUpgrade,
+    upgrade_study,
 )
 from antarest.study.storage.study_upgrader.upgrader_840 import (
     MAPPING_TRANSMISSION_CAPACITIES,
@@ -37,10 +38,8 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "850"
+    target_version = "860"
     upgrade_study(tmp_path, target_version)
-    with open(tmp_path / "settings" / "generaldata.ini", "r") as f:
-        print(f.readlines())
     assert_study_antares_file_is_updated(tmp_path, target_version)
     assert_settings_are_updated(tmp_path, old_values)
     assert_inputs_are_updated(tmp_path, old_areas_values)
@@ -140,6 +139,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
         == 0.0
     )
     assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
+    assert adequacy_patch["enable-first-step"]
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
@@ -153,38 +153,33 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
 
 
 def get_old_area_values(tmp_path: Path) -> dict:
-    links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     dico = {}
-    for folder in links:
-        all_txt = glob.glob(str(Path(folder) / "*.txt"))
-        if len(all_txt) > 0:
-            for txt in all_txt:
-                path_txt = Path(txt)
-                new_txt = Path(path_txt.parent.name).joinpath(path_txt.stem)
-                df = pandas.read_csv(txt, sep="\t", header=None)
-                dico[str(new_txt)] = df
+    for folder in (tmp_path / "input" / "links").iterdir():
+        all_txt = folder.glob("*.txt")
+        for path_txt in all_txt:
+            new_txt = Path(path_txt.parent.name).joinpath(path_txt.stem)
+            df = pandas.read_csv(path_txt, sep="\t", header=None)
+            dico[str(new_txt)] = df
     return dico
 
 
 def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
     input_path = tmp_path / "input"
-    assert (input_path / "renewables").is_dir()
-    assert (input_path / "renewables" / "clusters").is_dir()
-    assert (input_path / "renewables" / "series").is_dir()
+
+    # tests 8.1 upgrade
+    assert_folder_is_created(input_path / "renewables")
+
+    # tests 8.2 upgrade
     links = glob.glob(str(tmp_path / "input" / "links" / "*"))
     for folder in links:
         folder_path = Path(folder)
-        all_txt = glob.glob(str(folder_path / "*.txt"))
-        if len(all_txt) > 0:
-            for txt in all_txt:
-                path_txt = Path(txt)
-                old_txt = str(
-                    Path(path_txt.parent.name).joinpath(path_txt.stem)
-                ).replace("_parameters", "")
-                df = pandas.read_csv(txt, sep="\t", header=None)
-                assert (
-                    df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
-                )
+        for txt in folder_path.glob("*.txt"):
+            path_txt = Path(txt)
+            old_txt = str(
+                Path(path_txt.parent.name).joinpath(path_txt.stem)
+            ).replace("_parameters", "")
+            df = pandas.read_csv(txt, sep="\t", header=None)
+            assert df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
             df_capacities = pandas.read_csv(
@@ -208,6 +203,8 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
                     df_capacities[0].values.all()
                     == dico[new_txt].iloc[:, 1].values.all()
                 )
+
+    # tests 8.3 upgrade
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
     for folder in areas:
         folder_path = Path(folder)
@@ -215,6 +212,30 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
             data = reader.read(folder_path / "adequacy_patch.ini")
             assert data["adequacy-patch"]["adequacy-patch-mode"] == "outside"
+
+    # tests 8.6 upgrade
+    assert_folder_is_created(input_path / "st-storage")
+    list_areas = (
+        (input_path / "areas" / "list.txt")
+        .read_text(encoding="utf-8")
+        .splitlines(keepends=False)
+    )
+    for area_name in list_areas:
+        area_id = transform_name_to_id(area_name)
+        st_storage_path = input_path.joinpath(
+            "st-storage", "clusters", area_id
+        )
+        assert st_storage_path.is_dir()
+        assert (st_storage_path / "list.ini").exists()
+        assert input_path.joinpath(
+            "hydro", "series", area_id, "mingen.txt"
+        ).exists()
+
+
+def assert_folder_is_created(path: Path) -> None:
+    assert path.is_dir()
+    assert (path / "clusters").is_dir()
+    assert (path / "series").is_dir()
 
 
 def are_same_dir(dir1, dir2) -> bool:

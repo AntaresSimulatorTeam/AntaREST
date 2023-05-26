@@ -1,7 +1,9 @@
+from typing import Dict, Any
+
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_daily,
     default_scenario_hourly,
@@ -27,7 +29,7 @@ class InputHydroSeriesArea(FolderNode):
             if self.config.version >= 650
             else default_scenario_monthly
         )
-        return {
+        hydro_series_matrices: Dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("mod.txt"),
@@ -42,3 +44,11 @@ class InputHydroSeriesArea(FolderNode):
                 default_empty=default_scenario_hourly,
             ),
         }
+        if self.config.version >= 860:
+            hydro_series_matrices["mingen"] = InputSeriesMatrix(
+                self.context,
+                self.config.next_file("mingen.txt"),
+                freq=MatrixFrequency.HOURLY,
+                default_empty=default_scenario_hourly,
+            )
+        return hydro_series_matrices

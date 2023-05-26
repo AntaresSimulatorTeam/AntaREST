@@ -2,6 +2,9 @@ import base64
 import logging
 from typing import Optional, List, Tuple, Union, cast
 
+import numpy as np
+from numpy import typing as npt
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch, assert_this
 from antarest.matrixstore.model import MatrixData
@@ -586,28 +589,18 @@ class CommandExtractor(ICommandExtractor):
         default_value: Optional[str] = None,
     ) -> ICommand:
         data = study_tree.get(url)
-        matrix = CommandExtractor.get_matrix(data, default_value is None)
+        matrix = None
+        if isinstance(data, str):
+            matrix = data
+        elif isinstance(data, dict):
+            matrix = data["data"] if "data" in data else [[]]
+        if isinstance(matrix, np.ndarray):
+            matrix = cast(List[List[MatrixData]], matrix.tolist())
         return ReplaceMatrix(
             target="/".join(url),
             matrix=matrix or default_value,
             command_context=self.command_context,
         )
-
-    @staticmethod
-    def get_matrix(
-        data: Union[JSON, str], raise_on_missing: Optional[bool] = False
-    ) -> Optional[Union[str, List[List[MatrixData]]]]:
-        if isinstance(data, str):
-            return data
-        elif isinstance(data, dict):
-            if "data" in data:
-                assert isinstance(data["data"], list)
-                return data["data"]
-            else:
-                return [[]]
-        elif raise_on_missing:
-            raise ValueError("Invalid matrix")
-        return None
 
     def generate_update_district(
         self,

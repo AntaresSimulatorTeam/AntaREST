@@ -247,6 +247,16 @@ class CreateArea(ICommand):
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
 
+        if version >= 860:
+            new_area_data["input"]["st-storage"] = {
+                "clusters": {area_id: {"list": {}}}
+            }
+            new_area_data["input"]["hydro"]["series"][area_id][
+                "mingen"
+            ] = (
+                self.command_context.generator_matrix_constants.get_null_matrix()
+            )
+
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
 
         # NOTE regarding the following configurations:

@@ -23,6 +23,15 @@ class Cluster(BaseModel):
     enabled: bool = True
 
 
+class Storage(BaseModel):
+    """
+    Short-term storage model used in Area creation
+    """
+
+    id: str
+    name: str
+
+
 class Link(BaseModel):
     """
     Object linked to /input/links/<link>/properties.ini information
@@ -56,6 +65,8 @@ class Area(BaseModel):
     renewables: List[Cluster]
     filters_synthesis: List[str]
     filters_year: List[str]
+    # since v8.6
+    storages: List[Storage] = []
 
 
 class DistrictSet(BaseModel):
@@ -203,6 +214,12 @@ class FileStudyTreeConfig(DTO):
                 for thermal in self.areas[area].thermals
                 if not only_enabled or thermal.enabled
             ],
+        )
+
+    def get_st_storage_names(self, area: str) -> List[str]:
+        return self.cache.get(
+            f"%st-storage%{area}",
+            [storage.id for storage in self.areas[area].storages],
         )
 
     def get_renewable_names(
