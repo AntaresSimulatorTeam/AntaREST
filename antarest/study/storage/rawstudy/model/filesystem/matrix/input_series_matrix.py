@@ -4,9 +4,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd  # type: ignore
-from numpy import typing as npt
-from pandas.errors import EmptyDataError  # type: ignore
-
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -19,6 +16,8 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixFrequency,
     MatrixNode,
 )
+from numpy import typing as npt
+from pandas.errors import EmptyDataError  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +81,12 @@ class InputSeriesMatrix(MatrixNode):
             return data
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            default = self._format_default_matrix()
-            return pd.DataFrame(default) if return_dataframe else default
+            if self.default_empty is None:
+                return pd.DataFrame() if return_dataframe else {}
+            matrix = pd.DataFrame(self.default_empty)
+            return (
+                matrix if return_dataframe else matrix.to_dict(orient="split")
+            )
 
     def check_errors(
         self,
@@ -103,15 +106,3 @@ class InputSeriesMatrix(MatrixNode):
                 f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
             )
         return errors
-
-    def _format_default_matrix(self) -> Dict[str, Any]:
-        if self.default_empty is not None:
-            index_count, column_count = self.default_empty.shape
-            if index_count > 0 and column_count > 0:
-                logger.info("Using preset default matrix")
-                return {
-                    "index": list(range(index_count)),
-                    "columns": list(range(column_count)),
-                    "data": self.default_empty,
-                }
-        return {}
