@@ -37,6 +37,7 @@ function ManagementOptions() {
       }}
       onSubmit={handleSubmit}
       sx={{ pb: 2 }}
+      enableUndoRedo
     >
       <Fields />
     </Form>

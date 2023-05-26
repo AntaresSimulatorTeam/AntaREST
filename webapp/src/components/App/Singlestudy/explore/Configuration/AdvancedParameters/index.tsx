@@ -54,6 +54,7 @@ function AdvancedParameters() {
         defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
       onSubmit={handleSubmit}
+      enableUndoRedo
     >
       <Fields version={Number(study.version)} />
     </Form>

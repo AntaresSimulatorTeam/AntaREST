@@ -55,6 +55,7 @@ function Allocation() {
               }}
               onSubmit={handleSubmit}
               sx={{ p: 3 }}
+              enableUndoRedo
             >
               <Fields />
             </Form>

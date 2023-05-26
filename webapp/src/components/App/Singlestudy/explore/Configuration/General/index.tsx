@@ -55,6 +55,7 @@ function GeneralParameters() {
         config={{ defaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
         apiRef={apiRef}
+        enableUndoRedo
       >
         <Fields setDialog={setDialog} />
       </Form>

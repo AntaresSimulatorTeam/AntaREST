@@ -29,6 +29,7 @@ function TimeSeriesManagement() {
       key={study.id}
       config={{ defaultValues: () => getTimeSeriesFormFields(study.id) }}
       onSubmit={handleSubmit}
+      enableUndoRedo
     >
       <Fields />
     </Form>
