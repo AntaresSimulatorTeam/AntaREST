@@ -6,9 +6,8 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from alembic.util import CommandError
-from sqlalchemy.ext.declarative import declarative_base  # type: ignore
-
 from antarest.core.utils.utils import get_local_path
+from sqlalchemy.orm import declarative_base  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -40,4 +39,4 @@ def upgrade_db(config_file: Path) -> None:
     if current_version != head:
         logger.info(f"Upgrading database from {current_version} to {head}")
         command.upgrade(alembic_cfg, head)
-    logger.info(f"Database up to date")
+    logger.info("Database up to date")
