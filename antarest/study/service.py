@@ -1679,7 +1679,7 @@ class StudyService:
             parsed_commands: List[ICommand] = []
             for command in commands:
                 parsed_commands.extend(
-                    self.storage_service.variant_study_service.command_factory.to_icommand(
+                    self.storage_service.variant_study_service.command_factory.to_command(
                         command
                     )
                 )

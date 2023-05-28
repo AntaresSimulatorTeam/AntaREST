@@ -9,9 +9,6 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, cast
 from uuid import uuid4
 
-from fastapi import HTTPException
-from filelock import FileLock
-
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     CommandNotFoundError,
@@ -35,7 +32,6 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import (
     JSON,
     PermissionInfo,
-    PublicMode,
     StudyPermissionType,
 )
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -101,6 +97,8 @@ from antarest.study.storage.variantstudy.repository import (
 from antarest.study.storage.variantstudy.variant_command_generator import (
     VariantCommandGenerator,
 )
+from fastapi import HTTPException
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +153,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         except ValueError:
             raise CommandNotFoundError(
                 f"Command with id {command_id} not found"
-            )
+            ) from None
 
     def get_commands(
         self, study_id: str, params: RequestParameters
@@ -177,7 +175,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         for i, command in enumerate(commands):
             try:
                 command_objects.extend(
-                    self.command_factory.to_icommand(command)
+                    self.command_factory.to_command(command)
                 )
             except Exception as e:
                 logger.error(
@@ -185,7 +183,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 raise CommandNotValid(
                     f"Command at index {i} for study {study_id}"
-                )
+                ) from None
         return command_objects
 
     def _check_update_authorization(self, metadata: VariantStudy) -> None:
@@ -237,6 +235,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         command_objs = self._check_commands_validity(study_id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
+        # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
                 command=command.action,
@@ -274,17 +273,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study_id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
-        study.commands = []
-        study.commands.extend(
-            [
-                CommandBlock(
-                    command=command.action,
-                    args=json.dumps(command.args),
-                    index=i,
-                )
-                for i, command in enumerate(validated_commands)
-            ]
-        )
+        # noinspection PyArgumentList
+        study.commands = [
+            CommandBlock(
+                command=command.action,
+                args=json.dumps(command.args),
+                index=i,
+            )
+            for i, command in enumerate(validated_commands)
+        ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
         return str(study.id)
 
@@ -390,7 +387,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for matrix in suppress_exception(
                 lambda: reduce(
                     lambda m, c: m + c.get_inner_matrices(),
-                    self.command_factory.to_icommand(command.to_dto()),
+                    self.command_factory.to_command(command.to_dto()),
                     cast(List[str], []),
                 ),
                 lambda e: logger.warning(
@@ -508,7 +505,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         output_list: List[StudyMetadataDTO] = self._get_variants_parents(
             id, params
         )
-        if len(output_list) > 0:
+        if output_list:
             output_list = output_list[1:]
         return output_list
 
@@ -611,14 +608,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
-        if not study.additional_data:
-            additional_data = StudyAdditionalData()
-        else:
+        if study.additional_data:
+            # noinspection PyArgumentList
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
                 patch=study.additional_data.patch,
             )
+        else:
+            additional_data = StudyAdditionalData()
+        # noinspection PyArgumentList
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -628,9 +627,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=study.version,
-            folder=re.sub(f"/?{study.id}", "", study.folder)
-            if study.folder is not None
-            else None,
+            folder=(
+                re.sub(f"/?{study.id}", "", study.folder)
+                if study.folder is not None
+                else None
+            ),
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
@@ -682,7 +683,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                         exc_info=e,
                     )
 
-            # this is important because the callback will be called outside of the current db context so we need to fetch the id attribute before
+            # this is important because the callback will be called outside the current
+            # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
             def callback(notifier: TaskUpdateNotifier) -> TaskResult:
@@ -772,9 +774,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         remove_from_cache(self.cache, variant_study.id)
 
         # Get snapshot directory
-        dest_path = self.get_study_path(variant_study)
+        dst_path = self.get_study_path(variant_study)
 
-        # this indicate that the current snapshot is up to date and we can only generate from the next command
+        # this indicates that the current snapshot is up-to-date,
+        # and we can only generate from the next command
         last_executed_command_index = (
             VariantStudyService._get_snapshot_last_executed_command_index(
                 variant_study
@@ -801,20 +804,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.repository.save(variant_study, update_modification_date=False)
 
         unmanaged_user_config: Optional[Path] = None
-        if dest_path.is_dir():
+        if dst_path.is_dir():
             # Remove snapshot directory if it exists and last snapshot is out of sync
             if last_executed_command_index is None:
                 logger.info("Removing previous snapshot data")
-                if (dest_path / "user").exists():
+                if (dst_path / "user").exists():
                     logger.info("Keeping previous unmanaged user config")
                     tmp_dir = tempfile.TemporaryDirectory(
                         dir=self.config.storage.tmp_dir
                     )
                     shutil.copytree(
-                        dest_path / "user", tmp_dir.name, dirs_exist_ok=True
+                        dst_path / "user", tmp_dir.name, dirs_exist_ok=True
                     )
                     unmanaged_user_config = Path(tmp_dir.name)
-                shutil.rmtree(dest_path)
+                shutil.rmtree(dst_path)
             else:
                 logger.info("Using previous snapshot data")
         elif last_executed_command_index is not None:
@@ -825,19 +828,19 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             last_executed_command_index = None
 
         if last_executed_command_index is None:
-            # Copy parent study to dest
+            # Copy parent study to destination
             if isinstance(parent_study, VariantStudy):
                 self._safe_generation(parent_study)
                 self.export_study_flat(
                     metadata=parent_study,
-                    dest=dest_path,
+                    dst_path=dst_path,
                     outputs=False,
                     denormalize=False,
                 )
             else:
                 self.raw_study_service.export_study_flat(
                     metadata=parent_study,
-                    dest=dest_path,
+                    dst_path=dst_path,
                     outputs=False,
                     denormalize=False,
                 )
@@ -852,34 +855,36 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         results = self._generate_snapshot(
             variant_study=variant_study,
-            dest_path=dest_path,
+            dst_path=dst_path,
             notifier=notifier,
             from_command_index=command_start_index,
         )
 
         if unmanaged_user_config:
-            logger.info("Restoring previous unamanaged user config")
-            if dest_path.exists():
-                if (dest_path / "user").exists():
+            logger.info("Restoring previous unmanaged user config")
+            if dst_path.exists():
+                if (dst_path / "user").exists():
                     logger.warning(
-                        "Existing unamanaged user config. It will be overwritten."
+                        "Existing unmanaged user config. It will be overwritten."
                     )
-                    shutil.rmtree((dest_path / "user"))
-                shutil.copytree(unmanaged_user_config, dest_path / "user")
+                    shutil.rmtree((dst_path / "user"))
+                shutil.copytree(unmanaged_user_config, dst_path / "user")
             else:
                 logger.warning("Destination snapshot doesn't exist !")
             shutil.rmtree(unmanaged_user_config, ignore_errors=True)
 
         if results.success:
+            # sourcery skip: extract-method
             last_command_index = len(variant_study.commands) - 1
+            # noinspection PyArgumentList
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
                 created_at=datetime.utcnow(),
-                last_executed_command=variant_study.commands[
-                    last_command_index
-                ].id
-                if last_command_index >= 0
-                else None,
+                last_executed_command=(
+                    variant_study.commands[last_command_index].id
+                    if last_command_index >= 0
+                    else None
+                ),
             )
             study = self.study_factory.create_from_fs(
                 self.get_study_path(variant_study),
@@ -967,14 +972,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def _to_icommand(
         self, metadata: VariantStudy, from_index: int = 0
     ) -> List[List[ICommand]]:
-        commands: List[List[ICommand]] = []
-        index = 0
-        for command_block in metadata.commands:
-            if from_index <= index:
-                commands.append(
-                    self.command_factory.to_icommand(command_block.to_dto())
-                )
-            index += 1
+        commands: List[List[ICommand]] = [
+            self.command_factory.to_command(command_block.to_dto())
+            for index, command_block in enumerate(metadata.commands)
+            if from_index <= index
+        ]
         return commands
 
     def _generate_config(
@@ -993,7 +995,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def _generate_snapshot(
         self,
         variant_study: VariantStudy,
-        dest_path: Path,
+        dst_path: Path,
         notifier: TaskUpdateNotifier = noop_notifier,
         from_command_index: int = 0,
     ) -> GenerationResultInfoDTO:
@@ -1003,7 +1005,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             from_index=from_command_index,
         )
         return self.generator.generate(
-            commands, dest_path, variant_study, notifier=notify
+            commands, dst_path, variant_study, notifier=notify
         )
 
     def get_study_task(
@@ -1040,30 +1042,32 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def copy(
         self,
         src_meta: VariantStudy,
-        dest_name: str,
+        dst_name: str,
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
         Copy study to a new destination
         Args:
             src_meta: source study
-            dest_name: destination study
+            dst_name: destination study
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
-        if not src_meta.additional_data:
-            additional_data = StudyAdditionalData()
-        else:
+        if src_meta.additional_data:
+            # noinspection PyArgumentList
             additional_data = StudyAdditionalData(
                 horizon=src_meta.additional_data.horizon,
                 author=src_meta.additional_data.author,
                 patch=src_meta.additional_data.patch,
             )
-        dest_meta = VariantStudy(
+        else:
+            additional_data = StudyAdditionalData()
+        # noinspection PyArgumentList
+        dst_meta = VariantStudy(
             id=new_id,
-            name=dest_name,
+            name=dst_name,
             parent_id=src_meta.parent_id,
             path=study_path,
             public_mode=src_meta.public_mode,
@@ -1075,7 +1079,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             additional_data=additional_data,
         )
 
-        dest_meta.commands = [
+        # noinspection PyArgumentList
+        dst_meta.commands = [
             CommandBlock(
                 study_id=new_id,
                 command=command.command,
@@ -1086,7 +1091,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for command in src_meta.commands
         ]
 
-        return dest_meta
+        return dst_meta
 
     def _wait_for_generation(
         self, metadata: VariantStudy, timeout: Optional[int] = None
@@ -1102,16 +1107,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self, metadata: VariantStudy, timeout: Optional[int] = None
     ) -> None:
         try:
-            if not self.exists(metadata):
-                if not self._wait_for_generation(metadata, timeout):
-                    raise ValueError()
+            if not self.exists(metadata) and not self._wait_for_generation(
+                metadata, timeout
+            ):
+                raise ValueError()
         except Exception as e:
             logger.error(
                 f"Fail to generate variant study {metadata.id}", exc_info=e
             )
             raise VariantGenerationError(
                 f"Error while generating {metadata.id}"
-            )
+            ) from None
 
     @staticmethod
     def _get_snapshot_last_executed_command_index(
@@ -1170,9 +1176,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         Set an output to the reference output of a study
         Args:
-            metadata: study
-            output_id: the id of output to set the reference status
-            status: true to set it as reference, false to unset it
+            metadata: study.
+            output_id: the id of output to set the reference status.
+            status: true to set it as reference, false to unset it.
         Returns:
         """
         self.patch_service.set_reference_output(metadata, output_id, status)
@@ -1217,7 +1223,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def export_study_flat(
         self,
         metadata: VariantStudy,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
@@ -1229,7 +1235,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         output_src_path = path_study / "output"
         export_study_flat(
             snapshot_path,
-            dest,
+            dst_path,
             self.study_factory,
             outputs,
             output_list_filter,

@@ -1,7 +1,6 @@
 from typing import List
 
 from antarest.core.model import JSON
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -74,9 +73,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-)
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CommandFactory:
@@ -96,134 +93,72 @@ class CommandFactory:
             patch_service=patch_service,
         )
 
-    def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
-        assert_this(isinstance(args, dict))
-        if action == CommandName.CREATE_AREA.value:
-            return CreateArea(
+    def _to_single_command(self, action: str, args: JSON) -> ICommand:
+        """Convert a single CommandDTO to ICommand."""
+        command_mapping = {
+            CommandName.CREATE_AREA.value: CreateArea,
+            CommandName.REMOVE_AREA.value: RemoveArea,
+            CommandName.CREATE_DISTRICT.value: CreateDistrict,
+            CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
+            CommandName.CREATE_LINK.value: CreateLink,
+            CommandName.REMOVE_LINK.value: RemoveLink,
+            CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
+            CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
+            CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
+            CommandName.CREATE_CLUSTER.value: CreateCluster,
+            CommandName.REMOVE_CLUSTER.value: RemoveCluster,
+            CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
+            CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
+            CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
+            CommandName.UPDATE_CONFIG.value: UpdateConfig,
+            CommandName.UPDATE_COMMENTS.value: UpdateComments,
+            CommandName.UPDATE_FILE.value: UpdateRawFile,
+            CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
+            CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
+            CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
+        }
+        if action in command_mapping:
+            command_class = command_mapping[action]
+            return command_class(
                 **args,
                 command_context=self.command_context,
-            )
+            )  # type: ignore
+        raise NotImplementedError(action)
 
-        elif action == CommandName.REMOVE_AREA.value:
-            return RemoveArea(
-                **args,
-                command_context=self.command_context,
-            )
+    def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
+        """
+        Convert a CommandDTO to a list of ICommand.
 
-        elif action == CommandName.CREATE_DISTRICT.value:
-            return CreateDistrict(
-                **args,
-                command_context=self.command_context,
-            )
+        Args:
+            command_dto: The CommandDTO to convert.
 
-        elif action == CommandName.REMOVE_DISTRICT.value:
-            return RemoveDistrict(
-                **args,
-                command_context=self.command_context,
-            )
+        Returns:
+            List: A list of ICommand instances.
 
-        elif action == CommandName.CREATE_LINK.value:
-            return CreateLink(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.REMOVE_LINK.value:
-            return RemoveLink(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
-            return CreateBindingConstraint(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
-            return UpdateBindingConstraint(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
-            return RemoveBindingConstraint(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.CREATE_CLUSTER.value:
-            return CreateCluster(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.REMOVE_CLUSTER.value:
-            return RemoveCluster(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.CREATE_RENEWABLES_CLUSTER.value:
-            return CreateRenewablesCluster(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.REMOVE_RENEWABLES_CLUSTER.value:
-            return RemoveRenewablesCluster(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.REPLACE_MATRIX.value:
-            return ReplaceMatrix(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.UPDATE_CONFIG.value:
-            return UpdateConfig(
-                **args,
-                command_context=self.command_context,
-            )
-        elif action == CommandName.UPDATE_COMMENTS.value:
-            return UpdateComments(
-                **args,
-                command_context=self.command_context,
-            )
-        elif action == CommandName.UPDATE_FILE.value:
-            return UpdateRawFile(
-                **args,
-                command_context=self.command_context,
-            )
-        elif action == CommandName.UPDATE_DISTRICT.value:
-            return UpdateDistrict(
-                **args,
-                command_context=self.command_context,
-            )
-        elif action == CommandName.UPDATE_PLAYLIST.value:
-            return UpdatePlaylist(
-                **args,
-                command_context=self.command_context,
-            )
-        elif action == CommandName.UPDATE_SCENARIO_BUILDER.value:
-            return UpdateScenarioBuilder(
-                **args, command_context=self.command_context
-            )
-        raise NotImplementedError()
-
-    def to_icommand(self, command_dto: CommandDTO) -> List[ICommand]:
+        Raises:
+            NotImplementedError: If the argument type is not implemented.
+        """
         args = command_dto.args
         if isinstance(args, dict):
-            return [self._to_single_icommand(command_dto.action, args)]
-
+            return [self._to_single_command(command_dto.action, args)]
         elif isinstance(args, list):
-            output_list = []
-            for argument in args:
-                output_list.append(
-                    self._to_single_icommand(command_dto.action, argument)
-                )
-            return output_list
-
+            return [
+                self._to_single_command(command_dto.action, argument)
+                for argument in args
+            ]
         raise NotImplementedError()
+
+    def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:
+        """
+        Convert a list of CommandDTO to a list of ICommand.
+
+        Args:
+            cmd_dto_list: The CommandDTO objetcs to convert.
+
+        Returns:
+            List: A list of ICommand instances.
+
+        Raises:
+            NotImplementedError: If the argument type is not implemented.
+        """
+        return [cmd for dto in cmd_dto_list for cmd in self.to_command(dto)]
