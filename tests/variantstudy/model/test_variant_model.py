@@ -1,17 +1,14 @@
 import datetime
 from pathlib import Path
-from unittest.mock import Mock, ANY
-
-from sqlalchemy import create_engine
+from unittest.mock import ANY, Mock
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
@@ -27,10 +24,12 @@ from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
     SNAPSHOT_RELATIVE_PATH,
+    VariantStudyService,
 )
+from sqlalchemy import create_engine
 
+# noinspection SpellCheckingInspection
 SADMIN = RequestParameters(
     user=JWTUser(
         id=0,
@@ -41,17 +40,16 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(
-    tmp_path: Path, command_factory: CommandFactory
-) -> VariantStudyService:
+def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
     engine = create_engine(
         "sqlite:///:memory:",
         echo=True,
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -75,8 +73,10 @@ def test_commands_service(
     )
 
     with db():
+        # sourcery skip: extract-method, inline-variable
         # Save a study
         origin_id = "origin-id"
+        # noinspection PyArgumentList
         origin_study = RawStudy(
             id=origin_id,
             name="my-study",
@@ -168,8 +168,9 @@ def test_smart_generation(
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -199,20 +200,22 @@ def test_smart_generation(
         GenerationResultInfoDTO(success=True, details=[]),
     ]
 
+    # noinspection PyUnusedLocal
     def export_flat(
         metadata: VariantStudy,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         denormalize: bool = True,
     ) -> None:
-        dest.mkdir(parents=True)
-        (dest / "user").mkdir()
-        (dest / "user" / "some_unmanaged_config").touch()
+        dst_path.mkdir(parents=True)
+        (dst_path / "user").mkdir()
+        (dst_path / "user" / "some_unmanaged_config").touch()
 
     service.raw_study_service.export_study_flat.side_effect = export_flat
 
     with db():
         origin_id = "base-study"
+        # noinspection PyArgumentList
         origin_study = RawStudy(
             id=origin_id,
             name="my-study",

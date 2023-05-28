@@ -2,7 +2,7 @@ import logging
 import time
 from os import listdir
 from pathlib import Path
-from typing import Set, List
+from typing import List, Set
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -13,9 +13,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -77,7 +74,7 @@ class MatrixGarbageCollector(IService):
             command_dto: CommandDTO, study_ref: str
         ) -> List[ICommand]:
             try:
-                return self.variant_study_service.command_factory.to_icommand(
+                return self.variant_study_service.command_factory.to_command(
                     command_dto
                 )
             except Exception as e:
@@ -147,6 +144,6 @@ class MatrixGarbageCollector(IService):
                 with db():
                     self._clean_matrices()
             except Exception as e:
-                logger.error(f"Error while cleaning matrices", exc_info=e)
+                logger.error("Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
             time.sleep(self.sleeping_time)

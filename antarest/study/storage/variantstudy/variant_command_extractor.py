@@ -40,24 +40,20 @@ class VariantCommandsExtractor:
         stopwatch = StopWatch()
         study_tree = study.tree
         study_config = study.config
-        study_commands: List[ICommand] = []
-
-        study_commands.append(
+        # noinspection SpellCheckingInspection
+        study_commands: List[ICommand] = [
             self.command_extractor.generate_update_config(
                 study_tree, ["settings", "generaldata"]
-            )
-        )
-        study_commands.append(
+            ),
             self.command_extractor.generate_update_config(
                 study_tree,
                 ["settings", "scenariobuilder"],
-            )
-        )
-        study_commands.append(
+            ),
             self.command_extractor.generate_update_config(
                 study_tree, ["layers", "layers"]
-            )
-        )
+            ),
+        ]
+
         stopwatch.log_elapsed(
             lambda x: logger.info(f"General command extraction done in {x}s")
         )
@@ -73,11 +69,11 @@ class VariantCommandsExtractor:
         study_commands += all_links_commands
 
         # correlations
-        for type in ["load", "wind", "solar", "hydro"]:
+        for type_ in ["load", "wind", "solar", "hydro"]:
             study_commands.append(
                 self.command_extractor.generate_update_config(
                     study_tree,
-                    ["input", type, "prepro", "correlation"],
+                    ["input", type_, "prepro", "correlation"],
                 )
             )
 
@@ -94,6 +90,7 @@ class VariantCommandsExtractor:
             )
 
         # binding constraints
+        # noinspection SpellCheckingInspection
         binding_config = study_tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -127,16 +124,13 @@ class VariantCommandsExtractor:
             matrix_service=self.matrix_service,
             patch_service=self.command_extractor.patch_service,
         )
+
         logger.info("Parsing commands")
-        base_commands: List[ICommand] = []
-        for command in base:
-            base_commands += command_factory.to_icommand(command)
+        base_commands = command_factory.to_commands(base)
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Base commands parsed in {x}s")
         )
-        variant_commands: List[ICommand] = []
-        for command in variant:
-            variant_commands += command_factory.to_icommand(command)
+        variant_commands = command_factory.to_commands(variant)
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Variant commands parsed in {x}s")
         )
@@ -145,35 +139,29 @@ class VariantCommandsExtractor:
         added_commands: List[Tuple[int, ICommand]] = []
         missing_commands: List[Tuple[ICommand, int]] = []
         modified_commands: List[Tuple[int, ICommand, ICommand]] = []
-        order = 10
-        for variant_command in variant_commands:
-            order += 1
-            found = False
+        for order, variant_command in enumerate(variant_commands, start=11):
             for base_command in base_commands:
                 if variant_command.match(base_command):
                     if not variant_command.match(base_command, True):
                         modified_commands.append(
                             (order, variant_command, base_command)
                         )
-                    found = True
                     break
-            if not found:
+            else:
+                # not found
                 added_commands.append((order, variant_command))
         stopwatch.log_elapsed(
             lambda x: logger.info(f"First diff pass done in {x}s")
         )
         logger.info(f"Found {len(added_commands)} added commands")
         logger.info(f"Found {len(modified_commands)} modified commands")
-        index = 0
-        for base_command in base_commands:
-            found = False
-            for variant_command in variant_commands:
-                if base_command.match(variant_command):
-                    found = True
-                    break
+        for index, base_command in enumerate(base_commands):
+            found = any(
+                base_command.match(variant_command)
+                for variant_command in variant_commands
+            )
             if not found:
                 missing_commands.append((base_command, index))
-            index += 1
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Second diff pass done in {x}s")
         )
@@ -181,46 +169,45 @@ class VariantCommandsExtractor:
 
         first_commands: List[Tuple[int, ICommand]] = []
         last_commands: List[Tuple[int, ICommand]] = []
-        logger.info(f"Computing new diff commands")
+        logger.info("Computing new diff commands")
         for command_obj, index in missing_commands:
             logger.info(f"Reverting {command_obj.match_signature()}")
             if command_obj.command_name == CommandName.REMOVE_AREA:
                 command_list = first_commands
                 priority = 0
-            elif (
-                command_obj.command_name == CommandName.REMOVE_LINK
-                or command_obj.command_name == CommandName.REMOVE_CLUSTER
-            ):
+            elif command_obj.command_name in [
+                CommandName.REMOVE_LINK,
+                CommandName.REMOVE_CLUSTER,
+            ]:
                 command_list = first_commands
                 priority = 1
-            elif (
-                command_obj.command_name == CommandName.UPDATE_CONFIG
-                or command_obj.command_name == CommandName.REPLACE_MATRIX
-                or command_obj.command_name == CommandName.UPDATE_COMMENTS
-            ):
+            elif command_obj.command_name in [
+                CommandName.UPDATE_CONFIG,
+                CommandName.REPLACE_MATRIX,
+                CommandName.UPDATE_COMMENTS,
+            ]:
                 command_list = first_commands
                 priority = 2
             elif command_obj.command_name == CommandName.CREATE_AREA:
                 command_list = last_commands
                 priority = 3
-            elif (
-                command_obj.command_name == CommandName.CREATE_CLUSTER
-                or command_obj.command_name == CommandName.CREATE_LINK
-            ):
+            elif command_obj.command_name in [
+                CommandName.CREATE_CLUSTER,
+                CommandName.CREATE_LINK,
+            ]:
                 command_list = last_commands
                 priority = 2
-            elif (
-                command_obj.command_name == CommandName.CREATE_LINK
-                or command_obj.command_name
-                == CommandName.CREATE_BINDING_CONSTRAINT
-                or command_obj.command_name == CommandName.CREATE_DISTRICT
-            ):
+            elif command_obj.command_name in [
+                CommandName.CREATE_BINDING_CONSTRAINT,
+                CommandName.CREATE_DISTRICT,
+            ]:
                 command_list = last_commands
                 priority = 1
             else:
                 command_list = first_commands
                 priority = 3
 
+            # noinspection SpellCheckingInspection
             command_reverter = CommandReverter()
             command_list.extend(
                 [

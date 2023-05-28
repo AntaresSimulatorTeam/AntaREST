@@ -354,7 +354,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     def export_study_flat(
         self,
         metadata: RawStudy,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
@@ -366,7 +366,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         try:
             export_study_flat(
                 path_study,
-                dest,
+                dst_path,
                 self.study_factory,
                 outputs,
                 output_list_filter,

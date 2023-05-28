@@ -482,7 +482,7 @@ def test_copy_study(
         path=str(path_study),
         additional_data=StudyAdditionalData(),
     )
-    md = study_service.copy(src_md, "dest_name")
+    md = study_service.copy(src_md, "dst_name")
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     study.get.assert_called_once_with(["study"])

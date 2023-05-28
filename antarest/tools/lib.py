@@ -9,24 +9,16 @@ from typing import List, Optional, Set
 from zipfile import ZipFile
 
 import requests
-from requests import Session
-
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
-from antarest.core.utils.utils import (
-    StopWatch,
-    get_local_path,
-    assert_this,
-)
+from antarest.core.utils.utils import StopWatch, assert_this, get_local_path
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import (
-    SimpleMatrixService,
-)
+from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import (
-    STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
+    STUDY_REFERENCE_TEMPLATES,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
@@ -48,6 +40,7 @@ from antarest.study.storage.variantstudy.variant_command_extractor import (
 from antarest.study.storage.variantstudy.variant_command_generator import (
     VariantCommandGenerator,
 )
+from requests import Session
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
@@ -100,7 +93,7 @@ class RemoteVariantGenerator(IVariantGenerator):
                     [MatrixData(s) for s in l] for l in list(tsv_data)
                 ]
                 res = self.session.post(
-                    self.build_url(f"/v1/matrix"), json=matrix_data
+                    self.build_url("/v1/matrix"), json=matrix_data
                 )
                 assert_this(res.status_code == 200)
                 matrix_id = res.json()
@@ -143,9 +136,10 @@ class RemoteVariantGenerator(IVariantGenerator):
         )
 
     def build_url(self, url: str) -> str:
-        if self.host is not None:
-            return f"{self.host.strip('/')}/{url.strip('/')}"
-        return url
+        # sourcery skip: assign-if-exp, reintroduce-else
+        if self.host is None:
+            return url
+        return f"{self.host.strip('/')}/{url.strip('/')}"
 
 
 class LocalVariantGenerator(IVariantGenerator):
@@ -176,8 +170,10 @@ class LocalVariantGenerator(IVariantGenerator):
 
         command_objs: List[List[ICommand]] = []
         logger.info("Parsing command objects")
-        for command_block in commands:
-            command_objs.append(command_factory.to_icommand(command_block))
+        command_objs.extend(
+            command_factory.to_command(command_block)
+            for command_block in commands
+        )
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command objects parsed in {x}s")
         )
@@ -185,6 +181,7 @@ class LocalVariantGenerator(IVariantGenerator):
             command_objs, self.output_path, delete_on_failure=False
         )
         if result.success:
+            # sourcery skip: extract-method
             logger.info("Building new study tree")
             study = study_factory.create_from_fs(
                 self.output_path, study_id="", use_cache=False
@@ -340,9 +337,9 @@ def parse_commands(file: Path) -> List[CommandDTO]:
         json_commands = json.load(fh)
     stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
-    commands: List[CommandDTO] = []
-    for command in json_commands:
-        commands.append(CommandDTO.parse_obj(command))
+    commands: List[CommandDTO] = [
+        CommandDTO.parse_obj(command) for command in json_commands
+    ]
     stopwatch.log_elapsed(
         lambda x: logger.info(f"Script commands parsed in {x}s")
     )
@@ -365,7 +362,7 @@ def apply_commands_from_dir(
 
 
 def generate_study(
-    input: Path,
+    command_dir: Path,
     study_id: Optional[str],
     output: Optional[str] = None,
     host: Optional[str] = None,
@@ -381,4 +378,4 @@ def generate_study(
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
         generator = LocalVariantGenerator(output_dir)
-    return apply_commands_from_dir(input, generator)
+    return apply_commands_from_dir(command_dir, generator)

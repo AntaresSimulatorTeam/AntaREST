@@ -3,15 +3,12 @@ import pkgutil
 from unittest.mock import Mock
 
 import pytest
-
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.business.utils import (
-    remove_none_args,
-)
+from antarest.study.storage.variantstudy.business.utils import remove_none_args
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -21,17 +18,27 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class TestCommandFactory:
+    # noinspection SpellCheckingInspection
     def setup_class(self):
+        """
+        Set up the test class.
+
+        Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
+        and creates a set of command class names derived from the `ICommand` abstract class.
+        The objective is to ensure that the unit test covers all commands in this package.
+
+        This method is executed once before any tests in the test class are run.
+        """
         for module_loader, name, ispkg in pkgutil.iter_modules(
             ["antarest/study/storage/variantstudy/model/command"]
         ):
             importlib.import_module(
-                "." + name,
+                f".{name}",
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        self.command_class_set = set(
-            [command.__name__ for command in ICommand.__subclasses__()]
-        )
+        self.command_class_set = {
+            command.__name__ for command in ICommand.__subclasses__()
+        }
 
     @pytest.mark.parametrize(
         "command_dto",
@@ -321,7 +328,7 @@ class TestCommandFactory:
             matrix_service=Mock(spec=MatrixService),
             patch_service=Mock(spec=PatchService),
         )
-        command_list = command_factory.to_icommand(command_dto=command_dto)
+        command_list = command_factory.to_command(command_dto=command_dto)
         if isinstance(args := command_dto.args, dict):
             assert len(command_list) == 1
             assert remove_none_args(command_list[0].to_dto()) == command_dto
@@ -346,6 +353,6 @@ def test_unknown_command():
             matrix_service=Mock(spec=MatrixService),
             patch_service=Mock(spec=PatchService),
         )
-        command_factory.to_icommand(
+        command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={})
         )
