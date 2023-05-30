@@ -35,9 +35,9 @@ def test_service() -> None:
     # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -356,9 +356,9 @@ def test_repository():
     # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -461,9 +461,9 @@ def test_cancel():
     # sourcery skip: aware-datetime-for-utc
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

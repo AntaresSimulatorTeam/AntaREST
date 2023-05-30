@@ -96,8 +96,9 @@ def test_job_result() -> None:
 def test_update_object():
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -128,8 +129,9 @@ def test_update_object():
 def test_logs():
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

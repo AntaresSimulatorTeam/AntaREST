@@ -133,8 +133,9 @@ def test_get_matrices_used_in_variant_studies(
 ):
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -190,8 +191,9 @@ def test_get_matrices_used_in_dataset(
     matrix_garbage_collector.dataset_repository = MatrixDataSetRepository()
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

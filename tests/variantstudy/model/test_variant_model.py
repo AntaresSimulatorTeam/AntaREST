@@ -50,8 +50,9 @@ def test_commands_service(
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -168,8 +169,9 @@ def test_smart_generation(
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

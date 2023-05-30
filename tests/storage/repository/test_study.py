@@ -28,8 +28,9 @@ def test_cyclelife():
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -103,8 +104,9 @@ def test_study_inheritance():
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
