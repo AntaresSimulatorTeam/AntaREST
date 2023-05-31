@@ -400,6 +400,7 @@
   "study.modelization.thermal": "Thermal Clus.",
   "study.modelization.hydro": "Hydro",
   "study.modelization.hydro.correlation.viewMatrix": "View all correlations",
+  "study.modelization.hydro.correlation.coefficient": "Coeff. (%)",
   "study.modelization.hydro.allocation.viewMatrix": "View all allocations",
   "study.modelization.hydro.allocation.error.field.delete": "Error when deleting the allocation",
   "study.modelization.wind": "Wind",
