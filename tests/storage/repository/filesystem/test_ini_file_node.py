@@ -191,28 +191,25 @@ def test_validate_section():
 def test_save(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")
 
-    ini_content = textwrap.dedent(
-        """\
-        [part1]
-        key_float = 2.1
-        key_int = 1
-        key_str = value1
-        """
-    )
-    ini_path.write_text(ini_content)
-
     types = {
         "part1": {
             "key_int": int,
             "key_float": float,
             "key_str": str,
-        }
+            "key_bool": bool,
+        },
+        "part2": {
+            "key_int": int,
+            "key_float": float,
+            "key_str": str,
+            "key_bool": bool,
+        },
     }
 
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=ini_path,
+            study_path=tmp_path,
             path=ini_path,
             version=-1,
             study_id="id",
@@ -221,23 +218,77 @@ def test_save(tmp_path: Path) -> None:
         ),
         types=types,
     )
-    # note: the order of the keys is preserved in the output
+
+    # The example below allows for creating an INI file from scratch by providing
+    # a dictionary of sections to write. The dictionary order is preserved.
     data = {
         "part1": {
-            "key_int": 10,
-            "key_str": "value10",
             "key_float": 2.1,
+            "key_int": 1,
+            "key_str": "value1",
+        },
+        "part2": {
+            "key_float": 18,
+            "key_int": 5,
+            "key_str": "value2",
         },
     }
     node.save(data)
-    node.save(3.14, url=["part1", "key_float"])
-
     expected = textwrap.dedent(
         """\
         [part1]
-        key_int = 10
+        key_float = 2.1
+        key_int = 1
+        key_str = value1
+
+        [part2]
+        key_float = 18
+        key_int = 5
+        key_str = value2
+        """
+    )
+    assert ini_path.read_text().strip() == expected.strip()
+
+    # The example below allows for updating the parameters of a **section** in an INI file.
+    # The update simply involves replacing all the parameters with the values defined
+    # in the key/value dictionary. The previous values are removed, and new values can be added.
+    # Note: this update only affects a specific section, leaving other sections unaffected.
+    data = {
+        # "key_int": 10,  # <- removed
+        "key_str": "value10",
+        "key_float": 2.1,
+        "key_bool": True,  # <- inserted
+    }
+    node.save(data, url=["part1"])
+    # note: the order of the keys is preserved in the output
+    expected = textwrap.dedent(
+        """\
+        [part1]
+        key_str = value10
+        key_float = 2.1
+        key_bool = True
+
+        [part2]
+        key_float = 18
+        key_int = 5
+        key_str = value2
+        """
+    )
+    assert ini_path.read_text().strip() == expected.strip()
+
+    # The exemple below allows for updating a single parameter, the others are unaffected.
+    node.save(3.14, url=["part1", "key_float"])
+    expected = textwrap.dedent(
+        """\
+        [part1]
         key_str = value10
         key_float = 3.14
+        key_bool = True
+
+        [part2]
+        key_float = 18
+        key_int = 5
+        key_str = value2
         """
     )
     assert ini_path.read_text().strip() == expected.strip()
