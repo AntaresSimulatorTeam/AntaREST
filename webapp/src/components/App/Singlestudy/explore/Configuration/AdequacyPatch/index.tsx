@@ -33,6 +33,7 @@ function AdequacyPatch() {
         defaultValues: () => getAdequacyPatchFormFields(study.id),
       }}
       onSubmit={handleSubmit}
+      enableUndoRedo
     >
       <Fields />
     </Form>
