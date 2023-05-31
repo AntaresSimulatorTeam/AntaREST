@@ -32,11 +32,11 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 @pytest.fixture
 def matrix_service() -> MatrixService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker,SpellCheckingInspection
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

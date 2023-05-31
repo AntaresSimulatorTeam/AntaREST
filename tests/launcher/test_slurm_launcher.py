@@ -248,11 +248,11 @@ def test_run_study(
     version: int,
     job_status: JobStatus,
 ):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -362,11 +362,11 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 
 @pytest.mark.unit_test
 def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

@@ -33,11 +33,11 @@ from tests.conftest import with_db_context
 
 def test_service() -> None:
     # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -354,11 +354,11 @@ def test_worker_tasks(tmp_path: Path):
 
 def test_repository():
     # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -459,11 +459,11 @@ def test_repository():
 
 def test_cancel():
     # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

@@ -32,8 +32,9 @@ def test_local_launcher__launcher_init_exception():
 def test_compute(tmp_path: Path):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

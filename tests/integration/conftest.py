@@ -26,8 +26,9 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

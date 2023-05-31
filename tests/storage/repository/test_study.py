@@ -23,13 +23,14 @@ from tests.conftest import with_db_context
 
 
 def test_cyclelife():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -95,7 +96,7 @@ def test_cyclelife():
 
 
 def test_study_inheritance():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     sess = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
@@ -103,8 +104,9 @@ def test_study_inheritance():
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

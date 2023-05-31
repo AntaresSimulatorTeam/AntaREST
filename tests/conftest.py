@@ -26,11 +26,11 @@ def project_path() -> Path:
 def with_db_context(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        engine = create_engine("sqlite:///:memory:", echo=True)
+        engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
-        # noinspection PyTypeChecker
+        # noinspection SpellCheckingInspection
         DBSessionMiddleware(
-            Mock(),
+            None,
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )
