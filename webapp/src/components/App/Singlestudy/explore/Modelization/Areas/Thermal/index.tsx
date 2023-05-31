@@ -14,7 +14,7 @@ import {
   getThermalFormFields,
   noDataValues,
   ThermalFormFields,
-  updateThermalFormFields,
+  setThermalFormFields,
 } from "./utils";
 
 function Thermal() {
@@ -28,7 +28,7 @@ function Thermal() {
   const handleSubmit =
     (areaId: string, clusterId: string) =>
     ({ dirtyValues }: SubmitHandlerPlus<ThermalFormFields>) => {
-      return updateThermalFormFields(study.id, areaId, clusterId, dirtyValues);
+      return setThermalFormFields(study.id, areaId, clusterId, dirtyValues);
     };
 
   ////////////////////////////////////////////////////////////////
