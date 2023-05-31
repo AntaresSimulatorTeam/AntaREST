@@ -150,7 +150,7 @@ function LoginWrapper(props: Props) {
                   </Typography>
                 </Box>
                 <Box width="70%" my={2}>
-                  <Form onSubmit={handleSubmit} hideSubmitButton disableLoader>
+                  <Form onSubmit={handleSubmit} hideSubmitButton>
                     {({ control, formState: { isDirty, isSubmitting } }) => (
                       <>
                         <StringFE

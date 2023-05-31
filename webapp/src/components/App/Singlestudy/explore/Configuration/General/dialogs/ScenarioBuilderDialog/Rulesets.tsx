@@ -140,7 +140,6 @@ function Rulesets() {
           <Form
             onSubmit={openForm === "rename" ? handleRename : handleAdd}
             hideSubmitButton
-            disableLoader
             config={{
               defaultValues: {
                 name: openForm === "rename" ? activeRuleset : "",

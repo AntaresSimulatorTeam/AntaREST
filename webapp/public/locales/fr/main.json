@@ -62,6 +62,8 @@
   "global.matrices": "Matrices",
   "global.chooseFile": "Choisir un fichier",
   "global.assign": "Assigner",
+  "global.undo": "Annuler",
+  "global.redo": "Rétablir",
   "global.time.hourly": "Horaire",
   "global.time.daily": "Journalier",
   "global.time.weekly": "Hebdomadaire",
