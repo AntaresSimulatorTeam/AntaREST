@@ -7,10 +7,8 @@ from zipfile import ZipFile
 import pytest
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.matrixstore.service import (
-    ISimpleMatrixService,
-    SimpleMatrixService,
-)
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import (
     AreaCreationDTO,
     AreaManager,
@@ -53,48 +51,55 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
+from tests.conftest import with_db_context
+from tests.storage.business.assets import ASSETS_DIR
 
 
 @pytest.fixture
 def empty_study(tmp_path: Path) -> FileStudy:
-    cur_dir: Path = Path(__file__).parent
-    study_path = tmp_path.joinpath(str(uuid.uuid4()))
+    study_id = str(uuid.uuid4())
+    study_path = tmp_path.joinpath(study_id)
     study_path.mkdir()
-    with ZipFile(cur_dir / "assets" / "empty_study_810.zip") as zip_output:
+    with ZipFile(ASSETS_DIR / "empty_study_810.zip") as zip_output:
         zip_output.extractall(path=study_path)
-    config = build(study_path, "1")
+    config = build(study_path, study_id)
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 
 @pytest.fixture
-def matrix_service(tmp_path: Path) -> ISimpleMatrixService:
+def matrix_service(tmp_path: Path) -> SimpleMatrixService:
     matrix_path = tmp_path.joinpath("matrix_store")
     matrix_path.mkdir()
     return SimpleMatrixService(matrix_path)
 
 
+@with_db_context
 def test_area_crud(
-    empty_study: FileStudy, matrix_service: ISimpleMatrixService
+    empty_study: FileStudy, matrix_service: SimpleMatrixService
 ):
+    # Prepare the managers that are used in this UT
     raw_study_service = Mock(spec=RawStudyService)
     variant_study_service = Mock(spec=VariantStudyService)
+    storage_service = StudyStorageService(
+        raw_study_service, variant_study_service
+    )
     area_manager = AreaManager(
-        storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
-        repository=Mock(spec=StudyMetadataRepository),
+        storage_service=storage_service,
+        repository=StudyMetadataRepository(Mock()),
     )
-    link_manager = LinkManager(
-        storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        )
-    )
+    link_manager = LinkManager(storage_service=storage_service)
+
+    # Check `AreaManager` behaviour with a RAW study
+    study_id = str(uuid.uuid4())
     # noinspection PyArgumentList
     study = RawStudy(
-        id="1",
-        path=empty_study.config.study_path,
+        id=study_id,
+        path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
+    db.session.add(study)
+    db.session.commit()
+
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
     variant_study_service.command_factory = CommandFactory(
@@ -139,10 +144,12 @@ def test_area_crud(
     area_manager.delete_area(study, "test2")
     assert len(empty_study.config.areas.keys()) == 0
 
+    # Check `AreaManager` behaviour with a variant study
+    variant_id = str(uuid.uuid4())
     # noinspection PyArgumentList
     study = VariantStudy(
-        id="2",
-        path=empty_study.config.study_path,
+        id=variant_id,
+        path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
     variant_study_service.get_raw.return_value = empty_study
@@ -153,7 +160,7 @@ def test_area_crud(
         ),
     )
     variant_study_service.append_commands.assert_called_with(
-        "2",
+        variant_id,
         [
             CommandDTO(
                 action=CommandName.CREATE_AREA.value,
@@ -174,24 +181,39 @@ def test_area_crud(
         study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100))
     )
     variant_study_service.append_commands.assert_called_with(
-        "2",
+        variant_id,
         [
             CommandDTO(
                 action=CommandName.UPDATE_CONFIG.value,
                 args=[
-                    {"target": "input/areas/test/ui/ui/x", "data": "100"},
-                    {"target": "input/areas/test/ui/ui/y", "data": "200"},
+                    {
+                        "target": "input/areas/test/ui/ui/x",
+                        "data": "100",
+                    },
+                    {
+                        "target": "input/areas/test/ui/ui/y",
+                        "data": "200",
+                    },
                     {
                         "target": "input/areas/test/ui/ui/color_r",
                         "data": "255",
                     },
-                    {"target": "input/areas/test/ui/ui/color_g", "data": "0"},
+                    {
+                        "target": "input/areas/test/ui/ui/color_g",
+                        "data": "0",
+                    },
                     {
                         "target": "input/areas/test/ui/ui/color_b",
                         "data": "100",
                     },
-                    {"target": "input/areas/test/ui/layerX/0", "data": "100"},
-                    {"target": "input/areas/test/ui/layerY/0", "data": "200"},
+                    {
+                        "target": "input/areas/test/ui/layerX/0",
+                        "data": "100",
+                    },
+                    {
+                        "target": "input/areas/test/ui/layerY/0",
+                        "data": "200",
+                    },
                     {
                         "target": "input/areas/test/ui/layerColor/0",
                         "data": "255 , 0 , 100",
@@ -207,7 +229,7 @@ def test_area_crud(
     )
     link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
     variant_study_service.append_commands.assert_called_with(
-        "2",
+        variant_id,
         [
             CommandDTO(
                 action=CommandName.CREATE_LINK.value,
@@ -222,7 +244,7 @@ def test_area_crud(
     )
     link_manager.delete_link(study, "test", "test2")
     variant_study_service.append_commands.assert_called_with(
-        "2",
+        variant_id,
         [
             CommandDTO(
                 action=CommandName.REMOVE_LINK.value,
@@ -233,7 +255,7 @@ def test_area_crud(
     )
     area_manager.delete_area(study, "test2")
     variant_study_service.append_commands.assert_called_with(
-        "2",
+        variant_id,
         [
             CommandDTO(
                 action=CommandName.REMOVE_AREA.value, args={"id": "test2"}
@@ -408,8 +430,8 @@ def test_get_all_area():
             "id": "s1",
         },
     ]
-    all = area_manager.get_all_areas(study)
-    assert expected_all == [area.dict() for area in all]
+    all_areas = area_manager.get_all_areas(study)
+    assert expected_all == [area.dict() for area in all_areas]
 
     links = link_manager.get_all_links(study)
     assert [
