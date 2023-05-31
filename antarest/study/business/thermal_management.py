@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
 from pydantic import StrictStr, StrictBool
 
@@ -42,7 +42,6 @@ class ThermalFormFields(FormFieldsBaseModel):
     min_down_time: Optional[int]
     must_run: Optional[StrictBool]
     spinning: Optional[int]
-    co2: Optional[int]
     volatility_forced: Optional[int]
     volatility_planned: Optional[int]
     law_forced: Optional[LawOption]
@@ -52,6 +51,20 @@ class ThermalFormFields(FormFieldsBaseModel):
     fixed_cost: Optional[int]
     startup_cost: Optional[int]
     market_bid_cost: Optional[int]
+    # Pollutants
+    co2: Optional[float]
+    so2: Optional[float]
+    nh3: Optional[float]
+    nox: Optional[float]
+    nmvoc: Optional[float]
+    pm25: Optional[float]
+    pm5: Optional[float]
+    pm10: Optional[float]
+    op1: Optional[float]
+    op2: Optional[float]
+    op3: Optional[float]
+    op4: Optional[float]
+    op5: Optional[float]
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -99,10 +112,6 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{THERMAL_PATH}/spinning",
         "default_value": 0,
     },
-    "co2": {
-        "path": f"{THERMAL_PATH}/co2",
-        "default_value": 0,
-    },
     "volatility_forced": {
         "path": f"{THERMAL_PATH}/volatility.forced",
         "default_value": 0,
@@ -139,6 +148,71 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{THERMAL_PATH}/market-bid-cost",
         "default_value": 0,
     },
+    # Pollutants
+    "co2": {
+        "path": f"{THERMAL_PATH}/co2",
+        "default_value": 0.0,
+    },
+    "so2": {
+        "path": f"{THERMAL_PATH}/so2",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "nh3": {
+        "path": f"{THERMAL_PATH}/nh3",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "nox": {
+        "path": f"{THERMAL_PATH}/nox",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "nmvoc": {
+        "path": f"{THERMAL_PATH}/nmvoc",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "pm25": {
+        "path": f"{THERMAL_PATH}/pm2_5",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "pm5": {
+        "path": f"{THERMAL_PATH}/pm5",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "pm10": {
+        "path": f"{THERMAL_PATH}/pm10",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "op1": {
+        "path": f"{THERMAL_PATH}/op1",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "op2": {
+        "path": f"{THERMAL_PATH}/op2",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "op3": {
+        "path": f"{THERMAL_PATH}/op3",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "op4": {
+        "path": f"{THERMAL_PATH}/op4",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
+    "op5": {
+        "path": f"{THERMAL_PATH}/op5",
+        "default_value": 0.0,
+        "start_version": 860,
+    },
 }
 
 
@@ -160,7 +234,16 @@ class ThermalManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             target_name = PurePosixPath(field_info["path"]).name
-            return thermal_config.get(target_name, field_info["default_value"])
+            study_ver = file_study.config.version
+            start_ver = cast(int, field_info.get("start_version", -1))
+            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
+            is_in_version = start_ver <= study_ver < end_ver
+
+            return (
+                thermal_config.get(target_name, field_info["default_value"])
+                if is_in_version
+                else None
+            )
 
         return ThermalFormFields.construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}
