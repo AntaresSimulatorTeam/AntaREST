@@ -100,7 +100,24 @@ enum LawOption {
 // Types
 ////////////////////////////////////////////////////////////////
 
-export interface ThermalFormFields {
+interface PollutantFields {
+  co2: number;
+  // For study versions >= 860
+  so2: number;
+  nh3: number;
+  nox: number;
+  nmvoc: number;
+  pm25: number;
+  pm5: number;
+  pm10: number;
+  op1: number;
+  op2: number;
+  op3: number;
+  op4: number;
+  op5: number;
+}
+
+export interface ThermalFormFields extends PollutantFields {
   name: string;
   group: string;
   enabled: boolean;
@@ -111,7 +128,6 @@ export interface ThermalFormFields {
   spinning: number;
   minUpTime: number;
   minDownTime: number;
-  co2: number;
   marginalCost: number;
   fixedCost: number;
   startupCost: number;
@@ -131,6 +147,21 @@ export interface ThermalFormFields {
 export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
 export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGenerationOption);
 export const TS_LAW_OPTIONS = Object.values(LawOption);
+export const POLLUTANT_NAMES: Array<keyof PollutantFields> = [
+  "co2",
+  "so2",
+  "nh3",
+  "nox",
+  "nmvoc",
+  "pm25",
+  "pm5",
+  "pm10",
+  "op1",
+  "op2",
+  "op3",
+  "op4",
+  "op5",
+];
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -153,7 +184,7 @@ export async function getThermalFormFields(
   return res.data;
 }
 
-export function updateThermalFormFields(
+export function setThermalFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
