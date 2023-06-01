@@ -52,7 +52,7 @@ class ReplaceMatrix(ICommand):
                 status=True,
                 message=f"Matrix '{self.target}' has been successfully replaced.",
             ),
-            dict(),
+            {},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -103,10 +103,9 @@ class ReplaceMatrix(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, ReplaceMatrix):
             return False
-        simple_match = self.target == other.target
-        if not equal:
-            return simple_match
-        return simple_match and self.matrix == other.matrix
+        if equal:
+            return self.target == other.target and self.matrix == other.matrix
+        return self.target == other.target
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

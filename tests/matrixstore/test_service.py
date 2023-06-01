@@ -1,131 +1,168 @@
 import datetime
 import io
-from unittest.mock import Mock, ANY
-from zipfile import ZipFile, ZIP_DEFLATED
+import time
+from unittest.mock import ANY, Mock
+from zipfile import ZIP_DEFLATED, ZipFile
 
+import numpy as np
 import pytest
-from fastapi import UploadFile
-from sqlalchemy import create_engine
-
-from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.dbmodel import Base
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
-    MatrixDTO,
     Matrix,
-    MatrixContent,
-    MatrixDataSetUpdateDTO,
     MatrixDataSet,
-    MatrixDataSetRelation,
     MatrixDataSetDTO,
+    MatrixDataSetRelation,
+    MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
 )
 from antarest.matrixstore.service import MatrixService
+from fastapi import UploadFile
 
 
-def test_save():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+class TestMatrixService:
+    def test_create__nominal_case(self, matrix_service: MatrixService):
+        """Creates a new matrix object with the specified data."""
+        # when a matrix is created (inserted) in the service
+        data = [[1, 2, 3], [4, 5, 6]]
+        matrix_id = matrix_service.create(data)
 
-    # Init Mock
-    repo_content = Mock()
-    repo_content.save.return_value = "my-id"
+        # A "real" hash value is calculated
+        assert matrix_id, "ID can't be empty"
 
-    repo = Mock()
+        # The matrix is saved in the content repository as a TSV file
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
+        array = np.loadtxt(content_path)
+        assert array.all() == np.array(data).all()
 
-    # Input
-    dto = [[1, 2]]
+        # A matrix object is stored in the database
+        with db():
+            obj = matrix_service.repo.get(matrix_id)
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
+        assert obj.width == len(data[0])
+        assert obj.height == len(data)
+        now = datetime.datetime.utcnow()
+        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
-    # Expected
-    matrix = Matrix(
-        id="my-id",
-        width=2,
-        height=1,
-        created_at=ANY,
-    )
+    def test_create__from_numpy_array(self, matrix_service: MatrixService):
+        """Creates a new matrix object with the specified data."""
+        # when a matrix is created (inserted) in the service
+        data = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64)
+        matrix_id = matrix_service.create(data)
 
-    repo.get.return_value = None
+        # A "real" hash value is calculated
+        assert matrix_id, "ID can't be empty"
 
-    # Test
-    service = MatrixService(
-        repo=repo,
-        repo_dataset=Mock(),
-        matrix_content_repository=repo_content,
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        config=Mock(),
-        user_service=Mock(),
-    )
-    id = service.create(dto)
+        # The matrix is saved in the content repository as a TSV file
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
+        array = np.loadtxt(content_path)
+        assert array.all() == data.all()
 
-    # Verify
-    assert id == "my-id"
-    repo.save.assert_called_once_with(matrix)
-    repo_content.save.assert_called_once_with(dto)
+        # A matrix object is stored in the database
+        with db():
+            obj = matrix_service.repo.get(matrix_id)
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
+        assert obj.width == data.shape[1]
+        assert obj.height == data.shape[0]
+        now = datetime.datetime.utcnow()
+        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
+    def test_create__side_effect(self, matrix_service: MatrixService):
+        """Creates a new matrix object with the specified data, but fail during saving."""
+        # if the matrix can't be created in the service
+        matrix_repo = matrix_service.repo
+        matrix_repo.save = Mock(side_effect=Exception("database error"))
+        with pytest.raises(Exception, match="database error"):
+            data = [[1, 2, 3], [4, 5, 6]]
+            matrix_service.create(data)
 
-def test_get():
-    # Init Mock
-    content = Mock()
-    content.get.return_value = MatrixContent(
-        data=[[1, 2]],
-        index=[1],
-        columns=["a", "b"],
-    )
+        # the associated matrix file must not be deleted
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        tsv_files = list(bucket_dir.glob("*.tsv"))
+        assert tsv_files
 
-    repo = Mock()
-    repo.get.return_value = Matrix(
-        id="my-id",
-        width=2,
-        height=1,
-        created_at=datetime.datetime.fromtimestamp(42),
-    )
+        # Nothing is stored in the database
+        with db():
+            assert not db.session.query(Matrix).count()
 
-    repo_meta = Mock()
+    def test_get(self, matrix_service):
+        """Get a matrix object from the database and the matrix content repository."""
+        # when a matrix is created (inserted) in the service
+        data = [[1, 2, 3], [4, 5, 6]]
+        matrix_id = matrix_service.create(data)
 
-    # Expected
-    exp = MatrixDTO.construct(
-        id="my-id",
-        created_at=42,
-        width=2,
-        height=1,
-        data=[[1.0, 2.0]],
-        index=[1],
-        columns=["a", "b"],
-    )
+        # nominal_case: we can retrieve the matrix and its content
+        with db():
+            obj = matrix_service.get(matrix_id)
 
-    # Test
-    service = MatrixService(
-        repo, repo_meta, content, Mock(), Mock(), Mock(), Mock()
-    )
-    res = service.get("my-id")
-    assert exp == res
+        assert obj is not None, f"Missing Matrix object {matrix_id}"
+        assert obj.width == len(data[0])
+        assert obj.height == len(data)
+        now = datetime.datetime.utcnow()
+        local_time = time.mktime(datetime.datetime.timetuple(now))
+        assert local_time - 1 <= obj.created_at <= local_time
+        assert obj.data == data
+        assert obj.index == list(range(len(data)))
+        assert obj.columns == list(range(len(data[0])))
 
+        # missing_case: the matrix is missing in the database
+        with db():
+            missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
+            obj = matrix_service.get(missing_hash)
+        assert obj is None
 
-def test_delete():
-    content = Mock()
-    repo = Mock()
-    repo_meta = Mock()
+    def test_exists(self, matrix_service):
+        """Test the exists method."""
+        # when a matrix is created (inserted) in the service
+        data = [[1, 2, 3], [4, 5, 6]]
+        matrix_id = matrix_service.create(data)
 
-    service = MatrixService(
-        repo, repo_meta, content, Mock(), Mock(), Mock(), Mock()
-    )
-    service.delete("my-id")
-    content.delete.assert_called_once_with("my-id")
-    repo.delete.assert_called_once_with("my-id")
+        # nominal_case: we can retrieve the matrix and its content
+        with db():
+            assert matrix_service.exists(matrix_id)
+            missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
+            assert not matrix_service.exists(missing_hash)
+
+    def test_delete__nominal_case(self, matrix_service: MatrixService):
+        """Delete a matrix object from the matrix content repository and the database."""
+        # when a matrix is created (inserted) in the service
+        data = [[1, 2, 3], [4, 5, 6]]
+        matrix_id = matrix_service.create(data)
+
+        # When the matrix id deleted
+        with db():
+            matrix_service.delete(matrix_id)
+
+        # The matrix in no more available in the content repository
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        tsv_files = list(bucket_dir.glob("*.tsv"))
+        assert not tsv_files
+
+        # The matrix object is deleted from the database
+        with db():
+            assert not db.session.query(Matrix).count()
+
+    def test_delete__missing(self, matrix_service: MatrixService):
+        """Delete a matrix object from the matrix content repository and the database."""
+        # When the matrix id deleted
+        with db():
+            missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
+            matrix_service.delete(missing_hash)
+
+        # then, the matrix in no more available in the content repository
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        tsv_files = list(bucket_dir.glob("*.tsv"))
+        assert not tsv_files
+
+        # The matrix object is deleted from the database
+        with db():
+            assert not db.session.query(Matrix).count()
 
 
 def test_dataset_lifecycle():

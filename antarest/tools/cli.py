@@ -12,15 +12,13 @@ from antarest.tools.lib import (
 )
 from antarest.study.storage.study_upgrader import upgrade_study
 
-logging.basicConfig(level=logging.INFO)
 
-
-@click.group()
+@click.group(context_settings={"max_content_width": 120})
 def commands() -> None:
-    pass
+    logging.basicConfig(level=logging.INFO)
 
 
-@commands.command()
+@commands.command("apply-script")
 @click.option(
     "--host",
     "-h",
@@ -61,12 +59,22 @@ def commands() -> None:
     type=str,
     help="ID of the variant to apply the script onto",
 )
-def apply_script(
+@click.option(
+    "--version",
+    "-v",
+    nargs=1,
+    required=False,
+    type=str,
+    help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
+    default=NEW_DEFAULT_STUDY_VERSION,
+)
+def cli_apply_script(
     input: str,
     study_id: Optional[str],
-    output: Optional[str] = None,
-    host: Optional[str] = None,
-    auth_token: Optional[str] = None,
+    output: Optional[str],
+    host: Optional[str],
+    auth_token: Optional[str],
+    version: str,
 ) -> None:
     """Apply a variant script onto an AntaresWeb study variant"""
     if output is None and host is None:
@@ -79,11 +87,13 @@ def apply_script(
         print("--study_id must be set")
         exit(1)
 
-    res = generate_study(Path(input), study_id, output, host, auth_token)
+    res = generate_study(
+        Path(input), study_id, output, host, auth_token, version
+    )
     print(res)
 
 
-@commands.command()
+@commands.command("generate-script")
 @click.option(
     "--input",
     "-i",
@@ -100,12 +110,12 @@ def apply_script(
     type=click.Path(exists=False),
     help="Script output path",
 )
-def generate_script(input: str, output: str) -> None:
+def cli_generate_script(input: str, output: str) -> None:
     """Generate variant script commands from a study"""
     extract_commands(Path(input), Path(output))
 
 
-@commands.command()
+@commands.command("generate-script-diff")
 @click.option(
     "--base",
     nargs=1,
@@ -137,14 +147,14 @@ def generate_script(input: str, output: str) -> None:
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
     default=NEW_DEFAULT_STUDY_VERSION,
 )
-def generate_script_diff(
+def cli_generate_script_diff(
     base: str, variant: str, output: str, version: str
 ) -> None:
     """Generate variant script commands from two variant script directories"""
     generate_diff(Path(base), Path(variant), Path(output), version)
 
 
-@commands.command()
+@commands.command("upgrade-study")
 @click.argument(
     "study-path",
     nargs=1,
@@ -155,7 +165,7 @@ def generate_script_diff(
     nargs=1,
     type=click.STRING,
 )
-def update_study(study_path: Path, target_version: str) -> None:
+def cli_upgrade_study(study_path: Path, target_version: str) -> None:
     """Upgrades study version
 
     STUDY_PATH is the path of the study you want to update

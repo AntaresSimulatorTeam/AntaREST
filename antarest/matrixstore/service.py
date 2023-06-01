@@ -1,109 +1,93 @@
+import contextlib
 import logging
-import os
-import shutil
 import tempfile
-import time
-from abc import abstractmethod, ABC
-from datetime import datetime
+from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple, Sequence
+from typing import List, Optional, Sequence, Tuple, Union
 from zipfile import ZipFile
 
-from fastapi import UploadFile
-
-from antarest.core.config import StorageConfig, Config
+import numpy as np
+from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import (
-    TaskUpdateNotifier,
-    ITaskService,
-)
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, assert_this, zip_dir
+from antarest.core.utils.utils import StopWatch, zip_dir
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
-    MatrixDTO,
     Matrix,
     MatrixContent,
-    MatrixDataSet,
-    MatrixDataSetUpdateDTO,
-    MatrixDataSetDTO,
-    MatrixInfoDTO,
-    MatrixDataSetRelation,
     MatrixData,
+    MatrixDataSet,
+    MatrixDataSetDTO,
+    MatrixDataSetRelation,
+    MatrixDataSetUpdateDTO,
+    MatrixDTO,
+    MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import (
-    MatrixRepository,
     MatrixContentRepository,
     MatrixDataSetRepository,
+    MatrixRepository,
 )
-from antarest.matrixstore.utils import (
-    parse_tsv_matrix,
-    write_tsv_matrix,
-    write_tsv_matrix_to_file,
-)
+from fastapi import UploadFile
+from numpy import typing as npt
 
 logger = logging.getLogger(__name__)
 
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def create(self, data: List[List[MatrixData]]) -> str:
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         raise NotImplementedError()
 
     @abstractmethod
-    def exists(self, id: str) -> bool:
+    def exists(self, matrix_id: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, id: str) -> None:
+    def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
 
 class SimpleMatrixService(ISimpleMatrixService):
-    def __init__(self, matrix_path: Path):
-        self.matrix_path = matrix_path
-        assert_this(matrix_path.exists() and matrix_path.is_dir())
-        config = Config(storage=StorageConfig(matrixstore=matrix_path))
-        self.matrix_content_repository = MatrixContentRepository(config)
+    def __init__(self, bucket_dir: Path):
+        self.bucket_dir = bucket_dir
+        self.content_repo = MatrixContentRepository(bucket_dir)
 
-    def create(self, data: List[List[MatrixData]]) -> str:
-        matrix_hash = self.matrix_content_repository.save(data)
-        return matrix_hash
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
+        return self.content_repo.save(data)
 
-    def get(self, id: str) -> Optional[MatrixDTO]:
-        data = self.matrix_content_repository.get(id)
-        if data:
-            assert data.columns is not None
-            assert data.index is not None
-            return MatrixDTO.construct(
-                id=id,
-                width=len(data.columns),
-                height=len(data.index),
-                index=data.index,
-                columns=data.columns,
-                data=data.data,
-            )
-        else:
-            return None
+    def get(self, matrix_id: str) -> MatrixDTO:
+        data = self.content_repo.get(matrix_id)
+        return MatrixDTO.construct(
+            id=matrix_id,
+            width=len(data.columns),
+            height=len(data.index),
+            index=data.index,
+            columns=data.columns,
+            data=data.data,
+        )
 
-    def exists(self, id: str) -> bool:
-        return self.matrix_content_repository.exists(id)
+    def exists(self, matrix_id: str) -> bool:
+        return self.content_repo.exists(matrix_id)
 
-    def delete(self, id: str) -> None:
-        self.matrix_content_repository.delete(id)
+    def delete(self, matrix_id: str) -> None:
+        self.content_repo.delete(matrix_id)
 
 
 class MatrixService(ISimpleMatrixService):
@@ -126,18 +110,6 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
 
     @staticmethod
-    def _to_dto(matrix: Matrix, content: MatrixContent) -> MatrixDTO:
-        return MatrixDTO.construct(
-            id=matrix.id,
-            width=matrix.width,
-            height=matrix.height,
-            created_at=int(time.mktime(datetime.timetuple(matrix.created_at))),
-            index=content.index,
-            columns=content.columns,
-            data=content.data,
-        )
-
-    @staticmethod
     def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
         matrix = Matrix(
             id=dto.id,
@@ -152,19 +124,46 @@ class MatrixService(ISimpleMatrixService):
 
         return matrix, content
 
-    def create(self, data: List[List[MatrixData]]) -> str:
-        matrix_hash = self.matrix_content_repository.save(data)
+    def create(
+        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
+        """
+        Creates a new matrix object with the specified data.
+
+        - Saves the matrix data to the content repository.
+        - Creates a new matrix object in the database, with metadata such as its width,
+          height, and creation time.
+
+        Parameters:
+            data:
+                The matrix content to be saved. It can be either a nested list of floats
+                or a NumPy array of type np.float64.
+
+        Returns:
+            A SHA256 hash for the new matrix object.
+            This identifier can be used to retrieve the matrix later.
+
+        Important:
+            If an error occurs while creating or saving the matrix object,
+            the associated data file will not (and should not) be deleted.
+            The `MatrixGarbageCollector` class is responsible for removing
+            unreferenced matrices to avoid leaving unused files lying around.
+        """
+        matrix_id = self.matrix_content_repository.save(data)
+        shape = (
+            data.shape
+            if isinstance(data, np.ndarray)
+            else (len(data), len(data[0]) if data else 0)
+        )
         with db():
-            if not self.repo.get(matrix_hash):
-                self.repo.save(
-                    Matrix(
-                        id=matrix_hash,
-                        width=len(data[0] if len(data) > 0 else []),
-                        height=len(data),
-                        created_at=datetime.utcnow(),
-                    )
-                )
-        return matrix_hash
+            matrix = Matrix(
+                id=matrix_id,
+                width=shape[1],
+                height=shape[0],
+                created_at=datetime.now(timezone.utc),
+            )
+            self.repo.save(matrix)
+        return matrix_id
 
     def create_by_importation(
         self, file: UploadFile, json: bool = False
@@ -178,26 +177,40 @@ class MatrixService(ISimpleMatrixService):
                     if not info.is_dir()
                 }
                 matrix_info: List[MatrixInfoDTO] = []
-                for name in files.keys():
+                for name in files:
                     if all(
                         [
                             not name.startswith("__MACOSX/"),
                             not name.startswith(".DS_Store"),
                         ]
                     ):
-                        id = self.file_importation(files[name], json)
-                        matrix_info.append(MatrixInfoDTO(id=id, name=name))
+                        matrix_id = self._file_importation(files[name], json)
+                        matrix_info.append(
+                            MatrixInfoDTO(id=matrix_id, name=name)
+                        )
                 return matrix_info
             else:
-                id = self.file_importation(f.read(), json)
-                return [MatrixInfoDTO(id=id, name=file.filename)]
+                matrix_id = self._file_importation(f.read(), json)
+                return [MatrixInfoDTO(id=matrix_id, name=file.filename)]
 
-    def file_importation(self, file: bytes, is_json: bool = False) -> str:
+    def _file_importation(self, file: bytes, is_json: bool = False) -> str:
+        """
+        Imports a matrix from a TSV or JSON file in bytes format.
+
+        Parameters:
+            file: The file contents as bytes.
+            is_json: `True` if the file is JSON-encoded (default: `False`).
+
+        Returns:
+            A SHA256 hash that identifies the imported matrix.
+        """
         if is_json:
             return self.create(MatrixContent.parse_raw(file).data)
-        else:
-            data = parse_tsv_matrix(file)
-            return self.create(data)
+        # noinspection PyTypeChecker
+        matrix = np.loadtxt(
+            BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2
+        )
+        return self.create(matrix)
 
     def get_dataset(
         self,
@@ -279,7 +292,7 @@ class MatrixService(ISimpleMatrixService):
         """
         List matrix user metadata
 
-        Args:
+        Parameters:
             dataset_name: the dataset name search query
             filter_own: indicate if only the current user datasets should be returned
             params: The request parameter containing user information
@@ -324,23 +337,65 @@ class MatrixService(ISimpleMatrixService):
         self.repo_dataset.delete(id)
         return id
 
-    def get(self, id: str) -> Optional[MatrixDTO]:
-        matrix_content = self.matrix_content_repository.get(id)
-        matrix = self.repo.get(id)
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+        """
+        Get a matrix object from the database and the matrix content repository.
 
-        if matrix_content and matrix:
-            return MatrixService._to_dto(matrix, matrix_content)
-        else:
+        Parameters:
+            matrix_id: The SHA256 hash of the matrix object to search for.
+
+        Returns:
+            A Data Transfer Object (DTO) of the matrix and its content,
+            or `None` if the matrix is not found in the database.
+        """
+        matrix = self.repo.get(matrix_id)
+        if matrix is None:
             return None
-
-    def exists(self, id: str) -> bool:
-        return self.matrix_content_repository.exists(id) and self.repo.exists(
-            id
+        content = self.matrix_content_repository.get(matrix_id)
+        return MatrixDTO.construct(
+            id=matrix.id,
+            width=matrix.width,
+            height=matrix.height,
+            created_at=int(matrix.created_at.timestamp()),
+            index=content.index,
+            columns=content.columns,
+            data=content.data,
         )
 
-    def delete(self, id: str) -> None:
-        self.matrix_content_repository.delete(id)
-        self.repo.delete(id)
+    def exists(self, matrix_id: str) -> bool:
+        """
+        Check if a matrix object exists in both the matrix content repository and the database.
+
+        Parameters:
+            matrix_id: The SHA256 hash of the matrix object to check for existence.
+
+        Returns:
+            bool: `True` if the matrix object exists in both repositories, `False` otherwise.
+        """
+        return self.matrix_content_repository.exists(
+            matrix_id
+        ) and self.repo.exists(matrix_id)
+
+    def delete(self, matrix_id: str) -> None:
+        """
+        Delete a matrix object from the matrix content repository and the database.
+
+        Parameters:
+            matrix_id: The SHA256 hash of the matrix object to delete.
+        """
+        # Matrix deletion is done exclusively when the `MatrixGarbageCollector`
+        # service collects deprecated matrices (matrices that are no longer
+        # used by any study) and deletes them.
+        # So, we can ignore missing database records and/or missing files.
+        # Currently, the deletion is done matrix by matrix (eager deletion
+        # is not used, which is under-performing).
+        # In the case of a unitary deletion, it is preferable to use a transaction
+        # in order to have a rollback in case of failure, and to start with the
+        # database deletion and finish with the file deletion (considered as atomic).
+        with db():
+            self.repo.delete(matrix_id)
+            with contextlib.suppress(FileNotFoundError):
+                self.matrix_content_repository.delete(matrix_id)
 
     @staticmethod
     def check_access_permission(
@@ -353,10 +408,8 @@ class MatrixService(ISimpleMatrixService):
             return True
         dataset_groups = [group.id for group in dataset.groups]
         access = (
-            dataset.owner_id == user.id
-            or dataset.owner_id == user.impersonator
-        ) or (
-            any([group.id in dataset_groups for group in user.groups])
+            dataset.owner_id in [user.id, user.impersonator]
+            or any(group.id in dataset_groups for group in user.groups)
             and not write
         )
         if not access and raise_error:
@@ -366,7 +419,6 @@ class MatrixService(ISimpleMatrixService):
     def create_matrix_files(
         self, matrix_ids: Sequence[str], export_path: Path
     ) -> str:
-        assert_this(export_path.name.endswith(".zip"))
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
@@ -375,7 +427,11 @@ class MatrixService(ISimpleMatrixService):
                 mtx = self.get(mid)
                 if not mtx:
                     continue
-                write_tsv_matrix(mtx, tmpdir)
+                name = f"matrix-{mtx.id}.txt"
+                filepath = f"{tmpdir}/{name}"
+                array = np.array(mtx.data, dtype=np.float64)
+                # noinspection PyTypeChecker
+                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(
                 lambda x: logger.info(
@@ -391,7 +447,7 @@ class MatrixService(ISimpleMatrixService):
     ) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
-        Args:
+        Parameters:
             dataset_id: matrix dataset id
             params: request parameters
         """
@@ -456,18 +512,20 @@ class MatrixService(ISimpleMatrixService):
     def download_matrix(
         self,
         matrix_id: str,
-        tmp_file: Path,
+        filepath: Path,
         params: RequestParameters,
     ) -> None:
         """
-        Export study output to a zip file.
-        Args:
-            matrix_id: matrix id
-            tmp_file: temporary file
-            params: request parameters
+        Prepare the matrix download if the user has permissions to do it.
+
+        Parameters:
+            matrix_id: The SHA256 hash of the matrix object to download.
+            filepath: File path of the TSV file to write.
+            params: Request parameters.
         """
         if not params.user:
             raise UserHasNotPermissionError()
-        matrix = self.get(matrix_id)
-        if matrix:
-            write_tsv_matrix_to_file(matrix, str(tmp_file))
+        if matrix := self.get(matrix_id):
+            array = np.array(matrix.data, dtype=np.float64)
+            # noinspection PyTypeChecker
+            np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
