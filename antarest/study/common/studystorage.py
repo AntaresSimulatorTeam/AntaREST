@@ -248,7 +248,7 @@ class IStudyStorageService(ABC, Generic[T]):
     def export_study_flat(
         self,
         metadata: T,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
@@ -257,13 +257,11 @@ class IStudyStorageService(ABC, Generic[T]):
         Export study to destination
 
         Args:
-            metadata: study
-            dest: destination path
-            outputs: list of outputs to keep
-            output_list_filter: list of outputs to keep (None indicate all outputs)
-            denormalize: denormalize the study (replace matrix links by real matrices)
-        Returns: None
-
+            metadata: study.
+            dst_path: destination path.
+            outputs: list of outputs to keep.
+            output_list_filter: list of outputs to keep (None indicate all outputs).
+            denormalize: denormalize the study (replace matrix links by real matrices).
         """
         raise NotImplementedError()
 
