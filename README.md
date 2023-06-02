@@ -67,8 +67,8 @@ pyinstaller AntaresWebWin.spec
 You can test the build is ok using:
 
 ```shell script
-dist/AntaresWebServer -v       # Linux based system
-dist\AntaresWebServer.exe -v   # Windows system
+dist/AntaresWeb/AntaresWebServer -v       # Linux based system
+dist\AntaresWeb\AntaresWebServer.exe -v   # Windows system
 ```
 
 ### Using docker
