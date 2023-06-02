@@ -55,13 +55,12 @@ These steps should work on any linux system with docker and docker-compose insta
 
    b. Create the directory `resources/deploy/db`
 
-
 5. Run the following command to spin up the application containers:  
 
    ```shell
    docker-compose up
    ```
-   
+
 6. You can then access the application at http://localhost
 
 7. To stop the application you can juste hit "CTRL-C" to end the containers.

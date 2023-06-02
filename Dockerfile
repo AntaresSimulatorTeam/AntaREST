@@ -6,7 +6,7 @@ ENV ANTAREST_CONF /resources/application.yaml
 
 RUN mkdir -p examples/studies
 
-COPY ./requirements.txt /conf/
+COPY ./requirements.txt ./conf/* /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
 COPY ./scripts /scripts
