@@ -5,9 +5,12 @@ The front end is a [React](https://reactjs.org/) web application. A local build 
 
 ## Quick start
 
-Requirements : 
+Requirements:
+
 - python : 3.8.x
-- node : 14.x
+- node : 14.x  
+
+Then perform the following steps:
 
 1. First clone the projet:
 ```
