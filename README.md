@@ -19,7 +19,7 @@ git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
 ```
 
-Install back dependencies
+Install backend dependencies
 
 ```shell script
 python -m pip install --upgrade pip
@@ -27,7 +27,7 @@ pip install pydantic --no-binary pydantic
 pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
 ```
 
-Build front
+Build frontend
 
 ```shell script
 cd webapp
@@ -65,12 +65,12 @@ dist\server.exe -v   # Windows system
 To build the docker image, use the following command:
 
 ```shell script
-docker build --tag antarest -f docker/Dockerfile .
+docker build --tag antarest .
 ```
 
-## Start the API
+## Run the API
 
-### Using builded binary with pyinstaller
+### Using binary built with pyinstaller
 
 ```shell script
 dist/server -s $STUDIES_ABSOLUTE_PATH         # Linux based system
@@ -81,20 +81,17 @@ dist\server.exe -s %STUDIES_ABSOLUTE_PATH%    # Windows system
 
 ### Using docker image
 
+You may run the back-end with default configuration using the following command:
 ```shell script
 docker run \
   -p 80:5000 \
-  -e GUNICORN_WORKERS=4 \
-  -v $STUDIES_ABSOLUTE_PATH:/studies \
+  -e GUNICORN_WORKERS=1 \
   antarest
 ```
 
-* Setting the environment variable GUNICORN_WORKERS to *ALL_AVAILABLE* will make GUNICORN use 2 * nb_cpu +1 workers
-    * https://docs.gunicorn.org/en/stable/design.html#how-many-workers
-    * ALL_AVAILABLE is also the default value of GUNICORN_WORKERS if you do not set it
-* $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
-    * If you do not mount */studies* to a host path, the docker image will use the current path as the studies path
-* An exemple is available in this repo in the *script* folder
+However, for a complete deployment including the front-end application, and the use of an external database
+and an external REDIS instance, please refer to the deployement instructions on [readthedocs website](https://antares-web.readthedocs.io/en/latest)
+
 
 ### Using python directly
 
