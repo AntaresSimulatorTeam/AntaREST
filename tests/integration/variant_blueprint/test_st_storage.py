@@ -12,7 +12,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from tests.integration.utils import wait_task_completion
 
 
-@pytest.mark.integration_test
+@pytest.mark.unit_test
 class TestSTStorage:
     """
     This unit test is designed to demonstrate the creation, modification of properties and
@@ -93,10 +93,11 @@ class TestSTStorage:
         # - `inflows`: Inflows
         area_id = transform_name_to_id("FR")
         siemens_battery = "Siemens Battery"
+        siemens_battery_id = transform_name_to_id(siemens_battery)
         args = {
             "area_id": area_id,
+            "storage_name": siemens_battery,
             "parameters": {
-                "name": siemens_battery,
                 "group": "Battery",
                 "injection_nominal_capacity": 150,
                 "withdrawal_nominal_capacity": 150,
@@ -120,24 +121,15 @@ class TestSTStorage:
         # For instance, we want to initialize the `inflows` time series
         # with random values (for this demo).
         # To do that, we can use the `replace_matrix` command like bellow:
-        siemens_battery_id = transform_name_to_id(siemens_battery)
         inflows = np.random.randint(0, 1001, size=(8760, 1))
-        args1 = {
+        args = {
             "target": f"input/st-storage/series/{area_id}/{siemens_battery_id}/inflows",
             "matrix": inflows.tolist(),
-        }
-        pmax_injection = np.random.rand(8760, 1)
-        args2 = {
-            "target": f"input/st-storage/series/{area_id}/{siemens_battery_id}/pmax_injection",
-            "matrix": pmax_injection.tolist(),
         }
         res = client.post(
             f"/v1/studies/{study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[
-                {"action": "replace_matrix", "args": args1},
-                {"action": "replace_matrix", "args": args2},
-            ],
+            json=[{"action": "replace_matrix", "args": args}],
         )
         res.raise_for_status()
 
@@ -154,8 +146,8 @@ class TestSTStorage:
         grand_maison = "Grand'Maison"
         args = {
             "area_id": area_id,
+            "storage_name": grand_maison,
             "parameters": {
-                "name": grand_maison,
                 "group": "PSP_closed",
                 "injectionnominalcapacity": 1500,
                 "withdrawalnominalcapacity": 1800,
@@ -202,9 +194,9 @@ class TestSTStorage:
         inflows = np.random.randint(0, 1001, size=(8760, 1))
         args = {
             "area_id": area_id,
+            "storage_name": "Bad Storage",
             "parameters": {
-                "name": "Bad Storage",
-                "group": "Wonderland",  # Oops!
+                "group": "Wonderland",
                 "injection_nominal_capacity": -2000,  # Oops!
                 "withdrawal_nominal_capacity": 1500,
                 "reservoir_capacity": 20000,

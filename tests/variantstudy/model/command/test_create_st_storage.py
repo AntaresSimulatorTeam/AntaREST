@@ -1,15 +1,11 @@
 import re
-from typing import Dict, Union
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
@@ -25,8 +21,8 @@ from antarest.study.storage.variantstudy.model.command.create_area import (
 from antarest.study.storage.variantstudy.model.command.create_st_storage import (
     REQUIRED_VERSION,
     CreateSTStorage,
+    STStorageConfig,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
@@ -37,7 +33,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import ValidationError
 
 
 @pytest.fixture(name="recent_study")
@@ -60,7 +55,6 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
 # Non-string values are automatically converted into strings.
 # noinspection SpellCheckingInspection
 PARAMETERS = {
-    "name": "Storage1",
     "group": "Battery",
     "injectionnominalcapacity": 1500,
     "withdrawalnominalcapacity": 1500,
@@ -69,9 +63,7 @@ PARAMETERS = {
     "initialleveloptim": True,
 }
 
-# noinspection SpellCheckingInspection
 OTHER_PARAMETERS = {
-    "name": "Storage1",
     "group": "Battery",
     "injectionnominalcapacity": 1200,
     "withdrawalnominalcapacity": 1300,
@@ -84,15 +76,16 @@ OTHER_PARAMETERS = {
 
 class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
-    def test_init(self, command_context: CommandContext) -> None:
+    def test_init(self, command_context: CommandContext):
         pmax_injection = np.random.rand(8760, 1)
         inflows = np.random.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            pmax_injection=pmax_injection.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
+            storage_name="Storage1",
+            parameters=PARAMETERS,
+            pmax_injection=pmax_injection.tolist(),
+            inflows=inflows.tolist(),
         )
 
         # Check the attribues
@@ -100,7 +93,9 @@ class TestCreateSTStorage:
         assert cmd.version == 1
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
+        assert cmd.storage_name == "Storage1"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
+        expected_parameters["name"] = cmd.storage_name
         assert cmd.parameters == STStorageConfig(**expected_parameters)
 
         # check the matrices links
@@ -115,16 +110,15 @@ class TestCreateSTStorage:
 
     def test_init__invalid_storage_name(
         self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
-            parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
             CreateSTStorage(
                 command_context=command_context,
                 area_id="dummy",
-                parameters=STStorageConfig(**parameters),
+                storage_name="?%$$",  # bad name
+                parameters=PARAMETERS,
             )
-        # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
         assert ctx.value.errors() == [
             {
                 "loc": ("__root__",),
@@ -134,17 +128,16 @@ class TestCreateSTStorage:
         ]
 
     # noinspection SpellCheckingInspection
-    def test_init__invalid_matrix_values(
-        self, command_context: CommandContext
-    ) -> None:
+    def test_init__invalid_matrix(self, command_context: CommandContext):
         array = np.random.rand(8760, 1)  # OK
         array[10] = 25  # BAD
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
+                storage_name="Storage1",
+                parameters=PARAMETERS,
+                pmax_injection=array.tolist(),
             )
         assert ctx.value.errors() == [
             {
@@ -154,83 +147,16 @@ class TestCreateSTStorage:
             }
         ]
 
-    # noinspection SpellCheckingInspection
-    def test_init__invalid_matrix_shape(
-        self, command_context: CommandContext
-    ) -> None:
-        array = np.random.rand(24, 1)  # BAD SHAPE
-        with pytest.raises(ValidationError) as ctx:
-            CreateSTStorage(
-                command_context=command_context,
-                area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
-            )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Invalid matrix shape (24, 1), expected (8760, 1)",
-                "type": "value_error",
-            }
-        ]
-
-        # noinspection SpellCheckingInspection
-
-    def test_init__invalid_nan_value(
-        self, command_context: CommandContext
-    ) -> None:
-        array = np.random.rand(8760, 1)  # OK
-        array[20] = np.nan  # BAD
-        with pytest.raises(ValidationError) as ctx:
-            CreateSTStorage(
-                command_context=command_context,
-                area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
-            )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Matrix values cannot contain NaN",
-                "type": "value_error",
-            }
-        ]
-
-        # noinspection SpellCheckingInspection
-
-    def test_init__invalid_matrix_type(
-        self, command_context: CommandContext
-    ) -> None:
-        array = {"data": [1, 2, 3]}
-        with pytest.raises(ValidationError) as ctx:
-            CreateSTStorage(
-                command_context=command_context,
-                area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
-                pmax_injection=array,  # type: ignore
-            )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "value is not a valid list",
-                "type": "type_error.list",
-            },
-            {
-                "loc": ("pmax_injection",),
-                "msg": "str type expected",
-                "type": "type_error.str",
-            },
-        ]
-
     def test_apply_config__invalid_version(
         self, empty_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="foo",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Bar",
+            parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(empty_study.config)
 
@@ -244,13 +170,14 @@ class TestCreateSTStorage:
 
     def test_apply_config__missing_area(
         self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
 
@@ -264,7 +191,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__duplicate_storage(
         self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -276,17 +203,18 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
         assert command_output.status is True
 
         # Then, apply the config a second time
-        parameters = {**PARAMETERS, "name": "STORAGE1"}  # different case
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**parameters),
+            storage_name="STORAGE1",  # different case
+            parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
 
@@ -300,7 +228,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__nominal_case(
         self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -312,7 +240,8 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
 
@@ -324,42 +253,10 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__without_groups(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
-        # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR",
-            command_context=command_context,
-        )
-        create_area.apply(recent_study)
-
-        # Remove the group from the nominal case parameters
-        parameters_wo_groups = dict(PARAMETERS)
-        parameters_wo_groups.pop("group")
-
-        # Then, apply the config for a new ST Storage
-        create_st_storage = CreateSTStorage(
-            command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**parameters_wo_groups),
-        )
-        command_output = create_st_storage.apply_config(recent_study.config)
-        assert command_output.status is True
-        assert re.search(
-            rf"'{re.escape(create_st_storage.storage_name)}'.*added",
-            command_output.message,
-            flags=re.IGNORECASE,
-        )
-        # assert that the default group value is Other1
-        area_fr = recent_study.config.areas["area fr"]
-        storage = area_fr.st_storages[0]
-        assert storage.group == STStorageGroup.OTHER1
-
     # noinspection SpellCheckingInspection
     def test_apply__nominal_case(
         self, recent_study: FileStudy, command_context: CommandContext
-    ) -> None:
+    ):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -373,9 +270,10 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
-            pmax_injection=pmax_injection.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
+            storage_name="Storage1",
+            parameters=PARAMETERS,
+            pmax_injection=pmax_injection.tolist(),
+            inflows=inflows.tolist(),
         )
         command_output = cmd.apply(recent_study)
         assert command_output.status
@@ -408,52 +306,35 @@ class TestCreateSTStorage:
         inflows_id = service.create(inflows)
         expected = {
             "storage1": {
-                "pmax_injection": f"matrix://{pmax_injection_id}",
-                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal(),
-                "lower_rule_curve": constants.get_st_storage_lower_rule_curve(),
-                "upper_rule_curve": constants.get_st_storage_upper_rule_curve(),
+                "PMAX-injection": f"matrix://{pmax_injection_id}",
+                "PMAX-withdrawal": constants.get_st_storage_pmax_withdrawal(),
+                "lower-rule-curve": constants.get_st_storage_lower_rule_curve(),
+                "upper-rule-curve": constants.get_st_storage_upper_rule_curve(),
                 "inflows": f"matrix://{inflows_id}",
             }
         }
         assert config == expected
 
-    def test_apply__invalid_apply_config(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ) -> None:
-        # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context
-        )
-        create_area.apply(empty_study)
-
-        # Then, apply the command to create a new ST Storage
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
-        )
-        command_output = cmd.apply(empty_study)
-        assert not command_output.status  # invalid study (too old)
-
     # noinspection SpellCheckingInspection
-    def test_to_dto(self, command_context: CommandContext) -> None:
+    def test_to_dto(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
 
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        # `initiallevel` = 0 because `initialleveloptim` is True
-        expected_parameters["initiallevel"] = 0
+        expected_parameters["name"] = cmd.storage_name
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
             args={
                 "area_id": "area_fr",
+                "storage_name": "Storage1",
                 "parameters": expected_parameters,
                 "pmax_injection": strip_matrix_protocol(
                     constants.get_st_storage_pmax_withdrawal()
@@ -473,73 +354,70 @@ class TestCreateSTStorage:
             },
         )
 
-    def test_match_signature(self, command_context: CommandContext) -> None:
+    def test_match_signature(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         assert cmd.match_signature() == "create_st_storage%area_fr%storage1"
 
     @pytest.mark.parametrize("area_id", ["area_fr", "area_en"])
+    @pytest.mark.parametrize("storage_name", ["Storage1", "Storage2"])
     @pytest.mark.parametrize("parameters", [PARAMETERS, OTHER_PARAMETERS])
     def test_match(
         self,
         command_context: CommandContext,
-        area_id: str,
-        parameters: Dict[str, Union[str, float]],
-    ) -> None:
+        area_id,
+        storage_name,
+        parameters,
+    ):
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         cmd2 = CreateSTStorage(
             command_context=command_context,
             area_id=area_id,
-            parameters=STStorageConfig(**parameters),
+            storage_name=storage_name,
+            parameters=parameters,
         )
         light_equal = (
-            area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
+            area_id == cmd1.area_id and storage_name == cmd1.storage_name
         )
         assert cmd1.match(cmd2, equal=False) == light_equal
-        deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
+        deep_equal = (
+            area_id == cmd1.area_id
+            and storage_name == cmd1.storage_name
+            and {"name": cmd2.storage_name, **parameters} == PARAMETERS
+        )
         assert cmd1.match(cmd2, equal=True) == deep_equal
 
-    def test_match__unknown_type(
-        self, command_context: CommandContext
-    ) -> None:
-        cmd1 = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-        )
-        # Always `False` when compared to another object type
-        assert cmd1.match(Mock(spec=ICommand), equal=False) is False
-        assert cmd1.match(Mock(spec=ICommand), equal=True) is False
-
-    def test_create_diff__not_equals(
-        self, command_context: CommandContext
-    ) -> None:
+    def test_create_diff(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         upper_rule_curve = np.random.rand(8760, 1)
         inflows = np.random.uniform(0, 1000, size=(8760, 1))
         other = CreateSTStorage(
             command_context=command_context,
             area_id=cmd.area_id,
-            parameters=STStorageConfig(**OTHER_PARAMETERS),
-            upper_rule_curve=upper_rule_curve.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
+            storage_name=cmd.storage_name,
+            parameters=OTHER_PARAMETERS,
+            upper_rule_curve=upper_rule_curve.tolist(),
+            inflows=inflows.tolist(),
         )
         actual = cmd.create_diff(other)
         expected = [
             ReplaceMatrix(
                 command_context=command_context,
-                target="input/st-storage/series/area_fr/storage1/upper_rule_curve",
+                target="input/st-storage/series/area_fr/storage1/upper-rule-curve",
                 matrix=strip_matrix_protocol(other.upper_rule_curve),
             ),
             ReplaceMatrix(
@@ -555,22 +433,12 @@ class TestCreateSTStorage:
         ]
         assert actual == expected
 
-    def test_create_diff__equals(
-        self, command_context: CommandContext
-    ) -> None:
+    def test_get_inner_matrices(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-        )
-        actual = cmd.create_diff(cmd)
-        assert not actual
-
-    def test_get_inner_matrices(self, command_context: CommandContext) -> None:
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            storage_name="Storage1",
+            parameters=PARAMETERS,
         )
         actual = cmd.get_inner_matrices()
         constants = command_context.generator_matrix_constants

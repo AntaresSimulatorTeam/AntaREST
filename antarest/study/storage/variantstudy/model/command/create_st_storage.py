@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import numpy as np
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
+    STStorage,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -28,22 +28,89 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import Field, validator, Extra
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 from pydantic.fields import ModelField
 
-# noinspection SpellCheckingInspection
-_MATRIX_NAMES = (
-    "pmax_injection",
-    "pmax_withdrawal",
-    "lower_rule_curve",
-    "upper_rule_curve",
-    "inflows",
-)
-
-# Minimum required version.
+# minimum required version.
 REQUIRED_VERSION = 860
 
 MatrixType = List[List[MatrixData]]
+
+
+class STStorageGroup(EnumIgnoreCase):
+    """
+    This class defines the specific energy storage systems.
+
+    Enum values:
+        PSP_OPEN: Represents an open pumped storage plant.
+        PSP_CLOSED: Represents a closed pumped storage plant.
+        PONDAGE: Represents a pondage storage system (reservoir storage system).
+        BATTERY: Represents a battery storage system.
+        OTHER: Represents other energy storage systems.
+    """
+
+    PSP_OPEN = "PSP_open"
+    PSP_CLOSED = "PSP_closed"
+    PONDAGE = "Pondage"
+    BATTERY = "Battery"
+    OTHER = "Other"
+
+
+# noinspection SpellCheckingInspection
+class STStorageConfig(BaseModel):
+    """
+    Manage the configuration files in the context of Short-Term Storage.
+    It provides a convenient way to read and write configuration data from/to an INI file format.
+    """
+
+    class Config:
+        extra = Extra.forbid
+        allow_population_by_field_name = True
+
+    name: str = Field(
+        ...,
+        description="Short-term storage name (mandatory)",
+        regex=r"\w+",
+    )
+    group: STStorageGroup = Field(
+        ...,
+        description="Energy storage system group (mandatory)",
+    )
+    injection_nominal_capacity: float = Field(
+        0,
+        description="Injection nominal capacity (MW)",
+        ge=0,
+        alias="injectionnominalcapacity",
+    )
+    withdrawal_nominal_capacity: float = Field(
+        0,
+        description="Withdrawal nominal capacity (MW)",
+        ge=0,
+        alias="withdrawalnominalcapacity",
+    )
+    reservoir_capacity: float = Field(
+        0,
+        description="Reservoir capacity (MWh)",
+        ge=0,
+        alias="reservoircapacity",
+    )
+    efficiency: float = Field(
+        1,
+        description="Efficiency of the storage system",
+        ge=0,
+        le=1,
+    )
+    initial_level: float = Field(
+        0,
+        description="Initial level of the storage system",
+        ge=0,
+        alias="initiallevel",
+    )
+    initial_level_optim: bool = Field(
+        False,
+        description="Flag indicating if the initial level is optimized",
+        alias="initialleveloptim",
+    )
 
 
 # noinspection SpellCheckingInspection
@@ -52,19 +119,11 @@ class CreateSTStorage(ICommand):
     Command used to create a short-terme storage in an area.
     """
 
-    class Config:
-        extra = Extra.forbid
-
-    # Overloaded parameters
-    # =====================
-
-    command_name = CommandName.CREATE_ST_STORAGE
-    version = 1
-
-    # Command parameters
-    # ==================
-
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
+    storage_name: str = Field(
+        description="Short-term storage name",
+        regex=r"[a-zA-Z0-9_(),& -]+",
+    )
     parameters: STStorageConfig
     pmax_injection: Optional[Union[MatrixType, str]] = Field(
         None,
@@ -87,17 +146,48 @@ class CreateSTStorage(ICommand):
         description="Inflows (MW)",
     )
 
-    @property
-    def storage_id(self) -> str:
-        """The normalized version of the storage's name used as the ID."""
-        return self.parameters.id
+    # `storage_id` is computed
+    storage_id: str
 
-    @property
-    def storage_name(self) -> str:
-        """The label representing the name of the storage for the user."""
-        return self.parameters.name
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            command_name=CommandName.CREATE_ST_STORAGE, version=1, **data
+        )
 
-    @validator(*_MATRIX_NAMES, always=True)
+    @root_validator(pre=True)
+    def validate_parameters(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        storage_name = values.get("storage_name")
+        if not storage_name:
+            return values
+        storage_id = transform_name_to_id(storage_name)
+        if not storage_id:
+            raise ValueError(
+                f"Invalid short term storage name '{storage_name}'."
+            )
+        values["storage_id"] = storage_id
+        # The short-term storage name must be added to the parameters,
+        # because the INI section name is the short-term storage ID, not the name.
+        if parameters := values.get("parameters"):
+            if isinstance(parameters, dict):
+                parameters["name"] = storage_name
+            elif (
+                isinstance(parameters, STStorageConfig)
+                and parameters.name != storage_name
+            ):
+                raise ValueError(
+                    f"The storage name parameter '{parameters.name}' does not match"
+                    f" the 'storage_name' attribute: '{storage_name}'."
+                )
+        return values
+
+    @validator(
+        "pmax_injection",
+        "pmax_withdrawal",
+        "lower_rule_curve",
+        "upper_rule_curve",
+        "inflows",
+        always=True,
+    )
     def register_matrix(
         cls,
         v: Optional[Union[MatrixType, str]],
@@ -132,21 +222,14 @@ class CreateSTStorage(ICommand):
             # use an already-registered default matrix
             constants: GeneratorMatrixConstants
             constants = values["command_context"].generator_matrix_constants
-            # Directly access the methods instead of using `getattr` for maintainability
-            methods = {
-                "pmax_injection": constants.get_st_storage_pmax_injection,
-                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
-                "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
-                "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
-                "inflows": constants.get_st_storage_inflows,
-            }
-            method = methods[field.name]
-            return method()
+            method_name = f"get_st_storage_{field.name}"
+            method = getattr(constants, method_name)
+            return cast(str, method())
         if isinstance(v, str):
-            # Check the matrix link
+            # check the matrix link
             return validate_matrix(v, values)
         if isinstance(v, list):
-            # Check the matrix values and create the corresponding matrix link
+            # check the matrix values and create the corresponding matrix link
             array = np.array(v, dtype=np.float64)
             if array.shape != (8760, 1):
                 raise ValueError(
@@ -154,16 +237,16 @@ class CreateSTStorage(ICommand):
                 )
             if np.isnan(array).any():
                 raise ValueError("Matrix values cannot contain NaN")
-            # All matrices except "inflows" are constrained between 0 and 1
-            constrained = set(_MATRIX_NAMES) - {"inflows"}
-            if field.name in constrained and (
-                np.any(array < 0) or np.any(array > 1)
-            ):
+            if field.name in {
+                "pmax_injection",
+                "pmax_withdrawal",
+                "lower_rule_curve",
+                "upper_rule_curve",
+            } and (np.any(array < 0) or np.any(array > 1)):
                 raise ValueError("Matrix values should be between 0 and 1")
             v = cast(MatrixType, array.tolist())
             return validate_matrix(v, values)
-        # Invalid datatype
-        # pragma: no cover
+        # invalid datatype (not implemented?)
         raise TypeError(repr(v))
 
     def _apply_config(
@@ -219,7 +302,8 @@ class CreateSTStorage(ICommand):
             )
 
         # Create a new short-term storage and add it to the area
-        area.st_storages.append(self.parameters)
+        st_storage = STStorage(id=self.storage_id, name=self.storage_name)
+        area.st_storages.append(st_storage)
 
         return (
             CommandOutput(
@@ -263,8 +347,11 @@ class CreateSTStorage(ICommand):
                     "series": {
                         self.area_id: {
                             self.storage_id: {
-                                attr: getattr(self, attr)
-                                for attr in _MATRIX_NAMES
+                                "PMAX-injection": self.pmax_injection,
+                                "PMAX-withdrawal": self.pmax_withdrawal,
+                                "lower-rule-curve": self.lower_rule_curve,
+                                "upper-rule-curve": self.upper_rule_curve,
+                                "inflows": self.inflows,
                             }
                         }
                     },
@@ -283,18 +370,22 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = json.loads(self.parameters.json(by_alias=True))
+        # fmt: off
+        parameters = json.loads(self.parameters.json(by_alias=True, exclude_defaults=True))
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
+                "storage_name": self.storage_name,
                 "parameters": parameters,
-                **{
-                    attr: strip_matrix_protocol(getattr(self, attr))
-                    for attr in _MATRIX_NAMES
-                },
+                "pmax_injection": strip_matrix_protocol(self.pmax_injection),
+                "pmax_withdrawal": strip_matrix_protocol(self.pmax_withdrawal),
+                "lower_rule_curve": strip_matrix_protocol(self.lower_rule_curve),
+                "upper_rule_curve": strip_matrix_protocol(self.upper_rule_curve),
+                "inflows": strip_matrix_protocol(self.inflows),
             },
         )
+        # fmt: on
 
     def match_signature(self) -> str:
         """Returns the command signature."""
@@ -320,7 +411,7 @@ class CreateSTStorage(ICommand):
         if not isinstance(other, CreateSTStorage):
             return False
         if equal:
-            # Deep comparison
+            # deep comparison
             return self.__eq__(other)
         else:
             return (
@@ -340,6 +431,7 @@ class CreateSTStorage(ICommand):
             A list of commands representing the differences between
             the two `ICommand` objects.
         """
+        other = cast(CreateSTStorage, other)
         from antarest.study.storage.variantstudy.model.command.replace_matrix import (
             ReplaceMatrix,
         )
@@ -347,24 +439,27 @@ class CreateSTStorage(ICommand):
             UpdateConfig,
         )
 
-        other = cast(CreateSTStorage, other)
+        attrs = {
+            "PMAX-injection": "pmax_injection",
+            "PMAX-withdrawal": "pmax_withdrawal",
+            "lower-rule-curve": "lower_rule_curve",
+            "upper-rule-curve": "upper_rule_curve",
+            "inflows": "inflows",
+        }
         commands: List[ICommand] = [
             ReplaceMatrix(
-                target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
+                target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{ini_name}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
                 command_context=self.command_context,
             )
-            for attr in _MATRIX_NAMES
+            for ini_name, attr in attrs.items()
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            data: Dict[str, Any] = json.loads(
-                other.parameters.json(by_alias=True)
-            )
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
-                    data=data,
+                    data=json.loads(other.parameters.json(by_alias=True)),
                     command_context=self.command_context,
                 )
             )
@@ -374,8 +469,14 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
+        attrs = [
+            "pmax_injection",
+            "pmax_withdrawal",
+            "lower_rule_curve",
+            "upper_rule_curve",
+            "inflows",
+        ]
         matrices: List[str] = [
-            strip_matrix_protocol(getattr(self, attr))
-            for attr in _MATRIX_NAMES
+            strip_matrix_protocol(getattr(self, attr)) for attr in attrs
         ]
         return matrices
