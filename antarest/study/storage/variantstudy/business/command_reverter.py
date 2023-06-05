@@ -33,6 +33,9 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
     CreateRenewablesCluster,
 )
+from antarest.study.storage.variantstudy.model.command.create_st_storage import (
+    CreateSTStorage,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
@@ -51,6 +54,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 )
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
     RemoveRenewablesCluster,
+)
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
+    RemoveSTStorage,
 )
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
@@ -265,6 +271,31 @@ class CommandReverter:
     ) -> List[ICommand]:
         raise NotImplementedError(
             "The revert function for RemoveRenewablesCluster is not available"
+        )
+
+    @staticmethod
+    def _revert_create_st_storage(
+        base_command: CreateSTStorage,
+        history: List["ICommand"],
+        base: FileStudy,
+    ) -> List[ICommand]:
+        storage_id = base_command.storage_id
+        return [
+            RemoveSTStorage(
+                area_id=base_command.area_id,
+                storage_id=storage_id,
+                command_context=base_command.command_context,
+            )
+        ]
+
+    @staticmethod
+    def _revert_remove_st_storage(
+        base_command: RemoveSTStorage,
+        history: List["ICommand"],
+        base: FileStudy,
+    ) -> List[ICommand]:
+        raise NotImplementedError(
+            "The revert function for RemoveSTStorage is not available"
         )
 
     @staticmethod
