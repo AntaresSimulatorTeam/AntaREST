@@ -5,7 +5,6 @@ import uuid
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type
 
-from pythonjsonlogger.jsonlogger import JsonFormatter
 from antarest.core.config import Config
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
@@ -80,7 +79,7 @@ def configure_logger(
                 ),
             },
             "json": {
-                "class": f"{JsonFormatter.__module__}.{JsonFormatter.__qualname__}",
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": (
                     "%(asctime)s"
                     " - %(process)s"
