@@ -49,7 +49,8 @@ class _WorkerTaskEndedCallback:
             type=EventType.WORKER_TASK_ENDED,
             payload=WorkerTaskResult(
                 task_id=self._task_id, task_result=result
-            ),  # Use `NONE` for internal events
+            ),
+            # Use `NONE` for internal events
             permissions=PermissionInfo(public_mode=PublicMode.NONE),
         )
         self._event_bus.push(event)
