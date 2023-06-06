@@ -1,11 +1,11 @@
+import re
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Dict, Set
-
-from pydantic.main import BaseModel
+from typing import Dict, List, Optional, Set
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
+from pydantic.main import BaseModel
 
 
 class ENR_MODELLING(Enum):
@@ -261,34 +261,24 @@ class FileStudyTreeConfig(DTO):
         return self.areas[area].filters_year
 
 
-def transform_name_to_id(name: str, lower: bool = True) -> str:
-    """This transformation was taken from the cpp Antares Simulator.."""
-    duppl = False
-    study_id = ""
-    for c in name:
-        if (
-            (c >= "a" and c <= "z")
-            or (c >= "A" and c <= "Z")
-            or (c >= "0" and c <= "9")
-            or c == "_"
-            or c == "-"
-            or c == "("
-            or c == ")"
-            or c == ","
-            or c == "&"
-            or c == " "
-        ):
-            study_id += c
-            duppl = False
-        else:
-            if not duppl:
-                study_id += " "
-                duppl = True
+# Invalid chars was taken from Antares Simulator (C++).
+_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
 
-    study_id_stripped = study_id.strip()
-    if lower:
-        return study_id_stripped.lower()
-    return study_id_stripped
+
+def transform_name_to_id(name: str, lower: bool = True) -> str:
+    """
+    Transform a name into an identifier by replacing consecutive
+    invalid characters by a single white space, and then whitespaces
+    are striped from both ends.
+
+    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+
+    Args:
+        name: The name to convert.
+        lower: The flag used to turn the identifier in lower case.
+    """
+    valid_id = _sub_invalid_chars(" ", name).strip()
+    return valid_id.lower() if lower else valid_id
 
 
 class FileStudyTreeConfigDTO(BaseModel):
