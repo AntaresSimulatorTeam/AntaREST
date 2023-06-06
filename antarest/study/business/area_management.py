@@ -201,10 +201,14 @@ class AreaManager:
         layers = file_study.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
             raise LayerNotFound
-
         areas_ui = file_study.tree.get(
-            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
+            ["input", "areas", ",".join(file_study.config.areas), "ui"]
         )
+        # standardizes 'areas_ui' to a dictionary format even if only one area exists.
+        cfg_areas = list(file_study.config.areas)
+        if len(cfg_areas) == 1:
+            areas_ui = {cfg_areas[0]: areas_ui}
+
         existing_areas = [
             area
             for area in areas_ui
