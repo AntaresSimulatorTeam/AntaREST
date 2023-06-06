@@ -94,11 +94,11 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
 
 
 def auto_retry_assert(
-    predicate: Callable[..., bool], timeout: int = 2
+    predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2
 ) -> None:
     threshold = datetime.now(timezone.utc) + timedelta(seconds=timeout)
     while datetime.now(timezone.utc) < threshold:
         if predicate():
             return
-        time.sleep(0.2)
+        time.sleep(delay)
     raise AssertionError()

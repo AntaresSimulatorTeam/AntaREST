@@ -275,7 +275,7 @@ class DummyWorker(AbstractWorker):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
-    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)
         relative_path = task_info.task_args["file"]
