@@ -1,19 +1,18 @@
 from enum import Enum
-from pathlib import Path, PurePosixPath
-from typing import Union, Optional, Dict, TypedDict, Any, List
-
-from pydantic import StrictFloat, StrictInt, StrictStr, StrictBool
+from pathlib import PurePosixPath
+from typing import Any, Dict, List, Optional
 
 from antarest.study.business.utils import (
-    execute_or_add_commands,
-    FormFieldsBaseModel,
     FieldInfo,
+    FormFieldsBaseModel,
+    execute_or_add_commands,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from pydantic import Field
 
 
 class TimeSeriesInterpretation(str, Enum):
@@ -25,12 +24,18 @@ RENEWABLE_PATH = "input/renewables/clusters/{area}/list/{cluster}"
 
 
 class RenewableFormFields(FormFieldsBaseModel):
-    group: Optional[StrictStr]
-    name: Optional[StrictStr]
+    """
+    Pydantic model representing renewable cluster configuration form fields.
+    """
+
+    # fmt: off
+    group: Optional[str]
+    name: Optional[str]
     ts_interpretation: Optional[TimeSeriesInterpretation]
-    unit_count: Optional[StrictInt]
-    enabled: Optional[StrictBool]
-    nominal_capacity: Optional[StrictInt]
+    unit_count: Optional[int] = Field(description="Unit count", ge=1)
+    enabled: Optional[bool] = Field(description="Enable flag")
+    nominal_capacity: Optional[float] = Field(description="Nominal capacity (MW)", ge=0)
+    # fmt: on
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -48,7 +53,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "unit_count": {
         "path": f"{RENEWABLE_PATH}/unitcount",
-        "default_value": 0,
+        "default_value": 1,
     },
     "enabled": {
         "path": f"{RENEWABLE_PATH}/enabled",
