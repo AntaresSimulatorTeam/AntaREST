@@ -82,9 +82,7 @@ class IEventBus(ABC):
         pass
 
     @abstractmethod
-    def add_queue_consumer(
-        self, listener: EventListener, queue: str
-    ) -> str:
+    def add_queue_consumer(self, listener: EventListener, queue: str) -> str:
         """
         Adds a consumer for events on the specified queue.
         """
