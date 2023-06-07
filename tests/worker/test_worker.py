@@ -20,7 +20,7 @@ class DummyWorker(AbstractWorker):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
-    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)
         relative_path = task_info.task_args["file"]
@@ -28,22 +28,19 @@ class DummyWorker(AbstractWorker):
         return TaskResult(success=True, message="")
 
 
-@pytest.mark.skip(reason="disabled because it sometimes crashes randomly")
 def test_simple_task(tmp_path: Path):
     task_queue = "do_stuff"
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
-    event_bus.queue(
-        Event(
-            type=EventType.WORKER_TASK,
-            payload=WorkerTaskCommand(
-                task_type="touch stuff",
-                task_id="some task",
-                task_args={"file": "foo"},
-            ),
-            permissions=PermissionInfo(public_mode=PublicMode.READ),
+    command_event = Event(
+        type=EventType.WORKER_TASK,
+        payload=WorkerTaskCommand(
+            task_type="touch stuff",
+            task_id="some task",
+            task_args={"file": "foo"},
         ),
-        task_queue,
+        permissions=PermissionInfo(public_mode=PublicMode.READ),
     )
+    event_bus.queue(command_event, task_queue)
 
     # Add some listeners to debug the event bus notifications
     msg = []
@@ -61,9 +58,17 @@ def test_simple_task(tmp_path: Path):
     # Wait for the end of the processing
     # Set a big value to `timeout` if you want to debug the worker
     auto_retry_assert(lambda: (tmp_path / "foo").exists(), timeout=60)
+    auto_retry_assert(
+        lambda: msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"],
+        timeout=1,
+        delay=0.1,
+    )
 
-    # Wait a short time to allow the event bus to have the opportunity
-    # to process the notification of the end event.
-    time.sleep(0.1)
-
-    assert msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"]
+    msg.clear()
+    # Send a second event to check worker is still processing events
+    event_bus.queue(command_event, task_queue)
+    auto_retry_assert(
+        lambda: msg == ["WORKER_TASK_STARTED", "WORKER_TASK_ENDED"],
+        timeout=1,
+        delay=0.1,
+    )

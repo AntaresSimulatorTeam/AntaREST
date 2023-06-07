@@ -40,14 +40,14 @@ def test_execute_task(logger_mock: Mock, tmp_path: Path):
     worker.study_factory = Mock()
 
     with pytest.raises(NotImplementedError):
-        worker.execute_task(
+        worker._execute_task(
             task_info=WorkerTaskCommand(
                 task_id="task_id", task_type="unknown", task_args={}
             )
         )
 
     with pytest.raises(NotImplementedError):
-        worker.execute_task(
+        worker._execute_task(
             task_info=WorkerTaskCommand(
                 task_id="task_id",
                 task_type=GENERATE_KIRSHOFF_CONSTRAINTS_TASK_NAME,
@@ -55,7 +55,7 @@ def test_execute_task(logger_mock: Mock, tmp_path: Path):
             )
         )
     study_path = tmp_path / "study"
-    result = worker.execute_task(
+    result = worker._execute_task(
         task_info=WorkerTaskCommand(
             task_id="task_id",
             task_type=GENERATE_TIMESERIES_TASK_NAME,
