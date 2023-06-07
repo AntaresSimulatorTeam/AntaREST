@@ -1,13 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+from pathlib import Path
 
 block_cipher = None
 
-antares_web_server_a = Analysis(['antarest/gui.py'],
+# We need to analyze all alembic files to be sure the migration phase works fine
+migrations_dir = Path('alembic/versions')
+migration_files = [str(f) for f in migrations_dir.iterdir() if f.is_file() and f.suffix == '.py']
+
+antares_web_server_a = Analysis(['antarest/gui.py', 'alembic/env.py'] + migration_files,
              pathex=[],
              binaries=[('./alembic.ini', './alembic.ini')],
              datas=[('./resources', './resources'), ('./alembic', './alembic')],
-             hiddenimports=['cmath', 'antarest.dbmodel', 'plyer.platforms.win', 'plyer.platforms.win.notification'],
+             hiddenimports=[
+                 'cmath',
+                 'antarest.dbmodel',
+                 'plyer.platforms.win',
+                 'plyer.platforms.win.notification',
+                 'pythonjsonlogger.jsonlogger',
+             ],
              hookspath=['extra-hooks'],
              hooksconfig={},
              runtime_hooks=[],
