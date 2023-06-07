@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import logging
 import os
@@ -8,6 +9,11 @@ from pathlib import Path
 from time import time
 from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
+
+import numpy as np
+from fastapi import HTTPException, UploadFile
+from markupsafe import escape
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -52,7 +58,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
-from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchManager,
 )
@@ -175,9 +180,6 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
-from fastapi import HTTPException, UploadFile
-from markupsafe import escape
-from starlette.responses import FileResponse, Response
 
 logger = logging.getLogger(__name__)
 
@@ -1580,32 +1582,43 @@ class StudyService:
         Returns: ICommand that replaces the data
 
         """
+        # fmt: off
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        # fmt: on
         if isinstance(tree_node, IniFileNode):
             return UpdateConfig(
                 target=url,
                 data=data,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                command_context=context,
             )
         elif isinstance(tree_node, InputSeriesMatrix):
+            if isinstance(data, bytes):
+                # noinspection PyTypeChecker
+                matrix = np.loadtxt(
+                    io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2
+                )
+                return ReplaceMatrix(
+                    target=url,
+                    matrix=matrix.tolist(),
+                    command_context=context,
+                )
             return ReplaceMatrix(
                 target=url,
-                matrix=parse_tsv_matrix(data)
-                if isinstance(data, bytes)
-                else data,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                matrix=data,
+                command_context=context,
             )
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 return UpdateComments(
                     target=url,
                     comments=data,
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=context,
                 )
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
                     b64Data=base64.b64encode(data).decode("utf-8"),
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=context,
                 )
         raise NotImplementedError()
 
