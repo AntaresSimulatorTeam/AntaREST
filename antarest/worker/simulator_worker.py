@@ -59,7 +59,7 @@ class SimulatorWorker(AbstractWorker):
             cache=LocalCache(),
         )
 
-    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         if task_info.task_type == GENERATE_TIMESERIES_TASK_NAME:
             return self.execute_timeseries_generation_task(task_info)
         elif task_info.task_type == GENERATE_KIRSHOFF_CONSTRAINTS_TASK_NAME:

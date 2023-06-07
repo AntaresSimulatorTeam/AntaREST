@@ -44,7 +44,7 @@ def test_archive_worker_action(tmp_path: Path):
             "remove_src": True,
         },
     )
-    archive_worker.execute_task(task_info)
+    archive_worker._execute_task(task_info)
 
     assert not zip_file.exists()
     assert expected_output.exists()
