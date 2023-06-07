@@ -75,6 +75,29 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+COMMAND_MAPPING = {
+    CommandName.CREATE_AREA.value: CreateArea,
+    CommandName.REMOVE_AREA.value: RemoveArea,
+    CommandName.CREATE_DISTRICT.value: CreateDistrict,
+    CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
+    CommandName.CREATE_LINK.value: CreateLink,
+    CommandName.REMOVE_LINK.value: RemoveLink,
+    CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
+    CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
+    CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
+    CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
+    CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
+    CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
+    CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
+    CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
+    CommandName.UPDATE_CONFIG.value: UpdateConfig,
+    CommandName.UPDATE_COMMENTS.value: UpdateComments,
+    CommandName.UPDATE_FILE.value: UpdateRawFile,
+    CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
+    CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
+    CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
+}
+
 
 class CommandFactory:
     """
@@ -95,30 +118,8 @@ class CommandFactory:
 
     def _to_single_command(self, action: str, args: JSON) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
-        command_mapping = {
-            CommandName.CREATE_AREA.value: CreateArea,
-            CommandName.REMOVE_AREA.value: RemoveArea,
-            CommandName.CREATE_DISTRICT.value: CreateDistrict,
-            CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
-            CommandName.CREATE_LINK.value: CreateLink,
-            CommandName.REMOVE_LINK.value: RemoveLink,
-            CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
-            CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
-            CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
-            CommandName.CREATE_CLUSTER.value: CreateCluster,
-            CommandName.REMOVE_CLUSTER.value: RemoveCluster,
-            CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
-            CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
-            CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
-            CommandName.UPDATE_CONFIG.value: UpdateConfig,
-            CommandName.UPDATE_COMMENTS.value: UpdateComments,
-            CommandName.UPDATE_FILE.value: UpdateRawFile,
-            CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
-            CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
-            CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
-        }
-        if action in command_mapping:
-            command_class = command_mapping[action]
+        if action in COMMAND_MAPPING:
+            command_class = COMMAND_MAPPING[action]
             return command_class(
                 **args,
                 command_context=self.command_context,

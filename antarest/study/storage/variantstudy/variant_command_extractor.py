@@ -177,7 +177,7 @@ class VariantCommandsExtractor:
                 priority = 0
             elif command_obj.command_name in [
                 CommandName.REMOVE_LINK,
-                CommandName.REMOVE_CLUSTER,
+                CommandName.REMOVE_THERMAL_CLUSTER,
             ]:
                 command_list = first_commands
                 priority = 1
@@ -192,7 +192,7 @@ class VariantCommandsExtractor:
                 command_list = last_commands
                 priority = 3
             elif command_obj.command_name in [
-                CommandName.CREATE_CLUSTER,
+                CommandName.CREATE_THERMAL_CLUSTER,
                 CommandName.CREATE_LINK,
             ]:
                 command_list = last_commands
