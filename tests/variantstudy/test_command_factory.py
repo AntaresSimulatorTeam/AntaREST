@@ -320,6 +320,71 @@ class TestCommandFactory:
                     }
                 },
             ),
+            CommandDTO(
+                action=CommandName.CREATE_ST_STORAGE.value,
+                args={
+                    "area_id": "area 1",
+                    "storage_name": "Storage 1",
+                    "parameters": {"name": "Storage 1", "group": "Battery"},
+                    "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
+                    "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
+                    "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+                    "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+                    "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+                },
+            ),
+            CommandDTO(
+                action=CommandName.CREATE_ST_STORAGE.value,
+                args=[
+                    {
+                        "area_id": "area 1",
+                        "storage_name": "Storage 1",
+                        "parameters": {
+                            "name": "Storage 1",
+                            "group": "Battery",
+                        },
+                        "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
+                        "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
+                        "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+                        "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+                        "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+                    },
+                    {
+                        "area_id": "area 1",
+                        "storage_name": "Storage 2",
+                        "parameters": {
+                            "name": "Storage 2",
+                            "group": "Battery",
+                            "efficiency": 0.94,
+                        },
+                        "pmax_injection": "matrix://3f5b3746-3995-49b7-a6da-622633472e05",
+                        "pmax_withdrawal": "matrix://4b64a31f-927b-4887-b4cd-adcddd39bdcd",
+                        "lower_rule_curve": "matrix://16c7c3ae-9824-4ef2-aa68-51145884b025",
+                        "upper_rule_curve": "matrix://9a6104e9-990a-415f-a6e2-57507e13b58c",
+                        "inflows": "matrix://e8923768-9bdd-40c2-a6ea-2da2523be727",
+                    },
+                ],
+            ),
+            CommandDTO(
+                action=CommandName.REMOVE_ST_STORAGE.value,
+                args={
+                    "area_id": "area 1",
+                    "storage_id": "storage 1",
+                },
+            ),
+            CommandDTO(
+                action=CommandName.REMOVE_ST_STORAGE.value,
+                args=[
+                    {
+                        "area_id": "area 1",
+                        "storage_id": "storage 1",
+                    },
+                    {
+                        "area_id": "area 1",
+                        "storage_id": "storage 2",
+                    },
+                ],
+            ),
         ],
     )
     @pytest.mark.unit_test
