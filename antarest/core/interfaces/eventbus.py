@@ -52,19 +52,40 @@ class Event(BaseModel):
     channel: str = ""
 
 
+EventListener = Callable[[Event], Awaitable[None]]
+
+
 class IEventBus(ABC):
+    """
+    Interface for the event bus.
+
+    The event bus provides 2 communication mechanisms:
+      - a broadcasting mechanism, where events are pushed to all
+        registered listeners
+      - a message queue mechanism: a message can be pushed to
+        a specified queue. Only consumers registered for that
+        queue will be called to handle those messages.
+    """
+
     @abstractmethod
     def push(self, event: Event) -> None:
+        """
+        Pushes an event to registered listeners.
+        """
         pass
 
     @abstractmethod
     def queue(self, event: Event, queue: str) -> None:
+        """
+        Queues an event at the end of the specified queue.
+        """
         pass
 
     @abstractmethod
-    def add_queue_consumer(
-        self, listener: Callable[[Event], Awaitable[None]], queue: str
-    ) -> str:
+    def add_queue_consumer(self, listener: EventListener, queue: str) -> str:
+        """
+        Adds a consumer for events on the specified queue.
+        """
         pass
 
     @abstractmethod
@@ -74,7 +95,7 @@ class IEventBus(ABC):
     @abstractmethod
     def add_listener(
         self,
-        listener: Callable[[Event], Awaitable[None]],
+        listener: EventListener,
         type_filter: Optional[List[EventType]] = None,
     ) -> str:
         """
