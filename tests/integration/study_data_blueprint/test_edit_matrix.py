@@ -222,3 +222,64 @@ class TestEditMatrix:
         assert [[a[i] for a in new_data[2:4]] for i in range(2, 4)] == [[42] * 2] * 2
         assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [[42] * 6] * 2
         # fmt: on
+
+    def test_edit_matrix__thermal_cluster(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        study_id: str,
+    ):
+        # Given the following Area
+        area_id = "fr"
+
+        # Create a cluster
+        cluster_id = "cluster 1"
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[
+                {
+                    "action": "create_cluster",
+                    "args": {
+                        "area_id": area_id,
+                        "cluster_name": cluster_id,
+                        "parameters": {},
+                    },
+                }
+            ],
+        )
+        res.raise_for_status()
+
+        # This test shows that we can't update the time series
+        # because the matrix is empty (this is the default behaviour).
+        # In that case, we should have an HTTP 422 error and a message
+        # saying that it is impossible to modify an empty matrix.
+        obj = [
+            {
+                "coordinates": [[1, 0]],
+                "operation": {"operation": "=", "value": 128},
+            }
+        ]
+        res = client.put(
+            f"/v1/studies/{study_id}/matrix?path=input/thermal/series/{area_id}/{cluster_id}/series",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=obj,
+        )
+
+        # WARNING: we have a random behaviour:
+        # - in most cases, the empty matrix is parsed (expected1),
+        # - but, sometimes it can't (expected2).
+        expected1 = {
+            "description": (
+                "Cannot edit matrix using coordinates=[(1, 0)], operation=['=' 128.0]:"
+                " Cannot apply operation ['=' 128.0]:"
+                " invalid coordinates (1, 0): index 1 is out of bounds for axis 0 with size 0"
+            ),
+            "exception": "BadEditInstructionException",
+        }
+        expected2 = {
+            "description": "Cannot parse matrix: All arrays must be of the same length",
+            "exception": "BadEditInstructionException",
+        }
+        assert res.json() in [expected1, expected2]
+        assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
