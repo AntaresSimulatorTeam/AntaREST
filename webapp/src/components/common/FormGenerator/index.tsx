@@ -69,15 +69,15 @@ export interface FormGeneratorProps<T extends FieldValues> {
 
 function formateFieldset<T extends FieldValues>(fieldset: IFieldsetType<T>) {
   const { fields, ...otherProps } = fieldset;
-  const formatedFields = fields.map((field) => ({ ...field, id: uuidv4() }));
-  return { ...otherProps, fields: formatedFields, id: uuidv4() };
+  const formattedFields = fields.map((field) => ({ ...field, id: uuidv4() }));
+  return { ...otherProps, fields: formattedFields, id: uuidv4() };
 }
 
 export default function FormGenerator<T extends FieldValues>(
   props: FormGeneratorProps<T>
 ) {
   const { jsonTemplate } = props;
-  const formatedTemplate = useMemo(
+  const formattedTemplate = useMemo(
     () => jsonTemplate.map(formateFieldset),
     [jsonTemplate]
   );
@@ -89,7 +89,7 @@ export default function FormGenerator<T extends FieldValues>(
 
   return (
     <>
-      {formatedTemplate.map((fieldset) => (
+      {formattedTemplate.map((fieldset) => (
         <Fieldset
           key={fieldset.id}
           legend={

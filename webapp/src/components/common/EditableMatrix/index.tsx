@@ -59,7 +59,9 @@ function EditableMatrix(props: PropTypes) {
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formatedColumns, setFormatedColumns] = useState<ColumnSettings[]>([]);
+  const [formattedColumns, setFormattedColumns] = useState<ColumnSettings[]>(
+    []
+  );
   const hotTableComponent = useRef<HotTable>(null);
 
   ////////////////////////////////////////////////////////////////
@@ -99,7 +101,7 @@ function EditableMatrix(props: PropTypes) {
   };
 
   useEffect(() => {
-    setFormatedColumns([
+    setFormattedColumns([
       ...(prependIndex ? [{ title: "Time", readOnly: true, width: 130 }] : []),
       ...columns.map((col, index) => ({
         title: columnsNames?.[index] || formatColumnName(col),
@@ -164,7 +166,7 @@ function EditableMatrix(props: PropTypes) {
             onUpdate && handleSlice(change || [], source)
           }
           beforeKeyDown={(e) => handleKeyDown(e)}
-          columns={formatedColumns}
+          columns={formattedColumns}
           rowHeaders={matrixRowNames || true}
           manualColumnResize
         />
