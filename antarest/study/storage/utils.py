@@ -265,7 +265,7 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-ENGLISH_MONTHS = [
+MONTHS = [
     "January",
     "February",
     "March",
@@ -280,7 +280,7 @@ ENGLISH_MONTHS = [
     "December",
 ]
 
-ENGLISH_DAY_NAMES = [
+DAY_NAMES = [
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -313,13 +313,13 @@ def get_start_date(
     start_offset = cast(int, config.get("simulation.start"))
     end = cast(int, config.get("simulation.end"))
 
-    starting_month_index = ENGLISH_MONTHS.index(starting_month.title()) + 1
+    starting_month_index = MONTHS.index(starting_month.title()) + 1
+    starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2000
     while True:
         if leapyear == calendar.isleap(target_year):
             first_day = datetime(target_year, starting_month_index, 1)
-            first_day_name = ENGLISH_DAY_NAMES[first_day.weekday()]
-            if first_day_name == starting_day.title():
+            if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
 
@@ -349,11 +349,11 @@ def get_start_date(
         else:
             steps = (13 - start_date.month) + end_date.month
 
+    first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
     for first_week_offset in range(7):
         first_day = start_date + timedelta(days=first_week_offset)
-        first_day_name = ENGLISH_DAY_NAMES[first_day.weekday()]
-        if first_day_name == first_week_day.title():
+        if first_day.weekday() == first_week_day_index:
             break
     first_week_size = first_week_offset if first_week_offset != 0 else 7
 
