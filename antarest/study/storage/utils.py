@@ -265,7 +265,7 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = [
+MONTHS = (
     "January",
     "February",
     "March",
@@ -278,9 +278,9 @@ MONTHS = [
     "October",
     "November",
     "December",
-]
+)
 
-DAY_NAMES = [
+DAY_NAMES = (
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -288,7 +288,7 @@ DAY_NAMES = [
     "Friday",
     "Saturday",
     "Sunday",
-]
+)
 
 
 def get_start_date(
