@@ -250,10 +250,8 @@ class TestEditMatrix:
         )
         res.raise_for_status()
 
-        # This test shows that we can't update the time series
-        # because the matrix is empty (this is the default behaviour).
-        # In that case, we should have an HTTP 422 error and a message
-        # saying that it is impossible to modify an empty matrix.
+        # Even if the matrix is missing, it is now possible to update it
+        # because an empty matrix of the right shape is generated automatically.
         obj = [
             {
                 "coordinates": [[1, 0]],
@@ -265,21 +263,15 @@ class TestEditMatrix:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
+        res.raise_for_status()
 
-        # WARNING: we have a random behaviour:
-        # - in most cases, the empty matrix is parsed (expected1),
-        # - but, sometimes it can't (expected2).
-        expected1 = {
-            "description": (
-                "Cannot edit matrix using coordinates=[(1, 0)], operation=['=' 128.0]:"
-                " Cannot apply operation ['=' 128.0]:"
-                " invalid coordinates (1, 0): index 1 is out of bounds for axis 0 with size 0"
-            ),
-            "exception": "BadEditInstructionException",
-        }
-        expected2 = {
-            "description": "Cannot parse matrix: All arrays must be of the same length",
-            "exception": "BadEditInstructionException",
-        }
-        assert res.json() in [expected1, expected2]
-        assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        # We can check the modified matrix
+        res = client.get(
+            f"/v1/studies/{study_id}/raw?path=input/thermal/series/{area_id}/{cluster_id}/series",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        actual = res.json()["data"]
+        assert actual[1][0] == 128
+        del actual[1]
+        assert all(row[0] == 0 for row in actual)
