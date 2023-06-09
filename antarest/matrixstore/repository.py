@@ -211,7 +211,7 @@ class MatrixContentRepository:
             lock_file = matrix_file.with_suffix(".tsv.lock")
             with FileLock(lock_file, timeout=15):
                 # noinspection PyTypeChecker
-                np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18f")
+                np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
