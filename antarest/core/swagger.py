@@ -6,7 +6,9 @@ from fastapi.routing import APIRoute
 sim = "{sim} = simulation index <br/>"
 area = "{area} = area name to select <br/>"
 link = "{link} = link name to select <br/>"
+attachment = "User-defined file attachment <br/>"
 
+# noinspection SpellCheckingInspection
 urls: List[Tuple[str, str]] = [
     ("layers/layers", ""),
     ("settings/generaldata", ""),
@@ -23,12 +25,12 @@ urls: List[Tuple[str, str]] = [
     ("input/thermal/clusters/{area}/list", area),
     ("input/thermal/areas", ""),
     ("input/wind/prepro/{area}/settings", area),
+    ("user/wind_solar/synthesis_windSolar.xlsx", attachment),
 ]
 
 
 def get_path_examples() -> Any:
-    examples = {url: {"value": url, "description": des} for url, des in urls}
-    return examples
+    return {url: {"value": url, "description": des} for url, des in urls}
 
 
 def customize_openapi(app: FastAPI) -> None:
