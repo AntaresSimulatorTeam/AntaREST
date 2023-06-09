@@ -1,5 +1,4 @@
 import io
-import os
 import shutil
 from datetime import datetime
 from http import HTTPStatus
@@ -8,19 +7,15 @@ from typing import Union
 from unittest.mock import Mock
 
 import pytest
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON
-from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
-from antarest.login.model import User
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
@@ -221,7 +216,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            {},
+            {"data": [[]], "index": [0], "columns": []},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -249,7 +244,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            {},
+            {"data": [[]], "index": [0], "columns": []},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
@@ -286,7 +281,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
-            {},
+            {"data": [[]], "index": [0], "columns": []},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
@@ -298,7 +293,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
-            {},
+            {"data": [[]], "index": [0], "columns": []},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
