@@ -1381,6 +1381,69 @@ def test_area_management(app: FastAPI):
         "profit": True,
     }
 
+    # Properties form
+
+    res_properties_config = client.get(
+        f"/v1/studies/{study_id}/areas/area1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_properties_config_json = res_properties_config.json()
+    assert res_properties_config_json == {
+        "color": "230,108,44",
+        "posX": 0.0,
+        "posY": 0.0,
+        "energyCostUnsupplied": 0.0,
+        "energyCostSpilled": 0.0,
+        "nonDispatchPower": True,
+        "dispatchHydroPower": True,
+        "otherDispatchPower": True,
+        "filterSynthesis": ["hourly", "daily", "weekly", "monthly", "annual"],
+        "filterByYear": ["hourly", "daily", "weekly", "monthly", "annual"],
+        "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+    }
+
+    client.put(
+        f"/v1/studies/{study_id}/areas/area1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "color": "123,108,96",
+            "posX": 3.4,
+            "posY": 9.0,
+            "energyCostUnsupplied": 2.0,
+            "energyCostSpilled": 4.0,
+            "nonDispatchPower": False,
+            "dispatchHydroPower": False,
+            "otherDispatchPower": False,
+            "filterSynthesis": ["monthly", "annual"],
+            "filterByYear": ["hourly", "daily", "annual"],
+            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+        },
+    )
+    res_properties_config = client.get(
+        f"/v1/studies/{study_id}/areas/area1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_properties_config_json = res_properties_config.json()
+    assert res_properties_config_json == {
+        "color": "123,108,96",
+        "posX": 3.4,
+        "posY": 9.0,
+        "energyCostUnsupplied": 2.0,
+        "energyCostSpilled": 4.0,
+        "nonDispatchPower": False,
+        "dispatchHydroPower": False,
+        "otherDispatchPower": False,
+        "filterSynthesis": ["monthly", "annual"],
+        "filterByYear": ["hourly", "daily", "annual"],
+        "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+    }
+
     # Hydro form
 
     res_hydro_config = client.put(

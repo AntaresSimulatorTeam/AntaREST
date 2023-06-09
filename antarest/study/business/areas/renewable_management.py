@@ -20,9 +20,6 @@ class TimeSeriesInterpretation(str, Enum):
     PRODUCTION_FACTOR = "production-factor"
 
 
-RENEWABLE_PATH = "input/renewables/clusters/{area}/list/{cluster}"
-
-
 class RenewableFormFields(FormFieldsBaseModel):
     """
     Pydantic model representing renewable cluster configuration form fields.
@@ -36,6 +33,9 @@ class RenewableFormFields(FormFieldsBaseModel):
     enabled: Optional[bool] = Field(description="Enable flag")
     nominal_capacity: Optional[float] = Field(description="Nominal capacity (MW)", ge=0)
     # fmt: on
+
+
+RENEWABLE_PATH = "input/renewables/clusters/{area}/list/{cluster}"
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {

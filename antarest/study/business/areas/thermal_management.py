@@ -27,9 +27,6 @@ class LawOption(str, Enum):
     GEOMETRIC = "geometric"
 
 
-THERMAL_PATH = "input/thermal/clusters/{area}/list/{cluster}"
-
-
 class ThermalFormFields(FormFieldsBaseModel):
     group: Optional[StrictStr]
     name: Optional[StrictStr]
@@ -52,6 +49,9 @@ class ThermalFormFields(FormFieldsBaseModel):
     fixed_cost: Optional[int]
     startup_cost: Optional[int]
     market_bid_cost: Optional[int]
+
+
+THERMAL_PATH = "input/thermal/clusters/{area}/list/{cluster}"
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {

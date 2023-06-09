@@ -14,10 +14,13 @@ from pydantic.types import StrictStr, StrictInt, StrictBool
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
-from antarest.study.business.renewable_management import (
+from antarest.study.business.areas.properties_management import (
+    AdequacyPatchMode,
+)
+from antarest.study.business.areas.renewable_management import (
     TimeSeriesInterpretation,
 )
-from antarest.study.business.thermal_management import (
+from antarest.study.business.areas.thermal_management import (
     TimeSeriesGenerationOption,
     LawOption,
 )
@@ -48,12 +51,6 @@ class TableTemplateType(str, Enum):
     CLUSTER = "cluster"
     RENEWABLE = "renewable"
     BINDING_CONSTRAINT = "binding constraint"
-
-
-class AdequacyPatchMode(str, Enum):
-    OUTSIDE = "outside"
-    INSIDE = "inside"
-    VIRTUAL = "virtual"
 
 
 class AssetType(str, Enum):
