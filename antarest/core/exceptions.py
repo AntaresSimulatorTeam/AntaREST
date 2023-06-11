@@ -183,8 +183,8 @@ class AllocationDataNotFound(HTTPException):
         ids = ", ".join(f"'{a}'" for a in area_ids)
         msg = {
             0: "Allocation data is found",
-            1: f"Allocation data for area {area_ids} is not found",
-            2: f"Allocation data for areas {area_ids} is not found",
+            1: f"Allocation data for area {ids} is not found",
+            2: f"Allocation data for areas {ids} is not found",
         }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
@@ -227,7 +227,7 @@ class DistrictAlreadyExist(HTTPException):
 
 class BadEditInstructionException(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class CannotScanInternalWorkspace(HTTPException):

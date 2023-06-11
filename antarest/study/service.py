@@ -11,12 +11,9 @@ from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
-from fastapi import HTTPException, UploadFile
-from markupsafe import escape
-from starlette.responses import FileResponse, Response
-
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    BadEditInstructionException,
     CommandApplicationError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
@@ -80,7 +77,11 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
-from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.matrix_management import (
+    MatrixManager,
+    MatrixUpdateError,
+    MatrixManagerError,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.renewable_management import RenewableManager
@@ -180,6 +181,9 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
+from fastapi import HTTPException, UploadFile
+from markupsafe import escape
+from starlette.responses import FileResponse, Response
 
 logger = logging.getLogger(__name__)
 
@@ -2353,7 +2357,12 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
+        try:
+            self.matrix_manager.update_matrix(
+                study, path, matrix_edit_instruction
+            )
+        except MatrixManagerError as exc:
+            raise BadEditInstructionException(str(exc)) from exc
 
     def check_and_update_all_study_versions_in_database(
         self, params: RequestParameters

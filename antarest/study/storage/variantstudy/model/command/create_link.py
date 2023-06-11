@@ -1,32 +1,31 @@
-from typing import Dict, List, Union, Any, Optional, cast, Tuple
-
-from pydantic import validator, root_validator
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.common.default_values import (
+    FilteringOptions,
+    LinkProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Link,
     FileStudyTreeConfig,
+    Link,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.common.default_values import (
-    LinkProperties,
-    FilteringOptions,
-)
 from antarest.study.storage.variantstudy.business.utils import (
-    validate_matrix,
     strip_matrix_protocol,
+    validate_matrix,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from pydantic import root_validator, validator
 
 
 class LinkAlreadyExistError(Exception):
@@ -50,9 +49,7 @@ class CreateLink(ICommand):
     def validate_series(
         cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
     ) -> Optional[Union[List[List[MatrixData]], str]]:
-        if v is not None:
-            return validate_matrix(v, values)
-        return v
+        return validate_matrix(v, values) if v is not None else v
 
     @root_validator
     def validate_areas(cls, values: Dict[str, Any]) -> Any:
@@ -135,7 +132,7 @@ class CreateLink(ICommand):
                     status=False,
                     message=f"The area '{self.area1}' does not exist",
                 ),
-                dict(),
+                {},
             )
         if self.area2 not in study_data.areas:
             return (
@@ -143,7 +140,7 @@ class CreateLink(ICommand):
                     status=False,
                     message=f"The area '{self.area2}' does not exist",
                 ),
-                dict(),
+                {},
             )
 
         if self.area1 == self.area2:
@@ -152,9 +149,16 @@ class CreateLink(ICommand):
                     status=False,
                     message="Cannot create link between the same node",
                 ),
-                dict(),
+                {},
             )
 
+        # Link parameters between two areas are stored in only one of the two
+        # areas in the "input/links" tree. One area acts as source (`area_from`)
+        # and the other as target (`area_to`).
+        # Parameters are stored in the target area (`area_to`).
+        # The choice as to which area plays the role of source or target is made
+        # arbitrarily by sorting the area IDs in lexicographic order.
+        # The first will be the source and the second will be the target.
         area_from, area_to = sorted([self.area1, self.area2])
         if area_to in study_data.areas[area_from].links:
             return (
@@ -162,7 +166,7 @@ class CreateLink(ICommand):
                     status=False,
                     message=f"The link between {self.area1} and {self.area2} already exist.",
                 ),
-                dict(),
+                {},
             )
 
         self._create_link_in_config(area_from, area_to, study_data)
@@ -175,7 +179,7 @@ class CreateLink(ICommand):
                     status=False,
                     message=f"The link between {self.area1} and {self.area2} already exist",
                 ),
-                dict(),
+                {},
             )
 
         return (
@@ -296,11 +300,11 @@ class CreateLink(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateLink, other)
-        from antarest.study.storage.variantstudy.model.command.update_config import (
-            UpdateConfig,
-        )
         from antarest.study.storage.variantstudy.model.command.replace_matrix import (
             ReplaceMatrix,
+        )
+        from antarest.study.storage.variantstudy.model.command.update_config import (
+            UpdateConfig,
         )
 
         commands: List[ICommand] = []

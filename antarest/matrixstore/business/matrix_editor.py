@@ -1,10 +1,7 @@
 import operator
-from enum import Enum
-from typing import Optional, Any, List, cast, Tuple
+from typing import Any, List, Optional, Tuple, Dict
 
-import numpy as np
-import pandas as pd  # type:ignore
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field, root_validator
 
 
 class MatrixSlice(BaseModel):
@@ -17,51 +14,38 @@ class MatrixSlice(BaseModel):
 
     @validator("row_to", always=True)
     def set_row_to(cls, v: Optional[int], values: Any) -> int:
-        if v is None:
-            return cast(int, values["row_from"])
-        return v
+        return values["row_from"] if v is None else v  # type: ignore
 
     @validator("column_to", always=True)
     def set_column_to(cls, v: Optional[int], values: Any) -> int:
-        if v is None:
-            return cast(int, values["column_from"])
-        return v
+        return values["column_from"] if v is None else v  # type: ignore
 
 
-class Operator(Enum):
-    ADD = "+"
-    SUB = "-"
-    MUL = "*"
-    DIV = "/"
-    ABS = "ABS"
-    EQ = "="
+OPERATIONS = {
+    "+": operator.add,
+    "-": operator.sub,
+    "*": operator.mul,
+    "/": operator.truediv,
+    "ABS": lambda x, y: abs(x),
+    "=": lambda x, y: y,
+}
 
 
 class Operation(BaseModel):
-    operation: Operator
+    operation: str = Field(regex=r"[=/*+-]|ABS")
     value: float
 
+    # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
-        def set_series(x):  # type:ignore
+        if use_coords:
+            return OPERATIONS[self.operation](x, self.value)  # type: ignore
+        if self.operation == "=":
             x.loc[~x.isnull()] = self.value
             return x
+        return OPERATIONS[self.operation](x, self.value)  # type: ignore
 
-        operation_dict = {
-            Operator.ADD: operator.add,
-            Operator.SUB: operator.sub,
-            Operator.MUL: operator.mul,
-            Operator.DIV: operator.truediv,
-            Operator.ABS: lambda x, y: abs(x),
-            Operator.EQ: lambda x, y: set_series(x),  # type:ignore
-        }
-        if not use_coords:
-            operation_dict[Operator.EQ] = lambda x, y: set_series(
-                x
-            )  # type:ignore
-        else:
-            operation_dict[Operator.EQ] = lambda x, y: y
-
-        return operation_dict[self.operation](x, self.value)  # type: ignore
+    def __str__(self) -> str:
+        return f"['{self.operation}' {self.value}]"
 
 
 class MatrixEditInstructionDTO(BaseModel):
@@ -69,35 +53,36 @@ class MatrixEditInstructionDTO(BaseModel):
     coordinates: Optional[List[Tuple[int, int]]] = None
     operation: Operation
 
+    @root_validator(pre=True)
+    def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validates the 'slices' and 'coordinates' fields.
 
-class MatrixEditor:
-    @staticmethod
-    def update_matrix_content_with_slices(
-        matrix_data: pd.DataFrame,
-        slices: List[MatrixSlice],
-        operation: Operation,
-    ) -> pd.DataFrame:
-        mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
+        Args:
+            values: The input values for validation.
 
-        for matrix_slice in slices:
-            mask.loc[
-                matrix_slice.row_from : matrix_slice.row_to,
-                matrix_slice.column_from : matrix_slice.column_to,
-            ] = True
+        Returns:
+            The validated values.
 
-        new_matrix_data = matrix_data.where(mask).apply(operation.compute)
-        new_matrix_data[new_matrix_data.isnull()] = matrix_data
+        Raises:
+            ValueError: If both 'slices' and 'coordinates' are `None`.
+            ValueError: If both 'slices' and 'coordinates' are both defined.
+        """
+        slices = values.get("slices")
+        coordinates = values.get("coordinates")
+        # fmt: off
+        if slices is None and coordinates is None:
+            raise ValueError("At least 'slices' or 'coordinates' must be defined.")
+        if slices is not None and coordinates is not None:
+            raise ValueError("Only 'slices' or 'coordinates' could be defined, but not both.")
+        # fmt: on
+        return values
 
-        return new_matrix_data.astype(matrix_data.dtypes)
-
-    @staticmethod
-    def update_matrix_content_with_coordinates(
-        df: pd.DataFrame,
-        coordinates: List[Tuple[int, int]],
-        operation: Operation,
-    ) -> pd.DataFrame:
-        for row, column in coordinates:
-            df.iat[row, column] = operation.compute(
-                df.iat[row, column], use_coords=True
-            )
-        return df.astype(df.dtypes)
+    def __str__(self) -> str:
+        # fmt: off
+        if self.slices:
+            return f"slices={self.slices}, operation={self.operation}"
+        elif self.coordinates:
+            return f"coordinates={self.coordinates}, operation={self.operation}"
+        # fmt: on
+        raise NotImplementedError

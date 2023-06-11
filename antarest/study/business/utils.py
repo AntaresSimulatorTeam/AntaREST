@@ -33,7 +33,23 @@ def execute_or_add_commands(
             executed_commands.append(command)
         storage_service.variant_study_service.invalidate_cache(study)
         if not is_managed(study):
-            file_study.tree.async_denormalize()
+            # In a previous version, de-normalization was performed asynchronously.
+            # However, this cause problems with concurrent file access,
+            # especially when de-normalizing a matrix (which can take time).
+            #
+            # async_denormalize = threading.Thread(
+            #     name=f"async_denormalize-{study.id}",
+            #     target=file_study.tree.denormalize,
+            # )
+            # async_denormalize.start()
+            #
+            # To avoid this concurrency problem, it would be necessary to implement a
+            # locking system for the entire study using a file lock (since multiple processes,
+            # not only multiple threads, could access the same content simultaneously).
+            #
+            # Currently, we use a synchronous call to address the concurrency problem
+            # within the current process (not across multiple processes)...
+            file_study.tree.denormalize()
     else:
         storage_service.variant_study_service.append_commands(
             study.id,
