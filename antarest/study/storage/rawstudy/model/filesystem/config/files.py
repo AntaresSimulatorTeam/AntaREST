@@ -241,7 +241,13 @@ def parse_simulation_zip(path: Path) -> Simulation:
     ) as output_dir:
         try:
             with zipfile.ZipFile(path) as zf:
-                zf.extract(ini_path, output_dir)
+                try:
+                    zf.extract(ini_path, output_dir)
+                except KeyError:
+                    raise SimulationParsingError(
+                        path,
+                        f"Parameters file '{ini_path}' not found",
+                    ) from None
                 if xpansion_path in zf.namelist():
                     zf.extract(xpansion_path, output_dir)
                 if integrity_path in zf.namelist():
