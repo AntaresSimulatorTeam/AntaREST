@@ -40,24 +40,19 @@ class VariantCommandsExtractor:
         stopwatch = StopWatch()
         study_tree = study.tree
         study_config = study.config
-        study_commands: List[ICommand] = []
-
-        study_commands.append(
+        study_commands: List[ICommand] = [
             self.command_extractor.generate_update_config(
                 study_tree, ["settings", "generaldata"]
-            )
-        )
-        study_commands.append(
+            ),
             self.command_extractor.generate_update_config(
                 study_tree,
                 ["settings", "scenariobuilder"],
-            )
-        )
-        study_commands.append(
+            ),
             self.command_extractor.generate_update_config(
                 study_tree, ["layers", "layers"]
-            )
-        )
+            ),
+        ]
+
         stopwatch.log_elapsed(
             lambda x: logger.info(f"General command extraction done in {x}s")
         )
@@ -73,11 +68,11 @@ class VariantCommandsExtractor:
         study_commands += all_links_commands
 
         # correlations
-        for type in ["load", "wind", "solar", "hydro"]:
+        for cat in ["load", "wind", "solar", "hydro"]:
             study_commands.append(
                 self.command_extractor.generate_update_config(
                     study_tree,
-                    ["input", type, "prepro", "correlation"],
+                    ["input", cat, "prepro", "correlation"],
                 )
             )
 
@@ -164,16 +159,13 @@ class VariantCommandsExtractor:
         )
         logger.info(f"Found {len(added_commands)} added commands")
         logger.info(f"Found {len(modified_commands)} modified commands")
-        index = 0
-        for base_command in base_commands:
-            found = False
-            for variant_command in variant_commands:
-                if base_command.match(variant_command):
-                    found = True
-                    break
+        for index, base_command in enumerate(base_commands):
+            found = any(
+                base_command.match(variant_command)
+                for variant_command in variant_commands
+            )
             if not found:
                 missing_commands.append((base_command, index))
-            index += 1
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Second diff pass done in {x}s")
         )
@@ -181,7 +173,7 @@ class VariantCommandsExtractor:
 
         first_commands: List[Tuple[int, ICommand]] = []
         last_commands: List[Tuple[int, ICommand]] = []
-        logger.info(f"Computing new diff commands")
+        logger.info("Computing new diff commands")
         for command_obj, index in missing_commands:
             logger.info(f"Reverting {command_obj.match_signature()}")
             if command_obj.command_name == CommandName.REMOVE_AREA:

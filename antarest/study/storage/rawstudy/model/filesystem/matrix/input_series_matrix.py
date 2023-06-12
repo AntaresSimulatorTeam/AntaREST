@@ -1,10 +1,8 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, List, Optional, Union, cast
 
 import pandas as pd  # type: ignore
-from pandas.errors import EmptyDataError  # type: ignore
-
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -17,6 +15,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixFrequency,
     MatrixNode,
 )
+from pandas.errors import EmptyDataError  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,8 @@ class InputSeriesMatrix(MatrixNode):
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
-        self.default_empty = default_empty
+        # Ensure that the matrix is a 2D matrix by setting it to [[]] if not provided
+        self.default_empty = default_empty or [[]]
 
     def parse(
         self,
@@ -45,19 +45,21 @@ class InputSeriesMatrix(MatrixNode):
         return_dataframe: bool = False,
     ) -> Union[JSON, pd.DataFrame]:
         file_path = file_path or self.config.path
-        try:
-            # sourcery skip: extract-method
-            stopwatch = StopWatch()
-            if self.get_link_path().exists():
-                link = self.get_link_path().read_text()
-                matrix_json = self.context.resolver.resolve(link)
-                matrix_json = cast(JSON, matrix_json)
-                matrix: pd.DataFrame = pd.DataFrame(
-                    data=matrix_json["data"],
-                    columns=matrix_json["columns"],
-                    index=matrix_json["index"],
-                )
-            else:
+
+        stopwatch = StopWatch()
+
+        link_path = self.get_link_path()
+        if link_path.exists():
+            link = link_path.read_text()
+            matrix_json = self.context.resolver.resolve(link)
+            matrix_json = cast(JSON, matrix_json)
+            matrix: pd.DataFrame = pd.DataFrame(
+                data=matrix_json["data"],
+                columns=matrix_json["columns"],
+                index=matrix_json["index"],
+            )
+        else:
+            try:
                 matrix = pd.read_csv(
                     file_path,
                     sep="\t",
@@ -65,23 +67,28 @@ class InputSeriesMatrix(MatrixNode):
                     header=None,
                     float_precision="legacy",
                 )
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Matrix parsed in {x}s")
-            )
-            matrix.dropna(how="any", axis=1, inplace=True)
-            if return_dataframe:
-                return matrix
+            except (FileNotFoundError, EmptyDataError):
+                # Return an empty matrix if the CSV file is not found or empty.
+                # Save the empty matrix as a CSV file for subsequent user modification.
+                logger.warning(f"Empty file found when parsing {file_path}")
+                df = pd.DataFrame(data=self.default_empty, dtype=float)
+                df.to_csv(file_path, sep="\t", index=False, header=False)
+                if return_dataframe:
+                    return df
+                return {
+                    "data": df.values.tolist(),
+                    "columns": df.columns.tolist(),
+                    "index": df.index.tolist(),
+                }
 
-            data: JSON = matrix.to_dict(orient="split")
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Matrix to dict in {x}s")
-            )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
+        matrix.dropna(how="any", axis=1, inplace=True)
+        if return_dataframe:
+            return matrix
 
-            return data
-        except EmptyDataError:
-            logger.warning(f"Empty file found when parsing {file_path}")
-            default = self._format_default_matrix()
-            return pd.DataFrame(default) if return_dataframe else default
+        data: JSON = matrix.to_dict(orient="split")
+        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+        return data
 
     def check_errors(
         self,
@@ -101,17 +108,3 @@ class InputSeriesMatrix(MatrixNode):
                 f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
             )
         return errors
-
-    def _format_default_matrix(self) -> Dict[str, Any]:
-        if self.default_empty:
-            index_count = len(self.default_empty)
-            if index_count > 0:
-                column_count = len(self.default_empty[0])
-                if column_count > 0:
-                    logger.info("Using preset default matrix")
-                    return {
-                        "index": list(range(index_count)),
-                        "columns": list(range(column_count)),
-                        "data": self.default_empty,
-                    }
-        return {}

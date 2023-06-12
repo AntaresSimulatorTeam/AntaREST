@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import logging
 import os
@@ -9,8 +10,10 @@ from time import time
 from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
 
+import numpy as np
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    BadEditInstructionException,
     CommandApplicationError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
@@ -52,7 +55,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.business.matrix_editor import (
     MatrixEditInstructionDTO,
 )
-from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchManager,
 )
@@ -75,7 +77,11 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
-from antarest.study.business.matrix_management import MatrixManager
+from antarest.study.business.matrix_management import (
+    MatrixManager,
+    MatrixUpdateError,
+    MatrixManagerError,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.renewable_management import RenewableManager
@@ -1580,32 +1586,43 @@ class StudyService:
         Returns: ICommand that replaces the data
 
         """
+        # fmt: off
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        # fmt: on
         if isinstance(tree_node, IniFileNode):
             return UpdateConfig(
                 target=url,
                 data=data,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                command_context=context,
             )
         elif isinstance(tree_node, InputSeriesMatrix):
+            if isinstance(data, bytes):
+                # noinspection PyTypeChecker
+                matrix = np.loadtxt(
+                    io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2
+                )
+                return ReplaceMatrix(
+                    target=url,
+                    matrix=matrix.tolist(),
+                    command_context=context,
+                )
             return ReplaceMatrix(
                 target=url,
-                matrix=parse_tsv_matrix(data)
-                if isinstance(data, bytes)
-                else data,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                matrix=data,
+                command_context=context,
             )
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 return UpdateComments(
                     target=url,
                     comments=data,
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=context,
                 )
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
                     b64Data=base64.b64encode(data).decode("utf-8"),
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=context,
                 )
         raise NotImplementedError()
 
@@ -2340,7 +2357,12 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
+        try:
+            self.matrix_manager.update_matrix(
+                study, path, matrix_edit_instruction
+            )
+        except MatrixManagerError as exc:
+            raise BadEditInstructionException(str(exc)) from exc
 
     def check_and_update_all_study_versions_in_database(
         self, params: RequestParameters

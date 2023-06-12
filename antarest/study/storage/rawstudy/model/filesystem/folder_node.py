@@ -28,10 +28,17 @@ class ChildNotFoundError(HTTPException):
 
 
 class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
+    # noinspection SpellCheckingInspection
     """
-    Hub node which forward request deeper in tree according to url. Or expand request according to depth.
-    Its children is set node by node following antares tree structure.
-    Structure is implemented in antarest.study.repository.filesystem.root
+    A node in the Antares tree structure that represents a folder in a filesystem.
+
+    This class is responsible for forwarding requests deeper in the tree according
+    to the provided URL, or expanding requests according to the depth of the folder
+    structure. It is a hub node that can have child nodes added to it as required
+    to build out the tree.
+
+    The Antares tree structure is implemented in the
+    `antarest.study.storage.rawstudy.model.filesystem` module.
     """
 
     def __init__(
@@ -96,7 +103,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             return {}
         return {
             name: node.get(depth=depth - 1, expanded=True, formatted=formatted)
-            if depth - 1 != 0
+            if depth != 1
             else {}
             for name, node in children.items()
         }
@@ -141,12 +148,10 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     ) -> None:
         self._assert_not_in_zipped_file()
         children = self.build()
-        url = url or []
-
         if not self.config.path.exists():
             self.config.path.mkdir()
 
-        if url:
+        if url := url or []:
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
@@ -175,7 +180,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             (name,), sub_url = self.extract_child(children, url)
             return children[name].check_errors(data, sub_url, raising)
         else:
-            errors: List[str] = list()
+            errors: List[str] = []
             for key in data:
                 if key not in children:
                     msg = f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
@@ -216,13 +221,13 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
         if names[0] not in children:
             raise ChildNotFoundError(
-                f"{names[0]} not a child of {self.__class__.__name__}"
+                f"'{names[0]}' not a child of {self.__class__.__name__}"
             )
         child_class = type(children[names[0]])
         for name in names:
             if name not in children:
                 raise ChildNotFoundError(
-                    f"{name} not a child of {self.__class__.__name__}"
+                    f"'{name}' not a child of {self.__class__.__name__}"
                 )
             if type(children[name]) != child_class:
                 raise FilterError("Filter selection has different classes")

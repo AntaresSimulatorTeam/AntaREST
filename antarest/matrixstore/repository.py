@@ -1,20 +1,20 @@
-import csv
 import hashlib
-import json
 import logging
-from typing import List, Optional, cast
+from pathlib import Path
+from typing import List, Optional, Union
 
-from sqlalchemy import exists, and_  # type: ignore
+import numpy as np
+from filelock import FileLock
+from numpy import typing as npt
+from sqlalchemy import and_, exists  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
 
-from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,
-    MatrixDataSet,
     MatrixData,
+    MatrixDataSet,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class MatrixDataSetRepository:
     """
 
     def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
-        res = db.session.query(
+        res: bool = db.session.query(
             exists().where(MatrixDataSet.id == matrix_user_metadata.id)
         ).scalar()
         if res:
@@ -56,8 +56,9 @@ class MatrixDataSetRepository:
         owner: Optional[int] = None,
     ) -> List[MatrixDataSet]:
         """
-        Query a list of MatrixUserMetadata by searching for each one separatly if a set of filter match
-        Args:
+        Query a list of MatrixUserMetadata by searching for each one separately if a set of filter match
+
+        Parameters:
             name: the partial name of dataset
             owner: owner id to filter the result with
 
@@ -84,8 +85,7 @@ class MatrixRepository:
     """
 
     def save(self, matrix: Matrix) -> Matrix:
-        res = db.session.query(exists().where(Matrix.id == matrix.id)).scalar()
-        if res:
+        if db.session.query(exists().where(Matrix.id == matrix.id)).scalar():
             db.session.merge(matrix)
         else:
             db.session.add(matrix)
@@ -94,87 +94,149 @@ class MatrixRepository:
         logger.debug(f"Matrix {matrix.id} saved")
         return matrix
 
-    def get(self, id: str) -> Optional[Matrix]:
-        matrix: Matrix = db.session.query(Matrix).get(id)
+    def get(self, matrix_hash: str) -> Optional[Matrix]:
+        matrix: Matrix = db.session.query(Matrix).get(matrix_hash)
         return matrix
 
-    def exists(self, id: str) -> bool:
-        res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
+    def exists(self, matrix_hash: str) -> bool:
+        res: bool = db.session.query(
+            exists().where(Matrix.id == matrix_hash)
+        ).scalar()
         return res
 
-    def delete(self, id: str) -> None:
-        g = db.session.query(Matrix).get(id)
-        if g:
+    def delete(self, matrix_hash: str) -> None:
+        if g := db.session.query(Matrix).get(matrix_hash):
             db.session.delete(g)
             db.session.commit()
         else:
             logger.warning(
-                f"Trying to delete matrix {id}, but was not found in database!"
+                f"Trying to delete matrix {matrix_hash}, but was not found in database!"
             )
-        logger.debug(f"Matrix {id} deleted")
+        logger.debug(f"Matrix {matrix_hash} deleted")
 
 
 class MatrixContentRepository:
-    def __init__(self, config: Config) -> None:
-        self.bucket = config.storage.matrixstore
-        self.bucket.mkdir(parents=True, exist_ok=True)
+    """
+    Manage the content of matrices stored in a directory.
 
-    @staticmethod
-    def initialize_matrix_content(matrix_content: MatrixContent) -> None:
-        if matrix_content.index is None:
-            matrix_content.index = list(range(0, len(matrix_content.data)))
-        else:
-            assert_this(len(matrix_content.index) == len(matrix_content.data))
-        if matrix_content.columns is None:
-            if len(matrix_content.data) > 0:
-                matrix_content.columns = list(
-                    range(0, len(matrix_content.data[0]))
-                )
-            else:
-                matrix_content.columns = []
-        else:
-            if len(matrix_content.data) > 0:
-                assert_this(
-                    len(matrix_content.columns) == len(matrix_content.data[0])
-                )
-            else:
-                assert_this(len(matrix_content.columns) == 0)
+    This class provides methods to get, check existence,
+    save, and delete the content of matrices stored in a directory.
+    The matrices are stored as tab-separated values (TSV) files and
+    are accessed and modified using their SHA256 hash as their unique identifier.
 
-    @staticmethod
-    def _compute_hash(data: str) -> str:
-        return hashlib.sha256(data.encode()).hexdigest()
+    Attributes:
+        bucket_dir: The directory path where the matrices are stored.
+    """
 
-    def _write_matrix_data(self, h: str, data: List[List[MatrixData]]) -> None:
-        file_path = self.bucket / f"{h}.tsv"
-        with open(file_path, "w", newline="") as fd:
-            tsv_output = csv.writer(fd, delimiter="\t")
-            tsv_output.writerows(data)
+    def __init__(self, bucket_dir: Path) -> None:
+        self.bucket_dir = bucket_dir
+        self.bucket_dir.mkdir(parents=True, exist_ok=True)
 
-    def get(self, id: str) -> Optional[MatrixContent]:
-        file = self.bucket / f"{id}.tsv"
-        if not file.exists():
-            return None
+    def get(self, matrix_hash: str) -> MatrixContent:
+        """
+        Retrieves the content of a matrix with a given SHA256 hash.
 
-        tsv_data = csv.reader(open(file, newline=""), delimiter="\t")
-        data = [[MatrixData(s) for s in l] for l in list(tsv_data)]
-        matrix_content = MatrixContent(data=data)
-        self.initialize_matrix_content(matrix_content)
+        Parameters:
+            matrix_hash: SHA256 hash
 
-        return matrix_content
+        Returns:
+            The matrix content or `None` if the file is not found.
+        """
+        # fmt: off
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+        data = matrix.tolist()
+        index = list(range(matrix.shape[0]))
+        columns = list(range(matrix.shape[1]))
+        return MatrixContent.construct(data=data, columns=columns, index=index)
+        # fmt: on
 
-    def exists(self, id: str) -> bool:
-        file = self.bucket / f"{id}.tsv"
-        return file.exists()
+    def exists(self, matrix_hash: str) -> bool:
+        """
+        Checks if a matrix with a given SHA256 hash exists in the directory.
 
-    def save(self, content: List[List[MatrixData]]) -> str:
-        stringify = json.dumps(content)
-        h = MatrixContentRepository._compute_hash(stringify)
+        Parameters:
+            matrix_hash: SHA256 hash
 
-        if not (self.bucket / f"{h}.tsv").exists():
-            self._write_matrix_data(h, content)
-        return h
+        Returns:
+            `True` if the matrix exist else `None`.
+        """
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        return matrix_file.exists()
 
-    def delete(self, id: str) -> None:
-        matrix_file = self.bucket / f"{id}.tsv"
-        if matrix_file.exists():
-            matrix_file.unlink()
+    def save(
+        self, content: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
+    ) -> str:
+        """
+        Saves the content of a matrix as a TSV file in the bucket directory
+        and returns its SHA256 hash.
+
+        The matrix content will be saved in a TSV file format, where each row represents
+        a line in the file and the values are separated by tabs. The file will be saved
+        in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
+        is returned as a string.
+
+        Parameters:
+            content:
+                The matrix content to be saved. It can be either a nested list of floats
+                or a NumPy array of type np.float64.
+
+        Returns:
+            The SHA256 hash of the saved TSV file.
+
+        Raises:
+            ValueError:
+                If the provided content is not a valid matrix or cannot be saved.
+        """
+        # IMPLEMENTATION DETAIL:
+        # We chose to calculate the hash value from the binary data of the array buffer,
+        # as this is much more efficient than using a JSON string conversion.
+        # Note that in both cases, the hash value calculation is not stable:
+        # 1. The same floating point number can have several possible representations
+        #    depending on the platform on which the calculations are performed,
+        # 2. The JSON conversion, necessarily involves a textual representation
+        #    of the floating point numbers which can introduce rounding errors.
+        # However, this method is still a good approach to calculate a hash value
+        # for a non-mutable NumPy Array.
+        matrix = (
+            content
+            if isinstance(content, np.ndarray)
+            else np.array(content, dtype=np.float64)
+        )
+        matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        # Avoid having to save the matrix again (that's the whole point of using a hash).
+        if not matrix_file.exists():
+            # Ensure exclusive access to the matrix file between multiple processes (or threads).
+            lock_file = matrix_file.with_suffix(".tsv.lock")
+            with FileLock(lock_file, timeout=15):
+                # noinspection PyTypeChecker
+                np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
+
+            # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+            # See https://github.com/tox-dev/py-filelock/issues/31
+            # However, this deletion is possible when the matrix is no longer in use.
+            # This is done in `MatrixGarbageCollector` when matrix files are deleted.
+
+        return matrix_hash
+
+    def delete(self, matrix_hash: str) -> None:
+        """
+        Deletes the TSV file containing the content of a matrix with the given SHA256 hash.
+
+        Parameters:
+            matrix_hash: The SHA256 hash of the matrix.
+
+        Raises:
+            FileNotFoundError: If the TSV file does not exist.
+
+        Note:
+            This method also deletes any abandoned lock file.
+        """
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file.unlink()
+
+        # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+        # Abandoned lock files are deleted here to maintain consistent behavior.
+        lock_file = matrix_file.with_suffix(".tsv.lock")
+        lock_file.unlink(missing_ok=True)

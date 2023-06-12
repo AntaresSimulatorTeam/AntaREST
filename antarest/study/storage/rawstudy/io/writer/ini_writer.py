@@ -1,7 +1,7 @@
 import ast
 from configparser import RawConfigParser
 from pathlib import Path
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
@@ -12,6 +12,7 @@ class IniConfigParser(RawConfigParser):
         super().__init__()
         self.special_keys = special_keys
 
+    # noinspection SpellCheckingInspection
     def optionxform(self, optionstr: str) -> str:
         return optionstr
 
@@ -40,7 +41,7 @@ class IniConfigParser(RawConfigParser):
             value = delimiter + str(value).replace("\n", "\n\t")
         else:
             value = ""
-        fp.write("{}{}\n".format(key, value))
+        fp.write(f"{key}{value}\n")
 
     def _write_section(  # type:ignore
         self,
@@ -49,8 +50,8 @@ class IniConfigParser(RawConfigParser):
         section_items,
         delimiter,
     ) -> None:
-        """Write a single section to the specified `fp'."""
-        fp.write("[{}]\n".format(section_name))
+        """Write a single section to the specified `fp`."""
+        fp.write(f"[{section_name}]\n")
         for key, value in section_items:
             if (
                 self.special_keys
@@ -68,7 +69,7 @@ class IniConfigParser(RawConfigParser):
 
 class IniWriter:
     """
-    Standard .ini writer
+    Standard INI writer.
     """
 
     def __init__(self, special_keys: Optional[List[str]] = None):
@@ -76,26 +77,30 @@ class IniWriter:
 
     def write(self, data: JSON, path: Path) -> None:
         """
-        Write .ini file fro json content
+        Write `.ini` file from JSON content
+
         Args:
-            data: json content
-            path: .ini file
-
-        Returns:
-
+            data: JSON content.
+            path: path to `.ini` file.
         """
         config_parser = IniConfigParser(special_keys=self.special_keys)
         config_parser.read_dict(data)
-        config_parser.write(path.open("w"))
+        with path.open("w") as fp:
+            config_parser.write(fp)
 
 
 class SimpleKeyValueWriter(IniWriter):
+    """
+    Simple key/value INI writer.
+    """
+
     def write(self, data: JSON, path: Path) -> None:
         """
-        Write .ini file from json content
+        Write `.ini` file from JSON content
+
         Args:
-            data: json content
-            path: .ini file
+            data: JSON content.
+            path: path to `.ini` file.
         """
         with path.open("w") as fp:
             for key, value in data.items():

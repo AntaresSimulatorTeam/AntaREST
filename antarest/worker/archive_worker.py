@@ -9,7 +9,6 @@ from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.utils import unzip, StopWatch
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,6 +19,14 @@ class ArchiveTaskArgs(BaseModel):
 
 
 class ArchiveWorker(AbstractWorker):
+    """
+    The Antares archive worker is a task that runs in the background$
+    to automatically unarchive simulation results.
+
+    The worker is notified by the web application via EventBus to initiate
+    asynchronous unarchiving of the results.
+    """
+
     TASK_TYPE = "unarchive"
 
     def __init__(
@@ -38,7 +45,7 @@ class ArchiveWorker(AbstractWorker):
             [f"{ArchiveWorker.TASK_TYPE}_{workspace}"],
         )
 
-    def execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
+    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         logger.info(f"Executing task {task_info.json()}")
         try:
             # sourcery skip: extract-method
@@ -54,7 +61,7 @@ class ArchiveWorker(AbstractWorker):
             )
             stopwatch.log_elapsed(
                 lambda t: logger.info(
-                    f"Successfuly extracted {src} into {dest} in {t}s"
+                    f"Successfully extracted {src} into {dest} in {t}s"
                 )
             )
             return TaskResult(success=True, message="")

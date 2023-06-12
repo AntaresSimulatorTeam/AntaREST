@@ -159,7 +159,7 @@ class OutputSeriesMatrix(
             return self.parse(file_path, tmp_dir)
         except FileNotFoundError as e:
             raise ChildNotFoundError(
-                f"Output file {self.config.path.name} not found in study {self.config.study_id}"
+                f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
             ) from e
 
     def dump(

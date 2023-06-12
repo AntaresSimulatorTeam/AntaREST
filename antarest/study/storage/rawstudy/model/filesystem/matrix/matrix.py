@@ -54,6 +54,17 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         return f"matrixfile://{self.config.path.name}"
 
     def normalize(self) -> None:
+        # noinspection SpellCheckingInspection
+        """
+        Normalize the matrix by creating a link to the normalized version.
+        The original matrix is then deleted.
+
+        Skips the normalization process if the link path already exists
+        or the matrix is zipped.
+
+        Raises:
+            DenormalizationException: if the original matrix retrieval fails.
+        """
         if self.get_link_path().exists() or self.config.zip_path:
             return
 
@@ -67,9 +78,15 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.config.path.unlink()
 
     def denormalize(self) -> None:
+        """
+        Read the matrix ID from the matrix link, retrieve the original matrix
+        and write the matrix data to the file specified by `self.config.path`
+        before removing the link file.
+        """
         if self.config.path.exists() or not self.get_link_path().exists():
             return
 
+        # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
         matrix = self.context.resolver.resolve(uuid)
