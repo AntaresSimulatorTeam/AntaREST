@@ -1381,10 +1381,85 @@ def test_area_management(app: FastAPI):
         "profit": True,
     }
 
+    # Properties form
+
+    res_properties_config = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_properties_config_json = res_properties_config.json()
+    res_properties_config_json["filterSynthesis"] = set(
+        res_properties_config_json["filterSynthesis"]
+    )
+    res_properties_config_json["filterByYear"] = set(
+        res_properties_config_json["filterByYear"]
+    )
+    assert res_properties_config_json == {
+        "color": "230,108,44",
+        "posX": 0.0,
+        "posY": 0.0,
+        "energyCostUnsupplied": 0.0,
+        "energyCostSpilled": 0.0,
+        "nonDispatchPower": True,
+        "dispatchHydroPower": True,
+        "otherDispatchPower": True,
+        "filterSynthesis": {"hourly", "daily", "weekly", "monthly", "annual"},
+        "filterByYear": {"hourly", "daily", "weekly", "monthly", "annual"},
+        "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+    }
+
+    client.put(
+        f"/v1/studies/{study_id}/areas/area 1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "color": "123,108,96",
+            "posX": 3.4,
+            "posY": 9.0,
+            "energyCostUnsupplied": 2.0,
+            "energyCostSpilled": 4.0,
+            "nonDispatchPower": False,
+            "dispatchHydroPower": False,
+            "otherDispatchPower": False,
+            "filterSynthesis": ["monthly", "annual"],
+            "filterByYear": ["hourly", "daily", "annual"],
+            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+        },
+    )
+    res_properties_config = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/properties/form",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_properties_config_json = res_properties_config.json()
+    res_properties_config_json["filterSynthesis"] = set(
+        res_properties_config_json["filterSynthesis"]
+    )
+    res_properties_config_json["filterByYear"] = set(
+        res_properties_config_json["filterByYear"]
+    )
+    assert res_properties_config_json == {
+        "color": "123,108,96",
+        "posX": 3.4,
+        "posY": 9.0,
+        "energyCostUnsupplied": 2.0,
+        "energyCostSpilled": 4.0,
+        "nonDispatchPower": False,
+        "dispatchHydroPower": False,
+        "otherDispatchPower": False,
+        "filterSynthesis": {"monthly", "annual"},
+        "filterByYear": {"hourly", "daily", "annual"},
+        "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+    }
+
     # Hydro form
 
     res_hydro_config = client.put(
-        f"/v1/studies/{study_id}/areas/area1/hydro/form",
+        f"/v1/studies/{study_id}/areas/area 1/hydro/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1398,7 +1473,7 @@ def test_area_management(app: FastAPI):
     assert res_hydro_config.status_code == 200
 
     res_hydro_config = client.get(
-        f"/v1/studies/{study_id}/areas/area1/hydro/form",
+        f"/v1/studies/{study_id}/areas/area 1/hydro/form",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -1552,28 +1627,28 @@ def test_area_management(app: FastAPI):
     res_table_data_json = res_table_data.json()
     assert res_table_data_json == {
         "area 1": {
-            "nonDispatchablePower": True,
-            "dispatchableHydroPower": True,
-            "otherDispatchablePower": True,
+            "nonDispatchablePower": False,
+            "dispatchableHydroPower": False,
+            "otherDispatchablePower": False,
+            "averageUnsuppliedEnergyCost": 2.0,
             "spreadUnsuppliedEnergyCost": 0.0,
+            "averageSpilledEnergyCost": 4.0,
             "spreadSpilledEnergyCost": 0.0,
-            "averageUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 0.0,
-            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": "outside",
+            "filterSynthesis": "monthly, annual",
+            "filterYearByYear": "hourly, daily, annual",
+            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
         },
         "area 2": {
             "nonDispatchablePower": True,
             "dispatchableHydroPower": True,
             "otherDispatchablePower": True,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "spreadSpilledEnergyCost": 0.0,
             "averageUnsuppliedEnergyCost": 0.0,
+            "spreadUnsuppliedEnergyCost": 0.0,
             "averageSpilledEnergyCost": 0.0,
+            "spreadSpilledEnergyCost": 0.0,
             "filterSynthesis": "hourly, daily, weekly, monthly, annual",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": "outside",
+            "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
         },
     }
 
@@ -1587,12 +1662,13 @@ def test_area_management(app: FastAPI):
         },
         json={
             "area 1": {
-                "nonDispatchablePower": False,
+                "nonDispatchablePower": True,
                 "spreadSpilledEnergyCost": 1.1,
                 "filterYearByYear": "monthly, annual",
+                "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
             },
             "area 2": {
-                "nonDispatchablePower": True,
+                "nonDispatchablePower": False,
                 "spreadSpilledEnergyCost": 3.0,
                 "filterSynthesis": "hourly",
                 "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
@@ -1614,28 +1690,28 @@ def test_area_management(app: FastAPI):
     res_table_data_json = res_table_data.json()
     assert res_table_data_json == {
         "area 1": {
+            "nonDispatchablePower": True,
+            "dispatchableHydroPower": False,
+            "otherDispatchablePower": False,
+            "averageUnsuppliedEnergyCost": 2.0,
+            "spreadUnsuppliedEnergyCost": 0.0,
+            "averageSpilledEnergyCost": 4.0,
+            "spreadSpilledEnergyCost": 1.1,
+            "filterSynthesis": "monthly, annual",
+            "filterYearByYear": "monthly, annual",
+            "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+        },
+        "area 2": {
             "nonDispatchablePower": False,
             "dispatchableHydroPower": True,
             "otherDispatchablePower": True,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "spreadSpilledEnergyCost": 1.1,
             "averageUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 0.0,
-            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-            "filterYearByYear": "monthly, annual",
-            "adequacyPatchMode": "outside",
-        },
-        "area 2": {
-            "nonDispatchablePower": True,
-            "dispatchableHydroPower": True,
-            "otherDispatchablePower": True,
             "spreadUnsuppliedEnergyCost": 0.0,
+            "averageSpilledEnergyCost": 0.0,
             "spreadSpilledEnergyCost": 3.0,
-            "averageUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 0.0,
             "filterSynthesis": "hourly",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": "outside",
+            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
         },
     }
 
