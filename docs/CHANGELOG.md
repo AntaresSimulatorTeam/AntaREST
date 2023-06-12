@@ -1,6 +1,28 @@
 Antares Web Changelog
 =====================
 
+v2.14.2 (2023-06-12)
+--------------------
+
+### Bug Fixes
+
+*  **renewable:** fixing issue with missing display of renewable cluster form (#1545) ([03c7628](https://github.com/AntaresSimulatorTeam/AntaREST/commit/03c76280a88373ace47121bd44a2fe529bcd7343))
+*  **worker:** archive worker must be kept alive for processing (#1567) ([34e1675](https://github.com/AntaresSimulatorTeam/AntaREST/commit/34e1675737d5af390f4be97b47898ad1e60a7b51))
+*  **build:** fix pyinstaller build (#1566) ([2c7b899](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c7b89936afb0ebc03d79f9505daa901c1a8a003))
+*  **desktop:** correct date parsing in localized environment (#1568) ([1d9177a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d9177af66e68983a8db3ca3858449605b24d9f9))
+*  **matrix:** check invalid params and empty matrix in matrix update (#1572) ([f80aa6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f80aa6b2178192660d55370977f1495ed1e72f00))
+
+
+### Features
+
+*  **matrix:** improve matrix read/write using NumPy (#1562) ([2784828](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2784828b7f10ff53d2f59ca594525243d97aaa6a))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>
+
+
 v2.14.1 (2023-05-15)
 --------------------
 
