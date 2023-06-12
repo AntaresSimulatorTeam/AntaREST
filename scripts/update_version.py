@@ -126,7 +126,7 @@ def main() -> None:
         help=f"new release date, using the format '{date_type.regex.pattern}'",
         metavar="ISO_DATE",
     )
-    version_type = RegexType(regex = r"\d+(?:\.\d+)+")
+    version_type = RegexType(regex=r"\d+(?:\.\d+)+")
     parser.add_argument(
         "new_version",
         type=version_type,
