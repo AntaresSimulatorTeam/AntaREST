@@ -235,9 +235,9 @@ class ThermalManager:
         def get_value(field_info: FieldInfo) -> Any:
             target_name = PurePosixPath(field_info["path"]).name
             study_ver = file_study.config.version
-            start_ver = cast(int, field_info.get("start_version", -1))
-            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
-            is_in_version = start_ver <= study_ver < end_ver
+            start_ver = cast(int, field_info.get("start_version", 0))
+            end_ver = cast(int, field_info.get("end_version", study_ver))
+            is_in_version = start_ver <= study_ver <= end_ver
 
             return (
                 thermal_config.get(target_name, field_info["default_value"])
