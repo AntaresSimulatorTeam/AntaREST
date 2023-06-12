@@ -1,12 +1,10 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List, cast
-
-from pydantic import StrictBool, conint, PositiveInt, root_validator
+from typing import Any, Dict, List, Optional, cast
 
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    FieldInfo,
     GENERAL_DATA_PATH,
+    FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study
@@ -18,6 +16,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
+from pydantic import PositiveInt, StrictBool, conint, root_validator
 
 
 class Mode(str, Enum):
@@ -217,10 +216,10 @@ class GeneralManager:
 
             path = field_info["path"]
             study_ver = file_study.config.version
-            start_ver = cast(int, field_info.get("start_version", -1))
-            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
+            start_ver = cast(int, field_info.get("start_version", 0))
+            end_ver = cast(int, field_info.get("end_version", study_ver))
             target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver < end_ver
+            is_in_version = start_ver <= study_ver <= end_ver
             parent = general if GENERAL_PATH in path else output
 
             return (

@@ -1,12 +1,10 @@
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Optional, Dict, Any, List
-
-from pydantic import StrictStr, StrictBool
+from typing import Any, Dict, List, Optional, cast
 
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
     FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study
@@ -14,6 +12,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from pydantic import StrictBool, StrictStr
 
 
 class TimeSeriesGenerationOption(str, Enum):
@@ -160,7 +159,16 @@ class ThermalManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             target_name = PurePosixPath(field_info["path"]).name
-            return thermal_config.get(target_name, field_info["default_value"])
+            study_ver = file_study.config.version
+            start_ver = cast(int, field_info.get("start_version", 0))
+            end_ver = cast(int, field_info.get("end_version", study_ver))
+            is_in_version = start_ver <= study_ver <= end_ver
+
+            return (
+                thermal_config.get(target_name, field_info["default_value"])
+                if is_in_version
+                else None
+            )
 
         return ThermalFormFields.construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}
