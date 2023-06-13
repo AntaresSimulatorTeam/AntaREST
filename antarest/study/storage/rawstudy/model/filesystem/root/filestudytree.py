@@ -61,18 +61,3 @@ class FileStudyTree(FolderNode):
             children["output"] = Output(self.context, output_config)
 
         return children
-
-    def async_denormalize(self) -> Thread:
-        logger.info(
-            f"Denormalizing (async) study data for study {self.config.study_id}"
-        )
-        thread = Thread(
-            target=self._threaded_denormalize,
-            name=f"{self.__class__.__name__}-Denormalizer",
-        )
-        thread.start()
-        return thread
-
-    def _threaded_denormalize(self) -> None:
-        with db():
-            self.denormalize()

@@ -265,6 +265,31 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
+MONTHS = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+
+DAY_NAMES = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+)
+
 
 def get_start_date(
     file_study: FileStudy,
@@ -273,6 +298,7 @@ def get_start_date(
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
+
     Args:
         file_study: Study data
         output_id: id of the output, if None, then it's the start date of the input matrices
@@ -287,28 +313,27 @@ def get_start_date(
     start_offset = cast(int, config.get("simulation.start"))
     end = cast(int, config.get("simulation.end"))
 
-    starting_month_index = strptime(starting_month, "%B").tm_mon
+    starting_month_index = MONTHS.index(starting_month.title()) + 1
+    starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2000
     while True:
         if leapyear == calendar.isleap(target_year):
             first_day = datetime(target_year, starting_month_index, 1)
-            if first_day.strftime("%A") == starting_day:
+            if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
 
-    start_offset_days = (
-        timedelta(days=start_offset - 1)
-        if output_id is not None
-        else timedelta(days=0)
+    start_offset_days = timedelta(
+        days=(0 if output_id is None else start_offset - 1)
     )
     start_date = (
         datetime(target_year, starting_month_index, 1) + start_offset_days
     )
     # base case is DAILY
     steps = (
-        end - start_offset + 1
-        if output_id is not None
-        else MATRIX_INPUT_DAYS_COUNT
+        MATRIX_INPUT_DAYS_COUNT
+        if output_id is None
+        else end - start_offset + 1
     )
     if level == StudyDownloadLevelDTO.HOURLY:
         steps = steps * 24
@@ -324,13 +349,12 @@ def get_start_date(
         else:
             steps = (13 - start_date.month) + end_date.month
 
+    first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
-    while True:
-        if (start_date + timedelta(days=first_week_offset)).strftime(
-            "%A"
-        ) == first_week_day:
+    for first_week_offset in range(7):
+        first_day = start_date + timedelta(days=first_week_offset)
+        if first_day.weekday() == first_week_day_index:
             break
-        first_week_offset += 1
     first_week_size = first_week_offset if first_week_offset != 0 else 7
 
     return MatrixIndex.construct(

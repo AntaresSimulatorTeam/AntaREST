@@ -2,18 +2,17 @@ from typing import List, Tuple
 
 import pandas as pd
 import pytest
-
-from antarest.matrixstore.business.matrix_editor import (
-    Operation,
-    MatrixSlice,
-    MatrixEditor,
-)
+from antarest.matrixstore.business.matrix_editor import MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.matrix_management import (
+    update_matrix_content_with_coordinates,
+    update_matrix_content_with_slices,
+)
 
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "slices,operation,expected_result",
+    "slices, operation, expected_result",
     [
         (
             [
@@ -96,14 +95,14 @@ from antarest.matrixstore.model import MatrixData
         ),
     ],
 )
-def test_matrix_editor_with_slices(
+def test_update_matrix_content_with_slices(
     slices: List[MatrixSlice],
     operation: Operation,
     expected_result: List[List[MatrixData]],
 ):
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
-    output_matrix = MatrixEditor.update_matrix_content_with_slices(
+    output_matrix = update_matrix_content_with_slices(
         matrix_data=matrix_data, slices=slices, operation=operation
     )
 
@@ -114,7 +113,7 @@ def test_matrix_editor_with_slices(
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "coords,operation,expected_result",
+    "coords, operation, expected_result",
     [
         (
             [
@@ -202,14 +201,14 @@ def test_matrix_editor_with_slices(
         ),
     ],
 )
-def test_matrix_editor_with_coords(
+def test_update_matrix_content_with_coordinates(
     coords: List[Tuple[int, int]],
     operation: Operation,
     expected_result: List[List[MatrixData]],
 ):
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
-    output_matrix = MatrixEditor.update_matrix_content_with_coordinates(
+    output_matrix = update_matrix_content_with_coordinates(
         df=matrix_data, coordinates=coords, operation=operation
     )
 

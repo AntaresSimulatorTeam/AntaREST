@@ -9,8 +9,6 @@ from zipfile import ZipFile
 
 import numpy as np
 import requests
-from requests import Session
-
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
@@ -41,6 +39,7 @@ from antarest.study.storage.variantstudy.variant_command_extractor import (
 from antarest.study.storage.variantstudy.variant_command_generator import (
     VariantCommandGenerator,
 )
+from requests import Session
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
