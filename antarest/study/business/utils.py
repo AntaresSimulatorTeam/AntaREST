@@ -1,4 +1,4 @@
-from typing import List, Sequence, TypedDict, Any, Optional
+from typing import List, Sequence, TypedDict, Any, Optional, Callable
 
 from pydantic import BaseModel, Extra
 
@@ -57,3 +57,9 @@ class FieldInfo(TypedDict, total=False):
     default_value: Any
     start_version: Optional[int]
     end_version: Optional[int]
+    # Workaround to replace Pydantic's computed values which are ignored by FastAPI.
+    # TODO: check @computed_field available in Pydantic v2 to remove it
+    # (value) -> encoded_value
+    encode: Optional[Callable[[Any], Any]]
+    # (encoded_value, current_value) -> decoded_value
+    decode: Optional[Callable[[Any, Optional[Any]], Any]]
