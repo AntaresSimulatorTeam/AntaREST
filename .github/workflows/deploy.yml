@@ -63,7 +63,7 @@ jobs:
       - name: 🔧 Generate Antares Desktop for Ubuntu
         if: matrix.os == 'ubuntu-20.04'
         run: |
-          git log -1 HEAD --format=%H > .\resources\commit_id
+          git log -1 HEAD --format=%H > ./resources/commit_id
           pyinstaller --distpath dist/package AntaresWebLinux.spec
 
       - name: 🔧 Generate Antares Worker for Windows
@@ -75,7 +75,7 @@ jobs:
       - name: 🔧 Generate Antares Worker for Ubuntu
         if: matrix.os == 'ubuntu-20.04'
         run: |
-          git log -1 HEAD --format=%H > .\resources\commit_id
+          git log -1 HEAD --format=%H > ./resources/commit_id
           pyinstaller --distpath dist/package -F antarest/worker/archive_worker_service.py -n AntaresWebWorker --add-data resources:resources --hidden-import 'pythonjsonlogger.jsonlogger'
 
       - name: 📦 Packaging
