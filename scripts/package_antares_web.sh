@@ -62,7 +62,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
   echo "INFO: Updating executable permissions..."
-  for excutable in "AntaresWeb/AntaresWebServer" "AntaresWeb/AntaresTool" "AntaresWebWorker"; do
+  for excutable in "${DIST_DIR}/AntaresWeb/AntaresWebServer" "${DIST_DIR}/AntaresWeb/AntaresTool" "${DIST_DIR}/AntaresWebWorker"; do
     chmod +x "${excutable}"
   done
 fi
