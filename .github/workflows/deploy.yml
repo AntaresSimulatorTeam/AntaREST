@@ -80,5 +80,5 @@ jobs:
       - name: 🚀 Upload binaries
         uses: actions/upload-artifact@v3
         with:
-          name: AntaresWeb-${{ matrix.os }}
-          path: dist/package/AntaresWeb.pkg.zip
+          name: AntaresWeb-${{ matrix.os }}-pkg
+          path: dist/package/AntaresWeb.zip
