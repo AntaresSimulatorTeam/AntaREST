@@ -1,33 +1,64 @@
 # Antares Web
 
-> WARNING: in Linux environment, the following files must be executable.
-> To do this, you can run the following commands:
->
-> ```shell
-> chmod +x AntaresWeb/AntaresTool
-> chmod +x AntaresWeb/AntaresWebServer
-> chmod +x AntaresWebWorker
-> ```
+## Launching the Web Server
 
-To launch the Antares Web, run the command:
+### Windows
+
+To launch the Antares Web server on Windows, follow these steps:
+
+1. Use the provided `AntaresWebServerShortcut.lnk` shortcut.
+2. Ensure that no previous version of the server is running. If it is, locate the "AntaresWebServer" icon in the system
+   tray and click on it. From the menu, select "Quit".
+
+### Ubuntu
+
+To launch the Antares Web server on Ubuntu, follow these steps:
+
+1. Open a terminal.
+2. Navigate to the directory where the `AntaresWebServer` script is located. For example, if it is located in
+   the `AntaresWeb` directory, use the following command:
+
+```shell
+cd /path/to/AntaresWeb
+```
+
+Run the following command to launch the server:
 
 ```shell
 ./AntaresWeb/AntaresWebServer
 ```
 
-Then go to http://127.0.0.1:8080
+## Accessing the Web Server
 
-## Variant manager tool
+Once the Antares Web server is running, you can access it using a web browser.
+
+1. Open a web browser.
+2. Enter the following URL in the address bar:
+
+```
+http://127.0.0.1:8080
+```
+
+This will connect you to the Antares Web server.
+
+## Using the Variant Manager Tool
 
 To use the variant manager tool, run the command:
 
 ```
-./AntaresWeb/AntaresTool --help
+./AntaresWeb/AntaresTool
 ```
 
-Further instruction will be provided by the command output.
+The tool has the following subcommands:
 
-## Archive worker
+- `apply-script`:          Apply a variant script onto an AntaresWeb study variant
+- `generate-script`:       Generate variant script commands from a study
+- `generate-script-diff`:  Generate variant script commands from two variant script directories
+- `upgrade-study`:         Upgrades study version
+
+Further instructions can be found in the online help. Use the `--help' option.
+
+## Using the Archive Worker
 
 The Antares archive manager is a command that runs in the background to automatically unarchive simulation results.
 The worker is notified by the web application via EventBus to initiate asynchronous unarchiving of the results.
