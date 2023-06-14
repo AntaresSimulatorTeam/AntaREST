@@ -97,6 +97,66 @@ def update_matrix_content_with_coordinates(
     return df.astype(df.dtypes)
 
 
+def group_by_slices(
+    cells: List[Tuple[int, int]]
+) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    """
+    Groups the given cells into rectangular slices based on their coordinates.
+
+    Args:
+        cells: A list of tuples representing the coordinates of cells.
+            Each tuple contains the (x, y) coordinates of a cell.
+
+    Returns:
+        A list of tuples representing the slices.
+        Each tuple contains two tuples representing the coordinates of the top-left
+        and bottom-right cells of a slice.
+    """
+    if not cells:
+        return []
+
+    # Sort the cells by columns first, and then by rows,
+    # since the user typically selects cells by columns.
+    cells = sorted(cells, key=lambda p: (p[0], p[1]))
+
+    # Group cells into columns
+    column = [cells[0]]
+    columns = [column]
+    for bottom_most, cell in zip(cells[:-1], cells[1:]):
+        if bottom_most[0] == cell[0] and bottom_most[1] == cell[1] - 1:
+            # contiguous cell => same column
+            column.append(cell)
+        else:
+            # discontinus cell => new column
+            column = [cell]
+            columns.append(column)
+
+    # Keep only the top and bottom cells of each column
+    columns = [[c[0], c[-1]] for c in columns]
+
+    # Sort the columns by y-axis first and x-axis after
+    columns = sorted(columns, key=lambda c: (c[0][1], c[-1][1], c[0][0]))
+
+    # Group columns into slices
+    rectangle = [columns[0]]
+    rectangles = [rectangle]
+    for right_most, column in zip(columns[:-1], columns[1:]):
+        if (
+            right_most[0][1] == column[0][1]
+            and right_most[-1][1] == column[-1][1]
+            and right_most[0][0] == column[0][0] - 1
+        ):
+            # Contiguous column => same slice
+            rectangle.append(column)
+        else:
+            # Discontinuous column => new slice
+            rectangle = [column]
+            rectangles.append(rectangle)
+
+    # Create the slices by extracting top-left and bottom-right cell coordinates
+    return [(r[0][0], r[-1][-1]) for r in rectangles]
+
+
 class MatrixManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
