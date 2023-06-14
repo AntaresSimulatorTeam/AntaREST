@@ -2,7 +2,9 @@
 
 # Antares Web Packaging -- Desktop Version
 #
-# This script is launch by the GitHub Workflow `.github/workflows/deploy.yml`
+# This script is launch by the GitHub Workflow `.github/workflows/deploy.yml`.
+# It builds the Desktop version of the Web Application and the Worker Application.
+# Make sure you run the `npm install` stage before running this script.
 
 set -e
 
@@ -24,6 +26,25 @@ else
 fi
 
 LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v$ANTARES_SOLVER_FULL_VERSION/$ANTARES_SOLVER_ZIPFILE_NAME"
+
+echo "INFO: Preparing the Git Commit ID..."
+git log -1 HEAD --format=%H > ${RESOURCES_DIR}/commit_id
+
+echo "INFO: Generating the Desktop version of the Web Application..."
+if [[ "$OSTYPE" == "msys"* ]]; then
+  pushd ${PROJECT_DIR}
+  pyinstaller --distpath ${DIST_DIR} AntaresWebWin.spec
+  popd
+else
+  pushd ${PROJECT_DIR}
+  pyinstaller --distpath ${DIST_DIR} AntaresWebLinux.spec
+  popd
+fi
+
+echo "INFO: Generating the Worker Application..."
+pushd ${PROJECT_DIR}
+pyinstaller --distpath ${DIST_DIR} AntaresWebWorker.spec
+popd
 
 echo "INFO: Creating destination directory '${ANTARES_SOLVER_DIR}'..."
 mkdir -p "${ANTARES_SOLVER_DIR}"
