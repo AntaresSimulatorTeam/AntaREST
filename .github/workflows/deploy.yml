@@ -105,4 +105,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: AntaresWeb-${{ matrix.os }}
-          path: dist/package/AntaresWeb.zip
+          path: dist/package/AntaresWeb.pkg.zip
