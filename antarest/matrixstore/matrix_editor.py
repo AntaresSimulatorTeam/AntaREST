@@ -124,7 +124,7 @@ class Operation(BaseModel):
             return (self.operation, self.value).__le__(
                 (other.operation, other.value)
             )
-        return NotImplemented
+        return NotImplemented  # pragma: no cover
 
 
 class MatrixEditInstruction(BaseModel):
@@ -190,7 +190,7 @@ class MatrixEditInstruction(BaseModel):
         Raises:
            ValueError: If any coordinate value is less than 0.
         """
-        if coordinates is None:
+        if coordinates is None:  # pragma: no cover
             return None
         for coordinate in coordinates:
             if coordinate[0] < 0 or coordinate[1] < 0:
