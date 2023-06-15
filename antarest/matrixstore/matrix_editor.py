@@ -1,3 +1,4 @@
+import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -82,6 +83,7 @@ OPERATIONS = {
 }
 
 
+@functools.total_ordering
 class Operation(BaseModel):
     """
     Represents an operation to be performed on a value or a matrix.
@@ -112,6 +114,17 @@ class Operation(BaseModel):
     def __str__(self) -> str:
         """Returns a string representation used in error messages."""
         return f"['{self.operation}' {self.value}]"
+
+    def __le__(self, other: Any) -> bool:
+        """
+        Compares two operations (used for sorting and grouping).
+        """
+        if isinstance(other, Operation):
+            # noinspection PyTypeChecker
+            return (self.operation, self.value).__le__(
+                (other.operation, other.value)
+            )
+        return NotImplemented
 
 
 class MatrixEditInstruction(BaseModel):

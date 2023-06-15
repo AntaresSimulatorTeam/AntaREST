@@ -120,6 +120,16 @@ class TestOperation:
             "value": 123.0,
         }
 
+    def test_total_ordering(self):
+        op1 = Operation(operation="=", value=120)
+        op2 = Operation(operation="=", value=150)
+        op3 = Operation(operation="/", value=150)
+        op4 = Operation(operation="/", value=120)
+        operations = [op1, op2, op3, op4]
+        operations.sort()
+        # note that: "/" < "="
+        assert operations == [op4, op3, op1, op2]
+
 
 class TestMatrixEditInstruction:
     @pytest.mark.parametrize(
