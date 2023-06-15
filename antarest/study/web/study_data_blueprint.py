@@ -28,6 +28,9 @@ from antarest.study.business.area_management import (
     AreaUI,
     LayerInfoDTO,
 )
+from antarest.study.business.areas.properties_management import (
+    PropertiesFormFields,
+)
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
@@ -43,7 +46,7 @@ from antarest.study.business.district_manager import (
     DistrictUpdateDTO,
 )
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.hydro_management import (
+from antarest.study.business.areas.hydro_management import (
     ManagementOptionsFormFields,
 )
 from antarest.study.business.link_management import LinkInfoDTO
@@ -51,7 +54,9 @@ from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.renewable_management import RenewableFormFields
+from antarest.study.business.areas.renewable_management import (
+    RenewableFormFields,
+)
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
     TableTemplateType,
@@ -59,7 +64,7 @@ from antarest.study.business.table_mode_management import (
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
 )
-from antarest.study.business.thermal_management import ThermalFormFields
+from antarest.study.business.areas.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
@@ -1396,6 +1401,60 @@ def create_study_data_routes(
         )
 
         return study_service.generate_timeseries(study, params)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/properties/form",
+        tags=[APITag.study_data],
+        summary="Get properties for a given area",
+        response_model=PropertiesFormFields,
+        response_model_exclude_none=True,
+    )
+    def get_properties_form_values(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> PropertiesFormFields:
+        logger.info(
+            "Getting properties form values for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+
+        return study_service.properties_manager.get_field_values(
+            study,
+            area_id,
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/properties/form",
+        tags=[APITag.study_data],
+        summary="Set properties for a given area",
+    )
+    def set_properties_form_values(
+        uuid: str,
+        area_id: str,
+        form_fields: PropertiesFormFields,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            "Setting properties form values for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, request_params
+        )
+
+        study_service.properties_manager.set_field_values(
+            study, area_id, form_fields
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",

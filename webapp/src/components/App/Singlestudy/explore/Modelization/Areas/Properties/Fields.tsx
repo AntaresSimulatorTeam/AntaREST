@@ -1,0 +1,107 @@
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import { useMemo } from "react";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import Fieldset from "../../../../../../common/Fieldset";
+import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
+import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
+import { useFormContextPlus } from "../../../../../../common/Form";
+import { ADEQUACY_PATCH_OPTIONS, PropertiesFormFields } from "./utils";
+import { StudyMetadata } from "../../../../../../../common/types";
+
+function Fields() {
+  const { t } = useTranslation();
+  const { control } = useFormContextPlus<PropertiesFormFields>();
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const studyVersion = Number(study.version);
+
+  const filterOptions = useMemo(
+    () =>
+      ["hourly", "daily", "weekly", "monthly", "annual"].map((filter) => ({
+        label: t(`global.time.${filter}`),
+        value: filter,
+      })),
+    [t]
+  );
+
+  return (
+    <>
+      <Fieldset legend={t("global.general")}>
+        <ColorPickerFE
+          name="color"
+          label={t("global.color")}
+          control={control}
+        />
+        <NumberFE
+          name="posX"
+          label={t("study.modelization.properties.posX")}
+          control={control}
+        />
+        <NumberFE
+          name="posY"
+          label={t("study.modelization.properties.posY")}
+          control={control}
+        />
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.properties.energyCost")}>
+        <NumberFE
+          name="energyCostUnsupplied"
+          label={t("study.modelization.properties.unsupplied")}
+          control={control}
+        />
+        <NumberFE
+          name="energyCostSpilled"
+          label={t("study.modelization.properties.spilled")}
+          control={control}
+        />
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.properties.lastResortShedding")}>
+        <SwitchFE
+          name="nonDispatchPower"
+          label={t("study.modelization.properties.nonDispatchPower")}
+          control={control}
+        />
+        <SwitchFE
+          name="dispatchHydroPower"
+          label={t("study.modelization.properties.dispatchHydroPower")}
+          control={control}
+        />
+        <SwitchFE
+          name="otherDispatchPower"
+          label={t("study.modelization.properties.otherDispatchPower")}
+          control={control}
+        />
+      </Fieldset>
+      {studyVersion >= 830 && (
+        <Fieldset legend="Adequacy patch">
+          <SelectFE
+            name="adequacyPatchMode"
+            label={t("study.modelization.properties.adequacyPatch")}
+            options={ADEQUACY_PATCH_OPTIONS}
+            control={control}
+            sx={{ minWidth: "200px" }}
+          />
+        </Fieldset>
+      )}
+      <Fieldset legend={t("study.modelization.properties.outputFilter")}>
+        <SelectFE
+          name="filterSynthesis"
+          label={t("study.modelization.properties.filterSynthesis")}
+          options={filterOptions}
+          multiple
+          control={control}
+        />
+        <SelectFE
+          name="filterByYear"
+          label={t("study.modelization.properties.filterByYear")}
+          options={filterOptions}
+          multiple
+          control={control}
+        />
+      </Fieldset>
+    </>
+  );
+}
+
+export default Fields;

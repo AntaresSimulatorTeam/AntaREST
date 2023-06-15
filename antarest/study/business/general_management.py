@@ -217,10 +217,10 @@ class GeneralManager:
 
             path = field_info["path"]
             study_ver = file_study.config.version
-            start_ver = cast(int, field_info.get("start_version", -1))
-            end_ver = cast(int, field_info.get("end_version", study_ver + 1))
+            start_ver = cast(int, field_info.get("start_version", 0))
+            end_ver = cast(int, field_info.get("end_version", study_ver))
             target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver < end_ver
+            is_in_version = start_ver <= study_ver <= end_ver
             parent = general if GENERAL_PATH in path else output
 
             return (

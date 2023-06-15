@@ -14,10 +14,13 @@ from pydantic.types import StrictStr, StrictInt, StrictBool
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
-from antarest.study.business.renewable_management import (
+from antarest.study.business.areas.properties_management import (
+    AdequacyPatchMode,
+)
+from antarest.study.business.areas.renewable_management import (
     TimeSeriesInterpretation,
 )
-from antarest.study.business.thermal_management import (
+from antarest.study.business.areas.thermal_management import (
     TimeSeriesGenerationOption,
     LawOption,
 )
@@ -48,12 +51,6 @@ class TableTemplateType(str, Enum):
     CLUSTER = "cluster"
     RENEWABLE = "renewable"
     BINDING_CONSTRAINT = "binding constraint"
-
-
-class AdequacyPatchMode(str, Enum):
-    OUTSIDE = "outside"
-    INSIDE = "inside"
-    VIRTUAL = "virtual"
 
 
 class AssetType(str, Enum):
@@ -165,215 +162,216 @@ class PathVars(TypedDict, total=False):
     cluster: str
 
 
-AREA_FIELD_PATH_BASE = "input/areas/{id}/optimization"
-ECONOMIC_OPTIONS_PATH_BASE = "input/thermal/areas"
-LINK_FIELD_PATH_BASE = "input/links/{area1}/properties/{area2}"
-CLUSTER_FIELD_PATH_BASE = "input/thermal/clusters/{area}/list/{cluster}"
-RENEWABLE_FIELD_PATH_BASE = "input/renewables/clusters/{area}/list/{cluster}"
-BINDING_CONSTRAINT_FIELD_PATH_BASE = (
-    "input/bindingconstraints/bindingconstraints"
-)
+AREA_PATH = "input/areas/{area}"
+THERMAL_PATH = "input/thermal/areas"
+LINK_GLOB_PATH = "input/links/{area1}/properties"
+LINK_PATH = f"{LINK_GLOB_PATH}/{{area2}}"
+CLUSTER_GLOB_PATH = "input/thermal/clusters/{area}/list"
+CLUSTER_PATH = f"{CLUSTER_GLOB_PATH}/{{cluster}}"
+RENEWABLE_GLOB_PATH = "input/renewables/clusters/{area}/list"
+RENEWABLE_PATH = f"{RENEWABLE_GLOB_PATH}/{{cluster}}"
+BINDING_CONSTRAINT_PATH = "input/bindingconstraints/bindingconstraints"
 
 FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     TableTemplateType.AREA: {
         "non_dispatchable_power": {
-            "path": f"{AREA_FIELD_PATH_BASE}/nodal optimization/non-dispatchable-power",
+            "path": f"{AREA_PATH}/optimization/nodal optimization/non-dispatchable-power",
             "default_value": NodalOptimization.NON_DISPATCHABLE_POWER,
         },
         "dispatchable_hydro_power": {
-            "path": f"{AREA_FIELD_PATH_BASE}/nodal optimization/dispatchable-hydro-power",
+            "path": f"{AREA_PATH}/optimization/nodal optimization/dispatchable-hydro-power",
             "default_value": NodalOptimization.DISPATCHABLE_HYDRO_POWER,
         },
         "other_dispatchable_power": {
-            "path": f"{AREA_FIELD_PATH_BASE}/nodal optimization/other-dispatchable-power",
+            "path": f"{AREA_PATH}/optimization/nodal optimization/other-dispatchable-power",
             "default_value": NodalOptimization.OTHER_DISPATCHABLE_POWER,
         },
         "average_unsupplied_energy_cost": {
-            "path": f"{ECONOMIC_OPTIONS_PATH_BASE}/unserverdenergycost/{{id}}",
+            "path": f"{THERMAL_PATH}/unserverdenergycost/{{area}}",
             "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
         },
         "spread_unsupplied_energy_cost": {
-            "path": f"{AREA_FIELD_PATH_BASE}/nodal optimization/spread-unsupplied-energy-cost",
+            "path": f"{AREA_PATH}/optimization/nodal optimization/spread-unsupplied-energy-cost",
             "default_value": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
         },
         "average_spilled_energy_cost": {
-            "path": f"{ECONOMIC_OPTIONS_PATH_BASE}/spilledenergycost/{{id}}",
+            "path": f"{THERMAL_PATH}/spilledenergycost/{{area}}",
             "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
         },
         "spread_spilled_energy_cost": {
-            "path": f"{AREA_FIELD_PATH_BASE}/nodal optimization/spread-spilled-energy-cost",
+            "path": f"{AREA_PATH}/optimization/nodal optimization/spread-spilled-energy-cost",
             "default_value": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
         },
         "filter_synthesis": {
-            "path": f"{AREA_FIELD_PATH_BASE}/filtering/filter-synthesis",
+            "path": f"{AREA_PATH}/optimization/filtering/filter-synthesis",
             "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
-            "path": f"{AREA_FIELD_PATH_BASE}/filtering/filter-year-by-year",
+            "path": f"{AREA_PATH}/optimization/filtering/filter-year-by-year",
             "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
         "adequacy_patch_mode": {
-            "path": f"{AREA_FIELD_PATH_BASE}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
+            "path": f"{AREA_PATH}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
             "default_value": AdequacyPatchMode.OUTSIDE.value,
         },
     },
     TableTemplateType.LINK: {
         "hurdles_cost": {
-            "path": f"{LINK_FIELD_PATH_BASE}/hurdles-cost",
+            "path": f"{LINK_PATH}/hurdles-cost",
             "default_value": LinkProperties.HURDLES_COST,
         },
         "loop_flow": {
-            "path": f"{LINK_FIELD_PATH_BASE}/loop-flow",
+            "path": f"{LINK_PATH}/loop-flow",
             "default_value": LinkProperties.LOOP_FLOW,
         },
         "use_phase_shifter": {
-            "path": f"{LINK_FIELD_PATH_BASE}/use-phase-shifter",
+            "path": f"{LINK_PATH}/use-phase-shifter",
             "default_value": LinkProperties.USE_PHASE_SHIFTER,
         },
         "transmission_capacities": {
-            "path": f"{LINK_FIELD_PATH_BASE}/transmission-capacities",
+            "path": f"{LINK_PATH}/transmission-capacities",
             "default_value": LinkProperties.TRANSMISSION_CAPACITIES,
         },
         "asset_type": {
-            "path": f"{LINK_FIELD_PATH_BASE}/asset-type",
+            "path": f"{LINK_PATH}/asset-type",
             "default_value": LinkProperties.ASSET_TYPE,
         },
         "link_style": {
-            "path": f"{LINK_FIELD_PATH_BASE}/link-style",
+            "path": f"{LINK_PATH}/link-style",
             "default_value": LinkProperties.LINK_STYLE,
         },
         "link_width": {
-            "path": f"{LINK_FIELD_PATH_BASE}/link-width",
+            "path": f"{LINK_PATH}/link-width",
             "default_value": LinkProperties.LINK_WIDTH,
         },
         "display_comments": {
-            "path": f"{LINK_FIELD_PATH_BASE}/display-comments",
+            "path": f"{LINK_PATH}/display-comments",
             "default_value": LinkProperties.DISPLAY_COMMENTS,
         },
         "filter_synthesis": {
-            "path": f"{LINK_FIELD_PATH_BASE}/filter-synthesis",
+            "path": f"{LINK_PATH}/filter-synthesis",
             "default_value": FilteringOptions.FILTER_SYNTHESIS,
         },
         "filter_year_by_year": {
-            "path": f"{LINK_FIELD_PATH_BASE}/filter-year-by-year",
+            "path": f"{LINK_PATH}/filter-year-by-year",
             "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
     },
     TableTemplateType.CLUSTER: {
         "group": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/group",
+            "path": f"{CLUSTER_PATH}/group",
             "default_value": "",
         },
         "enabled": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/enabled",
+            "path": f"{CLUSTER_PATH}/enabled",
             "default_value": True,
         },
         "must_run": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/must-run",
+            "path": f"{CLUSTER_PATH}/must-run",
             "default_value": False,
         },
         "unit_count": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/unitcount",
+            "path": f"{CLUSTER_PATH}/unitcount",
             "default_value": 0,
         },
         "nominal_capacity": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/nominalcapacity",
+            "path": f"{CLUSTER_PATH}/nominalcapacity",
             "default_value": 0,
         },
         "min_stable_power": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/min-stable-power",
+            "path": f"{CLUSTER_PATH}/min-stable-power",
             "default_value": 0,
         },
         "spinning": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/spinning",
+            "path": f"{CLUSTER_PATH}/spinning",
             "default_value": 0,
         },
         "min_up_time": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/min-up-time",
+            "path": f"{CLUSTER_PATH}/min-up-time",
             "default_value": 1,
         },
         "min_down_time": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/min-down-time",
+            "path": f"{CLUSTER_PATH}/min-down-time",
             "default_value": 1,
         },
         "co2": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/co2",
+            "path": f"{CLUSTER_PATH}/co2",
             "default_value": 0,
         },
         "marginal_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/marginal-cost",
+            "path": f"{CLUSTER_PATH}/marginal-cost",
             "default_value": 0,
         },
         "fixed_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/fixed-cost",
+            "path": f"{CLUSTER_PATH}/fixed-cost",
             "default_value": 0,
         },
         "startup_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/startup-cost",
+            "path": f"{CLUSTER_PATH}/startup-cost",
             "default_value": 0,
         },
         "market_bid_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/market-bid-cost",
+            "path": f"{CLUSTER_PATH}/market-bid-cost",
             "default_value": 0,
         },
         "spread_cost": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/spread-cost",
+            "path": f"{CLUSTER_PATH}/spread-cost",
             "default_value": 0,
         },
         "ts_gen": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/gen-ts",
+            "path": f"{CLUSTER_PATH}/gen-ts",
             "default_value": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
         },
         "volatility_forced": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/volatility.forced",
+            "path": f"{CLUSTER_PATH}/volatility.forced",
             "default_value": 0,
         },
         "volatility_planned": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/volatility.planned",
+            "path": f"{CLUSTER_PATH}/volatility.planned",
             "default_value": 0,
         },
         "law_forced": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/law.forced",
+            "path": f"{CLUSTER_PATH}/law.forced",
             "default_value": LawOption.UNIFORM.value,
         },
         "law_planned": {
-            "path": f"{CLUSTER_FIELD_PATH_BASE}/law.planned",
+            "path": f"{CLUSTER_PATH}/law.planned",
             "default_value": LawOption.UNIFORM.value,
         },
     },
     TableTemplateType.RENEWABLE: {
         "group": {
-            "path": f"{RENEWABLE_FIELD_PATH_BASE}/group",
+            "path": f"{RENEWABLE_PATH}/group",
             "default_value": "",
         },
         "ts_interpretation": {
-            "path": f"{RENEWABLE_FIELD_PATH_BASE}/ts-interpretation",
+            "path": f"{RENEWABLE_PATH}/ts-interpretation",
             "default_value": TimeSeriesInterpretation.POWER_GENERATION.value,
         },
         "enabled": {
-            "path": f"{RENEWABLE_FIELD_PATH_BASE}/enabled",
+            "path": f"{RENEWABLE_PATH}/enabled",
             "default_value": True,
         },
         "unit_count": {
-            "path": f"{RENEWABLE_FIELD_PATH_BASE}/unitcount",
+            "path": f"{RENEWABLE_PATH}/unitcount",
             "default_value": 0,
         },
         "nominal_capacity": {
-            "path": f"{RENEWABLE_FIELD_PATH_BASE}/nominalcapacity",
+            "path": f"{RENEWABLE_PATH}/nominalcapacity",
             "default_value": 0,
         },
     },
     TableTemplateType.BINDING_CONSTRAINT: {
         "type": {
-            "path": f"{BINDING_CONSTRAINT_FIELD_PATH_BASE}/type",
+            "path": f"{BINDING_CONSTRAINT_PATH}/type",
             "default_value": BindingConstraintType.HOURLY.value,
         },
         "operator": {
-            "path": f"{BINDING_CONSTRAINT_FIELD_PATH_BASE}/operator",
+            "path": f"{BINDING_CONSTRAINT_PATH}/operator",
             "default_value": BindingConstraintOperator.LESS.value,
         },
         "enabled": {
-            "path": f"{BINDING_CONSTRAINT_FIELD_PATH_BASE}/enabled",
+            "path": f"{BINDING_CONSTRAINT_PATH}/enabled",
             "default_value": True,
         },
     },
@@ -540,20 +538,20 @@ class TableModeManager:
         path_arr = path.split("/")
 
         if table_type == TableTemplateType.AREA:
-            if path.startswith(ECONOMIC_OPTIONS_PATH_BASE):
-                base_path = ECONOMIC_OPTIONS_PATH_BASE
-                # Remove {id}
+            if path.startswith(THERMAL_PATH):
+                base_path = THERMAL_PATH
+                # Remove {area}
                 path_arr = path_arr[:-1]
             else:
-                base_path = AREA_FIELD_PATH_BASE
+                base_path = AREA_PATH
         elif table_type == TableTemplateType.LINK:
-            base_path = LINK_FIELD_PATH_BASE
+            base_path = LINK_PATH
         elif table_type == TableTemplateType.CLUSTER:
-            base_path = CLUSTER_FIELD_PATH_BASE
+            base_path = CLUSTER_PATH
         elif table_type == TableTemplateType.RENEWABLE:
-            base_path = RENEWABLE_FIELD_PATH_BASE
+            base_path = RENEWABLE_PATH
         elif table_type == TableTemplateType.BINDING_CONSTRAINT:
-            base_path = BINDING_CONSTRAINT_FIELD_PATH_BASE
+            base_path = BINDING_CONSTRAINT_PATH
 
         return path_arr[len(base_path.split("/")) :]
 
@@ -566,17 +564,17 @@ class TableModeManager:
         path = FIELDS_INFO_BY_TYPE[table_type][column]["path"]
 
         if table_type == TableTemplateType.AREA:
-            return path.replace("{id}", path_vars["id"])
+            return path.format(area=path_vars["id"])
         if table_type == TableTemplateType.LINK:
-            return path.replace("{area1}", path_vars["area1"]).replace(
-                "{area2}", path_vars["area2"]
+            return path.format(
+                area1=path_vars["area1"], area2=path_vars["area2"]
             )
         if table_type in [
             TableTemplateType.CLUSTER,
             TableTemplateType.RENEWABLE,
         ]:
-            return path.replace("{area}", path_vars["area"]).replace(
-                "{cluster}", path_vars["cluster"]
+            return path.format(
+                area=path_vars["area"], cluster=path_vars["cluster"]
             )
 
         return path
@@ -609,43 +607,33 @@ class TableModeManager:
     ) -> Dict[str, Any]:
         if table_type == TableTemplateType.AREA:
             data: Dict[str, Any] = file_study.tree.get(
-                AREA_FIELD_PATH_BASE.replace("{id}", "*").split("/")
+                url=AREA_PATH.format(area="*").split("/"), depth=3
             )
 
-            # Add economic options in data
-            economic_opts = file_study.tree.get(
-                ECONOMIC_OPTIONS_PATH_BASE.split("/")
-            )
-            for opt in economic_opts:
-                for area in economic_opts[opt]:
+            # Add thermal fields in data
+            thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
+            for field in thermal_fields:
+                for area in thermal_fields[field]:
                     if area in data:
                         data[area] = {
                             **data[area],
-                            opt: economic_opts[opt][area],
+                            field: thermal_fields[field][area],
                         }
 
             return data
         if table_type == TableTemplateType.LINK:
             return file_study.tree.get(
-                LINK_FIELD_PATH_BASE.replace("{area1}", "*")
-                .replace("/{area2}", "")
-                .split("/")
+                LINK_GLOB_PATH.format(area1="*").split("/")
             )
         if table_type == TableTemplateType.CLUSTER:
             return file_study.tree.get(
-                CLUSTER_FIELD_PATH_BASE.replace("{area}", "*")
-                .replace("/{cluster}", "")
-                .split("/")
+                CLUSTER_GLOB_PATH.format(area="*").split("/")
             )
         if table_type == TableTemplateType.RENEWABLE:
             return file_study.tree.get(
-                RENEWABLE_FIELD_PATH_BASE.replace("{area}", "*")
-                .replace("/{cluster}", "")
-                .split("/")
+                RENEWABLE_GLOB_PATH.format(area="*").split("/")
             )
         if table_type == TableTemplateType.BINDING_CONSTRAINT:
-            return file_study.tree.get(
-                BINDING_CONSTRAINT_FIELD_PATH_BASE.split("/")
-            )
+            return file_study.tree.get(BINDING_CONSTRAINT_PATH.split("/"))
 
         return {}

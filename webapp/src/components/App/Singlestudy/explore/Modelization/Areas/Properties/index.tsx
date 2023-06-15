@@ -1,36 +1,46 @@
-import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import Form from "../../../../../../common/Form";
-import PropertiesForm from "./PropertiesForm";
-import { getDefaultValues } from "./utils";
+import {
+  PropertiesFormFields,
+  getPropertiesFormFields,
+  setPropertiesFormFields,
+} from "./utils";
+import Fields from "./Fields";
+import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const currentArea = useAppSelector(getCurrentAreaId);
-  const [t] = useTranslation();
+  const currentAreaId = useAppSelector(getCurrentAreaId);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = (data: SubmitHandlerPlus<PropertiesFormFields>) => {
+    const { dirtyValues } = data;
+    return setPropertiesFormFields(study.id, currentAreaId, dirtyValues);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
+    <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
       <Form
-        key={study.id + currentArea}
+        key={study.id + currentAreaId}
         config={{
-          defaultValues: () => getDefaultValues(study.id, currentArea, t),
+          defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
         }}
+        onSubmit={handleSubmit}
       >
-        {(formApi) => (
-          <PropertiesForm
-            {...formApi}
-            areaName={currentArea}
-            studyId={study.id}
-            studyVersion={Number(study.version)}
-          />
-        )}
+        <Fields />
       </Form>
-    </Box>
+    </Paper>
   );
 }
 
