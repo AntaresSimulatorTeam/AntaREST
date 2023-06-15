@@ -9,7 +9,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstructionDTO,
+    MatrixEditInstruction,
 )
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchFormFields,
@@ -477,7 +477,7 @@ def create_study_data_routes(
     def edit_matrix(
         uuid: str,
         path: str,
-        matrix_edit_instructions: List[MatrixEditInstructionDTO] = Body(...),
+        matrix_edit_instructions: List[MatrixEditInstruction] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)

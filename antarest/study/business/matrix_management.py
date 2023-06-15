@@ -3,7 +3,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd  # type:ignore
 from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstructionDTO,
+    MatrixEditInstruction,
     MatrixSlice,
     Operation,
 )
@@ -29,7 +29,7 @@ class MatrixManagerError(Exception):
 
 class MatrixEditError(MatrixManagerError):
     def __init__(
-        self, instruction: MatrixEditInstructionDTO, reason: str
+        self, instruction: MatrixEditInstruction, reason: str
     ) -> None:
         msg = f"Cannot edit matrix using {instruction}: {reason}"
         super().__init__(msg)
@@ -165,7 +165,7 @@ class MatrixManager:
         self,
         study: Study,
         path: str,
-        edit_instructions: List[MatrixEditInstructionDTO],
+        edit_instructions: List[MatrixEditInstruction],
     ) -> None:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)

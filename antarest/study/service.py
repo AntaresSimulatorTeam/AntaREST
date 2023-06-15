@@ -53,7 +53,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstructionDTO,
+    MatrixEditInstruction,
 )
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchManager,
@@ -2354,7 +2354,7 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        matrix_edit_instruction: List[MatrixEditInstructionDTO],
+        matrix_edit_instruction: List[MatrixEditInstruction],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)

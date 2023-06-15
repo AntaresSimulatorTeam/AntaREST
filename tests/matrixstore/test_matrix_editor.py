@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from antarest.matrixstore.matrix_editor import (
     MatrixSlice,
     Operation,
-    MatrixEditInstructionDTO,
+    MatrixEditInstruction,
     OPERATIONS,
 )
 
@@ -121,7 +121,7 @@ class TestOperation:
         }
 
 
-class TestMatrixEditInstructionDTO:
+class TestMatrixEditInstruction:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
@@ -198,5 +198,5 @@ class TestMatrixEditInstructionDTO:
     def test_init(
         self, kwargs: Dict[str, Any], expected: Dict[str, Any]
     ) -> None:
-        obj = MatrixEditInstructionDTO(**kwargs)
+        obj = MatrixEditInstruction(**kwargs)
         assert obj.dict(by_alias=False) == expected

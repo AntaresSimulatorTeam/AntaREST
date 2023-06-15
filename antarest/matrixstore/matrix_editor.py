@@ -114,7 +114,7 @@ class Operation(BaseModel):
         return f"['{self.operation}' {self.value}]"
 
 
-class MatrixEditInstructionDTO(BaseModel):
+class MatrixEditInstruction(BaseModel):
     """
     Represents a data transfer object for matrix edit instructions.
 
