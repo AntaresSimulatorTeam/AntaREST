@@ -1,4 +1,5 @@
 import itertools
+import logging
 import operator
 from typing import List, Tuple
 
@@ -22,6 +23,8 @@ from antarest.study.storage.variantstudy.business.utils import (
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MatrixManagerError(Exception):
@@ -237,6 +240,7 @@ class MatrixManager:
         path: str,
         edit_instructions: List[MatrixEditInstruction],
     ) -> None:
+        logger.info(f"Starting matrix update for {study.id}...")
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         matrix_service = (
@@ -249,12 +253,15 @@ class MatrixManager:
             raise TypeError(repr(type(matrix_node)))
 
         try:
+            logger.info(f"Loading matrix data from node '{path}'...")
             matrix_df: pd.DataFrame = matrix_node.parse(return_dataframe=True)
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
+        logger.info(f"Merging {len(edit_instructions)} instructions...")
         edit_instructions = merge_edit_instructions(edit_instructions)
 
+        logger.info(f"Processing {len(edit_instructions)} instructions...")
         for instr in edit_instructions:
             try:
                 if instr.slices:
@@ -277,8 +284,10 @@ class MatrixManager:
             except MatrixUpdateError as exc:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
+        logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
         new_matrix_id = matrix_service.create(matrix_df.to_numpy().tolist())
 
+        logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
             ReplaceMatrix(
                 target=path,
@@ -287,12 +296,17 @@ class MatrixManager:
             )
         ]
 
+        logger.info(f"Executing command for study '{study.id}'...")
         execute_or_add_commands(
             study=study,
             file_study=file_study,
             commands=command,
             storage_service=self.storage_service,
         )
+
         if not is_managed(study):
+            logger.info(f"Denormalizing matrix for path '{path}'...")
             matrix_node = file_study.tree.get_node(path.split("/"))
             matrix_node.denormalize()
+
+        logger.info("Matrix update done.")
