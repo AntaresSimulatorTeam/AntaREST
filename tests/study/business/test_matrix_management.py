@@ -2,12 +2,17 @@ from typing import List, Tuple
 
 import pandas as pd
 import pytest
-from antarest.matrixstore.matrix_editor import MatrixSlice, Operation
+from antarest.matrixstore.matrix_editor import (
+    MatrixEditInstruction,
+    MatrixSlice,
+    Operation,
+)
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
+    group_by_slices,
+    merge_edit_instructions,
     update_matrix_content_with_coordinates,
     update_matrix_content_with_slices,
-    group_by_slices,
 )
 
 
@@ -100,7 +105,7 @@ def test_update_matrix_content_with_slices(
     slices: List[MatrixSlice],
     operation: Operation,
     expected_result: List[List[MatrixData]],
-):
+) -> None:
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
     output_matrix = update_matrix_content_with_slices(
@@ -206,7 +211,7 @@ def test_update_matrix_content_with_coordinates(
     coords: List[Tuple[int, int]],
     operation: Operation,
     expected_result: List[List[MatrixData]],
-):
+) -> None:
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
     output_matrix = update_matrix_content_with_coordinates(
@@ -273,3 +278,76 @@ class TestGroupBySlices:
     ) -> None:
         actual = group_by_slices(cells)
         assert actual == expected
+
+
+# alias for shorter code
+MEI = MatrixEditInstruction
+
+
+class TestMergeEditInstructions:
+    def test_merge_edit_instructions__coordinates_merged(self) -> None:
+        op = Operation(operation="=", value=314)
+        instr1 = MEI(coordinates=[(0, 0)], operation=op)
+        instr2 = MEI(coordinates=[(1, 1)], operation=op)
+        actual = merge_edit_instructions([instr1, instr2])
+        assert actual == [MEI(coordinates=[(0, 0), (1, 1)], operation=op)]
+
+    def test_merge_edit_instructions__operations_mixed(self) -> None:
+        instr1 = MEI(
+            coordinates=[(0, 0)],
+            operation=Operation(operation="=", value=314),
+        )
+        instr2 = MEI(
+            coordinates=[(0, 1)],
+            operation=Operation(operation="=", value=628),
+        )
+        instr3 = MEI(
+            coordinates=[(1, 0)],
+            operation=Operation(operation="/", value=314),
+        )
+        actual = merge_edit_instructions([instr1, instr2, instr3])
+        assert actual == [
+            # fmt: off
+            MEI(
+                coordinates=[(1, 0)],
+                operation=Operation(operation="/", value=314.0),
+            ),
+            MEI(
+                coordinates=[(0, 0)],
+                operation=Operation(operation="=", value=314.0),
+            ),
+            MEI(
+                coordinates=[(0, 1)],
+                operation=Operation(operation="=", value=628.0),
+            ),
+            # fmt: on
+        ]
+
+    def test_merge_edit_instructions__slice_created(self) -> None:
+        op = Operation(operation="=", value=314)
+        instr1 = MEI(coordinates=[(0, 0)], operation=op)
+        instr2 = MEI(coordinates=[(0, 1), (0, 2)], operation=op)
+        actual = merge_edit_instructions([instr1, instr2])
+        assert actual == [
+            # fmt: off
+            MEI(
+                slices=[MatrixSlice(row_from=0, row_to=2, column_from=0, column_to=0)],
+                operation=op,
+            )
+            # fmt: on
+        ]
+
+    def test_merge_edit_instructions__big_column(self) -> None:
+        op = Operation(operation="=", value=314)
+        instructions = [
+            MEI(coordinates=[(0, y)], operation=op) for y in range(8760)
+        ]
+        actual = merge_edit_instructions(instructions)
+        assert actual == [
+            # fmt: off
+            MEI(
+                slices=[MatrixSlice(row_from=0, row_to=8759, column_from=0, column_to=0)],
+                operation=op,
+            )
+            # fmt: on
+        ]

@@ -1,3 +1,5 @@
+import itertools
+import operator
 from typing import List, Tuple
 
 import numpy as np
@@ -157,6 +159,84 @@ def group_by_slices(
     return [(r[0][0], r[-1][-1]) for r in rectangles]
 
 
+def merge_edit_instructions(
+    edit_instructions: List[MatrixEditInstruction],
+) -> List[MatrixEditInstruction]:
+    """
+    Merges edit instructions for the same operation and value into
+    slice-based edit instructions to reduce computation time when a large
+    number of cells are affected.
+
+    This function takes a list of `MatrixEditInstruction` objects and combines
+    instructions that have the same operation and value into a single
+    instruction that operates on slices of the matrix.
+
+    Args:
+        edit_instructions: The list of edit instructions to merge.
+
+    Returns:
+        List[MatrixEditInstruction]: The merged edit instructions.
+    """
+    # First level of triage of editing instructions
+    coord_list = []  # those one will be merged
+    slices_list = []  # those one are unaffected
+    for instr in edit_instructions:
+        if instr.coordinates is not None:
+            coord_list.append(instr)
+        elif instr.slices is not None:
+            slices_list.append(instr)
+        else:  # pragma: no cover
+            raise NotImplementedError(instr)
+
+    # Prepare the result list of instructions
+    result_list = slices_list
+
+    # Sort coordinate instructions by operation and values
+    by_operation = operator.attrgetter("operation")
+    coord_list.sort(key=by_operation)
+    for operation, group in itertools.groupby(coord_list, key=by_operation):
+        # Collect all coordinates of the group of instructions
+        cells = [c for g in group for c in g.coordinates]  # type: ignore
+
+        # Extract the slices to build new "coordinates"/"slices" instructions
+        rectangles = group_by_slices(cells)
+        coordinates = []
+        slices = []
+        for rectangle in rectangles:
+            top_left = rectangle[0]
+            bottom_right = rectangle[-1]
+            if top_left == bottom_right:
+                # 1-by-1 slices are coordinates
+                coordinates.append(top_left)
+            else:
+                slices.append(
+                    MatrixSlice(
+                        column_from=top_left[0],
+                        column_to=bottom_right[0],
+                        row_from=top_left[1],
+                        row_to=bottom_right[1],
+                    )
+                )
+
+        # Add the new instructions to the result
+        if coordinates:
+            result_list.append(
+                MatrixEditInstruction(
+                    coordinates=coordinates,
+                    operation=operation,
+                )
+            )
+        if slices:
+            result_list.append(
+                MatrixEditInstruction(
+                    slices=slices,
+                    operation=operation,
+                )
+            )
+
+    return result_list
+
+
 class MatrixManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -182,6 +262,8 @@ class MatrixManager:
             matrix_df: pd.DataFrame = matrix_node.parse(return_dataframe=True)
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
+
+        edit_instructions = merge_edit_instructions(edit_instructions)
 
         for instr in edit_instructions:
             try:
