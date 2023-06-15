@@ -13,7 +13,51 @@ from antarest.study.business.matrix_management import (
     merge_edit_instructions,
     update_matrix_content_with_coordinates,
     update_matrix_content_with_slices,
+    MatrixIndexError,
+    MatrixManagerError,
+    MatrixEditError,
+    MatrixUpdateError,
 )
+
+
+class TestMatrixManagerError:
+    def test_init(self):
+        error = MatrixManagerError(message="foo")
+        assert "foo" in str(error)
+
+
+class TestMatrixEditError:
+    def test_init(self):
+        error = MatrixEditError(
+            instruction=MatrixEditInstruction(
+                coordinates=[(5, 6)],
+                operation=Operation(operation="=", value=798),
+            ),
+            reason="foo",
+        )
+        assert "foo" in str(error)
+        assert "(5, 6)" in str(error)
+
+
+class TestMatrixUpdateError:
+    def test_init(self):
+        error = MatrixUpdateError(
+            operation=Operation(operation="=", value=798), reason="foo"
+        )
+        assert "foo" in str(error)
+        assert "=" in str(error)
+        assert "798" in str(error)
+
+
+class TestMatrixIndexError:
+    def test_init(self):
+        error = MatrixIndexError(
+            operation=Operation(operation="=", value=798),
+            coordinates=(5, 8),
+            exc=Exception("foo"),
+        )
+        assert "foo" in str(error)
+        assert "(5, 8)" in str(error)
 
 
 @pytest.mark.unit_test
@@ -22,7 +66,7 @@ from antarest.study.business.matrix_management import (
     [
         (
             [
-                MatrixSlice(row_from=0, column_from=0),
+                MatrixSlice(row_from=0, column_from=0, row_to=0, column_to=0),
                 MatrixSlice(row_from=2, row_to=3, column_from=2, column_to=3),
             ],
             Operation(operation="+", value=2),
@@ -36,7 +80,7 @@ from antarest.study.business.matrix_management import (
         ),
         (
             [
-                MatrixSlice(row_from=1, column_from=0, column_to=5),
+                MatrixSlice(row_from=1, column_from=0, row_to=1, column_to=5),
             ],
             Operation(operation="-", value=1),
             [
@@ -49,7 +93,7 @@ from antarest.study.business.matrix_management import (
         ),
         (
             [
-                MatrixSlice(row_from=0, row_to=5, column_from=1),
+                MatrixSlice(row_from=0, row_to=5, column_from=1, column_to=1),
             ],
             Operation(operation="*", value=3),
             [
@@ -75,7 +119,7 @@ from antarest.study.business.matrix_management import (
         ),
         (
             [
-                MatrixSlice(row_from=1, column_from=1),
+                MatrixSlice(row_from=1, column_from=1, row_to=1, column_to=1),
             ],
             Operation(operation="ABS", value=2),
             [
@@ -88,7 +132,7 @@ from antarest.study.business.matrix_management import (
         ),
         (
             [
-                MatrixSlice(row_from=4, column_from=4),
+                MatrixSlice(row_from=4, column_from=4, row_to=4, column_to=4),
             ],
             Operation(operation="=", value=42),
             [
@@ -115,6 +159,17 @@ def test_update_matrix_content_with_slices(
     assert output_matrix.equals(
         pd.DataFrame(expected_result).astype(matrix_data.dtypes)
     )
+
+
+def test_update_matrix_content_with_slices__out_of_bounds() -> None:
+    matrix_data = pd.DataFrame([[]], dtype=float)
+    slices = [MatrixSlice(row_from=8, column_from=2, row_to=8, column_to=9)]
+    result = update_matrix_content_with_slices(
+        matrix_data=matrix_data,
+        slices=slices,
+        operation=Operation(operation="=", value=999),
+    )
+    assert result.equals(matrix_data)
 
 
 @pytest.mark.unit_test
@@ -221,6 +276,16 @@ def test_update_matrix_content_with_coordinates(
     assert output_matrix.equals(
         pd.DataFrame(expected_result).astype(matrix_data.dtypes)
     )
+
+
+def test_update_matrix_content_with_coordinates__out_of_bounds() -> None:
+    matrix_data = pd.DataFrame([[]], dtype=float)
+    with pytest.raises(MatrixIndexError):
+        update_matrix_content_with_coordinates(
+            df=matrix_data,
+            coordinates=[(3, 4)],
+            operation=Operation(operation="=", value=99),
+        )
 
 
 class TestGroupBySlices:

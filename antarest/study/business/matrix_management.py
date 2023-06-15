@@ -43,14 +43,6 @@ class MatrixUpdateError(Exception):
         super().__init__(msg)
 
 
-class MatrixSliceError(MatrixUpdateError):
-    def __init__(
-        self, operation: Operation, matrix_slice: MatrixSlice, exc: Exception
-    ) -> None:
-        reason = f"invalid slice {matrix_slice}: {exc}"
-        super().__init__(operation, reason)
-
-
 class MatrixIndexError(MatrixUpdateError):
     def __init__(
         self,
@@ -70,13 +62,11 @@ def update_matrix_content_with_slices(
     mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
 
     for matrix_slice in slices:
-        try:
-            mask.loc[
-                matrix_slice.row_from : matrix_slice.row_to,
-                matrix_slice.column_from : matrix_slice.column_to,
-            ] = True
-        except IndexError as exc:
-            raise MatrixSliceError(operation, matrix_slice, exc) from None
+        # note: the `.loc` attribute doesn't raise `IndexError`
+        mask.loc[
+            matrix_slice.row_from : matrix_slice.row_to,
+            matrix_slice.column_from : matrix_slice.column_to,
+        ] = True
 
     new_matrix_data = matrix_data.where(mask).apply(operation.compute)
     new_matrix_data[new_matrix_data.isnull()] = matrix_data
@@ -255,7 +245,7 @@ class MatrixManager:
 
         matrix_node = file_study.tree.get_node(url=path.split("/"))
 
-        if not isinstance(matrix_node, InputSeriesMatrix):
+        if not isinstance(matrix_node, InputSeriesMatrix):  # pragma: no cover
             raise TypeError(repr(type(matrix_node)))
 
         try:
@@ -279,7 +269,7 @@ class MatrixManager:
                         coordinates=instr.coordinates,
                         operation=instr.operation,
                     )
-                else:
+                else:  # pragma: no cover
                     raise MatrixEditError(
                         instr,
                         reason="instruction must contain coordinates or slices",
