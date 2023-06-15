@@ -8,7 +8,7 @@ from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.business.matrix_editor import (
+from antarest.matrixstore.matrix_editor import (
     MatrixEditInstructionDTO,
 )
 from antarest.study.business.adequacy_patch_management import (

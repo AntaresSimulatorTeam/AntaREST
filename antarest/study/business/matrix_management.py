@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd  # type:ignore
-from antarest.matrixstore.business.matrix_editor import (
+from antarest.matrixstore.matrix_editor import (
     MatrixEditInstructionDTO,
     MatrixSlice,
     Operation,

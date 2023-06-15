@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import pandas as pd
 import pytest
-from antarest.matrixstore.business.matrix_editor import MatrixSlice, Operation
+from antarest.matrixstore.matrix_editor import MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
     update_matrix_content_with_coordinates,
