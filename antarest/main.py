@@ -7,19 +7,6 @@ from typing import Any, Dict, Optional, Tuple, cast
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 import uvicorn.config  # type: ignore
-from fastapi import FastAPI, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
-from fastapi_jwt_auth import AuthJWT  # type: ignore
-from ratelimit import RateLimitMiddleware  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-from starlette.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
-
 from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
@@ -37,6 +24,18 @@ from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
 from antarest.utils import Module, create_services, init_db
+from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi_jwt_auth import AuthJWT  # type: ignore
+from ratelimit import RateLimitMiddleware  # type: ignore
+from ratelimit.backends.redis import RedisBackend  # type: ignore
+from ratelimit.backends.simple import MemoryBackend  # type: ignore
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +224,7 @@ def fastapi_app(
             )
 
     else:
-
+        # noinspection PyUnusedLocal
         @application.get("/", include_in_schema=False)
         def home(request: Request) -> Any:
             """
@@ -273,6 +272,7 @@ def fastapi_app(
     )
     application.include_router(create_utils_routes(config))
 
+    # noinspection PyUnusedLocal
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
@@ -285,6 +285,7 @@ def fastapi_app(
             status_code=exc.status_code,
         )
 
+    # noinspection PyUnusedLocal
     @application.exception_handler(RequestValidationError)
     async def handle_validation_exception(
         request: Request, exc: RequestValidationError
@@ -301,13 +302,23 @@ def fastapi_app(
             ),
         )
 
+    # noinspection PyUnusedLocal
     @application.exception_handler(Exception)
     def handle_all_exception(request: Request, exc: Exception) -> Any:
-        """Return JSON instead of HTML for HTTP errors."""
+        """
+        Custom exception handler to return JSON response for HTTP errors.
+
+        Args:
+            request: The incoming request object.
+            exc: The raised exception.
+
+        Returns:
+            The JSON response containing error details.
+        """
         logger.error("Unexpected Exception", exc_info=exc)
         return JSONResponse(
             content={
-                "description": "Unexpected server error",
+                "description": f"Unexpected server error: {exc}",
                 "exception": exc.__class__.__name__,
             },
             status_code=500,
@@ -354,6 +365,7 @@ def fastapi_app(
 
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+# noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
     # fmt: off
     "[%(asctime)s] [%(process)s]"
@@ -361,6 +373,7 @@ LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
     "  %(message)s"
     # fmt: on
 )
+# noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
     # fmt: off
     "[%(asctime)s] [%(process)s] [%(name)s]"
