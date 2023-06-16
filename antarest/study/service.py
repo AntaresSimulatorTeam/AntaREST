@@ -2357,6 +2357,21 @@ class StudyService:
         matrix_edit_instruction: List[MatrixEditInstruction],
         params: RequestParameters,
     ) -> None:
+        """
+        Updates a matrix in a study based on the provided edit instructions.
+
+        Args:
+            uuid: The UUID of the study.
+            path: The path of the matrix to update.
+            matrix_edit_instruction: A list of edit instructions to be applied to the matrix.
+            params: Additional request parameters.
+
+        Raises:
+            BadEditInstructionException: If an error occurs while updating the matrix.
+
+        Permissions:
+            - User must have WRITE permission on the study.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
