@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, cast
 
+import pydantic
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 import uvicorn.config  # type: ignore
@@ -300,6 +301,33 @@ def fastapi_app(
                     "body": exc.body,
                 }
             ),
+        )
+
+    # noinspection PyUnusedLocal
+    @application.exception_handler(pydantic.ValidationError)
+    def handle_validation_error(
+        request: Request, exc: pydantic.ValidationError
+    ) -> Any:
+        """
+        Custom exception handler to return JSON response for `ValidationError`.
+
+        This exception is usually raised during Study configuration reading
+        (not when using an end point).
+
+        Args:
+            request: The incoming request object.
+            exc: The raised exception.
+
+        Returns:
+            The JSON response containing error details.
+        """
+        return JSONResponse(
+            content={
+                "description": f"{exc}",
+                "exception": exc.__class__.__name__,
+                "body": exc.json(),
+            },
+            status_code=422,
         )
 
     # noinspection PyUnusedLocal
