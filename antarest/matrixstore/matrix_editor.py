@@ -2,18 +2,19 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 
 class MatrixSlice(BaseModel):
+    # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Represents a group of cells in a matrix for updating.
 
     Attributes:
-        column_from: Starting column index (inclusive) for the slice.
-        column_to: Ending column index (exclusive) for the slice. Defaults to `column_from`.
-        row_from: Starting row index (inclusive) for the slice.
-        row_to: Ending row index (exclusive) for the slice. Defaults to `row_from`.
+    - `column_from`: Starting column index (inclusive) for the slice.
+    - `column_to`: Ending column index (inclusive) for the slice. Defaults to `column_from`.
+    - `row_from`: Starting row index (inclusive) for the slice.
+    - `row_to`: Ending row index (inclusive) for the slice. Defaults to `row_from`.
     """
 
     row_from: int
@@ -22,6 +23,7 @@ class MatrixSlice(BaseModel):
     column_to: int
 
     class Config:
+        extra = Extra.forbid
         schema_extra = {
             "example": {
                 "column_from": 5,
@@ -85,19 +87,21 @@ OPERATIONS = {
 
 @functools.total_ordering
 class Operation(BaseModel):
+    # NOTE: This Markdown documentation is reflected in the Swagger API
     """
-    Represents an operation to be performed on a value or a matrix.
+    Represents an update operation to be performed on matrix cells.
 
     Attributes:
-        operation: The operation symbol (or function name).
-        value: The value associated with the operation.
+     - `operation`: The operation symbol: "+", "-", "*", "/", "ABS" or "=".
+     - `value`: The value associated with the operation.
     """
 
     operation: str = Field(regex=r"[=/*+-]|ABS")
     value: float
 
     class Config:
-        schema_extra = {"example": {"operation": "=", "value": "120"}}
+        extra = Extra.forbid
+        schema_extra = {"example": {"operation": "=", "value": 120.0}}
 
     # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
@@ -128,13 +132,15 @@ class Operation(BaseModel):
 
 
 class MatrixEditInstruction(BaseModel):
+    # NOTE: This Markdown documentation is reflected in the Swagger API
     """
-    Represents a data transfer object for matrix edit instructions.
+    Provides edit instructions to be applied to a matrix.
 
     Attributes:
-        slices: The matrix slices to edit.
-        coordinates: The coordinates of the matrix elements to edit.
-        operation: The operation to perform on the matrix.
+    - `slices`: The matrix slices to edit.
+    - `coordinates`: The coordinates of the matrix cells to edit.
+    - `operation`: The update operation (simple assignment or mathematical operator)
+      to perform on the matrix.
     """
 
     slices: Optional[List[MatrixSlice]] = None
@@ -142,12 +148,14 @@ class MatrixEditInstruction(BaseModel):
     operation: Operation
 
     class Config:
-        schema_extra = {
-            "example": {
-                "coordinates": [(1, 2)],
-                "operation": {"operation": "=", "value": 120.0},
-            }
-        }
+        extra = Extra.forbid
+
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any]) -> None:
+            schema["example"] = MatrixEditInstruction(
+                coordinates=[(0, 10), (0, 11), (0, 12)],
+                operation=Operation(operation="=", value=120.0),
+            )
 
     @root_validator(pre=True)
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
