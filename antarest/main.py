@@ -276,7 +276,16 @@ def fastapi_app(
     # noinspection PyUnusedLocal
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
-        """Return JSON instead of HTML for HTTP errors."""
+        """
+        Custom exception handler to return JSON response for HTTP errors.
+
+        Args:
+            request: The incoming request object.
+            exc: The raised exception.
+
+        Returns:
+            The JSON response containing error details.
+        """
         logger.error("HTTP Exception", exc_info=exc)
         return JSONResponse(
             content={
@@ -291,6 +300,16 @@ def fastapi_app(
     async def handle_validation_exception(
         request: Request, exc: RequestValidationError
     ) -> Any:
+        """
+        Custom exception handler to return JSON response for `RequestValidationError`.
+
+        Args:
+            request: The incoming request object.
+            exc: The raised exception.
+
+        Returns:
+            The JSON response containing error details.
+        """
         error_message = exc.errors()[0]["msg"]
         return JSONResponse(
             status_code=422,
