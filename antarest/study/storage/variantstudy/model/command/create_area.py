@@ -93,7 +93,6 @@ class CreateArea(ICommand):
 
         # fmt: off
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        correlation_config = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
         get_or_create_section(hydro_config, "inter-daily-breakdown")[area_id] = 1
         get_or_create_section(hydro_config, "intra-daily-modulation")[area_id] = 24
         get_or_create_section(hydro_config, "inter-monthly-breakdown")[area_id] = 1
@@ -225,13 +224,12 @@ class CreateArea(ICommand):
             }
         }
 
-        # Ensure the "annual" key exists in the hydro prepro configuration for new areas, as it's the default mode for hydro correlations.
-        # If not present, it might lead to incorrect setup.
-        new_correlation = correlation_config.copy()
+        # Ensure the "annual" key exists in the hydro correlation configuration to avoid incorrect setup
+        # fmt: off
+        new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
         new_correlation.setdefault("annual", {})
-        new_area_data["input"]["hydro"]["prepro"][
-            "correlation"
-        ] = new_correlation
+        new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
+        # fmt: on
 
         if version > 650:
             # fmt: off
