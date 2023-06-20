@@ -4,6 +4,7 @@ Python module that is dedicated to printing application version and dependencies
 import subprocess
 from pathlib import Path
 from typing import Dict
+import sys
 
 from pydantic import BaseModel
 
@@ -80,7 +81,8 @@ def get_dependencies() -> Dict[str, str]:
             If the `pip freeze` command fails for some reason.
     """
     # fmt: off
-    output = subprocess.check_output("pip freeze", encoding="utf-8", shell=True)
+    pip_path = Path(sys.executable).parent / "pip"
+    output = subprocess.check_output(f"{pip_path} freeze", encoding="utf-8", shell=True)
     lines = (
         line
         for line in output.splitlines(keepends=False)
