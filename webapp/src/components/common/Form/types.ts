@@ -9,7 +9,6 @@ import {
   UseFormRegisterReturn,
   UseFormReturn,
 } from "react-hook-form";
-import { O } from "ts-toolbelt";
 
 export interface SubmitHandlerPlus<
   // TODO Make parameter required
@@ -52,8 +51,3 @@ export interface UseFormReturnPlus<
   register: UseFormRegisterPlus<TFieldValues>;
   control: ControlPlus<TFieldValues, TContext>;
 }
-
-export type DefaultValuesFix<TFieldValues extends FieldValues> = O.Partial<
-  TFieldValues,
-  "deep"
->;

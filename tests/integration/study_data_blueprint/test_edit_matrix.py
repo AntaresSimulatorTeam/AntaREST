@@ -1,4 +1,3 @@
-from http import HTTPStatus
 from urllib.parse import quote
 
 import pytest
@@ -133,6 +132,10 @@ class TestEditMatrix:
         assert new_data != initial_data
         assert new_data[0] == [1] * 6
 
+        # The web application generates a query using a list of Matrix Edit Instructions,
+        # each containing different coordinates. The first coordinate represents the row
+        # ndex, and the second coordinate represents the column index.
+        # In the example bellow, the user selects the rows 4 to 6 inclusive and the column 5.
         res = client.put(
             f"/v1/studies/{study_id}/matrix?path=input/links/{area_from_q}/{area_to_q}_parameters",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -143,7 +146,21 @@ class TestEditMatrix:
                         "operation": "=",
                         "value": 42,
                     },
-                }
+                },
+                {
+                    "coordinates": [(5, 5)],
+                    "operation": {
+                        "operation": "=",
+                        "value": 42,
+                    },
+                },
+                {
+                    "coordinates": [(6, 5)],
+                    "operation": {
+                        "operation": "=",
+                        "value": 42,
+                    },
+                },
             ],
         )
         res.raise_for_status()
@@ -156,6 +173,8 @@ class TestEditMatrix:
         new_data = res.json()["data"]
         assert new_data != initial_data
         assert new_data[4][5] == 42
+        assert new_data[5][5] == 42
+        assert new_data[6][5] == 42
 
         res = client.put(
             f"/v1/studies/{study_id}/matrix?path=input/links/{area_from_q}/{area_to_q}_parameters",

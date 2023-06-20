@@ -35,7 +35,6 @@ import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import {
-  DefaultValuesFix,
   SubmitHandlerPlus,
   UseFormRegisterPlus,
   UseFormReturnPlus,
@@ -49,14 +48,7 @@ export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any
 > extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
-  config?: Omit<UseFormProps<TFieldValues, TContext>, "defaultValues"> & {
-    // Workaround to fix issue related to the use of an async function for the default values:
-    // without that all props that use `TFieldValues` will have a wrong type,
-    // `TFieldValues` will be equal to `() => Promise<TFieldValues>`
-    defaultValues?:
-      | DefaultValuesFix<TFieldValues>
-      | (() => Promise<TFieldValues>);
-  };
+  config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
@@ -119,11 +111,15 @@ function Form<TFieldValues extends FieldValues, TContext>(
     mode: "onChange",
     delayError: 750,
     ...config,
-    // TS issue caused by the used of `DefaultValuesFix` instead of original `DefaultValues`
-    defaultValues: config?.defaultValues as UseFormProps<
-      TFieldValues,
-      TContext
-    >["defaultValues"],
+    defaultValues: RA.isFunction(config?.defaultValues)
+      ? () => {
+          const fn = config?.defaultValues as () => Promise<TFieldValues>;
+          return fn().catch((err) => {
+            enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), err);
+            throw err;
+          });
+        }
+      : config?.defaultValues,
   });
 
   const {

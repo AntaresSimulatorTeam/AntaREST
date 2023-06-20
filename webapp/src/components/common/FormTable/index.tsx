@@ -5,13 +5,13 @@ import * as R from "ramda";
 import type { SxProps } from "@mui/material";
 import type { Theme } from "@mui/system";
 import { useMemo } from "react";
+import { DefaultValues } from "react-hook-form";
 import type { IdType } from "../../../common/types";
 import Form, { FormProps } from "../Form";
 import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import useMemoLocked from "../../../hooks/useMemoLocked";
-import { DefaultValuesFix } from "../Form/types";
 
 type TableFieldValuesByRow = Record<
   IdType,
@@ -21,7 +21,7 @@ type TableFieldValuesByRow = Record<
 export interface FormTableProps<
   TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow
 > {
-  defaultValues: DefaultValuesFix<TFieldValues>;
+  defaultValues: DefaultValues<TFieldValues>;
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
   onSubmitError?: FormProps<TFieldValues>["onSubmitError"];
   formApiRef?: FormProps<TFieldValues>["apiRef"];

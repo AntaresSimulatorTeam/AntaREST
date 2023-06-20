@@ -52,8 +52,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.matrixstore.business.matrix_editor import (
-    MatrixEditInstructionDTO,
+from antarest.matrixstore.matrix_editor import (
+    MatrixEditInstruction,
 )
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchManager,
@@ -69,22 +69,24 @@ from antarest.study.business.area_management import (
     AreaType,
     AreaUI,
 )
+from antarest.study.business.areas.properties_management import (
+    PropertiesManager,
+)
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintManager,
 )
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.hydro_management import HydroManager
+from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.business.matrix_management import (
     MatrixManager,
-    MatrixUpdateError,
     MatrixManagerError,
 )
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
-from antarest.study.business.renewable_management import RenewableManager
+from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.scenario_builder_management import (
     ScenarioBuilderManager,
 )
@@ -92,7 +94,7 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
 )
-from antarest.study.business.thermal_management import ThermalManager
+from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -321,6 +323,7 @@ class StudyService:
         )
         self.hydro_manager = HydroManager(self.storage_service)
         self.allocation_manager = AllocationManager(self.storage_service)
+        self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
         self.thermal_manager = ThermalManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
@@ -2351,9 +2354,24 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        matrix_edit_instruction: List[MatrixEditInstructionDTO],
+        matrix_edit_instruction: List[MatrixEditInstruction],
         params: RequestParameters,
     ) -> None:
+        """
+        Updates a matrix in a study based on the provided edit instructions.
+
+        Args:
+            uuid: The UUID of the study.
+            path: The path of the matrix to update.
+            matrix_edit_instruction: A list of edit instructions to be applied to the matrix.
+            params: Additional request parameters.
+
+        Raises:
+            BadEditInstructionException: If an error occurs while updating the matrix.
+
+        Permissions:
+            - User must have WRITE permission on the study.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)

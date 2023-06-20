@@ -124,7 +124,6 @@ class LocalLauncher(AbstractLauncher):
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
                 encoding="utf-8",
-                shell=True,
             )
             self.job_id_to_study_id[str(uuid)] = (
                 study_uuid,

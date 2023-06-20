@@ -1,9 +1,12 @@
+import itertools
+import logging
+import operator
 from typing import List, Tuple
 
 import numpy as np
 import pandas as pd  # type:ignore
-from antarest.matrixstore.business.matrix_editor import (
-    MatrixEditInstructionDTO,
+from antarest.matrixstore.matrix_editor import (
+    MatrixEditInstruction,
     MatrixSlice,
     Operation,
 )
@@ -21,6 +24,8 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class MatrixManagerError(Exception):
     def __init__(self, message: str) -> None:
@@ -29,7 +34,7 @@ class MatrixManagerError(Exception):
 
 class MatrixEditError(MatrixManagerError):
     def __init__(
-        self, instruction: MatrixEditInstructionDTO, reason: str
+        self, instruction: MatrixEditInstruction, reason: str
     ) -> None:
         msg = f"Cannot edit matrix using {instruction}: {reason}"
         super().__init__(msg)
@@ -39,14 +44,6 @@ class MatrixUpdateError(Exception):
     def __init__(self, operation: Operation, reason: str) -> None:
         msg = f"Cannot apply operation {operation}: {reason}"
         super().__init__(msg)
-
-
-class MatrixSliceError(MatrixUpdateError):
-    def __init__(
-        self, operation: Operation, matrix_slice: MatrixSlice, exc: Exception
-    ) -> None:
-        reason = f"invalid slice {matrix_slice}: {exc}"
-        super().__init__(operation, reason)
 
 
 class MatrixIndexError(MatrixUpdateError):
@@ -68,13 +65,11 @@ def update_matrix_content_with_slices(
     mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
 
     for matrix_slice in slices:
-        try:
-            mask.loc[
-                matrix_slice.row_from : matrix_slice.row_to,
-                matrix_slice.column_from : matrix_slice.column_to,
-            ] = True
-        except IndexError as exc:
-            raise MatrixSliceError(operation, matrix_slice, exc) from None
+        # note: the `.loc` attribute doesn't raise `IndexError`
+        mask.loc[
+            matrix_slice.row_from : matrix_slice.row_to,
+            matrix_slice.column_from : matrix_slice.column_to,
+        ] = True
 
     new_matrix_data = matrix_data.where(mask).apply(operation.compute)
     new_matrix_data[new_matrix_data.isnull()] = matrix_data
@@ -97,6 +92,144 @@ def update_matrix_content_with_coordinates(
     return df.astype(df.dtypes)
 
 
+def group_by_slices(
+    cells: List[Tuple[int, int]]
+) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    """
+    Groups the given cells into rectangular slices based on their coordinates.
+
+    Args:
+        cells: A list of tuples representing the coordinates of cells.
+            Each tuple contains the (row, col) coordinates of a cell.
+
+    Returns:
+        A list of tuples representing the slices.
+        Each tuple contains two tuples representing the coordinates of the top-left
+        and bottom-right cells of a slice.
+    """
+    if not cells:
+        return []
+
+    # Sort the cells by columns first, and then by rows,
+    # since the user typically selects cells by columns.
+    cells = sorted(cells, key=lambda p: (p[1], p[0]))
+
+    # Group cells into columns
+    column = [cells[0]]
+    columns = [column]
+    for bottom_most, cell in zip(cells[:-1], cells[1:]):
+        if bottom_most[1] == cell[1] and bottom_most[0] == cell[0] - 1:
+            # contiguous cell => same column
+            column.append(cell)
+        else:
+            # discontinus cell => new column
+            column = [cell]
+            columns.append(column)
+
+    # Keep only the top and bottom cells of each column
+    columns = [[c[0], c[-1]] for c in columns]
+
+    # Sort the columns by col-axis first and row-axis after
+    columns = sorted(columns, key=lambda c: (c[0][0], c[-1][0], c[0][1]))
+
+    # Group columns into slices
+    rectangle = [columns[0]]
+    rectangles = [rectangle]
+    for right_most, column in zip(columns[:-1], columns[1:]):
+        if (
+            right_most[0][0] == column[0][0]
+            and right_most[-1][0] == column[-1][0]
+            and right_most[0][1] == column[0][1] - 1
+        ):
+            # Contiguous column => same slice
+            rectangle.append(column)
+        else:
+            # Discontinuous column => new slice
+            rectangle = [column]
+            rectangles.append(rectangle)
+
+    # Create the slices by extracting top-left and bottom-right cell coordinates
+    return [(r[0][0], r[-1][-1]) for r in rectangles]
+
+
+def merge_edit_instructions(
+    edit_instructions: List[MatrixEditInstruction],
+) -> List[MatrixEditInstruction]:
+    """
+    Merges edit instructions for the same operation and value into
+    slice-based edit instructions to reduce computation time when a large
+    number of cells are affected.
+
+    This function takes a list of `MatrixEditInstruction` objects and combines
+    instructions that have the same operation and value into a single
+    instruction that operates on slices of the matrix.
+
+    Args:
+        edit_instructions: The list of edit instructions to merge.
+
+    Returns:
+        List[MatrixEditInstruction]: The merged edit instructions.
+    """
+    # First level of triage of editing instructions
+    coord_list = []  # those one will be merged
+    slices_list = []  # those one are unaffected
+    for instr in edit_instructions:
+        if instr.coordinates is not None:
+            coord_list.append(instr)
+        elif instr.slices is not None:
+            slices_list.append(instr)
+        else:  # pragma: no cover
+            raise NotImplementedError(instr)
+
+    # Prepare the result list of instructions
+    result_list = slices_list
+
+    # Sort coordinate instructions by operation and values
+    by_operation = operator.attrgetter("operation")
+    coord_list.sort(key=by_operation)
+    for operation, group in itertools.groupby(coord_list, key=by_operation):
+        # Collect all coordinates of the group of instructions
+        cells = [c for g in group for c in g.coordinates]  # type: ignore
+
+        # Extract the slices to build new "coordinates"/"slices" instructions
+        rectangles = group_by_slices(cells)
+        coordinates = []
+        slices = []
+        for rectangle in rectangles:
+            top_left = rectangle[0]
+            bottom_right = rectangle[-1]
+            if top_left == bottom_right:
+                # 1-by-1 slices are coordinates
+                coordinates.append(top_left)
+            else:
+                slices.append(
+                    MatrixSlice(
+                        column_from=top_left[1],
+                        column_to=bottom_right[1],
+                        row_from=top_left[0],
+                        row_to=bottom_right[0],
+                    )
+                )
+
+        # Add the new instructions to the result
+        if coordinates:
+            result_list.append(
+                MatrixEditInstruction(
+                    coordinates=coordinates,
+                    operation=operation,
+                )
+            )
+        if slices:
+            result_list.append(
+                MatrixEditInstruction(
+                    slices=slices,
+                    operation=operation,
+                )
+            )
+
+    return result_list
+
+
 class MatrixManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -105,8 +238,9 @@ class MatrixManager:
         self,
         study: Study,
         path: str,
-        edit_instructions: List[MatrixEditInstructionDTO],
+        edit_instructions: List[MatrixEditInstruction],
     ) -> None:
+        logger.info(f"Starting matrix update for {study.id}...")
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         matrix_service = (
@@ -115,14 +249,19 @@ class MatrixManager:
 
         matrix_node = file_study.tree.get_node(url=path.split("/"))
 
-        if not isinstance(matrix_node, InputSeriesMatrix):
+        if not isinstance(matrix_node, InputSeriesMatrix):  # pragma: no cover
             raise TypeError(repr(type(matrix_node)))
 
         try:
+            logger.info(f"Loading matrix data from node '{path}'...")
             matrix_df: pd.DataFrame = matrix_node.parse(return_dataframe=True)
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
+        logger.info(f"Merging {len(edit_instructions)} instructions...")
+        edit_instructions = merge_edit_instructions(edit_instructions)
+
+        logger.info(f"Processing {len(edit_instructions)} instructions...")
         for instr in edit_instructions:
             try:
                 if instr.slices:
@@ -137,7 +276,7 @@ class MatrixManager:
                         coordinates=instr.coordinates,
                         operation=instr.operation,
                     )
-                else:
+                else:  # pragma: no cover
                     raise MatrixEditError(
                         instr,
                         reason="instruction must contain coordinates or slices",
@@ -145,8 +284,10 @@ class MatrixManager:
             except MatrixUpdateError as exc:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
+        logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
         new_matrix_id = matrix_service.create(matrix_df.to_numpy().tolist())
 
+        logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
             ReplaceMatrix(
                 target=path,
@@ -155,12 +296,17 @@ class MatrixManager:
             )
         ]
 
+        logger.info(f"Executing command for study '{study.id}'...")
         execute_or_add_commands(
             study=study,
             file_study=file_study,
             commands=command,
             storage_service=self.storage_service,
         )
+
         if not is_managed(study):
+            logger.info(f"Denormalizing matrix for path '{path}'...")
             matrix_node = file_study.tree.get_node(path.split("/"))
             matrix_node.denormalize()
+
+        logger.info("Matrix update done.")

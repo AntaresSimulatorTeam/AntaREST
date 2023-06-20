@@ -1,7 +1,6 @@
 import { Box, TextField, TextFieldProps, InputAdornment } from "@mui/material";
 import { ChangeEvent, useRef, useState } from "react";
 import { ColorResult, SketchPicker } from "react-color";
-import { useTranslation } from "react-i18next";
 import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { useClickAway, useKey, useUpdateEffect } from "react-use";
 import { rgbToString, stringToRGB } from "./utils";
@@ -24,7 +23,6 @@ function ColorPickerFE(props: ColorPickerFEProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const internalRef = useRef<HTMLInputElement>();
   const pickerWrapperRef = useRef(null);
-  const { t } = useTranslation();
 
   useUpdateEffect(() => {
     setCurrentColor(value ?? "");
@@ -71,10 +69,7 @@ function ColorPickerFE(props: ColorPickerFEProps) {
       )}
     >
       <TextField
-        label={t("global.color")}
-        variant="filled"
         {...textFieldProps}
-        sx={{ mx: 1 }}
         value={currentColor}
         placeholder={currentColor}
         inputRef={composeRefs(inputRef, internalRef)}
@@ -90,12 +85,18 @@ function ColorPickerFE(props: ColorPickerFEProps) {
           ),
         }}
         onClick={() => setIsPickerOpen(true)}
+        sx={{
+          ".MuiInputAdornment-sizeMedium+.MuiOutlinedInput-input": {
+            paddingTop: "16.5px !important",
+            paddingBottom: "16.5px !important",
+          },
+        }}
       />
       {isPickerOpen && (
         <Box
           sx={{
             position: "absolute",
-            top: "calc(100% + 8px)",
+            top: "calc(95%)",
             zIndex: 1000,
           }}
           ref={pickerWrapperRef}
