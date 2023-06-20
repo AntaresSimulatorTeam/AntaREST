@@ -224,6 +224,13 @@ class CreateArea(ICommand):
             }
         }
 
+        # Ensure the "annual" key exists in the hydro correlation configuration to avoid incorrect setup
+        # fmt: off
+        new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
+        new_correlation.setdefault("annual", {})
+        new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
+        # fmt: on
+
         if version > 650:
             # fmt: off
             get_or_create_section(hydro_config, "initialize reservoir date")[area_id] = 0
