@@ -12,7 +12,7 @@ from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.local_launcher.local_launcher import (
     LocalLauncher,
 )
-from antarest.launcher.model import JobStatus
+from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from sqlalchemy import create_engine
 
 
@@ -75,12 +75,23 @@ def test_compute(tmp_path: Path):
         str(uuid): ("study-id", tmp_path / "run", Mock())
     }
     local_launcher.callbacks.import_output.return_value = "some output"
-    # noinspection PyTypeChecker
+    launcher_parameters = LauncherParametersDTO(
+        adequacy_patch=None,
+        nb_cpu=8,
+        post_processing=False,
+        time_limit=3600,
+        xpansion=False,
+        xpansion_r_version=False,
+        archive_output=False,
+        auto_unzip=True,
+        output_suffix="",
+        other_options="",
+    )
     local_launcher._compute(
         antares_solver_path=solver_path,
         study_uuid="study-id",
         uuid=uuid,
-        launcher_parameters=None,
+        launcher_parameters=launcher_parameters,
     )
 
     # noinspection PyUnresolvedReferences
