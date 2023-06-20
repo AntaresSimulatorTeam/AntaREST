@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import IO, Callable, Dict, Optional, Tuple, cast
+from typing import IO, Callable, Dict, Optional, Tuple, cast, List
 from uuid import UUID
 
 from antarest.core.config import Config
@@ -118,8 +118,13 @@ class LocalLauncher(AbstractLauncher):
                 str(uuid), study_uuid, export_path, launcher_parameters
             )
 
+            args = [
+                str(antares_solver_path),
+                f"--force-parallel={launcher_parameters.nb_cpu}",
+                str(export_path),
+            ]
             process = subprocess.Popen(
-                [antares_solver_path, export_path],
+                args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
