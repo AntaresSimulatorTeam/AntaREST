@@ -1,6 +1,35 @@
 Antares Web Changelog
 =====================
 
+v2.14.3 (2023-06-20)
+--------------------
+
+### Bug Fixes
+
+*  **desktop:** correct Antares Desktop packaging ([95d7544](https://github.com/AntaresSimulatorTeam/AntaREST/commit/95d754473d63596fd6844cfb97d47a3f2041e2ba))
+*  **error:** improve error handling with enhanced error message (#1590) ([9e22aee](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e22aee25a812b81a323c83a043ffc36f0b1eb46))
+*  **matrix:** significant performance enhancement for Time Series update (#1588) ([220107a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/220107aa2ff18be556960ecf367816cd1aa4ed3f))
+*  **launcher:** correct the launching of the local Antares Solver ([8a31514](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8a31514f5995d02e7e23402251396bda2ce22580))
+*  **api:** add missing "annual" key on correlation config for new areas (#1600) ([ac98a76](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac98a76ca591dc1d582eacd5d00c258bbf06ac5f))
+
+
+### Documentation
+
+* update user instructions for Antares Web Desktop version ([98bcac5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/98bcac590ba21cae68980172f120627143f090d4))
+
+
+### Features
+
+*  **common:** display a snackbar error when async default values failed in Form (#1592) ([c213437](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c213437fc4ac82ac5c1aab4dcdf6638729b81497))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/skamril">skamril</a>,
+<a href="https://github.com/hdinia">hdinia</a>
+
+
 v2.14.2 (2023-06-12)
 --------------------
 
