@@ -66,6 +66,16 @@ class TestCreateArea:
             assert int(hydro["leeway up"][area_id]) == 1
             assert int(hydro["pumping efficiency"][area_id]) == 1
 
+        # fmt: off
+        correlation = configparser.ConfigParser()
+        correlation.read(study_path / "input" / "hydro" / "prepro" / "correlation.ini")
+        correlation_dict = {k: v for k, v in correlation.items() if k != "DEFAULT"}
+        assert correlation_dict == {
+            "general": {"mode": "annual"},
+            "annual": {},
+        }
+        # fmt: on
+
         # Allocation
         assert (
             study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini"

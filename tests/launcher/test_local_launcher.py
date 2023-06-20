@@ -1,3 +1,5 @@
+import os
+import textwrap
 from pathlib import Path
 from unittest.mock import Mock, call
 from uuid import uuid4
@@ -42,18 +44,47 @@ def test_compute(tmp_path: Path):
         Config(), callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
+    # prepare a dummy executable to simulate Antares Solver
+    if os.name == "nt":
+        solver_name = "solver.bat"
+        solver_path = tmp_path.joinpath(solver_name)
+        solver_path.write_text(
+            textwrap.dedent(
+                """\
+                @echo off
+                echo 'Dummy Solver is running...'
+                exit 0
+                """
+            )
+        )
+    else:
+        solver_name = "solver.sh"
+        solver_path = tmp_path.joinpath(solver_name)
+        solver_path.write_text(
+            textwrap.dedent(
+                """\
+                #!/usr/bin/env bash
+                echo 'Dummy Solver is running...'
+                exit 0
+                """
+            )
+        )
+        solver_path.chmod(0o775)
+
     uuid = uuid4()
     local_launcher.job_id_to_study_id = {
         str(uuid): ("study-id", tmp_path / "run", Mock())
     }
     local_launcher.callbacks.import_output.return_value = "some output"
+    # noinspection PyTypeChecker
     local_launcher._compute(
-        antares_solver_path="echo",
+        antares_solver_path=solver_path,
         study_uuid="study-id",
         uuid=uuid,
         launcher_parameters=None,
     )
 
+    # noinspection PyUnresolvedReferences
     local_launcher.callbacks.update_status.assert_has_calls(
         [
             call(str(uuid), JobStatus.RUNNING, None, None),
