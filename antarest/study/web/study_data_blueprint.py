@@ -8,8 +8,8 @@ from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.business.matrix_editor import (
-    MatrixEditInstructionDTO,
+from antarest.matrixstore.matrix_editor import (
+    MatrixEditInstruction,
 )
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchFormFields,
@@ -477,9 +477,21 @@ def create_study_data_routes(
     def edit_matrix(
         uuid: str,
         path: str,
-        matrix_edit_instructions: List[MatrixEditInstructionDTO] = Body(...),
+        matrix_edit_instructions: List[MatrixEditInstruction] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        # NOTE: This Markdown documentation is reflected in the Swagger API
+        """
+        Edit a matrix in a study based on the provided edit instructions.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `path`: The path of the matrix to update.
+        - `matrix_edit_instructions`: A list of edit instructions to be applied to the matrix.
+
+        Permissions:
+        - User must have WRITE permission on the study.
+        """
         params = RequestParameters(user=current_user)
         study_service.update_matrix(
             uuid, path, matrix_edit_instructions, params
