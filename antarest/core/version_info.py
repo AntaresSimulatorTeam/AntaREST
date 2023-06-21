@@ -61,9 +61,7 @@ def get_last_commit_from_git() -> str:
     """Returns the commit ID of the current Git HEAD, or ""."""
     command = ["git", "log", "-1", "HEAD", "--format=%H"]
     try:
-        return subprocess.check_output(
-            command, encoding="utf-8", shell=True
-        ).strip()
+        return subprocess.check_output(command, encoding="utf-8").strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return ""
 
@@ -82,7 +80,7 @@ def get_dependencies() -> Dict[str, str]:
             If the `pip freeze` command fails for some reason.
     """
     # fmt: off
-    pip_path = Path(sys.executable).parent / "pip.exe" if os.name == "nt" else "pip"
+    pip_path = str(Path(sys.executable).parent / "pip.exe") if os.name == "nt" else "pip"
     output = subprocess.check_output([pip_path, "freeze"], encoding="utf-8")
     lines = (
         line
