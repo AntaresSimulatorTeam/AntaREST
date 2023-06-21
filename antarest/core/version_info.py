@@ -80,9 +80,8 @@ def get_dependencies() -> Dict[str, str]:
             If the `pip freeze` command fails for some reason.
     """
     # fmt: off
-    pip_exe = "pip.exe" if os.name == "nt" else "pip"
-    pip_path = Path(sys.executable).parent / pip_exe
-    output = subprocess.check_output([str(pip_path), "freeze"], encoding="utf-8")
+    args = [sys.executable, "-m", "pip", "freeze"]
+    output = subprocess.check_output(args, encoding="utf-8")
     lines = (
         line
         for line in output.splitlines(keepends=False)
