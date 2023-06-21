@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd  # type: ignore
@@ -37,7 +37,13 @@ class InputSeriesMatrix(MatrixNode):
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
-        self.default_empty = default_empty
+        if default_empty is None:
+            # Ensure that the matrix is a 2D matrix
+            self.default_empty = np.empty((1, 0), dtype=np.float64)
+        else:
+            # Clone the template value and make it writable
+            self.default_empty = np.copy(default_empty)
+            self.default_empty.flags.writeable = True
 
     def parse(
         self,
@@ -81,8 +87,6 @@ class InputSeriesMatrix(MatrixNode):
             return data
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            if self.default_empty is None:
-                return pd.DataFrame() if return_dataframe else {}
             matrix = pd.DataFrame(self.default_empty)
             return (
                 matrix if return_dataframe else matrix.to_dict(orient="split")

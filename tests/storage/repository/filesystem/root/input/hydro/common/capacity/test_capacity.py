@@ -3,7 +3,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -22,7 +21,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import (
     capacity,
 )
-
 
 # noinspection SpellCheckingInspection
 BEFORE_650 = {
@@ -97,7 +95,7 @@ class TestInputHydroCommonCapacity:
         value: InputSeriesMatrix
         actual_obj = {
             key: {
-                "default_empty": value.default_empty,
+                "default_empty": value.default_empty.tolist(),
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }
