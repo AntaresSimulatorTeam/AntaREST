@@ -3,22 +3,53 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
     AreaMultipleMatrixList,
     ThermalMatrixList,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
     TsNumbersVector,
 )
 
 
 class OutputSimulationTsNumbers(FolderNode):
+    """
+    Represents a folder structure, which contains several time series folders
+    (one for each generator type: "hydro", "load", "solar" and "wind")
+    and a specific folder structure for the thermal clusters (one for each area).
+
+    Example of tree structure:
+
+    .. code-block:: text
+
+       output/20230323-1540adq/ts-numbers/
+       ├── hydro
+       │   ├── at.txt
+       │   ├── ch.txt
+       │   ├── pompage.txt
+       │   └── turbinage.txt
+       ├── load
+       │   ├── at.txt
+       │   ├── ch.txt
+       │   ├── pompage.txt
+       │   └── turbinage.txt
+       ├── solar
+       │   ├── at.txt
+       │   ├── ch.txt
+       │   ├── pompage.txt
+       │   └── turbinage.txt
+       ├── thermal
+       │   ├── at [...]
+       │   ├── ch [...]
+       │   ├── pompage [...]
+       │   └── turbinage [...]
+       └── wind
+           ├── at.txt
+           ├── ch.txt
+           ├── pompage.txt
+           └── turbinage.txt
+    """
+
     def build(self) -> TREE:
         children: TREE = {
             "hydro": AreaMatrixList(
