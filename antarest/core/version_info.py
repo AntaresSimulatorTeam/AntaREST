@@ -1,9 +1,11 @@
 """
 Python module that is dedicated to printing application version and dependencies information
 """
+import os
 import subprocess
 from pathlib import Path
 from typing import Dict
+import sys
 
 from pydantic import BaseModel
 
@@ -57,11 +59,9 @@ def get_commit_id(resources_dir: Path) -> str:
 
 def get_last_commit_from_git() -> str:
     """Returns the commit ID of the current Git HEAD, or ""."""
-    command = "git log -1 HEAD --format=%H"
+    command = ["git", "log", "-1", "HEAD", "--format=%H"]
     try:
-        return subprocess.check_output(
-            command, encoding="utf-8", shell=True
-        ).strip()
+        return subprocess.check_output(command, encoding="utf-8").strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return ""
 
@@ -80,7 +80,8 @@ def get_dependencies() -> Dict[str, str]:
             If the `pip freeze` command fails for some reason.
     """
     # fmt: off
-    output = subprocess.check_output("pip freeze", encoding="utf-8", shell=True)
+    args = [sys.executable, "-m", "pip", "freeze"]
+    output = subprocess.check_output(args, encoding="utf-8")
     lines = (
         line
         for line in output.splitlines(keepends=False)
