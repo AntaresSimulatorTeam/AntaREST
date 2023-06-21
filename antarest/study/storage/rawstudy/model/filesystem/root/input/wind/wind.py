@@ -4,9 +4,6 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import (
     InputPrepro,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
@@ -17,6 +14,33 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
 
 
 class InputWind(FolderNode):
+    """
+    Represents a folder structure, which contains a "prepro" and a time series structure.
+
+    Example of tree structure:
+
+    .. code-block:: text
+
+       input/wind/
+       ├── prepro
+       │   ├── correlation.ini
+       │   ├── store_in
+       │   │   ├── conversion.txt
+       │   │   ├── data.txt
+       │   │   ├── k.txt
+       │   │   ├── settings.ini
+       │   │   └── translation.txt
+       │   └── store_out
+       │       ├── conversion.txt
+       │       ├── data.txt
+       │       ├── k.txt
+       │       ├── settings.ini
+       │       └── translation.txt
+       └── series
+           ├── wind_store_in.txt
+           └── wind_store_out.txt
+    """
+
     def build(self) -> TREE:
         children: TREE = {
             "prepro": InputPrepro(
