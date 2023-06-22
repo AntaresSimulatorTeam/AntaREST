@@ -1,13 +1,14 @@
 from enum import Enum
-from typing import Optional, Union, List, Any, Dict, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic.types import StrictBool
 
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
+    GENERAL_DATA_PATH,
+    FieldInfo,
     FormFieldsBaseModel,
     execute_or_add_commands,
-    FieldInfo,
-    GENERAL_DATA_PATH,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -16,11 +17,11 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class LegacyTransmissionCapacities(str, Enum):
+class LegacyTransmissionCapacities(EnumIgnoreCase):
     INFINITE = "infinite"
 
 
-class TransmissionCapacities(str, Enum):
+class TransmissionCapacities(EnumIgnoreCase):
     LOCAL_VALUES = "local-values"
     NULL_FOR_ALL_LINKS = "null-for-all-links"
     INFINITE_FOR_ALL_LINKS = "infinite-for-all-links"
@@ -28,14 +29,14 @@ class TransmissionCapacities(str, Enum):
     INFINITE_FOR_PHYSICAL_LINKS = "infinite-for-physical-links"
 
 
-class UnfeasibleProblemBehavior(str, Enum):
+class UnfeasibleProblemBehavior(EnumIgnoreCase):
     WARNING_DRY = "warning-dry"
     WARNING_VERBOSE = "warning-verbose"
     ERROR_DRY = "error-dry"
     ERROR_VERBOSE = "error-verbose"
 
 
-class SimplexOptimizationRange(str, Enum):
+class SimplexOptimizationRange(EnumIgnoreCase):
     DAY = "day"
     WEEK = "week"
 
