@@ -1,23 +1,40 @@
+import datetime
 import uuid
-from datetime import datetime
-from typing import Any, List, Optional, Union
-
-from pydantic import BaseModel
-from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer, Boolean  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
-from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
+from typing import Any, List, Union
 
 from antarest.core.persistence import Base
 from antarest.login.model import GroupDTO, Identity, UserInfo
+from pydantic import BaseModel
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+)
+from sqlalchemy.orm import relationship  # type: ignore
 
 
 class Matrix(Base):  # type: ignore
+    """
+    Represents a matrix object in the database.
+
+    Attributes:
+        id: A SHA256 hash for the matrix data (primary key).
+        width: Number of columns in the matrix.
+        height: Number of rows in the matrix.
+        created_at: Creation date of the matrix (unknown usage).
+    """
+
+    # noinspection SpellCheckingInspection
     __tablename__ = "matrix"
 
-    id = Column(String(64), primary_key=True)
-    width = Column(Integer)
-    height = Column(Integer)
-    created_at = Column(DateTime)
+    id: str = Column(String(64), primary_key=True)
+    width: int = Column(Integer)
+    height: int = Column(Integer)
+    created_at: datetime.datetime = Column(DateTime)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
@@ -59,19 +76,23 @@ groups_dataset_relation = Table(
 
 
 class MatrixDataSetRelation(Base):  # type: ignore
+    # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
-    dataset_id = Column(
+
+    # noinspection SpellCheckingInspection
+    dataset_id: str = Column(
         String,
         ForeignKey("dataset.id", name="fk_matrixdatasetrelation_dataset_id"),
         primary_key=True,
     )
-    matrix_id = Column(
+    # noinspection SpellCheckingInspection
+    matrix_id: str = Column(
         String,
         ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
         primary_key=True,
     )
-    name = Column(String, primary_key=True)
-    matrix = relationship(Matrix)
+    name: str = Column(String, primary_key=True)
+    matrix: Matrix = relationship(Matrix)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MatrixDataSetRelation):
@@ -87,24 +108,43 @@ class MatrixDataSetRelation(Base):  # type: ignore
 
 
 class MatrixDataSet(Base):  # type: ignore
+    """
+    Represents a user dataset containing matrices in the database.
+
+    Attributes:
+        id: The unique identifier of the dataset (primary key).
+        name: The name of the dataset.
+        owner_id: The foreign key referencing the owner's identity.
+        public: Indicates whether the dataset is public or not.
+        created_at: The creation date of the dataset.
+        updated_at: The last update date of the dataset.
+
+    Relationships:
+        owner (Identity): The relationship to the owner's identity.
+        groups (List[Group]): The relationship to groups associated with the dataset.
+        matrices (List[MatrixDataSetRelation]): The relationship to matrix dataset relations.
+    """
+
+    # noinspection SpellCheckingInspection
     __tablename__ = "dataset"
 
-    id = Column(
+    id: str = Column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String)
-    owner_id = Column(
+    name: str = Column(String)
+    # noinspection SpellCheckingInspection
+    owner_id: int = Column(
         Integer,
         ForeignKey("identities.id", name="fk_matrixdataset_identities_id"),
     )
-    public = Column(Boolean, default=False)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    public: bool = Column(Boolean, default=False)
+    created_at: datetime.datetime = Column(DateTime)
+    updated_at: datetime.datetime = Column(DateTime)
 
-    owner = relationship(Identity)
+    owner: Identity = relationship(Identity)
     groups = relationship(
         "Group",
         secondary=lambda: groups_dataset_relation,
