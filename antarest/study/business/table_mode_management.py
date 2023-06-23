@@ -1,19 +1,9 @@
 from enum import Enum
-from typing import (
-    Optional,
-    Dict,
-    TypedDict,
-    Union,
-    Any,
-    List,
-)
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from pydantic import StrictFloat
-from pydantic.types import StrictStr, StrictInt, StrictBool
+from pydantic.types import StrictBool, StrictInt, StrictStr
 
-from antarest.study.business.binding_constraint_management import (
-    BindingConstraintManager,
-)
 from antarest.study.business.areas.properties_management import (
     AdequacyPatchMode,
 )
@@ -21,21 +11,25 @@ from antarest.study.business.areas.renewable_management import (
     TimeSeriesInterpretation,
 )
 from antarest.study.business.areas.thermal_management import (
-    TimeSeriesGenerationOption,
     LawOption,
+    TimeSeriesGenerationOption,
 )
+from antarest.study.business.binding_constraint_management import (
+    BindingConstraintManager,
+)
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
     execute_or_add_commands,
 )
+from antarest.study.common.default_values import (
+    FilteringOptions,
+    LinkProperties,
+    NodalOptimization,
+)
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.common.default_values import (
-    NodalOptimization,
-    FilteringOptions,
-    LinkProperties,
-)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
@@ -45,7 +39,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class TableTemplateType(str, Enum):
+class TableTemplateType(EnumIgnoreCase):
     AREA = "area"
     LINK = "link"
     CLUSTER = "cluster"
@@ -53,7 +47,7 @@ class TableTemplateType(str, Enum):
     BINDING_CONSTRAINT = "binding constraint"
 
 
-class AssetType(str, Enum):
+class AssetType(EnumIgnoreCase):
     AC = "ac"
     DC = "dc"
     GAZ = "gaz"
@@ -61,19 +55,19 @@ class AssetType(str, Enum):
     OTHER = "other"
 
 
-class TransmissionCapacity(str, Enum):
+class TransmissionCapacity(EnumIgnoreCase):
     INFINITE = "infinite"
     IGNORE = "ignore"
     ENABLED = "enabled"
 
 
-class BindingConstraintType(str, Enum):
+class BindingConstraintType(EnumIgnoreCase):
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
 
 
-class BindingConstraintOperator(str, Enum):
+class BindingConstraintOperator(EnumIgnoreCase):
     LESS = "less"
     GREATER = "greater"
     BOTH = "both"

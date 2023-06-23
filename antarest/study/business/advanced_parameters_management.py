@@ -1,14 +1,16 @@
 import re
-from typing import Optional, List, Any, Dict, TypedDict
 from enum import Enum
+from typing import Any, Dict, List, Optional, TypedDict
 
 from pydantic import validator
 from pydantic.types import StrictInt, StrictStr
+
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    execute_or_add_commands,
     GENERAL_DATA_PATH,
     FieldInfo,
+    FormFieldsBaseModel,
+    execute_or_add_commands,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -17,42 +19,42 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class InitialReservoirLevel(str, Enum):
+class InitialReservoirLevel(EnumIgnoreCase):
     COLD_START = "cold start"
     HOT_START = "hot start"
 
 
-class HydroHeuristicPolicy(str, Enum):
+class HydroHeuristicPolicy(EnumIgnoreCase):
     ACCOMMODATE_RULES_CURVES = "accommodate rule curves"
     MAXIMIZE_GENERATION = "maximize generation"
 
 
-class HydroPricingMode(str, Enum):
+class HydroPricingMode(EnumIgnoreCase):
     FAST = "fast"
     ACCURATE = "accurate"
 
 
-class PowerFluctuation(str, Enum):
+class PowerFluctuation(EnumIgnoreCase):
     FREE_MODULATIONS = "free modulations"
     MINIMIZE_EXCURSIONS = "minimize excursions"
     MINIMIZE_RAMPING = "minimize ramping"
 
 
-class SheddingPolicy(str, Enum):
+class SheddingPolicy(EnumIgnoreCase):
     SHAVE_PEAKS = "shave peaks"
     MINIMIZE_DURATION = "minimize duration"
 
 
-class ReserveManagement(str, Enum):
+class ReserveManagement(EnumIgnoreCase):
     GLOBAL = "global"
 
 
-class UnitCommitmentMode(str, Enum):
+class UnitCommitmentMode(EnumIgnoreCase):
     FAST = "fast"
     ACCURATE = "accurate"
 
 
-class SimulationCore(str, Enum):
+class SimulationCore(EnumIgnoreCase):
     MINIMUM = "minimum"
     LOW = "low"
     MEDIUM = "medium"
@@ -60,7 +62,7 @@ class SimulationCore(str, Enum):
     MAXIMUM = "maximum"
 
 
-class RenewableGenerationModeling(str, Enum):
+class RenewableGenerationModeling(EnumIgnoreCase):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
 

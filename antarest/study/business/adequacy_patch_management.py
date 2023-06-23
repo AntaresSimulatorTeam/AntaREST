@@ -1,13 +1,14 @@
 from enum import Enum
-from typing import Optional, List, Any, Dict
+from typing import Any, Dict, List, Optional
 
 from pydantic.types import StrictBool, confloat
 
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
+    GENERAL_DATA_PATH,
+    FieldInfo,
     FormFieldsBaseModel,
     execute_or_add_commands,
-    FieldInfo,
-    GENERAL_DATA_PATH,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -16,7 +17,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class PriceTakingOrder(str, Enum):
+class PriceTakingOrder(EnumIgnoreCase):
     DENS = "DENS"
     LOAD = "Load"
 
