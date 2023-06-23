@@ -3,15 +3,16 @@ import shutil
 from enum import Enum
 from http import HTTPStatus
 from io import BytesIO
-from typing import Optional, Union, List, cast
-from zipfile import ZipFile, BadZipFile
+from typing import List, Optional, Union, cast
+from zipfile import BadZipFile, ZipFile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import Field, BaseModel, validator
+from pydantic import BaseModel, Field, validator
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
 from antarest.core.utils.utils import suppress_exception
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
     BucketNode,
@@ -30,35 +31,35 @@ from antarest.study.storage.utils import fix_study_root
 logger = logging.getLogger(__name__)
 
 
-class XpansionResourceFileType(str, Enum):
+class XpansionResourceFileType(EnumIgnoreCase):
     CAPACITIES = "capacities"
     WEIGHTS = "weights"
     CONSTRAINTS = "constraints"
 
 
-class UcType(str, Enum):
+class UcType(EnumIgnoreCase):
     EXPANSION_FAST = "expansion_fast"
     EXPANSION_ACCURATE = "expansion_accurate"
 
 
-class Master(str, Enum):
+class Master(EnumIgnoreCase):
     INTEGER = "integer"
     RELAXED = "relaxed"
 
 
-class CutType(str, Enum):
+class CutType(EnumIgnoreCase):
     AVERAGE = "average"
     YEARLY = "yearly"
     WEEKLY = "weekly"
 
 
-class Solver(str, Enum):
+class Solver(EnumIgnoreCase):
     CBC = "Cbc"
     COIN = "Coin"
     XPRESS = "Xpress"
 
 
-class MaxIteration(str, Enum):
+class MaxIteration(EnumIgnoreCase):
     INF = "+Inf"
 
 

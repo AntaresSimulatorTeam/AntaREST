@@ -1,13 +1,14 @@
 import re
 from builtins import sorted
 from enum import Enum
-from typing import Optional, Dict, Any, cast, List, Set, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
-from pydantic import root_validator, Field
+from pydantic import Field, root_validator
 
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
     FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study
@@ -65,7 +66,7 @@ def decode_filter(
     return ", ".join(sort_filter_options(encoded_value))
 
 
-class AdequacyPatchMode(str, Enum):
+class AdequacyPatchMode(EnumIgnoreCase):
     OUTSIDE = "outside"
     INSIDE = "inside"
     VIRTUAL = "virtual"

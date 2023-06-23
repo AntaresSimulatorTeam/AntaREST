@@ -1,18 +1,14 @@
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
-from pydantic import (
-    root_validator,
-    validator,
-    StrictBool,
-    StrictInt,
-)
+from pydantic import StrictBool, StrictInt, root_validator, validator
 
 from antarest.core.model import JSON
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
-    execute_or_add_commands,
-    FormFieldsBaseModel,
     GENERAL_DATA_PATH,
+    FormFieldsBaseModel,
+    execute_or_add_commands,
 )
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -25,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class TSType(str, Enum):
+class TSType(EnumIgnoreCase):
     LOAD = "load"
     HYDRO = "hydro"
     THERMAL = "thermal"
@@ -35,7 +31,7 @@ class TSType(str, Enum):
     NTC = "ntc"
 
 
-class SeasonCorrelation(str, Enum):
+class SeasonCorrelation(EnumIgnoreCase):
     MONTHLY = "monthly"
     ANNUAL = "annual"
 
