@@ -63,7 +63,9 @@ def create_utils_routes(config: Config) -> APIRouter:
     ) -> Any:
         if not current_user.is_site_admin():
             raise UserHasNotPermissionError()
-        logging.getLogger(__name__).warning("Killing the worker")
-        exit(1)
+        logging.getLogger(__name__).critical("Killing the worker")
+        # PyInstaller modifies the behavior of built-in functions, such as `exit`.
+        # It is advisable to use `sys.exit` or raise the `SystemExit` exception instead.
+        raise SystemExit(f"Worker killed by the user #{current_user.id}")
 
     return bp
