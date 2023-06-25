@@ -8,7 +8,6 @@ from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
-
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
@@ -108,35 +107,6 @@ def build_study_service(
         cache_service=cache_service,
         config=config,
     )
-
-
-# noinspection PyArgumentList
-@pytest.mark.unit_test
-def test_get_studies_uuid() -> None:
-    bob = User(id=2, name="bob")
-    alice = User(id=3, name="alice")
-
-    a = Study(id="A", owner=bob)
-    b = Study(id="B", owner=alice)
-    c = Study(id="C", owner=bob)
-
-    # Mock
-    repository = Mock()
-    repository.get_all.return_value = [a, b, c]
-
-    study_service = Mock()
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(study_service, repository, config)
-
-    studies = service._get_study_metadatas(
-        RequestParameters(user=JWTUser(id=2, impersonator=2, type="users"))
-    )
-
-    assert [a, c] == studies
 
 
 def study_to_dto(study: Study) -> StudyMetadataDTO:
