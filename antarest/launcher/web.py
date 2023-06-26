@@ -15,6 +15,7 @@ from antarest.launcher.model import (
     LauncherEnginesDTO,
     LauncherParametersDTO,
     LogType,
+    LauncherToolsDTO,
 )
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
@@ -184,7 +185,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=LauncherEnginesDTO,
     )
     def get_engines() -> Any:
-        logger.info(f"Listing launch engines")
+        logger.info("Listing launch engines")
         return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
@@ -210,7 +211,17 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        logger.info(f"Fetching version list")
+        logger.info("Fetching version list")
         return service.get_versions(params=params)
+
+    @bp.get(
+        "/launcher/tools",
+        tags=[APITag.launcher],
+        summary="Retrieve available tools",
+        response_model=LauncherToolsDTO,
+    )
+    def get_available_tools() -> LauncherToolsDTO:
+        logger.info("Get available tools")
+        return service.get_available_tools()
 
     return bp

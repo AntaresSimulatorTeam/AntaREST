@@ -49,6 +49,7 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LogType,
     XpansionParametersDTO,
+    LauncherToolsDTO,
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -766,3 +767,14 @@ class LauncherService:
             id=f"Launch_Progress_{job_id}"
         ) or {"progress": 0}
         return launch_progress_json.get("progress", 0)
+
+    def get_available_tools(self) -> LauncherToolsDTO:
+        config_tools = self.config.storage.tools
+        if config_tools is None:
+            return LauncherToolsDTO()
+        return LauncherToolsDTO(
+            xpress="xpress" in config_tools,
+            xpansionR="xpansionR" in config_tools,
+            xpansionCpp="xpansionCpp" in config_tools,
+            adequacyPatchR="adequacyPatchR" in config_tools,
+        )

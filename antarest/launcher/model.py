@@ -161,3 +161,10 @@ class JobCreationDTO(BaseModel):
 
 class LauncherEnginesDTO(BaseModel):
     engines: List[str]
+
+
+class LauncherToolsDTO(BaseModel):
+    xpansionR: bool = False
+    xpansionCpp: bool = False
+    adequacyPatchR: bool = False
+    xpress: bool = False
