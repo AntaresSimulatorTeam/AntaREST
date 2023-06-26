@@ -6,8 +6,8 @@ pmax_injection.flags.writeable = False
 pmax_withdrawal = np.ones((8760, 1), dtype=np.float64)
 pmax_withdrawal.flags.writeable = False
 
-inflow = np.zeros((8760, 1), dtype=np.float64)
-inflow.flags.writeable = False
+inflows = np.zeros((8760, 1), dtype=np.float64)
+inflows.flags.writeable = False
 
 lower_rule_curve = np.zeros((8760, 1), dtype=np.float64)
 lower_rule_curve.flags.writeable = False
