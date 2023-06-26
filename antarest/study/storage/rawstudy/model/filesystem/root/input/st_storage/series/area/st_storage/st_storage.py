@@ -23,10 +23,10 @@ class InputSTStorageAreaStorage(FolderNode):
                 self.config.next_file("PMAX-withdrawal.txt"),
                 default_empty=series.pmax_withdrawal,
             ),
-            "inflow": InputSeriesMatrix(
+            "inflows": InputSeriesMatrix(
                 self.context,
-                self.config.next_file("inflow.txt"),
-                default_empty=series.inflow,
+                self.config.next_file("inflows.txt"),
+                default_empty=series.inflows,
             ),
             "lower-rule-curve": InputSeriesMatrix(
                 self.context,
