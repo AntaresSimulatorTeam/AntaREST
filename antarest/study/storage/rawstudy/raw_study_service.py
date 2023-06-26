@@ -14,6 +14,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
@@ -271,6 +272,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             updated_at=datetime.utcnow(),
             version=src_meta.version,
             additional_data=additional_data,
+            public_mode=PublicMode.READ,
         )
 
         src_path = self.get_study_path(src_meta)
