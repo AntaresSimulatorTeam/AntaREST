@@ -1,6 +1,7 @@
 """
 Python module that is dedicated to printing application version and dependencies information
 """
+import os
 import subprocess
 from pathlib import Path
 from typing import Dict
