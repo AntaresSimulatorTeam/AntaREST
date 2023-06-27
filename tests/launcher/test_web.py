@@ -16,6 +16,7 @@ from antarest.launcher.model import (
     JobResultDTO,
     LauncherParametersDTO,
     LogType,
+    LauncherToolsDTO,
 )
 
 ADMIN = JWTUser(
@@ -106,7 +107,7 @@ def test_jobs() -> None:
     assert res.status_code == 200
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
 
-    res = client.get(f"/v1/launcher/jobs")
+    res = client.get("/v1/launcher/jobs")
     assert res.status_code == 200
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
@@ -130,7 +131,20 @@ def test_version():
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(f"/v1/launcher/_versions")
+    res = client.get("/v1/launcher/_versions")
+    assert res.status_code == 200
+    assert res.json() == output
+
+
+@pytest.mark.unit_test
+def test_launcher_tools():
+    service = Mock()
+    output = LauncherToolsDTO()
+    service.get_available_tools.return_value = output
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get("/v1/launcher/tools")
     assert res.status_code == 200
     assert res.json() == output
 

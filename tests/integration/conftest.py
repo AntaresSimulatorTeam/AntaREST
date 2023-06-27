@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
+from antarest.launcher.model import LauncherToolsDTO
 from antarest.main import fastapi_app
 from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.conftest import project_dir
@@ -65,6 +66,7 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
                 matrix_dir=str(matrix_dir),
                 archive_dir=str(archive_dir),
                 tmp_dir=str(tmp_dir),
+                tools={"xpress": "fake_path", "xpansionCpp": "fake_path_2"},
                 launcher_mock=str(cur_dir / "launcher_mock.sh"),
             )
         )

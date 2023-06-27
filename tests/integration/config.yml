@@ -14,6 +14,7 @@ db:
 storage:
   matrixstore: {{matrix_dir}}
   archive_dir: {{archive_dir}}
+  tools: {{tools}}
   tmp_dir: {{tmp_dir}}
   watcher_lock: false
   workspaces:

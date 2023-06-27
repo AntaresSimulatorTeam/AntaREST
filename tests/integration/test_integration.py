@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.launcher.model import LauncherToolsDTO
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.general_management import Mode
@@ -496,6 +497,9 @@ def test_main(app: FastAPI):
     assert new_meta.json()["status"] == "copied"
     assert new_meta.json()["name"] == "STA-mini-copy"
     assert new_meta.json()["horizon"] == "2035"
+
+    res = client.get("/v1/launcher/tools")
+    assert res.json() == LauncherToolsDTO(xpress=True, xpansionCpp=True)
 
 
 def test_matrix(app: FastAPI):
