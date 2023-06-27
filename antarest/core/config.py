@@ -163,13 +163,15 @@ class StorageConfig:
 @dataclass(frozen=True)
 class LocalConfig:
     binaries: Dict[str, Path] = field(default_factory=lambda: {})
-    tools: Optional[Dict[str, Path]] = field(default_factory=lambda: {})
+    tools: Optional[Dict[str, Path]] = None
 
     @staticmethod
     def from_dict(data: JSON) -> Optional["LocalConfig"]:
         return LocalConfig(
             binaries={str(v): Path(p) for v, p in data["binaries"].items()},
-            tools={str(v): Path(p) for v, p in data["tools"].items()} if "tools" in data else {},
+            tools={str(v): Path(p) for v, p in data["tools"].items()}
+            if "tools" in data
+            else {},
         )
 
 

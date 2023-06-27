@@ -775,6 +775,7 @@ class LauncherService:
                 launcher == "slurm"
                 or (
                     self.config.launcher.local
+                    and self.config.launcher.local.tools
                     and "xpress" in self.config.launcher.local.tools
                 )
             ),
@@ -782,6 +783,7 @@ class LauncherService:
                 launcher == "slurm"
                 or (
                     self.config.launcher.local
+                    and self.config.launcher.local.tools
                     and "xpansionR" in self.config.launcher.local.tools
                 )
             ),
@@ -789,6 +791,7 @@ class LauncherService:
                 launcher == "slurm"
                 or (
                     self.config.launcher.local
+                    and self.config.launcher.local.tools
                     and "xpansionCpp" in self.config.launcher.local.tools
                 )
             ),
@@ -796,6 +799,7 @@ class LauncherService:
                 launcher == "slurm"
                 or (
                     self.config.launcher.local
+                    and self.config.launcher.local.tools
                     and "adequacyPatchR" in self.config.launcher.local.tools
                 )
             ),
