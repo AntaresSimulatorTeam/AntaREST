@@ -742,7 +742,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self._generate_study_config(variant_study, None)
+        return self._generate_study_config(variant_study, variant_study, None)
 
     def _generate(
         self,
@@ -897,7 +897,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return results
 
     def _generate_study_config(
-        self, metadata: VariantStudy, config: Optional[FileStudyTreeConfig]
+        self,
+        original_study: VariantStudy,
+        metadata: VariantStudy,
+        config: Optional[FileStudyTreeConfig],
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         parent_study = self.repository.get(metadata.parent_id)
         if parent_study is None:
@@ -907,13 +910,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study = self.study_factory.create_from_fs(
                 self.raw_study_service.get_study_path(parent_study),
                 parent_study.id,
-                output_path=Path(metadata.path) / OUTPUT_RELATIVE_PATH,
+                output_path=Path(original_study.path) / OUTPUT_RELATIVE_PATH,
                 use_cache=False,
             )
             parent_config = study.config
         else:
             res, parent_config = self._generate_study_config(
-                parent_study, config
+                original_study, parent_study, config
             )
             if res is not None and not res.success:
                 return res, parent_config
