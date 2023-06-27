@@ -19,12 +19,12 @@ function ButtonBack(props: Props) {
       alignItems="center"
       boxSizing="border-box"
     >
-      <ArrowBackIcon
+      <Button
+        startIcon={<ArrowBackIcon />}
+        variant="text"
         color="secondary"
         onClick={() => onClick()}
-        sx={{ cursor: "pointer" }}
-      />
-      <Button variant="text" color="secondary" onClick={() => onClick()}>
+      >
         {t("button.back")}
       </Button>
     </Box>

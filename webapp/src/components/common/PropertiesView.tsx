@@ -5,6 +5,7 @@ import SearchFE from "./fieldEditors/SearchFE";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 interface PropsType {
+  topContent?: ReactNode;
   mainContent: ReactNode | undefined;
   secondaryContent?: ReactNode;
   onSearchFilterChange?: (value: string) => void;
@@ -13,8 +14,14 @@ interface PropsType {
 }
 
 function PropertiesView(props: PropsType) {
-  const { onAdd, onSearchFilterChange, mainContent, secondaryContent, sx } =
-    props;
+  const {
+    onAdd,
+    onSearchFilterChange,
+    topContent,
+    mainContent,
+    secondaryContent,
+    sx,
+  } = props;
 
   return (
     <Box
@@ -33,6 +40,7 @@ function PropertiesView(props: PropsType) {
         sx
       )}
     >
+      {topContent}
       {onSearchFilterChange && (
         <SearchFE onSearchValueChange={onSearchFilterChange} />
       )}
