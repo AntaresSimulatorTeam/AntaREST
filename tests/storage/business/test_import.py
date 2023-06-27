@@ -10,6 +10,7 @@ from antarest.core.exceptions import (
     BadZipBinary,
     StudyValidationError,
 )
+from antarest.core.model import PublicMode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
@@ -67,10 +68,13 @@ def test_import_study(tmp_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=tmp_path / "other-study",
         additional_data=StudyAdditionalData(),
+        public_mode=PublicMode.EDIT,
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
         assert md.path == f"{tmp_path}{os.sep}other-study"
+    # assert that importing file into a created study does not alter its public_mode
+    assert md.public_mode == PublicMode.EDIT
 
     shutil.rmtree(tmp_path / "other-study")
     with pytest.raises(BadZipBinary):
