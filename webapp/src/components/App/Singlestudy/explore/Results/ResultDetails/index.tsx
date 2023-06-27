@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext, useParams } from "react-router";
+import { useNavigate, useOutletContext, useParams } from "react-router";
 import axios from "axios";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -38,6 +38,7 @@ import UsePromiseCond, {
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { downloadMatrix } from "../../../../../../utils/matrixUtils";
+import ButtonBack from "../../../../../common/ButtonBack";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -57,6 +58,7 @@ function ResultDetails() {
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas
@@ -152,6 +154,16 @@ function ResultDetails() {
       <SplitLayoutView
         left={
           <PropertiesView
+            topContent={
+              <Box
+                sx={{
+                  width: 1,
+                  px: 1,
+                }}
+              >
+                <ButtonBack onClick={() => navigate("..")} />
+              </Box>
+            }
             mainContent={
               <>
                 <ToggleButtonGroup

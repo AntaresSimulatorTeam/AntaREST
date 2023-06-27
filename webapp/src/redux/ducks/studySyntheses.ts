@@ -8,6 +8,7 @@ import * as RA from "ramda-adjunct";
 import {
   FileStudyTreeConfigDTO,
   GenericInfo,
+  LaunchJobDTO,
   Link,
   LinkElement,
   WSMessage,
@@ -139,10 +140,12 @@ export const setStudySynthesis = createAsyncThunk<
 });
 
 export const refreshStudySynthesis =
-  (event: WSMessage<GenericInfo>): AppThunk =>
+  (event: WSMessage<GenericInfo | LaunchJobDTO>): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const { id } = event.payload;
+    const id =
+      "study_id" in event.payload ? event.payload.study_id : event.payload.id;
+
     if (getStudySynthesisIds(state).includes(id)) {
       dispatch(setStudySynthesis(id as string));
 
