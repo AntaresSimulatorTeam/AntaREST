@@ -34,11 +34,13 @@ The local installation of this application use a bundled build of the web server
 
 ### For Windows
 
-1. Download the lastest version [here](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.8.0/AntaresWeb-windows-v2.8.0.zip)
+1. Download the lastest version [here](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.14.3/AntaresWeb-windows-v2.14.3.zip.zip)
 2. Unzip the package
 3. Go into the directory **AntaresWeb-windows-vX.X.X** (vX.X.X for the latest version)
-4. Launch this file **AntaresWebServerShortcut** . You'll have this pop up
+4. Launch this file **AntaresWebServerShortcut** . (It's important to run the shortcut and not the exe). You'll have this pop up
+
 ![](assets/media/img/deployment_windows.png)
+
 5. Then go to [http://localhost:8080](http://localhost:8080), you can now use it.
 
 
