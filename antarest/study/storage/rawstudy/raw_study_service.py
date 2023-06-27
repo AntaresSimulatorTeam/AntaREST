@@ -272,7 +272,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             updated_at=datetime.utcnow(),
             version=src_meta.version,
             additional_data=additional_data,
-            public_mode=PublicMode.READ,
+            public_mode=PublicMode.NONE,
+            groups=src_meta.groups,
         )
 
         src_path = self.get_study_path(src_meta)
