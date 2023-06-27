@@ -499,7 +499,7 @@ def test_main(app: FastAPI):
     assert new_meta.json()["horizon"] == "2035"
 
     res = client.get("/v1/launcher/tools")
-    assert res.json() == LauncherToolsDTO(xpress=True, xpansionCpp=True)
+    assert res.json() == LauncherToolsDTO(xpress=True)
 
 
 def test_matrix(app: FastAPI):

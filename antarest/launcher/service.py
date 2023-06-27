@@ -769,12 +769,34 @@ class LauncherService:
         return launch_progress_json.get("progress", 0)
 
     def get_available_tools(self) -> LauncherToolsDTO:
-        config_tools = self.config.storage.tools
-        if config_tools is None:
-            return LauncherToolsDTO()
+        launcher = self.config.launcher.default
         return LauncherToolsDTO(
-            xpress="xpress" in config_tools,
-            xpansionR="xpansionR" in config_tools,
-            xpansionCpp="xpansionCpp" in config_tools,
-            adequacyPatchR="adequacyPatchR" in config_tools,
+            xpress=bool(
+                launcher == "slurm"
+                or (
+                    self.config.launcher.local
+                    and "xpress" in self.config.launcher.local.tools
+                )
+            ),
+            xpansionR=bool(
+                launcher == "slurm"
+                or (
+                    self.config.launcher.local
+                    and "xpansionR" in self.config.launcher.local.tools
+                )
+            ),
+            xpansionCpp=bool(
+                launcher == "slurm"
+                or (
+                    self.config.launcher.local
+                    and "xpansionCpp" in self.config.launcher.local.tools
+                )
+            ),
+            adequacyPatchR=bool(
+                launcher == "slurm"
+                or (
+                    self.config.launcher.local
+                    and "adequacyPatchR" in self.config.launcher.local.tools
+                )
+            ),
         )

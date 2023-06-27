@@ -14,7 +14,6 @@ db:
 storage:
   matrixstore: {{matrix_dir}}
   archive_dir: {{archive_dir}}
-  tools: {{tools}}
   tmp_dir: {{tmp_dir}}
   watcher_lock: false
   workspaces:
@@ -28,6 +27,8 @@ launcher:
   local:
     binaries:
       700: {{launcher_mock}}
+    tools:
+      xpress: {{xpress_path}}
 
 debug: false
 
