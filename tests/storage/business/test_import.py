@@ -68,13 +68,13 @@ def test_import_study(tmp_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=tmp_path / "other-study",
         additional_data=StudyAdditionalData(),
-        public_mode=PublicMode.EDIT,
+        groups=["fake_group_1", "fake_group_2"],
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
         assert md.path == f"{tmp_path}{os.sep}other-study"
-    # assert that importing file into a created study does not alter its public_mode
-    assert md.public_mode == PublicMode.EDIT
+    # assert that importing file into a created study does not alter its group
+    assert md.groups == ["fake_group_1", "fake_group_2"]
 
     shutil.rmtree(tmp_path / "other-study")
     with pytest.raises(BadZipBinary):

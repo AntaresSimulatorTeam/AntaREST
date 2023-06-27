@@ -1499,7 +1499,7 @@ class StudyService:
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
             additional_data=StudyAdditionalData(),
-            public_mode=PublicMode.READ,
+            groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(
             study, stream
