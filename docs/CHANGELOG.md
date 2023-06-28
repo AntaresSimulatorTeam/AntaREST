@@ -15,6 +15,7 @@ v2.14.4 (2023-06-28)
 *  **deploy:** change example study settings to allow parallel run (#1617) ([389793e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/389793e08dee0f05dfe68d952e9b85b64b3bc57e))
 *  **variant:** get synthesis now also works for level 2+ variants (#1622) ([661b856](https://github.com/AntaresSimulatorTeam/AntaREST/commit/661b856331673ac792fd2ca264d0fb45433d3ee5))
 *  **results:** refresh study outputs when job completed and add back button (#1621) ([39846c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/39846c07db0ccd540fcf73fe8a5d711012101226))
+*  **deploy:** remove unnecessary Outputs from "000 Free Data Sample" study (#1628) ([a154dac](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a154dacdc11e99a38cbc2d2930c50875563b76a2))
 
 
 ### Documentation
