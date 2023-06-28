@@ -2405,6 +2405,23 @@ def test_variant_manager(app: FastAPI):
         },
     )
     variant_id = res.json()
+
+    client.post(
+        f"/v1/launcher/run/{variant_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+
+    res = client.get(
+        f"v1/studies/{variant_id}/synthesis",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+
+    assert variant_id in res.json()["output_path"]
+
     client.post(
         f"/v1/studies/{variant_id}/variants?name=bar",
         headers={

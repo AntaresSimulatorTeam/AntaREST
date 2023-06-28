@@ -22,14 +22,18 @@ class TestVersionInfo:
 
     @pytest.mark.unit_test
     def test_get_commit_id__commit_id__exist(self, tmp_path) -> None:
+        # fmt: off
         path_commit_id = tmp_path.joinpath("commit_id")
-        path_commit_id.write_text("fake_commit")
-        assert get_commit_id(tmp_path) == "fake_commit"
+        path_commit_id.write_text("6d891aba6e4a1c3a6f43b8ca00b021a20d319091")
+        assert (get_commit_id(tmp_path) == "6d891aba6e4a1c3a6f43b8ca00b021a20d319091")
+        # fmt: on
 
     @pytest.mark.unit_test
-    def test_get_commit_id__commit_id__missing(self, tmp_path) -> None:
-        with patch(
-            "antarest.core.version_info.get_last_commit_from_git",
-            return_value="mock commit",
-        ):
-            assert get_commit_id(tmp_path) == "mock commit"
+    def test_get_commit_id__git_call_ok(self, tmp_path) -> None:
+        actual = get_commit_id(tmp_path)
+        assert re.fullmatch(r"[0-9a-fA-F]{40}", actual)
+
+    @pytest.mark.unit_test
+    def test_get_commit_id__git_call_failed(self, tmp_path) -> None:
+        with patch("subprocess.check_output", side_effect=FileNotFoundError):
+            assert not get_commit_id(tmp_path)

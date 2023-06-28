@@ -34,7 +34,7 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
       name={filterName as FieldPath<T>}
       multiple
       options={filterOptions}
-      label={t(`study.modelization.nodeProperties.${filterName}`)}
+      label={t(`study.outputFilters.${filterName}`)}
       control={control}
       rules={{
         onAutoSubmit: (value) => {
@@ -48,7 +48,7 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
   );
 
   return (
-    <Fieldset legend={t("study.modelization.nodeProperties.outputFilter")}>
+    <Fieldset legend={t("study.outputFilters")}>
       {renderFilter("filterSynthesis")}
       {renderFilter("filterByYear")}
     </Fieldset>

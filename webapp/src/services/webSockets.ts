@@ -2,6 +2,7 @@ import debug from "debug";
 import * as RA from "ramda-adjunct";
 import {
   GenericInfo,
+  LaunchJobDTO,
   StudySummary,
   UserInfo,
   WSEvent,
@@ -60,6 +61,7 @@ export function initWebSocket(
   if (!globalListenerAdded) {
     messageListeners.push(
       makeStudyListener(dispatch),
+      makeStudyJobStatusListener(dispatch),
       makeMaintenanceListener(dispatch),
       makeStudyDataListener(dispatch)
     );
@@ -197,6 +199,26 @@ function makeStudyListener(dispatch: AppDispatch) {
         break;
       case WSEvent.STUDY_DELETED:
         dispatch(deleteStudy(e));
+        break;
+    }
+  };
+}
+
+function makeStudyJobStatusListener(dispatch: AppDispatch): MessageListener {
+  const unsubscribeById: Record<LaunchJobDTO["id"], VoidFunction> = {};
+
+  return function listener(e: WSMessage<LaunchJobDTO>): void {
+    switch (e.type) {
+      case WSEvent.STUDY_JOB_STARTED: {
+        const unsubscribe = sendWsSubscribeMessage(
+          WsChannel.JobStatus + e.payload.id
+        );
+        unsubscribeById[e.payload.id] = unsubscribe;
+        break;
+      }
+      case WSEvent.STUDY_JOB_COMPLETED:
+        unsubscribeById[e.payload.id]?.();
+        dispatch(refreshStudySynthesis(e));
         break;
     }
   };
