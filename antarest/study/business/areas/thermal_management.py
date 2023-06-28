@@ -1,12 +1,13 @@
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Optional, Dict, Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-from pydantic import StrictStr, StrictBool
+from pydantic import StrictBool, StrictStr
 
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
     FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study
@@ -16,13 +17,13 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 
 
-class TimeSeriesGenerationOption(str, Enum):
+class TimeSeriesGenerationOption(EnumIgnoreCase):
     USE_GLOBAL_PARAMETER = "use global parameter"
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
 
 
-class LawOption(str, Enum):
+class LawOption(EnumIgnoreCase):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
 

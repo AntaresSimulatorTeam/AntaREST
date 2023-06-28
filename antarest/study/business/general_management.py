@@ -1,12 +1,13 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-from pydantic import StrictBool, conint, PositiveInt, root_validator
+from pydantic import PositiveInt, StrictBool, conint, root_validator
 
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    FieldInfo,
     GENERAL_DATA_PATH,
+    FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study
@@ -20,13 +21,13 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 
 
-class Mode(str, Enum):
+class Mode(EnumIgnoreCase):
     ECONOMY = "Economy"
     ADEQUACY = "Adequacy"
     DRAFT = "draft"
 
 
-class Month(str, Enum):
+class Month(EnumIgnoreCase):
     JANUARY = "january"
     FEBRUARY = "february"
     MARCH = "march"
@@ -41,7 +42,7 @@ class Month(str, Enum):
     DECEMBER = "december"
 
 
-class WeekDay(str, Enum):
+class WeekDay(EnumIgnoreCase):
     MONDAY = "Monday"
     TUESDAY = "Tuesday"
     WEDNESDAY = "Wednesday"
@@ -51,7 +52,7 @@ class WeekDay(str, Enum):
     SUNDAY = "Sunday"
 
 
-class BuildingMode(str, Enum):
+class BuildingMode(EnumIgnoreCase):
     AUTOMATIC = "Automatic"
     CUSTOM = "Custom"
     DERATED = "Derated"

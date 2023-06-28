@@ -2,6 +2,9 @@ from enum import Enum
 from pathlib import PurePosixPath
 from typing import Any, Dict, List, Optional
 
+from pydantic import Field
+
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import (
     FieldInfo,
     FormFieldsBaseModel,
@@ -12,10 +15,9 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import Field
 
 
-class TimeSeriesInterpretation(str, Enum):
+class TimeSeriesInterpretation(EnumIgnoreCase):
     POWER_GENERATION = "power-generation"
     PRODUCTION_FACTOR = "production-factor"
 

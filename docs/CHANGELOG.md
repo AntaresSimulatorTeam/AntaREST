@@ -1,6 +1,40 @@
 Antares Web Changelog
 =====================
 
+v2.14.4 (2023-06-28)
+--------------------
+
+### Bug Fixes
+
+*  **launcher:** take into account the `nb_cpu` in the local Solver command line (#1603) ([7bb4f0c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7bb4f0c45db8ddbaedc1a814d0bfddb9fb440aba))
+*  **api:** resolve version display issue in Desktop's `/version` endpoint (#1605) ([a0bf966](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a0bf966dc0b7a0ee302b7d25ff0d95f5307d8117))
+*  **study:** fixing case sensitivity issues in reading study configuration (#1610) ([f03ad59](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f03ad59f41a4d5a29a088e7ff98d20037540563b))
+*  **api:** correct `/kill` end-point implementation to work with PyInstaller ([213fb88](https://github.com/AntaresSimulatorTeam/AntaREST/commit/213fb885b05490afe573938ec4300f07b561b2dd))
+*  **fastapi:** correct URL inconsistency between the webapp and the API (#1612) ([195d22c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/195d22c7005e2abad7f389164b0701a8fa24b98c))
+*  **i18n:** wrong translations and add missing keys (#1615) ([7a7019c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7a7019cc1e900feaa5681d2244a81550510e9a78))
+*  **deploy:** change example study settings to allow parallel run (#1617) ([389793e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/389793e08dee0f05dfe68d952e9b85b64b3bc57e))
+*  **variant:** get synthesis now also works for level 2+ variants (#1622) ([661b856](https://github.com/AntaresSimulatorTeam/AntaREST/commit/661b856331673ac792fd2ca264d0fb45433d3ee5))
+*  **results:** refresh study outputs when job completed and add back button (#1621) ([39846c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/39846c07db0ccd540fcf73fe8a5d711012101226))
+*  **deploy:** remove unnecessary Outputs from "000 Free Data Sample" study (#1628) ([a154dac](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a154dacdc11e99a38cbc2d2930c50875563b76a2))
+
+
+### Documentation
+
+*  **model:** add documentation to the `Matrix` and `MatrixDataSet` classes ([f7ae5f4](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f7ae5f4735eb4add02c8aa951eaf30405748dfe6))
+
+
+### Code Refactoring
+
+*  **api:** remove unused protected function ([6ea3ad7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6ea3ad7208fd16746bd134aebf8ed8ea9b3da61d))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>,
+<a href="https://github.com/skamril">skamril</a>
+
+
 v2.14.3 (2023-06-20)
 --------------------
 

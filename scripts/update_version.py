@@ -7,6 +7,7 @@ import argparse
 import datetime
 import pathlib
 import re
+import typing
 
 try:
     from antarest import __version__
@@ -17,6 +18,84 @@ except ImportError:
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 # fmt: on
+
+TOKENS = [
+    ("H1", r"^([^\n]+)\n={3,}$"),
+    ("H2", r"^([^\n]+)\n-{3,}$"),
+    ("H3", r"^#{3}\s+([^\n]+)$"),
+    ("H4", r"^#{4}\s+([^\n]+)$"),
+    ("LINE", r"^[^\n]+$"),
+    ("NEWLINE", r"\n"),
+    ("MISMATCH", r"."),
+]
+
+ANY_TOKEN_RE = "|".join([f"(?P<{name}>{regex})" for name, regex in TOKENS])
+
+
+class Token:
+    def __init__(self, kind: str, text: str) -> None:
+        self.kind = kind
+        self.text = text
+
+    def __str__(self) -> str:
+        return self.text
+
+
+class NewlineToken(Token):
+    def __init__(self) -> None:
+        super().__init__("NEWLINE", "\n")
+
+
+class TitleToken(Token):
+    def __init__(self, kind: str, text: str) -> None:
+        super().__init__(kind, text)
+
+    @property
+    def level(self) -> int:
+        return int(self.kind[1:])
+
+    def __str__(self) -> str:
+        title = self.text.strip()
+        if self.level == 1:
+            return "\n".join([title, "=" * len(title)])
+        elif self.level == 2:
+            return "\n".join([title, "-" * len(title)])
+        else:
+            return "#" * self.level + " " + title
+
+
+def parse_changelog(change_log: str) -> typing.Generator[Token, None, None]:
+    for mo in re.finditer(ANY_TOKEN_RE, change_log, flags=re.MULTILINE):
+        kind = mo.lastgroup
+        if kind in {"H1", "H2", "H3", "H4"} and mo.lastindex is not None:
+            title = mo[mo.lastindex + 1]
+            yield TitleToken(kind, title)
+        elif kind == "LINE":
+            yield Token(kind, mo.group())
+        elif kind == "NEWLINE":
+            yield NewlineToken()
+        else:
+            raise NotImplementedError(kind, mo.group())
+
+
+def update_changelog(
+    change_log: str, new_version: str, new_date: str
+) -> typing.Generator[Token, None, None]:
+    title_found = False
+    new_title = f"v{new_version} ({new_date})"
+    for token in parse_changelog(change_log):
+        if (
+            not title_found
+            and isinstance(token, TitleToken)
+            and token.level == 2
+        ):
+            title_found = True
+            if token.text != new_title:
+                yield TitleToken(kind=token.kind, text=new_title)
+                yield NewlineToken()
+                yield NewlineToken()
+                yield NewlineToken()
+        yield token
 
 
 def upgrade_version(new_version: str, new_date: str) -> None:
@@ -76,6 +155,13 @@ def upgrade_version(new_version: str, new_date: str) -> None:
     text = fullpath.read_text(encoding="utf-8")
     patched = re.sub(search, replace, text, count=1)
     fullpath.write_text(patched, encoding="utf-8")
+
+    print("Preparing the CHANGELOG in the documentation...")
+    changelog_path = PROJECT_DIR.joinpath("docs/CHANGELOG.md")
+    change_log = changelog_path.read_text(encoding="utf-8")
+    with changelog_path.open(mode="w", encoding="utf-8") as fd:
+        for token in update_changelog(change_log, new_version, new_date):
+            print(token, end="", file=fd)
 
     print("The version has been successfully updated.")
 
