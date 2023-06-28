@@ -16,6 +16,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.model import PublicMode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
@@ -481,10 +482,13 @@ def test_copy_study(
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
         additional_data=StudyAdditionalData(),
+        groups=["fake_group_1", "fake_group_2"],
     )
     md = study_service.copy(src_md, "dst_name")
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
+    assert md.public_mode == PublicMode.NONE
+    assert md.groups == src_md.groups
     study.get.assert_called_once_with(["study"])
 
 
