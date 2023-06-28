@@ -10,7 +10,6 @@ from antarest.core.exceptions import (
     BadZipBinary,
     StudyValidationError,
 )
-from antarest.core.model import PublicMode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
