@@ -14,7 +14,7 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Body, Depends, File
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param
 from starlette.responses import (
     JSONResponse,
@@ -110,12 +110,26 @@ def create_raw_study_routes(
             if content_type == "application/json":
                 # Use `JSONResponse` to ensure to return a valid JSON response
                 # that checks `NaN` and `Infinity` values.
-                output = json.loads(output)
-                return JSONResponse(content=output)
+                try:
+                    output = json.loads(output)
+                    return JSONResponse(content=output)
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                        detail=f"Invalid JSON configuration in path '{path}': {exc}",
+                    ) from None
             elif encoding:
-                response = PlainTextResponse(output, media_type=content_type)
-                response.charset = encoding
-                return response
+                try:
+                    # fmt: off
+                    response = PlainTextResponse(output, media_type=content_type)
+                    response.charset = encoding
+                    return response
+                    # fmt: on
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                        detail=f"Invalid plain text configuration in path '{path}': {exc}",
+                    ) from None
             elif content_type:
                 headers = {
                     "Content-Disposition": f"attachment; filename='{resource_path.name}'"
