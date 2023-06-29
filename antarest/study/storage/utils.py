@@ -67,12 +67,15 @@ def get_default_workspace_path(config: Config) -> Path:
     return get_workspace_path(config, DEFAULT_WORKSPACE_NAME)
 
 
-def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
+def update_antares_info(
+    metadata: Study, studytree: FileStudyTree, update_author: bool
+) -> None:
     """
     Update study.antares data
     Args:
         metadata: study information
         studytree: study tree
+        update_author: Whether the author should be modified or not (only True when creating a study)
 
     Returns: none, update is directly apply on study_data
 
@@ -82,6 +85,8 @@ def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     study_data_info["antares"]["version"] = metadata.version
+    if update_author:
+        study_data_info["antares"]["author"] = metadata.author
     studytree.save(study_data_info, ["study"])
 
 

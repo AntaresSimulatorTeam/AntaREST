@@ -741,6 +741,20 @@ class StudyService:
         sid = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / sid)
 
+        author = "Unknown"
+        if params.user:
+            try:
+                if author_not_formatted := self.user_service.get_user(
+                    params.user.id, params
+                ):
+                    author = author_not_formatted.to_dto().name
+            except Exception as e:
+                logger.error(
+                    "Due to this exception %d, the author will remain Unknown",
+                    params.user.id,
+                    exc_info=e,
+                )
+
         raw = RawStudy(
             id=sid,
             name=study_name,
@@ -750,6 +764,7 @@ class StudyService:
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
             additional_data=StudyAdditionalData(),
+            author=author,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)

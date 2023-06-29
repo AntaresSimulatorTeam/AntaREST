@@ -158,7 +158,7 @@ def test_main(app: FastAPI):
     assert res.json()["description"] == "Not a year by year simulation"
 
     # Set new comments
-    res = client.put(
+    client.put(
         f"/v1/studies/{study_id}/comments",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
@@ -314,6 +314,14 @@ def test_main(app: FastAPI):
     assert created.status_code == 201
 
     res = client.get(
+        f"/v1/studies/{created.json()}/raw?path=study&depth=3&formatted=true",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.json()["antares"]["author"] == "George"
+
+    res = client.get(
         "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
@@ -386,7 +394,7 @@ def test_main(app: FastAPI):
     assert len(res.json()) == 1
 
     # play with groups
-    res = client.post(
+    client.post(
         "/v1/groups",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
@@ -400,14 +408,14 @@ def test_main(app: FastAPI):
         },
     )
     group_id = res.json()[1]["id"]
-    res = client.post(
+    client.post(
         "/v1/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"type": 40, "group_id": group_id, "identity_id": 3},
     )
-    res = client.post(
+    client.post(
         "/v1/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
