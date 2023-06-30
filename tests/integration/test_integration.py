@@ -2481,8 +2481,8 @@ def test_variant_manager(app: FastAPI):
     assert children["children"][0]["children"][1]["node"]["name"] == "baz"
 
     # George creates a base study
-    # He creates a variant from this study : assert that its author is George
-    # The admin creates a variant from the same base study : assert that its author is admin
+    # He creates a variant from this study : assert that no command is created
+    # The admin creates a variant from the same base study : assert that its author is admin (created via a command)
 
     client.post(
         "/v1/users",
@@ -2516,7 +2516,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.json()[0]["args"]["data"]["antares"]["author"] == "George"
+    assert len(res.json()) == 0
     res = client.post(
         f"/v1/studies/{base_study_id}/variants?name=foo",
         headers={

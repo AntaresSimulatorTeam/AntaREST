@@ -71,25 +71,27 @@ def create_study_variant_routes(
             return ""
 
         author = study_service.get_user_name(params)
-        study_service.apply_commands(
-            variant_study.id,
-            [
-                UpdateConfig(
-                    target="study",
-                    data={
-                        "antares": {
-                            "version": variant_study.version,
-                            "caption": variant_study.name,
-                            "created": variant_study.created_at.timestamp(),
-                            "lastsave": variant_study.created_at.timestamp(),
-                            "author": author,
-                        }
-                    },
-                    command_context=study_service.storage_service.variant_study_service.command_factory.command_context,
-                ).to_dto()
-            ],
-            params,
-        )
+        parent_author = variant_study.additional_data.author
+        if author != parent_author:
+            study_service.apply_commands(
+                variant_study.id,
+                [
+                    UpdateConfig(
+                        target="study",
+                        data={
+                            "antares": {
+                                "version": variant_study.version,
+                                "caption": variant_study.name,
+                                "created": variant_study.created_at.timestamp(),
+                                "lastsave": variant_study.created_at.timestamp(),
+                                "author": author,
+                            }
+                        },
+                        command_context=study_service.storage_service.variant_study_service.command_factory.command_context,
+                    ).to_dto()
+                ],
+                params,
+            )
         return str(variant_study.id)
 
     @bp.get(
