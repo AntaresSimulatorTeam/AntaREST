@@ -1,14 +1,10 @@
 import logging
 from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
-
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -22,6 +18,7 @@ from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
 )
+from fastapi import APIRouter, Body, Depends
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +55,13 @@ def create_study_variant_routes(
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        """
+        Creates a study variant.
+
+        Parameters:
+        - `uuid`: The UUID of the parent study.
+        - `name`: The name of the new study variant.
+        """
         sanitized_uuid = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
         logger.info(
@@ -67,12 +71,13 @@ def create_study_variant_routes(
         variant_study = variant_study_service.create_variant_study(
             uuid=sanitized_uuid, name=name, params=params
         )
-        if not variant_study:
-            return ""
 
         author = study_service.get_user_name(params)
         parent_author = variant_study.additional_data.author
         if author != parent_author:
+            command_context = (
+                study_service.storage_service.variant_study_service.command_factory.command_context
+            )
             study_service.apply_commands(
                 variant_study.id,
                 [
@@ -87,7 +92,7 @@ def create_study_variant_routes(
                                 "author": author,
                             }
                         },
-                        command_context=study_service.storage_service.variant_study_service.command_factory.command_context,
+                        command_context=command_context,
                     ).to_dto()
                 ],
                 params,
