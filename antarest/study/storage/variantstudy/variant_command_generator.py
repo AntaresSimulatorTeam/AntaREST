@@ -126,7 +126,7 @@ class VariantCommandGenerator:
             dest_path, "", use_cache=False
         )
         if metadata:
-            update_antares_info(metadata, study.tree, False)
+            update_antares_info(metadata, study.tree, True)
 
         results = VariantCommandGenerator._generate(
             commands,

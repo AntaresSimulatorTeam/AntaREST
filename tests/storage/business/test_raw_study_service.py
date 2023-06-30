@@ -241,6 +241,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
         version="720",
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
+        additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)
 
@@ -279,6 +280,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
             version=version,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
+            additional_data=StudyAdditionalData(author="john.doe"),
         )
         return study_service.create(metadata)
 

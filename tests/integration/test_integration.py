@@ -2480,6 +2480,43 @@ def test_variant_manager(app: FastAPI):
     assert children["children"][0]["children"][0]["node"]["name"] == "bar"
     assert children["children"][0]["children"][1]["node"]["name"] == "baz"
 
+    # George creates a base study
+    # He creates a variant from this study : assert that its author is George
+    # The admin creates a variant from the same base study : assert that its author is admin
+
+    client.post(
+        "/v1/users",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "George", "password": "mypass"},
+    )
+    res = client.post(
+        "/v1/login", json={"username": "George", "password": "mypass"}
+    )
+    george_credentials = res.json()
+    base_study_res = client.post(
+        "/v1/studies?name=foo",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+
+    base_study_id = base_study_res.json()
+    res = client.post(
+        f"/v1/studies/{base_study_id}/variants?name=foo_2",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    variant_id = res.json()
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json()[0]["args"]["data"]["antares"]["author"] == "George"
     res = client.post(
         f"/v1/studies/{base_study_id}/variants?name=foo",
         headers={
@@ -2487,6 +2524,18 @@ def test_variant_manager(app: FastAPI):
         },
     )
     variant_id = res.json()
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert len(res.json()) == 1
+    command = res.json()[0]
+    assert command["action"] == "update_config"
+    assert command["args"]["target"] == "study"
+    assert command["args"]["data"]["antares"]["author"] == "admin"
+
     res = client.get(
         f"/v1/studies/{variant_id}/parents",
         headers={
@@ -2557,7 +2606,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert len(res.json()) == 3
+    assert len(res.json()) == 4
     assert res.status_code == 200
 
     res = client.put(

@@ -7,7 +7,6 @@ import time
 from datetime import datetime, timedelta
 from math import ceil
 from pathlib import Path
-from time import strptime
 from typing import Callable, List, Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
@@ -19,7 +18,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import StopWatch
@@ -41,6 +40,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
     FileStudyTree,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def update_antares_info(
     Args:
         metadata: study information
         studytree: study tree
-        update_author: Whether the author should be modified or not (only True when creating a study)
+        update_author: Whether the author should be modified or not. Only True when creating a study (raw or variant)
 
     Returns: none, update is directly apply on study_data
 
@@ -86,7 +86,7 @@ def update_antares_info(
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     study_data_info["antares"]["version"] = metadata.version
     if update_author:
-        study_data_info["antares"]["author"] = metadata.author
+        study_data_info["antares"]["author"] = metadata.additional_data.author
     studytree.save(study_data_info, ["study"])
 
 
@@ -164,7 +164,7 @@ def extract_output_name(
     )
 
     mode = "eco" if general_info["mode"] == "Economy" else "adq"
-    suffix_name = general_info["name"] if general_info["name"] else ""
+    suffix_name = general_info["name"] or ""
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name

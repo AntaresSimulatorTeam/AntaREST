@@ -15,13 +15,12 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,11 +64,33 @@ def create_study_variant_routes(
             f"Creating new variant '{name}' from study {uuid}",
             extra={"user": current_user.id},
         )
-
-        output = variant_study_service.create_variant_study(
+        variant_study = variant_study_service.create_variant_study(
             uuid=sanitized_uuid, name=name, params=params
         )
-        return output or ""
+        if not variant_study:
+            return ""
+
+        author = study_service.get_user_name(params)
+        study_service.apply_commands(
+            variant_study.id,
+            [
+                UpdateConfig(
+                    target="study",
+                    data={
+                        "antares": {
+                            "version": variant_study.version,
+                            "caption": variant_study.name,
+                            "created": variant_study.created_at.timestamp(),
+                            "lastsave": variant_study.created_at.timestamp(),
+                            "author": author,
+                        }
+                    },
+                    command_context=study_service.storage_service.variant_study_service.command_factory.command_context,
+                ).to_dto()
+            ],
+            params,
+        )
+        return str(variant_study.id)
 
     @bp.get(
         "/studies/{uuid}/variants",

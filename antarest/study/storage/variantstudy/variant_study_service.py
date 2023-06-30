@@ -80,6 +80,9 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudy,
@@ -584,7 +587,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
-    ) -> Optional[str]:
+    ) -> Optional[VariantStudy]:
         """
         Create empty study
         Args:
@@ -650,7 +653,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             variant_study.id,
             params.get_user_id(),
         )
-        return str(variant_study.id)
+        return variant_study
 
     def generate_task(
         self,
