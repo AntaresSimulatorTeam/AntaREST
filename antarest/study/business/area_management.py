@@ -95,38 +95,47 @@ class AreaManager:
     def get_all_areas(
         self, study: RawStudy, area_type: Optional[AreaType] = None
     ) -> List[AreaInfoDTO]:
+        """
+        Retrieves all areas and districts of a raw study based on the area type.
+
+        Args:
+            study: The raw study object.
+            area_type: The type of area. Retrieves areas and districts if `None`.
+
+        Returns:
+            A list of area/district information.
+        """
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         metadata = self.patch_service.get(study)
         areas_metadata: Dict[str, PatchArea] = metadata.areas or {}
-        result = []
+        cfg_areas: Dict[str, Area] = file_study.config.areas
+        result: List[AreaInfoDTO] = []
+
         if area_type is None or area_type == AreaType.AREA:
-            for area_name, area in file_study.config.areas.items():
-                result.append(
-                    AreaInfoDTO(
-                        id=area_name,
-                        name=area.name,
-                        type=AreaType.AREA,
-                        metadata=areas_metadata.get(area_name, PatchArea()),
-                        thermals=self._get_clusters(
-                            file_study, area_name, metadata
-                        ),
-                    )
+            result.extend(
+                AreaInfoDTO(
+                    id=area_id,
+                    name=area.name,
+                    type=AreaType.AREA,
+                    metadata=areas_metadata.get(area_id, PatchArea()),
+                    thermals=self._get_clusters(file_study, area_id, metadata),
                 )
+                for area_id, area in cfg_areas.items()
+            )
 
         if area_type is None or area_type == AreaType.DISTRICT:
-            for set_name in file_study.config.sets:
-                result.append(
-                    AreaInfoDTO(
-                        id=set_name,
-                        name=file_study.config.sets[set_name].name or set_name,
-                        type=AreaType.DISTRICT,
-                        set=file_study.config.sets[set_name].get_areas(
-                            list(file_study.config.areas.keys())
-                        ),
-                        metadata=areas_metadata.get(set_name, PatchArea()),
-                    )
+            cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
+            result.extend(
+                AreaInfoDTO(
+                    id=set_id,
+                    name=district.name or set_id,
+                    type=AreaType.DISTRICT,
+                    set=district.get_areas(list(cfg_areas)),
+                    metadata=areas_metadata.get(set_id, PatchArea()),
                 )
+                for set_id, district in cfg_sets.items()
+            )
 
         return result
 
