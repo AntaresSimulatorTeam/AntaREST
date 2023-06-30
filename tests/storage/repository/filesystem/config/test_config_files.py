@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     Cluster,
     BindingConstraintDTO,
-    Storage,
+    STStorage,
 )
 from tests.storage.business.assets import ASSETS_DIR
 
@@ -303,9 +303,9 @@ def test_parse_st_storage(tmp_path: Path) -> None:
     ).write_text(content)
 
     assert _parse_st_storage(study_path, "fr") == [
-        Storage(id="t1", name="t1"),
-        Storage(id="t2", name="t2"),
-        Storage(id="t3", name="t3"),
+        STStorage(id="t1", name="t1"),
+        STStorage(id="t2", name="t2"),
+        STStorage(id="t3", name="t3"),
     ]
 
 
