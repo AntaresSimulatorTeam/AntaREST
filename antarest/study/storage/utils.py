@@ -40,7 +40,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
     FileStudyTree,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -68,26 +67,26 @@ def get_default_workspace_path(config: Config) -> Path:
 
 
 def update_antares_info(
-    metadata: Study, studytree: FileStudyTree, update_author: bool
+    metadata: Study, study_tree: FileStudyTree, *, update_author: bool
 ) -> None:
     """
-    Update study.antares data
+    Update the "antares" information directly in the study tree.
+
     Args:
-        metadata: study information
-        studytree: study tree
-        update_author: Whether the author should be modified or not. Only True when creating a study (raw or variant)
-
-    Returns: none, update is directly apply on study_data
-
+        metadata: The study object extracted from the database.
+        study_tree: The study tree object.
+        update_author: Specifies whether the author should be modified or not.
+            The author's name should be updated when the study is created,
+            but it is not changed if the study is copied.
     """
-    study_data_info = studytree.get(["study"])
+    study_data_info = study_tree.get(["study"])
     study_data_info["antares"]["caption"] = metadata.name
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     study_data_info["antares"]["version"] = metadata.version
     if update_author:
         study_data_info["antares"]["author"] = metadata.additional_data.author
-    studytree.save(study_data_info, ["study"])
+    study_tree.save(study_data_info, ["study"])
 
 
 def fix_study_root(study_path: Path) -> None:
