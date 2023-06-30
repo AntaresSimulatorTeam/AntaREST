@@ -25,8 +25,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Link,
     Simulation,
+    STStorage,
     transform_name_to_id,
-    Storage,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
@@ -49,35 +49,38 @@ def build(
     study_path: Path, study_id: str, output_path: Optional[Path] = None
 ) -> "FileStudyTreeConfig":
     """
-    Extract data from filesystem to build config study.
+    Extracts data from the filesystem to build a study config.
+
     Args:
-        study_path: study_path with files inside.
-        study_id: uuid of the study
-        output_path: output_path if not in study_path/output
+        study_path: Path to the study directory or ZIP file containing the study.
+        study_id: UUID of the study.
+        output_path: Optional path for the output directory.
+            If not provided, it will be set to `{study_path}/output`.
 
-    Returns: study config fill with data
-
+    Returns:
+        An instance of `FileStudyTreeConfig` filled with the study data.
     """
+    is_zip_file = study_path.suffix.lower() == ".zip"
+
+    # Study directory to use if the study is compressed
+    study_dir = study_path.with_suffix("") if is_zip_file else study_path
     (sns, asi, enr_modelling) = _parse_parameters(study_path)
 
-    study_path_without_zip_extension = study_path.parent / (
-        study_path.stem if study_path.suffix == ".zip" else study_path.name
-    )
-
+    outputs_dir: Path = output_path or study_path / "output"
     return FileStudyTreeConfig(
         study_path=study_path,
-        output_path=output_path or study_path / "output",
-        path=study_path_without_zip_extension,
+        output_path=outputs_dir,
+        path=study_dir,
         study_id=study_id,
         version=_parse_version(study_path),
         areas=_parse_areas(study_path),
         sets=_parse_sets(study_path),
-        outputs=_parse_outputs(output_path or study_path / "output"),
+        outputs=_parse_outputs(outputs_dir),
         bindings=_parse_bindings(study_path),
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
-        zip_path=study_path if study_path.suffix == ".zip" else None,
+        zip_path=study_path if is_zip_file else None,
     )
 
 
@@ -359,7 +362,7 @@ def parse_area(root: Path, area: str) -> "Area":
         renewables=_parse_renewables(root, area_id),
         filters_synthesis=_parse_filters_synthesis(root, area_id),
         filters_year=_parse_filters_year(root, area_id),
-        st_storage=_parse_st_storage(root, area_id),
+        st_storages=_parse_st_storage(root, area_id),
     )
 
 
@@ -379,21 +382,18 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
     ]
 
 
-def _parse_st_storage(root: Path, area: str) -> List[Storage]:
+def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
-    list_ini: Dict[str, Any] = _extract_data_from_file(
+    config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
         file_type=FileType.SIMPLE_INI,
     )
     return [
-        Storage(
-            id=transform_name_to_id(key),
-            name=values.get("name", key),
-        )
-        for key, values in list_ini.items()
+        STStorage(id=storage_id, name=values["name"])
+        for storage_id, values in config_dict.items()
     ]
 
 
