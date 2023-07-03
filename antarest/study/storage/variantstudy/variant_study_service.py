@@ -80,6 +80,9 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudy,
@@ -584,16 +587,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
-    ) -> Optional[str]:
+    ) -> VariantStudy:
         """
-        Create empty study
+        Create a new variant study.
+
         Args:
-            uuid: study name to set
-            name: name of study
-            params: request parameters
+            uuid: The UUID of the parent study.
+            name: The name of the new variant study.
+            params: The request parameters.
 
-        Returns: new study uuid
+        Returns:
+            The newly created variant study.
 
+        Raises:
+            StudyNotFoundError:
+                If the parent study with the given UUID does not exist.
+            VariantStudyParentNotValid:
+                If the parent study is not managed and cannot be used to create a variant.
         """
         study = self.repository.get(uuid)
 
@@ -602,7 +612,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if not is_managed(study):
             raise VariantStudyParentNotValid(
-                f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
+                f"The study {study.name} is not managed. Cannot create a variant from it."
+                f" It must be imported first."
             )
 
         assert_permission(params.user, study, StudyPermissionType.READ)
@@ -650,7 +661,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             variant_study.id,
             params.get_user_id(),
         )
-        return str(variant_study.id)
+        return variant_study
 
     def generate_task(
         self,

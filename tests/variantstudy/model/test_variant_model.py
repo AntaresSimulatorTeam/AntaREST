@@ -86,8 +86,8 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
 
         # Create un new variant
         name = "my-variant"
-        saved_id = service.create_variant_study(origin_id, name, SADMIN)
-
+        variant_study = service.create_variant_study(origin_id, name, SADMIN)
+        saved_id = variant_study.id
         study = repository.get(saved_id)
         assert study.id == saved_id
         assert study.parent_id == origin_id
@@ -226,9 +226,10 @@ def test_smart_generation(
         )
         repository.save(origin_study)
 
-        variant_id = service.create_variant_study(
+        variant_study = service.create_variant_study(
             origin_id, "my variant", SADMIN
         )
+        variant_id = variant_study.id
         assert (
             service._get_variant_study(variant_id, SADMIN).folder
             == "some_place"
