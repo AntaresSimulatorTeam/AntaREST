@@ -330,7 +330,6 @@ Create a new short-term storage
 ```json
 {
   "area_id": "<AREA_ID>",
-  "storage_name": "<STRING>",
   "parameters": "<INI_MODEL>",
   "pmax_injection?": "<MATRIX>",
   "pmax_withdrawal?": "<MATRIX>",

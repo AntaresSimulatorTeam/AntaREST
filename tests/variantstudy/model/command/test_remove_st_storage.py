@@ -46,6 +46,7 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
 # Non-string values are automatically converted into strings.
 # noinspection SpellCheckingInspection
 PARAMETERS = {
+    "name": "Storage1",
     "group": "Battery",
     "injectionnominalcapacity": 1500,
     "withdrawalnominalcapacity": 1500,
@@ -170,7 +171,6 @@ class TestRemoveSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         create_st_storage.apply(recent_study)

@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import numpy as np
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
-    STStorage,
-    transform_name_to_id,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import Field, validator, Extra
 from pydantic.fields import ModelField
 
 # minimum required version.
@@ -37,93 +37,25 @@ REQUIRED_VERSION = 860
 MatrixType = List[List[MatrixData]]
 
 
-class STStorageGroup(EnumIgnoreCase):
-    """
-    This class defines the specific energy storage systems.
-
-    Enum values:
-        PSP_OPEN: Represents an open pumped storage plant.
-        PSP_CLOSED: Represents a closed pumped storage plant.
-        PONDAGE: Represents a pondage storage system (reservoir storage system).
-        BATTERY: Represents a battery storage system.
-        OTHER: Represents other energy storage systems.
-    """
-
-    PSP_OPEN = "PSP_open"
-    PSP_CLOSED = "PSP_closed"
-    PONDAGE = "Pondage"
-    BATTERY = "Battery"
-    OTHER = "Other"
-
-
-# noinspection SpellCheckingInspection
-class STStorageConfig(BaseModel):
-    """
-    Manage the configuration files in the context of Short-Term Storage.
-    It provides a convenient way to read and write configuration data from/to an INI file format.
-    """
-
-    class Config:
-        extra = Extra.forbid
-        allow_population_by_field_name = True
-
-    name: str = Field(
-        ...,
-        description="Short-term storage name (mandatory)",
-        regex=r"\w+",
-    )
-    group: STStorageGroup = Field(
-        ...,
-        description="Energy storage system group (mandatory)",
-    )
-    injection_nominal_capacity: float = Field(
-        0,
-        description="Injection nominal capacity (MW)",
-        ge=0,
-        alias="injectionnominalcapacity",
-    )
-    withdrawal_nominal_capacity: float = Field(
-        0,
-        description="Withdrawal nominal capacity (MW)",
-        ge=0,
-        alias="withdrawalnominalcapacity",
-    )
-    reservoir_capacity: float = Field(
-        0,
-        description="Reservoir capacity (MWh)",
-        ge=0,
-        alias="reservoircapacity",
-    )
-    efficiency: float = Field(
-        1,
-        description="Efficiency of the storage system",
-        ge=0,
-        le=1,
-    )
-    initial_level: float = Field(
-        0,
-        description="Initial level of the storage system",
-        ge=0,
-        alias="initiallevel",
-    )
-    initial_level_optim: bool = Field(
-        False,
-        description="Flag indicating if the initial level is optimized",
-        alias="initialleveloptim",
-    )
-
-
 # noinspection SpellCheckingInspection
 class CreateSTStorage(ICommand):
     """
     Command used to create a short-terme storage in an area.
     """
 
+    class Config:
+        extra = Extra.forbid
+
+    # Overloaded parameters
+    # =====================
+
+    command_name = CommandName.CREATE_ST_STORAGE
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    storage_name: str = Field(
-        description="Short-term storage name",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
     parameters: STStorageConfig
     pmax_injection: Optional[Union[MatrixType, str]] = Field(
         None,
@@ -146,39 +78,15 @@ class CreateSTStorage(ICommand):
         description="Inflows (MW)",
     )
 
-    # `storage_id` is computed
-    storage_id: str
+    @property
+    def storage_id(self) -> str:
+        """The normalized version of the storage's name used as the ID."""
+        return self.parameters.id
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_ST_STORAGE, version=1, **data
-        )
-
-    @root_validator(pre=True)
-    def validate_parameters(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        storage_name = values.get("storage_name")
-        if not storage_name:
-            return values
-        storage_id = transform_name_to_id(storage_name)
-        if not storage_id:
-            raise ValueError(
-                f"Invalid short term storage name '{storage_name}'."
-            )
-        values["storage_id"] = storage_id
-        # The short-term storage name must be added to the parameters,
-        # because the INI section name is the short-term storage ID, not the name.
-        if parameters := values.get("parameters"):
-            if isinstance(parameters, dict):
-                parameters["name"] = storage_name
-            elif (
-                isinstance(parameters, STStorageConfig)
-                and parameters.name != storage_name
-            ):
-                raise ValueError(
-                    f"The storage name parameter '{parameters.name}' does not match"
-                    f" the 'storage_name' attribute: '{storage_name}'."
-                )
-        return values
+    @property
+    def storage_name(self) -> str:
+        """The label representing the name of the storage for the user."""
+        return self.parameters.name
 
     @validator(
         "pmax_injection",
@@ -302,8 +210,7 @@ class CreateSTStorage(ICommand):
             )
 
         # Create a new short-term storage and add it to the area
-        st_storage = STStorage(id=self.storage_id, name=self.storage_name)
-        area.st_storages.append(st_storage)
+        area.st_storages.append(self.parameters)
 
         return (
             CommandOutput(
@@ -371,12 +278,11 @@ class CreateSTStorage(ICommand):
             The DTO object representing the current command.
         """
         # fmt: off
-        parameters = json.loads(self.parameters.json(by_alias=True, exclude_defaults=True))
+        parameters = json.loads(self.parameters.json(by_alias=True))
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
-                "storage_name": self.storage_name,
                 "parameters": parameters,
                 "pmax_injection": strip_matrix_protocol(self.pmax_injection),
                 "pmax_withdrawal": strip_matrix_protocol(self.pmax_withdrawal),
@@ -456,10 +362,14 @@ class CreateSTStorage(ICommand):
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
+            # Exclude the `id` because it is read-only, and they can't be modified (calculated)
+            data: Dict[str, Any] = json.loads(
+                other.parameters.json(by_alias=True)
+            )
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
-                    data=json.loads(other.parameters.json(by_alias=True)),
+                    data=data,
                     command_context=self.command_context,
                 )
             )
