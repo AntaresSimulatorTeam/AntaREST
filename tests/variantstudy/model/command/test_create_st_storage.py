@@ -55,6 +55,7 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
 # Non-string values are automatically converted into strings.
 # noinspection SpellCheckingInspection
 PARAMETERS = {
+    "name": "Storage1",
     "group": "Battery",
     "injectionnominalcapacity": 1500,
     "withdrawalnominalcapacity": 1500,
@@ -63,7 +64,9 @@ PARAMETERS = {
     "initialleveloptim": True,
 }
 
+# noinspection SpellCheckingInspection
 OTHER_PARAMETERS = {
+    "name": "Storage1",
     "group": "Battery",
     "injectionnominalcapacity": 1200,
     "withdrawalnominalcapacity": 1300,
@@ -82,7 +85,6 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
@@ -93,9 +95,7 @@ class TestCreateSTStorage:
         assert cmd.version == 1
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
-        assert cmd.storage_name == "Storage1"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
-        expected_parameters["name"] = cmd.storage_name
         assert cmd.parameters == STStorageConfig(**expected_parameters)
 
         # check the matrices links
@@ -113,15 +113,16 @@ class TestCreateSTStorage:
     ):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
+            parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
             CreateSTStorage(
                 command_context=command_context,
                 area_id="dummy",
-                storage_name="?%$$",  # bad name
-                parameters=PARAMETERS,
+                parameters=parameters,
             )
+        # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
         assert ctx.value.errors() == [
             {
-                "loc": ("__root__",),
+                "loc": ("parameters", "__root__"),
                 "msg": "Invalid short term storage name '?%$$'.",
                 "type": "value_error",
             }
@@ -135,7 +136,6 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                storage_name="Storage1",
                 parameters=PARAMETERS,
                 pmax_injection=array.tolist(),
             )
@@ -155,7 +155,6 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="foo",
-            storage_name="Bar",
             parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(empty_study.config)
@@ -176,7 +175,6 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -203,7 +201,6 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -213,8 +210,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            storage_name="STORAGE1",  # different case
-            parameters=PARAMETERS,
+            parameters={**PARAMETERS, "name": "STORAGE1"},  # different case
         )
         command_output = create_st_storage.apply_config(recent_study.config)
 
@@ -240,7 +236,6 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -270,7 +265,6 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            storage_name="Storage1",
             parameters=PARAMETERS,
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
@@ -320,21 +314,20 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
 
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        expected_parameters["name"] = cmd.storage_name
+        # `initiallevel` = 0 because `initialleveloptim` is True
+        expected_parameters["initiallevel"] = 0
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
             args={
                 "area_id": "area_fr",
-                "storage_name": "Storage1",
                 "parameters": expected_parameters,
                 "pmax_injection": strip_matrix_protocol(
                     constants.get_st_storage_pmax_withdrawal()
@@ -358,49 +351,39 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         assert cmd.match_signature() == "create_st_storage%area_fr%storage1"
 
     @pytest.mark.parametrize("area_id", ["area_fr", "area_en"])
-    @pytest.mark.parametrize("storage_name", ["Storage1", "Storage2"])
     @pytest.mark.parametrize("parameters", [PARAMETERS, OTHER_PARAMETERS])
     def test_match(
         self,
         command_context: CommandContext,
         area_id,
-        storage_name,
         parameters,
     ):
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         cmd2 = CreateSTStorage(
             command_context=command_context,
             area_id=area_id,
-            storage_name=storage_name,
             parameters=parameters,
         )
         light_equal = (
-            area_id == cmd1.area_id and storage_name == cmd1.storage_name
+            area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
         )
         assert cmd1.match(cmd2, equal=False) == light_equal
-        deep_equal = (
-            area_id == cmd1.area_id
-            and storage_name == cmd1.storage_name
-            and {"name": cmd2.storage_name, **parameters} == PARAMETERS
-        )
+        deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal
 
     def test_create_diff(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         upper_rule_curve = np.random.rand(8760, 1)
@@ -408,7 +391,6 @@ class TestCreateSTStorage:
         other = CreateSTStorage(
             command_context=command_context,
             area_id=cmd.area_id,
-            storage_name=cmd.storage_name,
             parameters=OTHER_PARAMETERS,
             upper_rule_curve=upper_rule_curve.tolist(),
             inflows=inflows.tolist(),
@@ -437,7 +419,6 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            storage_name="Storage1",
             parameters=PARAMETERS,
         )
         actual = cmd.get_inner_matrices()

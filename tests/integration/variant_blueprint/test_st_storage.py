@@ -12,7 +12,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from tests.integration.utils import wait_task_completion
 
 
-@pytest.mark.unit_test
+@pytest.mark.integration_test
 class TestSTStorage:
     """
     This unit test is designed to demonstrate the creation, modification of properties and
@@ -96,8 +96,8 @@ class TestSTStorage:
         siemens_battery_id = transform_name_to_id(siemens_battery)
         args = {
             "area_id": area_id,
-            "storage_name": siemens_battery,
             "parameters": {
+                "name": siemens_battery,
                 "group": "Battery",
                 "injection_nominal_capacity": 150,
                 "withdrawal_nominal_capacity": 150,
@@ -146,8 +146,8 @@ class TestSTStorage:
         grand_maison = "Grand'Maison"
         args = {
             "area_id": area_id,
-            "storage_name": grand_maison,
             "parameters": {
+                "name": grand_maison,
                 "group": "PSP_closed",
                 "injectionnominalcapacity": 1500,
                 "withdrawalnominalcapacity": 1800,
@@ -194,8 +194,8 @@ class TestSTStorage:
         inflows = np.random.randint(0, 1001, size=(8760, 1))
         args = {
             "area_id": area_id,
-            "storage_name": "Bad Storage",
             "parameters": {
+                "name": "Bad Storage",
                 "group": "Wonderland",
                 "injection_nominal_capacity": -2000,  # Oops!
                 "withdrawal_nominal_capacity": 1500,

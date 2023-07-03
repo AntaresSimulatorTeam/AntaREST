@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Link,
     Simulation,
-    STStorage,
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
