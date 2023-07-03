@@ -9,6 +9,8 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 from pydantic.main import BaseModel
 
+from .st_storage import STStorageConfig
+
 
 class ENR_MODELLING(Enum):
     AGGREGATED = "aggregated"
@@ -23,15 +25,6 @@ class Cluster(BaseModel):
     id: str
     name: str
     enabled: bool = True
-
-
-class STStorage(BaseModel):
-    """
-    Short-term storage model used in Area creation
-    """
-
-    id: str
-    name: str
 
 
 class Link(BaseModel):
@@ -71,7 +64,7 @@ class Area(BaseModel):
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
-    st_storages: List[STStorage] = []
+    st_storages: List[STStorageConfig] = []
 
 
 class DistrictSet(BaseModel):

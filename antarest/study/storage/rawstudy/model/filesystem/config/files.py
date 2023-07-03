@@ -25,8 +25,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Link,
     Simulation,
-    STStorage,
     transform_name_to_id,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
@@ -382,7 +384,7 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
     ]
 
 
-def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
+def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
@@ -392,7 +394,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
         file_type=FileType.SIMPLE_INI,
     )
     return [
-        STStorage(id=storage_id, name=values["name"])
+        STStorageConfig(**dict(values, id=storage_id))
         for storage_id, values in config_dict.items()
     ]
 
