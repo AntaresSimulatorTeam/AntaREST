@@ -213,12 +213,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
-        Create empty new study
+        Create a new empty study based on the given metadata.
+
         Args:
-            metadata: study information
+            metadata: An instance containing study information, eg.:
 
-        Returns: new study information
+                - id: The study UUID.
+                - name: The name of the study.
+                - version: The version of the study template to be used.
+                - path: The full path of the study directory in the "default" workspace.
+                - author: The author's name (if provided) or "Unknown" if missing.
+                - ...
 
+        Returns:
+            An updated `RawStudy` instance with the path to the newly created study.
         """
         path_study = Path(metadata.path)
         path_study.mkdir()

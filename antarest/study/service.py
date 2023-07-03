@@ -728,15 +728,18 @@ class StudyService:
         params: RequestParameters,
     ) -> str:
         """
-        Create empty study
+        Creates a study with the specified study name, version, group IDs, and user parameters.
+
         Args:
-            study_name: study name to set
-            version: version number of the study to create
-            group_ids: group to link to study
-            params: request parameters
+            study_name: The name of the study to create.
+            version: The version number of the study to choose the template for creation.
+            group_ids: A possibly empty list of user group IDs to associate with the study.
+            params:
+                The parameters of the HTTP request for creation, used to determine
+                the currently logged-in user (ID and name).
 
-        Returns: new study uuid
-
+        Returns:
+            str: The ID of the newly created study.
         """
         sid = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / sid)
@@ -777,17 +780,8 @@ class StudyService:
         """
         author = "Unknown"
         if params.user:
-            try:
-                if author_not_formatted := self.user_service.get_user(
-                    params.user.id, params
-                ):
-                    author = author_not_formatted.to_dto().name
-            except Exception as e:
-                logger.error(
-                    "Due to this exception %d, the author will remain Unknown",
-                    params.user.id,
-                    exc_info=e,
-                )
+            if curr_user := self.user_service.get_user(params.user.id, params):
+                author = curr_user.to_dto().name
         return author
 
     def get_study_synthesis(
