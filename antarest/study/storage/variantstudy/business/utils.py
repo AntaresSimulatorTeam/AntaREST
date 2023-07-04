@@ -1,7 +1,8 @@
-from typing import Union, List, Any, Sequence, Optional
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     MATRIX_PROTOCOL_PREFIX,
@@ -11,24 +12,39 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 def validate_matrix(
-    matrix: Union[List[List[MatrixData]], str], values: Any
+    matrix: Union[List[List[MatrixData]], str], values: Dict[str, Any]
 ) -> str:
-    matrix_id: str
+    """
+    Validates the matrix, stores the matrix array in the matrices repository,
+    and returns a reference to the stored array.
+
+    Args:
+        matrix: The matrix data or matrix link to validate.
+        values: Additional values used during the validation process.
+            It should contain the following key-value pairs:
+            - "command_context": An object providing access to matrix services.
+              It should have a "matrix_service" attribute which allows creating
+              and checking the existence of matrices.
+
+    Returns:
+        The ID of the validated matrix prefixed by "matrix://".
+
+    Raises:
+        TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
+        ValueError: If the matrix ID does not exist.
+    """
+    # fmt: off
+    matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        matrix_id = MATRIX_PROTOCOL_PREFIX + values[
-            "command_context"
-        ].matrix_service.create(data=matrix)
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=matrix)
     elif isinstance(matrix, str):
-        if values["command_context"].matrix_service.exists(matrix):
-            matrix_id = MATRIX_PROTOCOL_PREFIX + matrix
+        if matrix_service.exists(matrix):
+            return MATRIX_PROTOCOL_PREFIX + matrix
         else:
             raise ValueError(f"Matrix with id {matrix} does not exist")
     else:
-        raise ValueError(
-            f"The data {matrix} is neither a matrix nor a link to a matrix"
-        )
-
-    return matrix_id
+        raise TypeError(f"The data {matrix} is neither a matrix nor a link to a matrix")
+    # fmt: on
 
 
 def get_or_create_section(json_ini: JSON, section: str) -> JSON:

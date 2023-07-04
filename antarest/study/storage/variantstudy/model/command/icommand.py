@@ -34,20 +34,56 @@ class ICommand(ABC, BaseModel):
     command_context: CommandContext
 
     @abstractmethod
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
-
-    @abstractmethod
     def _apply_config(
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        """
+        Applies configuration changes to the study data.
+
+        Args:
+            study_data: The study data configuration.
+
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+        """
         raise NotImplementedError()
 
     def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
+        """
+        Applies configuration changes to the study data.
+
+        Args:
+            study_data: The study data configuration.
+
+        Returns:
+            The command output.
+        """
         output, _ = self._apply_config(study_data)
         return output
 
+    @abstractmethod
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        """
+        Applies the study data to update storage configurations and saves the changes.
+
+        Args:
+            study_data: The study data to be applied.
+
+        Returns:
+            The output of the command execution.
+        """
+        raise NotImplementedError()
+
     def apply(self, study_data: FileStudy) -> CommandOutput:
+        """
+        Applies the study data to update storage configurations and saves the changes.
+
+        Args:
+            study_data: The study data to be applied.
+
+        Returns:
+            The output of the command execution.
+        """
         try:
             return self._apply(study_data)
         except Exception as e:
@@ -65,10 +101,18 @@ class ICommand(ABC, BaseModel):
 
     @abstractmethod
     def to_dto(self) -> CommandDTO:
+        """
+        Converts the current object to a Data Transfer Object (DTO)
+        which is stored in the `CommandBlock` in the database.
+
+        Returns:
+            The DTO object representing the current command.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def match_signature(self) -> str:
+        """Returns the command signature."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -84,19 +128,50 @@ class ICommand(ABC, BaseModel):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        """
+        Creates a list of commands representing the differences between
+        the current instance and another `ICommand` object.
+
+        Args:
+            other: Another ICommand object to compare against.
+
+        Returns:
+            A list of commands representing the differences between
+            the two `ICommand` objects.
+        """
+        raise NotImplementedError()
+
     def create_diff(self, other: "ICommand") -> List["ICommand"]:
+        """
+        Creates a list of commands representing the differences between
+        the current instance and another `ICommand` object.
+
+        Args:
+            other: Another ICommand object to compare against.
+
+        Returns:
+            A list of commands representing the differences between
+            the two `ICommand` objects.
+        """
         assert_this(self.match(other))
         return self._create_diff(other)
 
     @abstractmethod
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_inner_matrices(self) -> List[str]:
+        """
+        Retrieves the list of matrix IDs.
+        """
         raise NotImplementedError()
 
     def get_command_extractor(self) -> "CommandExtractor":
+        """
+        Create a new `CommandExtractor` used to revert the command changes.
+
+        Returns:
+            An instance of `CommandExtractor`.
+        """
         from antarest.study.storage.variantstudy.business.command_extractor import (
             CommandExtractor,
         )
