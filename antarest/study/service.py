@@ -728,18 +728,23 @@ class StudyService:
         params: RequestParameters,
     ) -> str:
         """
-        Create empty study
+        Creates a study with the specified study name, version, group IDs, and user parameters.
+
         Args:
-            study_name: study name to set
-            version: version number of the study to create
-            group_ids: group to link to study
-            params: request parameters
+            study_name: The name of the study to create.
+            version: The version number of the study to choose the template for creation.
+            group_ids: A possibly empty list of user group IDs to associate with the study.
+            params:
+                The parameters of the HTTP request for creation, used to determine
+                the currently logged-in user (ID and name).
 
-        Returns: new study uuid
-
+        Returns:
+            str: The ID of the newly created study.
         """
         sid = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / sid)
+
+        author = self.get_user_name(params)
 
         raw = RawStudy(
             id=sid,
@@ -749,7 +754,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(author=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -766,6 +771,18 @@ class StudyService:
             "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
+
+    def get_user_name(self, params: RequestParameters) -> str:
+        """
+        Args: params : Request parameters
+
+        Returns: The user's name
+        """
+        author = "Unknown"
+        if params.user:
+            if curr_user := self.user_service.get_user(params.user.id, params):
+                author = curr_user.to_dto().name
+        return author
 
     def get_study_synthesis(
         self, study_id: str, params: RequestParameters

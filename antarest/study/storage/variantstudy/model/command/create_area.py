@@ -1,26 +1,23 @@
-from typing import Any, Optional, List, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.core.model import JSON
+from antarest.study.common.default_values import (
+    FilteringOptions,
+    NodalOptimization,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    transform_name_to_id,
     FileStudyTreeConfig,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.common.default_values import (
-    NodalOptimization,
-    FilteringOptions,
-)
-from antarest.study.storage.variantstudy.business.utils import (
-    get_or_create_section,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -66,7 +63,7 @@ class CreateArea(ICommand):
                     status=False,
                     message=f"Area '{self.area_name}' already exists and could not be created",
                 ),
-                dict(),
+                {},
             )
 
         study_data.areas[area_id] = Area(
@@ -93,9 +90,10 @@ class CreateArea(ICommand):
 
         # fmt: off
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        get_or_create_section(hydro_config, "inter-daily-breakdown")[area_id] = 1
-        get_or_create_section(hydro_config, "intra-daily-modulation")[area_id] = 24
-        get_or_create_section(hydro_config, "inter-monthly-breakdown")[area_id] = 1
+        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
+        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
+        hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
+        hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
         # fmt: on
 
         new_area_data: JSON = {
@@ -233,10 +231,10 @@ class CreateArea(ICommand):
 
         if version > 650:
             # fmt: off
-            get_or_create_section(hydro_config, "initialize reservoir date")[area_id] = 0
-            get_or_create_section(hydro_config, "leeway low")[area_id] = 1
-            get_or_create_section(hydro_config, "leeway up")[area_id] = 1
-            get_or_create_section(hydro_config, "pumping efficiency")[area_id] = 1
+            hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
+            hydro_config.setdefault("leeway low", {})[area_id] = 1
+            hydro_config.setdefault("leeway up", {})[area_id] = 1
+            hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
 
             new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_hydro_credit_modulations()

@@ -41,8 +41,10 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 
 
+# noinspection SpellCheckingInspection
 def test_manage_binding_constraint(
-    empty_study: FileStudy, command_context: CommandContext
+    empty_study: FileStudy,
+    command_context: CommandContext,
 ):
     study_path = empty_study.config.study_path
 
@@ -99,15 +101,13 @@ def test_manage_binding_constraint(
     res2 = bind2_cmd.apply(empty_study)
     assert res2.status
 
-    assert (
-        study_path / "input" / "bindingconstraints" / "bd 1.txt.link"
-    ).exists()
-    assert (
-        study_path / "input" / "bindingconstraints" / "bd 2.txt.link"
-    ).exists()
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    bc1_matrix_path = study_path / "input/bindingconstraints/bd 1.txt.link"
+    bc2_matrix_path = study_path / "input/bindingconstraints/bd 2.txt.link"
+    assert bc1_matrix_path.exists()
+    assert bc2_matrix_path.exists()
+
+    cfg_path = study_path / "input/bindingconstraints/bindingconstraints.ini"
+    bd_config = IniReader().read(cfg_path)
     assert bd_config.get("0") == {
         "name": "BD 1",
         "id": "bd 1",
@@ -137,9 +137,7 @@ def test_manage_binding_constraint(
     )
     res = bind_update.apply(empty_study)
     assert res.status
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    bd_config = IniReader().read(cfg_path)
     assert bd_config.get("0") == {
         "name": "BD 1",
         "id": "bd 1",
@@ -154,12 +152,8 @@ def test_manage_binding_constraint(
     )
     res3 = remove_bind.apply(empty_study)
     assert res3.status
-    assert not (
-        study_path / "input" / "bindingconstraints" / "bd 1.txt.link"
-    ).exists()
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    assert not bc1_matrix_path.exists()
+    bd_config = IniReader().read(cfg_path)
     assert len(bd_config) == 1
     assert bd_config.get("0") == {
         "name": "BD 2",
@@ -203,7 +197,9 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_not_match)
     assert not base.match(other_other)
     assert base.match_signature() == "create_binding_constraint%foo"
-    assert base.get_inner_matrices() == ["matrix_id"]
+    # check the matrices links
+    matrix_id = command_context.matrix_service.create([[0]])
+    assert base.get_inner_matrices() == [matrix_id]
 
     base = UpdateBindingConstraint(
         id="foo",
@@ -236,7 +232,9 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_not_match)
     assert not base.match(other_other)
     assert base.match_signature() == "update_binding_constraint%foo"
-    assert base.get_inner_matrices() == ["matrix_id"]
+    # check the matrices links
+    matrix_id = command_context.matrix_service.create([[0]])
+    assert base.get_inner_matrices() == [matrix_id]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
     other_match = RemoveBindingConstraint(
@@ -265,7 +263,7 @@ def test_revert(command_context: CommandContext):
         values=[[0]],
         command_context=command_context,
     )
-    assert CommandReverter().revert(base, [], None) == [
+    assert CommandReverter().revert(base, [], Mock(spec=FileStudy)) == [
         RemoveBindingConstraint(id="foo", command_context=command_context)
     ]
 
@@ -306,7 +304,7 @@ def test_revert(command_context: CommandContext):
                 command_context=command_context,
             ),
         ],
-        None,
+        Mock(spec=FileStudy),
     ) == [
         UpdateBindingConstraint(
             id="foo",
@@ -318,6 +316,8 @@ def test_revert(command_context: CommandContext):
             command_context=command_context,
         )
     ]
+    # check the matrices links
+    matrix_id = command_context.matrix_service.create([[0]])
     assert CommandReverter().revert(
         base,
         [
@@ -340,7 +340,7 @@ def test_revert(command_context: CommandContext):
                 command_context=command_context,
             ),
         ],
-        None,
+        Mock(spec=FileStudy),
     ) == [
         UpdateBindingConstraint(
             id="foo",
@@ -348,7 +348,7 @@ def test_revert(command_context: CommandContext):
             time_step=TimeStep.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"a": [0.3]},
-            values="matrix_id",
+            values=matrix_id,
             comments=None,
             command_context=command_context,
         )

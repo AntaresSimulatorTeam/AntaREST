@@ -216,16 +216,14 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(tmp_path: str, project_path) -> None:
-    path_studies = Path(tmp_path)
-
+def test_create(tmp_path: Path, project_path: Path) -> None:
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
-    config = build_config(path_studies)
+    config = build_config(tmp_path)
     study_service = RawStudyService(
         config=config,
         cache=Mock(),
@@ -241,11 +239,12 @@ def test_create_study(tmp_path: str, project_path) -> None:
         version="720",
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
+        additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)
 
-    assert md.path == f"{tmp_path}{os.sep}study1"
-    path_study = path_studies / md.id
+    assert md.path == str(tmp_path / "study1")
+    path_study = tmp_path / md.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
@@ -279,6 +278,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
             version=version,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
+            additional_data=StudyAdditionalData(author="john.doe"),
         )
         return study_service.create(metadata)
 

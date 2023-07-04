@@ -93,7 +93,10 @@ class ICommand(ABC, BaseModel):
             )
             return CommandOutput(
                 status=False,
-                message=f"Unexpected exception occurred when trying to apply command {self.command_name}",
+                message=(
+                    f"Unexpected exception occurred when trying"
+                    f" to apply command {self.command_name}: {e}"
+                ),
             )
 
     @abstractmethod

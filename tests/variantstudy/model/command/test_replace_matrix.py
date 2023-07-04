@@ -50,10 +50,10 @@ class TestReplaceMatrix:
         output = replace_matrix.apply(empty_study)
         assert output.status
 
-        assert (
-            "matrix_id"
-            in (study_path / (target_element + ".txt.link")).read_text()
-        )
+        # check the matrices links
+        matrix_id = command_context.matrix_service.create([[0]])
+        target_path = study_path / f"{target_element}.txt.link"
+        assert matrix_id in target_path.read_text()
 
         target_element = "fake/matrix/path"
         replace_matrix = ReplaceMatrix.parse_obj(
@@ -82,7 +82,9 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_not_match)
     assert not base.match(other_other)
     assert base.match_signature() == "replace_matrix%foo"
-    assert base.get_inner_matrices() == ["matrix_id"]
+    # check the matrices links
+    matrix_id = command_context.matrix_service.create([[0]])
+    assert base.get_inner_matrices() == [matrix_id]
 
 
 @patch(
