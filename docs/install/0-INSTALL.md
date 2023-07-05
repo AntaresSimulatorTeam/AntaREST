@@ -1,7 +1,8 @@
 # Introduction
 
-Antares-Web is developed mainly in **python** and uses [FastAPI](https://fastapi.tiangolo.com/) web framework.
-The front end is a [React](https://reactjs.org/) web application. A local build allows using Antares-Web as a desktop application.
+Antares Web is developed mainly in **Python** and uses [FastAPI](https://fastapi.tiangolo.com/) web framework.
+The front end is a [React](https://reactjs.org/) web application.
+A local build allows using Antares Web as a desktop application.
 
 ## Quick start
 
@@ -13,30 +14,56 @@ Requirements:
 Then perform the following steps:
 
 1. First clone the projet:
-```
-git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
-cd AntaREST
-```
 
-2. Install back dependencies
-```
-python -m pip install --upgrade pip
-pip install pydantic --no-binary pydantic
-pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
-```
+   ```shell
+   git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
+   cd AntaREST
+   ```
 
-3. Build front (for local mode use `cd ..; ./scripts/build-front.sh` instead of `npm run build`)
-```
-cd webapp
-npm install
-npm run build 
-```
+2. Create and activate a Python virtual environment:
 
-4. Run the application
-```
-export PYTHONPATH=$(pwd)
-python antarest/main.py -c resources/application.yaml --auto-upgrade-db
-```
+   ```shell
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install dependencies to build, test or develop the back end:
+
+   ```shell
+   python -m pip install --upgrade pip
+   pip install -e .                     # to install in development mode (editable)
+   pip install -r requirements.txt      # production requirements
+   pip install -r requirements-test.txt # production and unit tests requirements
+   pip install -r requirements-dev.txt  # production, unit tests and development requirements
+   ```
+
+4. Install dependencies to build the front end:
+
+   ```shell
+   cd webapp
+   npm install
+   npm run build
+   cd ..
+   ```
+   
+   Alternatively, for local usage in Desktop mode, use:
+
+   ```shell
+   bash scripts/build-front.sh
+   ```
+
+5. Run the application
+
+   ```shell
+   python antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
+   ```
+   
+   Alternatively, for local usage in Desktop mode, use:
+
+   ```shell
+   python antarest/main.py -c resources/application.yaml --auto-upgrade-db
+   ```
+
 
 ## Deploy
 
