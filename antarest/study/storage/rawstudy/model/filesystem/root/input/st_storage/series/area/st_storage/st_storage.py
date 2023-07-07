@@ -13,12 +13,12 @@ from antarest.study.storage.variantstudy.business.matrix_constants.st_storage im
 class InputSTStorageAreaStorage(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "PMAX-injection": InputSeriesMatrix(
+            "pmax_injection": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("PMAX-injection.txt"),
                 default_empty=series.pmax_injection,
             ),
-            "PMAX-withdrawal": InputSeriesMatrix(
+            "pmax_withdrawal": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("PMAX-withdrawal.txt"),
                 default_empty=series.pmax_withdrawal,
@@ -28,12 +28,12 @@ class InputSTStorageAreaStorage(FolderNode):
                 self.config.next_file("inflows.txt"),
                 default_empty=series.inflows,
             ),
-            "lower-rule-curve": InputSeriesMatrix(
+            "lower_rule_curve": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("lower-rule-curve.txt"),
                 default_empty=series.lower_rule_curve,
             ),
-            "upper-rule-curve": InputSeriesMatrix(
+            "upper_rule_curve": InputSeriesMatrix(
                 self.context,
                 self.config.next_file("upper-rule-curve.txt"),
                 default_empty=series.upper_rule_curve,
