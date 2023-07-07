@@ -44,7 +44,7 @@ class STStorageConfig(BaseModel):
     # the model to a dictionary or JSON format (`model_dump`).
     id: str = Field(
         description="Short-term storage ID",
-        regex=r"[a-z0-9_(),& -]+",
+        regex=r"[a-zA-Z0-9_(),& -]+",
         exclude=True,
     )
     name: str = Field(
