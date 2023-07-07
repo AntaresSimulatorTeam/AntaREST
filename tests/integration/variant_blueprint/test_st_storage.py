@@ -93,7 +93,6 @@ class TestSTStorage:
         # - `inflows`: Inflows
         area_id = transform_name_to_id("FR")
         siemens_battery = "Siemens Battery"
-        siemens_battery_id = transform_name_to_id(siemens_battery)
         args = {
             "area_id": area_id,
             "parameters": {
@@ -121,15 +120,24 @@ class TestSTStorage:
         # For instance, we want to initialize the `inflows` time series
         # with random values (for this demo).
         # To do that, we can use the `replace_matrix` command like bellow:
+        siemens_battery_id = transform_name_to_id(siemens_battery)
         inflows = np.random.randint(0, 1001, size=(8760, 1))
-        args = {
+        args1 = {
             "target": f"input/st-storage/series/{area_id}/{siemens_battery_id}/inflows",
             "matrix": inflows.tolist(),
+        }
+        pmax_injection = np.random.rand(8760, 1)
+        args2 = {
+            "target": f"input/st-storage/series/{area_id}/{siemens_battery_id}/pmax_injection",
+            "matrix": pmax_injection.tolist(),
         }
         res = client.post(
             f"/v1/studies/{study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "replace_matrix", "args": args}],
+            json=[
+                {"action": "replace_matrix", "args": args1},
+                {"action": "replace_matrix", "args": args2},
+            ],
         )
         res.raise_for_status()
 
@@ -196,7 +204,7 @@ class TestSTStorage:
             "area_id": area_id,
             "parameters": {
                 "name": "Bad Storage",
-                "group": "Wonderland",
+                "group": "Wonderland",  # Oops!
                 "injection_nominal_capacity": -2000,  # Oops!
                 "withdrawal_nominal_capacity": 1500,
                 "reservoir_capacity": 20000,

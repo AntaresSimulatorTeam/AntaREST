@@ -254,10 +254,10 @@ class CreateSTStorage(ICommand):
                     "series": {
                         self.area_id: {
                             self.storage_id: {
-                                "PMAX-injection": self.pmax_injection,
-                                "PMAX-withdrawal": self.pmax_withdrawal,
-                                "lower-rule-curve": self.lower_rule_curve,
-                                "upper-rule-curve": self.upper_rule_curve,
+                                "pmax_injection": self.pmax_injection,
+                                "pmax_withdrawal": self.pmax_withdrawal,
+                                "lower_rule_curve": self.lower_rule_curve,
+                                "upper_rule_curve": self.upper_rule_curve,
                                 "inflows": self.inflows,
                             }
                         }
@@ -345,11 +345,12 @@ class CreateSTStorage(ICommand):
             UpdateConfig,
         )
 
+        # fixme: drop this mapping
         attrs = {
-            "PMAX-injection": "pmax_injection",
-            "PMAX-withdrawal": "pmax_withdrawal",
-            "lower-rule-curve": "lower_rule_curve",
-            "upper-rule-curve": "upper_rule_curve",
+            "pmax_injection": "pmax_injection",
+            "pmax_withdrawal": "pmax_withdrawal",
+            "lower_rule_curve": "lower_rule_curve",
+            "upper_rule_curve": "upper_rule_curve",
             "inflows": "inflows",
         }
         commands: List[ICommand] = [
