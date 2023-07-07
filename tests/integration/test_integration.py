@@ -670,7 +670,7 @@ def test_area_management(app: FastAPI):
         },
         json=[
             {
-                "action": CommandName.CREATE_CLUSTER.value,
+                "action": CommandName.CREATE_THERMAL_CLUSTER.value,
                 "args": {
                     "area_id": "area 1",
                     "cluster_name": "cluster 1",
@@ -687,7 +687,7 @@ def test_area_management(app: FastAPI):
         },
         json=[
             {
-                "action": CommandName.CREATE_CLUSTER.value,
+                "action": CommandName.CREATE_THERMAL_CLUSTER.value,
                 "args": {
                     "area_id": "area 2",
                     "cluster_name": "cluster 2",

@@ -35,7 +35,7 @@ class CreateCluster(ICommand):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
-            command_name=CommandName.CREATE_CLUSTER, version=1, **data
+            command_name=CommandName.CREATE_THERMAL_CLUSTER, version=1, **data
         )
 
     @validator("cluster_name")
@@ -146,7 +146,7 @@ class CreateCluster(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_CLUSTER.value,
+            action=CommandName.CREATE_THERMAL_CLUSTER.value,
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,

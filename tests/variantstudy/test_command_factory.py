@@ -40,6 +40,7 @@ class TestCommandFactory:
             command.__name__ for command in ICommand.__subclasses__()
         }
 
+    # noinspection SpellCheckingInspection
     @pytest.mark.parametrize(
         "command_dto",
         [
@@ -182,7 +183,7 @@ class TestCommandFactory:
                 args=[{"id": "id"}],
             ),
             CommandDTO(
-                action=CommandName.CREATE_CLUSTER.value,
+                action=CommandName.CREATE_THERMAL_CLUSTER.value,
                 args={
                     "area_id": "area_name",
                     "cluster_name": "cluster_name",
@@ -198,7 +199,7 @@ class TestCommandFactory:
                 },
             ),
             CommandDTO(
-                action=CommandName.CREATE_CLUSTER.value,
+                action=CommandName.CREATE_THERMAL_CLUSTER.value,
                 args=[
                     {
                         "area_id": "area_name",
@@ -216,11 +217,11 @@ class TestCommandFactory:
                 ],
             ),
             CommandDTO(
-                action=CommandName.REMOVE_CLUSTER.value,
+                action=CommandName.REMOVE_THERMAL_CLUSTER.value,
                 args={"area_id": "area_name", "cluster_id": "cluster_name"},
             ),
             CommandDTO(
-                action=CommandName.REMOVE_CLUSTER.value,
+                action=CommandName.REMOVE_THERMAL_CLUSTER.value,
                 args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
             ),
             CommandDTO(
