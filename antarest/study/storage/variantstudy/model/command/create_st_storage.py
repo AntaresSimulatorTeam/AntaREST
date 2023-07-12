@@ -31,7 +31,16 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from pydantic import Field, validator, Extra
 from pydantic.fields import ModelField
 
-# minimum required version.
+# noinspection SpellCheckingInspection
+_MATRIX_NAMES = (
+    "pmax_injection",
+    "pmax_withdrawal",
+    "lower_rule_curve",
+    "upper_rule_curve",
+    "inflows",
+)
+
+# Minimum required version.
 REQUIRED_VERSION = 860
 
 MatrixType = List[List[MatrixData]]
@@ -88,14 +97,7 @@ class CreateSTStorage(ICommand):
         """The label representing the name of the storage for the user."""
         return self.parameters.name
 
-    @validator(
-        "pmax_injection",
-        "pmax_withdrawal",
-        "lower_rule_curve",
-        "upper_rule_curve",
-        "inflows",
-        always=True,
-    )
+    @validator(*_MATRIX_NAMES, always=True)
     def register_matrix(
         cls,
         v: Optional[Union[MatrixType, str]],
@@ -134,10 +136,10 @@ class CreateSTStorage(ICommand):
             method = getattr(constants, method_name)
             return cast(str, method())
         if isinstance(v, str):
-            # check the matrix link
+            # Check the matrix link
             return validate_matrix(v, values)
         if isinstance(v, list):
-            # check the matrix values and create the corresponding matrix link
+            # Check the matrix values and create the corresponding matrix link
             array = np.array(v, dtype=np.float64)
             if array.shape != (8760, 1):
                 raise ValueError(
@@ -145,16 +147,16 @@ class CreateSTStorage(ICommand):
                 )
             if np.isnan(array).any():
                 raise ValueError("Matrix values cannot contain NaN")
-            if field.name in {
-                "pmax_injection",
-                "pmax_withdrawal",
-                "lower_rule_curve",
-                "upper_rule_curve",
-            } and (np.any(array < 0) or np.any(array > 1)):
+            # All matrices except "inflows" are constrained between 0 and 1
+            constrained = set(_MATRIX_NAMES) - {"inflows"}
+            if field.name in constrained and (
+                np.any(array < 0) or np.any(array > 1)
+            ):
                 raise ValueError("Matrix values should be between 0 and 1")
             v = cast(MatrixType, array.tolist())
             return validate_matrix(v, values)
-        # invalid datatype (not implemented?)
+        # Invalid datatype
+        # pragma: no cover
         raise TypeError(repr(v))
 
     def _apply_config(
@@ -254,11 +256,8 @@ class CreateSTStorage(ICommand):
                     "series": {
                         self.area_id: {
                             self.storage_id: {
-                                "pmax_injection": self.pmax_injection,
-                                "pmax_withdrawal": self.pmax_withdrawal,
-                                "lower_rule_curve": self.lower_rule_curve,
-                                "upper_rule_curve": self.upper_rule_curve,
-                                "inflows": self.inflows,
+                                attr: getattr(self, attr)
+                                for attr in _MATRIX_NAMES
                             }
                         }
                     },
@@ -277,21 +276,18 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        # fmt: off
         parameters = json.loads(self.parameters.json(by_alias=True))
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
                 "parameters": parameters,
-                "pmax_injection": strip_matrix_protocol(self.pmax_injection),
-                "pmax_withdrawal": strip_matrix_protocol(self.pmax_withdrawal),
-                "lower_rule_curve": strip_matrix_protocol(self.lower_rule_curve),
-                "upper_rule_curve": strip_matrix_protocol(self.upper_rule_curve),
-                "inflows": strip_matrix_protocol(self.inflows),
+                **{
+                    attr: strip_matrix_protocol(getattr(self, attr))
+                    for attr in _MATRIX_NAMES
+                },
             },
         )
-        # fmt: on
 
     def match_signature(self) -> str:
         """Returns the command signature."""
@@ -317,7 +313,7 @@ class CreateSTStorage(ICommand):
         if not isinstance(other, CreateSTStorage):
             return False
         if equal:
-            # deep comparison
+            # Deep comparison
             return self.__eq__(other)
         else:
             return (
@@ -337,7 +333,6 @@ class CreateSTStorage(ICommand):
             A list of commands representing the differences between
             the two `ICommand` objects.
         """
-        other = cast(CreateSTStorage, other)
         from antarest.study.storage.variantstudy.model.command.replace_matrix import (
             ReplaceMatrix,
         )
@@ -345,25 +340,17 @@ class CreateSTStorage(ICommand):
             UpdateConfig,
         )
 
-        # fixme: drop this mapping
-        attrs = {
-            "pmax_injection": "pmax_injection",
-            "pmax_withdrawal": "pmax_withdrawal",
-            "lower_rule_curve": "lower_rule_curve",
-            "upper_rule_curve": "upper_rule_curve",
-            "inflows": "inflows",
-        }
+        other = cast(CreateSTStorage, other)
         commands: List[ICommand] = [
             ReplaceMatrix(
-                target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{ini_name}",
+                target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
                 command_context=self.command_context,
             )
-            for ini_name, attr in attrs.items()
+            for attr in _MATRIX_NAMES
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            # Exclude the `id` because it is read-only, and they can't be modified (calculated)
             data: Dict[str, Any] = json.loads(
                 other.parameters.json(by_alias=True)
             )
@@ -380,14 +367,8 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
-        attrs = [
-            "pmax_injection",
-            "pmax_withdrawal",
-            "lower_rule_curve",
-            "upper_rule_curve",
-            "inflows",
-        ]
         matrices: List[str] = [
-            strip_matrix_protocol(getattr(self, attr)) for attr in attrs
+            strip_matrix_protocol(getattr(self, attr))
+            for attr in _MATRIX_NAMES
         ]
         return matrices
