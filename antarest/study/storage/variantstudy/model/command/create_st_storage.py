@@ -132,8 +132,15 @@ class CreateSTStorage(ICommand):
             # use an already-registered default matrix
             constants: GeneratorMatrixConstants
             constants = values["command_context"].generator_matrix_constants
-            method_name = f"get_st_storage_{field.name}"
-            method = getattr(constants, method_name)
+            # Directly access the methods instead of using `getattr` for maintainability
+            methods = {
+                "pmax_injection": constants.get_st_storage_pmax_injection,
+                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
+                "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
+                "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
+                "inflows": constants.get_st_storage_inflows,
+            }
+            method = methods[field.name]
             return cast(str, method())
         if isinstance(v, str):
             # Check the matrix link
