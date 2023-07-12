@@ -141,7 +141,7 @@ class CreateSTStorage(ICommand):
                 "inflows": constants.get_st_storage_inflows,
             }
             method = methods[field.name]
-            return cast(str, method())
+            return method()
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, values)
