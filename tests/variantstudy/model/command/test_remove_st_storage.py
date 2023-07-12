@@ -171,7 +171,7 @@ class TestRemoveSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=PARAMETERS,
+            parameters=PARAMETERS,  # type: ignore
         )
         create_st_storage.apply(recent_study)
 
