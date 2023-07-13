@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, cast
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
@@ -22,9 +23,9 @@ def project_path() -> Path:
     return PROJECT_DIR
 
 
-def with_db_context(f):
+def with_db_context(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection SpellCheckingInspection
@@ -39,7 +40,7 @@ def with_db_context(f):
     return wrapper
 
 
-def _assert_dict(a: dict, b: dict) -> None:
+def _assert_dict(a: Dict[str, Any], b: Dict[str, Any]) -> None:
     if a.keys() != b.keys():
         raise AssertionError(
             f"study level has not the same keys {a.keys()} != {b.keys()}"
@@ -48,7 +49,7 @@ def _assert_dict(a: dict, b: dict) -> None:
         assert_study(v, b[k])
 
 
-def _assert_list(a: list, b: list) -> None:
+def _assert_list(a: List[Any], b: List[Any]) -> None:
     for i, j in zip(a, b):
         assert_study(i, j)
 
@@ -65,7 +66,10 @@ def _assert_others(a: Any, b: Any) -> None:
         raise AssertionError(f"element in study not the same {a} != {b}")
 
 
-def _assert_array(a: np.ndarray, b: np.ndarray) -> None:
+def _assert_array(
+    a: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+) -> None:
     if not (a == b).all():
         raise AssertionError(f"element in study not the same {a} != {b}")
 
@@ -85,9 +89,9 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
         _assert_array(a, b)
     elif isinstance(a, np.ndarray) and isinstance(b, list):
-        _assert_list(cast(List, a.tolist()), b)
+        _assert_list(cast(List[float], a.tolist()), b)
     elif isinstance(a, list) and isinstance(b, np.ndarray):
-        _assert_list(a, cast(List, b.tolist()))
+        _assert_list(a, cast(List[float], b.tolist()))
     else:
         _assert_others(a, b)
 
