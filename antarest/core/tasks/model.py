@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
@@ -38,30 +38,30 @@ class TaskStatus(Enum):
         ]
 
 
-class TaskResult(BaseModel):
+class TaskResult(BaseModel, extra=Extra.forbid):
     success: bool
     message: str
     # Can be used to store json serialized result
     return_value: Optional[str]
 
 
-class TaskLogDTO(BaseModel):
+class TaskLogDTO(BaseModel, extra=Extra.forbid):
     id: str
     message: str
 
 
-class CustomTaskEventMessages(BaseModel):
+class CustomTaskEventMessages(BaseModel, extra=Extra.forbid):
     start: str
     running: str
     end: str
 
 
-class TaskEventPayload(BaseModel):
+class TaskEventPayload(BaseModel, extra=Extra.forbid):
     id: str
     message: str
 
 
-class TaskDTO(BaseModel):
+class TaskDTO(BaseModel, extra=Extra.forbid):
     id: str
     name: str
     owner: Optional[int]
@@ -74,7 +74,7 @@ class TaskDTO(BaseModel):
     ref_id: Optional[str] = None
 
 
-class TaskListFilter(BaseModel):
+class TaskListFilter(BaseModel, extra=Extra.forbid):
     status: List[TaskStatus] = []
     name: Optional[str] = None
     type: List[TaskType] = []
