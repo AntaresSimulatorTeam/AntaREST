@@ -1,26 +1,25 @@
-import sys
 import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, List, cast
-from unittest.mock import Mock
+from typing import Any, Callable, Dict, List, cast
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine
-
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
+from sqlalchemy import create_engine  # type: ignore
 
-project_dir: Path = Path(__file__).parent.parent
-sys.path.insert(0, str(project_dir))
+# fmt: off
+HERE = Path(__file__).parent.resolve()
+PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
+# fmt: on
 
 
 @pytest.fixture
 def project_path() -> Path:
-    return project_dir
+    return PROJECT_DIR
 
 
 def with_db_context(f):
