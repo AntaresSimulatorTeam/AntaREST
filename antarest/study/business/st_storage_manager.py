@@ -1,146 +1,112 @@
 import itertools
+import json
 import operator
-from enum import Enum
-from typing import List, Dict, Any
+import statistics
+from typing import Any, Dict, List
 
 import numpy as np
+from antarest.study.business.areas.table_group import TableGroup
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    execute_or_add_commands,
     Field,
-    AllOptionalMetaclass,
+    FormFieldsBaseModel as UtilsFormFieldsBaseModel,
+    execute_or_add_commands,
 )
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
+)
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.model.command.create_st_storage import (
+    CreateSTStorage,
+)
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
+    RemoveSTStorage,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, validator, root_validator
+from pydantic import BaseModel, Extra, validator
 
 
-# =============
-#  Form fields
-# =============
-
-
-class STStorageGroup(str, Enum):
+class FormFieldsBaseModel(UtilsFormFieldsBaseModel):
     """
-    This class defines the specific energy storage systems.
-
-    Enum values:
-        PSP_OPEN: Represents an open pumped storage plant.
-        PSP_CLOSED: Represents a closed pumped storage plant.
-        PONDAGE: Represents a pondage storage system (reservoir storage system).
-        BATTERY: Represents a battery storage system.
-        OTHER: Represents other energy storage systems.
-    """
-
-    PSP_OPEN = "PSP_open"
-    PSP_CLOSED = "PSP_closed"
-    PONDAGE = "Pondage"
-    BATTERY = "Battery"
-    OTHER = "Other"
-
-
-# noinspection SpellCheckingInspection
-class STStorageBaseModel(FormFieldsBaseModel):
-    """
-    This base class represents a group or a storage
-    for short-term storage configuration.
+    Pydantic Model for TableGroup
     """
 
     class Config:
+        # alias_generator = to_camel_case
+        # extra = Extra.forbid
+        validate_assignment = True
         allow_population_by_field_name = True
 
+
+class STStorageCreateForm(FormFieldsBaseModel):
+    """
+    Form used to **Create** a new short-term storage
+    """
+
     name: str = Field(
-        ...,
-        description="Short-term storage name (mandatory)",
-        regex=r"\w+",
-    )
-    injection_nominal_capacity: float = Field(
-        0,
-        description="Injection nominal capacity (MW)",
-        ge=0,
-        ini_alias="injectionnominalcapacity",
-    )
-    withdrawal_nominal_capacity: float = Field(
-        0,
-        description="Withdrawal nominal capacity (MW)",
-        ge=0,
-        ini_alias="withdrawalnominalcapacity",
-    )
-    reservoir_capacity: float = Field(
-        0,
-        description="Reservoir capacity (MWh)",
-        ge=0,
-        ini_alias="reservoircapacity",
-    )
-
-
-# noinspection SpellCheckingInspection
-class STStorageFields(STStorageBaseModel, metaclass=AllOptionalMetaclass):
-    """
-    This class represents a form for short-term storage configuration.
-    """
-
-    # NOTE: The `id` attribute refers to the INI section,
-    # while the `name` attribute pertains to the `name` option within that section.
-    id: str = Field(
-        ...,
-        description="Short-term storage ID (mandatory)",
-        regex=r"\w+",
+        description="Short-term storage name",
+        regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
-        ...,
         description="Energy storage system group (mandatory)",
     )
+
+    @property
+    def to_config(self) -> STStorageConfig:
+        values = self.dict(by_alias=False, exclude_none=True)
+        return STStorageConfig(**values)
+
+
+class STStorageEditForm(STStorageCreateForm):
+    """
+    Form used to **Edit** a short-term storage
+    """
+
+    id: str = Field(
+        description="Short-term storage ID",
+        regex=r"[a-zA-Z0-9_(),& -]+",
+    )
+    # name: inherited
+    # group: inherited
+    injection_nominal_capacity: float = Field(
+        None,
+        description="Injection nominal capacity (MW)",
+        ge=0,
+    )
+    withdrawal_nominal_capacity: float = Field(
+        None,
+        description="Withdrawal nominal capacity (MW)",
+        ge=0,
+    )
+    reservoir_capacity: float = Field(
+        None,
+        description="Reservoir capacity (MWh)",
+        ge=0,
+    )
     efficiency: float = Field(
-        1,
+        None,
         description="Efficiency of the storage system",
         ge=0,
         le=1,
     )
     initial_level: float = Field(
-        0,
+        None,
         description="Initial level of the storage system",
         ge=0,
-        ini_alias="initiallevel",
     )
     initial_level_optim: bool = Field(
-        False,
+        None,
         description="Flag indicating if the initial level is optimized",
-        ini_alias="initialleveloptim",
     )
 
-
-class STStorageGroupFields(STStorageBaseModel):
-    """
-    This class represents a group of storages.
-    """
-
-    storages: List[STStorageFields] = Field(
-        default_factory=list,
-        description="List of short-term storages",
-    )
-
-    @root_validator(pre=True)
-    def calculate_sums(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if "storages" not in values:
-            # Return early if `storages` is not provided (due to error)
-            return values
-        # convert iterator -> list
-        values["storages"] = storages = list(values["storages"])
-        field_names = (
-            "injection_nominal_capacity",
-            "withdrawal_nominal_capacity",
-            "reservoir_capacity",
-        )
-        for field_name in field_names:
-            if field_name not in values:
-                values[field_name] = sum(
-                    getattr(storage, field_name) for storage in storages
-                )
-        return values
+    @classmethod
+    def from_config(cls, storage_id: str, config: Dict[str, Any]) -> "STStorageEditForm":
+        st_storage_config = STStorageConfig(id=storage_id, **config)
+        values = st_storage_config.dict(by_alias=False, exclude_defaults=False)
+        return cls(**values)
 
 
 # =============
@@ -223,38 +189,38 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        storage_id: str,
-        field_values: STStorageFields,
-    ) -> None:
+        form: STStorageCreateForm,
+    ) -> str:
         """
-        Create a new short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
+        Create a new short-term storage configuration for the given `study`, `area_id`, and `storage_name`.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            storage_id: The short-term storage ID (section in the INI file).
-            field_values: STStorageFields object containing the short-term storage configuration.
+            form: Form used to Create a new short-term storage.
+
+        Returns:
+            The ID of the newly created short-term storage.
         """
-        # NOTE: The form field names are in camelCase,
-        # while the configuration field names are in snake_case.
-        config = field_values.to_ini()
+        st_storage_config = form.to_config
         command = CreateSTStorage(
-            target=ST_STORAGE_PATH.format(
-                area_id=area_id, storage_id=storage_id
-            ),
-            data=config,
+            area_id=area_id,
+            parameters=st_storage_config,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        # todo: La commande `execute_or_add_commands` devrait retourner un JSON.
+        #  Ici, le JSON serait simplement l'ID du stockage court terme créé.
         execute_or_add_commands(
             study, file_study, [command], self.storage_service
         )
+        return st_storage_config.id
 
     def get_st_storge_groups(
         self,
         study: Study,
         area_id: str,
-    ) -> List[STStorageGroupFields]:
+    ) -> TableGroup:
         """
         List of short-term storages grouped by types
 
@@ -263,7 +229,7 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
 
         Returns:
-            The list of short-term storage groups.
+            The table or a group of tables for short-term storage groups.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         try:
@@ -272,35 +238,68 @@ class STStorageManager:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
         else:
             # sourcery skip: extract-method
-            for section, value in config.items():
-                value["id"] = section
-            storages = sorted(
-                (
-                    STStorageFields.from_ini(
-                        value, study_version=int(study.version)
-                    )
-                    for key, value in config.items()
-                ),
-                key=operator.attrgetter("group", "id"),
+            # The Production Network contains all Production Groups.
+            prod_network = TableGroup(
+                properties={"name": f"Short-Term Storage of Area {area_id}"},
+                operations={
+                    "injectionNominalCapacity": sum,
+                    "withdrawalNominalCapacity": sum,
+                    "reservoirCapacity": sum,
+                },
             )
-            all_groups = []
-            group: STStorageGroup
-            for group, grp_iter in itertools.groupby(
-                storages, key=operator.attrgetter("group")
-            ):
-                group_fields = STStorageGroupFields(
-                    name=group.value,
-                    storages=grp_iter,
+
+            all_configs = [
+                STStorageConfig(id=storage_id, **options)
+                for storage_id, options in config.items()
+            ]
+
+            # Sort STStorageConfig by groups.
+            order_by = operator.attrgetter("group")
+            all_configs.sort(key=order_by)
+
+            # Group STStorageConfig by groups.
+            for group, configs in itertools.groupby(all_configs, key=order_by):
+                group_name: str = group.value
+
+                # Prepare the Production Units of that group.
+                cfg: STStorageConfig
+                elements = {
+                    cfg.id: TableGroup(
+                        properties={
+                            "group": group_name,
+                            "name": cfg.name,
+                            "injectionNominalCapacity": cfg.injection_nominal_capacity,
+                            "withdrawalNominalCapacity": cfg.withdrawal_nominal_capacity,
+                            "reservoirCapacity": cfg.reservoir_capacity,
+                            "efficiency": cfg.efficiency,
+                        }
+                    )
+                    for cfg in configs
+                }
+
+                # The Production Group contains all Production Units of that group.
+                prod_group = TableGroup(
+                    properties={"name": group_name},
+                    operations={
+                        "injectionNominalCapacity": sum,
+                        "withdrawalNominalCapacity": sum,
+                        "reservoirCapacity": sum,
+                        "efficiency": statistics.mean,
+                    },
+                    elements=elements,
                 )
-                all_groups.append(group_fields)
-            return all_groups
+
+                prod_network.elements[group_name] = prod_group
+
+            prod_network.calc_operations()
+            return prod_network
 
     def get_st_storage(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-    ) -> STStorageFields:
+    ) -> STStorageEditForm:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -310,11 +309,10 @@ class STStorageManager:
             storage_id: The ID of the short-term storage.
 
         Returns:
-            STStorageFields object containing the short-term storage configuration.
+            Form used to Update a short-term storage.
         """
-
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         # fmt: off
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         try:
             config = file_study.tree.get(
                 ST_STORAGE_PATH.format(area_id=area_id, storage_id=storage_id).split("/"),
@@ -323,38 +321,58 @@ class STStorageManager:
         except KeyError:
             raise STStorageFieldsNotFoundError(study.id, area_id, storage_id) from None
         else:
-            config["id"] = storage_id
-            return STStorageFields.from_ini(config, study_version=int(study.version))
+            return STStorageEditForm.from_config(storage_id, config)
         # fmt: on
 
     def update_st_storage(
         self,
         study: Study,
         area_id: str,
-        storage_id: str,
-        field_values: STStorageFields,
-    ) -> None:
+        form: STStorageEditForm,
+    ) -> STStorageEditForm:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage.
-            field_values: STStorageFields object containing the short-term storage configuration.
+            form: Form used to Update a short-term storage.
         """
-        # NOTE: The form field names are in camelCase,
-        # while the configuration field names are in snake_case.
-        config = field_values.to_ini()
+        # todo: Il faudrait une implémentation plus simple qui repose sur
+        #  une nouvelle commande "update_st_storage" similaire à "create_st_storage".
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        try:
+            # fmt: off
+            values = file_study.tree.get(
+                ST_STORAGE_PATH.format(area_id=area_id, storage_id=form.id).split("/"),
+                depth=1,
+            )
+            # fmt: on
+        except KeyError:
+            raise STStorageFieldsNotFoundError(
+                study.id, area_id, form.id
+            ) from None
+        else:
+            old_config = STStorageConfig(id=form.id, **values)
+
+        # use snake_case values
+        old_values = old_config.dict(by_alias=False, exclude_defaults=False)
+        new_values = form.dict(by_alias=False, exclude_none=True)
+        updated = {**old_values, **new_values}
+        new_config = STStorageConfig(**updated)
+        data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
         command = UpdateConfig(
-            target=ST_STORAGE_PATH.format(area_id=area_id, storage=storage_id),
-            data=config,
+            target=ST_STORAGE_PATH.format(area_id=area_id, storage=form.id),
+            data=data,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(
             study, file_study, [command], self.storage_service
         )
+
+        values = new_config.dict(by_alias=False, exclude_defaults=False)
+        return STStorageEditForm(**values)
 
     def delete_st_storage(
         self,

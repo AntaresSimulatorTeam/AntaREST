@@ -8,11 +8,10 @@ from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.business.st_storage_manager import (
     STStorageConfigNotFoundError,
-    STStorageFields,
     STStorageFieldsNotFoundError,
     STStorageGroup,
-    STStorageGroupFields,
     STStorageManager,
+    STStorageEditForm,
 )
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.io.reader import IniReader
@@ -133,58 +132,78 @@ class TestSTStorageManager:
         groups = manager.get_st_storge_groups(study, area_id="West")
 
         # Check
-        expected = [
-            STStorageGroupFields(
-                name="Battery",
-                injection_nominal_capacity=1500.0,
-                withdrawal_nominal_capacity=1500.0,
-                reservoir_capacity=20000.0,
-                storages=[
-                    STStorageFields(
-                        id="storage1",
-                        name="Storage1",
-                        injection_nominal_capacity=1500,
-                        withdrawal_nominal_capacity=1500,
-                        reservoir_capacity=20000,
-                        group=STStorageGroup.BATTERY,
-                        efficiency=0.94,
-                        initial_level=0,
-                        initial_level_optim=True,
-                    )
-                ],
-            ),
-            STStorageGroupFields(
-                name="PSP_closed",
-                injection_nominal_capacity=3500.0,
-                withdrawal_nominal_capacity=3000.0,
-                reservoir_capacity=41000.0,
-                storages=[
-                    STStorageFields(
-                        id="storage2",
-                        name="Storage2",
-                        injection_nominal_capacity=2000,
-                        withdrawal_nominal_capacity=1500,
-                        reservoir_capacity=20000,
-                        group=STStorageGroup.PSP_CLOSED,
-                        efficiency=0.78,
-                        initial_level=10000,
-                        initial_level_optim=False,
-                    ),
-                    STStorageFields(
-                        id="storage3",
-                        name="Storage3",
-                        injection_nominal_capacity=1500,
-                        withdrawal_nominal_capacity=1500,
-                        reservoir_capacity=21000,
-                        group=STStorageGroup.PSP_CLOSED,
-                        efficiency=0.72,
-                        initial_level=20000,
-                        initial_level_optim=False,
-                    ),
-                ],
-            ),
-        ]
-        assert groups == expected
+        actual = groups.dict(by_alias=True)
+        expected = {
+            "properties": {
+                "group": "",
+                "name": "Short-Term Storage of Area West",
+                "injectionNominalCapacity": 5000.0,
+                "withdrawalNominalCapacity": 4500.0,
+                "reservoirCapacity": 61000.0,
+                "efficiency": "",
+            },
+            "elements": {
+                "Battery": {
+                    "properties": {
+                        "group": "",
+                        "name": "Battery",
+                        "injectionNominalCapacity": 1500.0,
+                        "withdrawalNominalCapacity": 1500.0,
+                        "reservoirCapacity": 20000.0,
+                        "efficiency": 0.94,
+                    },
+                    "elements": {
+                        "storage1": {
+                            "properties": {
+                                "group": "Battery",
+                                "name": "Storage1",
+                                "injectionNominalCapacity": 1500.0,
+                                "withdrawalNominalCapacity": 1500.0,
+                                "reservoirCapacity": 20000.0,
+                                "efficiency": 0.94,
+                            },
+                            "elements": {},
+                        }
+                    },
+                },
+                "PSP_closed": {
+                    "properties": {
+                        "group": "",
+                        "name": "PSP_closed",
+                        "injectionNominalCapacity": 3500.0,
+                        "withdrawalNominalCapacity": 3000.0,
+                        "reservoirCapacity": 41000.0,
+                        "efficiency": 0.75,
+                    },
+                    "elements": {
+                        "storage2": {
+                            "properties": {
+                                "group": "PSP_closed",
+                                "name": "Storage2",
+                                "injectionNominalCapacity": 2000.0,
+                                "withdrawalNominalCapacity": 1500.0,
+                                "reservoirCapacity": 20000.0,
+                                "efficiency": 0.78,
+                            },
+                            "elements": {},
+                        },
+                        "storage3": {
+                            "properties": {
+                                "group": "PSP_closed",
+                                "name": "Storage3",
+                                "injectionNominalCapacity": 1500.0,
+                                "withdrawalNominalCapacity": 1500.0,
+                                "reservoirCapacity": 21000.0,
+                                "efficiency": 0.72,
+                            },
+                            "elements": {},
+                        },
+                    },
+                },
+            },
+        }
+
+        assert actual == expected
 
     def test_get_st_storage_groups__config_not_found(
         self, db_session, study_storage_service, study_uuid
@@ -215,6 +234,7 @@ class TestSTStorageManager:
             STStorageConfigNotFoundError, match="missing configuration"
         ) as ctx:
             manager.get_st_storge_groups(study, area_id="West")
+
         # ensure the error message contains at least the study ID and area ID
         err_msg = str(ctx.value)
         assert study.id in err_msg
@@ -250,25 +270,24 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested
-        groups = manager.get_st_storage(
+        edit_form = manager.get_st_storage(
             study, area_id="West", storage_id="storage1"
         )
 
-        # Define the expected storage fields
-        expected = STStorageFields(
-            id="storage1",
-            name="Storage1",
-            injection_nominal_capacity=1500,
-            withdrawal_nominal_capacity=1500,
-            reservoir_capacity=20000,
-            group=STStorageGroup.BATTERY,
-            efficiency=0.94,
-            initial_level=0,
-            initial_level_optim=True,
-        )
-
         # Assert that the returned storage fields match the expected fields
-        assert groups == expected
+        actual = edit_form.dict(by_alias=True)
+        expected = {
+            "efficiency": 0.94,
+            "group": STStorageGroup.BATTERY,
+            "id": None,
+            "initialLevel": 0.0,
+            "initialLevelOptim": True,
+            "injectionNominalCapacity": 1500.0,
+            "name": "Storage1",
+            "reservoirCapacity": 20000.0,
+            "withdrawalNominalCapacity": 1500.0,
+        }
+        assert actual == expected
 
     def test_get_st_storage__config_not_found(
         self, db_session, study_storage_service, study_uuid
