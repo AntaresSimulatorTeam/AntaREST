@@ -125,7 +125,7 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
 def create_field(
     default: Any = pydantic.fields.Undefined,
     *,
-    default_factory: Optional[pydantic.fields.NoArgAnyCallable] = None,
+    default_factory: Optional[pydantic.fields.NoArgAnyCallable] = None,  # type: ignore
     **kwargs: Any,
 ) -> Any:
     """
