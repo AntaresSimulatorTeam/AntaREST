@@ -111,12 +111,27 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         study: bytes = File(...),
         groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
+        """
+        This entry point allows you to import a study from your computer to the Antares Web server.
+
+        Args:
+            study: Your study zipped or its corresponding bytes
+            current_user: Current authenticated user.
+            groups: The groups your study will belong to (Default value: current_user groups)
+
+        Returns:
+            The id of the imported study on the AntaresWeb server
+        """
         logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
-        group_ids = groups.split(",") if groups else []
+        group_ids = (
+            groups.split(",")
+            if groups
+            else [group.id for group in current_user.groups]
+        )
 
         uuid = study_service.import_study(zip_binary, group_ids, params)
 
