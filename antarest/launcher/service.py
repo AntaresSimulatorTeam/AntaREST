@@ -459,15 +459,18 @@ class LauncherService:
             job_id, f"Extracting study {study_id}", JobLogType.BEFORE
         )
         with db():
+            output_list = (
+                [launcher_params.xpansion.output_id]
+                if launcher_params.xpansion
+                and isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                and launcher_params.xpansion.output_id is not None
+                else None
+            )
             self.study_service.export_study_flat(
                 study_id,
                 RequestParameters(DEFAULT_ADMIN_USER),
                 target_path,
-                output_list=[launcher_params.xpansion.output_id]
-                if launcher_params.xpansion
-                and isinstance(launcher_params.xpansion, XpansionParametersDTO)
-                and launcher_params.xpansion.output_id is not None
-                else None,
+                output_list=output_list,
             )
         self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
         self._after_export_flat_hooks(
