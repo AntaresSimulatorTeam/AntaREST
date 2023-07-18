@@ -3,9 +3,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from pydantic import Extra
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 from pydantic.main import BaseModel
+
+from .st_storage import STStorageConfig
 
 
 class ENR_MODELLING(Enum):
@@ -21,15 +25,6 @@ class Cluster(BaseModel):
     id: str
     name: str
     enabled: bool = True
-
-
-class Storage(BaseModel):
-    """
-    Short-term storage model used in Area creation
-    """
-
-    id: str
-    name: str
 
 
 class Link(BaseModel):
@@ -59,6 +54,9 @@ class Area(BaseModel):
     Object linked to /input/<area>/optimization.ini information
     """
 
+    class Config:
+        extra = Extra.forbid
+
     name: str
     links: Dict[str, Link]
     thermals: List[Cluster]
@@ -66,7 +64,7 @@ class Area(BaseModel):
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
-    storages: List[Storage] = []
+    st_storages: List[STStorageConfig] = []
 
 
 class DistrictSet(BaseModel):
@@ -143,14 +141,14 @@ class FileStudyTreeConfig(DTO):
         self.study_id = study_id
         self.version = version
         self.output_path = output_path
-        self.areas = areas or dict()
-        self.sets = sets or dict()
-        self.outputs = outputs or dict()
-        self.bindings = bindings or list()
+        self.areas = areas or {}
+        self.sets = sets or {}
+        self.outputs = outputs or {}
+        self.bindings = bindings or []
         self.store_new_set = store_new_set
-        self.archive_input_series = archive_input_series or list()
+        self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
-        self.cache = cache or dict()
+        self.cache = cache or {}
         self.zip_path = zip_path
 
     def next_file(
@@ -218,8 +216,7 @@ class FileStudyTreeConfig(DTO):
 
     def get_st_storage_names(self, area: str) -> List[str]:
         return self.cache.get(
-            f"%st-storage%{area}",
-            [storage.id for storage in self.areas[area].storages],
+            f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages]
         )
 
     def get_renewable_names(

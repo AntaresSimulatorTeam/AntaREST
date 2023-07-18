@@ -20,7 +20,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     Cluster,
     BindingConstraintDTO,
-    Storage,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
 )
 from tests.storage.business.assets import ASSETS_DIR
 
@@ -283,29 +286,59 @@ def test_parse_thermal(tmp_path: Path) -> None:
     ]
 
 
+# noinspection SpellCheckingInspection
+ST_STORAGE_LIST_INI = """\
+[siemens battery]
+name = Siemens Battery
+group = Battery
+injectionnominalcapacity = 150.0
+withdrawalnominalcapacity = 150.0
+reservoircapacity = 600.0
+efficiency = 0.94
+initiallevel = 0
+initialleveloptim = True
+
+[grand maison]
+name = Grand'Maison
+group = PSP_closed
+injectionnominalcapacity = 1500.0
+withdrawalnominalcapacity = 1800.0
+reservoircapacity = 20000.0
+efficiency = 0.78
+initiallevel = 10000.0
+initialleveloptim = False
+"""
+
+
 def test_parse_st_storage(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
-    study_path.joinpath("input", "st-storage", "clusters", "fr").mkdir(
-        parents=True
-    )
-    content = """
-        [t1]
-        name = t1
-
-        [t2]
-        name = t2
-
-        [t3]
-        name = t3
-        """
-    study_path.joinpath(
-        "input", "st-storage", "clusters", "fr", "list.ini"
-    ).write_text(content)
-
+    config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
+    config_dir.mkdir(parents=True)
+    config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
+    # noinspection SpellCheckingInspection
     assert _parse_st_storage(study_path, "fr") == [
-        Storage(id="t1", name="t1"),
-        Storage(id="t2", name="t2"),
-        Storage(id="t3", name="t3"),
+        STStorageConfig(
+            id="siemens battery",
+            name="Siemens Battery",
+            group=STStorageGroup.BATTERY,
+            injection_nominal_capacity=150.0,
+            withdrawal_nominal_capacity=150.0,
+            reservoir_capacity=600.0,
+            efficiency=0.94,
+            initial_level=0.0,
+            initial_level_optim=True,
+        ),
+        STStorageConfig(
+            id="grand maison",
+            name="Grand'Maison",
+            group=STStorageGroup.PSP_CLOSED,
+            injection_nominal_capacity=1500.0,
+            withdrawal_nominal_capacity=1800.0,
+            reservoir_capacity=20000.0,
+            efficiency=0.78,
+            initial_level=10000.0,
+            initial_level_optim=False,
+        ),
     ]
 
 

@@ -2,25 +2,23 @@ import tempfile
 from pathlib import Path
 from typing import Dict
 
-from filelock import FileLock
-
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
-    NULL_MATRIX,
-    NULL_SCENARIO_MATRIX,
     FIXED_4_COLUMNS,
     FIXED_8_COLUMNS,
+    NULL_MATRIX,
+    NULL_SCENARIO_MATRIX,
 )
+from filelock import FileLock
 
 # TODO: put index into variable
+# fmt: off
 HYDRO_COMMON_CAPACITY_MAX_POWER_V7 = "hydro/common/capacity/max_power/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V6 = "hydro/common/capacity/reservoir/v6"
 HYDRO_COMMON_CAPACITY_INFLOW_PATTERN = "hydro/common/capacity/inflow_pattern"
-HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = (
-    "hydro/common/capacity/credit_modulations"
-)
+HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = "hydro/common/capacity/credit_modulations"
 RESERVES_TS = "reserves"
 MISCGEN_TS = "miscgen"
 PREPRO_CONVERSION = "prepro/conversion"
@@ -33,9 +31,20 @@ LINK_DIRECT = "link_direct"
 LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
+ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
+# fmt: on
+
+# Short-term storage aliases
+ST_STORAGE_PMAX_INJECTION = ONES_SCENARIO_MATRIX
+ST_STORAGE_PMAX_WITHDRAWAL = ONES_SCENARIO_MATRIX
+ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
+ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
+
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
+# noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
@@ -97,6 +106,11 @@ class GeneratorMatrixConstants:
         )
         self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
         self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
+
+        # Some short-term storage matrices use np.ones((8760, 1))
+        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
+            matrix_constants.st_storage.series.pmax_injection
+        )
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
@@ -164,3 +178,25 @@ class GeneratorMatrixConstants:
 
     def get_default_miscgen(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]
+
+    # fmt: off
+    def get_st_storage_pmax_injection(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with ones."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_INJECTION]
+
+    def get_st_storage_pmax_withdrawal(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with ones."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_WITHDRAWAL]
+
+    def get_st_storage_lower_rule_curve(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_LOWER_RULE_CURVE]
+
+    def get_st_storage_upper_rule_curve(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with ones."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_UPPER_RULE_CURVE]
+
+    def get_st_storage_inflows(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+    # fmt: on

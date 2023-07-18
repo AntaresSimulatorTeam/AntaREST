@@ -27,6 +27,9 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
     CreateRenewablesCluster,
 )
+from antarest.study.storage.variantstudy.model.command.create_st_storage import (
+    CreateSTStorage,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
@@ -45,6 +48,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 )
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
     RemoveRenewablesCluster,
+)
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
+    RemoveSTStorage,
 )
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
@@ -89,6 +95,8 @@ COMMAND_MAPPING = {
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
+    CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
+    CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
     CommandName.UPDATE_COMMENTS.value: UpdateComments,
@@ -154,7 +162,7 @@ class CommandFactory:
         Convert a list of CommandDTO to a list of ICommand.
 
         Args:
-            cmd_dto_list: The CommandDTO objetcs to convert.
+            cmd_dto_list: The CommandDTO objects to convert.
 
         Returns:
             List: A list of ICommand instances.

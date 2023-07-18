@@ -53,31 +53,9 @@ The example provided bellow demonstrates the creation of two areas and a link be
 
 ## Command list
 
-### Base commands
+### Base types
 
-| Action Name               | Arguments                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Description                                                                                 |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| update_config             | <pre>{<br>target:&nbsp;&lt;INI_TARGET&gt;<br>data:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Update arbitrary config                                                                     |
-| replace_matrix            | <pre>{<br>target:&nbsp;&lt;INPUT_SERIES_MATRIX&gt;<br>matrix:&nbsp;&lt;MATRIX&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Replace arbitrary matrix                                                                    |
-| create_area               | <pre>{<br>area_name:&nbsp;&lt;STRING&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Create a new area                                                                           |
-| remove_area               | <pre>{<br>id:&nbsp;&lt;AREA_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Remove an existing area                                                                     |
-| create_cluster            | <pre>{<br>area_id:&nbsp;&lt;AREA_ID&gt;<br>cluster_name:&nbsp;&lt;STRING&gt;<br>prepro?:&nbsp;&lt;STRING&gt;<br>modulation?:&nbsp;&lt;MATRIX&gt;<br>parameters?:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Create a new thermal cluster                                                                |
-| remove_cluster            | <pre>{<br>area_id:&nbsp;&lt;AREA_ID&gt;<br>cluster_id:&nbsp;&lt;CLUSTER_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Remove an existing thermal cluster                                                          |
-| create_renewables_cluster | <pre>{<br>area_id:&nbsp;&lt;AREA_ID&gt;<br>cluster_name:&nbsp;&lt;STRING&gt;<br>parameters?:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Create a new renewable cluster                                                              |
-| remove_renewables_cluster | <pre>{<br>area_id:&nbsp;&lt;AREA_ID&gt;<br>cluster_id:&nbsp;&lt;CLUSTER_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Remove an existing renewable cluster                                                        |
-| create_link               | <pre>{<br>area1:&nbsp;&lt;AREA_ID&gt;<br>area2:&nbsp;&lt;AREA_ID&gt;<br>parameters?:&nbsp;&lt;INI_MODEL&gt;<br>series?:&nbsp;&lt;MATRIX&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Create a new link                                                                           |
-| remove_link               | <pre>{<br>area1:&nbsp;&lt;AREA_ID&gt;<br>area2:&nbsp;&lt;AREA_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Remove an existing link                                                                     |
-| create_district           | <pre>{<br>name:&nbsp;&lt;STRING&gt;<br>base_filter?:&nbsp;"add-all" &#124; <b>"remove-all"</b><br>filter_items?:&nbsp;&lt;LIST&#91;AREA_ID&#93;&gt;<br>output?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Create a new district (set of areas)                                                        |
-| remove_district           | <pre>{<br>id:&nbsp;&lt;DISTRICT_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Remove an existing district                                                                 |
-| create_binding_constraint | <pre>{<br>name:&nbsp;&lt;STRING&gt;<br>enabled?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>time_step:&nbsp;"hourly" &#124; "weekly" &#124; "daily"<br>operator:&nbsp;"equal" &#124; "both" &#124; "greater" &#124; "less"<br>coeffs:&nbsp;&lt;LIST&#91;CONSTRAINT_COEFF&#93;&gt;<br>values?:&nbsp;&lt;MATRIX&gt;<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre><br>CONSTRAINT_COEFF<pre>{<br>type:&nbsp;&lt;"cluster" &#124; "link" (choosing one or the other imply filling the right corresponding parameter below)&gt;<br>link:&nbsp;&lt;AREA_ID&gt;%&lt;AREA_ID&gt; (link)<br>cluster:&nbsp;&lt;AREA_ID&gt;.&lt;CLUSTER_ID&gt;<br>coeff:&nbsp;&lt;NUMBER&gt;<br>offset?:&nbsp;&lt;NUMBER&gt;<br>}</pre> | Create a new binding constraint                                                             |
-| update_binding_constraint | <pre>{<br>id:&nbsp;&lt;BINDING_CONSTRAINT_ID&gt;<br>enabled?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>time_step:&nbsp;"hourly" &#124; "weekly" &#124; "daily"<br>operator:&nbsp;"equal" &#124; "both" &#124; "greater" &#124; "less"<br>coeffs:&nbsp;&lt;LIST&#91;CONSTRAINT_COEFF&#93;&gt;<br>values?:&nbsp;&lt;MATRIX&gt;<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                | Update an existing binding constraint                                                       |
-| remove_binding_constraint | <pre>{<br>id:&nbsp;&lt;BINDING_CONSTRAINT_ID&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Remove an existing binding constraint                                                       |
-| update_playlist           | <pre>{<br>active:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>reverse:&nbsp;&lt;BOOLEAN&gt; (default: False)<br>items:&nbsp;&lt;LIST&#91;NUMBER&#93;&gt; (default: None)<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Update the playlist with provided active (or inactive) years (starting from year 1)         |
-| update_scenario_builder   | <pre>{<br>data:&nbsp;&lt;RULESETS_MODEL&gt; <br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Update scenario builder with partial configuration                                          |
-| update_district           | <pre>{<br>id:&nbsp;&lt;STRING&gt;<br>base_filter?:&nbsp;"add-all" &#124; <b>"remove-all"</b><br>filter_items?:&nbsp;&lt;LIST&#91;AREA_ID&#93;&gt;<br>output?:&nbsp;&lt;BOOLEAN&gt; (default: True)<br>comments?:&nbsp;&lt;STRING&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Update a district (set of areas)                                                            |
-| update_raw_file           | <pre>{<br>target:&nbsp;&lt;INPUT_RAW_FILE_TARGET&gt;<br>b64Data:&nbsp;&lt;STRING&gt;<br>}</pre>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Replace arbitrary data file (must not be a matrix or ini target) with a base64 encoded data |
-
-#### Base types
+The following table describes the data types used in the commands:
 
 | Type                       | Description                                                                                                                                                                                                             |
 |----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -89,11 +67,288 @@ The example provided bellow demonstrates the creation of two areas and a link be
 | RULESETS_MODEL             | like `INI_MODEL` with some specifications: an empty string allows to remove a key (ruleset or cell value) and a ruleset "A" with for value the name of an another ruleset "B" allows to clone the content of "B" in "A" |
 | INPUT_RAW_FILE_TARGET      | a valid antares raw data file relative path (without extension). The path can be found when browsing the study in detailed view                                                                                         |
 | INPUT_SERIES_MATRIX_TARGET | a valid antares matrix data file relative path (without extension). The path can be found when browsing the study in detailed view                                                                                      |
-| MATRIX                     | a matrix id or a list of list of values (eg. &#91;&#91;0,1,2&#93;,&#91;4,5,6&#93;&#93; where each sub list is a row of the matrix). Matrix id can be found in the Matrix Data manager tab.                              |
-| AREA_ID                    | the id of an area (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                           |
-| CLUSTER_ID                 | the id of a cluster (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                         |
-| DISTRICT_ID                | the id of a district (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                        |
-| BINDING_CONSTRAINT_ID      | the id of a binding constraint (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)              |
+| MATRIX                     | a matrix id or a list of list of values (eg. &#91;&#91;0,1,2&#93;,&#91;4,5,6&#93;&#93; where each sub list is a row of the matrix). Matrix ID can be found in the Matrix Data manager tab.                              |
+| AREA_ID                    | the ID of an area (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                           |
+| CLUSTER_ID                 | the ID of a cluster (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                         |
+| STORAGE_ID                 | the ID of a short-term storage (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)              |
+| DISTRICT_ID                | the ID of a district (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)                        |
+| BINDING_CONSTRAINT_ID      | the ID of a binding constraint (same as name, but lower cased and only with the following characters: &#91;a-z&#93;,&#91;0-9&#93;_,(,),-,&,",". Other characters will be transformed into a single space.)              |
+
+### `update_config`
+
+Update arbitrary config
+
+```json
+{
+  "target": "<INI_TARGET>",
+  "data": "<INI_MODEL>"
+}
+```
+
+### `replace_matrix`
+
+Replace arbitrary matrix
+
+```json
+{
+  "target": "<INPUT_SERIES_MATRIX_TARGET>",
+  "matrix": "<MATRIX>"
+}
+```
+
+### `create_area`
+
+Create a new area
+
+```json
+{
+  "area_name": "<STRING>"
+}
+```
+
+### `remove_area`
+
+Remove an existing area
+
+```json
+{
+  "id": "<AREA_ID>"
+}
+```
+
+### `create_cluster`
+
+Create a new thermal cluster
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "cluster_name": "<STRING>",
+  "parameters": "<INI_MODEL>",
+  "prepro?": "<STRING>",
+  "modulation?": "<MATRIX>"
+}
+```
+
+### `remove_cluster`
+
+Remove an existing thermal cluster
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "cluster_id": "<CLUSTER_ID>"
+}
+```
+
+### `create_renewables_cluster`
+
+Create a new renewable cluster
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "cluster_name": "<STRING>",
+  "parameters": "<INI_MODEL>"
+}
+```
+
+### `remove_renewables_cluster`
+
+Remove an existing renewable cluster
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "cluster_id": "<CLUSTER_ID>"
+}
+```
+
+### `create_link`
+
+Create a new link
+
+```json
+{
+  "area1": "<AREA_ID>",
+  "area2": "<AREA_ID>",
+  "parameters": "<INI_MODEL>",
+  "series?": "<MATRIX>"
+}
+```
+
+### `remove_link`
+
+Remove an existing link
+
+```json
+{
+  "area1": "<AREA_ID>",
+  "area2": "<AREA_ID>"
+}
+```
+
+### `create_district`
+
+Create a new district (set of areas)
+
+```json
+{
+  "name": "<STRING>",
+  "base_filter?": "'add-all' | 'remove-all'",
+  "filter_items?": "<LIST[AREA_ID]>",
+  "output?": "<BOOLEAN> (default: True)",
+  "comments?": "<STRING>"
+}
+```
+
+### `remove_district`
+
+Remove an existing district
+
+```json
+{
+  "id": "<DISTRICT_ID>"
+}
+```
+
+### `create_binding_constraint`
+
+Create a new binding constraint
+
+```json
+{
+  "name": "<STRING>",
+  "enabled?": "<BOOLEAN> (default: True)",
+  "time_step": "'hourly' | 'weekly' | 'daily'",
+  "operator": "'equal' | 'both' | 'greater' | 'less'",
+  "coeffs": "<LIST[CONSTRAINT_COEFF]>",
+  "values?": "<MATRIX>",
+  "comments?": "<STRING>"
+}
+```
+
+Where cluster `CONSTRAINT_COEFF` is:
+
+```json
+{
+  "type": "cluster",
+  "cluster": "<AREA_ID>.<CLUSTER_ID>",
+  "coeff": "<NUMBER>",
+  "offset?": "<NUMBER>"
+}
+```
+
+Or link `CONSTRAINT_COEFF` is:
+
+```json
+{
+  "type": "link",
+  "link": "<AREA_ID>%<AREA_ID>",
+  "coeff": "<NUMBER>",
+  "offset?": "<NUMBER>"
+}
+```
+
+### `update_binding_constraint`
+
+Update an existing binding constraint
+
+```json
+{
+  "id": "<BINDING_CONSTRAINT_ID>",
+  "enabled?": "<BOOLEAN> (default: True)",
+  "time_step": "'hourly' | 'weekly' | 'daily'",
+  "operator": "'equal' | 'both' | 'greater' | 'less'",
+  "coeffs": "<LIST[CONSTRAINT_COEFF]>",
+  "values?": "<MATRIX>",
+  "comments?": "<STRING>"
+}
+```
+
+### `remove_binding_constraint`
+
+Remove an existing binding constraint
+
+```json
+{
+  "id": "<BINDING_CONSTRAINT_ID>"
+}
+```
+
+### `update_playlist`
+
+Update the playlist with provided active (or inactive) years (starting from year 1)
+
+```json
+{
+  "active": "<BOOLEAN> (default: True)",
+  "reverse": "<BOOLEAN> (default: False)",
+  "items": "<LIST[NUMBER]> (default: None)"
+}
+```
+
+### `update_scenario_builder`
+
+Update scenario builder with partial configuration
+
+```json
+{
+  "data": "<RULESETS_MODEL>"
+}
+```
+
+### `update_district`
+
+Update a district (set of areas)
+
+```json
+{
+  "id": "<STRING>",
+  "base_filter?": "'add-all' | 'remove-all'",
+  "filter_items?": "<LIST[AREA_ID]>",
+  "output?": "<BOOLEAN> (default: True)",
+  "comments?": "<STRING>"
+}
+```
+
+### `update_raw_file`
+
+Replace arbitrary data file (must not be a matrix or ini target) with a base64 encoded data
+
+```json
+{
+  "target": "<INPUT_RAW_FILE_TARGET>",
+  "b64Data": "<STRING>"
+}
+```
+
+### `create_st_storage`
+
+Create a new short-term storage
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "parameters": "<INI_MODEL>",
+  "pmax_injection?": "<MATRIX>",
+  "pmax_withdrawal?": "<MATRIX>",
+  "lower_rule_curve?": "<MATRIX>",
+  "upper_rule_curve?": "<MATRIX>",
+  "inflows?": "<MATRIX>"
+}
+```
+
+### `remove_st_storage`
+
+Remove an existing short-term storage
+
+```json
+{
+  "area_id": "<AREA_ID>",
+  "storage_id": "<STORAGE_ID>"
+}
+```
 
 ### Specialized commands
 
