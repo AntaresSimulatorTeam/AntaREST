@@ -100,7 +100,9 @@ def test_exporter_file_no_output(
 
 
 @pytest.mark.parametrize("outputs", [True, False, "prout"])
-@pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"]])
+@pytest.mark.parametrize(
+    "output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]]
+)
 @pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
     tmp_path: Path,
