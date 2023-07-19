@@ -11,7 +11,6 @@ from antarest.study.business.st_storage_manager import (
     STStorageFieldsNotFoundError,
     STStorageGroup,
     STStorageManager,
-    STStorageEditForm,
 )
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.io.reader import IniReader
@@ -202,6 +201,34 @@ class TestSTStorageManager:
                 },
             },
         }
+
+        # todo: alternate data structure (flat=True):
+        # data = [
+        #     {
+        #         "group": "Battery",
+        #         "name": "Storage1",
+        #         "injectionNominalCapacity": 1500.0,
+        #         "withdrawalNominalCapacity": 1500.0,
+        #         "reservoirCapacity": 20000.0,
+        #         "efficiency": 0.94,
+        #     },
+        #     {
+        #         "group": "PSP_closed",
+        #         "name": "Storage2",
+        #         "injectionNominalCapacity": 2000.0,
+        #         "withdrawalNominalCapacity": 1500.0,
+        #         "reservoirCapacity": 20000.0,
+        #         "efficiency": 0.78,
+        #     },
+        #     {
+        #         "group": "PSP_closed",
+        #         "name": "Storage3",
+        #         "injectionNominalCapacity": 1500.0,
+        #         "withdrawalNominalCapacity": 1500.0,
+        #         "reservoirCapacity": 21000.0,
+        #         "efficiency": 0.72,
+        #     },
+        # ]
 
         assert actual == expected
 
