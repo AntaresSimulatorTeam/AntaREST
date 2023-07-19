@@ -392,10 +392,15 @@ def export_study_flat(
         if output_list_filter is not None:
             os.mkdir(output_dest_path)
             for output in output_list_filter:
-                shutil.copytree(
-                    src=output_src_path / output,
-                    dst=output_dest_path / output,
-                )
+                zip_path = output_src_path / f"{output}.zip"
+                if zip_path.exists():
+                    with ZipFile(zip_path) as zf:
+                        zf.extractall(output_dest_path / output)
+                else:
+                    shutil.copytree(
+                        src=output_src_path / output,
+                        dst=output_dest_path / output,
+                    )
         else:
             shutil.copytree(
                 src=output_src_path,
