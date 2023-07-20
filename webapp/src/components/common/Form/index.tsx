@@ -27,7 +27,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
-import { LoadingButton } from "@mui/lab";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -57,6 +57,7 @@ export interface FormProps<
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
+  submitButtonIcon?: LoadingButtonProps["startIcon"];
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
@@ -78,6 +79,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onSubmitError,
     children,
     submitButtonText,
+    submitButtonIcon,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
@@ -314,7 +316,13 @@ function Form<TFieldValues extends FieldValues, TContext>(
                 disabled={!isSubmitAllowed}
                 loading={isSubmitting}
                 loadingPosition="start"
-                startIcon={<SaveIcon />}
+                startIcon={
+                  RA.isNotUndefined(submitButtonIcon) ? (
+                    submitButtonIcon
+                  ) : (
+                    <SaveIcon />
+                  )
+                }
               >
                 {submitButtonText || t("global.save")}
               </LoadingButton>
