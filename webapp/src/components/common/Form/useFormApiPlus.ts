@@ -184,9 +184,8 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
 
   // `formState` is wrapped with a Proxy and updated in batch.
   // The API is updated here to keep reference, like `useForm` return.
-  useEffect(() => {
-    formApiPlus.formState = formState;
-  }, [formApiPlus, formState]);
+  // ! Don't used `useEffect`, because it's read before render.
+  formApiPlus.formState = formState;
 
   return formApiPlus;
 }
