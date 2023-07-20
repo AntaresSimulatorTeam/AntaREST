@@ -1,6 +1,5 @@
-from typing import Optional, Dict, Tuple, Any, TypedDict, List, Union
-
-from pydantic.types import StrictInt, StrictBool, StrictFloat
+from typing import Optional, Dict, Any, List, Union
+from pydantic import Field, validator
 
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
@@ -15,20 +14,21 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 
 
 class ManagementOptionsFormFields(FormFieldsBaseModel):
-    inter_daily_breakdown: Optional[Union[StrictFloat, StrictInt]]
-    intra_daily_modulation: Optional[Union[StrictFloat, StrictInt]]
-    inter_monthly_breakdown: Optional[Union[StrictFloat, StrictInt]]
-    reservoir: Optional[StrictBool]
-    reservoir_capacity: Optional[Union[StrictFloat, StrictInt]]
-    follow_load: Optional[StrictBool]
-    use_water: Optional[StrictBool]
-    hard_bounds: Optional[StrictBool]
-    initialize_reservoir_date: Optional[Union[StrictFloat, StrictInt]]
-    use_heuristic: Optional[StrictBool]
-    power_to_level: Optional[StrictBool]
-    leeway_low: Optional[Union[StrictFloat, StrictInt]]
-    leeway_up: Optional[Union[StrictFloat, StrictInt]]
-    pumping_efficiency: Optional[Union[StrictFloat, StrictInt]]
+    inter_daily_breakdown: Optional[float] = Field(ge=0)
+    intra_daily_modulation: Optional[float] = Field(ge=1)
+    inter_monthly_breakdown: Optional[float] = Field(ge=0)
+    reservoir: Optional[bool]
+    reservoir_capacity: Optional[float] = Field(ge=0)
+    follow_load: Optional[bool]
+    use_water: Optional[bool]
+    hard_bounds: Optional[bool]
+    initialize_reservoir_date: Optional[int] = Field(ge=0, le=11)
+    use_heuristic: Optional[bool]
+    power_to_level: Optional[bool]
+    use_leeway: Optional[bool]
+    leeway_low: Optional[float] = Field(ge=0)
+    leeway_up: Optional[float] = Field(ge=0)
+    pumping_efficiency: Optional[float] = Field(ge=0)
 
 
 HYDRO_PATH = "input/hydro/hydro"
@@ -72,6 +72,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{HYDRO_PATH}/power to level",
         "default_value": False,
     },
+    "use_leeway": {"path": f"{HYDRO_PATH}/use leeway", "default_value": False},
     "leeway_low": {"path": f"{HYDRO_PATH}/leeway low", "default_value": 1},
     "leeway_up": {"path": f"{HYDRO_PATH}/leeway up", "default_value": 1},
     "pumping_efficiency": {
