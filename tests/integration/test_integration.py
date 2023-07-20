@@ -1492,6 +1492,7 @@ def test_area_management(app: FastAPI):
         "initializeReservoirDate": 0,
         "useHeuristic": True,
         "powerToLevel": False,
+        "useLeeway": False,
         "leewayLow": 1,
         "leewayUp": 1,
         "pumpingEfficiency": 1,

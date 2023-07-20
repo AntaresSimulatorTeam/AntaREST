@@ -10,6 +10,7 @@ v2.14.5 (unreleased)
 *  **xpansion:** correct Xpansion settings field types ([edaa140](https://github.com/AntaresSimulatorTeam/AntaREST/commit/edaa1403edfec221681662ecff6accc4e774c0e2))
 *  **variant:** correct implementation of `VariantCommandsExtractor.diff` method ([289fb2f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/289fb2f1de28dbb40b24d3741fc972a17f462780))
 *  **ui-i18n:** add missing adequacy patch translations (#1680) ([a254b5e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a254b5e2a80d8a7229e8b002329921bc62165db1))
+*  **api:** add missing `use_leeway` field and validation rules (#1650) ([e62f41e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e62f41e5a33a1520f8d8bcc4171b9e4e9b5d8902))
 
 
 ### Continuous Integration
