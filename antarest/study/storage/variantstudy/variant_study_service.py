@@ -70,7 +70,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
-    export_study_flat,
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
@@ -839,22 +838,30 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             last_executed_command_index = None
 
         if last_executed_command_index is None:
-            # Copy parent study to destination
             if isinstance(parent_study, VariantStudy):
                 self._safe_generation(parent_study)
+                path_study = Path(parent_study.path)
+                snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
+                output_src_path = path_study / "output"
                 self.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
+                    snapshot_path,
+                    dst_path,
                     outputs=False,
-                    denormalize=False,
+                    output_src_path=output_src_path,
                 )
             else:
-                self.raw_study_service.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
-                    outputs=False,
-                    denormalize=False,
-                )
+                path_study = Path(parent_study.path)
+                if parent_study.archived:
+                    self.raw_study_service.unarchive(parent_study)
+                try:
+                    self.raw_study_service.export_study_flat(
+                        path_study=path_study,
+                        dest=dst_path,
+                        outputs=False,
+                    )
+                finally:
+                    if parent_study.archived:
+                        shutil.rmtree(parent_study.path)
 
         command_start_index = (
             last_executed_command_index + 1
@@ -1233,29 +1240,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
-
-    def export_study_flat(
-        self,
-        metadata: VariantStudy,
-        dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
-        denormalize: bool = True,
-    ) -> None:
-        self._safe_generation(metadata)
-        path_study = Path(metadata.path)
-
-        snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        output_src_path = path_study / "output"
-        export_study_flat(
-            snapshot_path,
-            dst_path,
-            self.study_factory,
-            outputs,
-            output_list_filter,
-            denormalize,
-            output_src_path,
-        )
 
     def get_synthesis(
         self,

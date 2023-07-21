@@ -44,7 +44,6 @@ from antarest.study.storage.utils import (
     is_managed,
     remove_from_cache,
     create_new_empty_study,
-    export_study_flat,
 )
 
 logger = logging.getLogger(__name__)
@@ -361,31 +360,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         metadata.path = str(path_study)
         return metadata
-
-    def export_study_flat(
-        self,
-        metadata: RawStudy,
-        dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
-        denormalize: bool = True,
-    ) -> None:
-        path_study = Path(metadata.path)
-
-        if metadata.archived:
-            self.unarchive(metadata)
-        try:
-            export_study_flat(
-                path_study,
-                dst_path,
-                self.study_factory,
-                outputs,
-                output_list_filter,
-                denormalize,
-            )
-        finally:
-            if metadata.archived:
-                shutil.rmtree(metadata.path)
 
     def check_errors(
         self,

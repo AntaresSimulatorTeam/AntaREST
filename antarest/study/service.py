@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import logging
+import shutil
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
@@ -1089,9 +1090,36 @@ class StudyService:
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs
-                )
+                # if study.type == 'rawstudy':
+                #     path_study = Path(study.path)
+                #     if study.archived:
+                #         self.storage_service.get_storage(study).unarchive(study)
+                #     try:
+                #         return self.storage_service.get_storage(study).export_study_flat(path_study,
+                #                                                                          dest,
+                #                                                                          len(output_list or []) > 0,
+                #                                                                          output_list
+                #                                                                          )
+                #     finally:
+                #         if study.archived:
+                #             shutil.rmtree(study.path)
+                if target_study.type == "ramstudy":
+                    if target_study.archived:
+                        self.storage_service.get_storage(
+                            target_study
+                        ).unarchive(target_study)
+                    try:
+                        self.storage_service.get_storage(
+                            target_study
+                        ).export_study(target_study, export_path, outputs)
+                    finally:
+                        if target_study.archived:
+                            shutil.rmtree(target_study.path)
+                else:
+                    self.storage_service.get_storage(
+                        target_study
+                    ).export_study(target_study, export_path, outputs)
+
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(
                     success=True, message=f"Study {uuid} successfully exported"
@@ -1201,9 +1229,30 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-
-        return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, len(output_list or []) > 0, output_list
+        path_study = Path(study.path)
+        if study.type == "rawstudy":
+            if study.archived:
+                self.storage_service.get_storage(study).unarchive(study)
+            try:
+                return self.storage_service.get_storage(
+                    study
+                ).export_study_flat(
+                    path_study=path_study,
+                    dest=dest,
+                    outputs=len(output_list or []) > 0,
+                    output_list_filter=output_list,
+                )
+            finally:
+                if study.archived:
+                    shutil.rmtree(study.path)
+        snapshot_path = path_study / "snapshot"
+        output_src_path = path_study / "output"
+        self.storage_service.get_storage(study).export_study_flat(
+            path_study=snapshot_path,
+            dest=dest,
+            outputs=len(output_list or []) > 0,
+            output_list_filter=output_list,
+            output_src_path=output_src_path,
         )
 
     def delete_study(

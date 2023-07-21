@@ -5,6 +5,10 @@ from abc import ABC
 from pathlib import Path
 from typing import List, Union, Optional, IO
 from uuid import uuid4
+import time
+from zipfile import ZipFile
+import os
+
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -272,7 +276,21 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.export_study_flat(metadata, tmp_study_path, outputs)
+            if metadata.type == "":
+                snapshot_path = path_study / ""
+                output_src_path = path_study / "output"
+                self.export_study_flat(
+                    snapshot_path,
+                    tmp_study_path,
+                    outputs,
+                )
+                self.export_study_flat(
+                    path_study=snapshot_path,
+                    dest=tmp_study_path,
+                    outputs=outputs,
+                    output_src_path=output_src_path,
+                )
+            self.export_study_flat(path_study, tmp_study_path, outputs)
             stopwatch = StopWatch()
             zip_dir(tmp_study_path, target)
             stopwatch.log_elapsed(
@@ -369,3 +387,59 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 exc_info=e,
             )
             return False
+
+    def export_study_flat(
+        self,
+        path_study: Path,
+        dest: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
+        output_src_path: Optional[Path] = None,
+    ) -> None:
+        """
+        Export study to destination
+        Args:
+            path_study: Study source path
+            dest: Destination path.
+            outputs: List of outputs to keep.
+            output_list_filter: List of outputs to keep (None indicate all outputs).
+            output_src_path: Denormalize the study (replace matrix links by real matrices).
+
+        Returns: None
+
+        """
+        start_time = time.time()
+        output_src_path = output_src_path or path_study / "output"
+        output_dest_path = dest / "output"
+        ignore_patterns = (
+            lambda directory, contents: ["output"]
+            if str(directory) == str(path_study)
+            else []
+        )
+
+        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+
+        if outputs and output_src_path.is_dir():
+            if output_dest_path.exists():
+                shutil.rmtree(output_dest_path)
+            if output_list_filter is not None:
+                os.mkdir(output_dest_path)
+                for output in output_list_filter:
+                    zip_path = output_src_path / f"{output}.zip"
+                    if zip_path.exists():
+                        with ZipFile(zip_path) as zf:
+                            zf.extractall(output_dest_path / output)
+                    else:
+                        shutil.copytree(
+                            src=output_src_path / output,
+                            dst=output_dest_path / output,
+                        )
+            else:
+                shutil.copytree(
+                    src=output_src_path,
+                    dst=output_dest_path,
+                )
+
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
