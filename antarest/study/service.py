@@ -1090,19 +1090,6 @@ class StudyService:
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                # if study.type == 'rawstudy':
-                #     path_study = Path(study.path)
-                #     if study.archived:
-                #         self.storage_service.get_storage(study).unarchive(study)
-                #     try:
-                #         return self.storage_service.get_storage(study).export_study_flat(path_study,
-                #                                                                          dest,
-                #                                                                          len(output_list or []) > 0,
-                #                                                                          output_list
-                #                                                                          )
-                #     finally:
-                #         if study.archived:
-                #             shutil.rmtree(study.path)
                 if target_study.type == "ramstudy":
                     if target_study.archived:
                         self.storage_service.get_storage(

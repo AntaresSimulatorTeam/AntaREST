@@ -276,14 +276,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            if metadata.type == "":
-                snapshot_path = path_study / ""
+            if metadata.type != "ramstudy":
+                snapshot_path = path_study / "snapshot"
                 output_src_path = path_study / "output"
-                self.export_study_flat(
-                    snapshot_path,
-                    tmp_study_path,
-                    outputs,
-                )
                 self.export_study_flat(
                     path_study=snapshot_path,
                     dest=tmp_study_path,
