@@ -57,6 +57,7 @@ from antarest.study.model import (
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
+    export_study_flat,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -79,9 +80,8 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+
+
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudy,
@@ -843,7 +843,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 path_study = Path(parent_study.path)
                 snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
                 output_src_path = path_study / "output"
-                self.export_study_flat(
+                export_study_flat(
                     snapshot_path,
                     dst_path,
                     outputs=False,
@@ -854,7 +854,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 if parent_study.archived:
                     self.raw_study_service.unarchive(parent_study)
                 try:
-                    self.raw_study_service.export_study_flat(
+                    export_study_flat(
                         path_study=path_study,
                         dest=dst_path,
                         outputs=False,

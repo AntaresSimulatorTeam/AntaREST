@@ -166,6 +166,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     study_matcher,
 )
+from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
@@ -1221,9 +1222,7 @@ class StudyService:
             if study.archived:
                 self.storage_service.get_storage(study).unarchive(study)
             try:
-                return self.storage_service.get_storage(
-                    study
-                ).export_study_flat(
+                return export_study_flat(
                     path_study=path_study,
                     dest=dest,
                     outputs=len(output_list or []) > 0,
@@ -1234,7 +1233,7 @@ class StudyService:
                     shutil.rmtree(study.path)
         snapshot_path = path_study / "snapshot"
         output_src_path = path_study / "output"
-        self.storage_service.get_storage(study).export_study_flat(
+        export_study_flat(
             path_study=snapshot_path,
             dest=dest,
             outputs=len(output_list or []) > 0,
