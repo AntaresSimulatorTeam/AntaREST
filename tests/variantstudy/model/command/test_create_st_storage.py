@@ -7,6 +7,9 @@ from pydantic import ValidationError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageGroup,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
 from antarest.study.storage.variantstudy.business.utils import (
@@ -311,6 +314,41 @@ class TestCreateSTStorage:
             rf"'{re.escape(create_st_storage.storage_name)}'.*added",
             command_output.message,
             flags=re.IGNORECASE,
+        )
+
+    def test_apply_config__whithout_groups(
+        self, recent_study: FileStudy, command_context: CommandContext
+    ):
+        # First, prepare a new Area
+        create_area = CreateArea(
+            area_name="Area FR",
+            command_context=command_context,
+        )
+        create_area.apply(recent_study)
+
+        # Remove the group from the nominal case parameters
+        parameters_whithout_groups = PARAMETERS
+        del parameters_whithout_groups["group"]
+
+        # Then, apply the config for a new ST Storage
+        create_st_storage = CreateSTStorage(
+            command_context=command_context,
+            area_id=transform_name_to_id(create_area.area_name),
+            parameters=STStorageConfig(**parameters_whithout_groups),
+        )
+        command_output = create_st_storage.apply_config(recent_study.config)
+        assert command_output.status is True
+        assert re.search(
+            rf"'{re.escape(create_st_storage.storage_name)}'.*added",
+            command_output.message,
+            flags=re.IGNORECASE,
+        )
+        # assert that the default group value is Other1
+        assert (
+            recent_study.config.areas["area fr"].dict()["st_storages"][0][
+                "group"
+            ]
+            == STStorageGroup.OTHER1
         )
 
     # noinspection SpellCheckingInspection

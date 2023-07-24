@@ -22,7 +22,11 @@ class STStorageGroup(EnumIgnoreCase):
     PSP_CLOSED = "PSP_closed"
     PONDAGE = "Pondage"
     BATTERY = "Battery"
-    OTHER = "Other"
+    OTHER1 = "Other1"
+    OTHER2 = "Other2"
+    OTHER3 = "Other3"
+    OTHER4 = "Other4"
+    OTHER5 = "Other5"
 
 
 # noinspection SpellCheckingInspection
@@ -48,7 +52,7 @@ class STStorageConfig(BaseModel):
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
-        ...,
+        STStorageGroup.OTHER1,
         description="Energy storage system group (mandatory)",
     )
     injection_nominal_capacity: float = Field(
