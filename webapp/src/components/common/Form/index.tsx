@@ -30,9 +30,15 @@ import clsx from "clsx";
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
+import axios from "axios";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
-import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import {
+  ROOT_ERROR_KEY,
+  getDirtyValues,
+  stringToPath,
+  toAutoSubmitConfig,
+} from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
@@ -125,14 +131,17 @@ function Form<TFieldValues extends FieldValues, TContext>(
       : config?.defaultValues,
   });
 
-  const { getValues, setValue, handleSubmit, formState, reset } = formApi;
+  const { getValues, setValue, setError, handleSubmit, formState, reset } =
+    formApi;
   // * /!\ `formState` is a proxy
-  const { isSubmitting, isSubmitSuccessful, isDirty, dirtyFields } = formState;
+  const { isSubmitting, isSubmitSuccessful, isDirty, dirtyFields, errors } =
+    formState;
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
   const showFooter = showSubmitButton || enableUndoRedo;
+  const rootError = errors.root?.[ROOT_ERROR_KEY];
 
   const formApiPlus = useFormApiPlus({
     formApi,
@@ -242,8 +251,17 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res)
-        .catch((error) => {
-          enqueueErrorSnackbar(t("form.submit.error"), error);
+        .catch((err) => {
+          enqueueErrorSnackbar(t("form.submit.error"), err);
+
+          // Any error under the `root` key are not persisted with each submission.
+          // They will be deleted automatically.
+          // cf. https://www.react-hook-form.com/api/useform/seterror/
+          setError(`root.${ROOT_ERROR_KEY}`, {
+            message: axios.isAxiosError(err)
+              ? err.response?.data.description
+              : err?.toString(),
+          });
         })
         .finally(() => {
           preventClose.current = false;
@@ -306,8 +324,13 @@ function Form<TFieldValues extends FieldValues, TContext>(
           <FormProvider {...formApiPlus}>{children}</FormProvider>
         )}
       </FormContext.Provider>
+      {rootError && (
+        <Box color="error.main" sx={{ fontSize: "0.9rem", mb: 2 }}>
+          {rootError.message || t("form.submit.error")}
+        </Box>
+      )}
       {showFooter && (
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex" }} className="Form__Footer">
           {showSubmitButton && (
             <>
               <LoadingButton
