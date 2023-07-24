@@ -57,6 +57,7 @@ from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.areas.renewable_management import (
     RenewableFormFields,
 )
+from antarest.study.business.st_storage_manager import STStorageEditForm, STStorageManagerError
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
     TableTemplateType,
@@ -1576,5 +1577,33 @@ def create_study_data_routes(
         study_service.thermal_manager.set_field_values(
             study, area_id, cluster_id, form_fields
         )
+
+    #Manage Study Data
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        tags=[APITag.study_data],
+        summary="Get the storage",
+        response_model=STStorageEditForm,
+    )
+    def get_st_storage(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ):
+        logger.info(
+            "Getting values for study %s and short term storage %s",
+            uuid,
+            storage_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.get_st_storage(
+            study, area_id, storage_id
+        )
+
 
     return bp

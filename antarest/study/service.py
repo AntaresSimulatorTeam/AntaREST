@@ -93,6 +93,7 @@ from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import (
     ScenarioBuilderManager,
 )
+from antarest.study.business.st_storage_manager import STStorageManager
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
@@ -325,6 +326,7 @@ class StudyService:
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
         self.thermal_manager = ThermalManager(self.storage_service)
+        self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
