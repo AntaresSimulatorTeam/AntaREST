@@ -8,6 +8,7 @@ from checksumdir import dirhash
 from antarest.core.config import Config, StorageConfig
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.abstract_storage_service import export_study_flat
 
 
 @pytest.mark.unit_test
@@ -105,17 +106,17 @@ def test_export_flat(tmp_path: Path):
     study_factory.create_from_fs.return_value = study_tree
 
     study = RawStudy(id="id", path=root)
+    path_study = Path(study.path)
 
-    study_service.export_study_flat(
-        study, tmp_path / "copy_with_output", outputs=True
-    )
+    export_study_flat(path_study, tmp_path / "copy_with_output", outputs=True)
 
     copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
 
     assert root_hash == copy_with_output_hash
 
-    study_service.export_study_flat(
-        study, tmp_path / "copy_without_output", outputs=False
+    path_study = Path(study.path)
+    export_study_flat(
+        path_study, tmp_path / "copy_without_output", outputs=False
     )
 
     copy_without_output_hash = dirhash(tmp_path / "copy_without_output", "md5")

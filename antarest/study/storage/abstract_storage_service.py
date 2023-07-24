@@ -81,7 +81,6 @@ def export_study_flat(
     )
 
     shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
-
     if outputs and output_src_path.is_dir():
         if output_dest_path.exists():
             shutil.rmtree(output_dest_path)
