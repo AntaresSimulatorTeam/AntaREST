@@ -271,3 +271,7 @@ class IStudyStorageService(ABC, Generic[T]):
         self, study: T, output_id: str, keep_src_zip: bool
     ) -> bool:
         raise NotImplementedError()
+
+    @abstractmethod
+    def unarchive(self, study: T) -> None:
+        raise NotImplementedError()
