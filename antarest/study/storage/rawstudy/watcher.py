@@ -179,7 +179,10 @@ class Watcher(IService):
         """
 
         def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
-            self.scan(workspace, path)
+            try:
+                self.scan(workspace, path)
+            except CannotScanInternalWorkspace as e:
+                logger.warning(e)
             return TaskResult(success=True, message="Scan completed")
 
         return self.task_service.add_task(
