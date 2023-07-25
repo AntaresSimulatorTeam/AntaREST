@@ -1,3 +1,4 @@
+import copy
 import re
 
 import numpy as np
@@ -327,7 +328,7 @@ class TestCreateSTStorage:
         create_area.apply(recent_study)
 
         # Remove the group from the nominal case parameters
-        parameters_whithout_groups = PARAMETERS
+        parameters_whithout_groups = copy.deepcopy(PARAMETERS)
         del parameters_whithout_groups["group"]
 
         # Then, apply the config for a new ST Storage
