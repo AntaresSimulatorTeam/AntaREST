@@ -14,6 +14,7 @@ from antarest.study.model import (
     RawStudy,
     StudyAdditionalData,
 )
+from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
@@ -81,6 +82,7 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
             id=origin_id,
             name="my-study",
             additional_data=StudyAdditionalData(),
+            path=str(tmp_path),
         )
         repository.save(origin_study)
 
@@ -208,17 +210,17 @@ def test_smart_generation(
     ]
 
     # noinspection PyUnusedLocal
-    def export_flat(
-        metadata: VariantStudy,
-        dst_path: Path,
-        outputs: bool = True,
-        denormalize: bool = True,
-    ) -> None:
-        dst_path.mkdir(parents=True)
-        (dst_path / "user").mkdir()
-        (dst_path / "user" / "some_unmanaged_config").touch()
+    # def export_flat(
+    #     src: Path,
+    #     dst_path: Path,
+    #     outputs: bool = True,
+    #     denormalize: bool = True,
+    # ) -> None:
+    #     dst_path.mkdir(parents=True)
+    #     (dst_path / "user").mkdir()
+    #     dst = (dst_path / "user" / "some_unmanaged_config").touch()
 
-    service.raw_study_service.export_study_flat.side_effect = export_flat
+    export_study_flat.side_effect = None
 
     with db():
         origin_id = "base-study"
@@ -230,6 +232,7 @@ def test_smart_generation(
             workspace=DEFAULT_WORKSPACE_NAME,
             additional_data=StudyAdditionalData(),
             updated_at=datetime.datetime(year=2000, month=1, day=1),
+            path=str(tmp_path),
         )
         repository.save(origin_study)
 
@@ -293,7 +296,6 @@ def test_smart_generation(
             ],
             SADMIN,
         )
-
         assert unmanaged_user_config_path.exists()
         unmanaged_user_config_path.write_text("hello")
         service._generate(variant_id, SADMIN, False)
