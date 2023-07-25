@@ -272,6 +272,5 @@ class IStudyStorageService(ABC, Generic[T]):
     ) -> bool:
         raise NotImplementedError()
 
-    @abstractmethod
     def unarchive(self, study: T) -> None:
         raise NotImplementedError()
