@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from unittest.mock import ANY, Mock
+from unittest.mock import ANY, Mock, patch
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -14,9 +14,7 @@ from antarest.study.model import (
     RawStudy,
     StudyAdditionalData,
 )
-from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
@@ -168,8 +166,11 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         assert study.snapshot.id == study.id
 
 
+@patch(
+    "antarest.study.storage.variantstudy.variant_study_service.export_study_flat"
+)
 def test_smart_generation(
-    tmp_path: Path, command_factory: CommandFactory
+    mock_export, tmp_path: Path, command_factory: CommandFactory
 ) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
@@ -210,18 +211,17 @@ def test_smart_generation(
     ]
 
     # noinspection PyUnusedLocal
-    # def export_flat(
-    #     src: Path,
-    #     dst_path: Path,
-    #     outputs: bool = True,
-    #     denormalize: bool = True,
-    # ) -> None:
-    #     dst_path.mkdir(parents=True)
-    #     (dst_path / "user").mkdir()
-    #     dst = (dst_path / "user" / "some_unmanaged_config").touch()
+    def export_flat(
+        path_study: Path,
+        dest: Path,
+        outputs: bool = True,
+        denormalize: bool = True,
+    ) -> None:
+        dest.mkdir(parents=True)
+        (dest / "user").mkdir()
+        (dest / "user" / "some_unmanaged_config").touch()
 
-    export_study_flat.side_effect = None
-
+    mock_export.side_effect = export_flat
     with db():
         origin_id = "base-study"
         # noinspection PyArgumentList
