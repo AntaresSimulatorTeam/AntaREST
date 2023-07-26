@@ -203,14 +203,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/launcher/_versions",
         tags=[APITag.launcher],
-        summary="Get list of supported study version for all configured launchers",
-        response_model=Dict[str, List[str]],
+        summary="Get list of supported solver versions for all configured launchers",
+        response_model=Dict[str, Dict[str, List[str]]],
     )
-    def get_versions(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        logger.info(f"Fetching version list")
-        return service.get_versions(params=params)
+    def get_solver_versions() -> Dict[str, Dict[str, List[str]]]:
+        logger.info("Fetching versions list")
+        return service.get_versions()
 
     return bp

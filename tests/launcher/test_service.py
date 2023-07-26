@@ -337,21 +337,28 @@ def test_service_get_jobs_from_database():
 @pytest.mark.parametrize(
     "config_local,config_slurm,expected_output",
     [
-        (None, None, {}),
+        (
+            None,
+            None,
+            {"default": {"local": []}, "others": {"slurm": []}},
+        ),
         (
             None,
             SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
-            {"slurm": ["42", "43"]},
+            {"default": {"local": []}, "others": {"slurm": ["42", "43"]}},
         ),
         (
             LocalConfig(binaries={"24": Path(), "34": Path()}),
             None,
-            {"local": ["24", "34"]},
+            {"default": {"local": ["24", "34"]}, "others": {"slurm": []}},
         ),
         (
             LocalConfig(binaries={"24": Path(), "34": Path()}),
             SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
-            {"local": ["24", "34"], "slurm": ["42", "43"]},
+            {
+                "default": {"local": ["24", "34"]},
+                "others": {"slurm": ["42", "43"]},
+            },
         ),
     ],
 )
@@ -370,7 +377,7 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
         cache=Mock(),
     )
 
-    assert expected_output == launcher_service.get_versions(params=Mock())
+    assert expected_output == launcher_service.get_versions()
 
 
 @pytest.mark.unit_test
