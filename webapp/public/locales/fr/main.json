@@ -490,6 +490,7 @@
   "study.question.killJob": "Êtes-vous sûr de vouloir annuler la simulation ?",
   "study.error.exportOutput": "Échec lors de l'export de la sortie",
   "study.error.listOutputs": "Échec de la récupération des sorties",
+  "study.error.launcherVersions": "Échec lors de la récupération des versions du launcher",
   "study.error.fetchComments": "Échec lors de la récupération des commentaires",
   "study.error.commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",
   "study.error.studyIdCopy": "Erreur lors de la copie de l'identifiant de l'étude",

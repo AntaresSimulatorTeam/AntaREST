@@ -1,8 +1,8 @@
+import functools
 import logging
 import os
 import shutil
-from datetime import datetime, timedelta
-from functools import reduce
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -186,7 +186,7 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    job_result.completion_date = datetime.utcnow()
+                    job_result.completion_date = datetime.now(timezone.utc)
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(
@@ -434,7 +434,7 @@ class LauncherService:
                     or ""
                 )
             if log_type == LogType.STDOUT:
-                app_logs: Dict[JobLogType, List[str]] = reduce(
+                app_logs: Dict[JobLogType, List[str]] = functools.reduce(
                     lambda logs, log: LauncherService.sort_log(log, logs),
                     job_result.logs or [],
                     {JobLogType.BEFORE: [], JobLogType.AFTER: []},
@@ -704,7 +704,7 @@ class LauncherService:
         if self.config.launcher.slurm:
             if from_cluster:
                 raise NotImplementedError
-            slurm_used_cpus = reduce(
+            slurm_used_cpus = functools.reduce(
                 lambda count, j: count
                 + (
                     LauncherParametersDTO.parse_raw(
@@ -719,7 +719,7 @@ class LauncherService:
                 float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
             )
         if self.config.launcher.local:
-            local_used_cpus = reduce(
+            local_used_cpus = functools.reduce(
                 lambda count, j: count
                 + (
                     LauncherParametersDTO.parse_raw(
@@ -733,19 +733,31 @@ class LauncherService:
             load["local"] = float(local_used_cpus) / (os.cpu_count() or 1)
         return load
 
-    def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
-        version_dict = {}
-        if self.config.launcher.local:
-            version_dict["local"] = list(
-                self.config.launcher.local.binaries.keys()
-            )
+    def get_solver_versions(self, solver: str) -> List[str]:
+        """
+        Fetch the list of solver versions from the configuration.
 
-        if self.config.launcher.slurm:
-            version_dict[
-                "slurm"
-            ] = self.config.launcher.slurm.antares_versions_on_remote_server
+        Args:
+            solver: name of the configuration to read: "default", "slurm" or "local".
 
-        return version_dict
+        Returns:
+            The list of solver versions.
+            This list is empty if the configuration is not available.
+
+        Raises:
+            KeyError: if the configuration is not "default", "slurm" or "local".
+        """
+        local_config = self.config.launcher.local
+        slurm_config = self.config.launcher.slurm
+        default_config = self.config.launcher.default
+        versions_map = {
+            "local": sorted(local_config.binaries) if local_config else [],
+            "slurm": sorted(slurm_config.antares_versions_on_remote_server)
+            if slurm_config
+            else [],
+        }
+        versions_map["default"] = versions_map[default_config]
+        return versions_map[solver]
 
     def get_launch_progress(
         self, job_id: str, params: RequestParameters

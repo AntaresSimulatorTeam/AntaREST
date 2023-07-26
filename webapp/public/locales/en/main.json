@@ -489,6 +489,7 @@
   "study.question.killJob": "Are you sure you want to cancel the simulation job?",
   "study.error.exportOutput": "Failed to export the output",
   "study.error.listOutputs": "Failed to retrieve output list",
+  "study.error.launcherVersions": "Failed to retrieve launcher versions",
   "study.error.fetchComments": "Failed to fetch comments",
   "study.error.commentsNotSaved": "Comments not saved",
   "study.error.studyIdCopy": "Failed to copy study ID",

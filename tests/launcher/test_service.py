@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Dict, Union, List, Literal
 from unittest.mock import Mock, patch, call
 from uuid import uuid4
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -335,30 +336,113 @@ def test_service_get_jobs_from_database():
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "config_local,config_slurm,expected_output",
+    "config, solver, expected",
     [
-        (None, None, {}),
-        (
-            None,
-            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
-            {"slurm": ["42", "43"]},
+        pytest.param(
+            {
+                "default": "local",
+                "local": [],
+                "slurm": [],
+            },
+            "default",
+            [],
+            id="empty-config",
         ),
-        (
-            LocalConfig(binaries={"24": Path(), "34": Path()}),
-            None,
-            {"local": ["24", "34"]},
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "default",
+            ["123", "456", "798"],
+            id="local-config-default",
         ),
-        (
-            LocalConfig(binaries={"24": Path(), "34": Path()}),
-            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
-            {"local": ["24", "34"], "slurm": ["42", "43"]},
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "slurm",
+            [],
+            id="local-config-slurm",
+        ),
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "unknown",
+            [],
+            id="local-config-unknown",
+            marks=pytest.mark.xfail(
+                reason="Unknown solver configuration: 'unknown'",
+                raises=KeyError,
+                strict=True,
+            ),
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "default",
+            ["147", "258", "369"],
+            id="slurm-config-default",
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "local",
+            [],
+            id="slurm-config-local",
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "unknown",
+            [],
+            id="slurm-config-unknown",
+            marks=pytest.mark.xfail(
+                reason="Unknown solver configuration: 'unknown'",
+                raises=KeyError,
+                strict=True,
+            ),
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "local": ["456", "123", "798"],
+                "slurm": ["258", "147", "369"],
+            },
+            "local",
+            ["123", "456", "798"],
+            id="local+slurm-config-local",
         ),
     ],
 )
-def test_service_get_versions(config_local, config_slurm, expected_output):
-    config = Config(
-        launcher=LauncherConfig(local=config_local, slurm=config_slurm)
+def test_service_get_solver_versions(
+    config: Dict[str, Union[str, List[str]]],
+    solver: Literal["default", "local", "slurm", "unknown"],
+    expected: List[str],
+) -> None:
+    # Prepare the configuration
+    default = config.get("default", "local")
+    local = LocalConfig(
+        binaries={k: Path(f"solver-{k}.exe") for k in config.get("local", [])}
     )
+    slurm = SlurmConfig(
+        antares_versions_on_remote_server=config.get("slurm", [])
+    )
+    launcher_config = LauncherConfig(
+        default=default,
+        local=local if local else None,
+        slurm=slurm if slurm else None,
+    )
+    config = Config(launcher=launcher_config)
     launcher_service = LauncherService(
         config=config,
         study_service=Mock(),
@@ -370,7 +454,11 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
         cache=Mock(),
     )
 
-    assert expected_output == launcher_service.get_versions(params=Mock())
+    # Fetch the solver versions
+    actual = launcher_service.get_solver_versions(solver)
+
+    # Check the result
+    assert actual == expected
 
 
 @pytest.mark.unit_test
