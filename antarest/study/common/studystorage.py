@@ -231,27 +231,6 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def export_study_flat(
-        self,
-        metadata: T,
-        dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
-        denormalize: bool = True,
-    ) -> None:
-        """
-        Export study to destination
-
-        Args:
-            metadata: study.
-            dst_path: destination path.
-            outputs: list of outputs to keep.
-            output_list_filter: list of outputs to keep (None indicate all outputs).
-            denormalize: denormalize the study (replace matrix links by real matrices).
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
@@ -273,4 +252,7 @@ class IStudyStorageService(ABC, Generic[T]):
 
     @abstractmethod
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
+        raise NotImplementedError()
+
+    def unarchive(self, study: T) -> None:
         raise NotImplementedError()

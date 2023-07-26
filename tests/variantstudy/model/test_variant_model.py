@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from unittest.mock import ANY, Mock
+from unittest.mock import ANY, Mock, patch
 
 from sqlalchemy import create_engine
 
@@ -13,7 +13,6 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_RELATIVE_PATH, VariantStudyService
@@ -64,6 +63,7 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
             id=origin_id,
             name="my-study",
             additional_data=StudyAdditionalData(),
+            path=str(tmp_path),
         )
         repository.save(origin_study)
 
@@ -138,7 +138,8 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         assert study.snapshot.id == study.id
 
 
-def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> None:
+@patch("antarest.study.storage.variantstudy.variant_study_service.export_study_flat")
+def test_smart_generation(mock_export, tmp_path: Path, command_factory: CommandFactory) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
         echo=False,
@@ -173,17 +174,16 @@ def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> No
 
     # noinspection PyUnusedLocal
     def export_flat(
-        metadata: VariantStudy,
-        dst_path: Path,
+        path_study: Path,
+        dest: Path,
         outputs: bool = True,
         denormalize: bool = True,
     ) -> None:
-        dst_path.mkdir(parents=True)
-        (dst_path / "user").mkdir()
-        (dst_path / "user" / "some_unmanaged_config").touch()
+        dest.mkdir(parents=True)
+        (dest / "user").mkdir()
+        (dest / "user" / "some_unmanaged_config").touch()
 
-    service.raw_study_service.export_study_flat.side_effect = export_flat
-
+    mock_export.side_effect = export_flat
     with db():
         origin_id = "base-study"
         # noinspection PyArgumentList
@@ -194,6 +194,7 @@ def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> No
             workspace=DEFAULT_WORKSPACE_NAME,
             additional_data=StudyAdditionalData(),
             updated_at=datetime.datetime(year=2000, month=1, day=1),
+            path=str(tmp_path),
         )
         repository.save(origin_study)
 
@@ -233,7 +234,6 @@ def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> No
             ],
             SADMIN,
         )
-
         assert unmanaged_user_config_path.exists()
         unmanaged_user_config_path.write_text("hello")
         service._generate(variant_id, SADMIN, False)

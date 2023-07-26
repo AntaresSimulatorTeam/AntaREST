@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import logging
+import shutil
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
@@ -106,6 +107,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     study_matcher,
 )
+from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -918,7 +920,17 @@ class StudyService:
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
+                storage = self.storage_service.get_storage(target_study)
+                if isinstance(target_study, RawStudy):
+                    if target_study.archived:
+                        storage.unarchive(target_study)
+                    try:
+                        storage.export_study(target_study, export_path, outputs)
+                    finally:
+                        if target_study.archived:
+                            shutil.rmtree(target_study.path)
+                else:
+                    storage.export_study(target_study, export_path, outputs)
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
@@ -1020,9 +1032,28 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-
-        return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, len(output_list or []) > 0, output_list
+        path_study = Path(study.path)
+        if isinstance(study, RawStudy):
+            if study.archived:
+                self.storage_service.get_storage(study).unarchive(study)
+            try:
+                return export_study_flat(
+                    path_study=path_study,
+                    dest=dest,
+                    outputs=len(output_list or []) > 0,
+                    output_list_filter=output_list,
+                )
+            finally:
+                if study.archived:
+                    shutil.rmtree(study.path)
+        snapshot_path = path_study / "snapshot"
+        output_src_path = path_study / "output"
+        export_study_flat(
+            path_study=snapshot_path,
+            dest=dest,
+            outputs=len(output_list or []) > 0,
+            output_list_filter=output_list,
+            output_src_path=output_src_path,
         )
 
     def delete_study(self, uuid: str, children: bool, params: RequestParameters) -> None:

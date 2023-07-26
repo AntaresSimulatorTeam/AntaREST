@@ -34,14 +34,13 @@ from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_n
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
-from antarest.study.storage.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract_storage_service import AbstractStorageService, export_study_flat
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
-    export_study_flat,
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
@@ -719,22 +718,30 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             last_executed_command_index = None
 
         if last_executed_command_index is None:
-            # Copy parent study to destination
             if isinstance(parent_study, VariantStudy):
                 self._safe_generation(parent_study)
-                self.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
+                path_study = Path(parent_study.path)
+                snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
+                output_src_path = path_study / "output"
+                export_study_flat(
+                    snapshot_path,
+                    dst_path,
                     outputs=False,
-                    denormalize=False,
+                    output_src_path=output_src_path,
                 )
             else:
-                self.raw_study_service.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
-                    outputs=False,
-                    denormalize=False,
-                )
+                path_study = Path(parent_study.path)
+                if parent_study.archived:
+                    self.raw_study_service.unarchive(parent_study)
+                try:
+                    export_study_flat(
+                        path_study=path_study,
+                        dest=dst_path,
+                        outputs=False,
+                    )
+                finally:
+                    if parent_study.archived:
+                        shutil.rmtree(parent_study.path)
 
         command_start_index = last_executed_command_index + 1 if last_executed_command_index is not None else 0
         logger.info(f"Generating study snapshot from command index {command_start_index}")
@@ -1067,29 +1074,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
-
-    def export_study_flat(
-        self,
-        metadata: VariantStudy,
-        dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
-        denormalize: bool = True,
-    ) -> None:
-        self._safe_generation(metadata)
-        path_study = Path(metadata.path)
-
-        snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        output_src_path = path_study / "output"
-        export_study_flat(
-            snapshot_path,
-            dst_path,
-            self.study_factory,
-            outputs,
-            output_list_filter,
-            denormalize,
-            output_src_path,
-        )
 
     def get_synthesis(
         self,

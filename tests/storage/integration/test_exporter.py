@@ -100,13 +100,11 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> Non
 
 @pytest.mark.parametrize("outputs", [True, False, "prout"])
 @pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]])
-@pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
     tmp_path: Path,
     sta_mini_zip_path: Path,
     outputs: bool,
     output_list: Optional[List[str]],
-    denormalize: bool,
 ) -> None:
     path_studies = tmp_path / "studies"
     path_studies.mkdir(exist_ok=True)
@@ -120,10 +118,8 @@ def test_export_flat(
     export_study_flat(
         path_studies / "STA-mini",
         export_path / "STA-mini-export",
-        Mock(),
         outputs,
         output_list,
-        denormalize=denormalize,
     )
 
     export_output_path = export_path / "STA-mini-export" / "output"
