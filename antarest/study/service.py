@@ -1091,7 +1091,7 @@ class StudyService:
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                if target_study.type == "ramstudy":
+                if isinstance(target_study, RawStudy):
                     if target_study.archived:
                         self.storage_service.get_storage(
                             target_study
