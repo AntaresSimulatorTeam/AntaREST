@@ -388,6 +388,11 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
+
+    # st_storage feature exists only since 8.6 version
+    if _parse_version(root) < 860:
+        return []
+
     config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),

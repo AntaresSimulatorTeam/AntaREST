@@ -312,6 +312,9 @@ initialleveloptim = False
 
 def test_parse_st_storage(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
+    study_path.joinpath("study.antares").write_text(
+        "[antares] \n version = 860"
+    )
     config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
     config_dir.mkdir(parents=True)
     config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
@@ -340,6 +343,12 @@ def test_parse_st_storage(tmp_path: Path) -> None:
             initial_level_optim=False,
         ),
     ]
+
+    # With a study version anterior to 860, it should always return an empty list
+    study_path.joinpath("study.antares").write_text(
+        "[antares] \n version = 850"
+    )
+    assert _parse_st_storage(study_path, "fr") == []
 
 
 def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
