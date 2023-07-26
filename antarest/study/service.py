@@ -1218,7 +1218,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         path_study = Path(study.path)
-        if study.type == "rawstudy":
+        if isinstance(study, RawStudy):
             if study.archived:
                 self.storage_service.get_storage(study).unarchive(study)
             try:

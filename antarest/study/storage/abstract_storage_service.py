@@ -43,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
+from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     fix_study_root,
@@ -330,7 +331,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
             assert_this(target.name.endswith(".zip"))
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            if metadata.type != "rawstudy":
+            if not isinstance(metadata, RawStudy):
                 snapshot_path = path_study / "snapshot"
                 output_src_path = path_study / "output"
                 export_study_flat(
