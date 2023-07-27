@@ -57,7 +57,11 @@ from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.areas.renewable_management import (
     RenewableFormFields,
 )
-from antarest.study.business.st_storage_manager import STStorageEditForm, STStorageManagerError
+from antarest.study.business.st_storage_manager import (
+    STStorageEditForm,
+    STStorageManagerError,
+    STStorageCreateForm,
+)
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
     TableTemplateType,
@@ -1578,7 +1582,7 @@ def create_study_data_routes(
             study, area_id, cluster_id, form_fields
         )
 
-    #Manage Study Data
+    # Manage Study Data
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
@@ -1605,5 +1609,84 @@ def create_study_data_routes(
             study, area_id, storage_id
         )
 
+    @bp.post(
+        "/v1/studies/{uuid}/areas/{area_id}/st-storage",
+        tags=[APITag.study_data],
+        summary="Create a new storage",
+        response_model=str,
+    )
+    def create_st_storage(
+        uuid: str,
+        area_id: str,
+        form: STStorageCreateForm,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Create storage short term from {area_id} for study {uuid}",
+            area_id,
+            uuid,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.create_st_storage(
+            study, area_id, form
+        )
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        tags=[APITag.study_data],
+        summary="Set short storage  form values for a given study",
+        response_model=STStorageEditForm,
+    )
+    def update_st_storage(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        form: STStorageCreateForm,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
+            area_id,
+            uuid,
+            storage_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.update_st_storage(
+            study, area_id, form
+        )
+
+    @bp.delete(
+        "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        tags=[APITag.study_data],
+        summary="Remove a storage from a study",
+    )
+    def delete_st_storage(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Delete storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
+            area_id,
+            uuid,
+            storage_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        study_service.st_storage_manager.delete_st_storage(
+            study, area_id, storage_id
+        )
 
     return bp
