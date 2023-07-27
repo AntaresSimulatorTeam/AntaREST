@@ -1039,6 +1039,7 @@ class StudyService:
             try:
                 return export_study_flat(
                     path_study=path_study,
+                    study_factory=study,
                     dest=dest,
                     outputs=len(output_list or []) > 0,
                     output_list_filter=output_list,
@@ -1050,6 +1051,7 @@ class StudyService:
         output_src_path = path_study / "output"
         export_study_flat(
             path_study=snapshot_path,
+            study_factory=study,
             dest=dest,
             outputs=len(output_list or []) > 0,
             output_list_filter=output_list,

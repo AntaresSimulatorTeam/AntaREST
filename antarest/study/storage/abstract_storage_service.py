@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 def export_study_flat(
     path_study: Path,
     dest: Path,
+    study_factory: StudyFactory,
     outputs: bool = True,
     output_list_filter: Optional[List[str]] = None,
     output_src_path: Optional[Path] = None,
@@ -49,6 +50,7 @@ def export_study_flat(
     Args:
         path_study: Study source path
         dest: Destination path.
+        study_factory: StudyFactory,
         outputs: List of outputs to keep.
         output_list_filter: List of outputs to keep (None indicate all outputs).
         output_src_path: Denormalize the study (replace matrix links by real matrices).
@@ -88,6 +90,11 @@ def export_study_flat(
     stop_time = time.time()
     duration = "{:.3f}".format(stop_time - start_time)
     logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+
+    study = study_factory.create_from_fs(dest, "", use_cache=False)
+    study.tree.denormalize()
+    duration = "{:.3f}".format(time.time() - stop_time)
+    logger.info(f"Study {path_study} denormalized in {duration}s")
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -293,11 +300,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 output_src_path = path_study / "output"
                 export_study_flat(
                     path_study=snapshot_path,
+                    study_factory=self.study_factory,
                     dest=tmp_study_path,
                     outputs=outputs,
                     output_src_path=output_src_path,
                 )
-            export_study_flat(path_study, tmp_study_path, outputs)
+            export_study_flat(
+                path_study, tmp_study_path, self.study_factory, outputs
+            )
             stopwatch = StopWatch()
             zip_dir(tmp_study_path, target)
             stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (zipped mode) in {x}s"))
