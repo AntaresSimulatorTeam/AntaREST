@@ -47,7 +47,7 @@ function Layers() {
         return acc;
       }, {}),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [columns.length]
+    [columns.length, areas]
   );
 
   ////////////////////////////////////////////////////////////////
