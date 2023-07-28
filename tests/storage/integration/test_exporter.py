@@ -118,6 +118,7 @@ def test_export_flat(
     export_study_flat(
         path_studies / "STA-mini",
         export_path / "STA-mini-export",
+        Mock(),
         outputs,
         output_list,
     )

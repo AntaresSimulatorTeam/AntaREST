@@ -13,6 +13,7 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_RELATIVE_PATH, VariantStudyService
@@ -28,7 +29,12 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
+@patch(
+    "antarest.study.storage.variantstudy.variant_study_service.export_study_flat"
+)
+def test_commands_service(
+    mock_export, tmp_path: Path, command_factory: CommandFactory
+):
     engine = create_engine(
         "sqlite:///:memory:",
         echo=False,
@@ -41,6 +47,7 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
+
     repository = VariantStudyRepository(LocalCache())
     service = VariantStudyService(
         raw_study_service=Mock(),
@@ -176,6 +183,7 @@ def test_smart_generation(mock_export, tmp_path: Path, command_factory: CommandF
     def export_flat(
         path_study: Path,
         dest: Path,
+        study_factory: VariantStudy,
         outputs: bool = True,
         denormalize: bool = True,
     ) -> None:
