@@ -19,10 +19,10 @@ class LogParser:
     ) -> bool:
         if "MC-Years : [" in line:
             if regex_result := re.search(
-                r".+?(?:\s\.\.\s)(\d+).+?(\d+)", line
+                r"MC-Years : \[\d+ .. \d+], total: (\d+)", line
             ):
                 launch_progress_dto.total_mc_years_to_perform = int(
-                    regex_result[2]
+                    regex_result[1]
                 )
                 return True
             else:
