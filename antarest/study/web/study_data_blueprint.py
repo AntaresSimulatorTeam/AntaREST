@@ -80,7 +80,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_data_routes(
-    study_service: StudyService, config: Config
+        study_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
@@ -103,10 +103,10 @@ def create_study_data_routes(
         response_model=Union[List[AreaInfoDTO], Dict[str, Any]],  # type: ignore
     )
     def get_areas(
-        uuid: str,
-        type: Optional[AreaType] = None,
-        ui: bool = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            type: Optional[AreaType] = None,
+            ui: bool = False,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
         logger.info(
             f"Fetching area list (type={type}) for study {uuid}",
@@ -123,9 +123,9 @@ def create_study_data_routes(
         response_model=List[LinkInfoDTO],
     )
     def get_links(
-        uuid: str,
-        with_ui: bool = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            with_ui: bool = False,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Fetching link list for study {uuid}",
@@ -142,9 +142,9 @@ def create_study_data_routes(
         response_model=AreaInfoDTO,
     )
     def create_area(
-        uuid: str,
-        area_creation_info: AreaCreationDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_creation_info: AreaCreationDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Creating new area for study {uuid}",
@@ -160,9 +160,9 @@ def create_study_data_routes(
         response_model=LinkInfoDTO,
     )
     def create_link(
-        uuid: str,
-        link_creation_info: LinkInfoDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            link_creation_info: LinkInfoDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Creating new link for study {uuid}",
@@ -178,11 +178,11 @@ def create_study_data_routes(
         response_model=AreaInfoDTO,
     )
     def update_area_ui(
-        uuid: str,
-        area_id: str,
-        area_ui: AreaUI,
-        layer: str = "0",
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            area_ui: AreaUI,
+            layer: str = "0",
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Updating area ui {area_id} for study {uuid}",
@@ -200,10 +200,10 @@ def create_study_data_routes(
         response_model=AreaInfoDTO,
     )
     def update_area_info(
-        uuid: str,
-        area_id: str,
-        area_patch_dto: Union[PatchArea, Dict[str, PatchCluster]],
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            area_patch_dto: Union[PatchArea, Dict[str, PatchCluster]],
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Updating area {area_id} for study {uuid}",
@@ -229,9 +229,9 @@ def create_study_data_routes(
         response_model=str,
     )
     def delete_area(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Removing area {area_id} in study {uuid}",
@@ -248,10 +248,10 @@ def create_study_data_routes(
         response_model=str,
     )
     def delete_link(
-        uuid: str,
-        area_from: str,
-        area_to: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_from: str,
+            area_to: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Removing link {area_from}%{area_to} in study {uuid}",
@@ -268,8 +268,8 @@ def create_study_data_routes(
         response_model=List[LayerInfoDTO],
     )
     def get_layers(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[LayerInfoDTO]:
         logger.info(
             f"Fetching layer list for study {uuid}",
@@ -288,9 +288,9 @@ def create_study_data_routes(
         response_model=str,
     )
     def create_layer(
-        uuid: str,
-        name: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            name: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
             f"Create layer {name} for study {uuid}",
@@ -308,11 +308,11 @@ def create_study_data_routes(
         summary="Update layer",
     )
     def update_layer(
-        uuid: str,
-        layer_id: str,
-        name: str = "",
-        areas: Optional[List[str]] = None,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            layer_id: str,
+            name: str = "",
+            areas: Optional[List[str]] = None,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating layer {layer_id} for study {uuid}",
@@ -334,9 +334,9 @@ def create_study_data_routes(
         status_code=HTTPStatus.NO_CONTENT,
     )
     def remove_layer(
-        uuid: str,
-        layer_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            layer_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Remove layer {layer_id} for study {uuid}",
@@ -355,8 +355,8 @@ def create_study_data_routes(
         response_model=List[DistrictInfoDTO],
     )
     def get_districts(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[DistrictInfoDTO]:
         logger.info(
             f"Fetching districts list for study {uuid}",
@@ -375,9 +375,9 @@ def create_study_data_routes(
         response_model=DistrictInfoDTO,
     )
     def create_district(
-        uuid: str,
-        dto: DistrictCreationDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            dto: DistrictCreationDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> DistrictInfoDTO:
         logger.info(
             f"Create district {dto.name} for study {uuid}",
@@ -395,10 +395,10 @@ def create_study_data_routes(
         summary="Update the properties of a district",
     )
     def update_district(
-        uuid: str,
-        district_id: str,
-        dto: DistrictUpdateDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            district_id: str,
+            dto: DistrictUpdateDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating district {district_id} for study {uuid}",
@@ -416,9 +416,9 @@ def create_study_data_routes(
         summary="Remove a district from a study",
     )
     def remove_district(
-        uuid: str,
-        district_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            district_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Remove district {district_id} for study {uuid}",
@@ -438,9 +438,9 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_hydro_form_values(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ManagementOptionsFormFields:
         logger.info(
             msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
@@ -459,10 +459,10 @@ def create_study_data_routes(
         summary="Set Hydro config with values from form",
     )
     def set_hydro_form_values(
-        uuid: str,
-        area_id: str,
-        data: ManagementOptionsFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            data: ManagementOptionsFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
@@ -481,10 +481,10 @@ def create_study_data_routes(
         summary="Edit matrix",
     )
     def edit_matrix(
-        uuid: str,
-        path: str,
-        matrix_edit_instructions: List[MatrixEditInstruction] = Body(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            path: str,
+            matrix_edit_instructions: List[MatrixEditInstruction] = Body(...),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         # NOTE: This Markdown documentation is reflected in the Swagger API
         """
@@ -511,8 +511,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_thematic_trimming(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThematicTrimmingFormFields:
         logger.info(
             f"Fetching thematic trimming config for study {uuid}",
@@ -530,9 +530,9 @@ def create_study_data_routes(
         summary="Set thematic trimming config",
     )
     def set_thematic_trimming(
-        uuid: str,
-        field_values: ThematicTrimmingFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: ThematicTrimmingFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating thematic trimming config for study {uuid}",
@@ -554,8 +554,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_playlist(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Dict[int, PlaylistColumns]:
         logger.info(
             f"Getting MC Scenario playlist data for study {uuid}",
@@ -574,9 +574,9 @@ def create_study_data_routes(
         summary="Set MC Scenario playlist data with values from table form",
     )
     def set_playlist(
-        uuid: str,
-        data: Dict[int, PlaylistColumns],
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            data: Dict[int, PlaylistColumns],
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating MC Scenario playlist table data for study {uuid}",
@@ -595,8 +595,8 @@ def create_study_data_routes(
         response_model=Dict[int, float],
     )
     def get_playlist_config(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Fetching playlist config for study {uuid}",
@@ -614,12 +614,12 @@ def create_study_data_routes(
         summary="Set playlist config",
     )
     def set_playlist_config(
-        uuid: str,
-        active: bool = True,
-        reverse: bool = False,
-        playlist: Optional[List[int]] = Body(default=None),
-        weights: Optional[Dict[int, int]] = Body(default=None),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            active: bool = True,
+            reverse: bool = False,
+            playlist: Optional[List[int]] = Body(default=None),
+            weights: Optional[Dict[int, int]] = Body(default=None),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Updating playlist config for study {uuid}",
@@ -640,8 +640,8 @@ def create_study_data_routes(
         response_model=Dict[str, Any],
     )
     def get_scenario_builder_config(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Dict[str, Any]:
         logger.info(
             f"Getting MC Scenario builder config for study {uuid}",
@@ -660,9 +660,9 @@ def create_study_data_routes(
         summary="Set MC Scenario builder config",
     )
     def update_scenario_builder_config(
-        uuid: str,
-        data: Dict[str, Any],
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            data: Dict[str, Any],
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating MC Scenario builder config for study {uuid}",
@@ -682,8 +682,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_general_form_values(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GeneralFormFields:
         logger.info(
             msg=f"Getting General management config for study {uuid}",
@@ -702,9 +702,9 @@ def create_study_data_routes(
         summary="Set General config with values from form",
     )
     def set_general_form_values(
-        uuid: str,
-        field_values: GeneralFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: GeneralFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating General management config for study {uuid}",
@@ -725,8 +725,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_optimization_form_values(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> OptimizationFormFields:
         logger.info(
             msg=f"Getting optimization config for study {uuid}",
@@ -745,9 +745,9 @@ def create_study_data_routes(
         summary="Set optimization config with values from form",
     )
     def set_optimization_form_values(
-        uuid: str,
-        field_values: OptimizationFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: OptimizationFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating optimization config for study {uuid}",
@@ -770,8 +770,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_adequacy_patch_form_values(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AdequacyPatchFormFields:
         logger.info(
             msg=f"Getting adequacy patch config for study {uuid}",
@@ -790,9 +790,9 @@ def create_study_data_routes(
         summary="Set adequacy patch config with values from form",
     )
     def set_adequacy_patch_form_values(
-        uuid: str,
-        field_values: AdequacyPatchFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: AdequacyPatchFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating adequacy patch config for study {uuid}",
@@ -815,8 +815,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_timeseries_form_values(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TSFormFields:
         logger.info(
             msg=f"Getting Time Series config for study {uuid}",
@@ -835,9 +835,9 @@ def create_study_data_routes(
         summary="Set Time Series config with values from form",
     )
     def set_timeseries_form_values(
-        uuid: str,
-        field_values: TSFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: TSFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating Time Series config for study {uuid}",
@@ -859,10 +859,10 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_table_data(
-        uuid: str,
-        table_type: TableTemplateType,
-        columns: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            table_type: TableTemplateType,
+            columns: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Dict[str, ColumnsModelTypes]:
         logger.info(
             f"Getting template table data for study {uuid}",
@@ -883,10 +883,10 @@ def create_study_data_routes(
         summary="Set table data with values from table form",
     )
     def set_table_data(
-        uuid: str,
-        table_type: TableTemplateType,
-        data: Dict[str, ColumnsModelTypes],
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            table_type: TableTemplateType,
+            data: Dict[str, ColumnsModelTypes],
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating table data for study {uuid}",
@@ -907,7 +907,7 @@ def create_study_data_routes(
         summary="update database version of all studies",
     )
     def update_version(
-        current_user: JWTUser = Depends(auth.get_current_user),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
         study_service.check_and_update_all_study_versions_in_database(params)
@@ -919,8 +919,8 @@ def create_study_data_routes(
         response_model=None,  # Dict[str, bool],
     )
     def get_binding_constraint_list(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Fetching binding constraint list for study {uuid}",
@@ -941,9 +941,9 @@ def create_study_data_routes(
         response_model=None,  # Dict[str, bool],
     )
     def get_binding_constraint(
-        uuid: str,
-        binding_constraint_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            binding_constraint_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
@@ -964,10 +964,10 @@ def create_study_data_routes(
         response_model=None,  # Dict[str, bool],
     )
     def update_binding_constraint(
-        uuid: str,
-        binding_constraint_id: str,
-        data: UpdateBindingConstProps,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            binding_constraint_id: str,
+            data: UpdateBindingConstProps,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Update binding constraint {binding_constraint_id} for study {uuid}",
@@ -989,10 +989,10 @@ def create_study_data_routes(
         summary="update constraint term",
     )
     def add_constraint_term(
-        uuid: str,
-        binding_constraint_id: str,
-        data: ConstraintTermDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            binding_constraint_id: str,
+            data: ConstraintTermDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"add constraint term from {binding_constraint_id} for study {uuid}",
@@ -1014,10 +1014,10 @@ def create_study_data_routes(
         summary="update constraint term",
     )
     def update_constraint_term(
-        uuid: str,
-        binding_constraint_id: str,
-        data: ConstraintTermDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            binding_constraint_id: str,
+            data: ConstraintTermDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"update constraint term from {binding_constraint_id} for study {uuid}",
@@ -1037,10 +1037,10 @@ def create_study_data_routes(
         summary="update constraint term",
     )
     def remove_constraint_term(
-        uuid: str,
-        binding_constraint_id: str,
-        term_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            binding_constraint_id: str,
+            term_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"delete constraint term {term_id} from {binding_constraint_id} for study {uuid}",
@@ -1061,8 +1061,8 @@ def create_study_data_routes(
         response_model=AllocationMatrix,
     )
     def get_allocation_matrix(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationMatrix:
         """
         Get the hydraulic allocation matrix for all areas.
@@ -1096,9 +1096,9 @@ def create_study_data_routes(
         response_model=AllocationFormFields,
     )
     def get_allocation_form_fields(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationFormFields:
         """
         Get the form fields used for the allocation form.
@@ -1131,18 +1131,18 @@ def create_study_data_routes(
         response_model=AllocationFormFields,
     )
     def set_allocation_form_fields(
-        uuid: str,
-        area_id: str,
-        data: AllocationFormFields = Body(
-            ...,
-            example=AllocationFormFields(
-                allocation=[
-                    {"areaId": "EAST", "coefficient": 1},
-                    {"areaId": "NORTH", "coefficient": 0.20},
-                ]
+            uuid: str,
+            area_id: str,
+            data: AllocationFormFields = Body(
+                ...,
+                example=AllocationFormFields(
+                    allocation=[
+                        {"areaId": "EAST", "coefficient": 1},
+                        {"areaId": "NORTH", "coefficient": 0.20},
+                    ]
+                ),
             ),
-        ),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AllocationFormFields:
         """
         Update the hydraulic allocation of a given area.
@@ -1174,25 +1174,25 @@ def create_study_data_routes(
         response_model=CorrelationMatrix,
     )
     def get_correlation_matrix(
-        uuid: str,
-        columns: Optional[str] = Query(
-            None,
-            examples={
-                "all areas": {
-                    "description": "get the correlation matrix for all areas (by default)",
-                    "value": "",
+            uuid: str,
+            columns: Optional[str] = Query(
+                None,
+                examples={
+                    "all areas": {
+                        "description": "get the correlation matrix for all areas (by default)",
+                        "value": "",
+                    },
+                    "single area": {
+                        "description": "get the correlation column for a single area",
+                        "value": "north",
+                    },
+                    "selected areas": {
+                        "description": "get the correlation columns for a selected list of areas",
+                        "value": "north,east",
+                    },
                 },
-                "single area": {
-                    "description": "get the correlation column for a single area",
-                    "value": "north",
-                },
-                "selected areas": {
-                    "description": "get the correlation columns for a selected list of areas",
-                    "value": "north,east",
-                },
-            },
-        ),  # type: ignore
-        current_user: JWTUser = Depends(auth.get_current_user),
+            ),  # type: ignore
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationMatrix:
         """
         Get the hydraulic/load/solar/wind correlation matrix of a study.
@@ -1234,21 +1234,21 @@ def create_study_data_routes(
         response_model=CorrelationMatrix,
     )
     def set_correlation_matrix(
-        uuid: str,
-        matrix: CorrelationMatrix = Body(
-            ...,
-            example={
-                "columns": ["north", "east", "south", "west"],
-                "data": [
-                    [0.0, 0.0, 0.25, 0.0],
-                    [0.0, 0.0, 0.75, 0.12],
-                    [0.25, 0.75, 0.0, 0.75],
-                    [0.0, 0.12, 0.75, 0.0],
-                ],
-                "index": ["north", "east", "south", "west"],
-            },
-        ),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            matrix: CorrelationMatrix = Body(
+                ...,
+                example={
+                    "columns": ["north", "east", "south", "west"],
+                    "data": [
+                        [0.0, 0.0, 0.25, 0.0],
+                        [0.0, 0.0, 0.75, 0.12],
+                        [0.25, 0.75, 0.0, 0.75],
+                        [0.0, 0.12, 0.75, 0.0],
+                    ],
+                    "index": ["north", "east", "south", "west"],
+                },
+            ),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationMatrix:
         """
         Set the hydraulic/load/solar/wind correlation matrix of a study.
@@ -1281,9 +1281,9 @@ def create_study_data_routes(
         response_model=CorrelationFormFields,
     )
     def get_correlation_form_fields(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationFormFields:
         """
         Get the form fields used for the correlation form.
@@ -1315,18 +1315,18 @@ def create_study_data_routes(
         response_model=CorrelationFormFields,
     )
     def set_correlation_form_fields(
-        uuid: str,
-        area_id: str,
-        data: CorrelationFormFields = Body(
-            ...,
-            example=CorrelationFormFields(
-                correlation=[
-                    {"areaId": "east", "coefficient": 80},
-                    {"areaId": "north", "coefficient": 20},
-                ]
+            uuid: str,
+            area_id: str,
+            data: CorrelationFormFields = Body(
+                ...,
+                example=CorrelationFormFields(
+                    correlation=[
+                        {"areaId": "east", "coefficient": 80},
+                        {"areaId": "north", "coefficient": 20},
+                    ]
+                ),
             ),
-        ),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationFormFields:
         """
         Update the hydraulic/load/solar/wind correlation of a given area.
@@ -1360,8 +1360,8 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_advanced_parameters(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AdvancedParamsFormFields:
         logger.info(
             msg=f"Getting Advanced Parameters for study {uuid}",
@@ -1383,9 +1383,9 @@ def create_study_data_routes(
         summary="Set Advanced parameters new values",
     )
     def set_advanced_parameters(
-        uuid: str,
-        field_values: AdvancedParamsFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            field_values: AdvancedParamsFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Updating Advanced parameters values for study {uuid}",
@@ -1406,8 +1406,8 @@ def create_study_data_routes(
         summary="Generate timeseries",
     )
     def generate_timeseries(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
             f"Generating timeseries for study {uuid}",
@@ -1428,9 +1428,9 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_properties_form_values(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> PropertiesFormFields:
         logger.info(
             "Getting properties form values for study %s and area %s",
@@ -1454,10 +1454,10 @@ def create_study_data_routes(
         summary="Set properties for a given area",
     )
     def set_properties_form_values(
-        uuid: str,
-        area_id: str,
-        form_fields: PropertiesFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            form_fields: PropertiesFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             "Setting properties form values for study %s and area %s",
@@ -1482,10 +1482,10 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_renewable_form_values(
-        uuid: str,
-        area_id: str,
-        cluster_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            cluster_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableFormFields:
         logger.info(
             "Getting renewable form values for study %s and cluster %s",
@@ -1507,11 +1507,11 @@ def create_study_data_routes(
         summary="Set renewable form values for a given cluster",
     )
     def set_renewable_form_values(
-        uuid: str,
-        area_id: str,
-        cluster_id: str,
-        form_fields: RenewableFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            cluster_id: str,
+            form_fields: RenewableFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             "Setting renewable form values for study %s and cluster %s",
@@ -1536,10 +1536,10 @@ def create_study_data_routes(
         response_model_exclude_none=True,
     )
     def get_thermal_form_values(
-        uuid: str,
-        area_id: str,
-        cluster_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            cluster_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalFormFields:
         logger.info(
             "Getting thermal form values for study %s and cluster %s",
@@ -1561,11 +1561,11 @@ def create_study_data_routes(
         summary="Set thermal form values for a given cluster",
     )
     def set_thermal_form_values(
-        uuid: str,
-        area_id: str,
-        cluster_id: str,
-        form_fields: ThermalFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            cluster_id: str,
+            form_fields: ThermalFormFields,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             "Setting thermal form values for study %s and cluster %s",
@@ -1590,11 +1590,11 @@ def create_study_data_routes(
         response_model=STStorageEditForm,
     )
     def get_st_storage(
-        uuid: str,
-        area_id: str,
-        storage_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ):
+            uuid: str,
+            area_id: str,
+            storage_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> STStorageEditForm:
         logger.info(
             "Getting values for study %s and short term storage %s",
             uuid,
@@ -1616,11 +1616,11 @@ def create_study_data_routes(
         response_model=str,
     )
     def create_st_storage(
-        uuid: str,
-        area_id: str,
-        form: STStorageCreateForm,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+            uuid: str,
+            area_id: str,
+            form: STStorageCreateForm,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
         logger.info(
             f"Create storage short term from {area_id} for study {uuid}",
             area_id,
@@ -1642,12 +1642,12 @@ def create_study_data_routes(
         response_model=STStorageEditForm,
     )
     def update_st_storage(
-        uuid: str,
-        area_id: str,
-        storage_id: str,
-        form: STStorageCreateForm,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+            uuid: str,
+            area_id: str,
+            storage_id: str,
+            form: STStorageEditForm,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> STStorageEditForm:
         logger.info(
             f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
             area_id,
@@ -1669,10 +1669,10 @@ def create_study_data_routes(
         summary="Remove a storage from a study",
     )
     def delete_st_storage(
-        uuid: str,
-        area_id: str,
-        storage_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            area_id: str,
+            storage_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Delete storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
