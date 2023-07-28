@@ -1,4 +1,6 @@
 import pytest
+from tests.storage.integration.data import simulation_log
+
 
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
 
@@ -7,33 +9,33 @@ from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
     "launch_progress_dto,line,expected_progression,expected_output",
     [
         (
-            LaunchProgressDTO(N_K=100, N_ANNUAL_RESULT=10),
+            LaunchProgressDTO(total_mc_years_to_perform=100),
             "[infos] MC-Years : [1 .. 11], total: 11",
             0,
             True,
         ),
         (
-            LaunchProgressDTO(N_K=100, N_ANNUAL_RESULT=10),
+            LaunchProgressDTO(total_mc_years_to_perform=10),
             "this is a test",
             0,
             False,
         ),
         (
-            LaunchProgressDTO(N_K=100, N_ANNUAL_RESULT=10),
+            LaunchProgressDTO(total_mc_years_to_perform=100),
             "[solver][infos] parallel batch size : 10",
-            9 * 0.8,
-            True,
+            0,
+            False,
         ),
         (
-            LaunchProgressDTO(N_K=100, N_ANNUAL_RESULT=10),
+            LaunchProgressDTO(total_mc_years_to_perform=10),
             "[solver][infos] Exporting the annual results",
-            0.8 * 9 * 1 / 10,
+            9.8,
             True,
         ),
         (
-            LaunchProgressDTO(N_K=100, N_ANNUAL_RESULT=10),
+            LaunchProgressDTO(total_mc_years_to_perform=10),
             "[solver][infos] Exporting the survey results",
-            99 * 0.8,
+            99,
             True,
         ),
     ],
@@ -47,3 +49,32 @@ def test_update_progress(
     output = LogParser.update_progress(line, launch_progress_dto)
     assert launch_progress_dto.progress == expected_progression
     assert output == expected_output
+
+
+def test_update_progress_with_real_log():
+    real_log = simulation_log.simulation_log.split("\n")
+    launch_progress_dto = LaunchProgressDTO()
+    for line in real_log:
+        if "Exporting the annual results" in line:
+            pre_update_progress = launch_progress_dto.progress
+            LogParser.update_progress(line, launch_progress_dto)
+            assert (
+                launch_progress_dto.progress
+                == pre_update_progress
+                + 98 / launch_progress_dto.total_mc_years_to_perform
+            )
+            continue
+        elif "Exporting the survey results" in line:
+            pre_update_progress = launch_progress_dto.progress
+            assert pre_update_progress < 99
+            LogParser.update_progress(line, launch_progress_dto)
+            assert launch_progress_dto.progress == 99
+            continue
+        elif "Quitting the solver gracefully" in line:
+            assert launch_progress_dto.progress == 99
+            LogParser.update_progress(line, launch_progress_dto)
+            assert launch_progress_dto.progress == 100
+            continue
+        LogParser.update_progress(line, launch_progress_dto)
+    print(launch_progress_dto.progress)
+    assert launch_progress_dto.total_mc_years_to_perform == 2
