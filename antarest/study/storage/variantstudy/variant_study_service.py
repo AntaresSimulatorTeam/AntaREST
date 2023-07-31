@@ -726,7 +726,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 export_study_flat(
                     snapshot_path,
                     dst_path,
-                    parent_study,
+                    self.study_factory,
                     outputs=False,
                     output_src_path=output_src_path,
                 )
@@ -738,7 +738,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     export_study_flat(
                         path_study=path_study,
                         dest=dst_path,
-                        study_factory=parent_study,
+                        study_factory=self.study_factory,
                         outputs=False,
                     )
                 finally:
