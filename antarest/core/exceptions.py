@@ -165,12 +165,18 @@ class ConstraintIdNotFoundError(HTTPException):
 
 class LayerNotFound(HTTPException):
     def __init__(self) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND)
+        super().__init__(
+            HTTPStatus.NOT_FOUND,
+            "Layer not found",
+        )
 
 
 class LayerNotAllowedToBeDeleted(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(HTTPStatus.EXPECTATION_FAILED)
+    def __init__(self, layer_name: str = "All") -> None:
+        super().__init__(
+            HTTPStatus.BAD_REQUEST,
+            f"You cannot delete the layer: '{layer_name}'",
+        )
 
 
 class StudyOutputNotFoundError(Exception):

@@ -328,15 +328,9 @@ class AreaManager:
         """
         Remove a layer from a study.
 
-        Args:
-            study (RawStudy): The study to remove the layer from.
-            layer_id (str): The ID of the layer to remove.
-
         Raises:
             LayerNotAllowedToBeDeleted: If the layer ID is "0".
-
-        Returns:
-            None
+            LayerNotFound: If the layer ID is not found.
         """
         if layer_id == "0":
             raise LayerNotAllowedToBeDeleted
@@ -344,18 +338,14 @@ class AreaManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
 
-        # remove areas from layer if any
-        areas = list(file_study.config.areas)
-        if areas:
-            self.update_layer(study, layer_id, {"areas": []})
+        if layer_id not in layers:
+            raise LayerNotFound(layer_id)
+
+        del layers[layer_id]
 
         command = UpdateConfig(
-            target=f"layers/layers/layers",
-            data={
-                str(layer): layers[layer]
-                for layer in layers
-                if str(layer) != layer_id
-            },
+            target="layers/layers/layers",
+            data=layers,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(

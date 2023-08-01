@@ -326,6 +326,7 @@ def create_study_data_routes(
         "/studies/{uuid}/layers/{layer_id}",
         tags=[APITag.study_data],
         summary="Remove layer",
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def remove_layer(
         uuid: str,
