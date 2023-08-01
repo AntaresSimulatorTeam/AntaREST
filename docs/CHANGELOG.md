@@ -7,6 +7,7 @@ v2.14.5 (unreleased)
 ### Bug Fixes
 
 *  **web:** change API response_model to avoid ValidationError (#1526) ([47b5346](https://github.com/AntaresSimulatorTeam/AntaREST/commit/47b5346069f58c2634647625056a1b339da37c72))
+*  **xpansion:** correct Xpansion settings field types ([edaa140](https://github.com/AntaresSimulatorTeam/AntaREST/commit/edaa1403edfec221681662ecff6accc4e774c0e2))
 
 
 ### Contributors
