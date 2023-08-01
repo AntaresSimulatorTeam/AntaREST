@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ErrorIcon from "@mui/icons-material/Error";
+import UpgradeIcon from "@mui/icons-material/Upgrade";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
@@ -165,7 +165,7 @@ function NavHeader({
     },
     {
       key: "study.upgrade",
-      icon: ErrorIcon,
+      icon: UpgradeIcon,
       action: () => setOpenUpgradeDialog(true),
       condition: !isArchived && !isLatestVersion,
     },
@@ -318,16 +318,12 @@ function NavHeader({
           </Box>
         </ConfirmationDialog>
       )}
-      {openUpgradeDialog && (
-        <ConfirmationDialog
-          title={t("dialog.title.confirmation")}
-          onCancel={() => setOpenUpgradeDialog(false)}
-          onConfirm={handleUpgrade}
-          alert="warning"
-          open
-        >
-          <Typography>{t("study.question.upgrade")}</Typography>
-        </ConfirmationDialog>
+      {study && openUpgradeDialog && (
+        <UpgradeDialog
+          study={study}
+          open={openUpgradeDialog}
+          onClose={() => setOpenUpgradeDialog(false)}
+        />
       )}
       {study && openExportDialog && (
         <ExportDialog
