@@ -290,7 +290,6 @@ export const updateStudyMapNode = createAsyncThunk<
 
 export const deleteStudyMapNode = createAsyncThunk<
   {
-    studyId: StudyMetadata["id"];
     nodeId: StudyMapNode["id"];
   },
   {
@@ -307,7 +306,7 @@ export const deleteStudyMapNode = createAsyncThunk<
     dispatch(deleteStudyMapNodeTemp({ studyId, nodeId }));
     try {
       await studyDataApi.deleteArea(studyId, nodeId);
-      return { studyId, nodeId };
+      return { nodeId };
     } catch (error) {
       if (node) {
         dispatch(createStudyMapNodeTemp({ studyId, node }));
@@ -627,17 +626,15 @@ export default createReducer(initialState, (builder) => {
       }
     })
     .addCase(deleteStudyMapNode.fulfilled, (draftState, action) => {
-      const { studyId, nodeId } = action.payload;
-      const entity = draftState.entities[studyId];
-      if (entity) {
-        const { layers, districts } = draftState;
-        Object.values(layers).forEach((layer) => {
-          layer.areas = layer.areas.filter((areaId) => areaId !== nodeId);
-        });
-        Object.values(districts).forEach((district) => {
-          district.areas = district.areas.filter((areaId) => areaId !== nodeId);
-        });
-      }
+      const { nodeId } = action.payload;
+      const { layers, districts } = draftState;
+
+      Object.values(layers).forEach((layer) => {
+        layer.areas = layer.areas.filter((areaId) => areaId !== nodeId);
+      });
+      Object.values(districts).forEach((district) => {
+        district.areas = district.areas.filter((areaId) => areaId !== nodeId);
+      });
     })
     .addCase(createStudyMapLinkTemp, (draftState, action) => {
       const { studyId, link } = action.payload;

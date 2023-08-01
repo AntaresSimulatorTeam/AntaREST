@@ -36,7 +36,7 @@ function Table(props: TableProps) {
                 ? longestHeaderLength
                 : headerLength;
             },
-            20 // To force minimum size
+            10 // To force minimum size
           ) * 8,
     [data, rowHeaders]
   );
