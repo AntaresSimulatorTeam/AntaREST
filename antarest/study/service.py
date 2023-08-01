@@ -1036,7 +1036,7 @@ class StudyService:
         storage = self.storage_service.get_storage(study)
         if isinstance(study, RawStudy):
             if study.archived:
-                storage.unarchived(study)
+                storage.unarchive(study)
             try:
                 return storage.export_study_flat(
                     path_study=path_study,
@@ -1883,7 +1883,7 @@ class StudyService:
 
         def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.unarchived(study_to_archive)
+            self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
             os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))
