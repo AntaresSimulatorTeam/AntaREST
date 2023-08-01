@@ -253,30 +253,3 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
         raise NotImplementedError()
-
-    def unarchive(self, study: T) -> None:
-        """
-        Unarchived a study
-        Args:
-            study: StudyFactory
-        """
-        raise NotImplementedError()
-
-    def export_study_flat(
-        self,
-        path_study: Path,
-        dst_path: Path,
-        outputs: bool = True,
-        output_src_path: Optional[Path] = None,
-        output_list_filter: Optional[List[str]] = None,
-    ) -> None:
-        """
-        Export study to destination
-        Args:
-            path_study: source path.
-            dst_path: destination path.
-            outputs: list of outputs to keep.
-            output_src_path: list output path
-            output_list_filter:list of outputs to keep
-        """
-        raise NotImplementedError()

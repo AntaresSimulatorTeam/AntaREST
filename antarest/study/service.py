@@ -922,6 +922,7 @@ class StudyService:
                 target_study = self.get_study(uuid)
                 storage = self.storage_service.get_storage(target_study)
                 if isinstance(target_study, RawStudy):
+                    storage = cast(RawStudyService, storage)
                     if target_study.archived:
                         storage.unarchive(target_study)
                     try:
@@ -1035,6 +1036,7 @@ class StudyService:
         path_study = Path(study.path)
         storage = self.storage_service.get_storage(study)
         if isinstance(study, RawStudy):
+            storage = cast(RawStudyService, storage)
             if study.archived:
                 storage.unarchive(study)
             try:
@@ -1048,15 +1050,17 @@ class StudyService:
             finally:
                 if study.archived:
                     shutil.rmtree(study.path)
-        snapshot_path = path_study / "snapshot"
-        output_src_path = path_study / "output"
-        return storage.export_study_flat(
-            path_study=snapshot_path,
-            dst_path=dest,
-            outputs=len(output_list or []) > 0,
-            output_list_filter=output_list,
-            output_src_path=output_src_path,
-        )
+        else:
+            snapshot_path = path_study / "snapshot"
+            output_src_path = path_study / "output"
+            storage = cast(VariantStudyService, storage)
+            return storage.export_study_flat(
+                path_study=snapshot_path,
+                dst_path=dest,
+                outputs=len(output_list or []) > 0,
+                output_list_filter=output_list,
+                output_src_path=output_src_path,
+            )
 
     def delete_study(self, uuid: str, children: bool, params: RequestParameters) -> None:
         """
