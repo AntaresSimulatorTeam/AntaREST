@@ -1,4 +1,5 @@
-simulation_log = """[Wed Oct 14 14:25:04 2020][solver][check] Antares Solver v7.0.0 (RTE France)
+SIMULATION_LOG = """\
+[Wed Oct 14 14:25:04 2020][solver][check] Antares Solver v7.0.0 (RTE France)
 [Wed Oct 14 14:25:04 2020][solver][infos]   :: built for 64-bit architectures, Microsoft Windows, 8 cpu(s)
 [Wed Oct 14 14:25:04 2020][solver][infos]   :: hostname = GROESNWP7
 [Wed Oct 14 14:25:04 2020][solver][infos] 

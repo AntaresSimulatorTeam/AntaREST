@@ -102,10 +102,7 @@ class AbstractLauncher(ABC):
             launch_progress_dto = LaunchProgressDTO.parse_obj(
                 launch_progress_json
             )
-            progress_updated = False
-            for line in log_line.split("\n"):
-                progress_updated |= launch_progress_dto.update_progress(line)
-            if progress_updated:
+            if launch_progress_dto.parse_log_lines(log_line.splitlines()):
                 self.event_bus.push(
                     Event(
                         type=EventType.LAUNCH_PROGRESS,
