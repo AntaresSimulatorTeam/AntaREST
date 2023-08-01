@@ -2,8 +2,8 @@ import base64
 import io
 import json
 import logging
-import shutil
 import os
+import shutil
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
@@ -88,6 +88,7 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -107,7 +108,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     study_matcher,
 )
-from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -1883,7 +1883,7 @@ class StudyService:
 
         def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
+            self.storage_service.raw_study_service.unarchived(study_to_archive)
             study_to_archive.archived = False
 
             os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))

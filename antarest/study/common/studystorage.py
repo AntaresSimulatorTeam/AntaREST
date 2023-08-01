@@ -255,10 +255,13 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     def unarchive(self, study: T) -> None:
+        """
+        Unarchived a study
+        Args:
+            study: StudyFactory
+        """
         raise NotImplementedError()
 
-    # def export_study_flat(self, **kwargs) -> None:
-    #     raise NotImplementedError()
     def export_study_flat(
         self,
         path_study: Path,
@@ -267,4 +270,13 @@ class IStudyStorageService(ABC, Generic[T]):
         output_src_path: Optional[Path] = None,
         output_list_filter: Optional[List[str]] = None,
     ) -> None:
+        """
+        Export study to destination
+        Args:
+            path_study: source path.
+            dst_path: destination path.
+            outputs: list of outputs to keep.
+            output_src_path: list of source outputs path
+            output_list_filter:list of outputs to keep
+        """
         raise NotImplementedError()

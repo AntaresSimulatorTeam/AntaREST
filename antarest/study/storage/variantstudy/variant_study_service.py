@@ -39,12 +39,7 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import (
-    assert_permission,
-    get_default_workspace_path,
-    is_managed,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import assert_permission, get_default_workspace_path, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -719,21 +714,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if last_executed_command_index is None:
             if isinstance(parent_study, VariantStudy):
-                #     self._safe_generation(parent_study)
-                #     self.export_study_flat(
-                #         metadata=parent_study,
-                #         dst_path=dst_path,
-                #         outputs=False,
-                #         denormalize=False,
-                #     )
-                # else:
-                #     self.raw_study_service.export_study_flat(
-                #         metadata=parent_study,
-                #         dst_path=dst_path,
-                #         outputs=False,
-                #         denormalize=False,
-                #     )
-
                 self._safe_generation(parent_study)
                 path_study = Path(parent_study.path)
                 snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
@@ -747,7 +727,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             else:
                 path_study = Path(parent_study.path)
                 if parent_study.archived:
-                    self.raw_study_service.unarchive(parent_study)
+                    self.raw_study_service.unarchived(parent_study)
                 try:
                     self.raw_study_service.export_study_flat(
                         path_study=path_study,
@@ -1105,9 +1085,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             output_src_path=output_src_path,
             output_list_filter=output_list_filter,
         )
-        study = self.study_factory.create_from_fs(
-            dst_path, "", use_cache=False
-        )
+        study = self.study_factory.create_from_fs(dst_path, "", use_cache=False)
         study.tree.denormalize()
 
     def get_synthesis(

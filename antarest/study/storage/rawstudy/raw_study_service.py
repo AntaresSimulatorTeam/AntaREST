@@ -337,9 +337,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             output_list_filter=output_list_filter,
             output_src_path=output_src_path,
         )
-        study = self.study_factory.create_from_fs(
-            dst_path, "", use_cache=False
-        )
+        study = self.study_factory.create_from_fs(dst_path, "", use_cache=False)
         study.tree.denormalize()
 
     def check_errors(
@@ -370,7 +368,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.cache.invalidate(study.id)
         return new_study_path
 
-    def unarchive(self, study: RawStudy) -> None:
+    def unarchived(self, study: RawStudy) -> None:
         with open(
             self.get_archive_path(study),
             "rb",

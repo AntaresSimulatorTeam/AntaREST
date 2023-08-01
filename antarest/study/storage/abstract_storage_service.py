@@ -1,25 +1,26 @@
+import functools
 import logging
+import os
 import shutil
 import tempfile
+import time
+import zipfile
 from abc import ABC
 from pathlib import Path
-from typing import IO, List, Optional, Union
+from typing import IO, List, Optional, Union, Sequence
 from uuid import uuid4
-import time
-from zipfile import ZipFile
-import os
-
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON
-from antarest.core.utils.utils import StopWatch, assert_this, extract_zip, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
     PatchOutputs,
     PatchStudy,
+    RawStudy,
     StudyAdditionalData,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -36,6 +37,11 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
+# noinspection PyUnusedLocal
+def _ignore_patterns(path_study: Path, directory: str, contents: Sequence[str]) -> Sequence[str]:
+    return ["output"] if Path(directory) == path_study else []
+
+
 def export_study_flat(
     path_study: Path,
     dest: Path,
@@ -49,21 +55,16 @@ def export_study_flat(
     Args:
         path_study: Study source path
         dest: Destination path.
-        study_factory: StudyFactory,
         outputs: List of outputs to keep.
         output_list_filter: List of outputs to keep (None indicate all outputs).
-        output_src_path: Denormalize the study (replace matrix links by real matrices).
-
+        output_src_path: list of source outputs path.
     """
     start_time = time.time()
     output_src_path = output_src_path or path_study / "output"
     output_dest_path = dest / "output"
-    ignore_patterns = (
-        lambda directory, contents: ["output"]
-        if str(directory) == str(path_study)
-        else []
-    )
 
+    ignore_patterns = functools.partial(_ignore_patterns, path_study)
+    # noinspection PyTypeChecker
     shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
     if outputs and output_src_path.is_dir():
         if output_dest_path.exists():
@@ -73,7 +74,7 @@ def export_study_flat(
             for output in output_list_filter:
                 zip_path = output_src_path / f"{output}.zip"
                 if zip_path.exists():
-                    with ZipFile(zip_path) as zf:
+                    with zipfile.ZipFile(zip_path) as zf:
                         zf.extractall(output_dest_path / output)
                 else:
                     shutil.copytree(
@@ -304,9 +305,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     outputs=outputs,
                     output_src_path=output_src_path,
                 )
-            study = self.study_factory.create_from_fs(
-                tmp_study_path, "", use_cache=False
-            )
+            study = self.study_factory.create_from_fs(tmp_study_path, "", use_cache=False)
             study.tree.denormalize()
             stopwatch = StopWatch()
             zip_dir(tmp_study_path, target)
