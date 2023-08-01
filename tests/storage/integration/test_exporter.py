@@ -16,7 +16,7 @@ from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.storage.utils import export_study_flat
+from antarest.study.storage.abstract_storage_service import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 
@@ -118,7 +118,6 @@ def test_export_flat(
     export_study_flat(
         path_studies / "STA-mini",
         export_path / "STA-mini-export",
-        Mock(),
         outputs,
         output_list,
     )

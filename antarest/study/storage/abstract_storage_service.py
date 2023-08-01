@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 def export_study_flat(
     path_study: Path,
     dest: Path,
-    study_factory: StudyFactory,
     outputs: bool = True,
     output_list_filter: Optional[List[str]] = None,
     output_src_path: Optional[Path] = None,
@@ -90,11 +89,6 @@ def export_study_flat(
     stop_time = time.time()
     duration = "{:.3f}".format(stop_time - start_time)
     logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-
-    study = study_factory.create_from_fs(dest, "", use_cache=False)
-    study.tree.denormalize()
-    duration = "{:.3f}".format(time.time() - stop_time)
-    logger.info(f"Study {path_study} denormalized in {duration}s")
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -295,19 +289,25 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            if not isinstance(metadata, RawStudy):
+            if isinstance(metadata, RawStudy):
+                export_study_flat(
+                    path_study=path_study,
+                    dest=tmp_study_path,
+                    outputs=outputs,
+                )
+            else:
                 snapshot_path = path_study / "snapshot"
                 output_src_path = path_study / "output"
                 export_study_flat(
                     path_study=snapshot_path,
-                    study_factory=self.study_factory,
                     dest=tmp_study_path,
                     outputs=outputs,
                     output_src_path=output_src_path,
                 )
-            export_study_flat(
-                path_study, tmp_study_path, self.study_factory, outputs
+            study = self.study_factory.create_from_fs(
+                tmp_study_path, "", use_cache=False
             )
+            study.tree.denormalize()
             stopwatch = StopWatch()
             zip_dir(tmp_study_path, target)
             stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (zipped mode) in {x}s"))

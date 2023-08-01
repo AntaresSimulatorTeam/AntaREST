@@ -719,14 +719,28 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if last_executed_command_index is None:
             if isinstance(parent_study, VariantStudy):
+                #     self._safe_generation(parent_study)
+                #     self.export_study_flat(
+                #         metadata=parent_study,
+                #         dst_path=dst_path,
+                #         outputs=False,
+                #         denormalize=False,
+                #     )
+                # else:
+                #     self.raw_study_service.export_study_flat(
+                #         metadata=parent_study,
+                #         dst_path=dst_path,
+                #         outputs=False,
+                #         denormalize=False,
+                #     )
+
                 self._safe_generation(parent_study)
                 path_study = Path(parent_study.path)
                 snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
                 output_src_path = path_study / "output"
-                export_study_flat(
-                    snapshot_path,
-                    dst_path,
-                    self.study_factory,
+                self.export_study_flat(
+                    path_study=snapshot_path,
+                    dst_path=dst_path,
                     outputs=False,
                     output_src_path=output_src_path,
                 )
@@ -735,10 +749,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 if parent_study.archived:
                     self.raw_study_service.unarchive(parent_study)
                 try:
-                    export_study_flat(
+                    self.raw_study_service.export_study_flat(
                         path_study=path_study,
-                        dest=dst_path,
-                        study_factory=self.study_factory,
+                        dst_path=dst_path,
                         outputs=False,
                     )
                 finally:
@@ -1076,6 +1089,26 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
+
+    def export_study_flat(
+        self,
+        path_study: Path,
+        dst_path: Path,
+        outputs: bool = True,
+        output_src_path: Optional[Path] = None,
+        output_list_filter: Optional[List[str]] = None,
+    ) -> None:
+        export_study_flat(
+            path_study=path_study,
+            dest=dst_path,
+            outputs=outputs,
+            output_src_path=output_src_path,
+            output_list_filter=output_list_filter,
+        )
+        study = self.study_factory.create_from_fs(
+            dst_path, "", use_cache=False
+        )
+        study.tree.denormalize()
 
     def get_synthesis(
         self,

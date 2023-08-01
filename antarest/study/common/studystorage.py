@@ -256,3 +256,15 @@ class IStudyStorageService(ABC, Generic[T]):
 
     def unarchive(self, study: T) -> None:
         raise NotImplementedError()
+
+    # def export_study_flat(self, **kwargs) -> None:
+    #     raise NotImplementedError()
+    def export_study_flat(
+        self,
+        path_study: Path,
+        dst_path: Path,
+        outputs: bool = True,
+        output_src_path: Optional[Path] = None,
+        output_list_filter: Optional[List[str]] = None,
+    ) -> None:
+        raise NotImplementedError()

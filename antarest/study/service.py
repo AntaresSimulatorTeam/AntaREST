@@ -1033,26 +1033,26 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         path_study = Path(study.path)
+        storage = self.storage_service.get_storage(study)
         if isinstance(study, RawStudy):
             if study.archived:
-                self.storage_service.get_storage(study).unarchive(study)
+                storage.unarchive(study)
             try:
-                return export_study_flat(
+                return storage.export_study_flat(
                     path_study=path_study,
-                    study_factory=study,
-                    dest=dest,
+                    dst_path=dest,
                     outputs=len(output_list or []) > 0,
                     output_list_filter=output_list,
+                    output_src_path=None,
                 )
             finally:
                 if study.archived:
                     shutil.rmtree(study.path)
         snapshot_path = path_study / "snapshot"
         output_src_path = path_study / "output"
-        export_study_flat(
+        return storage.export_study_flat(
             path_study=snapshot_path,
-            study_factory=study,
-            dest=dest,
+            dst_path=dest,
             outputs=len(output_list or []) > 0,
             output_list_filter=output_list,
             output_src_path=output_src_path,

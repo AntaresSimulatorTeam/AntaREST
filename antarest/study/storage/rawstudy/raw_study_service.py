@@ -16,7 +16,7 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
-from antarest.study.storage.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract_storage_service import AbstractStorageService, export_study_flat
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -321,6 +321,26 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         metadata.path = str(path_study)
         return metadata
+
+    def export_study_flat(
+        self,
+        path_study: Path,
+        dst_path: Path,
+        outputs: bool = True,
+        output_src_path: Optional[Path] = None,
+        output_list_filter: Optional[List[str]] = None,
+    ) -> None:
+        export_study_flat(
+            path_study=path_study,
+            dest=dst_path,
+            outputs=outputs,
+            output_list_filter=output_list_filter,
+            output_src_path=output_src_path,
+        )
+        study = self.study_factory.create_from_fs(
+            dst_path, "", use_cache=False
+        )
+        study.tree.denormalize()
 
     def check_errors(
         self,
