@@ -276,7 +276,7 @@ class IStudyStorageService(ABC, Generic[T]):
             path_study: source path.
             dst_path: destination path.
             outputs: list of outputs to keep.
-            output_src_path: list of source outputs path
+            output_src_path: list output path
             output_list_filter:list of outputs to keep
         """
         raise NotImplementedError()

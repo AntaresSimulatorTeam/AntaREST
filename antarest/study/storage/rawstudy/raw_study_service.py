@@ -368,7 +368,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.cache.invalidate(study.id)
         return new_study_path
 
-    def unarchived(self, study: RawStudy) -> None:
+    def unarchive(self, study: RawStudy) -> None:
         with open(
             self.get_archive_path(study),
             "rb",

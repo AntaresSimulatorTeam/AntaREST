@@ -727,7 +727,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             else:
                 path_study = Path(parent_study.path)
                 if parent_study.archived:
-                    self.raw_study_service.unarchived(parent_study)
+                    self.raw_study_service.unarchive(parent_study)
                 try:
                     self.raw_study_service.export_study_flat(
                         path_study=path_study,

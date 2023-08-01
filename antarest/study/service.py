@@ -1036,7 +1036,7 @@ class StudyService:
         storage = self.storage_service.get_storage(study)
         if isinstance(study, RawStudy):
             if study.archived:
-                storage.unarchive(study)
+                storage.unarchived(study)
             try:
                 return storage.export_study_flat(
                     path_study=path_study,
