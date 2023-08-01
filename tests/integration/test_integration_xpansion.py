@@ -1,4 +1,4 @@
-from io import StringIO
+import io
 from pathlib import Path
 
 from antarest.study.business.area_management import AreaType
@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 
-def test_integration_xpansion(app: FastAPI, tmp_path: str):
+def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
         "/v1/login", json={"username": "admin", "password": "admin"}
@@ -78,7 +78,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 200
 
     assert (
-        Path(tmp_path) / "internal_workspace" / study_id / "user" / "expansion"
+        tmp_path / "internal_workspace" / study_id / "user" / "expansion"
     ).exists()
 
     res = client.get(
@@ -98,7 +98,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relative_gap": 1e-12,
         "relaxed-optimality-gap": None,
         "solver": "Cbc",
-        "batch-size": 0,
+        "batch_size": 0,
         "uc_type": "expansion_fast",
         "yearly-weights": None,
         "timelimit": 1e12,
@@ -124,7 +124,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         "relative_gap": None,
         "relaxed-optimality-gap": None,
         "solver": None,
-        "batch-size": 0,
+        "batch_size": 0,
         "uc_type": "expansion_fast",
         "yearly-weights": None,
         "timelimit": 1e12,
@@ -148,7 +148,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_constraints1,
-            StringIO(content_constraints1),
+            io.StringIO(content_constraints1),
             "image/jpeg",
         )
     }
@@ -171,7 +171,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_constraints1,
-            StringIO(content_constraints1),
+            io.StringIO(content_constraints1),
             "image/jpeg",
         ),
     }
@@ -186,7 +186,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_constraints2,
-            StringIO(content_constraints2),
+            io.StringIO(content_constraints2),
             "image/jpeg",
         ),
     }
@@ -195,11 +195,12 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         headers=headers,
         files=files,
     )
+    res.raise_for_status()
 
     files = {
         "file": (
             filename_constraints3,
-            StringIO(content_constraints3),
+            io.StringIO(content_constraints3),
             "image/jpeg",
         ),
     }
@@ -208,7 +209,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         headers=headers,
         files=files,
     )
-    assert res.status_code == 200
+    res.raise_for_status()
 
     res = client.get(
         f"{xpansion_base_url}/resources/constraints/{filename_constraints1}",
@@ -294,7 +295,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_capa1,
-            StringIO(content_capa1),
+            io.StringIO(content_capa1),
             "txt/csv",
         )
     }
@@ -324,7 +325,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_capa2,
-            StringIO(content_capa2),
+            io.StringIO(content_capa2),
             "txt/csv",
         )
     }
@@ -338,7 +339,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     files = {
         "file": (
             filename_capa3,
-            StringIO(content_capa3),
+            io.StringIO(content_capa3),
             "txt/csv",
         )
     }
@@ -431,5 +432,5 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     assert res.status_code == 200
 
     assert not (
-        Path(tmp_path) / "internal_workspace" / study_id / "user" / "expansion"
+        tmp_path / "internal_workspace" / study_id / "user" / "expansion"
     ).exists()
