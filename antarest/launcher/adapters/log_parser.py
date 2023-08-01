@@ -3,27 +3,19 @@ import re
 
 from pydantic import BaseModel
 
-
 logger = logging.getLogger(__name__)
 
 
 class LaunchProgressDTO(BaseModel):
     progress: float = 0
-    total_mc_years_to_perform: int = 1
+    total_mc_years: int = 1
 
-
-class LogParser:
-    @staticmethod
-    def update_progress(
-        line: str, launch_progress_dto: LaunchProgressDTO
-    ) -> bool:
+    def update_progress(self, line: str) -> bool:
         if "MC-Years : [" in line:
             if regex_result := re.search(
                 r"MC-Years : \[\d+ .. \d+], total: (\d+)", line
             ):
-                launch_progress_dto.total_mc_years_to_perform = int(
-                    regex_result[1]
-                )
+                self.total_mc_years = int(regex_result[1])
                 return True
             else:
                 logger.warning(
@@ -31,14 +23,12 @@ class LogParser:
                 )
                 return False
         elif "Exporting the annual results" in line:
-            launch_progress_dto.progress += (
-                98 / launch_progress_dto.total_mc_years_to_perform
-            )
+            self.progress += 98 / self.total_mc_years
             return True
         elif "Exporting the survey results" in line:
-            launch_progress_dto.progress = 99
+            self.progress = 99
             return True
         elif "Quitting the solver gracefully" in line:
-            launch_progress_dto.progress = 100
+            self.progress = 100
             return True
         return False

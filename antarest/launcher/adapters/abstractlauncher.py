@@ -13,7 +13,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.launcher.adapters.log_parser import LaunchProgressDTO, LogParser
+from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 
@@ -104,10 +104,7 @@ class AbstractLauncher(ABC):
             )
             progress_updated = False
             for line in log_line.split("\n"):
-                progress_updated = (
-                    LogParser.update_progress(line, launch_progress_dto)
-                    or progress_updated
-                )
+                progress_updated |= launch_progress_dto.update_progress(line)
             if progress_updated:
                 self.event_bus.push(
                     Event(
