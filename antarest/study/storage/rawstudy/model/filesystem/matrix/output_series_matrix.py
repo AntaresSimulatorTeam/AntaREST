@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-import pandas as pd  # type: ignore
+import pandas as pd
 from pandas import DataFrame
 
 from antarest.core.model import JSON

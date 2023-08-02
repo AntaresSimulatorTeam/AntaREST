@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
 import numpy as np
-import pandas as pd  # type: ignore
+import pandas as pd
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -17,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
 from numpy import typing as npt
-from pandas.errors import EmptyDataError  # type: ignore
+from pandas.errors import EmptyDataError
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class InputSeriesMatrix(MatrixNode):
             if return_dataframe:
                 return matrix
 
-            data: JSON = matrix.to_dict(orient="split")
+            data = cast(JSON, matrix.to_dict(orient="split"))
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Matrix to dict in {x}s")
             )
@@ -89,7 +89,9 @@ class InputSeriesMatrix(MatrixNode):
             logger.warning(f"Empty file found when parsing {file_path}")
             matrix = pd.DataFrame(self.default_empty)
             return (
-                matrix if return_dataframe else matrix.to_dict(orient="split")
+                matrix
+                if return_dataframe
+                else cast(JSON, matrix.to_dict(orient="split"))
             )
 
     def check_errors(
