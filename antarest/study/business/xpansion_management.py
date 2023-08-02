@@ -116,7 +116,7 @@ class XpansionSettingsDTO(BaseModel):
         None, alias="ampl.solve_bounds_frequency"
     )
     relative_gap: Optional[float] = Field(default=None, ge=0)
-    batch_size: Optional[int] = Field(default=0, alias="batch-size", ge=0)
+    batch_size: Optional[int] = Field(default=0, ge=0)
     solver: Optional[Solver] = None
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
@@ -289,7 +289,7 @@ class XpansionManager:
             else:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
-                xpansion_settings["batch-size"] = 0
+                xpansion_settings["batch_size"] = 0
 
             xpansion_configuration_data = {
                 "user": {

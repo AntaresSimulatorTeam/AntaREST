@@ -134,7 +134,7 @@ def make_link_and_areas(empty_study):
                     "master": "integer",
                     "relative_gap": 1e-12,
                     "solver": "Cbc",
-                    "batch-size": 0,
+                    "batch_size": 0,
                 },
                 "sensitivity": {"sensitivity_in": {}},
                 "candidates": {},
@@ -231,7 +231,7 @@ def test_delete_xpansion_configuration(tmp_path: Path):
                     "ampl.solve_bounds_frequency": None,
                     "relative_gap": 1e-12,
                     "solver": "Cbc",
-                    "batch-size": 0,
+                    "batch_size": 0,
                 }
             ),
         ),
@@ -318,7 +318,7 @@ def test_update_xpansion_settings(tmp_path: Path):
             "ampl.solve_bounds_frequency": None,
             "relative_gap": 1e-12,
             "solver": "Cbc",
-            "batch-size": 4,
+            "batch_size": 4,
         }
     )
 
