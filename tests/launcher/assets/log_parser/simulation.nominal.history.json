@@ -1,0 +1,26 @@
+[
+ [
+  "[Wed Oct 14 14:25:04 2020][solver][infos] Loading the list of areas...",
+  1.0
+ ],
+ [
+  "[Wed Oct 14 14:25:05 2020][solver][infos] MC-Years : [1 .. 2], total: 2",
+  2.0
+ ],
+ [
+  "[Wed Oct 14 14:25:05 2020][solver][infos] Exporting the annual results",
+  50.0
+ ],
+ [
+  "[Wed Oct 14 14:25:05 2020][solver][infos] Exporting the annual results",
+  98.0
+ ],
+ [
+  "[Wed Oct 14 14:25:05 2020][solver][check] Exporting the survey results...",
+  99.0
+ ],
+ [
+  "[Wed Oct 14 14:25:05 2020][solver][infos] [UI] Quitting the solver gracefully",
+  100.0
+ ]
+]

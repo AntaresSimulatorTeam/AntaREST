@@ -1,0 +1,14 @@
+[
+ [
+  "[Wed Nov 10 10:43:15 2021][solver][fatal] User's playlist: at least one year must be selected",
+  100.0
+ ],
+ [
+  "[Wed Nov 10 10:43:15 2021][solver][infos] Loading the list of areas...",
+  1.0
+ ],
+ [
+  "[Wed Nov 10 10:43:37 2021][solver][error] Found 1 error and 1 warning: The simulation must stop.",
+  100.0
+ ]
+]

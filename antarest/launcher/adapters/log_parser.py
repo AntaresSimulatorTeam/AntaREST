@@ -1,55 +1,102 @@
-import logging
+import functools
 import re
+import typing as t
 
 from pydantic import BaseModel
 
+_SearchFunc = t.Callable[[str], t.Optional[t.Match[str]]]
 
-logger = logging.getLogger(__name__)
+_compile = functools.partial(re.compile, flags=re.IGNORECASE | re.VERBOSE)
+
+# Search for the line indicating the loading of areas (first line of data loading).
+_loading_areas = t.cast(
+    _SearchFunc,
+    _compile(r"Loading \s+ the \s+ list \s+ of \s+ areas").search,
+)
+
+# Search for the total number of Monté-Carlo (MC) years.
+_total_mc_years = t.cast(
+    _SearchFunc,
+    _compile(
+        r"""
+        MC-Years \s* : \s*
+        \[ \d+ \s* \.{2,3} \s*  \d+ ], \s* total \s* : \s*
+        (?P<total_mc_years> \d+)
+        """
+    ).search,
+)
+
+# Search for the line indicating the export of annual results of a Monté-Carlo year.
+_annual_results = t.cast(
+    _SearchFunc,
+    _compile(r"Exporting \s+ the \s+ annual \s+ results").search,
+)
+
+# Search for the line indicating the export of survey results.
+_survey_results = t.cast(
+    _SearchFunc,
+    _compile(r"Exporting \s+ the \s+ survey \s+ results").search,
+)
+
+# Search for the line indicating the solver is quitting gracefully or an error
+_quitting = t.cast(
+    _SearchFunc,
+    _compile(
+        r"""
+        Quitting \s+ the \s+ solver \s+ gracefully |
+        \[error] |
+        \[fatal]
+        """
+    ).search,
+)
 
 
 class LaunchProgressDTO(BaseModel):
-    coef: float = 0.8
+    """
+    Measure the progress of a study simulation.
+
+    The progress percentage is calculated based on the number of Monté-Carlo
+    years completed relative to the total number of years.
+
+    Attributes:
+        progress:
+            The percentage of completion for the simulation, ranging from 0 to 100.
+        total_mc_years:
+            The total number of Monté-Carlo years for the simulation.
+    """
+
     progress: float = 0
-    N_ANNUAL_RESULT: int = 1
-    N_K: int = 1
+    total_mc_years: int = 1
 
-
-class LogParser:
-    @staticmethod
-    def update_progress(
-        line: str, launch_progress_dto: LaunchProgressDTO
-    ) -> bool:
-        if "MC-Years : [" in line:
-            regex = re.compile(
-                r".+?(?:\s\.\.\s)(\d+).+?(\d+)"
-            )  # group 1 is the first number after " .. ", and group 2 is the las number of the line
-            mo = regex.search(line)
-            launch_progress_dto.N_K = int(mo.group(1))  # type:ignore
-            launch_progress_dto.N_ANNUAL_RESULT = int(
-                mo.group(2)  # type:ignore
-            )
+    def _update_progress(self, line: str) -> bool:
+        """Updates the progress based on the given log line."""
+        if _loading_areas(line):
+            self.progress = 1.0
             return True
-        elif "parallel batch size : " in line:
-            mk = re.search(r"parallel batch size : (\d+)", line)
-            if mk:
-                K = int(mk.group(1))
-                launch_progress_dto.progress += (
-                    launch_progress_dto.coef * 90 * K / launch_progress_dto.N_K
-                )
-                return True
-            else:
-                logger.warning(
-                    f"Failed to extract log progress batch size on line : {line}"
-                )
-        elif "Exporting the annual results" in line:
-            launch_progress_dto.progress += (
-                launch_progress_dto.coef
-                * 9
-                * 1
-                / launch_progress_dto.N_ANNUAL_RESULT
-            )
+        if mo := _total_mc_years(line):
+            self.progress = 2.0
+            self.total_mc_years = int(mo["total_mc_years"])
             return True
-        elif "Exporting the survey results" in line:
-            launch_progress_dto.progress = launch_progress_dto.coef * 99
+        if _annual_results(line):
+            self.progress += 96 / self.total_mc_years
+            return True
+        if _survey_results(line):
+            self.progress = 99.0
+            return True
+        if _quitting(line):
+            self.progress = 100.0
             return True
         return False
+
+    def parse_log_lines(self, lines: t.Iterable[str]) -> bool:
+        """
+        Parses a sequence of log lines and updates the progress accordingly.
+
+        Args:
+            lines (Iterable[str]): An iterable containing log lines to be parsed.
+
+        Returns:
+            bool: `True` if progress was updated at least once during the parsing,
+                  `False` otherwise.
+        """
+        return bool(sum(self._update_progress(line) for line in lines))

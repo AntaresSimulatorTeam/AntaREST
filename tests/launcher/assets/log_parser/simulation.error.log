@@ -1,0 +1,84 @@
+[Fri Dec  9 23:16:48 2022][solver][check] Antares Solver v8.4.0-rc3 (fcb303c)
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: built for 64-bit architectures, GNU/Linux, 12 cpu(s)
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: hostname = localhost
+[Fri Dec  9 23:16:48 2022][solver][infos] 
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: from /home/omnesflo/Téléchargements/antares-8.4.0-rc3-Ubuntu-20.04/bin
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: log filename: /home/omnesflo/short/029 Pumped storage plant - 2/logs/solver-20221209-231648.log
+[Fri Dec  9 23:16:48 2022][solver][infos] 
+[Fri Dec  9 23:16:48 2022][solver][notic] Preparing 029 Pumped storage plant - 2...
+[Fri Dec  9 23:16:48 2022][solver][infos]   detected version: 840
+[Fri Dec  9 23:16:48 2022][solver][infos]   from `/home/omnesflo/short/029 Pumped storage plant - 2`
+[Fri Dec  9 23:16:48 2022][solver][infos] 
+[Fri Dec  9 23:16:48 2022][solver][infos]   simulation mode: Economy
+[Fri Dec  9 23:16:48 2022][solver][infos]   simplex optimization range: day
+[Fri Dec  9 23:16:48 2022][solver][infos] Aggregate renewables were chosen. Output will be disabled for renewable clusters.
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: ignoring export mps
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: ignoring adequacy patch
+[Fri Dec  9 23:16:48 2022][solver][infos]   :: ignoring export structure
+[Fri Dec  9 23:16:48 2022][solver][infos]   Output folder : /home/omnesflo/short/029 Pumped storage plant - 2/output/20221209-2316eco
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading the list of areas...
+[Fri Dec  9 23:16:48 2022][solver][infos]   Loading the area list from `/home/omnesflo/short/029 Pumped storage plant - 2/input/areas/list.txt`
+[Fri Dec  9 23:16:48 2022][solver][infos]   5 areas found
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading global hydro data...
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal clusters...
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal configuration for the area & PSP-HUB
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal configuration for the area & PSP-IN
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal configuration for the area & PSP-OUT
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal configuration for the area east
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading thermal configuration for the area west
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading renewable configuration for the area & PSP-HUB
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading renewable configuration for the area & PSP-IN
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading renewable configuration for the area & PSP-OUT
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading renewable configuration for the area east
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading renewable configuration for the area west
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading the area 1/5: & PSP-HUB
+[Fri Dec  9 23:16:48 2022][solver][infos] Loading the area 1/5: & PSP-HUB  16%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 1/5: & PSP-HUB  33%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 1/5: & PSP-HUB  50%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 1/5: & PSP-HUB  66%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 1/5: & PSP-HUB  83%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN  16%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN  33%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN  50%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN  66%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 2/5: & PSP-IN  83%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT  16%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT  33%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT  50%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT  66%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 3/5: & PSP-OUT  83%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  11%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  22%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  33%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  44%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  55%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  66%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  77%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 4/5: east  88%
+[Fri Dec  9 23:16:49 2022][solver][error] I/O error: /home/omnesflo/short/029 Pumped storage plant - 2/input/areas/east/adequacy_patch.ini: Impossible to read the file
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  11%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  22%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  33%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  44%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  55%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  66%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  77%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading the area 5/5: west  88%
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading correlation matrices...
+[Fri Dec  9 23:16:49 2022][solver][infos] 
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading constraints...
+[Fri Dec  9 23:16:49 2022][solver][infos]  added `PSP efficiency ratio` (daily, bounded below)
+[Fri Dec  9 23:16:49 2022][solver][infos] 1 binding constraint found
+[Fri Dec  9 23:16:49 2022][solver][infos] 
+[Fri Dec  9 23:16:49 2022][solver][infos] Loading sets of areas...
+[Fri Dec  9 23:16:49 2022][solver][infos]    found `all areas` (2 items)
+[Fri Dec  9 23:16:49 2022][solver][infos] [statistics] disk: read: 10159 ko, written: 0 ko
+[Fri Dec  9 23:16:49 2022][solver][infos] [statistics] network: read: 0 ko, written: 0 ko
+[Fri Dec  9 23:16:49 2022][solver][infos] The study is loaded.
+[Fri Dec  9 23:16:49 2022][solver][infos] [UI] Display messages: Off
+[Fri Dec  9 23:16:49 2022][solver][infos] 
+[Fri Dec  9 23:16:49 2022][solver][error] Found 1 error: The simulation must stop.

@@ -12,6 +12,7 @@ v2.14.5 (unreleased)
 *  **ui-i18n:** add missing adequacy patch translations (#1680) ([a254b5e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a254b5e2a80d8a7229e8b002329921bc62165db1))
 *  **api:** add missing `use_leeway` field and validation rules (#1650) ([e62f41e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e62f41e5a33a1520f8d8bcc4171b9e4e9b5d8902))
 *  **export:** ZIP outputs are now uncompressed before export (#1656) ([247d110](https://github.com/AntaresSimulatorTeam/AntaREST/commit/247d11080fe98d80b64cc344db2aa0e2eca613cf))
+*  **log-parser:** simplify parsing and make it accurate (#1682) ([5d20d6d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/5d20d6dd4e70f45aaa8ed8bf17b01ae810d5d162))
 
 
 ### Continuous Integration
