@@ -1,6 +1,6 @@
 -r requirements-test.txt
 # Version of Black should match the versions set in `.github/workflows/main.yml`
-black~=23.1.0
+black~=23.7.0
 mypy~=0.931
 pyinstaller~=4.8
 checksumdir~=1.2.0
