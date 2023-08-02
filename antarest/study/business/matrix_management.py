@@ -1,7 +1,7 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -71,10 +71,12 @@ def update_matrix_content_with_slices(
             matrix_slice.column_from : matrix_slice.column_to,
         ] = True
 
+    # noinspection PyTypeChecker
     new_matrix_data = matrix_data.where(mask).apply(operation.compute)
     new_matrix_data[new_matrix_data.isnull()] = matrix_data
 
-    return new_matrix_data.astype(matrix_data.dtypes)
+    # noinspection PyTypeChecker
+    return cast(pd.DataFrame, new_matrix_data.astype(matrix_data.dtypes))
 
 
 def update_matrix_content_with_coordinates(
@@ -89,7 +91,8 @@ def update_matrix_content_with_coordinates(
             )
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
-    return df.astype(df.dtypes)
+    # noinspection PyTypeChecker
+    return df.astype(dict(df.dtypes))
 
 
 def group_by_slices(
@@ -254,7 +257,10 @@ class MatrixManager:
 
         try:
             logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df: pd.DataFrame = matrix_node.parse(return_dataframe=True)
+            matrix_df = cast(
+                pd.DataFrame,
+                matrix_node.parse(return_dataframe=True),
+            )
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
