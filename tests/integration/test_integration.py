@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import time
 from pathlib import Path
 from unittest.mock import ANY
@@ -923,6 +924,73 @@ def test_area_management(app: FastAPI):
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
+
+    # Delete the layer '1' that has 1 area
+    res = client.delete(
+        f"/v1/studies/{study_id}/layers/1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == HTTPStatus.NO_CONTENT
+
+    # Ensure the layer is deleted
+    res = client.get(
+        f"/v1/studies/{study_id}/layers",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+    ]
+
+    # Create the layer again without areas
+    res = client.post(
+        f"/v1/studies/{study_id}/layers?name=test2",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == "1"
+
+    # Delete the layer with no areas
+    res = client.delete(
+        f"/v1/studies/{study_id}/layers/1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == HTTPStatus.NO_CONTENT
+
+    # Ensure the layer is deleted
+    res = client.get(
+        f"/v1/studies/{study_id}/layers",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+    ]
+
+    # Try to delete a non-existing layer
+    res = client.delete(
+        f"/v1/studies/{study_id}/layers/1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == HTTPStatus.NOT_FOUND
+
+    # Try to delete the layer 'All'
+    res = client.delete(
+        f"/v1/studies/{study_id}/layers/0",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == HTTPStatus.BAD_REQUEST
 
     # -- `district` integration tests
 

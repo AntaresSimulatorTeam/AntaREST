@@ -96,6 +96,23 @@ const initialState = studyMapsAdapter.getInitialState({
   districts: {},
 }) as StudyMapsState;
 
+////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////
+
+function filterAreasFromEntity<T extends StudyLayer | StudyMapDistrict>(
+  entities: Record<string, T>,
+  nodeId: StudyMapNode["id"]
+): Record<string, T> {
+  return R.map(
+    (entity) => ({
+      ...entity,
+      areas: entity.areas.filter((areaId) => areaId !== nodeId),
+    }),
+    entities
+  );
+}
+
 const n = makeActionName("studyMaps");
 
 ////////////////////////////////////////////////////////////////
@@ -288,7 +305,9 @@ export const updateStudyMapNode = createAsyncThunk<
 });
 
 export const deleteStudyMapNode = createAsyncThunk<
-  void, // WebSocket will update it
+  {
+    nodeId: StudyMapNode["id"];
+  },
   {
     studyId: StudyMetadata["id"];
     nodeId: StudyMapNode["id"];
@@ -300,16 +319,15 @@ export const deleteStudyMapNode = createAsyncThunk<
     const { studyId, nodeId } = data;
     const state = getState();
     const node = getStudyMap(state, studyId)?.nodes[nodeId];
-
-    if (node) {
-      dispatch(deleteStudyMapNodeTemp({ studyId, nodeId }));
-
-      try {
-        await studyDataApi.deleteArea(studyId, nodeId);
-      } catch (error) {
+    dispatch(deleteStudyMapNodeTemp({ studyId, nodeId }));
+    try {
+      await studyDataApi.deleteArea(studyId, nodeId);
+      return { nodeId };
+    } catch (error) {
+      if (node) {
         dispatch(createStudyMapNodeTemp({ studyId, node }));
-        return rejectWithValue(error);
       }
+      return rejectWithValue(error);
     }
   }
 );
@@ -361,7 +379,6 @@ export const createStudyMapLink = createAsyncThunk<
   } catch (err) {
     dispatch(deleteStudyLink({ studyId, area1, area2 }));
     dispatch(deleteStudyMapLinkTemp({ studyId, linkId }));
-
     return rejectWithValue(err);
   }
 });
@@ -460,30 +477,27 @@ export const fetchStudyMapDistricts = createAsyncThunk<
   Record<StudyMapDistrict["id"], StudyMapDistrict>,
   StudyMap["studyId"],
   AppAsyncThunkConfig
->(
-  n("FETCH_STUDY_MAP_DISTRICTS"),
-  async (studyId, { dispatch, rejectWithValue }) => {
-    try {
-      const districts = await studyApi.getStudyDistricts(studyId);
-      const studyMapDistricts = districts.reduce(
-        (acc, { id, name, output, comments, areas }) => {
-          acc[id] = {
-            id,
-            name,
-            output,
-            comments,
-            areas,
-          };
-          return acc;
-        },
-        {} as StudyMapsState["districts"]
-      );
-      return studyMapDistricts;
-    } catch (err) {
-      return rejectWithValue(err);
-    }
+>(n("FETCH_STUDY_MAP_DISTRICTS"), async (studyId, { rejectWithValue }) => {
+  try {
+    const districts = await studyApi.getStudyDistricts(studyId);
+    const studyMapDistricts = districts.reduce(
+      (acc, { id, name, output, comments, areas }) => {
+        acc[id] = {
+          id,
+          name,
+          output,
+          comments,
+          areas,
+        };
+        return acc;
+      },
+      {} as StudyMapsState["districts"]
+    );
+    return studyMapDistricts;
+  } catch (err) {
+    return rejectWithValue(err);
   }
-);
+});
 
 export const createStudyMapDistrict = createAsyncThunk<
   StudyMapDistrict,
@@ -622,7 +636,21 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(deleteStudyMapNodeTemp, (draftState, action) => {
       const { studyId, nodeId } = action.payload;
-      delete draftState.entities[studyId]?.nodes[nodeId];
+      const entity = draftState.entities[studyId];
+      if (entity) {
+        delete entity.nodes[nodeId];
+      }
+    })
+    .addCase(deleteStudyMapNode.fulfilled, (draftState, action) => {
+      const { nodeId } = action.payload;
+      draftState.layers = filterAreasFromEntity<StudyLayer>(
+        draftState.layers,
+        nodeId
+      );
+      draftState.districts = filterAreasFromEntity<StudyMapDistrict>(
+        draftState.districts,
+        nodeId
+      );
     })
     .addCase(createStudyMapLinkTemp, (draftState, action) => {
       const { studyId, link } = action.payload;
