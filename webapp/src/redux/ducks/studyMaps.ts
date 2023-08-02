@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import {
   createAction,
   createAsyncThunk,
@@ -96,6 +95,23 @@ const initialState = studyMapsAdapter.getInitialState({
   layers: {},
   districts: {},
 }) as StudyMapsState;
+
+////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////
+
+function filterAreasFromEntity<T extends StudyLayer | StudyMapDistrict>(
+  entities: Record<string, T>,
+  nodeId: StudyMapNode["id"]
+): Record<string, T> {
+  return R.map(
+    (entity) => ({
+      ...entity,
+      areas: entity.areas.filter((areaId) => areaId !== nodeId),
+    }),
+    entities
+  );
+}
 
 const n = makeActionName("studyMaps");
 
@@ -627,14 +643,14 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(deleteStudyMapNode.fulfilled, (draftState, action) => {
       const { nodeId } = action.payload;
-      const { layers, districts } = draftState;
-
-      Object.values(layers).forEach((layer) => {
-        layer.areas = layer.areas.filter((areaId) => areaId !== nodeId);
-      });
-      Object.values(districts).forEach((district) => {
-        district.areas = district.areas.filter((areaId) => areaId !== nodeId);
-      });
+      draftState.layers = filterAreasFromEntity<StudyLayer>(
+        draftState.layers,
+        nodeId
+      );
+      draftState.districts = filterAreasFromEntity<StudyMapDistrict>(
+        draftState.districts,
+        nodeId
+      );
     })
     .addCase(createStudyMapLinkTemp, (draftState, action) => {
       const { studyId, link } = action.payload;
