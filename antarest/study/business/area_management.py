@@ -339,7 +339,7 @@ class AreaManager:
         layers = file_study.tree.get(["layers", "layers", "layers"])
 
         if layer_id not in layers:
-            raise LayerNotFound(layer_id)
+            raise LayerNotFound
 
         del layers[layer_id]
 
