@@ -1,8 +1,10 @@
 import glob
 from pathlib import Path
+from typing import cast
 
-import numpy
-import pandas  # type: ignore
+import numpy as np
+import pandas
+import numpy.typing as npt
 
 
 def upgrade_820(study_path: Path) -> None:
@@ -29,21 +31,24 @@ def upgrade_820(study_path: Path) -> None:
                     df_direct = df.iloc[:, 0]
                     df_indirect = df.iloc[:, 1]
                     name = Path(txt).stem
-                    numpy.savetxt(
+                    # noinspection PyTypeChecker
+                    np.savetxt(
                         folder_path / f"{name}_parameters.txt",
-                        df_parameters.values,
+                        cast(npt.NDArray[np.float64], df_parameters.values),
                         delimiter="\t",
                         fmt="%.6f",
                     )
-                    numpy.savetxt(
+                    # noinspection PyTypeChecker
+                    np.savetxt(
                         folder_path / "capacities" / f"{name}_direct.txt",
-                        df_direct.values,
+                        cast(npt.NDArray[np.float64], df_direct.values),
                         delimiter="\t",
                         fmt="%.6f",
                     )
-                    numpy.savetxt(
+                    # noinspection PyTypeChecker
+                    np.savetxt(
                         folder_path / "capacities" / f"{name}_indirect.txt",
-                        df_indirect.values,
+                        cast(npt.NDArray[np.float64], df_indirect.values),
                         delimiter="\t",
                         fmt="%.6f",
                     )

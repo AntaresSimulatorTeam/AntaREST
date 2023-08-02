@@ -2,10 +2,9 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, cast
 
-import pandas as pd  # type: ignore
-
+import pandas as pd
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -71,7 +70,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         matrix = self.parse()
 
         if "data" in matrix:
-            uuid = self.context.matrix.create(matrix["data"])
+            data = cast(List[List[float]], matrix["data"])
+            uuid = self.context.matrix.create(data)
             self.get_link_path().write_text(
                 self.context.resolver.build_matrix_uri(uuid)
             )
@@ -115,7 +115,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
                 tmp_dir.cleanup()
             return b""
 
-        return self.parse(file_path, tmp_dir)
+        return cast(JSON, self.parse(file_path, tmp_dir))
 
     @abstractmethod
     def parse(

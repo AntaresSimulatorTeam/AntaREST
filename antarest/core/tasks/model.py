@@ -148,7 +148,7 @@ class TaskJob(Base):  # type: ignore
             if self.completion_date
             else None,
             logs=sorted(
-                [log.to_dto() for log in self.logs], key=lambda l: l.id  # type: ignore
+                [log.to_dto() for log in self.logs], key=lambda l: l.id
             )
             if with_logs
             else None,

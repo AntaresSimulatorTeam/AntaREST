@@ -11,8 +11,14 @@ v2.14.5 (unreleased)
 *  **variant:** correct implementation of `VariantCommandsExtractor.diff` method ([289fb2f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/289fb2f1de28dbb40b24d3741fc972a17f462780))
 
 
+### Continuous Integration
+
+* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting (#1685) ([d5535b3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d5535b30a8f5eee167ddbfcbb187194028c4790f))
+
+
 ### Contributors
 
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
 <a href="https://github.com/MartinBelthle">MartinBelthle</a>
 
 
