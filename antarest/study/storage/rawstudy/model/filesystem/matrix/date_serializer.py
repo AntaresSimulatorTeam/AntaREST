@@ -8,7 +8,7 @@ from pandas import DataFrame
 
 class IDateMatrixSerializer(ABC):
     """
-    Abstract class to handle date index reading and writing for many time frequency.
+    Abstract class to handle date index reading and writing for many time frequencies.
     Used by OutputSeriesMatrix
     """
 
@@ -39,7 +39,6 @@ class IDateMatrixSerializer(ABC):
             df: raw matrix from file content
 
         Returns: (date index, other matrix part)
-
         """
         raise NotImplementedError()
 
@@ -50,8 +49,7 @@ class IDateMatrixSerializer(ABC):
         Args:
             index: date index
 
-        Returns: raw matrix date waith antares style ready to be save on disk
-
+        Returns: raw matrix date with antares style ready to be saved on disk
         """
         raise NotImplementedError()
 
@@ -94,10 +92,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
-        date = df.iloc[
-            :,
-            2:5,
-        ]
+        date = df.iloc[:, 2:5]
         date.columns = ["day", "month", "hour"]
         date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
         date = (
@@ -110,10 +105,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
         # Extract right part with data
         to_remove = df.columns[0:5]
-        body = df.drop(
-            to_remove,
-            axis=1,
-        )
+        body = df.drop(to_remove, axis=1)
 
         return pd.Index(date), body
 
