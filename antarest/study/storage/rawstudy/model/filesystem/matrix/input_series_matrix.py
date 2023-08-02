@@ -79,7 +79,7 @@ class InputSeriesMatrix(MatrixNode):
             if return_dataframe:
                 return matrix
 
-            data: JSON = matrix.to_dict(orient="split")
+            data = cast(JSON, matrix.to_dict(orient="split"))
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Matrix to dict in {x}s")
             )
@@ -89,7 +89,9 @@ class InputSeriesMatrix(MatrixNode):
             logger.warning(f"Empty file found when parsing {file_path}")
             matrix = pd.DataFrame(self.default_empty)
             return (
-                matrix if return_dataframe else matrix.to_dict(orient="split")
+                matrix
+                if return_dataframe
+                else cast(JSON, matrix.to_dict(orient="split"))
             )
 
     def check_errors(
