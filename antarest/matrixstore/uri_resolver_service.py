@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
-from antarest.core.model import JSON, SUB_JSON
+from antarest.core.model import SUB_JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -40,15 +40,18 @@ class UriResolverService:
     def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
         data = self.matrix_service.get(id)
         if data:
-            formatted_data = {
-                "data": data.data,
-                "index": data.index,
-                "columns": data.columns,
-            }
             if formatted:
-                return formatted_data
+                return {
+                    "data": data.data,
+                    "index": data.index,
+                    "columns": data.columns,
+                }
             else:
-                df = pd.DataFrame(**formatted_data)
+                df = pd.DataFrame(
+                    data=data.data,
+                    index=data.index,
+                    columns=data.columns,
+                )
                 if not df.empty:
                     return (
                         df.to_csv(
