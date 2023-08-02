@@ -1,0 +1,14 @@
+[
+ [
+  "[Fri Dec  9 23:16:48 2022][solver][infos] Loading the list of areas...",
+  1.0
+ ],
+ [
+  "[Fri Dec  9 23:16:49 2022][solver][error] I/O error: /home/omnesflo/short/029 Pumped storage plant - 2/input/areas/east/adequacy_patch.ini: Impossible to read the file",
+  100.0
+ ],
+ [
+  "[Fri Dec  9 23:16:49 2022][solver][error] Found 1 error: The simulation must stop.",
+  100.0
+ ]
+]

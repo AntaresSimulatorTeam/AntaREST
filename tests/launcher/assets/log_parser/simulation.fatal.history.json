@@ -1,0 +1,46 @@
+[
+ [
+  "[Thu Aug 19 10:46:48 2021][solver][infos] Loading the list of areas...",
+  1.0
+ ],
+ [
+  "[Thu Aug 19 10:48:17 2021][solver][infos] MC-Years : [1 .. 1], total: 1",
+  2.0
+ ],
+ [
+  "[Thu Aug 19 10:48:18 2021][solver][error] Infeasible linear problem encountered. Possible causes:",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:18 2021][solver][error] * binding constraints,",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:18 2021][solver][error] * last resort shedding status,",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:18 2021][solver][error] * negative hurdle costs on lines with infinite capacity,",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:18 2021][solver][error] * Hydro reservoir impossible to manage with cumulative options \"hard bounds without heuristic\"",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:20 2021][solver][error] Linear optimization failed",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:20 2021][solver][fatal] Year 1 failed at week 1.",
+  100.0
+ ],
+ [
+  "[Thu Aug 19 10:48:21 2021][solver][infos] Exporting the annual results",
+  196.0
+ ],
+ [
+  "[Thu Aug 19 10:48:21 2021][solver][fatal] At least one year has failed in the previous set of parallel year.",
+  100.0
+ ]
+]

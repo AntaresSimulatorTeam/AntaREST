@@ -38,10 +38,16 @@ _survey_results = t.cast(
     _compile(r"Exporting \s+ the \s+ survey \s+ results").search,
 )
 
-# Search for the line indicating the solver is quitting gracefully.
+# Search for the line indicating the solver is quitting gracefully or an error
 _quitting = t.cast(
     _SearchFunc,
-    _compile(r"Quitting \s+ the \s+ solver \s+ gracefully").search,
+    _compile(
+        r"""
+        Quitting \s+ the \s+ solver \s+ gracefully |
+        \[error] |
+        \[fatal]
+        """
+    ).search,
 )
 
 
