@@ -2,7 +2,7 @@ import glob
 from pathlib import Path
 
 import numpy
-import pandas  # type: ignore
+import pandas
 
 
 def upgrade_820(study_path: Path) -> None:

@@ -1,7 +1,7 @@
 import re
 from typing import Optional, Tuple
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.matrixstore.service import ISimpleMatrixService

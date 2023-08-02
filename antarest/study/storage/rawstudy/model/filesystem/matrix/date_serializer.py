@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-import pandas as pd  # type: ignore
+import pandas as pd
 from pandas import DataFrame
 
 
