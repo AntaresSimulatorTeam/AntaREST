@@ -43,10 +43,6 @@ class FileType(Enum):
     MULTI_INI = "multi_ini"
 
 
-class FileTypeNotSupportedException(Exception):
-    pass
-
-
 def build(
     study_path: Path, study_id: str, output_path: Optional[Path] = None
 ) -> "FileStudyTreeConfig":
@@ -92,9 +88,13 @@ def _extract_data_from_file(
     file_type: FileType,
     multi_ini_keys: Optional[List[str]] = None,
 ) -> Any:
+    """
+    Extract and process data from various types of files.
+    """
+
     tmp_dir = None
     try:
-        if root.suffix == ".zip":
+        if root.suffix.lower() == ".zip":
             output_data_path, tmp_dir = extract_file_to_tmp_dir(
                 root, inside_root_path
             )
@@ -102,20 +102,20 @@ def _extract_data_from_file(
             output_data_path = root / inside_root_path
 
         if file_type == FileType.TXT:
-            output_data: Any = output_data_path.read_text().split("\n")
+            text = output_data_path.read_text(encoding="utf-8")
+            return text.splitlines(keepends=False)
         elif file_type == FileType.MULTI_INI:
-            output_data = MultipleSameKeysIniReader(multi_ini_keys).read(
-                output_data_path
-            )
+            multi_reader = MultipleSameKeysIniReader(multi_ini_keys)
+            return multi_reader.read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
-            output_data = IniReader().read(output_data_path)
-        else:
-            raise FileTypeNotSupportedException()
+            ini_reader = IniReader()
+            return ini_reader.read(output_data_path)
+        else:  # pragma: no cover
+            raise NotImplementedError(file_type)
+
     finally:
         if tmp_dir:
             tmp_dir.cleanup()
-
-    return output_data
 
 
 def _parse_version(path: Path) -> int:
@@ -388,6 +388,11 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
+
+    # st_storage feature exists only since 8.6 version
+    if _parse_version(root) < 860:
+        return []
+
     config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),

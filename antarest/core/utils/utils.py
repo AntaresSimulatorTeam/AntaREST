@@ -121,15 +121,15 @@ def retry(
     func: Callable[[], T], attempts: int = 10, interval: float = 0.5
 ) -> T:
     attempt = 0
-    catched_exception: Optional[Exception] = None
+    caught_exception: Optional[Exception] = None
     while attempt < attempts:
         try:
             attempt += 1
             return func()
         except Exception as e:
             time.sleep(interval)
-            catched_exception = e
-    raise catched_exception or ShouldNotHappenException()
+            caught_exception = e
+    raise caught_exception or ShouldNotHappenException()
 
 
 def assert_this(b: Any) -> None:
@@ -196,7 +196,7 @@ def extract_file_to_tmp_dir(
             exc_info=e,
         )
         tmp_dir.cleanup()
-        raise e
+        raise
     path = Path(tmp_dir.name) / inside_zip_path
     return path, tmp_dir
 

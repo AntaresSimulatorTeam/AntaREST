@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict, Any
 from zipfile import ZipFile
 
 import pytest
@@ -46,7 +47,7 @@ def build_empty_files(tmp: Path) -> Path:
     return study_path
 
 
-def test_parse_output_parmeters(tmp_path) -> None:
+def test_parse_output_parameters(tmp_path: Path) -> None:
     study = build_empty_files(tmp_path)
     content = """
     [output]
@@ -201,7 +202,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     ],
 )
 def test_parse_outputs__nominal(
-    tmp_path: Path, assets_name: str, expected: dict
+    tmp_path: Path, assets_name: str, expected: Dict[str, Any]
 ) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
@@ -312,6 +313,9 @@ initialleveloptim = False
 
 def test_parse_st_storage(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
+    study_path.joinpath("study.antares").write_text(
+        "[antares] \n version = 860"
+    )
     config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
     config_dir.mkdir(parents=True)
     config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
@@ -340,6 +344,12 @@ def test_parse_st_storage(tmp_path: Path) -> None:
             initial_level_optim=False,
         ),
     ]
+
+    # With a study version anterior to 860, it should always return an empty list
+    study_path.joinpath("study.antares").write_text(
+        "[antares] \n version = 850"
+    )
+    assert _parse_st_storage(study_path, "fr") == []
 
 
 def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
