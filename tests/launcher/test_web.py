@@ -1,3 +1,4 @@
+import http
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -123,16 +124,29 @@ def test_jobs() -> None:
 
 
 @pytest.mark.unit_test
-def get_solver_versions():
+def test_get_solver_versions():
     service = Mock()
     output = ["1", "2", "3"]
-    service.get_versions.return_value = output
+    service.get_solver_versions.return_value = output
 
     app = create_app(service)
     client = TestClient(app)
     res = client.get("/v1/launcher/_versions")
     res.raise_for_status()
     assert res.json() == output
+
+
+@pytest.mark.unit_test
+def test_get_solver_versions__failed():
+    service = Mock()
+    error = ValueError("bad solver")
+    service.get_solver_versions.side_effect = error
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get("/v1/launcher/_versions?solver=remote")
+    assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+    assert res.json() == {"detail": str(error)}
 
 
 @pytest.mark.unit_test

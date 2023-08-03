@@ -1,8 +1,10 @@
+import http
 import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -235,6 +237,12 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         logger.info(
             f"Fetching the list of solver versions for the '{solver}' configuration"
         )
-        return service.get_solver_versions(solver)
+        try:
+            return service.get_solver_versions(solver)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=str(e),
+            )
 
     return bp
