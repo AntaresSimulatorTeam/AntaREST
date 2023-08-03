@@ -1,12 +1,14 @@
+import functools
 import logging
 import os
 import shutil
 from datetime import datetime, timedelta, timezone
-import functools
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
+
+from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
@@ -55,7 +57,6 @@ from antarest.study.storage.utils import (
     extract_output_name,
     find_single_output_path,
 )
-from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -735,28 +736,36 @@ class LauncherService:
             load["local"] = float(local_used_cpus) / (os.cpu_count() or 1)
         return load
 
-    def get_versions(self) -> Dict[str, Dict[str, List[str]]]:
+    def get_solver_versions(self, solver: str) -> List[str]:
+        """
+        Fetch the list of solver versions from the configuration.
+
+        Args:
+            solver: name of the configuration to read: "default", "slurm" or "local".
+
+        Returns:
+            The list of solver versions.
+            This list is empty if the configuration is not available.
+
+        Raises:
+            ValueError: if the configuration is not "default", "slurm" or "local".
+        """
         local_config = self.config.launcher.local
-        local_list = sorted(local_config.binaries) if local_config else []
         slurm_config = self.config.launcher.slurm
-        slurm_list = (
-            sorted(slurm_config.antares_versions_on_remote_server)
+        default_config = self.config.launcher.default
+        versions_map = {
+            "local": sorted(local_config.binaries) if local_config else [],
+            "slurm": sorted(slurm_config.antares_versions_on_remote_server)
             if slurm_config
-            else []
-        )
-        default_launcher = self.config.launcher.default
-        if default_launcher == "local":
-            return {
-                "default": {"local": local_list},
-                "others": {"slurm": slurm_list},
-            }
-        elif default_launcher == "slurm":
-            return {
-                "default": {"slurm": slurm_list},
-                "others": {"local": local_list},
-            }
-        else:  # pragma: no cover
-            raise NotImplementedError(default_launcher)
+            else [],
+        }
+        versions_map["default"] = versions_map[default_config]
+        try:
+            return versions_map[solver]
+        except KeyError:
+            raise ValueError(
+                f"Unknown solver configuration: '{solver}'"
+            ) from None
 
     def get_launch_progress(
         self, job_id: str, params: RequestParameters

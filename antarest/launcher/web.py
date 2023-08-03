@@ -1,8 +1,8 @@
 import logging
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -203,11 +203,38 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/launcher/_versions",
         tags=[APITag.launcher],
-        summary="Get list of supported solver versions for all configured launchers",
-        response_model=Dict[str, Dict[str, List[str]]],
+        summary="Get list of supported solver versions",
+        response_model=List[str],
     )
-    def get_solver_versions() -> Dict[str, Dict[str, List[str]]]:
-        logger.info("Fetching versions list")
-        return service.get_versions()
+    def get_solver_versions(
+        solver: Optional[str] = Query(
+            None,
+            examples={
+                "default solver": {
+                    "description": "Get the solver versions of the default configuration",
+                    "value": "",
+                },
+                "SLURM solver": {
+                    "description": "Get the solver versions of the SLURM server if available",
+                    "value": "slurm",
+                },
+                "Local solver": {
+                    "description": "Get the solver versions of the Local server if available",
+                    "value": "local",
+                },
+            },
+        )
+    ) -> List[str]:
+        """
+        Get list of supported solver versions defined in the configuration.
+
+        Args:
+        - `solver`: name of the configuration to read: "default", "slurm" or "local".
+        """
+        solver = solver or "local"
+        logger.info(
+            f"Fetching the list of solver versions for the '{solver}' configuration"
+        )
+        return service.get_solver_versions(solver)
 
     return bp

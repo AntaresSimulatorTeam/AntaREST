@@ -123,12 +123,9 @@ def test_jobs() -> None:
 
 
 @pytest.mark.unit_test
-def test_version():
+def get_solver_versions():
     service = Mock()
-    output = {
-        "default": {"local": ["1", "2"]},
-        "others": {"slurm": ["3", "4"]},
-    }
+    output = ["1", "2", "3"]
     service.get_versions.return_value = output
 
     app = create_app(service)
