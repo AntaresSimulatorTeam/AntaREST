@@ -105,11 +105,11 @@ def _extract_data_from_file(
             text = output_data_path.read_text(encoding="utf-8")
             return text.splitlines(keepends=False)
         elif file_type == FileType.MULTI_INI:
-            reader = MultipleSameKeysIniReader(multi_ini_keys)
-            return reader.read(output_data_path)
+            multi_reader = MultipleSameKeysIniReader(multi_ini_keys)
+            return multi_reader.read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
-            reader = IniReader()
-            return reader.read(output_data_path)
+            ini_reader = IniReader()
+            return ini_reader.read(output_data_path)
         else:  # pragma: no cover
             raise NotImplementedError(file_type)
 

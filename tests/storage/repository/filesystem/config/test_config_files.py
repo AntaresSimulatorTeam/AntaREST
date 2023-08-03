@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict, Any
 from zipfile import ZipFile
 
 import pytest
@@ -46,7 +47,7 @@ def build_empty_files(tmp: Path) -> Path:
     return study_path
 
 
-def test_parse_output_parmeters(tmp_path) -> None:
+def test_parse_output_parameters(tmp_path: Path) -> None:
     study = build_empty_files(tmp_path)
     content = """
     [output]
@@ -201,7 +202,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     ],
 )
 def test_parse_outputs__nominal(
-    tmp_path: Path, assets_name: str, expected: dict
+    tmp_path: Path, assets_name: str, expected: Dict[str, Any]
 ) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
