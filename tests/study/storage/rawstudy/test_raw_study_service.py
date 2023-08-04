@@ -1,11 +1,10 @@
 import datetime
+import typing as t
 import zipfile
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine  # type: ignore
 
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -22,6 +21,28 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_db_context
+
+
+def _collect_files_by_type(raw_study_path: Path) -> t.Tuple[t.Set[str], t.Set[str], t.Set[str]]:
+    """
+    Collects files based on their types for comparison.
+    A tuple containing sets of study files, matrices, and outputs.
+    """
+    study_files = set()
+    matrices = set()
+    outputs = set()
+
+    for study_file in raw_study_path.rglob("*.*"):
+        relpath = study_file.relative_to(raw_study_path).as_posix()
+
+        if study_file.suffixes == [".txt", ".link"]:
+            matrices.add(relpath.replace(".link", ""))
+        elif relpath.startswith("output/"):
+            outputs.add(relpath)
+        else:
+            study_files.add(relpath)
+
+    return study_files, matrices, outputs
 
 
 class TestRawStudyService:
@@ -41,12 +62,12 @@ class TestRawStudyService:
     @pytest.mark.parametrize(
         "output_filter",
         [
-            # fmt:off
+            # "20230802-1425eco" is a folder,
+            # "20230802-1628eco" is a ZIP file.
             pytest.param(None, id="no_filter"),
             pytest.param(["20230802-1425eco"], id="folder"),
             pytest.param(["20230802-1628eco"], id="zipped"),
             pytest.param(["20230802-1425eco", "20230802-1628eco"], id="both"),
-            # fmt:on
         ],
     )
     @pytest.mark.parametrize(
@@ -67,10 +88,10 @@ class TestRawStudyService:
         study_storage_service: StudyStorageService,
         # pytest parameters
         outputs: bool,
-        output_filter: Optional[List[str]],
+        output_filter: t.Optional[t.List[str]],
         denormalize: bool,
     ) -> None:
-        ## Prepare database objects
+        # Prepare database objects
         # noinspection PyArgumentList
         user = User(id=0, name="admin")
         db.session.add(user)
@@ -100,7 +121,7 @@ class TestRawStudyService:
         db.session.add(raw_study)
         db.session.commit()
 
-        ## Prepare the RAW Study
+        # Prepare the RAW Study
         raw_study_service.create(raw_study)
         file_study = raw_study_service.get_raw(raw_study)
 
@@ -110,10 +131,8 @@ class TestRawStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(
-            command_context=command_context,
-            area_name="fr",
-        )
+        # For instance, we define an area "FR" with a short-term storage named "Storage1":
+        create_area_fr = CreateArea(command_context=command_context, area_name="fr")
 
         # noinspection SpellCheckingInspection
         pmax_injection = np.random.rand(8760, 1)
@@ -144,39 +163,33 @@ class TestRawStudyService:
             storage_service=study_storage_service,
         )
 
-        ## Prepare fake outputs
+        # Simulate generating results from an Antares Solver simulation.
+        # The results can be stored either as a sub-folder or as a ZIP file.
+        # In both cases, they are saved in the "output" directory.
+
+        # Prepare fake simulation outputs
         my_solver_outputs = ["20230802-1425eco", "20230802-1628eco.zip"]
         for filename in my_solver_outputs:
             output_path = raw_study_path / "output" / filename
             # To simplify the checking, there is only one file in each output:
             if output_path.suffix.lower() == ".zip":
-                # Create a fake ZIP file
+                # Create a fake ZIP file and add a simulation log
                 output_path.parent.mkdir(exist_ok=True, parents=True)
                 with zipfile.ZipFile(
                     output_path,
                     mode="w",
                     compression=zipfile.ZIP_DEFLATED,
                 ) as zf:
-                    zf.writestr("simulation.log", data="Simulation done")
+                    zf.writestr("simulation.log", data="Simulation completed")
             else:
-                # Create a directory
+                # Create a directory and add a simulation log
                 output_path.mkdir(exist_ok=True, parents=True)
-                (output_path / "simulation.log").write_text("Simulation done")
+                (output_path / "simulation.log").write_text("Simulation completed")
 
-        ## Collect all files by types to prepare the comparison
-        src_study_files = set()
-        src_matrices = set()
-        src_outputs = set()
-        for study_file in raw_study_path.rglob("*.*"):
-            relpath = study_file.relative_to(raw_study_path).as_posix()
-            if study_file.suffixes == [".txt", ".link"]:
-                src_matrices.add(relpath.replace(".link", ""))
-            elif relpath.startswith("output/"):
-                src_outputs.add(relpath)
-            else:
-                src_study_files.add(relpath)
+        # Collect all files by types to prepare the comparison
+        src_study_files, src_matrices, src_outputs = _collect_files_by_type(raw_study_path)
 
-        ## Run the export
+        # Run the export
         target_path = tmp_path / raw_study_path.with_suffix(".exported").name
         raw_study_service.export_study_flat(
             raw_study,
@@ -186,22 +199,12 @@ class TestRawStudyService:
             denormalize=denormalize,
         )
 
-        ## Collect the resulting files
-        res_study_files = set()
-        res_matrices = set()
-        res_outputs = set()
-        for study_file in target_path.rglob("*.*"):
-            relpath = study_file.relative_to(target_path).as_posix()
-            if study_file.suffixes == [".txt", ".link"]:
-                res_matrices.add(relpath.replace(".link", ""))
-            elif relpath.startswith("output/"):
-                res_outputs.add(relpath)
-            else:
-                res_study_files.add(relpath)
+        # Collect the resulting files
+        res_study_files, res_matrices, res_outputs = _collect_files_by_type(target_path)
 
-        ## Check the matrice
-        # If de-normalization is enabled, the previous loop won't find the matrices
-        # because the matrix extensions are ".txt" instead of ".txt.link".
+        # Check the matrice:
+        # If de-normalization is enabled, the `_collect_files_by_type` function won't
+        # find the matrices because the matrix extensions are ".txt" instead of ".txt.link".
         # Therefore, it is necessary to move the corresponding ".txt" files
         # from `res_study_files` to `res_matrices`.
         if denormalize:
@@ -210,7 +213,7 @@ class TestRawStudyService:
             res_study_files -= res_matrices
         assert res_matrices == src_matrices
 
-        ## Check the outputs
+        # Check the outputs
         if outputs:
             # If `outputs` is True the filtering can occurs
             if output_filter is None:
@@ -224,5 +227,5 @@ class TestRawStudyService:
             # whatever the value of the `output_list_filter` is
             assert not res_outputs
 
-        ## Check the study files
+        # Check the study files
         assert res_study_files == src_study_files
