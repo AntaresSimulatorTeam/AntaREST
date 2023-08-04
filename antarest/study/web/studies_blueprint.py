@@ -439,8 +439,9 @@ def create_study_routes(
         "/studies/_versions",
         tags=[APITag.study_management],
         summary="Show available study versions",
+        response_model=List[str],
     )
-    def get_studies_version(
+    def get_study_versions(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)

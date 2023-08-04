@@ -1,8 +1,10 @@
+import http
 import logging
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -22,6 +24,19 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_LATEST_JOBS = 200
+
+
+class UnknownSolverConfig(HTTPException):
+    """
+    Exception raised during solver versions retrieval when
+    the name of the launcher is not "default", "slurm" or "local".
+    """
+
+    def __init__(self, solver: str) -> None:
+        super().__init__(
+            http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Unknown solver configuration: '{solver}'",
+        )
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -201,16 +216,41 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_load(from_cluster)
 
     @bp.get(
-        "/launcher/_versions",
+        "/launcher/versions",
         tags=[APITag.launcher],
-        summary="Get list of supported study version for all configured launchers",
-        response_model=Dict[str, List[str]],
+        summary="Get list of supported solver versions",
+        response_model=List[str],
     )
-    def get_versions(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        logger.info(f"Fetching version list")
-        return service.get_versions(params=params)
+    def get_solver_versions(
+        solver: str = Query(
+            "local",
+            examples={
+                "Default solver": {
+                    "description": "Get the solver versions of the default configuration",
+                    "value": "default",
+                },
+                "SLURM solver": {
+                    "description": "Get the solver versions of the SLURM server if available",
+                    "value": "slurm",
+                },
+                "Local solver": {
+                    "description": "Get the solver versions of the Local server if available",
+                    "value": "local",
+                },
+            },
+        )
+    ) -> List[str]:
+        """
+        Get list of supported solver versions defined in the configuration.
+
+        Args:
+        - `solver`: name of the configuration to read: "default", "slurm" or "local".
+        """
+        logger.info(
+            f"Fetching the list of solver versions for the '{solver}' configuration"
+        )
+        if solver not in {"default", "slurm", "local"}:
+            raise UnknownSolverConfig(solver)
+        return service.get_solver_versions(solver)
 
     return bp
