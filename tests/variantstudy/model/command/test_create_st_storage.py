@@ -1,14 +1,14 @@
-import copy
 import re
+from typing import Dict, Union
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from pydantic import ValidationError
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
     STStorageGroup,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -25,8 +25,8 @@ from antarest.study.storage.variantstudy.model.command.create_area import (
 from antarest.study.storage.variantstudy.model.command.create_st_storage import (
     REQUIRED_VERSION,
     CreateSTStorage,
-    STStorageConfig,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
@@ -37,6 +37,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from pydantic import ValidationError
 
 
 @pytest.fixture(name="recent_study")
@@ -83,7 +84,7 @@ OTHER_PARAMETERS = {
 
 class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
-    def test_init(self, command_context: CommandContext):
+    def test_init(self, command_context: CommandContext) -> None:
         pmax_injection = np.random.rand(8760, 1)
         inflows = np.random.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
@@ -114,7 +115,7 @@ class TestCreateSTStorage:
 
     def test_init__invalid_storage_name(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
@@ -135,7 +136,7 @@ class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
     def test_init__invalid_matrix_values(
         self, command_context: CommandContext
-    ):
+    ) -> None:
         array = np.random.rand(8760, 1)  # OK
         array[10] = 25  # BAD
         with pytest.raises(ValidationError) as ctx:
@@ -154,7 +155,9 @@ class TestCreateSTStorage:
         ]
 
     # noinspection SpellCheckingInspection
-    def test_init__invalid_matrix_shape(self, command_context: CommandContext):
+    def test_init__invalid_matrix_shape(
+        self, command_context: CommandContext
+    ) -> None:
         array = np.random.rand(24, 1)  # BAD SHAPE
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
@@ -173,7 +176,9 @@ class TestCreateSTStorage:
 
         # noinspection SpellCheckingInspection
 
-    def test_init__invalid_nan_value(self, command_context: CommandContext):
+    def test_init__invalid_nan_value(
+        self, command_context: CommandContext
+    ) -> None:
         array = np.random.rand(8760, 1)  # OK
         array[20] = np.nan  # BAD
         with pytest.raises(ValidationError) as ctx:
@@ -193,7 +198,9 @@ class TestCreateSTStorage:
 
         # noinspection SpellCheckingInspection
 
-    def test_init__invalid_matrix_type(self, command_context: CommandContext):
+    def test_init__invalid_matrix_type(
+        self, command_context: CommandContext
+    ) -> None:
         array = {"data": [1, 2, 3]}
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
@@ -217,7 +224,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__invalid_version(
         self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -237,7 +244,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__missing_area(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -257,7 +264,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__duplicate_storage(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -293,7 +300,7 @@ class TestCreateSTStorage:
 
     def test_apply_config__nominal_case(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -317,9 +324,9 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__whithout_groups(
+    def test_apply_config__without_groups(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -328,14 +335,14 @@ class TestCreateSTStorage:
         create_area.apply(recent_study)
 
         # Remove the group from the nominal case parameters
-        parameters_whithout_groups = copy.deepcopy(PARAMETERS)
-        del parameters_whithout_groups["group"]
+        parameters_wo_groups = dict(PARAMETERS)
+        parameters_wo_groups.pop("group")
 
         # Then, apply the config for a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**parameters_whithout_groups),
+            parameters=STStorageConfig(**parameters_wo_groups),
         )
         command_output = create_st_storage.apply_config(recent_study.config)
         assert command_output.status is True
@@ -345,17 +352,14 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
         # assert that the default group value is Other1
-        assert (
-            recent_study.config.areas["area fr"].dict()["st_storages"][0][
-                "group"
-            ]
-            == STStorageGroup.OTHER1
-        )
+        area_fr = recent_study.config.areas["area fr"]
+        storage = area_fr.st_storages[0]
+        assert storage.group == STStorageGroup.OTHER1
 
     # noinspection SpellCheckingInspection
     def test_apply__nominal_case(
         self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -415,7 +419,7 @@ class TestCreateSTStorage:
 
     def test_apply__invalid_apply_config(
         self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context
@@ -432,7 +436,7 @@ class TestCreateSTStorage:
         assert not command_output.status  # invalid study (too old)
 
     # noinspection SpellCheckingInspection
-    def test_to_dto(self, command_context: CommandContext):
+    def test_to_dto(self, command_context: CommandContext) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -469,7 +473,7 @@ class TestCreateSTStorage:
             },
         )
 
-    def test_match_signature(self, command_context: CommandContext):
+    def test_match_signature(self, command_context: CommandContext) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -482,9 +486,9 @@ class TestCreateSTStorage:
     def test_match(
         self,
         command_context: CommandContext,
-        area_id,
-        parameters,
-    ):
+        area_id: str,
+        parameters: Dict[str, Union[str, float]],
+    ) -> None:
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -502,17 +506,21 @@ class TestCreateSTStorage:
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal
 
-    def test_match__unknown_type(self, command_context: CommandContext):
+    def test_match__unknown_type(
+        self, command_context: CommandContext
+    ) -> None:
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
             parameters=STStorageConfig(**PARAMETERS),
         )
         # Always `False` when compared to another object type
-        assert cmd1.match(..., equal=False) is False
-        assert cmd1.match(..., equal=True) is False
+        assert cmd1.match(Mock(spec=ICommand), equal=False) is False
+        assert cmd1.match(Mock(spec=ICommand), equal=True) is False
 
-    def test_create_diff__not_equals(self, command_context: CommandContext):
+    def test_create_diff__not_equals(
+        self, command_context: CommandContext
+    ) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -547,7 +555,9 @@ class TestCreateSTStorage:
         ]
         assert actual == expected
 
-    def test_create_diff__equals(self, command_context: CommandContext):
+    def test_create_diff__equals(
+        self, command_context: CommandContext
+    ) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -556,7 +566,7 @@ class TestCreateSTStorage:
         actual = cmd.create_diff(cmd)
         assert not actual
 
-    def test_get_inner_matrices(self, command_context: CommandContext):
+    def test_get_inner_matrices(self, command_context: CommandContext) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
