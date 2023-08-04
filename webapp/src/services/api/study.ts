@@ -287,6 +287,11 @@ interface LauncherLoadDTO {
   local: number;
 }
 
+export const getLauncherVersions = async (): Promise<Array<string>> => {
+  const res = await client.get("/v1/launcher/versions");
+  return res.data;
+};
+
 export const getLauncherLoad = async (): Promise<LauncherLoadDTO> => {
   const res = await client.get("/v1/launcher/load");
   return res.data;
