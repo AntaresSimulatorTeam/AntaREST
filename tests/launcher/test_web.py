@@ -1,23 +1,23 @@
 import http
+from typing import Dict, List, Union
 from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.core.config import Config, SecurityConfig
-from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import (
     JobResult,
-    JobStatus,
     JobResultDTO,
+    JobStatus,
     LauncherParametersDTO,
     LogType,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 ADMIN = JWTUser(
     id=1,
@@ -124,7 +124,7 @@ def test_jobs() -> None:
 
 
 @pytest.mark.unit_test
-def test_get_solver_versions():
+def test_get_solver_versions() -> None:
     service = Mock()
     output = ["1", "2", "3"]
     service.get_solver_versions.return_value = output
@@ -137,20 +137,48 @@ def test_get_solver_versions():
 
 
 @pytest.mark.unit_test
-def test_get_solver_versions__failed():
+@pytest.mark.parametrize(
+    "solver, status_code, expected",
+    [
+        # fmt: off
+        pytest.param(
+            "",
+            http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            {"detail": "Unknown solver configuration: ''"},
+            id="empty",
+        ),
+        pytest.param("default", http.HTTPStatus.OK, ["1", "2", "3"], id="default"),
+        pytest.param("slurm", http.HTTPStatus.OK, ["1", "2", "3"], id="slurm"),
+        pytest.param("local", http.HTTPStatus.OK, ["1", "2", "3"], id="local"),
+        pytest.param(
+            "remote",
+            http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            {"detail": "Unknown solver configuration: 'remote'"},
+            id="remote",
+        ),
+        # fmt: on
+    ],
+)
+def test_get_solver_versions__with_query_string(
+    solver: str,
+    status_code: http.HTTPStatus,
+    expected: Union[List[str], Dict[str, str]],
+) -> None:
     service = Mock()
-    error = KeyError("bad solver")
-    service.get_solver_versions.side_effect = error
+    if status_code == http.HTTPStatus.OK:
+        service.get_solver_versions.return_value = ["1", "2", "3"]
+    else:
+        service.get_solver_versions.side_effect = KeyError(solver)
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/launcher/versions?solver=remote")
-    assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
-    assert res.json() == {"detail": "Unknown solver configuration: 'remote'"}
+    res = client.get(f"/v1/launcher/versions?solver={solver}")
+    assert res.status_code == status_code  # OK or UNPROCESSABLE_ENTITY
+    assert res.json() == expected
 
 
 @pytest.mark.unit_test
-def test_get_job_log():
+def test_get_job_log() -> None:
     service = Mock()
     service.get_log.return_value = ""
     job_id = "job_id"
@@ -165,7 +193,7 @@ def test_get_job_log():
 
 
 @pytest.mark.unit_test
-def test_kill_job():
+def test_kill_job() -> None:
     service = Mock()
     service.kill_job.return_value.to_dto.return_value = ""
     job_id = "job_id"
