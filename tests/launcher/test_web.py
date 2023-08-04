@@ -131,7 +131,7 @@ def test_get_solver_versions():
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/launcher/_versions")
+    res = client.get("/v1/launcher/versions")
     res.raise_for_status()
     assert res.json() == output
 
@@ -144,7 +144,7 @@ def test_get_solver_versions__failed():
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/launcher/_versions?solver=remote")
+    res = client.get("/v1/launcher/versions?solver=remote")
     assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
     assert res.json() == {"detail": "Unknown solver configuration: 'remote'"}
 

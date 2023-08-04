@@ -216,7 +216,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_load(from_cluster)
 
     @bp.get(
-        "/launcher/_versions",
+        "/launcher/versions",
         tags=[APITag.launcher],
         summary="Get list of supported solver versions",
         response_model=List[str],
