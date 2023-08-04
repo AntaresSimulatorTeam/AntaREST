@@ -139,14 +139,14 @@ def test_get_solver_versions():
 @pytest.mark.unit_test
 def test_get_solver_versions__failed():
     service = Mock()
-    error = ValueError("bad solver")
+    error = KeyError("bad solver")
     service.get_solver_versions.side_effect = error
 
     app = create_app(service)
     client = TestClient(app)
     res = client.get("/v1/launcher/_versions?solver=remote")
     assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
-    assert res.json() == {"detail": str(error)}
+    assert res.json() == {"detail": "Unknown solver configuration: 'remote'"}
 
 
 @pytest.mark.unit_test

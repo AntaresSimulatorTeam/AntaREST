@@ -26,6 +26,19 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_LATEST_JOBS = 200
 
 
+class UnknownSolverConfig(HTTPException):
+    """
+    Exception raised during solver versions retrieval when
+    the name of the launcher is not "default", "slurm" or "local".
+    """
+
+    def __init__(self, solver: str) -> None:
+        super().__init__(
+            http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Unknown solver configuration: '{solver}'",
+        )
+
+
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1")
 
@@ -237,12 +250,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         logger.info(
             f"Fetching the list of solver versions for the '{solver}' configuration"
         )
-        try:
-            return service.get_solver_versions(solver)
-        except ValueError as e:
-            raise HTTPException(
-                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=str(e),
-            )
+        if solver not in {"default", "slurm", "local"}:
+            raise UnknownSolverConfig(solver)
+        return service.get_solver_versions(solver)
 
     return bp

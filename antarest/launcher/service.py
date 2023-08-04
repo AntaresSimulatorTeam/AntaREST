@@ -748,7 +748,7 @@ class LauncherService:
             This list is empty if the configuration is not available.
 
         Raises:
-            ValueError: if the configuration is not "default", "slurm" or "local".
+            KeyError: if the configuration is not "default", "slurm" or "local".
         """
         local_config = self.config.launcher.local
         slurm_config = self.config.launcher.slurm
@@ -760,12 +760,7 @@ class LauncherService:
             else [],
         }
         versions_map["default"] = versions_map[default_config]
-        try:
-            return versions_map[solver]
-        except KeyError:
-            raise ValueError(
-                f"Unknown solver configuration: '{solver}'"
-            ) from None
+        return versions_map[solver]
 
     def get_launch_progress(
         self, job_id: str, params: RequestParameters

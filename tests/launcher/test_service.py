@@ -376,7 +376,7 @@ def test_service_get_jobs_from_database():
             id="local-config-unknown",
             marks=pytest.mark.xfail(
                 reason="Unknown solver configuration: 'unknown'",
-                raises=ValueError,
+                raises=KeyError,
                 strict=True,
             ),
         ),
@@ -408,7 +408,7 @@ def test_service_get_jobs_from_database():
             id="slurm-config-unknown",
             marks=pytest.mark.xfail(
                 reason="Unknown solver configuration: 'unknown'",
-                raises=ValueError,
+                raises=KeyError,
                 strict=True,
             ),
         ),
