@@ -26,10 +26,10 @@ import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import CheckBoxFE from "../../../common/fieldEditors/CheckBoxFE";
-import NavHeaderInfo from "./NavHeaderInfo";
-import NavHeaderCommands from "./NavHeaderCommands";
+import Details from "./Details";
+import Actions from "./Actions";
 import UpgradeDialog from "../UpgradeDialog";
-import NavHeaderMenu, { NavMenuItem } from "./NavHeaderMenu";
+import ActionsMenu, { ActionsMenuItem } from "./ActionsMenu";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -65,8 +65,8 @@ function NavHeader({
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const isLatestVersion = study?.version === latestVersion;
-  const isManaged = study?.managed;
-  const isArchived = study?.archived;
+  const isManaged = !!study?.managed;
+  const isArchived = !!study?.archived;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -156,7 +156,7 @@ function NavHeader({
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const menuItems: NavMenuItem[] = [
+  const menuItems: ActionsMenuItem[] = [
     {
       key: "study.properties",
       icon: EditOutlinedIcon,
@@ -244,7 +244,7 @@ function NavHeader({
           display: "flex",
         }}
       >
-        <NavHeaderCommands
+        <Actions
           study={study}
           onOpenCommands={openCommands}
           isExplorer={isExplorer}
@@ -264,18 +264,14 @@ function NavHeader({
         >
           <MoreVertIcon />
         </Button>
-        <NavHeaderMenu
+        <ActionsMenu
           anchorEl={anchorEl}
           openMenu={openMenu}
           onClose={handleClose}
-          menuItems={menuItems}
+          items={menuItems}
         />
       </Box>
-      <NavHeaderInfo
-        study={study}
-        parent={parent}
-        childrenTree={childrenTree}
-      />
+      <Details study={study} parent={parent} childrenTree={childrenTree} />
       {study && openLauncherDialog && (
         <LauncherDialog
           open={openLauncherDialog}
@@ -313,7 +309,7 @@ function NavHeader({
             <CheckBoxFE
               value={deleteChildren}
               label={t("studies.deleteSubvariants")}
-              onChange={(_e, checked) => setDeleteChildren(checked)}
+              onChange={(_, checked) => setDeleteChildren(checked)}
             />
           </Box>
         </ConfirmationDialog>

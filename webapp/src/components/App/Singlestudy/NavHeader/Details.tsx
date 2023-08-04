@@ -49,7 +49,7 @@ interface Props {
   childrenTree: VariantTree | undefined;
 }
 
-function NavHeaderInfo({ study, parent, childrenTree }: Props) {
+function Details({ study, parent, childrenTree }: Props) {
   const [t, i18n] = useTranslation();
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
@@ -99,7 +99,7 @@ function NavHeaderInfo({ study, parent, childrenTree }: Props) {
       <StyledDivider />
       <BoxContainer>
         <PersonOutlineOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-        <TinyText>{study?.owner.name}</TinyText>
+        <TinyText>{study.owner.name}</TinyText>
       </BoxContainer>
       <BoxContainer>
         <SecurityOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
@@ -109,4 +109,4 @@ function NavHeaderInfo({ study, parent, childrenTree }: Props) {
   );
 }
 
-export default NavHeaderInfo;
+export default Details;

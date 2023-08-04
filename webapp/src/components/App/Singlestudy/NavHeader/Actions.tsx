@@ -18,7 +18,7 @@ interface Props {
   onOpenCommands: VoidFunction;
 }
 
-function NavHeaderCommands({
+function Actions({
   study,
   isExplorer,
   onCopyId,
@@ -45,6 +45,7 @@ function NavHeaderCommands({
         justifyContent: "flex-start",
         alignItems: "center",
         boxSizing: "border-box",
+        gap: 1,
       }}
     >
       <Tooltip title={study.folder} placement="bottom-start">
@@ -52,7 +53,7 @@ function NavHeaderCommands({
           variant="h6"
           noWrap
           sx={{
-            width: 1,
+            flex: 1,
           }}
         >
           {study.name}
@@ -83,24 +84,12 @@ function NavHeaderCommands({
           variant="filled"
           color="info"
           size="small"
-          sx={{ mr: 1 }}
         />
       ) : (
-        <Chip
-          label={study.workspace}
-          variant="filled"
-          size="small"
-          sx={{ mr: 1 }}
-        />
+        <Chip label={study.workspace} variant="filled" size="small" />
       )}
-      {(study.tags || []).map((tag) => (
-        <Chip
-          key={tag}
-          label={tag}
-          variant="filled"
-          size="small"
-          sx={{ mr: 1 }}
-        />
+      {study.tags?.map((tag) => (
+        <Chip key={tag} label={tag} variant="filled" size="small" />
       ))}
       {isExplorer && (
         <Button
@@ -108,7 +97,7 @@ function NavHeaderCommands({
           variant="contained"
           color="primary"
           onClick={isArchived ? onUnarchive : onLaunch}
-          sx={{ minWidth: isArchived ? 100 : 0, ml: 1 }}
+          sx={{ ml: 1 }}
         >
           {isArchived ? t("global.unarchive") : t("global.launch")}
         </Button>
@@ -128,4 +117,4 @@ function NavHeaderCommands({
   );
 }
 
-export default NavHeaderCommands;
+export default Actions;

@@ -29,6 +29,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   const versionOptions = useMemo(() => {
     return versions
       .filter((version) => version.id > study.version)
+      .sort((a, b) => b.name.localeCompare(a.name))
       .map(({ id, name }) => ({
         value: id,
         label: name,
@@ -43,11 +44,9 @@ function UpgradeDialog({ study, onClose, open }: Props) {
     data: SubmitHandlerPlus<typeof defaultValues>
   ) => {
     try {
-      await upgradeStudy(study.id, data.values.version);
+      await upgradeStudy(study.id, data.values.version).then(onClose);
     } catch (err) {
       enqueueErrorSnackbar(t("study.upgrade.error"), err as AxiosError);
-    } finally {
-      onClose();
     }
   };
 
@@ -59,6 +58,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
     <FormDialog
       title={t("study.upgrade")}
       titleIcon={UpgradeIcon}
+      submitButtonText={t("study.upgrade")}
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}

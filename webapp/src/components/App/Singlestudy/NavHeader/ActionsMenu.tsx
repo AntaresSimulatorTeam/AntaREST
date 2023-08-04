@@ -2,10 +2,10 @@ import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import { SvgIconComponent } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 
-export interface NavMenuItem {
+export interface ActionsMenuItem {
   key: string;
   icon: SvgIconComponent;
-  action: () => void;
+  action: VoidFunction | (() => Promise<void>);
   condition?: boolean;
   color?: string;
 }
@@ -14,10 +14,10 @@ interface Props {
   anchorEl: HTMLElement | null;
   openMenu: string;
   onClose: () => void;
-  menuItems: NavMenuItem[];
+  items: ActionsMenuItem[];
 }
 
-function NavHeaderMenu({ anchorEl, openMenu, onClose, menuItems }: Props) {
+function ActionsMenu({ anchorEl, openMenu, onClose, items }: Props) {
   const [t] = useTranslation();
 
   return (
@@ -28,7 +28,7 @@ function NavHeaderMenu({ anchorEl, openMenu, onClose, menuItems }: Props) {
       open={openMenu === "menu-study"}
       onClose={onClose}
     >
-      {menuItems.map(
+      {items.map(
         (item) =>
           item.condition && (
             <MenuItem
@@ -41,7 +41,7 @@ function NavHeaderMenu({ anchorEl, openMenu, onClose, menuItems }: Props) {
               <ListItemIcon>
                 <item.icon
                   sx={{
-                    color: item.color || "default",
+                    color: item.color,
                     width: "24px",
                     height: "24px",
                   }}
@@ -57,4 +57,4 @@ function NavHeaderMenu({ anchorEl, openMenu, onClose, menuItems }: Props) {
   );
 }
 
-export default NavHeaderMenu;
+export default ActionsMenu;
