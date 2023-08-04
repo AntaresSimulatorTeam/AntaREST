@@ -4,13 +4,14 @@ from typing import List
 from unittest.mock import MagicMock
 
 import pytest
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
 from antarest.eventbus.main import build_eventbus
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.conftest import auto_retry_assert
+from tests.helpers import auto_retry_assert
 
 
 class DummyWorker(AbstractWorker):

@@ -1,25 +1,21 @@
-import contextlib
 import datetime
 import re
 import uuid
 from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.core.model import PublicMode
-from antarest.dbmodel import Base
-from antarest.login.model import User, Group
+from antarest.login.model import Group, User
 from antarest.study.business.allocation_management import (
     AllocationField,
     AllocationFormFields,
-    AllocationMatrix,
     AllocationManager,
+    AllocationMatrix,
 )
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
-from antarest.study.model import Study, StudyContentStatus, RawStudy
+from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -38,12 +34,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
-)
-
-from antarest.study.business.allocation_management import (
-    AllocationManager,
-    AllocationField,
-    AllocationFormFields,
 )
 
 
@@ -177,21 +167,6 @@ class TestAllocationMatrix:
                 columns=["NORTH", "SOUTH"],
                 data=[[0, 0], [0, 0]],
             )
-
-
-@pytest.fixture(scope="function", name="db_engine")
-def db_engine_fixture():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="function", name="db_session")
-def db_session_fixture(db_engine):
-    make_session = sessionmaker(bind=db_engine)
-    with contextlib.closing(make_session()) as session:
-        yield session
 
 
 # noinspection SpellCheckingInspection
