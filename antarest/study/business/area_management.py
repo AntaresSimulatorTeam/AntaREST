@@ -1,17 +1,17 @@
 import logging
 import re
 from enum import Enum
-from typing import Optional, Dict, List, Tuple, Any
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import LayerNotFound, LayerNotAllowedToBeDeleted
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import (
-    RawStudy,
-    PatchArea,
     Patch,
+    PatchArea,
     PatchCluster,
+    RawStudy,
     Study,
 )
 from antarest.study.repository import StudyMetadataRepository
@@ -33,7 +33,6 @@ from antarest.study.storage.variantstudy.model.command.remove_area import (
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +80,49 @@ class LayerInfoDTO(BaseModel):
     id: str
     name: str
     areas: List[str]
+
+
+def _get_ui_info_map(
+    file_study: FileStudy, area_ids: Sequence[str]
+) -> Dict[str, Any]:
+    """
+    Get the UI information (a JSON object) for each selected Area.
+
+    Args:
+        file_study: A file study from which the configuration can be read.
+        area_ids: List of selected area IDs.
+
+    Returns:
+        Dictionary where keys are IDs, and values are UI objects.
+
+    Raises:
+        ChildNotFoundError: if one of the Area IDs is not found in the configuration.
+    """
+    # If there is no ID, it is better to return an empty dictionary
+    # instead of raising an obscure exception.
+    if not area_ids:
+        return {}
+    ui_info_map = file_study.tree.get(
+        ["input", "areas", ",".join(area_ids), "ui"]
+    )
+    # If there is only one ID in the `area_ids`, the result returned from
+    # the `file_study.tree.get` call will be a single UI object.
+    # On the other hand, if there are multiple values in `area_ids`,
+    # the result will be a dictionary where the keys are the IDs,
+    # and the values are the corresponding UI objects.
+    if len(area_ids) == 1:
+        ui_info_map = {area_ids[0]: ui_info_map}
+    return ui_info_map
+
+
+def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
+    if (
+        area in area_uis
+        and "ui" in area_uis[area]
+        and "layers" in area_uis[area]["ui"]
+    ):
+        return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
+    return []
 
 
 class AreaManager:
@@ -131,67 +173,45 @@ class AreaManager:
         return result
 
     def get_all_areas_ui_info(self, study: RawStudy) -> Dict[str, Any]:
+        """
+        Retrieve information about all areas' user interface (UI) from the study.
+
+        Args:
+            study: The raw study object containing the study's data.
+
+        Returns:
+            A dictionary containing information about the user interface for the areas.
+
+        Raises:
+            ChildNotFoundError: if one of the Area IDs is not found in the configuration.
+        """
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
-        if len(file_study.config.areas.keys()) == 0:
-            return {}
-        areas_ui = file_study.tree.get(
-            ["input", "areas", ",".join(file_study.config.areas.keys()), "ui"]
-        )
-        if len(file_study.config.areas.keys()) == 1:
-            return {list(file_study.config.areas.keys())[0]: areas_ui}
-        return areas_ui
-
-    @staticmethod
-    def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
-        if (
-            area in area_uis
-            and "ui" in area_uis[area]
-            and "layers" in area_uis[area]["ui"]
-        ):
-            return re.split("\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
-        return []
+        area_ids = list(file_study.config.areas)
+        return _get_ui_info_map(file_study, area_ids)
 
     def get_layers(self, study: RawStudy) -> List[LayerInfoDTO]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
+        area_ids = list(file_study.config.areas)
+        ui_info_map = _get_ui_info_map(file_study, area_ids)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        areas_ui = (
-            file_study.tree.get(
-                [
-                    "input",
-                    "areas",
-                    ",".join(file_study.config.areas.keys()),
-                    "ui",
-                ]
-            )
-            if len(file_study.config.areas)
-            else {}
-        )
-
-        # if there is only 1 area, the area_ui object is not a dict keyed by area_id
-        area_list = list(file_study.config.areas.keys())
-        if len(area_list) == 1:
-            areas_ui = {area_list[0]: areas_ui}
-
-        if len(layers) == 0:
+        if not layers:
             layers["0"] = "All"
-        layers_with_items = [
+        return [
             LayerInfoDTO(
                 id=str(layer),
                 name=layers[str(layer)],
                 areas=[
                     area
-                    for area in areas_ui
-                    if str(layer)
-                    in AreaManager._get_area_layers(areas_ui, area)
+                    for area in ui_info_map
+                    if str(layer) in _get_area_layers(ui_info_map, area)
                     # the layer 0 always display all areas
                     or str(layer) == "0"
                 ],
             )
             for layer in layers
         ]
-        return layers_with_items
 
     def update_layer_areas(
         self, study: RawStudy, layer_id: str, areas: List[str]
@@ -209,7 +229,7 @@ class AreaManager:
             area
             for area in areas_ui
             if "ui" in areas_ui[area]
-            and layer_id in AreaManager._get_area_layers(areas_ui, area)
+            and layer_id in _get_area_layers(areas_ui, area)
         ]
         to_remove_areas = [
             area for area in existing_areas if area not in areas
@@ -237,9 +257,7 @@ class AreaManager:
             ]
 
         for area in to_remove_areas:
-            area_to_remove_layers: List[str] = AreaManager._get_area_layers(
-                areas_ui, area
-            )
+            area_to_remove_layers: List[str] = _get_area_layers(areas_ui, area)
             if layer_id in areas_ui[area]["layerX"]:
                 del areas_ui[area]["layerX"][layer_id]
             if layer_id in areas_ui[area]["layerY"]:
@@ -254,9 +272,7 @@ class AreaManager:
                 )
             commands.extend(create_update_commands(area))
         for area in to_add_areas:
-            area_to_add_layers: List[str] = AreaManager._get_area_layers(
-                areas_ui, area
-            )
+            area_to_add_layers: List[str] = _get_area_layers(areas_ui, area)
             if layer_id not in areas_ui[area]["layerX"]:
                 areas_ui[area]["layerX"][layer_id] = areas_ui[area]["ui"]["x"]
             if layer_id not in areas_ui[area]["layerY"]:
@@ -291,25 +307,26 @@ class AreaManager:
     def create_layer(self, study: RawStudy, layer_name: str) -> str:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        layer_ids = [int(layer) for layer in list(layers.keys())]
-        layer_id = "1"
-        if len(layer_ids) == 0:
+        command_context = (
+            self.storage_service.variant_study_service.command_factory.command_context
+        )
+        new_id = max((int(layer) for layer in layers), default=0) + 1
+        if new_id == 1:
             command = UpdateConfig(
-                target=f"layers/layers/layers",
+                target="layers/layers/layers",
                 data={"0": "All", "1": layer_name},
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                command_context=command_context,
             )
         else:
-            layer_id = str(layer_ids[-1] + 1)
             command = UpdateConfig(
-                target=f"layers/layers/layers/{layer_id}",
+                target=f"layers/layers/layers/{new_id}",
                 data=layer_name,
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                command_context=command_context,
             )
         execute_or_add_commands(
             study, file_study, [command], self.storage_service
         )
-        return layer_id
+        return str(new_id)
 
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -377,7 +394,7 @@ class AreaManager:
             if isinstance(area_or_set, Area)
             else AreaType.DISTRICT,
             metadata=patch.areas.get(area_id),
-            set=area_or_set.get_areas(list(file_study.config.areas.keys()))
+            set=area_or_set.get_areas(list(file_study.config.areas))
             if isinstance(area_or_set, DistrictSet)
             else [],
         )
