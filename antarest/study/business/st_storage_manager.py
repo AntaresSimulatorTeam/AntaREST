@@ -65,10 +65,6 @@ class STStorageEditForm(STStorageCreateForm):
     Form used to **Edit** a short-term storage
     """
 
-    id: str = Field(
-        description="Short-term storage ID",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
     # name: inherited
     # group: inherited
     injection_nominal_capacity: float = Field(
@@ -102,10 +98,23 @@ class STStorageEditForm(STStorageCreateForm):
         description="Flag indicating if the initial level is optimized",
     )
 
+
+class STStorageEditFormWithId(STStorageEditForm):
+    """
+    Form used to **Edit** a short-term storage
+    """
+
+    id: str = Field(
+        description="Short-term storage ID",
+        regex=r"[a-zA-Z0-9_(),& -]+",
+    )
+
     @classmethod
-    def from_config(cls, storage_id: str, config: Dict[str, Any]) -> "STStorageEditForm":
+    def from_config(
+        cls, storage_id: str, config: Dict[str, Any]
+    ) -> "STStorageEditFormWithId":
         st_storage_config = STStorageConfig(id=storage_id, **config)
-        values = st_storage_config.dict(by_alias=False, exclude_defaults=False)
+        values = vars(st_storage_config)
         return cls(**values)
 
 
@@ -146,7 +155,7 @@ class STStorageTimeSeries(BaseModel):
 
 # Note: in the directory tree, there are directories called "clusters",
 # but in reality they are short term storage.
-ST_STORAGE_PATH = "input/thermal/clusters/{area_id}/list/{storage_id}"
+ST_STORAGE_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 
 
 class STStorageManagerError(Exception):
@@ -299,7 +308,7 @@ class STStorageManager:
         study: Study,
         area_id: str,
         storage_id: str,
-    ) -> STStorageEditForm:
+    ) -> STStorageEditFormWithId:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -311,58 +320,68 @@ class STStorageManager:
         Returns:
             Form used to Update a short-term storage.
         """
-        # fmt: off
+        # fmt: offXX
         file_study = self.storage_service.get_storage(study).get_raw(study)
         try:
             config = file_study.tree.get(
-                ST_STORAGE_PATH.format(area_id=area_id, storage_id=storage_id).split("/"),
+                ST_STORAGE_PATH.format(
+                    area_id=area_id, storage_id=storage_id
+                ).split("/"),
                 depth=1,
             )
         except KeyError:
-            raise STStorageFieldsNotFoundError(study.id, area_id, storage_id) from None
+            raise STStorageFieldsNotFoundError(
+                study.id, area_id, storage_id
+            ) from None
         else:
-            return STStorageEditForm.from_config(storage_id, config)
+            return STStorageEditFormWithId.from_config(storage_id, config)
         # fmt: on
 
     def update_st_storage(
         self,
         study: Study,
         area_id: str,
+        storage_id: str,
         form: STStorageEditForm,
-    ) -> STStorageEditForm:
+    ) -> STStorageEditFormWithId:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
             form: Form used to Update a short-term storage.
         """
         # todo: Il faudrait une implémentation plus simple qui repose sur
         #  une nouvelle commande "update_st_storage" similaire à "create_st_storage".
         file_study = self.storage_service.get_storage(study).get_raw(study)
         try:
-            # fmt: off
+            # fmt: offXX
             values = file_study.tree.get(
-                ST_STORAGE_PATH.format(area_id=area_id, storage_id=form.id).split("/"),
+                ST_STORAGE_PATH.format(
+                    area_id=area_id, storage_id=storage_id
+                ).split("/"),
                 depth=1,
             )
             # fmt: on
         except KeyError:
             raise STStorageFieldsNotFoundError(
-                study.id, area_id, form.id
+                study.id, area_id, storage_id
             ) from None
         else:
-            old_config = STStorageConfig(id=form.id, **values)
+            old_config = STStorageConfig(id=storage_id, **values)
 
         # use snake_case values
         old_values = old_config.dict(by_alias=False, exclude_defaults=False)
         new_values = form.dict(by_alias=False, exclude_none=True)
         updated = {**old_values, **new_values}
-        new_config = STStorageConfig(**updated)
-        data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+        new_config = STStorageConfig(**updated, id=storage_id)
+        data = json.loads(new_config.json(by_alias=True))
         command = UpdateConfig(
-            target=ST_STORAGE_PATH.format(area_id=area_id, storage=form.id),
+            target=ST_STORAGE_PATH.format(
+                area_id=area_id, storage_id=storage_id
+            ),
             data=data,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
@@ -371,8 +390,8 @@ class STStorageManager:
             study, file_study, [command], self.storage_service
         )
 
-        values = new_config.dict(by_alias=False, exclude_defaults=False)
-        return STStorageEditForm(**values)
+        values = vars(new_config)
+        return STStorageEditFormWithId(**values)
 
     def delete_st_storage(
         self,

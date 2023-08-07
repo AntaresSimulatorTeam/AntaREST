@@ -306,7 +306,7 @@ class TestSTStorageManager:
         expected = {
             "efficiency": 0.94,
             "group": STStorageGroup.BATTERY,
-            "id": None,
+            "id": "storage1",
             "initialLevel": 0.0,
             "initialLevelOptim": True,
             "injectionNominalCapacity": 1500.0,
