@@ -387,6 +387,58 @@ ColumnsModelTypes = Union[
 ]
 
 
+def _get_glob_object(
+    file_study: FileStudy, table_type: TableTemplateType
+) -> Dict[str, Any]:
+    """
+    Retrieves the fields of an object according to its type (area, link, thermal cluster...).
+
+    Args:
+        file_study: A file study from which the configuration can be read.
+        table_type: Type of the object.
+
+    Returns:
+        Dictionary containing the fields used in Table mode.
+
+    Raises:
+        ChildNotFoundError: if one of the Area IDs is not found in the configuration.
+    """
+    # sourcery skip: extract-method
+    if table_type == TableTemplateType.AREA:
+        info_map: Dict[str, Any] = file_study.tree.get(
+            url=AREA_PATH.format(area="*").split("/"), depth=3
+        )
+        area_ids = list(file_study.config.areas)
+        # If there is only one ID in the `area_ids`, the result returned from
+        # the `file_study.tree.get` call will be a single object.
+        # On the other hand, if there are multiple values in `area_ids`,
+        # the result will be a dictionary where the keys are the IDs,
+        # and the values are the corresponding objects.
+        if len(area_ids) == 1:
+            info_map = {area_ids[0]: info_map}
+        # Add thermal fields in info_map
+        thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
+        for field, field_props in thermal_fields.items():
+            for area_id, value in field_props.items():
+                if area_id in info_map:
+                    info_map[area_id][field] = value
+        return info_map
+    if table_type == TableTemplateType.LINK:
+        return file_study.tree.get(LINK_GLOB_PATH.format(area1="*").split("/"))
+    if table_type == TableTemplateType.CLUSTER:
+        return file_study.tree.get(
+            CLUSTER_GLOB_PATH.format(area="*").split("/")
+        )
+    if table_type == TableTemplateType.RENEWABLE:
+        return file_study.tree.get(
+            RENEWABLE_GLOB_PATH.format(area="*").split("/")
+        )
+    if table_type == TableTemplateType.BINDING_CONSTRAINT:
+        return file_study.tree.get(BINDING_CONSTRAINT_PATH.split("/"))
+
+    return {}
+
+
 class TableModeManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -400,9 +452,7 @@ class TableModeManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
         fields_info = FIELDS_INFO_BY_TYPE[table_type]
-        glob_object = TableModeManager.__get_glob_object(
-            file_study, table_type
-        )
+        glob_object = _get_glob_object(file_study, table_type)
 
         def get_column_value(col: str, data: Dict[str, Any]) -> Any:
             f_info = fields_info[col]
@@ -460,7 +510,7 @@ class TableModeManager:
                 )
                 bindings_by_id = bindings_by_id or {
                     binding["id"]: binding
-                    for binding in TableModeManager.__get_glob_object(
+                    for binding in _get_glob_object(
                         file_study, table_type
                     ).values()
                 }
@@ -506,7 +556,7 @@ class TableModeManager:
                             )
                         )
 
-        if len(commands) > 0:
+        if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(
                 study, file_study, commands, self.storage_service
@@ -593,43 +643,3 @@ class TableModeManager:
             return PathVars(area=area, cluster=cluster)
 
         return PathVars()
-
-    @staticmethod
-    def __get_glob_object(
-        file_study: FileStudy, table_type: TableTemplateType
-    ) -> Dict[str, Any]:
-        if table_type == TableTemplateType.AREA:
-            info_map: Dict[str, Any] = file_study.tree.get(
-                url=AREA_PATH.format(area="*").split("/"), depth=3
-            )
-            area_ids = list(file_study.config.areas)
-            # If there is only one ID in the `area_ids`, the result returned from
-            # the `file_study.tree.get` call will be a single object.
-            # On the other hand, if there are multiple values in `area_ids`,
-            # the result will be a dictionary where the keys are the IDs,
-            # and the values are the corresponding objects.
-            if len(area_ids) == 1:
-                info_map = {area_ids[0]: info_map}
-            # Add thermal fields in info_map
-            thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
-            for field, field_props in thermal_fields.items():
-                for area_id, value in field_props.items():
-                    if area_id in info_map:
-                        info_map[area_id][field] = value
-            return info_map
-        if table_type == TableTemplateType.LINK:
-            return file_study.tree.get(
-                LINK_GLOB_PATH.format(area1="*").split("/")
-            )
-        if table_type == TableTemplateType.CLUSTER:
-            return file_study.tree.get(
-                CLUSTER_GLOB_PATH.format(area="*").split("/")
-            )
-        if table_type == TableTemplateType.RENEWABLE:
-            return file_study.tree.get(
-                RENEWABLE_GLOB_PATH.format(area="*").split("/")
-            )
-        if table_type == TableTemplateType.BINDING_CONSTRAINT:
-            return file_study.tree.get(BINDING_CONSTRAINT_PATH.split("/"))
-
-        return {}
