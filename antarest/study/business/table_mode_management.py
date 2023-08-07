@@ -612,13 +612,10 @@ class TableModeManager:
                 info_map = {area_ids[0]: info_map}
             # Add thermal fields in info_map
             thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
-            for field in thermal_fields:
-                for area in thermal_fields[field]:
-                    if area in info_map:
-                        info_map[area] = {
-                            **info_map[area],
-                            field: thermal_fields[field][area],
-                        }
+            for field, field_props in thermal_fields.items():
+                for area_id, value in field_props.items():
+                    if area_id in info_map:
+                        info_map[area_id][field] = value
             return info_map
         if table_type == TableTemplateType.LINK:
             return file_study.tree.get(
