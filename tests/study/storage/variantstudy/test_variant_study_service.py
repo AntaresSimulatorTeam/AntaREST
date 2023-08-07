@@ -5,7 +5,6 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine  # type: ignore
 
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
@@ -118,7 +117,7 @@ class TestVariantStudyService:
         denormalize: bool,
         from_scratch: bool,
     ) -> None:
-        ## Prepare database objects
+        # Prepare database objects
         # noinspection PyArgumentList
         user = User(id=0, name="admin")
         db.session.add(user)
@@ -129,7 +128,7 @@ class TestVariantStudyService:
         db.session.add(group)
         db.session.commit()
 
-        ## First create a raw study (root of the variant)
+        # First create a raw study (root of the variant)
         raw_study_path = tmp_path / "My RAW Study"
         # noinspection PyArgumentList
         raw_study = RawStudy(
@@ -149,7 +148,7 @@ class TestVariantStudyService:
         db.session.add(raw_study)
         db.session.commit()
 
-        ## Prepare the RAW Study
+        # Prepare the RAW Study
         raw_study_service.create(raw_study)
 
         variant_study = variant_study_service.create_variant_study(
@@ -161,7 +160,7 @@ class TestVariantStudyService:
             ),
         )
 
-        ## Prepare the RAW Study
+        # Prepare the RAW Study
         file_study = variant_study_service.get_raw(variant_study)
 
         command_context = CommandContext(
@@ -175,7 +174,7 @@ class TestVariantStudyService:
             area_name="fr",
         )
 
-        ## Prepare the Variant Study Data
+        # Prepare the Variant Study Data
         # noinspection SpellCheckingInspection
         pmax_injection = np.random.rand(8760, 1)
         inflows = np.random.uniform(0, 1000, size=(8760, 1))
@@ -205,7 +204,7 @@ class TestVariantStudyService:
             storage_service=study_storage_service,
         )
 
-        ## Run the "generate" task
+        # Run the "generate" task
         actual_uui = variant_study_service.generate_task(
             variant_study,
             denormalize=denormalize,
@@ -217,7 +216,7 @@ class TestVariantStudyService:
             flags=re.IGNORECASE,
         )
 
-        ## Collect the resulting files
+        # Collect the resulting files
         workspaces = variant_study_service.config.storage.workspaces
         internal_studies_dir: Path = workspaces["default"].path
         snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
