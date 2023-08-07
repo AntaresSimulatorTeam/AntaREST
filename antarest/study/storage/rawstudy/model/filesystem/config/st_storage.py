@@ -15,14 +15,18 @@ class STStorageGroup(EnumIgnoreCase):
         - PSP_CLOSED: Represents a closed pumped storage plant.
         - PONDAGE: Represents a pondage storage system (reservoir storage system).
         - BATTERY: Represents a battery storage system.
-        - OTHER: Represents other energy storage systems.
+        - OTHER1...OTHER5: Represents other energy storage systems.
     """
 
     PSP_OPEN = "PSP_open"
     PSP_CLOSED = "PSP_closed"
     PONDAGE = "Pondage"
     BATTERY = "Battery"
-    OTHER = "Other"
+    OTHER1 = "Other1"
+    OTHER2 = "Other2"
+    OTHER3 = "Other3"
+    OTHER4 = "Other4"
+    OTHER5 = "Other5"
 
 
 # noinspection SpellCheckingInspection
@@ -48,8 +52,8 @@ class STStorageConfig(BaseModel):
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
-        ...,
-        description="Energy storage system group (mandatory)",
+        STStorageGroup.OTHER1,
+        description="Energy storage system group",
     )
     injection_nominal_capacity: float = Field(
         0,
