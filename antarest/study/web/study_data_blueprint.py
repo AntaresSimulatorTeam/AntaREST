@@ -61,6 +61,7 @@ from antarest.study.business.st_storage_manager import (
     STStorageEditForm,
     STStorageManagerError,
     STStorageCreateForm,
+    STStorageEditFormWithId,
 )
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
@@ -1587,14 +1588,14 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the storage",
-        response_model=STStorageEditForm,
+        response_model=STStorageEditFormWithId,
     )
     def get_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageEditForm:
+    ) -> STStorageEditFormWithId:
         logger.info(
             f"Getting values for study {uuid} and short term storage {storage_id}",
             extra={"user": current_user.id},
@@ -1635,7 +1636,7 @@ def create_study_data_routes(
         "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Set short storage  form values for a given study",
-        response_model=STStorageEditForm,
+        response_model=STStorageEditFormWithId,
     )
     def update_st_storage(
         uuid: str,
@@ -1643,7 +1644,7 @@ def create_study_data_routes(
         storage_id: str,
         form: STStorageEditForm,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageEditForm:
+    ) -> STStorageEditFormWithId:
         logger.info(
             f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
             extra={"user": current_user.id},
@@ -1653,7 +1654,7 @@ def create_study_data_routes(
             uuid, StudyPermissionType.READ, params
         )
         return study_service.st_storage_manager.update_st_storage(
-            study, area_id, form
+            study, area_id, storage_id, form
         )
 
     @bp.delete(
