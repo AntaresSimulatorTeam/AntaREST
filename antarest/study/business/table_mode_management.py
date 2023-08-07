@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from pydantic import StrictFloat
@@ -600,24 +599,27 @@ class TableModeManager:
         file_study: FileStudy, table_type: TableTemplateType
     ) -> Dict[str, Any]:
         if table_type == TableTemplateType.AREA:
-            data: Dict[str, Any] = file_study.tree.get(
+            info_map: Dict[str, Any] = file_study.tree.get(
                 url=AREA_PATH.format(area="*").split("/"), depth=3
             )
-            areas = file_study.tree.config.areas
-            if len(areas) == 1:
-                data = {next(iter(areas.keys())): data}
-
-            # Add thermal fields in data
+            area_ids = list(file_study.config.areas)
+            # If there is only one ID in the `area_ids`, the result returned from
+            # the `file_study.tree.get` call will be a single object.
+            # On the other hand, if there are multiple values in `area_ids`,
+            # the result will be a dictionary where the keys are the IDs,
+            # and the values are the corresponding objects.
+            if len(area_ids) == 1:
+                info_map = {area_ids[0]: info_map}
+            # Add thermal fields in info_map
             thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
             for field in thermal_fields:
                 for area in thermal_fields[field]:
-                    if area in data:
-                        data[area] = {
-                            **data[area],
+                    if area in info_map:
+                        info_map[area] = {
+                            **info_map[area],
                             field: thermal_fields[field][area],
                         }
-
-            return data
+            return info_map
         if table_type == TableTemplateType.LINK:
             return file_study.tree.get(
                 LINK_GLOB_PATH.format(area1="*").split("/")
