@@ -603,6 +603,9 @@ class TableModeManager:
             data: Dict[str, Any] = file_study.tree.get(
                 url=AREA_PATH.format(area="*").split("/"), depth=3
             )
+            areas = file_study.tree.config.areas
+            if len(areas) == 1:
+                data = {next(iter(areas.keys())): data}
 
             # Add thermal fields in data
             thermal_fields = file_study.tree.get(THERMAL_PATH.split("/"))
