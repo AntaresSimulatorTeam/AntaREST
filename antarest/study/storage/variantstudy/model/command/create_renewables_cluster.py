@@ -1,24 +1,23 @@
-from typing import Dict, List, Any, cast, Tuple
-
-from pydantic import validator
+from typing import Any, Dict, List, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Cluster,
-    transform_name_to_id,
-    FileStudyTreeConfig,
     ENR_MODELLING,
+    Cluster,
+    FileStudyTreeConfig,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from pydantic import validator
 
 
 class CreateRenewablesCluster(ICommand):
@@ -49,9 +48,13 @@ class CreateRenewablesCluster(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=f"enr_modelling must be {ENR_MODELLING.CLUSTERS.value}",
+                    message=(
+                        f"Parameter 'renewable-generation-modelling'"
+                        f" must be set to '{ENR_MODELLING.CLUSTERS.value}'"
+                        f" instead of '{study_data.enr_modelling}'"
+                    ),
                 ),
-                dict(),
+                {},
             )
 
         if self.area_id not in study_data.areas:
@@ -60,7 +63,7 @@ class CreateRenewablesCluster(ICommand):
                     status=False,
                     message=f"Area '{self.area_id}' does not exist",
                 ),
-                dict(),
+                {},
             )
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].renewables:
@@ -70,7 +73,7 @@ class CreateRenewablesCluster(ICommand):
                         status=False,
                         message=f"Renewable cluster '{self.cluster_name}' already exist",
                     ),
-                    dict(),
+                    {},
                 )
         study_data.areas[self.area_id].renewables.append(
             Cluster(id=cluster_id, name=self.cluster_name)
