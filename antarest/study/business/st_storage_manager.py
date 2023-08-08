@@ -5,6 +5,11 @@ import statistics
 from typing import Any, Dict, List
 
 import numpy as np
+
+from antarest.core.exceptions import (
+    STStorageFieldsNotFoundError,
+    STStorageConfigNotFoundError,
+)
 from antarest.study.business.areas.table_group import TableGroup
 from antarest.study.business.utils import (
     Field,
@@ -60,7 +65,7 @@ class STStorageCreateForm(FormFieldsBaseModel):
         return STStorageConfig(**values)
 
 
-class STStorageEditForm(STStorageCreateForm):
+class STStorageInputForm(STStorageCreateForm):
     """
     Form used to **Edit** a short-term storage
     """
@@ -99,7 +104,7 @@ class STStorageEditForm(STStorageCreateForm):
     )
 
 
-class STStorageEditFormWithId(STStorageEditForm):
+class STStorageOutputForm(STStorageInputForm):
     """
     Form used to **Edit** a short-term storage
     """
@@ -112,7 +117,7 @@ class STStorageEditFormWithId(STStorageEditForm):
     @classmethod
     def from_config(
         cls, storage_id: str, config: Dict[str, Any]
-    ) -> "STStorageEditFormWithId":
+    ) -> "STStorageOutputForm":
         st_storage_config = STStorageConfig(id=storage_id, **config)
         values = vars(st_storage_config)
         return cls(**values)
@@ -156,34 +161,6 @@ class STStorageTimeSeries(BaseModel):
 # Note: in the directory tree, there are directories called "clusters",
 # but in reality they are short term storage.
 ST_STORAGE_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-
-
-class STStorageManagerError(Exception):
-    """Base class of STStorageManager"""
-
-    def __init__(self, study_id: str, area_id: str, reason: str) -> None:
-        msg = (
-            f"Error in the study '{study_id}',"
-            f" the 'short-term storage' configuration of area '{area_id}' is invalid:"
-            f" {reason}."
-        )
-        super().__init__(msg)
-
-
-class STStorageFieldsNotFoundError(STStorageManagerError):
-    """Fields of the short-term storage are not found"""
-
-    def __init__(self, study_id: str, area_id: str, storage_id: str) -> None:
-        super().__init__(
-            study_id, area_id, f"Fields of storage '{storage_id}' not found"
-        )
-
-
-class STStorageConfigNotFoundError(STStorageManagerError):
-    """Configuration for short-term storage is not found"""
-
-    def __init__(self, study_id: str, area_id: str) -> None:
-        super().__init__(study_id, area_id, "missing configuration")
 
 
 class STStorageManager:
@@ -308,7 +285,7 @@ class STStorageManager:
         study: Study,
         area_id: str,
         storage_id: str,
-    ) -> STStorageEditFormWithId:
+    ) -> STStorageOutputForm:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -334,7 +311,7 @@ class STStorageManager:
                 study.id, area_id, storage_id
             ) from None
         else:
-            return STStorageEditFormWithId.from_config(storage_id, config)
+            return STStorageOutputForm.from_config(storage_id, config)
         # fmt: on
 
     def update_st_storage(
@@ -342,8 +319,8 @@ class STStorageManager:
         study: Study,
         area_id: str,
         storage_id: str,
-        form: STStorageEditForm,
-    ) -> STStorageEditFormWithId:
+        form: STStorageInputForm,
+    ) -> STStorageOutputForm:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -391,7 +368,7 @@ class STStorageManager:
         )
 
         values = vars(new_config)
-        return STStorageEditFormWithId(**values)
+        return STStorageOutputForm(**values)
 
     def delete_st_storage(
         self,

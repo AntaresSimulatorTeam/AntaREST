@@ -8,6 +8,36 @@ class ShouldNotHappenException(Exception):
     pass
 
 
+class STStorageFieldsNotFoundError(HTTPException):
+    """Fields of the short-term storage are not found"""
+
+    def __init__(self, study_id: str, area_id: str, storage_id: str) -> None:
+        detail = (
+            f"Error in the study '{study_id}',"
+            f" the short-term storage configuration of area '{area_id}' is invalid:"
+            f" fields of storage '{storage_id}' not found"
+        )
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class STStorageConfigNotFoundError(HTTPException):
+    """Configuration for short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str) -> None:
+        detail = (
+            f"Error in the study '{study_id}',"
+            f" the short-term storage configuration of area '{area_id}' is invalid:"
+            f" missing configuration"
+        )
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
 class UnknownModuleError(Exception):
     def __init__(self, message: str) -> None:
         super(UnknownModuleError, self).__init__(message)
