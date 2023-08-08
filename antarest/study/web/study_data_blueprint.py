@@ -58,10 +58,9 @@ from antarest.study.business.areas.renewable_management import (
     RenewableFormFields,
 )
 from antarest.study.business.st_storage_manager import (
-    STStorageEditForm,
-    STStorageManagerError,
+    STStorageInputForm,
     STStorageCreateForm,
-    STStorageEditFormWithId,
+    STStorageOutputForm,
 )
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
@@ -1588,14 +1587,14 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the storage",
-        response_model=STStorageEditFormWithId,
+        response_model=STStorageOutputForm,
     )
     def get_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageEditFormWithId:
+    ) -> STStorageOutputForm:
         logger.info(
             f"Getting values for study {uuid} and short term storage {storage_id}",
             extra={"user": current_user.id},
@@ -1636,15 +1635,15 @@ def create_study_data_routes(
         "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Set short storage  form values for a given study",
-        response_model=STStorageEditFormWithId,
+        response_model=STStorageOutputForm,
     )
     def update_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: STStorageEditForm,
+        form: STStorageInputForm,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageEditFormWithId:
+    ) -> STStorageOutputForm:
         logger.info(
             f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
             extra={"user": current_user.id},
