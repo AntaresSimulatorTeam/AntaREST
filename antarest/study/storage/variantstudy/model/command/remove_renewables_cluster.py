@@ -51,25 +51,20 @@ class RemoveRenewablesCluster(ICommand):
                     status=False,
                     message=f"Area '{self.area_id}' does not exist",
                 ),
-                dict(),
+                {},
             )
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data.areas[self.area_id].renewables
-                    if cluster.id == self.cluster_id
-                ]
-            )
-            == 0
-        ):
+        if not [
+            cluster
+            for cluster in study_data.areas[self.area_id].renewables
+            if cluster.id == self.cluster_id
+        ]:
             return (
                 CommandOutput(
                     status=False,
                     message=f"Renewables cluster '{self.cluster_id}' does not exist",
                 ),
-                dict(),
+                {},
             )
         self._remove_renewables_cluster(study_data)
 
@@ -78,7 +73,7 @@ class RemoveRenewablesCluster(ICommand):
                 status=True,
                 message=f"Renewables cluster '{self.cluster_id}' removed from area '{self.area_id}'",
             ),
-            dict(),
+            {},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -88,18 +83,11 @@ class RemoveRenewablesCluster(ICommand):
                 message=f"Area '{self.area_id}' does not exist",
             )
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data.config.areas[
-                        self.area_id
-                    ].renewables
-                    if cluster.id == self.cluster_id
-                ]
-            )
-            == 0
-        ):
+        if not [
+            cluster
+            for cluster in study_data.config.areas[self.area_id].renewables
+            if cluster.id == self.cluster_id
+        ]:
             return CommandOutput(
                 status=False,
                 message=f"Renewables cluster '{self.cluster_id}' does not exist",
