@@ -23,13 +23,11 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 
 class TestRemoveRenewablesCluster:
-    def test_validation(self, empty_study: FileStudy):
-        pass
-
     def test_apply(
         self, empty_study: FileStudy, command_context: CommandContext
     ):
         empty_study.config.enr_modelling = ENR_MODELLING.CLUSTERS.value
+        empty_study.config.version = 810
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "cluster_name"
