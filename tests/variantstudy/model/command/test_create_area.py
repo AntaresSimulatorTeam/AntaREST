@@ -1,8 +1,11 @@
 import configparser
 from unittest.mock import Mock
 
+import pytest
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import (
@@ -21,12 +24,19 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 
 class TestCreateArea:
+    @pytest.mark.parametrize("version", [600, 650, 810, 830, 860])
+    @pytest.mark.parametrize("enr_modelling", list(ENR_MODELLING))
     def test_apply(
         self,
         empty_study: FileStudy,
         command_context: CommandContext,
+        # pytest parameters
+        version,
+        enr_modelling,
     ):
-        version = empty_study.config.version
+        empty_study.config.enr_modelling = enr_modelling.value
+        empty_study.config.version = version
+
         study_path = empty_study.config.study_path
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
@@ -132,6 +142,11 @@ class TestCreateArea:
         # Thermal Clusters
         assert (study_path / "input" / "thermal" / "clusters" / area_id).is_dir()
         assert (study_path / "input" / "thermal" / "clusters" / area_id / "list.ini").exists()
+
+        # Renewable Clusters
+        if version >= 810 and empty_study.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+            assert (study_path / "input" / "renewables" / "clusters" / area_id).is_dir()
+            assert (study_path / "input" / "renewables" / "clusters" / area_id / "list.ini").exists()
 
         # thermal/areas ini file
         assert (study_path / "input" / "thermal" / "areas.ini").exists()
