@@ -28,7 +28,7 @@ class TestRenewableCluster:
         #  General Data Update
         # =====================
 
-        # The `enr_modelling` value must be set tu "clusters" instead of "aggregated"
+        # The `enr_modelling` value must be set to "clusters" instead of "aggregated"
         args = {
             "target": "settings/generaldata/other preferences",
             "data": {"renewable-generation-modelling": "clusters"},
