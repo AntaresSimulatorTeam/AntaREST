@@ -194,8 +194,8 @@ class STStorageManager:
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        # todo: La commande `execute_or_add_commands` devrait retourner un JSON.
-        #  Ici, le JSON serait simplement l'ID du stockage court terme créé.
+        # todo: The `execute_or_add_commands` command should return a JSON object.
+        #  Here, the JSON object should simply be the created short term storage ID.
         execute_or_add_commands(
             study, file_study, [command], self.storage_service
         )
@@ -218,23 +218,21 @@ class STStorageManager:
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _LIST_PATH.format(area_id=area_id, storage_id="*")
-        path = path.replace("/*", "")
+        path = _LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
-        else:
-            # Sort STStorageConfig by groups and then by name
-            order_by = operator.attrgetter("group", "name")
-            all_configs = sorted(
-                (
-                    STStorageConfig(id=storage_id, **options)
-                    for storage_id, options in config.items()
-                ),
-                key=order_by,
-            )
-            return [STStorageOutputForm(**vars(config)) for config in all_configs]
+        # Sort STStorageConfig by groups and then by name
+        order_by = operator.attrgetter("group", "name")
+        all_configs = sorted(
+            (
+                STStorageConfig(id=storage_id, **options)
+                for storage_id, options in config.items()
+            ),
+            key=order_by,
+        )
+        return [STStorageOutputForm(**vars(config)) for config in all_configs]
         # fmt: on
 
     def get_st_storage(
@@ -263,8 +261,7 @@ class STStorageManager:
             raise STStorageFieldsNotFoundError(
                 study.id, area_id, storage_id
             ) from None
-        else:
-            return STStorageOutputForm.from_config(storage_id, config)
+        return STStorageOutputForm.from_config(storage_id, config)
         # fmt: on
 
     def update_st_storage(
@@ -283,8 +280,8 @@ class STStorageManager:
             storage_id: The ID of the short-term storage.
             form: Form used to Update a short-term storage.
         """
-        # todo: Il faudrait une implémentation plus simple qui repose sur
-        #  une nouvelle commande "update_st_storage" similaire à "create_st_storage".
+        # todo: We should have a more simple implementation based on
+        #  a new `update_st_storage` command similar to `create_st_storage`.
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = _LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
@@ -365,8 +362,7 @@ class STStorageManager:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
-        else:
-            return STStorageTimeSeries(**matrix)
+        return STStorageTimeSeries(**matrix)
         # fmt: on
 
     def update_time_series(
