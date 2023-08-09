@@ -17,7 +17,7 @@ class STStorageFieldsNotFoundError(HTTPException):
             f" the short-term storage configuration of area '{area_id}' is invalid:"
             f" fields of storage '{storage_id}' not found"
         )
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
         return self.detail
@@ -26,13 +26,15 @@ class STStorageFieldsNotFoundError(HTTPException):
 class STStorageMatrixNotFoundError(HTTPException):
     """Matrix of the short-term storage is not found"""
 
-    def __init__(self, study_id: str, area_id: str, storage_id: str, ts_name: str) -> None:
+    def __init__(
+        self, study_id: str, area_id: str, storage_id: str, ts_name: str
+    ) -> None:
         detail = (
             f"Error in the study '{study_id}',"
             f" the short-term storage configuration of area '{area_id}' is invalid:"
             f" time series '{ts_name}' of storage '{storage_id}' not found"
         )
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
         return self.detail
@@ -47,7 +49,7 @@ class STStorageConfigNotFoundError(HTTPException):
             f" the short-term storage configuration of area '{area_id}' is invalid:"
             f" missing configuration"
         )
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
         return self.detail
