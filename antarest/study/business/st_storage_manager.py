@@ -3,7 +3,7 @@ import operator
 from typing import Any, Dict, List
 
 import numpy as np
-from pydantic import BaseModel, Extra, validator
+from pydantic import BaseModel, Extra, validator, Field
 
 from antarest.core.exceptions import (
     STStorageFieldsNotFoundError,
@@ -11,7 +11,6 @@ from antarest.core.exceptions import (
     STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import (
-    Field,
     FormFieldsBaseModel as UtilsFormFieldsBaseModel,
     execute_or_add_commands,
 )
