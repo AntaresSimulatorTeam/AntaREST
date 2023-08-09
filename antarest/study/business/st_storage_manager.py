@@ -1,19 +1,17 @@
 import json
 import operator
-from typing import Any, Dict, List
+from typing import Any, List, Mapping, Sequence
 
 import numpy as np
-from pydantic import BaseModel, Extra, validator, Field
-
 from antarest.core.exceptions import (
-    STStorageFieldsNotFoundError,
     STStorageConfigNotFoundError,
+    STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import (
     FormFieldsBaseModel as UtilsFormFieldsBaseModel,
-    execute_or_add_commands,
 )
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfig,
@@ -29,6 +27,7 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
+from pydantic import BaseModel, Extra, Field, validator
 
 
 class FormFieldsBaseModel(UtilsFormFieldsBaseModel):
@@ -58,7 +57,7 @@ class STStorageCreateForm(FormFieldsBaseModel):
 
     @property
     def to_config(self) -> STStorageConfig:
-        values = self.dict(by_alias=False, exclude_none=True)
+        values = self.dict(by_alias=False)
         return STStorageConfig(**values)
 
 
@@ -113,10 +112,10 @@ class STStorageOutputForm(STStorageInputForm):
 
     @classmethod
     def from_config(
-        cls, storage_id: str, config: Dict[str, Any]
+        cls, storage_id: str, config: Mapping[str, Any]
     ) -> "STStorageOutputForm":
-        st_storage_config = STStorageConfig(id=storage_id, **config)
-        values = vars(st_storage_config)
+        st_storage_config = STStorageConfig(**config, id=storage_id)
+        values = st_storage_config.dict(by_alias=False)
         return cls(**values)
 
 
@@ -204,7 +203,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-    ) -> List[STStorageOutputForm]:
+    ) -> Sequence[STStorageOutputForm]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -222,6 +221,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
+        # fmt: on
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
         all_configs = sorted(
@@ -231,8 +231,10 @@ class STStorageManager:
             ),
             key=order_by,
         )
-        return [STStorageOutputForm(**vars(config)) for config in all_configs]
-        # fmt: on
+        return tuple(
+            STStorageOutputForm(**config.dict(by_alias=False))
+            for config in all_configs
+        )
 
     def get_st_storage(
         self,
@@ -290,14 +292,16 @@ class STStorageManager:
                 study.id, area_id, storage_id
             ) from None
         else:
-            old_config = STStorageConfig(id=storage_id, **values)
+            old_config = STStorageConfig(**values)
 
         # use snake_case values
-        old_values = old_config.dict(by_alias=False, exclude_defaults=False)
-        new_values = form.dict(by_alias=False, exclude_none=True)
+        old_values = old_config.dict(
+            by_alias=False, exclude_defaults=False, exclude={"id"}
+        )
+        new_values = form.dict(by_alias=False)
         updated = {**old_values, **new_values}
         new_config = STStorageConfig(**updated, id=storage_id)
-        data = json.loads(new_config.json(by_alias=True))
+        data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
         command = UpdateConfig(
             target=path,
             data=data,
@@ -308,7 +312,7 @@ class STStorageManager:
             study, file_study, [command], self.storage_service
         )
 
-        values = vars(new_config)
+        values = new_config.dict(by_alias=False)
         return STStorageOutputForm(**values)
 
     def delete_st_storage(
