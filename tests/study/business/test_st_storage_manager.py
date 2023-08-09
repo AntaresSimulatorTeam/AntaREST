@@ -1,15 +1,19 @@
 import datetime
 import io
+import re
 import uuid
 from typing import cast
 from unittest.mock import Mock
 
+import numpy as np
+from pydantic import ValidationError
 from sqlalchemy.orm.session import Session  # type: ignore
 
 import pytest
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
+    STStorageMatrixNotFoundError,
 )
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
@@ -311,3 +315,145 @@ class TestSTStorageManager:
         assert study.id in err_msg
         assert "West" in err_msg
         assert "storage1" in err_msg
+
+    def test_get_time_series__nominal_case(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        Test the `get_time_series` method of the `STStorageManager` class under nominal conditions.
+
+        This test verifies that the `get_time_series` method returns the expected storage matrix
+        for a specific study, area, storage ID, and Time Series combination.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        array = np.random.rand(8760, 1) * 1000
+        matrix = {
+            "index": list(range(8760)),
+            "columns": [0],
+            "data": array.tolist(),
+        }
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=matrix),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested
+        time_series = manager.get_time_series(
+            study, area_id="West", storage_id="storage1", ts_name="inflows"
+        )
+
+        # Assert that the returned storage fields match the expected fields
+        actual = time_series.dict(by_alias=True)
+        assert actual == matrix
+
+    def test_get_time_series__config_not_found(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        Test the `get_time_series` method of the `STStorageManager` class when the time series is not found.
+
+        This test verifies that the `get_time_series` method raises an `STStorageFieldsNotFoundError`
+        exception when the configuration for the provided study, area, time series,
+        and storage ID combination is not found.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(side_effect=KeyError("Oops!")),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested and expect an exception
+        with pytest.raises(
+            STStorageMatrixNotFoundError, match="not found"
+        ) as ctx:
+            manager.get_time_series(
+                study, area_id="West", storage_id="storage1", ts_name="inflows"
+            )
+        # ensure the error message contains at least the study ID, area ID and storage ID
+        err_msg = str(ctx.value)
+        assert study.id in err_msg
+        assert "West" in err_msg
+        assert "storage1" in err_msg
+        assert "inflows" in err_msg
+
+    def test_get_time_series__invalid_matrix(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        Test the `get_time_series` method of the `STStorageManager` class when the time series is not found.
+
+        This test verifies that the `get_time_series` method raises an `STStorageFieldsNotFoundError`
+        exception when the configuration for the provided study, area, time series,
+        and storage ID combination is not found.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        array = np.random.rand(365, 1) * 1000
+        matrix = {
+            "index": list(range(365)),
+            "columns": [0],
+            "data": array.tolist(),
+        }
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=matrix),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested and expect an exception
+        with pytest.raises(
+            ValidationError,
+            match=re.escape("time series must have shape (8760, 1)"),
+        ) as ctx:
+            manager.get_time_series(
+                study, area_id="West", storage_id="storage1", ts_name="inflows"
+            )

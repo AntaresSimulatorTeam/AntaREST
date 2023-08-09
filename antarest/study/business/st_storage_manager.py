@@ -8,6 +8,7 @@ from pydantic import BaseModel, Extra, validator
 from antarest.core.exceptions import (
     STStorageFieldsNotFoundError,
     STStorageConfigNotFoundError,
+    STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import (
     Field,
@@ -112,7 +113,9 @@ class STStorageOutputForm(STStorageInputForm):
     )
 
     @classmethod
-    def from_config(cls, storage_id: str, config: Dict[str, Any]) -> "STStorageOutputForm":
+    def from_config(
+        cls, storage_id: str, config: Dict[str, Any]
+    ) -> "STStorageOutputForm":
         st_storage_config = STStorageConfig(id=storage_id, **config)
         values = vars(st_storage_config)
         return cls(**values)
@@ -123,7 +126,7 @@ class STStorageOutputForm(STStorageInputForm):
 # =============
 
 
-MATRIX_SHAPE = (8670, 1)
+MATRIX_SHAPE = (8760, 1)
 
 
 class STStorageTimeSeries(BaseModel):
@@ -135,7 +138,9 @@ class STStorageTimeSeries(BaseModel):
     columns: List[int]
 
     @validator("data")
-    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
+    def validate_time_series(
+        cls, data: List[List[float]]
+    ) -> List[List[float]]:
         """Validate the time series."""
         array = np.array(data)
         if array.size == 0:
@@ -153,7 +158,8 @@ class STStorageTimeSeries(BaseModel):
 
 # Note: in the directory tree, there are directories called "clusters",
 # but in reality they are short term storage.
-ST_STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 
 
 class STStorageManager:
@@ -190,7 +196,9 @@ class STStorageManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         # todo: La commande `execute_or_add_commands` devrait retourner un JSON.
         #  Ici, le JSON serait simplement l'ID du stockage court terme créé.
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
         return st_storage_config.id
 
     def get_st_storages(
@@ -210,9 +218,9 @@ class STStorageManager:
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        path = _LIST_PATH.format(area_id=area_id, storage_id="*")
+        path = path.replace("/*", "")
         try:
-            path = ST_STORAGE_LIST_PATH.format(area_id=area_id, storage_id="*")
-            path = path.replace("/*", "")
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
@@ -248,8 +256,8 @@ class STStorageManager:
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        path = _LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
-            path = ST_STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageFieldsNotFoundError(
@@ -278,15 +286,13 @@ class STStorageManager:
         # todo: Il faudrait une implémentation plus simple qui repose sur
         #  une nouvelle commande "update_st_storage" similaire à "create_st_storage".
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        path = _LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
-            # fmt: offXX
-            values = file_study.tree.get(
-                ST_STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id).split("/"),
-                depth=1,
-            )
-            # fmt: on
+            values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageFieldsNotFoundError(study.id, area_id, storage_id) from None
+            raise STStorageFieldsNotFoundError(
+                study.id, area_id, storage_id
+            ) from None
         else:
             old_config = STStorageConfig(id=storage_id, **values)
 
@@ -297,12 +303,14 @@ class STStorageManager:
         new_config = STStorageConfig(**updated, id=storage_id)
         data = json.loads(new_config.json(by_alias=True))
         command = UpdateConfig(
-            target=ST_STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id),
+            target=path,
             data=data,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
 
         values = vars(new_config)
         return STStorageOutputForm(**values)
@@ -327,7 +335,9 @@ class STStorageManager:
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
 
     def get_time_series(
         self,
@@ -348,7 +358,16 @@ class STStorageManager:
         Returns:
             STStorageTimeSeries object containing the short-term storage configuration.
         """
-        return STStorageTimeSeries()
+        # fmt: off
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        path = _SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        try:
+            matrix = file_study.tree.get(path.split("/"), depth=1)
+        except KeyError:
+            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
+        else:
+            return STStorageTimeSeries(**matrix)
+        # fmt: on
 
     def update_time_series(
         self,
