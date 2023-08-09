@@ -42,8 +42,7 @@ class TestSTStorage:
 
         We will test updating a short-term storage:
 
-        - updating a single property,
-        - updating multiple properties,
+        - updating properties,
         - updating a matrix.
 
         We will test the deletion of short-term storages.
@@ -120,11 +119,20 @@ class TestSTStorage:
         #     }
         # ]
 
-        ## updating a single property
+        # todo: updating properties
         res = client.put(
             f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"reservoirCapacity": 2500},
+            json={
+                "efficiency": 1.0,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": True,
+                "injectionNominalCapacity": 2450,
+                "name": "New Siemens Battery",
+                "reservoirCapacity": 2500,
+                "withdrawalNominalCapacity": 2350,
+            },
         )
         res.raise_for_status()
         # check the updating
@@ -138,14 +146,12 @@ class TestSTStorage:
             "group": "Battery",
             "id": siemens_battery_id,
             "initialLevel": 0.0,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "name": siemens_battery,
+            "initialLevelOptim": True,
+            "injectionNominalCapacity": 2450,
+            "name": "New Siemens Battery",
             "reservoirCapacity": 2500,
-            "withdrawalNominalCapacity": 0.0,
+            "withdrawalNominalCapacity": 2350,
         }
-
-        # todo: updating multiple properties
 
         # todo: updating a matrix
 
