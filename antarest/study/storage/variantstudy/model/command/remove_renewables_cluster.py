@@ -45,33 +45,38 @@ class RemoveRenewablesCluster(ICommand):
         """
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=(
-                        f"Area '{self.area_id}' does not exist"
-                        f" in the study configuration."
-                    ),
-                ),
-                {},
+            message = (
+                f"Area '{self.area_id}' does not exist"
+                f" in the study configuration."
             )
+            return CommandOutput(status=False, message=message), {}
         area: Area = study_data.areas[self.area_id]
 
         # Search the Renewable cluster in the area
+        renewable = next(
+            iter(
+                renewable
+                for renewable in area.renewables
+                if renewable.id == self.cluster_id
+            ),
+            None,
+        )
+        if renewable is None:
+            message = (
+                f"Renewable cluster '{self.cluster_id}' does not exist"
+                f" in the area '{self.area_id}'."
+            )
+            return CommandOutput(status=False, message=message), {}
+
         for renewable in area.renewables:
             if renewable.id == self.cluster_id:
                 break
         else:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=(
-                        f"Renewable cluster '{self.cluster_id}' does not exist"
-                        f" in the area '{self.area_id}'."
-                    ),
-                ),
-                {},
+            message = (
+                f"Renewable cluster '{self.cluster_id}' does not exist"
+                f" in the area '{self.area_id}'."
             )
+            return CommandOutput(status=False, message=message), {}
 
         # Remove the Renewable cluster from the configuration
         area.renewables.remove(renewable)
@@ -80,16 +85,11 @@ class RemoveRenewablesCluster(ICommand):
             study_data, self.area_id, self.cluster_id
         )
 
-        return (
-            CommandOutput(
-                status=True,
-                message=(
-                    f"Renewable cluster '{self.cluster_id}' removed"
-                    f" from the area '{self.area_id}'."
-                ),
-            ),
-            {},
+        message = (
+            f"Renewable cluster '{self.cluster_id}' removed"
+            f" from the area '{self.area_id}'."
         )
+        return CommandOutput(status=True, message=message), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         """

@@ -45,44 +45,31 @@ class CreateRenewablesCluster(ICommand):
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         if study_data.enr_modelling != ENR_MODELLING.CLUSTERS.value:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=(
-                        f"Parameter 'renewable-generation-modelling'"
-                        f" must be set to '{ENR_MODELLING.CLUSTERS.value}'"
-                        f" instead of '{study_data.enr_modelling}'"
-                    ),
-                ),
-                {},
+            message = (
+                f"Parameter 'renewable-generation-modelling'"
+                f" must be set to '{ENR_MODELLING.CLUSTERS.value}'"
+                f" instead of '{study_data.enr_modelling}'"
             )
+            return CommandOutput(status=False, message=message), {}
 
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist",
-                ),
-                {},
-            )
+            message = f"Area '{self.area_id}' does not exist"
+            return CommandOutput(status=False, message=message), {}
+
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].renewables:
             if cluster.id == cluster_id:
-                return (
-                    CommandOutput(
-                        status=False,
-                        message=f"Renewable cluster '{self.cluster_name}' already exist",
-                    ),
-                    {},
+                message = (
+                    f"Renewable cluster '{self.cluster_name}' already exist"
                 )
+                return CommandOutput(status=False, message=message), {}
+
         study_data.areas[self.area_id].renewables.append(
             Cluster(id=cluster_id, name=self.cluster_name)
         )
+        message = f"Renewable cluster '{self.cluster_name}' added to area '{self.area_id}'"
         return (
-            CommandOutput(
-                status=True,
-                message=f"Renewable cluster '{self.cluster_name}' added to area '{self.area_id}'",
-            ),
+            CommandOutput(status=True, message=message),
             {"cluster_id": cluster_id},
         )
 
