@@ -25,9 +25,9 @@ class InputSTStorageSeriesArea(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            st_storage: InputSTStorageAreaStorage(
-                self.context, self.config.next_file(st_storage)
+            st_storage_id: InputSTStorageAreaStorage(
+                self.context, self.config.next_file(st_storage_id)
             )
-            for st_storage in self.config.get_st_storage_names(self.area)
+            for st_storage_id in self.config.get_st_storage_ids(self.area)
         }
         return children
