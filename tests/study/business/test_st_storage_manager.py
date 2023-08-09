@@ -1,19 +1,24 @@
 import datetime
 import io
 import uuid
+from typing import cast
 from unittest.mock import Mock
 
+from sqlalchemy.orm.session import Session  # type: ignore
+
 import pytest
-from antarest.core.model import PublicMode
-from antarest.login.model import Group, User
-from antarest.study.business.st_storage_manager import (
+from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
-    STStorageGroup,
-    STStorageManager,
 )
+from antarest.core.model import PublicMode
+from antarest.login.model import Group, User
+from antarest.study.business.st_storage_manager import STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageGroup,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -83,7 +88,7 @@ class TestSTStorageManager:
 
     # noinspection PyArgumentList
     @pytest.fixture(name="study_uuid")
-    def study_uuid_fixture(self, db_session) -> str:
+    def study_uuid_fixture(self, db_session: Session) -> str:
         user = User(id=0, name="admin")
         group = Group(id="my-group", name="group")
         raw_study = RawStudy(
@@ -102,15 +107,18 @@ class TestSTStorageManager:
         )
         db_session.add(raw_study)
         db_session.commit()
-        return raw_study.id
+        return cast(str, raw_study.id)
 
-    def test_get_st_storage_groups__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_st_storages__nominal_case(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
         """
-        This unit test is to verify the behavior of the `get_st_storage_groups`
+        This unit test is to verify the behavior of the `get_st_storages`
         method in the `STStorageManager` class under nominal conditions.
-        It checks whether the method returns the expected storage groups
+        It checks whether the method returns the expected storage list
         based on a specific configuration.
         """
         # The study must be fetched from the database
@@ -128,115 +136,55 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        groups = manager.get_st_storge_groups(study, area_id="West")
+        groups = manager.get_st_storages(study, area_id="West")
 
         # Check
-        actual = groups.dict(by_alias=True)
-        expected = {
-            "properties": {
-                "group": "",
-                "name": "Short-Term Storage of Area West",
-                "injectionNominalCapacity": 5000.0,
-                "withdrawalNominalCapacity": 4500.0,
-                "reservoirCapacity": 61000.0,
-                "efficiency": "",
+        actual = [form.dict(by_alias=True) for form in groups]
+        expected = [
+            {
+                "efficiency": 0.94,
+                "group": STStorageGroup.BATTERY,
+                "id": "storage1",
+                "initialLevel": 0.0,
+                "initialLevelOptim": True,
+                "injectionNominalCapacity": 1500.0,
+                "name": "Storage1",
+                "reservoirCapacity": 20000.0,
+                "withdrawalNominalCapacity": 1500.0,
             },
-            "elements": {
-                "Battery": {
-                    "properties": {
-                        "group": "",
-                        "name": "Battery",
-                        "injectionNominalCapacity": 1500.0,
-                        "withdrawalNominalCapacity": 1500.0,
-                        "reservoirCapacity": 20000.0,
-                        "efficiency": 0.94,
-                    },
-                    "elements": {
-                        "storage1": {
-                            "properties": {
-                                "group": "Battery",
-                                "name": "Storage1",
-                                "injectionNominalCapacity": 1500.0,
-                                "withdrawalNominalCapacity": 1500.0,
-                                "reservoirCapacity": 20000.0,
-                                "efficiency": 0.94,
-                            },
-                            "elements": {},
-                        }
-                    },
-                },
-                "PSP_closed": {
-                    "properties": {
-                        "group": "",
-                        "name": "PSP_closed",
-                        "injectionNominalCapacity": 3500.0,
-                        "withdrawalNominalCapacity": 3000.0,
-                        "reservoirCapacity": 41000.0,
-                        "efficiency": 0.75,
-                    },
-                    "elements": {
-                        "storage2": {
-                            "properties": {
-                                "group": "PSP_closed",
-                                "name": "Storage2",
-                                "injectionNominalCapacity": 2000.0,
-                                "withdrawalNominalCapacity": 1500.0,
-                                "reservoirCapacity": 20000.0,
-                                "efficiency": 0.78,
-                            },
-                            "elements": {},
-                        },
-                        "storage3": {
-                            "properties": {
-                                "group": "PSP_closed",
-                                "name": "Storage3",
-                                "injectionNominalCapacity": 1500.0,
-                                "withdrawalNominalCapacity": 1500.0,
-                                "reservoirCapacity": 21000.0,
-                                "efficiency": 0.72,
-                            },
-                            "elements": {},
-                        },
-                    },
-                },
+            {
+                "efficiency": 0.78,
+                "group": STStorageGroup.PSP_CLOSED,
+                "id": "storage2",
+                "initialLevel": 10000.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 2000.0,
+                "name": "Storage2",
+                "reservoirCapacity": 20000.0,
+                "withdrawalNominalCapacity": 1500.0,
             },
-        }
-
-        # todo: alternate data structure (flat=True):
-        # data = [
-        #     {
-        #         "group": "Battery",
-        #         "name": "Storage1",
-        #         "injectionNominalCapacity": 1500.0,
-        #         "withdrawalNominalCapacity": 1500.0,
-        #         "reservoirCapacity": 20000.0,
-        #         "efficiency": 0.94,
-        #     },
-        #     {
-        #         "group": "PSP_closed",
-        #         "name": "Storage2",
-        #         "injectionNominalCapacity": 2000.0,
-        #         "withdrawalNominalCapacity": 1500.0,
-        #         "reservoirCapacity": 20000.0,
-        #         "efficiency": 0.78,
-        #     },
-        #     {
-        #         "group": "PSP_closed",
-        #         "name": "Storage3",
-        #         "injectionNominalCapacity": 1500.0,
-        #         "withdrawalNominalCapacity": 1500.0,
-        #         "reservoirCapacity": 21000.0,
-        #         "efficiency": 0.72,
-        #     },
-        # ]
-
+            {
+                "efficiency": 0.72,
+                "group": STStorageGroup.PSP_CLOSED,
+                "id": "storage3",
+                "initialLevel": 20000.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 1500.0,
+                "name": "Storage3",
+                "reservoirCapacity": 21000.0,
+                "withdrawalNominalCapacity": 1500.0,
+            },
+        ]
         assert actual == expected
 
-    def test_get_st_storage_groups__config_not_found(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_st_storages__config_not_found(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
         """
-        This test verifies that when the `get_st_storage_groups` method is called
+        This test verifies that when the `get_st_storages` method is called
         with a study and area ID, and the corresponding configuration is not found
         (indicated by the `KeyError` raised by the mock), it correctly
         raises the `STStorageConfigNotFoundError` exception with the expected error
@@ -260,7 +208,7 @@ class TestSTStorageManager:
         with pytest.raises(
             STStorageConfigNotFoundError, match="missing configuration"
         ) as ctx:
-            manager.get_st_storge_groups(study, area_id="West")
+            manager.get_st_storages(study, area_id="West")
 
         # ensure the error message contains at least the study ID and area ID
         err_msg = str(ctx.value)
@@ -268,8 +216,11 @@ class TestSTStorageManager:
         assert "West" in err_msg
 
     def test_get_st_storage__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
         """
         Test the `get_st_storage` method of the `STStorageManager` class under nominal conditions.
 
@@ -317,8 +268,11 @@ class TestSTStorageManager:
         assert actual == expected
 
     def test_get_st_storage__config_not_found(
-        self, db_session, study_storage_service, study_uuid
-    ):
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
         """
         Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
 

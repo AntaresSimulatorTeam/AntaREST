@@ -1,16 +1,14 @@
-import itertools
 import json
 import operator
-import statistics
 from typing import Any, Dict, List
 
 import numpy as np
+from pydantic import BaseModel, Extra, validator
 
 from antarest.core.exceptions import (
     STStorageFieldsNotFoundError,
     STStorageConfigNotFoundError,
 )
-from antarest.study.business.areas.table_group import TableGroup
 from antarest.study.business.utils import (
     Field,
     FormFieldsBaseModel as UtilsFormFieldsBaseModel,
@@ -31,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, validator
 
 
 class FormFieldsBaseModel(UtilsFormFieldsBaseModel):
@@ -202,20 +199,20 @@ class STStorageManager:
         )
         return st_storage_config.id
 
-    def get_st_storge_groups(
+    def get_st_storages(
         self,
         study: Study,
         area_id: str,
-    ) -> TableGroup:
+    ) -> List[STStorageOutputForm]:
         """
-        List of short-term storages grouped by types
+        Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
 
         Returns:
-            The table or a group of tables for short-term storage groups.
+            The list of forms used to display the short-term storages.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         try:
@@ -223,62 +220,16 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
         else:
-            # sourcery skip: extract-method
-            # The Production Network contains all Production Groups.
-            prod_network = TableGroup(
-                properties={"name": f"Short-Term Storage of Area {area_id}"},
-                operations={
-                    "injectionNominalCapacity": sum,
-                    "withdrawalNominalCapacity": sum,
-                    "reservoirCapacity": sum,
-                },
+            # Sort STStorageConfig by groups and then by name
+            order_by = operator.attrgetter("group", "name")
+            all_configs = sorted(
+                (
+                    STStorageConfig(id=storage_id, **options)
+                    for storage_id, options in config.items()
+                ),
+                key=order_by,
             )
-
-            all_configs = [
-                STStorageConfig(id=storage_id, **options)
-                for storage_id, options in config.items()
-            ]
-
-            # Sort STStorageConfig by groups.
-            order_by = operator.attrgetter("group")
-            all_configs.sort(key=order_by)
-
-            # Group STStorageConfig by groups.
-            for group, configs in itertools.groupby(all_configs, key=order_by):
-                group_name: str = group.value
-
-                # Prepare the Production Units of that group.
-                cfg: STStorageConfig
-                elements = {
-                    cfg.id: TableGroup(
-                        properties={
-                            "group": group_name,
-                            "name": cfg.name,
-                            "injectionNominalCapacity": cfg.injection_nominal_capacity,
-                            "withdrawalNominalCapacity": cfg.withdrawal_nominal_capacity,
-                            "reservoirCapacity": cfg.reservoir_capacity,
-                            "efficiency": cfg.efficiency,
-                        }
-                    )
-                    for cfg in configs
-                }
-
-                # The Production Group contains all Production Units of that group.
-                prod_group = TableGroup(
-                    properties={"name": group_name},
-                    operations={
-                        "injectionNominalCapacity": sum,
-                        "withdrawalNominalCapacity": sum,
-                        "reservoirCapacity": sum,
-                        "efficiency": statistics.mean,
-                    },
-                    elements=elements,
-                )
-
-                prod_network.elements[group_name] = prod_group
-
-            prod_network.calc_operations()
-            return prod_network
+            return [STStorageOutputForm(**vars(config)) for config in all_configs]
 
     def get_st_storage(
         self,
