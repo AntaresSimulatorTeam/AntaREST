@@ -3,6 +3,8 @@ import operator
 from typing import Any, List, Mapping, Sequence
 
 import numpy as np
+from typing_extensions import Literal
+
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
@@ -127,7 +129,7 @@ class STStorageOutputForm(STStorageInputForm):
 MATRIX_SHAPE = (8760, 1)
 
 
-class STStorageTimeSeries(BaseModel):
+class STStorageMatrix(BaseModel):
     class Config:
         extra = Extra.forbid
 
@@ -149,6 +151,15 @@ class STStorageTimeSeries(BaseModel):
             raise ValueError("time series must not contain NaN values")
         return data
 
+
+# noinspection SpellCheckingInspection
+STStorageTimeSeries = Literal[
+    "pmax_injection",
+    "pmax_withdrawal",
+    "lower_rule_curve",
+    "upper_rule_curve",
+    "inflows",
+]
 
 # ============================
 #  Short-term storage manager
@@ -339,13 +350,13 @@ class STStorageManager:
             study, file_study, [command], self.storage_service
         )
 
-    def get_time_series(
+    def get_matrix(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-        ts_name: str,
-    ) -> STStorageTimeSeries:
+        ts_name: STStorageTimeSeries,
+    ) -> STStorageMatrix:
         """
         Get the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
 
@@ -356,7 +367,7 @@ class STStorageManager:
             ts_name: Name of the time series to get.
 
         Returns:
-            STStorageTimeSeries object containing the short-term storage configuration.
+            STStorageMatrix object containing the short-term storage configuration.
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -365,16 +376,16 @@ class STStorageManager:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
-        return STStorageTimeSeries(**matrix)
+        return STStorageMatrix(**matrix)
         # fmt: on
 
-    def update_time_series(
+    def update_matrix(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
         ts_name: str,
-        ts: STStorageTimeSeries,
+        ts: STStorageMatrix,
     ) -> None:
         """
         Update the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.

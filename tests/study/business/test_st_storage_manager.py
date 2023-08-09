@@ -316,16 +316,16 @@ class TestSTStorageManager:
         assert "West" in err_msg
         assert "storage1" in err_msg
 
-    def test_get_time_series__nominal_case(
+    def test_get_matrix__nominal_case(
         self,
         db_session: Session,
         study_storage_service: StudyStorageService,
         study_uuid: str,
     ) -> None:
         """
-        Test the `get_time_series` method of the `STStorageManager` class under nominal conditions.
+        Test the `get_matrix` method of the `STStorageManager` class under nominal conditions.
 
-        This test verifies that the `get_time_series` method returns the expected storage matrix
+        This test verifies that the `get_matrix` method returns the expected storage matrix
         for a specific study, area, storage ID, and Time Series combination.
 
         Args:
@@ -355,24 +355,24 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested
-        time_series = manager.get_time_series(
+        matrix = manager.get_matrix(
             study, area_id="West", storage_id="storage1", ts_name="inflows"
         )
 
         # Assert that the returned storage fields match the expected fields
-        actual = time_series.dict(by_alias=True)
+        actual = matrix.dict(by_alias=True)
         assert actual == matrix
 
-    def test_get_time_series__config_not_found(
+    def test_get_matrix__config_not_found(
         self,
         db_session: Session,
         study_storage_service: StudyStorageService,
         study_uuid: str,
     ) -> None:
         """
-        Test the `get_time_series` method of the `STStorageManager` class when the time series is not found.
+        Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_time_series` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 
@@ -400,7 +400,7 @@ class TestSTStorageManager:
         with pytest.raises(
             STStorageMatrixNotFoundError, match="not found"
         ) as ctx:
-            manager.get_time_series(
+            manager.get_matrix(
                 study, area_id="West", storage_id="storage1", ts_name="inflows"
             )
         # ensure the error message contains at least the study ID, area ID and storage ID
@@ -410,16 +410,16 @@ class TestSTStorageManager:
         assert "storage1" in err_msg
         assert "inflows" in err_msg
 
-    def test_get_time_series__invalid_matrix(
+    def test_get_matrix__invalid_matrix(
         self,
         db_session: Session,
         study_storage_service: StudyStorageService,
         study_uuid: str,
     ) -> None:
         """
-        Test the `get_time_series` method of the `STStorageManager` class when the time series is not found.
+        Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_time_series` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 
@@ -454,6 +454,6 @@ class TestSTStorageManager:
             ValidationError,
             match=re.escape("time series must have shape (8760, 1)"),
         ) as ctx:
-            manager.get_time_series(
+            manager.get_matrix(
                 study, area_id="West", storage_id="storage1", ts_name="inflows"
             )
