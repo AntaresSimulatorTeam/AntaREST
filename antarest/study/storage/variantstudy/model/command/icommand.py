@@ -55,10 +55,11 @@ class ICommand(ABC, BaseModel):
                 f"Failed to execute variant command {self.command_name}",
                 exc_info=e,
             )
-            return CommandOutput(
-                status=False,
-                message=f"Unexpected exception occurred when trying to apply command {self.command_name}",
+            message = (
+                f"Unexpected exception occurred when trying"
+                f" to apply command {self.command_name}: {e}"
             )
+            return CommandOutput(status=False, message=message)
 
     @abstractmethod
     def to_dto(self) -> CommandDTO:

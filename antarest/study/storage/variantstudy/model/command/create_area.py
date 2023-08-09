@@ -1,28 +1,45 @@
-from typing import Any, Optional, List, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.core.model import JSON
+from antarest.study.common.default_values import (
+    FilteringOptions,
+    NodalOptimization,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    ENR_MODELLING,
     Area,
-    transform_name_to_id,
     FileStudyTreeConfig,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.common.default_values import (
-    NodalOptimization,
-    FilteringOptions,
-)
 from antarest.study.storage.variantstudy.business.utils import (
     get_or_create_section,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+# noinspection SpellCheckingInspection
+def _generate_new_thermal_areas_ini(
+    file_study: FileStudy,
+    area_id: str,
+    *,
+    unserverdenergycost: float,
+    spilledenergycost: float,
+) -> JSON:
+    new_areas: JSON = file_study.tree.get(["input", "thermal", "areas"])
+    if unserverdenergycost is not None:
+        new_areas["unserverdenergycost"][area_id] = unserverdenergycost
+    if spilledenergycost is not None:
+        new_areas["spilledenergycost"][area_id] = spilledenergycost
+    return new_areas
 
 
 class CreateArea(ICommand):
@@ -34,23 +51,6 @@ class CreateArea(ICommand):
             version=1,
             **data,
         )
-
-    def _generate_new_thermal_areas_ini(
-        self,
-        file_study: FileStudy,
-        area_id: str,
-        unserverdenergycost: Optional[float] = None,
-        spilledenergycost: Optional[float] = None,
-    ) -> JSON:
-        new_areas: JSON = file_study.tree.get(
-            url=["input", "thermal", "areas"]
-        )
-        if unserverdenergycost is not None:
-            new_areas["unserverdenergycost"][area_id] = unserverdenergycost
-        if spilledenergycost is not None:
-            new_areas["spilledenergycost"][area_id] = spilledenergycost
-
-        return new_areas
 
     def _apply_config(
         self, study_data: FileStudyTreeConfig
@@ -200,7 +200,7 @@ class CreateArea(ICommand):
                 },
                 "thermal": {
                     "clusters": {area_id: {"list": {}}},
-                    "areas": self._generate_new_thermal_areas_ini(
+                    "areas": _generate_new_thermal_areas_ini(
                         study_data,
                         area_id,
                         unserverdenergycost=NodalOptimization.UNSERVERDDENERGYCOST,
@@ -248,6 +248,14 @@ class CreateArea(ICommand):
                 self.command_context.generator_matrix_constants.get_null_matrix()
             )
             # fmt: on
+
+        if (
+            version >= 810
+            and study_data.config.enr_modelling == ENR_MODELLING.CLUSTERS.value
+        ):
+            new_area_data["input"]["renewables"] = {
+                "clusters": {area_id: {"list": {}}},
+            }
 
         if version >= 830:
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {

@@ -1,30 +1,65 @@
 import contextlib
+import functools
 import io
-import os
 import json
+import logging
+import os
 import tempfile
 import zipfile
 from json import JSONDecodeError
 from pathlib import Path
-from typing import List, Optional, cast, Dict, Any, Union
-
-from filelock import FileLock
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import (
-    IniWriter,
-)
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from filelock import FileLock
+
+
+class IniFileNodeWarning(UserWarning):
+    """
+    Custom User Warning subclass for INI file-related warnings.
+
+    This warning class is designed to provide more informative warning messages for INI file errors.
+
+    Args:
+        config: The configuration associated with the INI file.
+        message: The specific warning message.
+    """
+
+    def __init__(self, config: FileStudyTreeConfig, message: str) -> None:
+        relpath = config.path.relative_to(config.study_path).as_posix()
+        super().__init__(f"INI File error '{relpath}': {message}")
+
+
+def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Decorator to suppress `UserWarning` exceptions by logging them as warnings.
+
+    Args:
+        f: The function or method to be decorated.
+
+    Returns:
+        Callable[..., Any]: The decorated function.
+    """
+
+    @functools.wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return f(*args, **kwargs)
+        except UserWarning as w:
+            # noinspection PyUnresolvedReferences
+            logging.getLogger(f.__module__).warning(str(w))
+
+    return wrapper
 
 
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
@@ -125,27 +160,69 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 info = cast(JSON, obj)
             self.writer.write(info, self.path)
 
+    @log_warning
     def delete(self, url: Optional[List[str]] = None) -> None:
-        url = url or []
-        if len(url) == 0:
-            if self.config.path.exists():
-                self.config.path.unlink()
-        elif len(url) > 0:
-            data = self.reader.read(self.path) if self.path.exists() else {}
+        """
+        Deletes the specified section or key from the INI file,
+        or the entire INI file if no URL is provided.
+
+        Args:
+            url: A list containing the URL components [section_name, key_name].
+
+        Raises:
+            IniFileNodeWarning:
+                If the specified section or key cannot be deleted due to errors such as
+                missing configuration file, non-resolved URL, or non-existent section/key.
+        """
+        if not self.path.exists():
+            raise IniFileNodeWarning(
+                self.config,
+                "fCannot delete item {url!r}: Config file not found",
+            )
+
+        if not url:
+            self.config.path.unlink()
+            return
+
+        url_len = len(url)
+        if url_len > 2:
+            raise IniFileNodeWarning(
+                self.config,
+                f"Cannot delete item {url!r}: URL should be fully resolved",
+            )
+
+        data = self.reader.read(self.path)
+
+        if url_len == 1:
             section_name = url[0]
-            if len(url) == 1:
-                with contextlib.suppress(KeyError):
-                    del data[section_name]
-            elif len(url) == 2:
-                # remove dict key
-                key_name = url[1]
-                with contextlib.suppress(KeyError):
-                    del data[section_name][key_name]
+            try:
+                del data[section_name]
+            except KeyError:
+                raise IniFileNodeWarning(
+                    self.config,
+                    f"Cannot delete section: Section [{section_name}] not found",
+                ) from None
+
+        elif url_len == 2:
+            section_name, key_name = url
+            try:
+                section = data[section_name]
+            except KeyError:
+                raise IniFileNodeWarning(
+                    self.config,
+                    f"Cannot delete key: Section [{section_name}] not found",
+                ) from None
             else:
-                raise ValueError(
-                    f"url should be fully resolved when arrives on {self.__class__.__name__}"
-                )
-            self.writer.write(data, self.path)
+                try:
+                    del section[key_name]
+                except KeyError:
+                    raise IniFileNodeWarning(
+                        self.config,
+                        f"Cannot delete key: Key '{key_name}'"
+                        f" not found in section [{section_name}]",
+                    ) from None
+
+        self.writer.write(data, self.path)
 
     def check_errors(
         self,

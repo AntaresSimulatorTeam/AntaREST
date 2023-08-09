@@ -1,6 +1,7 @@
-from typing import Any, List, Tuple, Dict
+from typing import Any, Dict, List, Tuple
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -8,12 +9,12 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -29,116 +30,95 @@ class RemoveRenewablesCluster(ICommand):
             **data,
         )
 
-    def _remove_renewables_cluster(
-        self, study_data_config: FileStudyTreeConfig
-    ) -> None:
-        study_data_config.areas[self.area_id].renewables = [
-            cluster
-            for cluster in study_data_config.areas[self.area_id].renewables
-            if cluster.id != self.cluster_id.lower()
-        ]
-
-        remove_area_cluster_from_binding_constraints(
-            study_data_config, self.area_id, self.cluster_id
-        )
-
     def _apply_config(
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        """
+        Applies configuration changes to the study data: remove the renewable clusters from the storages list.
+
+        Args:
+            study_data: The study data configuration.
+
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+            On success, the dictionary is empty.
+        """
+        # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist",
-                ),
-                dict(),
+            message = (
+                f"Area '{self.area_id}' does not exist"
+                f" in the study configuration."
             )
+            return CommandOutput(status=False, message=message), {}
+        area: Area = study_data.areas[self.area_id]
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data.areas[self.area_id].renewables
-                    if cluster.id == self.cluster_id
-                ]
-            )
-            == 0
-        ):
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Renewables cluster '{self.cluster_id}' does not exist",
-                ),
-                dict(),
-            )
-        self._remove_renewables_cluster(study_data)
-
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Renewables cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+        # Search the Renewable cluster in the area
+        renewable = next(
+            iter(
+                renewable
+                for renewable in area.renewables
+                if renewable.id == self.cluster_id
             ),
-            dict(),
+            None,
         )
+        if renewable is None:
+            message = (
+                f"Renewable cluster '{self.cluster_id}' does not exist"
+                f" in the area '{self.area_id}'."
+            )
+            return CommandOutput(status=False, message=message), {}
+
+        for renewable in area.renewables:
+            if renewable.id == self.cluster_id:
+                break
+        else:
+            message = (
+                f"Renewable cluster '{self.cluster_id}' does not exist"
+                f" in the area '{self.area_id}'."
+            )
+            return CommandOutput(status=False, message=message), {}
+
+        # Remove the Renewable cluster from the configuration
+        area.renewables.remove(renewable)
+
+        remove_area_cluster_from_binding_constraints(
+            study_data, self.area_id, self.cluster_id
+        )
+
+        message = (
+            f"Renewable cluster '{self.cluster_id}' removed"
+            f" from the area '{self.area_id}'."
+        )
+        return CommandOutput(status=True, message=message), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area_id not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_id}' does not exist",
-            )
+        """
+        Applies the study data to update renewable cluster configurations and saves the changes:
+        remove corresponding the configuration and remove the attached time series.
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data.config.areas[
-                        self.area_id
-                    ].renewables
-                    if cluster.id == self.cluster_id
-                ]
-            )
-            == 0
-        ):
-            return CommandOutput(
-                status=False,
-                message=f"Renewables cluster '{self.cluster_id}' does not exist",
-            )
+        Args:
+            study_data: The study data to be applied.
 
-        if len(study_data.config.areas[self.area_id].renewables) == 1:
-            study_data.tree.delete(
-                [
-                    "input",
-                    "renewables",
-                ]
-            )
-        else:
-            study_data.tree.delete(
-                [
-                    "input",
-                    "renewables",
-                    "clusters",
-                    self.area_id,
-                    "list",
-                    self.cluster_id,
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "renewables",
-                    "series",
-                    self.area_id,
-                    self.cluster_id,
-                ]
-            )
-
-        self._remove_renewables_cluster(study_data.config)
-
-        return CommandOutput(
-            status=True,
-            message=f"Renewables cluster '{self.cluster_id}' removed from area '{self.area_id}'",
-        )
+        Returns:
+            The output of the command execution.
+        """
+        # It is required to delete the files and folders that correspond to the renewable cluster
+        # BEFORE updating the configuration, as we need the configuration to do so.
+        # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
+        # fmt: off
+        paths = [
+            ["input", "renewables", "clusters", self.area_id, "list", self.cluster_id],
+            ["input", "renewables", "series", self.area_id, self.cluster_id],
+        ]
+        area: Area = study_data.config.areas[self.area_id]
+        if len(area.renewables) == 1:
+            paths.append(["input", "renewables", "series", self.area_id])
+        # fmt: on
+        for path in paths:
+            study_data.tree.delete(path)
+        # Deleting the renewable cluster in the configuration must be done AFTER
+        # deleting the files and folders.
+        return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
