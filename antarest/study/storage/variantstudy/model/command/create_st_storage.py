@@ -200,6 +200,7 @@ class CreateSTStorage(ICommand):
                 CommandOutput(
                     status=False,
                     message=f"Area '{self.area_id}' does not exist in the study configuration.",
+                    status_code=404,
                 ),
                 {},
             )
@@ -210,10 +211,9 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(
-                        f"Short-term storage '{self.storage_name}' already exists"
-                        f" in the area '{self.area_id}'."
-                    ),
+                    message=f"Short-term storage '{self.storage_name}' already exists"
+                    f" in the area '{self.area_id}'.",
+                    status_code=409,
                 ),
                 {},
             )

@@ -206,7 +206,10 @@ class STStorageManager:
         # todo: The `execute_or_add_commands` command should return a JSON object.
         #  Here, the JSON object should simply be the created short term storage ID.
         execute_or_add_commands(
-            study, file_study, [command], self.storage_service
+            study,
+            file_study,
+            [command],
+            self.storage_service,
         )
         return st_storage_config.id
 
