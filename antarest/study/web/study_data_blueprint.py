@@ -8,9 +8,7 @@ from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstruction,
-)
+from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchFormFields,
 )
@@ -28,9 +26,16 @@ from antarest.study.business.area_management import (
     AreaUI,
     LayerInfoDTO,
 )
+from antarest.study.business.areas.hydro_management import (
+    ManagementOptionsFormFields,
+)
 from antarest.study.business.areas.properties_management import (
     PropertiesFormFields,
 )
+from antarest.study.business.areas.renewable_management import (
+    RenewableFormFields,
+)
+from antarest.study.business.areas.thermal_management import ThermalFormFields
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
@@ -46,21 +51,17 @@ from antarest.study.business.district_manager import (
     DistrictUpdateDTO,
 )
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.areas.hydro_management import (
-    ManagementOptionsFormFields,
-)
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.areas.renewable_management import (
-    RenewableFormFields,
-)
 from antarest.study.business.st_storage_manager import (
-    STStorageInputForm,
     STStorageCreateForm,
+    STStorageInputForm,
     STStorageOutputForm,
+    STStorageMatrix,
+    STStorageTimeSeries,
 )
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
@@ -69,7 +70,6 @@ from antarest.study.business.table_mode_management import (
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
 )
-from antarest.study.business.areas.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
@@ -1605,6 +1605,49 @@ def create_study_data_routes(
         )
         return study_service.st_storage_manager.get_st_storage(
             study, area_id, storage_id
+        )
+
+    # Manage Study Data
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Get time series from a short-term storage",
+        response_model=STStorageMatrix,
+    )
+    def get_st_storage_matrix(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> STStorageMatrix:
+        """
+        Retrieve the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+        - `ts_name`: The name of the time series to retrieve.
+
+        Returns: The time series matrix with the following attributes:
+        - `index`: A list of 0-indexed time series lines (8760 lines).
+        - `columns`: A list of 0-indexed time series columns (1 column).
+        - `data`: A 2D-array matrix representing the time series.
+
+        Permissions:
+        - User must have READ permission on the study.
+        """
+        logger.info(
+            f"Retrieving time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.get_matrix(
+            study, area_id, storage_id, ts_name
         )
 
     @bp.post(
