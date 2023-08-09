@@ -320,7 +320,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         if name:
             study_service.areas.update_layer_name(study, layer_id, name)
@@ -344,7 +344,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         study_service.areas.remove_layer(study, layer_id)
 
@@ -406,7 +406,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         study_service.district_manager.update_district(study, district_id, dto)
 
@@ -426,7 +426,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         study_service.district_manager.remove_district(study, district_id)
 
@@ -975,7 +975,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         return (
             study_service.binding_constraint_manager.update_binding_constraint(
@@ -1650,7 +1650,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         return study_service.st_storage_manager.update_st_storage(
             study, area_id, storage_id, form
@@ -1673,7 +1673,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.READ, params
+            uuid, StudyPermissionType.WRITE, params
         )
         study_service.st_storage_manager.delete_st_storage(
             study, area_id, storage_id
