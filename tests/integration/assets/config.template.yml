@@ -9,7 +9,7 @@ security:
     url: ""
 
 db:
-  url: {{dburl}}
+  url: '{{db_url}}'
 
 storage:
   matrixstore: {{matrix_dir}}
