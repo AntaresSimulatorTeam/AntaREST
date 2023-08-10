@@ -69,6 +69,14 @@ const theme = createTheme({
         },
       },
     },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#222333",
+          color: "#FFFFFF",
+        },
+      },
+    },
     MuiPopover: {
       styleOverrides: {
         paper: {
@@ -152,6 +160,9 @@ const theme = createTheme({
     fontFamily: "'Inter', sans-serif",
   },
   palette: {
+    background: {
+      default: "#222333",
+    },
     primary: {
       dark: "#C9940B",
       main: "#FFB800",
