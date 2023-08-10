@@ -86,7 +86,9 @@ class CommandNotValid(HTTPException):
 
 
 class CommandApplicationError(HTTPException):
-    def __init__(self, message: str, status_code: Optional[int] = None) -> None:
+    def __init__(
+        self, message: str, status_code: Optional[int] = None
+    ) -> None:
         status_code = (
             HTTPStatus.INTERNAL_SERVER_ERROR
             if not status_code
