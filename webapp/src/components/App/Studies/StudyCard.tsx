@@ -261,7 +261,7 @@ const StudyCard = memo((props: Props) => {
             <StarToggle
               isActive={isFavorite}
               activeTitle={t("studies.removeFavorite")}
-              unactiveTitle={t("studies.bookmark")}
+              unactiveTitle={t("studies.addFavorite")}
               onToggle={handleFavoriteToggle}
             />
             <Tooltip title={t("study.copyId")}>

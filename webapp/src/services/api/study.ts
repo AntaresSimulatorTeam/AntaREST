@@ -166,8 +166,15 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
   await client.put(`/v1/studies/${sid}/unarchive`);
 };
 
-export const upgradeStudy = async (sid: string): Promise<void> => {
-  await client.put(`/v1/studies/${sid}/upgrade`);
+export const upgradeStudy = async (
+  studyId: string,
+  targetVersion: string
+): Promise<void> => {
+  await client.put(
+    `/v1/studies/${studyId}/upgrade?target_version=${encodeURIComponent(
+      targetVersion
+    )}`
+  );
 };
 
 export const deleteStudy = async (
