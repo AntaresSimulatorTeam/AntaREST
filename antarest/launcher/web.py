@@ -223,7 +223,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_solver_versions(
         solver: str = Query(
-            "local",
+            "default",
             examples={
                 "Default solver": {
                     "description": "Get the solver versions of the default configuration",
