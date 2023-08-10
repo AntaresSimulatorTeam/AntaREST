@@ -1,10 +1,8 @@
 import json
 import operator
-from typing import Any, List, Mapping, Sequence
+from typing import Any, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
-from typing_extensions import Literal
-
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
@@ -30,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
 from pydantic import BaseModel, Extra, Field, validator
+from typing_extensions import Literal
 
 
 class FormFieldsBaseModel(UtilsFormFieldsBaseModel):
@@ -56,6 +55,14 @@ class STStorageCreateForm(FormFieldsBaseModel):
     group: STStorageGroup = Field(
         description="Energy storage system group (mandatory)",
     )
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = STStorageCreateForm(
+                name="Siemens Battery",
+                group=STStorageGroup.BATTERY,
+            )
 
     @property
     def to_config(self) -> STStorageConfig:
@@ -101,6 +108,19 @@ class STStorageInputForm(STStorageCreateForm):
         description="Flag indicating if the initial level is optimized",
     )
 
+    class Config:
+        @staticmethod
+        def schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = STStorageInputForm(
+                name="Siemens Battery",
+                group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=150,
+                withdrawal_nominal_capacity=150,
+                reservoir_capacity=600,
+                efficiency=0.94,
+                initial_level_optim=True,
+            )
+
 
 class STStorageOutputForm(STStorageInputForm):
     """
@@ -111,6 +131,20 @@ class STStorageOutputForm(STStorageInputForm):
         description="Short-term storage ID",
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = STStorageOutputForm(
+                id="siemens_battery",
+                name="Siemens Battery",
+                group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=150,
+                withdrawal_nominal_capacity=150,
+                reservoir_capacity=600,
+                efficiency=0.94,
+                initial_level_optim=True,
+            )
 
     @classmethod
     def from_config(
