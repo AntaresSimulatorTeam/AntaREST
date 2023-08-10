@@ -1,7 +1,6 @@
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { StudyMetadata } from "../../../common/types";
 import { SubmitHandlerPlus } from "../../common/Form/types";
 import Fieldset from "../../common/Fieldset";
@@ -10,7 +9,6 @@ import FormDialog from "../../common/dialogs/FormDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudyVersionsFormatted } from "../../../redux/selectors";
 import { upgradeStudy } from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   study: StudyMetadata;
@@ -24,7 +22,6 @@ const defaultValues = {
 
 function UpgradeDialog({ study, onClose, open }: Props) {
   const [t] = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const versions = useAppSelector(getStudyVersionsFormatted);
   const versionOptions = useMemo(() => {
     return versions
@@ -43,11 +40,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   const handleSubmit = async (
     data: SubmitHandlerPlus<typeof defaultValues>
   ) => {
-    try {
-      await upgradeStudy(study.id, data.values.version).then(onClose);
-    } catch (err) {
-      enqueueErrorSnackbar(t("study.upgrade.error"), err as AxiosError);
-    }
+    return upgradeStudy(study.id, data.values.version).then(onClose);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -62,9 +55,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      config={{
-        defaultValues,
-      }}
+      config={{ defaultValues }}
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>

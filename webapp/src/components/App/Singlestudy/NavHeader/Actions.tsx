@@ -1,7 +1,8 @@
-import { Box, Tooltip, Typography, Chip, Button } from "@mui/material";
+import { Box, Tooltip, Typography, Chip, Button, Divider } from "@mui/material";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { StudyMetadata, StudyType } from "../../../../common/types";
 import { toggleFavorite } from "../../../../redux/ducks/studies";
 import StarToggle from "../../../common/StarToggle";
@@ -16,6 +17,7 @@ interface Props {
   onUnarchive: () => Promise<void>;
   onLaunch: VoidFunction;
   onOpenCommands: VoidFunction;
+  onOpenMenu: React.MouseEventHandler;
 }
 
 function Actions({
@@ -25,6 +27,7 @@ function Actions({
   onUnarchive,
   onLaunch,
   onOpenCommands,
+  onOpenMenu,
 }: Props) {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
@@ -45,7 +48,7 @@ function Actions({
         justifyContent: "flex-start",
         alignItems: "center",
         boxSizing: "border-box",
-        gap: 1,
+        gap: 2,
       }}
     >
       <Tooltip title={study.folder} placement="bottom-start">
@@ -71,7 +74,6 @@ function Actions({
             cursor: "pointer",
             width: 16,
             height: 16,
-            mx: 1,
             color: "text.secondary",
             "&:hover": { color: "primary.main" },
           }}
@@ -97,22 +99,31 @@ function Actions({
           variant="contained"
           color="primary"
           onClick={isArchived ? onUnarchive : onLaunch}
-          sx={{ ml: 1 }}
         >
           {isArchived ? t("global.unarchive") : t("global.launch")}
         </Button>
       )}
+      <Divider flexItem orientation="vertical" />
       {study.type === StudyType.VARIANT && (
         <Button
           size="small"
           variant="outlined"
           color="primary"
           onClick={onOpenCommands}
-          sx={{ minWidth: 0, ml: 2 }}
+          sx={{ minWidth: 0 }}
         >
           <HistoryOutlinedIcon />
         </Button>
       )}
+      <Button
+        size="small"
+        variant="outlined"
+        color="primary"
+        sx={{ width: "auto", minWidth: 0, px: 0 }}
+        onClick={onOpenMenu}
+      >
+        <MoreVertIcon />
+      </Button>
     </Box>
   );
 }

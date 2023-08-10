@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -55,7 +54,6 @@ function NavHeader({
   const dispatch = useAppDispatch();
   const latestVersion = useAppSelector(getLatestStudyVersion);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openMenu, setOpenMenu] = useState("");
   const [openLauncherDialog, setOpenLauncherDialog] = useState(false);
   const [openPropertiesDialog, setOpenPropertiesDialog] = useState(false);
   const [openUpgradeDialog, setOpenUpgradeDialog] = useState(false);
@@ -72,14 +70,12 @@ function NavHeader({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleOpenMenu = (event: MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
-    setOpenMenu(event.currentTarget.id);
   };
 
   const handleClose = () => {
     setAnchorEl(null);
-    setOpenMenu("");
   };
 
   const handleClickBack = () => {
@@ -251,22 +247,11 @@ function NavHeader({
           onCopyId={handleCopyId}
           onLaunch={handleLaunch}
           onUnarchive={handleUnarchive}
+          onOpenMenu={handleOpenMenu}
         />
-        <Button
-          size="small"
-          aria-controls="menu-study"
-          aria-haspopup="true"
-          id="menu-study"
-          variant="outlined"
-          color="primary"
-          sx={{ width: "auto", minWidth: 0, px: 0, marginLeft: 2 }}
-          onClick={handleClick}
-        >
-          <MoreVertIcon />
-        </Button>
         <ActionsMenu
           anchorEl={anchorEl}
-          openMenu={openMenu}
+          open={!!anchorEl}
           onClose={handleClose}
           items={menuItems}
         />

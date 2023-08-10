@@ -12,22 +12,16 @@ export interface ActionsMenuItem {
 
 interface Props {
   anchorEl: HTMLElement | null;
-  openMenu: string;
-  onClose: () => void;
+  open: boolean;
+  onClose: VoidFunction;
   items: ActionsMenuItem[];
 }
 
-function ActionsMenu({ anchorEl, openMenu, onClose, items }: Props) {
+function ActionsMenu({ anchorEl, open, onClose, items }: Props) {
   const [t] = useTranslation();
 
   return (
-    <Menu
-      id="menu-study"
-      anchorEl={anchorEl}
-      keepMounted
-      open={openMenu === "menu-study"}
-      onClose={onClose}
-    >
+    <Menu anchorEl={anchorEl} keepMounted open={open} onClose={onClose}>
       {items.map(
         (item) =>
           item.condition && (
