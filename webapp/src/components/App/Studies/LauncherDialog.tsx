@@ -47,7 +47,7 @@ import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
-const LAUNCH_LOAD_DEFAULT = 12;
+const LAUNCH_LOAD_DEFAULT = 22;
 const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {

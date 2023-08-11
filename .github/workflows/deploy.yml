@@ -3,8 +3,8 @@ name: deploy
 on:
   push:
     branches:
-      - 'master'
-      - 'hotfix/**'
+      - "master"
+      - "hotfix/**"
 
 jobs:
   binary:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [ windows-latest, ubuntu-20.04 ]
+        os: [windows-latest, ubuntu-20.04]
 
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
@@ -27,7 +27,7 @@ jobs:
       - name: 💚 Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
+          node-version: 18.16.1
 
       - name: 💚 Install dependencies
         run: npm install

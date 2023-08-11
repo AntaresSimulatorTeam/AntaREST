@@ -3,7 +3,7 @@ import { createTheme } from "@mui/material/styles";
 
 export const DRAWER_WIDTH = 60;
 export const DRAWER_WIDTH_EXTENDED = 240;
-export const STUDIES_HEIGHT_HEADER = 166;
+export const STUDIES_HEIGHT_HEADER = 130;
 export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
@@ -66,6 +66,14 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: "#222333",
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#222333",
+          color: "#FFFFFF",
         },
       },
     },
@@ -152,6 +160,9 @@ const theme = createTheme({
     fontFamily: "'Inter', sans-serif",
   },
   palette: {
+    background: {
+      default: "#222333",
+    },
     primary: {
       dark: "#C9940B",
       main: "#FFB800",

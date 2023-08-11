@@ -7,7 +7,7 @@ The front end is a [React](https://reactjs.org/) web application. A local build 
 
 Requirements : 
 - python : 3.8.x
-- node : 14.x
+- node : 18.16.1
 
 1. First clone the projet:
 

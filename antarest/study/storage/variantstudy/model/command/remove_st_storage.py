@@ -127,6 +127,9 @@ class RemoveSTStorage(ICommand):
             ["input", "st-storage", "clusters", self.area_id, "list", self.storage_id],
             ["input", "st-storage", "series", self.area_id, self.storage_id],
         ]
+        area: Area = study_data.config.areas[self.area_id]
+        if len(area.st_storages) == 1:
+            paths.append(["input", "st-storage", "series", self.area_id])
         # fmt: on
         for path in paths:
             study_data.tree.delete(path)
