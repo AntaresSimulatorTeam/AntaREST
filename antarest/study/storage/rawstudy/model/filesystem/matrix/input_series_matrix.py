@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
