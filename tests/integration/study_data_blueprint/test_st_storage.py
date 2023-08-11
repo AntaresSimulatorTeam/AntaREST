@@ -150,27 +150,21 @@ class TestSTStorage:
             f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
-                "efficiency": 1.0,
-                "group": "Battery",
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
                 "name": "New Siemens Battery",
                 "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
             },
         )
         assert res.status_code == 200, res.json()
         assert json.loads(res.text) == {
-            "efficiency": 1.0,
-            "group": "Battery",
-            "id": "siemens battery",
-            "initialLevel": 0.0,
-            "initialLevelOptim": True,
-            "injectionNominalCapacity": 2450,
+            "id": siemens_battery_id,
             "name": "New Siemens Battery",
+            "group": "Battery",
+            "efficiency": 1.0,
+            "initialLevel": 0.0,
+            "initialLevelOptim": False,
+            "injectionNominalCapacity": 0.0,
+            "withdrawalNominalCapacity": 0.0,
             "reservoirCapacity": 2500,
-            "withdrawalNominalCapacity": 2350,
         }
 
         res = client.get(
@@ -179,15 +173,54 @@ class TestSTStorage:
         )
         res.status_code = 200, res.json()
         assert res.json() == {
-            "efficiency": 1.0,
-            "group": "Battery",
             "id": siemens_battery_id,
-            "initialLevel": 0.0,
-            "initialLevelOptim": True,
-            "injectionNominalCapacity": 2450,
             "name": "New Siemens Battery",
+            "group": "Battery",
+            "efficiency": 1.0,
+            "initialLevel": 0.0,
+            "initialLevelOptim": False,
+            "injectionNominalCapacity": 0.0,
+            "withdrawalNominalCapacity": 0.0,
             "reservoirCapacity": 2500,
-            "withdrawalNominalCapacity": 2350,
+        }
+
+        # updating properties
+        res = client.put(
+            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "initialLevel": 5900,
+                "reservoirCapacity": 0,
+            },
+        )
+        assert res.status_code == 200, res.json()
+        assert json.loads(res.text) == {
+            "id": siemens_battery_id,
+            "name": "New Siemens Battery",
+            "group": "Battery",
+            "efficiency": 1.0,
+            "initialLevel": 5900,
+            "initialLevelOptim": False,
+            "injectionNominalCapacity": 0.0,
+            "withdrawalNominalCapacity": 0.0,
+            "reservoirCapacity": 0,
+        }
+
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.status_code = 200, res.json()
+        assert res.json() == {
+            "id": siemens_battery_id,
+            "name": "New Siemens Battery",
+            "group": "Battery",
+            "efficiency": 1.0,
+            "initialLevel": 5900,
+            "initialLevelOptim": False,
+            "injectionNominalCapacity": 0.0,
+            "withdrawalNominalCapacity": 0.0,
+            "reservoirCapacity": 0,
         }
 
         # todo: updating a matrix

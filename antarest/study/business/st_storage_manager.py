@@ -1,7 +1,7 @@
 import functools
 import json
 import operator
-from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
 from antarest.core.exceptions import (
@@ -71,40 +71,43 @@ class STStorageCreateForm(FormFieldsBaseModel):
         return STStorageConfig(**values)
 
 
-class STStorageInputForm(STStorageCreateForm):
+class STStorageInputForm(FormFieldsBaseModel):
     """
     Form used to **Edit** a short-term storage
     """
 
-    # name: inherited
-    # group: inherited
-    injection_nominal_capacity: float = Field(
+    name: Optional[str] = Field(
+        None,
+        description="Short-term storage name",
+        regex=r"[a-zA-Z0-9_(),& -]+",
+    )
+    injection_nominal_capacity: Optional[float] = Field(
         None,
         description="Injection nominal capacity (MW)",
         ge=0,
     )
-    withdrawal_nominal_capacity: float = Field(
+    withdrawal_nominal_capacity: Optional[float] = Field(
         None,
         description="Withdrawal nominal capacity (MW)",
         ge=0,
     )
-    reservoir_capacity: float = Field(
+    reservoir_capacity: Optional[float] = Field(
         None,
         description="Reservoir capacity (MWh)",
         ge=0,
     )
-    efficiency: float = Field(
+    efficiency: Optional[float] = Field(
         None,
         description="Efficiency of the storage system",
         ge=0,
         le=1,
     )
-    initial_level: float = Field(
+    initial_level: Optional[float] = Field(
         None,
         description="Initial level of the storage system",
         ge=0,
     )
-    initial_level_optim: bool = Field(
+    initial_level_optim: Optional[bool] = Field(
         None,
         description="Flag indicating if the initial level is optimized",
     )
@@ -114,11 +117,11 @@ class STStorageInputForm(STStorageCreateForm):
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = STStorageInputForm(
                 name="Siemens Battery",
-                group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=150,
                 withdrawal_nominal_capacity=150,
                 reservoir_capacity=600,
                 efficiency=0.94,
+                # initial_level is missing in this example ;-)
                 initial_level_optim=True,
             )
 
@@ -131,6 +134,9 @@ class STStorageOutputForm(STStorageInputForm):
     id: str = Field(
         description="Short-term storage ID",
         regex=r"[a-zA-Z0-9_(),& -]+",
+    )
+    group: STStorageGroup = Field(
+        description="Energy storage system group (mandatory)",
     )
 
     class Config:
@@ -420,13 +426,13 @@ class STStorageManager:
             old_config = STStorageConfig(**values)
 
         # use snake_case values
-        old_values = old_config.dict(
-            by_alias=False, exclude_defaults=False, exclude={"id"}
-        )
-        new_values = form.dict(by_alias=False)
+        old_values = old_config.dict(exclude={"id"}, exclude_defaults=True)
+        new_values = form.dict(by_alias=False, exclude_none=True)
         updated = {**old_values, **new_values}
         new_config = STStorageConfig(**updated, id=storage_id)
         data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+
+        # create the update config command with the modified data
         command = UpdateConfig(
             target=path,
             data=data,
