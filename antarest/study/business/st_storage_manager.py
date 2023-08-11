@@ -1,6 +1,7 @@
+import functools
 import json
 import operator
-from typing import Any, List, Mapping, MutableMapping, Sequence
+from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
 from antarest.core.exceptions import (
@@ -27,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 from typing_extensions import Literal
 
 
@@ -160,10 +161,19 @@ class STStorageOutputForm(STStorageInputForm):
 # =============
 
 
-MATRIX_SHAPE = (8760, 1)
-
-
 class STStorageMatrix(BaseModel):
+    """
+    Short-Term Storage Matrix  Model.
+
+    This model represents a matrix associated with short-term storage
+    and validates its integrity against specific conditions.
+
+    Attributes:
+        data: The 2D-array matrix containing time series values.
+        index: List of lines for the data matrix.
+        columns: List of columns for the data matrix.
+    """
+
     class Config:
         extra = Extra.forbid
 
@@ -175,15 +185,82 @@ class STStorageMatrix(BaseModel):
     def validate_time_series(
         cls, data: List[List[float]]
     ) -> List[List[float]]:
-        """Validate the time series."""
+        """
+        Validator to check the integrity of the time series data.
+
+        Note:
+            - The time series must have a shape of (8760, 1).
+            - Time series values must not be empty or contain NaN values.
+        """
         array = np.array(data)
         if array.size == 0:
             raise ValueError("time series must not be empty")
-        if array.shape != MATRIX_SHAPE:
-            raise ValueError(f"time series must have shape {MATRIX_SHAPE}")
+        if array.shape != (8760, 1):
+            raise ValueError("time series must have shape (8760, 1)")
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
         return data
+
+
+# noinspection SpellCheckingInspection
+class STStorageMatrices(BaseModel):
+    """
+    Short-Term Storage Matrices Validation Model.
+
+    This model is designed to validate constraints on short-term storage matrices.
+
+    Attributes:
+        pmax_injection: Matrix representing maximum injection values.
+        pmax_withdrawal: Matrix representing maximum withdrawal values.
+        lower_rule_curve: Matrix representing lower rule curve values.
+        upper_rule_curve: Matrix representing upper rule curve values.
+        inflows: Matrix representing inflow values.
+    """
+
+    class Config:
+        extra = Extra.forbid
+
+    pmax_injection: STStorageMatrix
+    pmax_withdrawal: STStorageMatrix
+    lower_rule_curve: STStorageMatrix
+    upper_rule_curve: STStorageMatrix
+    inflows: STStorageMatrix
+
+    @validator(
+        "pmax_injection",
+        "pmax_withdrawal",
+        "lower_rule_curve",
+        "upper_rule_curve",
+    )
+    def validate_time_series(cls, matrix: STStorageMatrix) -> STStorageMatrix:
+        """
+        Validator to check if matrix values are within the range [0, 1].
+        """
+        array = np.array(matrix.data)
+        if np.any(array < 0) or np.any(array > 1):
+            raise ValueError("Matrix values should be between 0 and 1")
+        return matrix
+
+    @root_validator()
+    def check_rule_curve(
+        cls, values: MutableMapping[str, STStorageMatrix]
+    ) -> MutableMapping[str, STStorageMatrix]:
+        """
+        Validator to ensure 'lower_rule_curve' values are less than
+        or equal to 'upper_rule_curve' values.
+        """
+        if "lower_rule_curve" in values and "upper_rule_curve" in values:
+            lower_rule_curve = values["lower_rule_curve"]
+            upper_rule_curve = values["upper_rule_curve"]
+            lower_array = np.array(lower_rule_curve.data, dtype=np.float64)
+            upper_array = np.array(upper_rule_curve.data, dtype=np.float64)
+            # noinspection PyUnresolvedReferences
+            if (lower_array > upper_array).any():
+                raise ValueError(
+                    "Each 'lower_rule_curve' value must be lower"
+                    " or equal to each 'upper_rule_curve'"
+                )
+        return values
 
 
 # noinspection SpellCheckingInspection
@@ -406,14 +483,26 @@ class STStorageManager:
         Returns:
             STStorageMatrix object containing the short-term storage configuration.
         """
+        matrix = self._get_matrix_obj(study, area_id, storage_id, ts_name)
+        return STStorageMatrix(**matrix)
+
+    def _get_matrix_obj(
+        self,
+        study: Study,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+    ) -> MutableMapping[str, Any]:
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = _SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
-        return STStorageMatrix(**matrix)
+            raise STStorageMatrixNotFoundError(
+                study.id, area_id, storage_id, ts_name
+            ) from None
+        return matrix
         # fmt: on
 
     def update_matrix(
@@ -421,7 +510,7 @@ class STStorageManager:
         study: Study,
         area_id: str,
         storage_id: str,
-        ts_name: str,
+        ts_name: STStorageTimeSeries,
         ts: STStorageMatrix,
     ) -> None:
         """
@@ -434,3 +523,72 @@ class STStorageManager:
             ts_name: Name of the time series to update.
             ts: Matrix of the time series to update.
         """
+        matrix_object = ts.dict()
+        self._save_matrix_obj(
+            study, area_id, storage_id, ts_name, matrix_object
+        )
+
+    def _save_matrix_obj(
+        self,
+        study: Study,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        matrix_obj: Dict[str, Any],
+    ) -> None:
+        # fmt: off
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        path = _SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        try:
+            file_study.tree.save(matrix_obj, path.split("/"))
+        except KeyError:
+            raise STStorageMatrixNotFoundError(
+                study.id, area_id, storage_id, ts_name
+            ) from None
+        # fmt: on
+
+    def validate_matrices(
+        self,
+        study: Study,
+        area_id: str,
+        storage_id: str,
+    ) -> bool:
+        """
+        Validate the short-term storage matrices.
+
+        This function validates the integrity of various matrices
+        associated with a short-term storage in a given study and area.
+
+        Note:
+            - All matrices except "inflows" should have values between 0 and 1 (inclusive).
+            - The values in the "lower_rule_curve" matrix should be less than or equal to
+              the corresponding values in the "upper_rule_curve" matrix.
+
+        Args:
+            study: The study object.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage to validate.
+
+        Raises:
+            ValidationError: If any of the matrices is invalid.
+
+        Returns:
+            bool: True if validation is successful.
+        """
+        # Create a partial function to retrieve matrix objects
+        get_matrix_obj = functools.partial(
+            self._get_matrix_obj, study, area_id, storage_id
+        )
+
+        # Validate matrices by constructing the `STStorageMatrices` object
+        # noinspection SpellCheckingInspection
+        STStorageMatrices(
+            pmax_injection=get_matrix_obj("pmax_injection"),
+            pmax_withdrawal=get_matrix_obj("pmax_withdrawal"),
+            lower_rule_curve=get_matrix_obj("lower_rule_curve"),
+            upper_rule_curve=get_matrix_obj("upper_rule_curve"),
+            inflows=get_matrix_obj("inflows"),
+        )
+
+        # Validation successful
+        return True
