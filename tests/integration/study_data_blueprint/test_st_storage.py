@@ -58,7 +58,7 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": 860},
         )
-        res.status_code = 200
+        res.status_code = 200, res.json()
         task_id = res.json()
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED, task
@@ -71,7 +71,7 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Battery"},
         )
-        res.status_code = 200
+        res.status_code = 200, res.json()
         siemens_battery_id = res.json()
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
 
@@ -80,7 +80,7 @@ class TestSTStorage:
             f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.status_code = 200
+        res.status_code = 200, res.json()
         assert res.json() == {
             "efficiency": 1.0,
             "group": "Battery",
@@ -130,7 +130,7 @@ class TestSTStorage:
             f"/v1/studies/{study_id}/areas/{area_id}/st-storage",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.json()
         assert res.json() == [
             {
                 "efficiency": 1.0,
@@ -160,7 +160,7 @@ class TestSTStorage:
                 "withdrawalNominalCapacity": 2350,
             },
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.json()
         assert json.loads(res.text) == {
             "efficiency": 1.0,
             "group": "Battery",
@@ -177,7 +177,7 @@ class TestSTStorage:
             f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.status_code = 200
+        res.status_code = 200, res.json()
         assert res.json() == {
             "efficiency": 1.0,
             "group": "Battery",
@@ -215,14 +215,14 @@ class TestSTStorage:
         )
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
 
         # Check delete with the wrong value of area_id
         res = client.delete(
             f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        assert res.status_code == 500
+        assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
         assert area_id + "foo" in description
@@ -238,7 +238,7 @@ class TestSTStorage:
         )
         obj = res.json()
         description = obj["description"]
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         assert f"{study_id}foo" in description
 
         # Check get with wrong area_id
@@ -250,7 +250,7 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert f"{area_id}foo" in description
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
 
         # Check get with wrong study_id
 
@@ -260,7 +260,7 @@ class TestSTStorage:
         )
         obj = res.json()
         description = obj["description"]
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         assert f"{study_id}foo" in description
 
         # Check post with wrong study_id
@@ -271,7 +271,7 @@ class TestSTStorage:
         )
         obj = res.json()
         description = obj["description"]
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         assert f"{study_id}foo" in description
 
         # Check post with wrong area_id
@@ -280,7 +280,7 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Battery"},
         )
-        assert res.status_code == 500
+        assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
         assert f"{area_id}foo" in description
@@ -293,7 +293,7 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Batteryfoo"},
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         obj = res.json()
         description = obj["description"]
         assert re.search(
@@ -315,7 +315,7 @@ class TestSTStorage:
                 "withdrawalNominalCapacity": 2350,
             },
         )
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
         assert f"{area_id}foo" in description
@@ -336,7 +336,7 @@ class TestSTStorage:
                 "withdrawalNominalCapacity": 2350,
             },
         )
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
         assert study_id in description
@@ -362,7 +362,7 @@ class TestSTStorage:
                 "withdrawalNominalCapacity": 2350,
             },
         )
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
         assert f"{study_id}foo" in description
@@ -382,4 +382,4 @@ class TestSTStorage:
                 "withdrawalNominalCapacity": 2350,
             },
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
