@@ -1,0 +1,4018 @@
+[
+ [
+  "[Wed Mar  1 18:30:35 2023][solver][infos] Loading the list of areas...",
+  1.0
+ ],
+ [
+  "[Wed Mar  1 18:31:20 2023][solver][infos] MC-Years : [1 .. 1000], total: 1000",
+  2.0
+ ],
+ [
+  "[Wed Mar  1 18:47:27 2023][solver][infos] Exporting the annual results",
+  2.096
+ ],
+ [
+  "[Wed Mar  1 18:49:22 2023][solver][infos] Exporting the annual results",
+  2.192
+ ],
+ [
+  "[Wed Mar  1 18:49:45 2023][solver][infos] Exporting the annual results",
+  2.2880000000000003
+ ],
+ [
+  "[Wed Mar  1 18:49:54 2023][solver][infos] Exporting the annual results",
+  2.3840000000000003
+ ],
+ [
+  "[Wed Mar  1 18:50:21 2023][solver][infos] Exporting the annual results",
+  2.4800000000000004
+ ],
+ [
+  "[Wed Mar  1 18:50:41 2023][solver][infos] Exporting the annual results",
+  2.5760000000000005
+ ],
+ [
+  "[Wed Mar  1 18:50:43 2023][solver][infos] Exporting the annual results",
+  2.6720000000000006
+ ],
+ [
+  "[Wed Mar  1 18:51:00 2023][solver][infos] Exporting the annual results",
+  2.7680000000000007
+ ],
+ [
+  "[Wed Mar  1 18:51:04 2023][solver][infos] Exporting the annual results",
+  2.8640000000000008
+ ],
+ [
+  "[Wed Mar  1 18:51:04 2023][solver][infos] Exporting the annual results",
+  2.960000000000001
+ ],
+ [
+  "[Wed Mar  1 18:51:11 2023][solver][infos] Exporting the annual results",
+  3.056000000000001
+ ],
+ [
+  "[Wed Mar  1 18:51:13 2023][solver][infos] Exporting the annual results",
+  3.152000000000001
+ ],
+ [
+  "[Wed Mar  1 18:51:17 2023][solver][infos] Exporting the annual results",
+  3.248000000000001
+ ],
+ [
+  "[Wed Mar  1 18:51:30 2023][solver][infos] Exporting the annual results",
+  3.344000000000001
+ ],
+ [
+  "[Wed Mar  1 18:51:32 2023][solver][infos] Exporting the annual results",
+  3.4400000000000013
+ ],
+ [
+  "[Wed Mar  1 18:51:36 2023][solver][infos] Exporting the annual results",
+  3.5360000000000014
+ ],
+ [
+  "[Wed Mar  1 18:51:40 2023][solver][infos] Exporting the annual results",
+  3.6320000000000014
+ ],
+ [
+  "[Wed Mar  1 18:51:55 2023][solver][infos] Exporting the annual results",
+  3.7280000000000015
+ ],
+ [
+  "[Wed Mar  1 18:51:59 2023][solver][infos] Exporting the annual results",
+  3.8240000000000016
+ ],
+ [
+  "[Wed Mar  1 18:52:02 2023][solver][infos] Exporting the annual results",
+  3.9200000000000017
+ ],
+ [
+  "[Wed Mar  1 19:06:32 2023][solver][infos] Exporting the annual results",
+  4.016000000000002
+ ],
+ [
+  "[Wed Mar  1 19:06:32 2023][solver][infos] Exporting the annual results",
+  4.112000000000002
+ ],
+ [
+  "[Wed Mar  1 19:06:33 2023][solver][infos] Exporting the annual results",
+  4.208000000000002
+ ],
+ [
+  "[Wed Mar  1 19:07:04 2023][solver][infos] Exporting the annual results",
+  4.304000000000002
+ ],
+ [
+  "[Wed Mar  1 19:07:36 2023][solver][infos] Exporting the annual results",
+  4.400000000000002
+ ],
+ [
+  "[Wed Mar  1 19:07:43 2023][solver][infos] Exporting the annual results",
+  4.496000000000002
+ ],
+ [
+  "[Wed Mar  1 19:07:44 2023][solver][infos] Exporting the annual results",
+  4.592000000000002
+ ],
+ [
+  "[Wed Mar  1 19:08:03 2023][solver][infos] Exporting the annual results",
+  4.688000000000002
+ ],
+ [
+  "[Wed Mar  1 19:08:10 2023][solver][infos] Exporting the annual results",
+  4.7840000000000025
+ ],
+ [
+  "[Wed Mar  1 19:08:18 2023][solver][infos] Exporting the annual results",
+  4.880000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:21 2023][solver][infos] Exporting the annual results",
+  4.976000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:22 2023][solver][infos] Exporting the annual results",
+  5.072000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:23 2023][solver][infos] Exporting the annual results",
+  5.168000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:26 2023][solver][infos] Exporting the annual results",
+  5.264000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:32 2023][solver][infos] Exporting the annual results",
+  5.360000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:49 2023][solver][infos] Exporting the annual results",
+  5.456000000000003
+ ],
+ [
+  "[Wed Mar  1 19:08:52 2023][solver][infos] Exporting the annual results",
+  5.552000000000003
+ ],
+ [
+  "[Wed Mar  1 19:09:10 2023][solver][infos] Exporting the annual results",
+  5.648000000000003
+ ],
+ [
+  "[Wed Mar  1 19:09:14 2023][solver][infos] Exporting the annual results",
+  5.744000000000003
+ ],
+ [
+  "[Wed Mar  1 19:09:29 2023][solver][infos] Exporting the annual results",
+  5.840000000000003
+ ],
+ [
+  "[Wed Mar  1 19:21:08 2023][solver][infos] Exporting the annual results",
+  5.9360000000000035
+ ],
+ [
+  "[Wed Mar  1 19:22:12 2023][solver][infos] Exporting the annual results",
+  6.032000000000004
+ ],
+ [
+  "[Wed Mar  1 19:22:58 2023][solver][infos] Exporting the annual results",
+  6.128000000000004
+ ],
+ [
+  "[Wed Mar  1 19:23:23 2023][solver][infos] Exporting the annual results",
+  6.224000000000004
+ ],
+ [
+  "[Wed Mar  1 19:23:31 2023][solver][infos] Exporting the annual results",
+  6.320000000000004
+ ],
+ [
+  "[Wed Mar  1 19:24:20 2023][solver][infos] Exporting the annual results",
+  6.416000000000004
+ ],
+ [
+  "[Wed Mar  1 19:24:24 2023][solver][infos] Exporting the annual results",
+  6.512000000000004
+ ],
+ [
+  "[Wed Mar  1 19:24:39 2023][solver][infos] Exporting the annual results",
+  6.608000000000004
+ ],
+ [
+  "[Wed Mar  1 19:24:48 2023][solver][infos] Exporting the annual results",
+  6.704000000000004
+ ],
+ [
+  "[Wed Mar  1 19:25:03 2023][solver][infos] Exporting the annual results",
+  6.800000000000004
+ ],
+ [
+  "[Wed Mar  1 19:25:24 2023][solver][infos] Exporting the annual results",
+  6.896000000000004
+ ],
+ [
+  "[Wed Mar  1 19:25:31 2023][solver][infos] Exporting the annual results",
+  6.992000000000004
+ ],
+ [
+  "[Wed Mar  1 19:25:31 2023][solver][infos] Exporting the annual results",
+  7.0880000000000045
+ ],
+ [
+  "[Wed Mar  1 19:25:45 2023][solver][infos] Exporting the annual results",
+  7.184000000000005
+ ],
+ [
+  "[Wed Mar  1 19:25:47 2023][solver][infos] Exporting the annual results",
+  7.280000000000005
+ ],
+ [
+  "[Wed Mar  1 19:26:01 2023][solver][infos] Exporting the annual results",
+  7.376000000000005
+ ],
+ [
+  "[Wed Mar  1 19:26:16 2023][solver][infos] Exporting the annual results",
+  7.472000000000005
+ ],
+ [
+  "[Wed Mar  1 19:26:21 2023][solver][infos] Exporting the annual results",
+  7.568000000000005
+ ],
+ [
+  "[Wed Mar  1 19:26:32 2023][solver][infos] Exporting the annual results",
+  7.664000000000005
+ ],
+ [
+  "[Wed Mar  1 19:26:53 2023][solver][infos] Exporting the annual results",
+  7.760000000000005
+ ],
+ [
+  "[Wed Mar  1 19:38:21 2023][solver][infos] Exporting the annual results",
+  7.856000000000005
+ ],
+ [
+  "[Wed Mar  1 19:38:36 2023][solver][infos] Exporting the annual results",
+  7.952000000000005
+ ],
+ [
+  "[Wed Mar  1 19:40:22 2023][solver][infos] Exporting the annual results",
+  8.048000000000005
+ ],
+ [
+  "[Wed Mar  1 19:41:08 2023][solver][infos] Exporting the annual results",
+  8.144000000000005
+ ],
+ [
+  "[Wed Mar  1 19:41:31 2023][solver][infos] Exporting the annual results",
+  8.240000000000006
+ ],
+ [
+  "[Wed Mar  1 19:41:39 2023][solver][infos] Exporting the annual results",
+  8.336000000000006
+ ],
+ [
+  "[Wed Mar  1 19:41:43 2023][solver][infos] Exporting the annual results",
+  8.432000000000006
+ ],
+ [
+  "[Wed Mar  1 19:41:43 2023][solver][infos] Exporting the annual results",
+  8.528000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:04 2023][solver][infos] Exporting the annual results",
+  8.624000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:05 2023][solver][infos] Exporting the annual results",
+  8.720000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:12 2023][solver][infos] Exporting the annual results",
+  8.816000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:15 2023][solver][infos] Exporting the annual results",
+  8.912000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:41 2023][solver][infos] Exporting the annual results",
+  9.008000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:43 2023][solver][infos] Exporting the annual results",
+  9.104000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:44 2023][solver][infos] Exporting the annual results",
+  9.200000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:51 2023][solver][infos] Exporting the annual results",
+  9.296000000000006
+ ],
+ [
+  "[Wed Mar  1 19:42:52 2023][solver][infos] Exporting the annual results",
+  9.392000000000007
+ ],
+ [
+  "[Wed Mar  1 19:42:53 2023][solver][infos] Exporting the annual results",
+  9.488000000000007
+ ],
+ [
+  "[Wed Mar  1 19:42:54 2023][solver][infos] Exporting the annual results",
+  9.584000000000007
+ ],
+ [
+  "[Wed Mar  1 19:44:21 2023][solver][infos] Exporting the annual results",
+  9.680000000000007
+ ],
+ [
+  "[Wed Mar  1 19:54:04 2023][solver][infos] Exporting the annual results",
+  9.776000000000007
+ ],
+ [
+  "[Wed Mar  1 19:54:14 2023][solver][infos] Exporting the annual results",
+  9.872000000000007
+ ],
+ [
+  "[Wed Mar  1 19:57:18 2023][solver][infos] Exporting the annual results",
+  9.968000000000007
+ ],
+ [
+  "[Wed Mar  1 19:59:06 2023][solver][infos] Exporting the annual results",
+  10.064000000000007
+ ],
+ [
+  "[Wed Mar  1 19:59:16 2023][solver][infos] Exporting the annual results",
+  10.160000000000007
+ ],
+ [
+  "[Wed Mar  1 19:59:37 2023][solver][infos] Exporting the annual results",
+  10.256000000000007
+ ],
+ [
+  "[Wed Mar  1 19:59:39 2023][solver][infos] Exporting the annual results",
+  10.352000000000007
+ ],
+ [
+  "[Wed Mar  1 19:59:45 2023][solver][infos] Exporting the annual results",
+  10.448000000000008
+ ],
+ [
+  "[Wed Mar  1 19:59:47 2023][solver][infos] Exporting the annual results",
+  10.544000000000008
+ ],
+ [
+  "[Wed Mar  1 19:59:47 2023][solver][infos] Exporting the annual results",
+  10.640000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:02 2023][solver][infos] Exporting the annual results",
+  10.736000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:14 2023][solver][infos] Exporting the annual results",
+  10.832000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:23 2023][solver][infos] Exporting the annual results",
+  10.928000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:36 2023][solver][infos] Exporting the annual results",
+  11.024000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:47 2023][solver][infos] Exporting the annual results",
+  11.120000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:50 2023][solver][infos] Exporting the annual results",
+  11.216000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:55 2023][solver][infos] Exporting the annual results",
+  11.312000000000008
+ ],
+ [
+  "[Wed Mar  1 20:00:58 2023][solver][infos] Exporting the annual results",
+  11.408000000000008
+ ],
+ [
+  "[Wed Mar  1 20:01:07 2023][solver][infos] Exporting the annual results",
+  11.504000000000008
+ ],
+ [
+  "[Wed Mar  1 20:01:30 2023][solver][infos] Exporting the annual results",
+  11.600000000000009
+ ],
+ [
+  "[Wed Mar  1 20:13:08 2023][solver][infos] Exporting the annual results",
+  11.696000000000009
+ ],
+ [
+  "[Wed Mar  1 20:14:15 2023][solver][infos] Exporting the annual results",
+  11.792000000000009
+ ],
+ [
+  "[Wed Mar  1 20:15:02 2023][solver][infos] Exporting the annual results",
+  11.888000000000009
+ ],
+ [
+  "[Wed Mar  1 20:15:22 2023][solver][infos] Exporting the annual results",
+  11.984000000000009
+ ],
+ [
+  "[Wed Mar  1 20:15:40 2023][solver][infos] Exporting the annual results",
+  12.080000000000009
+ ],
+ [
+  "[Wed Mar  1 20:15:41 2023][solver][infos] Exporting the annual results",
+  12.176000000000009
+ ],
+ [
+  "[Wed Mar  1 20:16:25 2023][solver][infos] Exporting the annual results",
+  12.27200000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:25 2023][solver][infos] Exporting the annual results",
+  12.36800000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:27 2023][solver][infos] Exporting the annual results",
+  12.46400000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:27 2023][solver][infos] Exporting the annual results",
+  12.56000000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:36 2023][solver][infos] Exporting the annual results",
+  12.65600000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:40 2023][solver][infos] Exporting the annual results",
+  12.75200000000001
+ ],
+ [
+  "[Wed Mar  1 20:16:59 2023][solver][infos] Exporting the annual results",
+  12.84800000000001
+ ],
+ [
+  "[Wed Mar  1 20:17:08 2023][solver][infos] Exporting the annual results",
+  12.94400000000001
+ ],
+ [
+  "[Wed Mar  1 20:17:29 2023][solver][infos] Exporting the annual results",
+  13.04000000000001
+ ],
+ [
+  "[Wed Mar  1 20:17:30 2023][solver][infos] Exporting the annual results",
+  13.13600000000001
+ ],
+ [
+  "[Wed Mar  1 20:17:56 2023][solver][infos] Exporting the annual results",
+  13.23200000000001
+ ],
+ [
+  "[Wed Mar  1 20:17:58 2023][solver][infos] Exporting the annual results",
+  13.32800000000001
+ ],
+ [
+  "[Wed Mar  1 20:18:21 2023][solver][infos] Exporting the annual results",
+  13.42400000000001
+ ],
+ [
+  "[Wed Mar  1 20:18:56 2023][solver][infos] Exporting the annual results",
+  13.52000000000001
+ ],
+ [
+  "[Wed Mar  1 20:30:42 2023][solver][infos] Exporting the annual results",
+  13.61600000000001
+ ],
+ [
+  "[Wed Mar  1 20:31:32 2023][solver][infos] Exporting the annual results",
+  13.71200000000001
+ ],
+ [
+  "[Wed Mar  1 20:31:39 2023][solver][infos] Exporting the annual results",
+  13.80800000000001
+ ],
+ [
+  "[Wed Mar  1 20:32:01 2023][solver][infos] Exporting the annual results",
+  13.90400000000001
+ ],
+ [
+  "[Wed Mar  1 20:32:20 2023][solver][infos] Exporting the annual results",
+  14.00000000000001
+ ],
+ [
+  "[Wed Mar  1 20:32:31 2023][solver][infos] Exporting the annual results",
+  14.09600000000001
+ ],
+ [
+  "[Wed Mar  1 20:32:37 2023][solver][infos] Exporting the annual results",
+  14.19200000000001
+ ],
+ [
+  "[Wed Mar  1 20:32:58 2023][solver][infos] Exporting the annual results",
+  14.288000000000011
+ ],
+ [
+  "[Wed Mar  1 20:33:01 2023][solver][infos] Exporting the annual results",
+  14.384000000000011
+ ],
+ [
+  "[Wed Mar  1 20:33:08 2023][solver][infos] Exporting the annual results",
+  14.480000000000011
+ ],
+ [
+  "[Wed Mar  1 20:33:38 2023][solver][infos] Exporting the annual results",
+  14.576000000000011
+ ],
+ [
+  "[Wed Mar  1 20:33:55 2023][solver][infos] Exporting the annual results",
+  14.672000000000011
+ ],
+ [
+  "[Wed Mar  1 20:33:58 2023][solver][infos] Exporting the annual results",
+  14.768000000000011
+ ],
+ [
+  "[Wed Mar  1 20:34:09 2023][solver][infos] Exporting the annual results",
+  14.864000000000011
+ ],
+ [
+  "[Wed Mar  1 20:34:09 2023][solver][infos] Exporting the annual results",
+  14.960000000000012
+ ],
+ [
+  "[Wed Mar  1 20:34:14 2023][solver][infos] Exporting the annual results",
+  15.056000000000012
+ ],
+ [
+  "[Wed Mar  1 20:34:31 2023][solver][infos] Exporting the annual results",
+  15.152000000000012
+ ],
+ [
+  "[Wed Mar  1 20:34:35 2023][solver][infos] Exporting the annual results",
+  15.248000000000012
+ ],
+ [
+  "[Wed Mar  1 20:35:05 2023][solver][infos] Exporting the annual results",
+  15.344000000000012
+ ],
+ [
+  "[Wed Mar  1 20:35:17 2023][solver][infos] Exporting the annual results",
+  15.440000000000012
+ ],
+ [
+  "[Wed Mar  1 20:45:38 2023][solver][infos] Exporting the annual results",
+  15.536000000000012
+ ],
+ [
+  "[Wed Mar  1 20:47:06 2023][solver][infos] Exporting the annual results",
+  15.632000000000012
+ ],
+ [
+  "[Wed Mar  1 20:47:44 2023][solver][infos] Exporting the annual results",
+  15.728000000000012
+ ],
+ [
+  "[Wed Mar  1 20:47:45 2023][solver][infos] Exporting the annual results",
+  15.824000000000012
+ ],
+ [
+  "[Wed Mar  1 20:48:06 2023][solver][infos] Exporting the annual results",
+  15.920000000000012
+ ],
+ [
+  "[Wed Mar  1 20:48:30 2023][solver][infos] Exporting the annual results",
+  16.016000000000012
+ ],
+ [
+  "[Wed Mar  1 20:48:34 2023][solver][infos] Exporting the annual results",
+  16.112000000000013
+ ],
+ [
+  "[Wed Mar  1 20:48:50 2023][solver][infos] Exporting the annual results",
+  16.208000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:07 2023][solver][infos] Exporting the annual results",
+  16.304000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:09 2023][solver][infos] Exporting the annual results",
+  16.400000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:15 2023][solver][infos] Exporting the annual results",
+  16.496000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:19 2023][solver][infos] Exporting the annual results",
+  16.592000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:22 2023][solver][infos] Exporting the annual results",
+  16.688000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:31 2023][solver][infos] Exporting the annual results",
+  16.784000000000013
+ ],
+ [
+  "[Wed Mar  1 20:49:58 2023][solver][infos] Exporting the annual results",
+  16.880000000000013
+ ],
+ [
+  "[Wed Mar  1 20:50:09 2023][solver][infos] Exporting the annual results",
+  16.976000000000013
+ ],
+ [
+  "[Wed Mar  1 20:50:19 2023][solver][infos] Exporting the annual results",
+  17.072000000000013
+ ],
+ [
+  "[Wed Mar  1 20:50:40 2023][solver][infos] Exporting the annual results",
+  17.168000000000013
+ ],
+ [
+  "[Wed Mar  1 20:50:44 2023][solver][infos] Exporting the annual results",
+  17.264000000000014
+ ],
+ [
+  "[Wed Mar  1 20:50:57 2023][solver][infos] Exporting the annual results",
+  17.360000000000014
+ ],
+ [
+  "[Wed Mar  1 21:00:28 2023][solver][infos] Exporting the annual results",
+  17.456000000000014
+ ],
+ [
+  "[Wed Mar  1 21:02:19 2023][solver][infos] Exporting the annual results",
+  17.552000000000014
+ ],
+ [
+  "[Wed Mar  1 21:02:45 2023][solver][infos] Exporting the annual results",
+  17.648000000000014
+ ],
+ [
+  "[Wed Mar  1 21:02:49 2023][solver][infos] Exporting the annual results",
+  17.744000000000014
+ ],
+ [
+  "[Wed Mar  1 21:03:21 2023][solver][infos] Exporting the annual results",
+  17.840000000000014
+ ],
+ [
+  "[Wed Mar  1 21:03:36 2023][solver][infos] Exporting the annual results",
+  17.936000000000014
+ ],
+ [
+  "[Wed Mar  1 21:03:38 2023][solver][infos] Exporting the annual results",
+  18.032000000000014
+ ],
+ [
+  "[Wed Mar  1 21:03:38 2023][solver][infos] Exporting the annual results",
+  18.128000000000014
+ ],
+ [
+  "[Wed Mar  1 21:03:42 2023][solver][infos] Exporting the annual results",
+  18.224000000000014
+ ],
+ [
+  "[Wed Mar  1 21:04:00 2023][solver][infos] Exporting the annual results",
+  18.320000000000014
+ ],
+ [
+  "[Wed Mar  1 21:04:01 2023][solver][infos] Exporting the annual results",
+  18.416000000000015
+ ],
+ [
+  "[Wed Mar  1 21:04:05 2023][solver][infos] Exporting the annual results",
+  18.512000000000015
+ ],
+ [
+  "[Wed Mar  1 21:04:21 2023][solver][infos] Exporting the annual results",
+  18.608000000000015
+ ],
+ [
+  "[Wed Mar  1 21:04:33 2023][solver][infos] Exporting the annual results",
+  18.704000000000015
+ ],
+ [
+  "[Wed Mar  1 21:04:50 2023][solver][infos] Exporting the annual results",
+  18.800000000000015
+ ],
+ [
+  "[Wed Mar  1 21:04:51 2023][solver][infos] Exporting the annual results",
+  18.896000000000015
+ ],
+ [
+  "[Wed Mar  1 21:05:01 2023][solver][infos] Exporting the annual results",
+  18.992000000000015
+ ],
+ [
+  "[Wed Mar  1 21:05:07 2023][solver][infos] Exporting the annual results",
+  19.088000000000015
+ ],
+ [
+  "[Wed Mar  1 21:05:14 2023][solver][infos] Exporting the annual results",
+  19.184000000000015
+ ],
+ [
+  "[Wed Mar  1 21:05:17 2023][solver][infos] Exporting the annual results",
+  19.280000000000015
+ ],
+ [
+  "[Wed Mar  1 21:15:57 2023][solver][infos] Exporting the annual results",
+  19.376000000000015
+ ],
+ [
+  "[Wed Mar  1 21:16:07 2023][solver][infos] Exporting the annual results",
+  19.472000000000016
+ ],
+ [
+  "[Wed Mar  1 21:16:19 2023][solver][infos] Exporting the annual results",
+  19.568000000000016
+ ],
+ [
+  "[Wed Mar  1 21:16:36 2023][solver][infos] Exporting the annual results",
+  19.664000000000016
+ ],
+ [
+  "[Wed Mar  1 21:16:49 2023][solver][infos] Exporting the annual results",
+  19.760000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:07 2023][solver][infos] Exporting the annual results",
+  19.856000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:09 2023][solver][infos] Exporting the annual results",
+  19.952000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:12 2023][solver][infos] Exporting the annual results",
+  20.048000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:33 2023][solver][infos] Exporting the annual results",
+  20.144000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:37 2023][solver][infos] Exporting the annual results",
+  20.240000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:45 2023][solver][infos] Exporting the annual results",
+  20.336000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:49 2023][solver][infos] Exporting the annual results",
+  20.432000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:52 2023][solver][infos] Exporting the annual results",
+  20.528000000000016
+ ],
+ [
+  "[Wed Mar  1 21:17:56 2023][solver][infos] Exporting the annual results",
+  20.624000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:06 2023][solver][infos] Exporting the annual results",
+  20.720000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:24 2023][solver][infos] Exporting the annual results",
+  20.816000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:28 2023][solver][infos] Exporting the annual results",
+  20.912000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:32 2023][solver][infos] Exporting the annual results",
+  21.008000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:32 2023][solver][infos] Exporting the annual results",
+  21.104000000000017
+ ],
+ [
+  "[Wed Mar  1 21:18:39 2023][solver][infos] Exporting the annual results",
+  21.200000000000017
+ ],
+ [
+  "[Wed Mar  1 21:29:25 2023][solver][infos] Exporting the annual results",
+  21.296000000000017
+ ],
+ [
+  "[Wed Mar  1 21:29:47 2023][solver][infos] Exporting the annual results",
+  21.392000000000017
+ ],
+ [
+  "[Wed Mar  1 21:30:17 2023][solver][infos] Exporting the annual results",
+  21.488000000000017
+ ],
+ [
+  "[Wed Mar  1 21:30:18 2023][solver][infos] Exporting the annual results",
+  21.584000000000017
+ ],
+ [
+  "[Wed Mar  1 21:31:10 2023][solver][infos] Exporting the annual results",
+  21.680000000000017
+ ],
+ [
+  "[Wed Mar  1 21:31:12 2023][solver][infos] Exporting the annual results",
+  21.776000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:14 2023][solver][infos] Exporting the annual results",
+  21.872000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:19 2023][solver][infos] Exporting the annual results",
+  21.968000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:31 2023][solver][infos] Exporting the annual results",
+  22.064000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:39 2023][solver][infos] Exporting the annual results",
+  22.160000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:45 2023][solver][infos] Exporting the annual results",
+  22.256000000000018
+ ],
+ [
+  "[Wed Mar  1 21:31:49 2023][solver][infos] Exporting the annual results",
+  22.352000000000018
+ ],
+ [
+  "[Wed Mar  1 21:32:02 2023][solver][infos] Exporting the annual results",
+  22.448000000000018
+ ],
+ [
+  "[Wed Mar  1 21:32:06 2023][solver][infos] Exporting the annual results",
+  22.54400000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:06 2023][solver][infos] Exporting the annual results",
+  22.64000000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:12 2023][solver][infos] Exporting the annual results",
+  22.73600000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:21 2023][solver][infos] Exporting the annual results",
+  22.83200000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:34 2023][solver][infos] Exporting the annual results",
+  22.92800000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:48 2023][solver][infos] Exporting the annual results",
+  23.02400000000002
+ ],
+ [
+  "[Wed Mar  1 21:32:54 2023][solver][infos] Exporting the annual results",
+  23.12000000000002
+ ],
+ [
+  "[Wed Mar  1 21:43:25 2023][solver][infos] Exporting the annual results",
+  23.21600000000002
+ ],
+ [
+  "[Wed Mar  1 21:43:48 2023][solver][infos] Exporting the annual results",
+  23.31200000000002
+ ],
+ [
+  "[Wed Mar  1 21:44:05 2023][solver][infos] Exporting the annual results",
+  23.40800000000002
+ ],
+ [
+  "[Wed Mar  1 21:44:25 2023][solver][infos] Exporting the annual results",
+  23.50400000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:03 2023][solver][infos] Exporting the annual results",
+  23.60000000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:08 2023][solver][infos] Exporting the annual results",
+  23.69600000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:13 2023][solver][infos] Exporting the annual results",
+  23.79200000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:22 2023][solver][infos] Exporting the annual results",
+  23.88800000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:34 2023][solver][infos] Exporting the annual results",
+  23.98400000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:34 2023][solver][infos] Exporting the annual results",
+  24.08000000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:37 2023][solver][infos] Exporting the annual results",
+  24.17600000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:42 2023][solver][infos] Exporting the annual results",
+  24.27200000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:42 2023][solver][infos] Exporting the annual results",
+  24.36800000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:49 2023][solver][infos] Exporting the annual results",
+  24.46400000000002
+ ],
+ [
+  "[Wed Mar  1 21:45:50 2023][solver][infos] Exporting the annual results",
+  24.56000000000002
+ ],
+ [
+  "[Wed Mar  1 21:46:12 2023][solver][infos] Exporting the annual results",
+  24.65600000000002
+ ],
+ [
+  "[Wed Mar  1 21:46:14 2023][solver][infos] Exporting the annual results",
+  24.75200000000002
+ ],
+ [
+  "[Wed Mar  1 21:46:37 2023][solver][infos] Exporting the annual results",
+  24.84800000000002
+ ],
+ [
+  "[Wed Mar  1 21:46:44 2023][solver][infos] Exporting the annual results",
+  24.94400000000002
+ ],
+ [
+  "[Wed Mar  1 21:47:02 2023][solver][infos] Exporting the annual results",
+  25.04000000000002
+ ],
+ [
+  "[Wed Mar  1 21:57:34 2023][solver][infos] Exporting the annual results",
+  25.13600000000002
+ ],
+ [
+  "[Wed Mar  1 21:58:13 2023][solver][infos] Exporting the annual results",
+  25.23200000000002
+ ],
+ [
+  "[Wed Mar  1 21:58:23 2023][solver][infos] Exporting the annual results",
+  25.32800000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:11 2023][solver][infos] Exporting the annual results",
+  25.42400000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:21 2023][solver][infos] Exporting the annual results",
+  25.52000000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:28 2023][solver][infos] Exporting the annual results",
+  25.61600000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:38 2023][solver][infos] Exporting the annual results",
+  25.71200000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:39 2023][solver][infos] Exporting the annual results",
+  25.80800000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:40 2023][solver][infos] Exporting the annual results",
+  25.90400000000002
+ ],
+ [
+  "[Wed Mar  1 21:59:55 2023][solver][infos] Exporting the annual results",
+  26.00000000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:11 2023][solver][infos] Exporting the annual results",
+  26.09600000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:20 2023][solver][infos] Exporting the annual results",
+  26.19200000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:29 2023][solver][infos] Exporting the annual results",
+  26.28800000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:43 2023][solver][infos] Exporting the annual results",
+  26.38400000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:54 2023][solver][infos] Exporting the annual results",
+  26.48000000000002
+ ],
+ [
+  "[Wed Mar  1 22:00:57 2023][solver][infos] Exporting the annual results",
+  26.576000000000022
+ ],
+ [
+  "[Wed Mar  1 22:01:00 2023][solver][infos] Exporting the annual results",
+  26.672000000000022
+ ],
+ [
+  "[Wed Mar  1 22:01:09 2023][solver][infos] Exporting the annual results",
+  26.768000000000022
+ ],
+ [
+  "[Wed Mar  1 22:01:14 2023][solver][infos] Exporting the annual results",
+  26.864000000000022
+ ],
+ [
+  "[Wed Mar  1 22:01:26 2023][solver][infos] Exporting the annual results",
+  26.960000000000022
+ ],
+ [
+  "[Wed Mar  1 22:11:27 2023][solver][infos] Exporting the annual results",
+  27.056000000000022
+ ],
+ [
+  "[Wed Mar  1 22:12:53 2023][solver][infos] Exporting the annual results",
+  27.152000000000022
+ ],
+ [
+  "[Wed Mar  1 22:13:04 2023][solver][infos] Exporting the annual results",
+  27.248000000000022
+ ],
+ [
+  "[Wed Mar  1 22:13:09 2023][solver][infos] Exporting the annual results",
+  27.344000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:22 2023][solver][infos] Exporting the annual results",
+  27.440000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:46 2023][solver][infos] Exporting the annual results",
+  27.536000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:49 2023][solver][infos] Exporting the annual results",
+  27.632000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:50 2023][solver][infos] Exporting the annual results",
+  27.728000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:53 2023][solver][infos] Exporting the annual results",
+  27.824000000000023
+ ],
+ [
+  "[Wed Mar  1 22:13:56 2023][solver][infos] Exporting the annual results",
+  27.920000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:02 2023][solver][infos] Exporting the annual results",
+  28.016000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:09 2023][solver][infos] Exporting the annual results",
+  28.112000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:16 2023][solver][infos] Exporting the annual results",
+  28.208000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:19 2023][solver][infos] Exporting the annual results",
+  28.304000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:28 2023][solver][infos] Exporting the annual results",
+  28.400000000000023
+ ],
+ [
+  "[Wed Mar  1 22:14:44 2023][solver][infos] Exporting the annual results",
+  28.496000000000024
+ ],
+ [
+  "[Wed Mar  1 22:14:47 2023][solver][infos] Exporting the annual results",
+  28.592000000000024
+ ],
+ [
+  "[Wed Mar  1 22:14:58 2023][solver][infos] Exporting the annual results",
+  28.688000000000024
+ ],
+ [
+  "[Wed Mar  1 22:15:07 2023][solver][infos] Exporting the annual results",
+  28.784000000000024
+ ],
+ [
+  "[Wed Mar  1 22:15:17 2023][solver][infos] Exporting the annual results",
+  28.880000000000024
+ ],
+ [
+  "[Wed Mar  1 22:25:23 2023][solver][infos] Exporting the annual results",
+  28.976000000000024
+ ],
+ [
+  "[Wed Mar  1 22:26:21 2023][solver][infos] Exporting the annual results",
+  29.072000000000024
+ ],
+ [
+  "[Wed Mar  1 22:26:39 2023][solver][infos] Exporting the annual results",
+  29.168000000000024
+ ],
+ [
+  "[Wed Mar  1 22:27:00 2023][solver][infos] Exporting the annual results",
+  29.264000000000024
+ ],
+ [
+  "[Wed Mar  1 22:27:00 2023][solver][infos] Exporting the annual results",
+  29.360000000000024
+ ],
+ [
+  "[Wed Mar  1 22:27:49 2023][solver][infos] Exporting the annual results",
+  29.456000000000024
+ ],
+ [
+  "[Wed Mar  1 22:27:50 2023][solver][infos] Exporting the annual results",
+  29.552000000000024
+ ],
+ [
+  "[Wed Mar  1 22:27:52 2023][solver][infos] Exporting the annual results",
+  29.648000000000025
+ ],
+ [
+  "[Wed Mar  1 22:27:58 2023][solver][infos] Exporting the annual results",
+  29.744000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:15 2023][solver][infos] Exporting the annual results",
+  29.840000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:17 2023][solver][infos] Exporting the annual results",
+  29.936000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:17 2023][solver][infos] Exporting the annual results",
+  30.032000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:27 2023][solver][infos] Exporting the annual results",
+  30.128000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:27 2023][solver][infos] Exporting the annual results",
+  30.224000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:31 2023][solver][infos] Exporting the annual results",
+  30.320000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:32 2023][solver][infos] Exporting the annual results",
+  30.416000000000025
+ ],
+ [
+  "[Wed Mar  1 22:28:58 2023][solver][infos] Exporting the annual results",
+  30.512000000000025
+ ],
+ [
+  "[Wed Mar  1 22:29:14 2023][solver][infos] Exporting the annual results",
+  30.608000000000025
+ ],
+ [
+  "[Wed Mar  1 22:29:26 2023][solver][infos] Exporting the annual results",
+  30.704000000000025
+ ],
+ [
+  "[Wed Mar  1 22:29:37 2023][solver][infos] Exporting the annual results",
+  30.800000000000026
+ ],
+ [
+  "[Wed Mar  1 22:40:11 2023][solver][infos] Exporting the annual results",
+  30.896000000000026
+ ],
+ [
+  "[Wed Mar  1 22:40:46 2023][solver][infos] Exporting the annual results",
+  30.992000000000026
+ ],
+ [
+  "[Wed Mar  1 22:40:50 2023][solver][infos] Exporting the annual results",
+  31.088000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:02 2023][solver][infos] Exporting the annual results",
+  31.184000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:24 2023][solver][infos] Exporting the annual results",
+  31.280000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:35 2023][solver][infos] Exporting the annual results",
+  31.376000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:38 2023][solver][infos] Exporting the annual results",
+  31.472000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:51 2023][solver][infos] Exporting the annual results",
+  31.568000000000026
+ ],
+ [
+  "[Wed Mar  1 22:41:52 2023][solver][infos] Exporting the annual results",
+  31.664000000000026
+ ],
+ [
+  "[Wed Mar  1 22:42:00 2023][solver][infos] Exporting the annual results",
+  31.760000000000026
+ ],
+ [
+  "[Wed Mar  1 22:42:09 2023][solver][infos] Exporting the annual results",
+  31.856000000000027
+ ],
+ [
+  "[Wed Mar  1 22:42:14 2023][solver][infos] Exporting the annual results",
+  31.952000000000027
+ ],
+ [
+  "[Wed Mar  1 22:42:15 2023][solver][infos] Exporting the annual results",
+  32.04800000000002
+ ],
+ [
+  "[Wed Mar  1 22:42:22 2023][solver][infos] Exporting the annual results",
+  32.14400000000002
+ ],
+ [
+  "[Wed Mar  1 22:42:23 2023][solver][infos] Exporting the annual results",
+  32.240000000000016
+ ],
+ [
+  "[Wed Mar  1 22:42:56 2023][solver][infos] Exporting the annual results",
+  32.33600000000001
+ ],
+ [
+  "[Wed Mar  1 22:43:10 2023][solver][infos] Exporting the annual results",
+  32.43200000000001
+ ],
+ [
+  "[Wed Mar  1 22:43:17 2023][solver][infos] Exporting the annual results",
+  32.528000000000006
+ ],
+ [
+  "[Wed Mar  1 22:43:31 2023][solver][infos] Exporting the annual results",
+  32.624
+ ],
+ [
+  "[Wed Mar  1 22:43:41 2023][solver][infos] Exporting the annual results",
+  32.72
+ ],
+ [
+  "[Wed Mar  1 22:54:54 2023][solver][infos] Exporting the annual results",
+  32.815999999999995
+ ],
+ [
+  "[Wed Mar  1 22:55:13 2023][solver][infos] Exporting the annual results",
+  32.91199999999999
+ ],
+ [
+  "[Wed Mar  1 22:55:25 2023][solver][infos] Exporting the annual results",
+  33.00799999999999
+ ],
+ [
+  "[Wed Mar  1 22:55:25 2023][solver][infos] Exporting the annual results",
+  33.103999999999985
+ ],
+ [
+  "[Wed Mar  1 22:55:47 2023][solver][infos] Exporting the annual results",
+  33.19999999999998
+ ],
+ [
+  "[Wed Mar  1 22:55:56 2023][solver][infos] Exporting the annual results",
+  33.29599999999998
+ ],
+ [
+  "[Wed Mar  1 22:55:58 2023][solver][infos] Exporting the annual results",
+  33.391999999999975
+ ],
+ [
+  "[Wed Mar  1 22:56:04 2023][solver][infos] Exporting the annual results",
+  33.48799999999997
+ ],
+ [
+  "[Wed Mar  1 22:56:12 2023][solver][infos] Exporting the annual results",
+  33.58399999999997
+ ],
+ [
+  "[Wed Mar  1 22:56:46 2023][solver][infos] Exporting the annual results",
+  33.679999999999964
+ ],
+ [
+  "[Wed Mar  1 22:56:49 2023][solver][infos] Exporting the annual results",
+  33.77599999999996
+ ],
+ [
+  "[Wed Mar  1 22:57:03 2023][solver][infos] Exporting the annual results",
+  33.87199999999996
+ ],
+ [
+  "[Wed Mar  1 22:57:07 2023][solver][infos] Exporting the annual results",
+  33.967999999999954
+ ],
+ [
+  "[Wed Mar  1 22:57:09 2023][solver][infos] Exporting the annual results",
+  34.06399999999995
+ ],
+ [
+  "[Wed Mar  1 22:57:27 2023][solver][infos] Exporting the annual results",
+  34.15999999999995
+ ],
+ [
+  "[Wed Mar  1 22:57:28 2023][solver][infos] Exporting the annual results",
+  34.25599999999994
+ ],
+ [
+  "[Wed Mar  1 22:57:43 2023][solver][infos] Exporting the annual results",
+  34.35199999999994
+ ],
+ [
+  "[Wed Mar  1 22:58:07 2023][solver][infos] Exporting the annual results",
+  34.44799999999994
+ ],
+ [
+  "[Wed Mar  1 22:58:09 2023][solver][infos] Exporting the annual results",
+  34.54399999999993
+ ],
+ [
+  "[Wed Mar  1 22:58:11 2023][solver][infos] Exporting the annual results",
+  34.63999999999993
+ ],
+ [
+  "[Wed Mar  1 23:08:37 2023][solver][infos] Exporting the annual results",
+  34.735999999999926
+ ],
+ [
+  "[Wed Mar  1 23:09:25 2023][solver][infos] Exporting the annual results",
+  34.83199999999992
+ ],
+ [
+  "[Wed Mar  1 23:09:34 2023][solver][infos] Exporting the annual results",
+  34.92799999999992
+ ],
+ [
+  "[Wed Mar  1 23:09:37 2023][solver][infos] Exporting the annual results",
+  35.023999999999916
+ ],
+ [
+  "[Wed Mar  1 23:10:04 2023][solver][infos] Exporting the annual results",
+  35.11999999999991
+ ],
+ [
+  "[Wed Mar  1 23:10:09 2023][solver][infos] Exporting the annual results",
+  35.21599999999991
+ ],
+ [
+  "[Wed Mar  1 23:10:11 2023][solver][infos] Exporting the annual results",
+  35.311999999999905
+ ],
+ [
+  "[Wed Mar  1 23:10:13 2023][solver][infos] Exporting the annual results",
+  35.4079999999999
+ ],
+ [
+  "[Wed Mar  1 23:10:31 2023][solver][infos] Exporting the annual results",
+  35.5039999999999
+ ],
+ [
+  "[Wed Mar  1 23:10:40 2023][solver][infos] Exporting the annual results",
+  35.599999999999895
+ ],
+ [
+  "[Wed Mar  1 23:10:43 2023][solver][infos] Exporting the annual results",
+  35.69599999999989
+ ],
+ [
+  "[Wed Mar  1 23:10:53 2023][solver][infos] Exporting the annual results",
+  35.79199999999989
+ ],
+ [
+  "[Wed Mar  1 23:11:19 2023][solver][infos] Exporting the annual results",
+  35.887999999999884
+ ],
+ [
+  "[Wed Mar  1 23:11:20 2023][solver][infos] Exporting the annual results",
+  35.98399999999988
+ ],
+ [
+  "[Wed Mar  1 23:11:22 2023][solver][infos] Exporting the annual results",
+  36.07999999999988
+ ],
+ [
+  "[Wed Mar  1 23:11:41 2023][solver][infos] Exporting the annual results",
+  36.175999999999874
+ ],
+ [
+  "[Wed Mar  1 23:12:08 2023][solver][infos] Exporting the annual results",
+  36.27199999999987
+ ],
+ [
+  "[Wed Mar  1 23:12:13 2023][solver][infos] Exporting the annual results",
+  36.36799999999987
+ ],
+ [
+  "[Wed Mar  1 23:12:27 2023][solver][infos] Exporting the annual results",
+  36.463999999999864
+ ],
+ [
+  "[Wed Mar  1 23:13:13 2023][solver][infos] Exporting the annual results",
+  36.55999999999986
+ ],
+ [
+  "[Wed Mar  1 23:25:05 2023][solver][infos] Exporting the annual results",
+  36.65599999999986
+ ],
+ [
+  "[Wed Mar  1 23:25:12 2023][solver][infos] Exporting the annual results",
+  36.75199999999985
+ ],
+ [
+  "[Wed Mar  1 23:25:13 2023][solver][infos] Exporting the annual results",
+  36.84799999999985
+ ],
+ [
+  "[Wed Mar  1 23:25:15 2023][solver][infos] Exporting the annual results",
+  36.943999999999846
+ ],
+ [
+  "[Wed Mar  1 23:25:36 2023][solver][infos] Exporting the annual results",
+  37.03999999999984
+ ],
+ [
+  "[Wed Mar  1 23:25:44 2023][solver][infos] Exporting the annual results",
+  37.13599999999984
+ ],
+ [
+  "[Wed Mar  1 23:25:46 2023][solver][infos] Exporting the annual results",
+  37.231999999999836
+ ],
+ [
+  "[Wed Mar  1 23:25:49 2023][solver][infos] Exporting the annual results",
+  37.32799999999983
+ ],
+ [
+  "[Wed Mar  1 23:25:51 2023][solver][infos] Exporting the annual results",
+  37.42399999999983
+ ],
+ [
+  "[Wed Mar  1 23:25:54 2023][solver][infos] Exporting the annual results",
+  37.519999999999825
+ ],
+ [
+  "[Wed Mar  1 23:25:57 2023][solver][infos] Exporting the annual results",
+  37.61599999999982
+ ],
+ [
+  "[Wed Mar  1 23:26:02 2023][solver][infos] Exporting the annual results",
+  37.71199999999982
+ ],
+ [
+  "[Wed Mar  1 23:26:05 2023][solver][infos] Exporting the annual results",
+  37.807999999999815
+ ],
+ [
+  "[Wed Mar  1 23:26:21 2023][solver][infos] Exporting the annual results",
+  37.90399999999981
+ ],
+ [
+  "[Wed Mar  1 23:26:25 2023][solver][infos] Exporting the annual results",
+  37.99999999999981
+ ],
+ [
+  "[Wed Mar  1 23:26:26 2023][solver][infos] Exporting the annual results",
+  38.095999999999805
+ ],
+ [
+  "[Wed Mar  1 23:26:49 2023][solver][infos] Exporting the annual results",
+  38.1919999999998
+ ],
+ [
+  "[Wed Mar  1 23:26:55 2023][solver][infos] Exporting the annual results",
+  38.2879999999998
+ ],
+ [
+  "[Wed Mar  1 23:26:55 2023][solver][infos] Exporting the annual results",
+  38.383999999999794
+ ],
+ [
+  "[Wed Mar  1 23:26:59 2023][solver][infos] Exporting the annual results",
+  38.47999999999979
+ ],
+ [
+  "[Wed Mar  1 23:38:34 2023][solver][infos] Exporting the annual results",
+  38.57599999999979
+ ],
+ [
+  "[Wed Mar  1 23:38:51 2023][solver][infos] Exporting the annual results",
+  38.671999999999784
+ ],
+ [
+  "[Wed Mar  1 23:39:01 2023][solver][infos] Exporting the annual results",
+  38.76799999999978
+ ],
+ [
+  "[Wed Mar  1 23:39:11 2023][solver][infos] Exporting the annual results",
+  38.86399999999978
+ ],
+ [
+  "[Wed Mar  1 23:39:15 2023][solver][infos] Exporting the annual results",
+  38.95999999999977
+ ],
+ [
+  "[Wed Mar  1 23:39:15 2023][solver][infos] Exporting the annual results",
+  39.05599999999977
+ ],
+ [
+  "[Wed Mar  1 23:39:22 2023][solver][infos] Exporting the annual results",
+  39.15199999999977
+ ],
+ [
+  "[Wed Mar  1 23:39:33 2023][solver][infos] Exporting the annual results",
+  39.24799999999976
+ ],
+ [
+  "[Wed Mar  1 23:39:33 2023][solver][infos] Exporting the annual results",
+  39.34399999999976
+ ],
+ [
+  "[Wed Mar  1 23:39:37 2023][solver][infos] Exporting the annual results",
+  39.439999999999756
+ ],
+ [
+  "[Wed Mar  1 23:39:41 2023][solver][infos] Exporting the annual results",
+  39.53599999999975
+ ],
+ [
+  "[Wed Mar  1 23:39:46 2023][solver][infos] Exporting the annual results",
+  39.63199999999975
+ ],
+ [
+  "[Wed Mar  1 23:39:57 2023][solver][infos] Exporting the annual results",
+  39.727999999999746
+ ],
+ [
+  "[Wed Mar  1 23:39:58 2023][solver][infos] Exporting the annual results",
+  39.82399999999974
+ ],
+ [
+  "[Wed Mar  1 23:40:02 2023][solver][infos] Exporting the annual results",
+  39.91999999999974
+ ],
+ [
+  "[Wed Mar  1 23:40:04 2023][solver][infos] Exporting the annual results",
+  40.015999999999735
+ ],
+ [
+  "[Wed Mar  1 23:40:09 2023][solver][infos] Exporting the annual results",
+  40.11199999999973
+ ],
+ [
+  "[Wed Mar  1 23:40:14 2023][solver][infos] Exporting the annual results",
+  40.20799999999973
+ ],
+ [
+  "[Wed Mar  1 23:40:16 2023][solver][infos] Exporting the annual results",
+  40.303999999999725
+ ],
+ [
+  "[Wed Mar  1 23:40:26 2023][solver][infos] Exporting the annual results",
+  40.39999999999972
+ ],
+ [
+  "[Wed Mar  1 23:50:57 2023][solver][infos] Exporting the annual results",
+  40.49599999999972
+ ],
+ [
+  "[Wed Mar  1 23:51:02 2023][solver][infos] Exporting the annual results",
+  40.591999999999715
+ ],
+ [
+  "[Wed Mar  1 23:52:08 2023][solver][infos] Exporting the annual results",
+  40.68799999999971
+ ],
+ [
+  "[Wed Mar  1 23:52:14 2023][solver][infos] Exporting the annual results",
+  40.78399999999971
+ ],
+ [
+  "[Wed Mar  1 23:52:37 2023][solver][infos] Exporting the annual results",
+  40.879999999999704
+ ],
+ [
+  "[Wed Mar  1 23:52:53 2023][solver][infos] Exporting the annual results",
+  40.9759999999997
+ ],
+ [
+  "[Wed Mar  1 23:53:02 2023][solver][infos] Exporting the annual results",
+  41.0719999999997
+ ],
+ [
+  "[Wed Mar  1 23:53:13 2023][solver][infos] Exporting the annual results",
+  41.167999999999694
+ ],
+ [
+  "[Wed Mar  1 23:53:17 2023][solver][infos] Exporting the annual results",
+  41.26399999999969
+ ],
+ [
+  "[Wed Mar  1 23:53:17 2023][solver][infos] Exporting the annual results",
+  41.35999999999969
+ ],
+ [
+  "[Wed Mar  1 23:53:21 2023][solver][infos] Exporting the annual results",
+  41.45599999999968
+ ],
+ [
+  "[Wed Mar  1 23:53:22 2023][solver][infos] Exporting the annual results",
+  41.55199999999968
+ ],
+ [
+  "[Wed Mar  1 23:53:28 2023][solver][infos] Exporting the annual results",
+  41.647999999999676
+ ],
+ [
+  "[Wed Mar  1 23:53:44 2023][solver][infos] Exporting the annual results",
+  41.74399999999967
+ ],
+ [
+  "[Wed Mar  1 23:53:45 2023][solver][infos] Exporting the annual results",
+  41.83999999999967
+ ],
+ [
+  "[Wed Mar  1 23:53:46 2023][solver][infos] Exporting the annual results",
+  41.935999999999666
+ ],
+ [
+  "[Wed Mar  1 23:53:51 2023][solver][infos] Exporting the annual results",
+  42.03199999999966
+ ],
+ [
+  "[Wed Mar  1 23:53:59 2023][solver][infos] Exporting the annual results",
+  42.12799999999966
+ ],
+ [
+  "[Wed Mar  1 23:54:05 2023][solver][infos] Exporting the annual results",
+  42.223999999999656
+ ],
+ [
+  "[Wed Mar  1 23:54:14 2023][solver][infos] Exporting the annual results",
+  42.31999999999965
+ ],
+ [
+  "[Thu Mar  2 00:04:43 2023][solver][infos] Exporting the annual results",
+  42.41599999999965
+ ],
+ [
+  "[Thu Mar  2 00:04:55 2023][solver][infos] Exporting the annual results",
+  42.511999999999645
+ ],
+ [
+  "[Thu Mar  2 00:04:55 2023][solver][infos] Exporting the annual results",
+  42.60799999999964
+ ],
+ [
+  "[Thu Mar  2 00:04:56 2023][solver][infos] Exporting the annual results",
+  42.70399999999964
+ ],
+ [
+  "[Thu Mar  2 00:05:18 2023][solver][infos] Exporting the annual results",
+  42.799999999999635
+ ],
+ [
+  "[Thu Mar  2 00:05:29 2023][solver][infos] Exporting the annual results",
+  42.89599999999963
+ ],
+ [
+  "[Thu Mar  2 00:05:42 2023][solver][infos] Exporting the annual results",
+  42.99199999999963
+ ],
+ [
+  "[Thu Mar  2 00:05:59 2023][solver][infos] Exporting the annual results",
+  43.087999999999624
+ ],
+ [
+  "[Thu Mar  2 00:05:59 2023][solver][infos] Exporting the annual results",
+  43.18399999999962
+ ],
+ [
+  "[Thu Mar  2 00:06:01 2023][solver][infos] Exporting the annual results",
+  43.27999999999962
+ ],
+ [
+  "[Thu Mar  2 00:06:02 2023][solver][infos] Exporting the annual results",
+  43.375999999999614
+ ],
+ [
+  "[Thu Mar  2 00:06:24 2023][solver][infos] Exporting the annual results",
+  43.47199999999961
+ ],
+ [
+  "[Thu Mar  2 00:06:33 2023][solver][infos] Exporting the annual results",
+  43.56799999999961
+ ],
+ [
+  "[Thu Mar  2 00:06:38 2023][solver][infos] Exporting the annual results",
+  43.663999999999604
+ ],
+ [
+  "[Thu Mar  2 00:06:47 2023][solver][infos] Exporting the annual results",
+  43.7599999999996
+ ],
+ [
+  "[Thu Mar  2 00:06:59 2023][solver][infos] Exporting the annual results",
+  43.8559999999996
+ ],
+ [
+  "[Thu Mar  2 00:07:18 2023][solver][infos] Exporting the annual results",
+  43.95199999999959
+ ],
+ [
+  "[Thu Mar  2 00:07:24 2023][solver][infos] Exporting the annual results",
+  44.04799999999959
+ ],
+ [
+  "[Thu Mar  2 00:07:49 2023][solver][infos] Exporting the annual results",
+  44.143999999999586
+ ],
+ [
+  "[Thu Mar  2 00:08:01 2023][solver][infos] Exporting the annual results",
+  44.23999999999958
+ ],
+ [
+  "[Thu Mar  2 00:19:11 2023][solver][infos] Exporting the annual results",
+  44.33599999999958
+ ],
+ [
+  "[Thu Mar  2 00:19:17 2023][solver][infos] Exporting the annual results",
+  44.431999999999576
+ ],
+ [
+  "[Thu Mar  2 00:19:52 2023][solver][infos] Exporting the annual results",
+  44.52799999999957
+ ],
+ [
+  "[Thu Mar  2 00:20:29 2023][solver][infos] Exporting the annual results",
+  44.62399999999957
+ ],
+ [
+  "[Thu Mar  2 00:20:41 2023][solver][infos] Exporting the annual results",
+  44.719999999999565
+ ],
+ [
+  "[Thu Mar  2 00:20:45 2023][solver][infos] Exporting the annual results",
+  44.81599999999956
+ ],
+ [
+  "[Thu Mar  2 00:20:46 2023][solver][infos] Exporting the annual results",
+  44.91199999999956
+ ],
+ [
+  "[Thu Mar  2 00:20:52 2023][solver][infos] Exporting the annual results",
+  45.007999999999555
+ ],
+ [
+  "[Thu Mar  2 00:21:06 2023][solver][infos] Exporting the annual results",
+  45.10399999999955
+ ],
+ [
+  "[Thu Mar  2 00:21:18 2023][solver][infos] Exporting the annual results",
+  45.19999999999955
+ ],
+ [
+  "[Thu Mar  2 00:21:19 2023][solver][infos] Exporting the annual results",
+  45.295999999999545
+ ],
+ [
+  "[Thu Mar  2 00:21:30 2023][solver][infos] Exporting the annual results",
+  45.39199999999954
+ ],
+ [
+  "[Thu Mar  2 00:21:36 2023][solver][infos] Exporting the annual results",
+  45.48799999999954
+ ],
+ [
+  "[Thu Mar  2 00:21:38 2023][solver][infos] Exporting the annual results",
+  45.583999999999534
+ ],
+ [
+  "[Thu Mar  2 00:21:44 2023][solver][infos] Exporting the annual results",
+  45.67999999999953
+ ],
+ [
+  "[Thu Mar  2 00:21:58 2023][solver][infos] Exporting the annual results",
+  45.77599999999953
+ ],
+ [
+  "[Thu Mar  2 00:22:00 2023][solver][infos] Exporting the annual results",
+  45.871999999999524
+ ],
+ [
+  "[Thu Mar  2 00:22:12 2023][solver][infos] Exporting the annual results",
+  45.96799999999952
+ ],
+ [
+  "[Thu Mar  2 00:22:17 2023][solver][infos] Exporting the annual results",
+  46.06399999999952
+ ],
+ [
+  "[Thu Mar  2 00:22:25 2023][solver][infos] Exporting the annual results",
+  46.15999999999951
+ ],
+ [
+  "[Thu Mar  2 00:33:12 2023][solver][infos] Exporting the annual results",
+  46.25599999999951
+ ],
+ [
+  "[Thu Mar  2 00:33:46 2023][solver][infos] Exporting the annual results",
+  46.35199999999951
+ ],
+ [
+  "[Thu Mar  2 00:33:47 2023][solver][infos] Exporting the annual results",
+  46.4479999999995
+ ],
+ [
+  "[Thu Mar  2 00:34:02 2023][solver][infos] Exporting the annual results",
+  46.5439999999995
+ ],
+ [
+  "[Thu Mar  2 00:34:05 2023][solver][infos] Exporting the annual results",
+  46.639999999999496
+ ],
+ [
+  "[Thu Mar  2 00:34:11 2023][solver][infos] Exporting the annual results",
+  46.73599999999949
+ ],
+ [
+  "[Thu Mar  2 00:34:20 2023][solver][infos] Exporting the annual results",
+  46.83199999999949
+ ],
+ [
+  "[Thu Mar  2 00:34:28 2023][solver][infos] Exporting the annual results",
+  46.927999999999486
+ ],
+ [
+  "[Thu Mar  2 00:34:34 2023][solver][infos] Exporting the annual results",
+  47.02399999999948
+ ],
+ [
+  "[Thu Mar  2 00:34:42 2023][solver][infos] Exporting the annual results",
+  47.11999999999948
+ ],
+ [
+  "[Thu Mar  2 00:34:56 2023][solver][infos] Exporting the annual results",
+  47.215999999999475
+ ],
+ [
+  "[Thu Mar  2 00:35:15 2023][solver][infos] Exporting the annual results",
+  47.31199999999947
+ ],
+ [
+  "[Thu Mar  2 00:35:22 2023][solver][infos] Exporting the annual results",
+  47.40799999999947
+ ],
+ [
+  "[Thu Mar  2 00:35:28 2023][solver][infos] Exporting the annual results",
+  47.503999999999465
+ ],
+ [
+  "[Thu Mar  2 00:35:32 2023][solver][infos] Exporting the annual results",
+  47.59999999999946
+ ],
+ [
+  "[Thu Mar  2 00:35:38 2023][solver][infos] Exporting the annual results",
+  47.69599999999946
+ ],
+ [
+  "[Thu Mar  2 00:35:44 2023][solver][infos] Exporting the annual results",
+  47.791999999999454
+ ],
+ [
+  "[Thu Mar  2 00:35:45 2023][solver][infos] Exporting the annual results",
+  47.88799999999945
+ ],
+ [
+  "[Thu Mar  2 00:36:22 2023][solver][infos] Exporting the annual results",
+  47.98399999999945
+ ],
+ [
+  "[Thu Mar  2 00:36:47 2023][solver][infos] Exporting the annual results",
+  48.079999999999444
+ ],
+ [
+  "[Thu Mar  2 00:47:13 2023][solver][infos] Exporting the annual results",
+  48.17599999999944
+ ],
+ [
+  "[Thu Mar  2 00:48:22 2023][solver][infos] Exporting the annual results",
+  48.27199999999944
+ ],
+ [
+  "[Thu Mar  2 00:48:43 2023][solver][infos] Exporting the annual results",
+  48.367999999999434
+ ],
+ [
+  "[Thu Mar  2 00:49:37 2023][solver][infos] Exporting the annual results",
+  48.46399999999943
+ ],
+ [
+  "[Thu Mar  2 00:49:41 2023][solver][infos] Exporting the annual results",
+  48.55999999999943
+ ],
+ [
+  "[Thu Mar  2 00:49:42 2023][solver][infos] Exporting the annual results",
+  48.65599999999942
+ ],
+ [
+  "[Thu Mar  2 00:49:45 2023][solver][infos] Exporting the annual results",
+  48.75199999999942
+ ],
+ [
+  "[Thu Mar  2 00:49:52 2023][solver][infos] Exporting the annual results",
+  48.847999999999416
+ ],
+ [
+  "[Thu Mar  2 00:49:53 2023][solver][infos] Exporting the annual results",
+  48.94399999999941
+ ],
+ [
+  "[Thu Mar  2 00:49:54 2023][solver][infos] Exporting the annual results",
+  49.03999999999941
+ ],
+ [
+  "[Thu Mar  2 00:50:04 2023][solver][infos] Exporting the annual results",
+  49.135999999999406
+ ],
+ [
+  "[Thu Mar  2 00:50:05 2023][solver][infos] Exporting the annual results",
+  49.2319999999994
+ ],
+ [
+  "[Thu Mar  2 00:50:10 2023][solver][infos] Exporting the annual results",
+  49.3279999999994
+ ],
+ [
+  "[Thu Mar  2 00:50:12 2023][solver][infos] Exporting the annual results",
+  49.423999999999396
+ ],
+ [
+  "[Thu Mar  2 00:50:13 2023][solver][infos] Exporting the annual results",
+  49.51999999999939
+ ],
+ [
+  "[Thu Mar  2 00:50:17 2023][solver][infos] Exporting the annual results",
+  49.61599999999939
+ ],
+ [
+  "[Thu Mar  2 00:50:41 2023][solver][infos] Exporting the annual results",
+  49.711999999999385
+ ],
+ [
+  "[Thu Mar  2 00:50:46 2023][solver][infos] Exporting the annual results",
+  49.80799999999938
+ ],
+ [
+  "[Thu Mar  2 00:50:52 2023][solver][infos] Exporting the annual results",
+  49.90399999999938
+ ],
+ [
+  "[Thu Mar  2 00:51:10 2023][solver][infos] Exporting the annual results",
+  49.999999999999375
+ ],
+ [
+  "[Thu Mar  2 01:02:39 2023][solver][infos] Exporting the annual results",
+  50.09599999999937
+ ],
+ [
+  "[Thu Mar  2 01:02:41 2023][solver][infos] Exporting the annual results",
+  50.19199999999937
+ ],
+ [
+  "[Thu Mar  2 01:03:22 2023][solver][infos] Exporting the annual results",
+  50.287999999999364
+ ],
+ [
+  "[Thu Mar  2 01:03:32 2023][solver][infos] Exporting the annual results",
+  50.38399999999936
+ ],
+ [
+  "[Thu Mar  2 01:03:36 2023][solver][infos] Exporting the annual results",
+  50.47999999999936
+ ],
+ [
+  "[Thu Mar  2 01:03:40 2023][solver][infos] Exporting the annual results",
+  50.575999999999354
+ ],
+ [
+  "[Thu Mar  2 01:03:44 2023][solver][infos] Exporting the annual results",
+  50.67199999999935
+ ],
+ [
+  "[Thu Mar  2 01:03:52 2023][solver][infos] Exporting the annual results",
+  50.76799999999935
+ ],
+ [
+  "[Thu Mar  2 01:03:55 2023][solver][infos] Exporting the annual results",
+  50.86399999999934
+ ],
+ [
+  "[Thu Mar  2 01:03:56 2023][solver][infos] Exporting the annual results",
+  50.95999999999934
+ ],
+ [
+  "[Thu Mar  2 01:03:59 2023][solver][infos] Exporting the annual results",
+  51.05599999999934
+ ],
+ [
+  "[Thu Mar  2 01:04:02 2023][solver][infos] Exporting the annual results",
+  51.15199999999933
+ ],
+ [
+  "[Thu Mar  2 01:04:03 2023][solver][infos] Exporting the annual results",
+  51.24799999999933
+ ],
+ [
+  "[Thu Mar  2 01:04:10 2023][solver][infos] Exporting the annual results",
+  51.343999999999326
+ ],
+ [
+  "[Thu Mar  2 01:04:28 2023][solver][infos] Exporting the annual results",
+  51.43999999999932
+ ],
+ [
+  "[Thu Mar  2 01:04:33 2023][solver][infos] Exporting the annual results",
+  51.53599999999932
+ ],
+ [
+  "[Thu Mar  2 01:04:46 2023][solver][infos] Exporting the annual results",
+  51.631999999999316
+ ],
+ [
+  "[Thu Mar  2 01:04:57 2023][solver][infos] Exporting the annual results",
+  51.72799999999931
+ ],
+ [
+  "[Thu Mar  2 01:05:02 2023][solver][infos] Exporting the annual results",
+  51.82399999999931
+ ],
+ [
+  "[Thu Mar  2 01:05:03 2023][solver][infos] Exporting the annual results",
+  51.919999999999305
+ ],
+ [
+  "[Thu Mar  2 01:16:11 2023][solver][infos] Exporting the annual results",
+  52.0159999999993
+ ],
+ [
+  "[Thu Mar  2 01:17:10 2023][solver][infos] Exporting the annual results",
+  52.1119999999993
+ ],
+ [
+  "[Thu Mar  2 01:17:10 2023][solver][infos] Exporting the annual results",
+  52.207999999999295
+ ],
+ [
+  "[Thu Mar  2 01:17:26 2023][solver][infos] Exporting the annual results",
+  52.30399999999929
+ ],
+ [
+  "[Thu Mar  2 01:17:32 2023][solver][infos] Exporting the annual results",
+  52.39999999999929
+ ],
+ [
+  "[Thu Mar  2 01:17:44 2023][solver][infos] Exporting the annual results",
+  52.495999999999285
+ ],
+ [
+  "[Thu Mar  2 01:18:10 2023][solver][infos] Exporting the annual results",
+  52.59199999999928
+ ],
+ [
+  "[Thu Mar  2 01:18:12 2023][solver][infos] Exporting the annual results",
+  52.68799999999928
+ ],
+ [
+  "[Thu Mar  2 01:18:19 2023][solver][infos] Exporting the annual results",
+  52.783999999999274
+ ],
+ [
+  "[Thu Mar  2 01:18:21 2023][solver][infos] Exporting the annual results",
+  52.87999999999927
+ ],
+ [
+  "[Thu Mar  2 01:18:23 2023][solver][infos] Exporting the annual results",
+  52.97599999999927
+ ],
+ [
+  "[Thu Mar  2 01:18:25 2023][solver][infos] Exporting the annual results",
+  53.071999999999264
+ ],
+ [
+  "[Thu Mar  2 01:18:26 2023][solver][infos] Exporting the annual results",
+  53.16799999999926
+ ],
+ [
+  "[Thu Mar  2 01:18:39 2023][solver][infos] Exporting the annual results",
+  53.26399999999926
+ ],
+ [
+  "[Thu Mar  2 01:18:39 2023][solver][infos] Exporting the annual results",
+  53.35999999999925
+ ],
+ [
+  "[Thu Mar  2 01:18:44 2023][solver][infos] Exporting the annual results",
+  53.45599999999925
+ ],
+ [
+  "[Thu Mar  2 01:18:46 2023][solver][infos] Exporting the annual results",
+  53.551999999999246
+ ],
+ [
+  "[Thu Mar  2 01:18:54 2023][solver][infos] Exporting the annual results",
+  53.64799999999924
+ ],
+ [
+  "[Thu Mar  2 01:18:57 2023][solver][infos] Exporting the annual results",
+  53.74399999999924
+ ],
+ [
+  "[Thu Mar  2 01:19:24 2023][solver][infos] Exporting the annual results",
+  53.839999999999236
+ ],
+ [
+  "[Thu Mar  2 01:30:03 2023][solver][infos] Exporting the annual results",
+  53.93599999999923
+ ],
+ [
+  "[Thu Mar  2 01:30:40 2023][solver][infos] Exporting the annual results",
+  54.03199999999923
+ ],
+ [
+  "[Thu Mar  2 01:30:54 2023][solver][infos] Exporting the annual results",
+  54.127999999999226
+ ],
+ [
+  "[Thu Mar  2 01:31:35 2023][solver][infos] Exporting the annual results",
+  54.22399999999922
+ ],
+ [
+  "[Thu Mar  2 01:31:45 2023][solver][infos] Exporting the annual results",
+  54.31999999999922
+ ],
+ [
+  "[Thu Mar  2 01:31:55 2023][solver][infos] Exporting the annual results",
+  54.415999999999215
+ ],
+ [
+  "[Thu Mar  2 01:32:02 2023][solver][infos] Exporting the annual results",
+  54.51199999999921
+ ],
+ [
+  "[Thu Mar  2 01:32:14 2023][solver][infos] Exporting the annual results",
+  54.60799999999921
+ ],
+ [
+  "[Thu Mar  2 01:32:18 2023][solver][infos] Exporting the annual results",
+  54.703999999999205
+ ],
+ [
+  "[Thu Mar  2 01:32:20 2023][solver][infos] Exporting the annual results",
+  54.7999999999992
+ ],
+ [
+  "[Thu Mar  2 01:32:24 2023][solver][infos] Exporting the annual results",
+  54.8959999999992
+ ],
+ [
+  "[Thu Mar  2 01:32:31 2023][solver][infos] Exporting the annual results",
+  54.991999999999194
+ ],
+ [
+  "[Thu Mar  2 01:32:33 2023][solver][infos] Exporting the annual results",
+  55.08799999999919
+ ],
+ [
+  "[Thu Mar  2 01:32:33 2023][solver][infos] Exporting the annual results",
+  55.18399999999919
+ ],
+ [
+  "[Thu Mar  2 01:32:37 2023][solver][infos] Exporting the annual results",
+  55.279999999999184
+ ],
+ [
+  "[Thu Mar  2 01:32:44 2023][solver][infos] Exporting the annual results",
+  55.37599999999918
+ ],
+ [
+  "[Thu Mar  2 01:32:48 2023][solver][infos] Exporting the annual results",
+  55.47199999999918
+ ],
+ [
+  "[Thu Mar  2 01:32:52 2023][solver][infos] Exporting the annual results",
+  55.567999999999174
+ ],
+ [
+  "[Thu Mar  2 01:32:52 2023][solver][infos] Exporting the annual results",
+  55.66399999999917
+ ],
+ [
+  "[Thu Mar  2 01:33:26 2023][solver][infos] Exporting the annual results",
+  55.75999999999917
+ ],
+ [
+  "[Thu Mar  2 01:43:48 2023][solver][infos] Exporting the annual results",
+  55.85599999999916
+ ],
+ [
+  "[Thu Mar  2 01:44:20 2023][solver][infos] Exporting the annual results",
+  55.95199999999916
+ ],
+ [
+  "[Thu Mar  2 01:44:48 2023][solver][infos] Exporting the annual results",
+  56.047999999999156
+ ],
+ [
+  "[Thu Mar  2 01:45:16 2023][solver][infos] Exporting the annual results",
+  56.14399999999915
+ ],
+ [
+  "[Thu Mar  2 01:45:43 2023][solver][infos] Exporting the annual results",
+  56.23999999999915
+ ],
+ [
+  "[Thu Mar  2 01:45:46 2023][solver][infos] Exporting the annual results",
+  56.335999999999146
+ ],
+ [
+  "[Thu Mar  2 01:45:50 2023][solver][infos] Exporting the annual results",
+  56.43199999999914
+ ],
+ [
+  "[Thu Mar  2 01:45:55 2023][solver][infos] Exporting the annual results",
+  56.52799999999914
+ ],
+ [
+  "[Thu Mar  2 01:46:00 2023][solver][infos] Exporting the annual results",
+  56.623999999999135
+ ],
+ [
+  "[Thu Mar  2 01:46:00 2023][solver][infos] Exporting the annual results",
+  56.71999999999913
+ ],
+ [
+  "[Thu Mar  2 01:46:05 2023][solver][infos] Exporting the annual results",
+  56.81599999999913
+ ],
+ [
+  "[Thu Mar  2 01:46:06 2023][solver][infos] Exporting the annual results",
+  56.911999999999125
+ ],
+ [
+  "[Thu Mar  2 01:46:34 2023][solver][infos] Exporting the annual results",
+  57.00799999999912
+ ],
+ [
+  "[Thu Mar  2 01:46:44 2023][solver][infos] Exporting the annual results",
+  57.10399999999912
+ ],
+ [
+  "[Thu Mar  2 01:46:46 2023][solver][infos] Exporting the annual results",
+  57.199999999999115
+ ],
+ [
+  "[Thu Mar  2 01:46:49 2023][solver][infos] Exporting the annual results",
+  57.29599999999911
+ ],
+ [
+  "[Thu Mar  2 01:46:57 2023][solver][infos] Exporting the annual results",
+  57.39199999999911
+ ],
+ [
+  "[Thu Mar  2 01:46:59 2023][solver][infos] Exporting the annual results",
+  57.487999999999104
+ ],
+ [
+  "[Thu Mar  2 01:47:03 2023][solver][infos] Exporting the annual results",
+  57.5839999999991
+ ],
+ [
+  "[Thu Mar  2 01:47:31 2023][solver][infos] Exporting the annual results",
+  57.6799999999991
+ ],
+ [
+  "[Thu Mar  2 01:57:24 2023][solver][infos] Exporting the annual results",
+  57.775999999999094
+ ],
+ [
+  "[Thu Mar  2 01:58:33 2023][solver][infos] Exporting the annual results",
+  57.87199999999909
+ ],
+ [
+  "[Thu Mar  2 01:58:36 2023][solver][infos] Exporting the annual results",
+  57.96799999999909
+ ],
+ [
+  "[Thu Mar  2 01:58:49 2023][solver][infos] Exporting the annual results",
+  58.06399999999908
+ ],
+ [
+  "[Thu Mar  2 01:59:32 2023][solver][infos] Exporting the annual results",
+  58.15999999999908
+ ],
+ [
+  "[Thu Mar  2 01:59:33 2023][solver][infos] Exporting the annual results",
+  58.25599999999908
+ ],
+ [
+  "[Thu Mar  2 01:59:39 2023][solver][infos] Exporting the annual results",
+  58.35199999999907
+ ],
+ [
+  "[Thu Mar  2 01:59:40 2023][solver][infos] Exporting the annual results",
+  58.44799999999907
+ ],
+ [
+  "[Thu Mar  2 01:59:58 2023][solver][infos] Exporting the annual results",
+  58.543999999999066
+ ],
+ [
+  "[Thu Mar  2 01:59:58 2023][solver][infos] Exporting the annual results",
+  58.63999999999906
+ ],
+ [
+  "[Thu Mar  2 02:00:21 2023][solver][infos] Exporting the annual results",
+  58.73599999999906
+ ],
+ [
+  "[Thu Mar  2 02:00:25 2023][solver][infos] Exporting the annual results",
+  58.831999999999056
+ ],
+ [
+  "[Thu Mar  2 02:00:41 2023][solver][infos] Exporting the annual results",
+  58.92799999999905
+ ],
+ [
+  "[Thu Mar  2 02:00:45 2023][solver][infos] Exporting the annual results",
+  59.02399999999905
+ ],
+ [
+  "[Thu Mar  2 02:00:49 2023][solver][infos] Exporting the annual results",
+  59.119999999999045
+ ],
+ [
+  "[Thu Mar  2 02:00:50 2023][solver][infos] Exporting the annual results",
+  59.21599999999904
+ ],
+ [
+  "[Thu Mar  2 02:00:53 2023][solver][infos] Exporting the annual results",
+  59.31199999999904
+ ],
+ [
+  "[Thu Mar  2 02:01:13 2023][solver][infos] Exporting the annual results",
+  59.407999999999035
+ ],
+ [
+  "[Thu Mar  2 02:01:35 2023][solver][infos] Exporting the annual results",
+  59.50399999999903
+ ],
+ [
+  "[Thu Mar  2 02:01:50 2023][solver][infos] Exporting the annual results",
+  59.59999999999903
+ ],
+ [
+  "[Thu Mar  2 02:10:34 2023][solver][infos] Exporting the annual results",
+  59.695999999999025
+ ],
+ [
+  "[Thu Mar  2 02:13:03 2023][solver][infos] Exporting the annual results",
+  59.79199999999902
+ ],
+ [
+  "[Thu Mar  2 02:13:28 2023][solver][infos] Exporting the annual results",
+  59.88799999999902
+ ],
+ [
+  "[Thu Mar  2 02:13:35 2023][solver][infos] Exporting the annual results",
+  59.983999999999014
+ ],
+ [
+  "[Thu Mar  2 02:13:40 2023][solver][infos] Exporting the annual results",
+  60.07999999999901
+ ],
+ [
+  "[Thu Mar  2 02:13:49 2023][solver][infos] Exporting the annual results",
+  60.17599999999901
+ ],
+ [
+  "[Thu Mar  2 02:13:52 2023][solver][infos] Exporting the annual results",
+  60.271999999999004
+ ],
+ [
+  "[Thu Mar  2 02:14:05 2023][solver][infos] Exporting the annual results",
+  60.367999999999
+ ],
+ [
+  "[Thu Mar  2 02:14:09 2023][solver][infos] Exporting the annual results",
+  60.463999999999
+ ],
+ [
+  "[Thu Mar  2 02:14:22 2023][solver][infos] Exporting the annual results",
+  60.55999999999899
+ ],
+ [
+  "[Thu Mar  2 02:14:24 2023][solver][infos] Exporting the annual results",
+  60.65599999999899
+ ],
+ [
+  "[Thu Mar  2 02:14:41 2023][solver][infos] Exporting the annual results",
+  60.751999999998986
+ ],
+ [
+  "[Thu Mar  2 02:14:43 2023][solver][infos] Exporting the annual results",
+  60.84799999999898
+ ],
+ [
+  "[Thu Mar  2 02:14:59 2023][solver][infos] Exporting the annual results",
+  60.94399999999898
+ ],
+ [
+  "[Thu Mar  2 02:15:11 2023][solver][infos] Exporting the annual results",
+  61.039999999998976
+ ],
+ [
+  "[Thu Mar  2 02:15:11 2023][solver][infos] Exporting the annual results",
+  61.13599999999897
+ ],
+ [
+  "[Thu Mar  2 02:15:22 2023][solver][infos] Exporting the annual results",
+  61.23199999999897
+ ],
+ [
+  "[Thu Mar  2 02:15:23 2023][solver][infos] Exporting the annual results",
+  61.327999999998966
+ ],
+ [
+  "[Thu Mar  2 02:15:45 2023][solver][infos] Exporting the annual results",
+  61.42399999999896
+ ],
+ [
+  "[Thu Mar  2 02:16:38 2023][solver][infos] Exporting the annual results",
+  61.51999999999896
+ ],
+ [
+  "[Thu Mar  2 02:26:16 2023][solver][infos] Exporting the annual results",
+  61.615999999998955
+ ],
+ [
+  "[Thu Mar  2 02:26:52 2023][solver][infos] Exporting the annual results",
+  61.71199999999895
+ ],
+ [
+  "[Thu Mar  2 02:28:26 2023][solver][infos] Exporting the annual results",
+  61.80799999999895
+ ],
+ [
+  "[Thu Mar  2 02:28:28 2023][solver][infos] Exporting the annual results",
+  61.903999999998945
+ ],
+ [
+  "[Thu Mar  2 02:28:38 2023][solver][infos] Exporting the annual results",
+  61.99999999999894
+ ],
+ [
+  "[Thu Mar  2 02:28:42 2023][solver][infos] Exporting the annual results",
+  62.09599999999894
+ ],
+ [
+  "[Thu Mar  2 02:28:56 2023][solver][infos] Exporting the annual results",
+  62.191999999998934
+ ],
+ [
+  "[Thu Mar  2 02:29:12 2023][solver][infos] Exporting the annual results",
+  62.28799999999893
+ ],
+ [
+  "[Thu Mar  2 02:29:16 2023][solver][infos] Exporting the annual results",
+  62.38399999999893
+ ],
+ [
+  "[Thu Mar  2 02:29:35 2023][solver][infos] Exporting the annual results",
+  62.479999999998924
+ ],
+ [
+  "[Thu Mar  2 02:29:38 2023][solver][infos] Exporting the annual results",
+  62.57599999999892
+ ],
+ [
+  "[Thu Mar  2 02:29:42 2023][solver][infos] Exporting the annual results",
+  62.67199999999892
+ ],
+ [
+  "[Thu Mar  2 02:29:54 2023][solver][infos] Exporting the annual results",
+  62.76799999999891
+ ],
+ [
+  "[Thu Mar  2 02:29:56 2023][solver][infos] Exporting the annual results",
+  62.86399999999891
+ ],
+ [
+  "[Thu Mar  2 02:30:12 2023][solver][infos] Exporting the annual results",
+  62.95999999999891
+ ],
+ [
+  "[Thu Mar  2 02:30:19 2023][solver][infos] Exporting the annual results",
+  63.0559999999989
+ ],
+ [
+  "[Thu Mar  2 02:30:26 2023][solver][infos] Exporting the annual results",
+  63.1519999999989
+ ],
+ [
+  "[Thu Mar  2 02:30:39 2023][solver][infos] Exporting the annual results",
+  63.247999999998896
+ ],
+ [
+  "[Thu Mar  2 02:30:48 2023][solver][infos] Exporting the annual results",
+  63.34399999999889
+ ],
+ [
+  "[Thu Mar  2 02:31:11 2023][solver][infos] Exporting the annual results",
+  63.43999999999889
+ ],
+ [
+  "[Thu Mar  2 02:42:19 2023][solver][infos] Exporting the annual results",
+  63.535999999998886
+ ],
+ [
+  "[Thu Mar  2 02:43:10 2023][solver][infos] Exporting the annual results",
+  63.63199999999888
+ ],
+ [
+  "[Thu Mar  2 02:43:15 2023][solver][infos] Exporting the annual results",
+  63.72799999999888
+ ],
+ [
+  "[Thu Mar  2 02:43:17 2023][solver][infos] Exporting the annual results",
+  63.823999999998875
+ ],
+ [
+  "[Thu Mar  2 02:43:26 2023][solver][infos] Exporting the annual results",
+  63.91999999999887
+ ],
+ [
+  "[Thu Mar  2 02:43:34 2023][solver][infos] Exporting the annual results",
+  64.01599999999887
+ ],
+ [
+  "[Thu Mar  2 02:43:36 2023][solver][infos] Exporting the annual results",
+  64.11199999999887
+ ],
+ [
+  "[Thu Mar  2 02:44:00 2023][solver][infos] Exporting the annual results",
+  64.20799999999888
+ ],
+ [
+  "[Thu Mar  2 02:44:01 2023][solver][infos] Exporting the annual results",
+  64.30399999999888
+ ],
+ [
+  "[Thu Mar  2 02:44:01 2023][solver][infos] Exporting the annual results",
+  64.39999999999888
+ ],
+ [
+  "[Thu Mar  2 02:44:11 2023][solver][infos] Exporting the annual results",
+  64.49599999999889
+ ],
+ [
+  "[Thu Mar  2 02:44:14 2023][solver][infos] Exporting the annual results",
+  64.59199999999889
+ ],
+ [
+  "[Thu Mar  2 02:44:15 2023][solver][infos] Exporting the annual results",
+  64.6879999999989
+ ],
+ [
+  "[Thu Mar  2 02:44:19 2023][solver][infos] Exporting the annual results",
+  64.7839999999989
+ ],
+ [
+  "[Thu Mar  2 02:44:28 2023][solver][infos] Exporting the annual results",
+  64.8799999999989
+ ],
+ [
+  "[Thu Mar  2 02:44:31 2023][solver][infos] Exporting the annual results",
+  64.9759999999989
+ ],
+ [
+  "[Thu Mar  2 02:44:44 2023][solver][infos] Exporting the annual results",
+  65.07199999999891
+ ],
+ [
+  "[Thu Mar  2 02:44:45 2023][solver][infos] Exporting the annual results",
+  65.16799999999891
+ ],
+ [
+  "[Thu Mar  2 02:44:51 2023][solver][infos] Exporting the annual results",
+  65.26399999999892
+ ],
+ [
+  "[Thu Mar  2 02:44:57 2023][solver][infos] Exporting the annual results",
+  65.35999999999892
+ ],
+ [
+  "[Thu Mar  2 02:56:00 2023][solver][infos] Exporting the annual results",
+  65.45599999999892
+ ],
+ [
+  "[Thu Mar  2 02:56:24 2023][solver][infos] Exporting the annual results",
+  65.55199999999893
+ ],
+ [
+  "[Thu Mar  2 02:56:51 2023][solver][infos] Exporting the annual results",
+  65.64799999999893
+ ],
+ [
+  "[Thu Mar  2 02:56:54 2023][solver][infos] Exporting the annual results",
+  65.74399999999893
+ ],
+ [
+  "[Thu Mar  2 02:56:58 2023][solver][infos] Exporting the annual results",
+  65.83999999999894
+ ],
+ [
+  "[Thu Mar  2 02:57:04 2023][solver][infos] Exporting the annual results",
+  65.93599999999894
+ ],
+ [
+  "[Thu Mar  2 02:57:07 2023][solver][infos] Exporting the annual results",
+  66.03199999999894
+ ],
+ [
+  "[Thu Mar  2 02:57:09 2023][solver][infos] Exporting the annual results",
+  66.12799999999895
+ ],
+ [
+  "[Thu Mar  2 02:57:16 2023][solver][infos] Exporting the annual results",
+  66.22399999999895
+ ],
+ [
+  "[Thu Mar  2 02:57:31 2023][solver][infos] Exporting the annual results",
+  66.31999999999896
+ ],
+ [
+  "[Thu Mar  2 02:57:49 2023][solver][infos] Exporting the annual results",
+  66.41599999999896
+ ],
+ [
+  "[Thu Mar  2 02:57:58 2023][solver][infos] Exporting the annual results",
+  66.51199999999896
+ ],
+ [
+  "[Thu Mar  2 02:58:13 2023][solver][infos] Exporting the annual results",
+  66.60799999999897
+ ],
+ [
+  "[Thu Mar  2 02:58:14 2023][solver][infos] Exporting the annual results",
+  66.70399999999897
+ ],
+ [
+  "[Thu Mar  2 02:58:18 2023][solver][infos] Exporting the annual results",
+  66.79999999999897
+ ],
+ [
+  "[Thu Mar  2 02:58:19 2023][solver][infos] Exporting the annual results",
+  66.89599999999898
+ ],
+ [
+  "[Thu Mar  2 02:58:22 2023][solver][infos] Exporting the annual results",
+  66.99199999999898
+ ],
+ [
+  "[Thu Mar  2 02:58:22 2023][solver][infos] Exporting the annual results",
+  67.08799999999898
+ ],
+ [
+  "[Thu Mar  2 02:58:46 2023][solver][infos] Exporting the annual results",
+  67.18399999999899
+ ],
+ [
+  "[Thu Mar  2 02:58:49 2023][solver][infos] Exporting the annual results",
+  67.27999999999899
+ ],
+ [
+  "[Thu Mar  2 03:10:18 2023][solver][infos] Exporting the annual results",
+  67.375999999999
+ ],
+ [
+  "[Thu Mar  2 03:10:59 2023][solver][infos] Exporting the annual results",
+  67.471999999999
+ ],
+ [
+  "[Thu Mar  2 03:11:16 2023][solver][infos] Exporting the annual results",
+  67.567999999999
+ ],
+ [
+  "[Thu Mar  2 03:11:20 2023][solver][infos] Exporting the annual results",
+  67.663999999999
+ ],
+ [
+  "[Thu Mar  2 03:11:28 2023][solver][infos] Exporting the annual results",
+  67.75999999999901
+ ],
+ [
+  "[Thu Mar  2 03:11:28 2023][solver][infos] Exporting the annual results",
+  67.85599999999901
+ ],
+ [
+  "[Thu Mar  2 03:11:30 2023][solver][infos] Exporting the annual results",
+  67.95199999999902
+ ],
+ [
+  "[Thu Mar  2 03:11:33 2023][solver][infos] Exporting the annual results",
+  68.04799999999902
+ ],
+ [
+  "[Thu Mar  2 03:11:36 2023][solver][infos] Exporting the annual results",
+  68.14399999999902
+ ],
+ [
+  "[Thu Mar  2 03:11:38 2023][solver][infos] Exporting the annual results",
+  68.23999999999903
+ ],
+ [
+  "[Thu Mar  2 03:11:39 2023][solver][infos] Exporting the annual results",
+  68.33599999999903
+ ],
+ [
+  "[Thu Mar  2 03:12:10 2023][solver][infos] Exporting the annual results",
+  68.43199999999904
+ ],
+ [
+  "[Thu Mar  2 03:12:14 2023][solver][infos] Exporting the annual results",
+  68.52799999999904
+ ],
+ [
+  "[Thu Mar  2 03:12:17 2023][solver][infos] Exporting the annual results",
+  68.62399999999904
+ ],
+ [
+  "[Thu Mar  2 03:12:18 2023][solver][infos] Exporting the annual results",
+  68.71999999999905
+ ],
+ [
+  "[Thu Mar  2 03:12:18 2023][solver][infos] Exporting the annual results",
+  68.81599999999905
+ ],
+ [
+  "[Thu Mar  2 03:12:21 2023][solver][infos] Exporting the annual results",
+  68.91199999999905
+ ],
+ [
+  "[Thu Mar  2 03:12:27 2023][solver][infos] Exporting the annual results",
+  69.00799999999906
+ ],
+ [
+  "[Thu Mar  2 03:12:30 2023][solver][infos] Exporting the annual results",
+  69.10399999999906
+ ],
+ [
+  "[Thu Mar  2 03:12:30 2023][solver][infos] Exporting the annual results",
+  69.19999999999906
+ ],
+ [
+  "[Thu Mar  2 03:22:46 2023][solver][infos] Exporting the annual results",
+  69.29599999999907
+ ],
+ [
+  "[Thu Mar  2 03:23:28 2023][solver][infos] Exporting the annual results",
+  69.39199999999907
+ ],
+ [
+  "[Thu Mar  2 03:23:41 2023][solver][infos] Exporting the annual results",
+  69.48799999999908
+ ],
+ [
+  "[Thu Mar  2 03:23:49 2023][solver][infos] Exporting the annual results",
+  69.58399999999908
+ ],
+ [
+  "[Thu Mar  2 03:24:04 2023][solver][infos] Exporting the annual results",
+  69.67999999999908
+ ],
+ [
+  "[Thu Mar  2 03:24:11 2023][solver][infos] Exporting the annual results",
+  69.77599999999909
+ ],
+ [
+  "[Thu Mar  2 03:24:46 2023][solver][infos] Exporting the annual results",
+  69.87199999999909
+ ],
+ [
+  "[Thu Mar  2 03:24:53 2023][solver][infos] Exporting the annual results",
+  69.9679999999991
+ ],
+ [
+  "[Thu Mar  2 03:25:11 2023][solver][infos] Exporting the annual results",
+  70.0639999999991
+ ],
+ [
+  "[Thu Mar  2 03:25:28 2023][solver][infos] Exporting the annual results",
+  70.1599999999991
+ ],
+ [
+  "[Thu Mar  2 03:25:45 2023][solver][infos] Exporting the annual results",
+  70.2559999999991
+ ],
+ [
+  "[Thu Mar  2 03:25:49 2023][solver][infos] Exporting the annual results",
+  70.35199999999911
+ ],
+ [
+  "[Thu Mar  2 03:25:49 2023][solver][infos] Exporting the annual results",
+  70.44799999999911
+ ],
+ [
+  "[Thu Mar  2 03:25:51 2023][solver][infos] Exporting the annual results",
+  70.54399999999912
+ ],
+ [
+  "[Thu Mar  2 03:25:53 2023][solver][infos] Exporting the annual results",
+  70.63999999999912
+ ],
+ [
+  "[Thu Mar  2 03:25:56 2023][solver][infos] Exporting the annual results",
+  70.73599999999912
+ ],
+ [
+  "[Thu Mar  2 03:26:08 2023][solver][infos] Exporting the annual results",
+  70.83199999999913
+ ],
+ [
+  "[Thu Mar  2 03:26:10 2023][solver][infos] Exporting the annual results",
+  70.92799999999913
+ ],
+ [
+  "[Thu Mar  2 03:26:31 2023][solver][infos] Exporting the annual results",
+  71.02399999999913
+ ],
+ [
+  "[Thu Mar  2 03:27:30 2023][solver][infos] Exporting the annual results",
+  71.11999999999914
+ ],
+ [
+  "[Thu Mar  2 03:38:20 2023][solver][infos] Exporting the annual results",
+  71.21599999999914
+ ],
+ [
+  "[Thu Mar  2 03:38:37 2023][solver][infos] Exporting the annual results",
+  71.31199999999914
+ ],
+ [
+  "[Thu Mar  2 03:39:04 2023][solver][infos] Exporting the annual results",
+  71.40799999999915
+ ],
+ [
+  "[Thu Mar  2 03:39:23 2023][solver][infos] Exporting the annual results",
+  71.50399999999915
+ ],
+ [
+  "[Thu Mar  2 03:39:50 2023][solver][infos] Exporting the annual results",
+  71.59999999999916
+ ],
+ [
+  "[Thu Mar  2 03:39:56 2023][solver][infos] Exporting the annual results",
+  71.69599999999916
+ ],
+ [
+  "[Thu Mar  2 03:39:57 2023][solver][infos] Exporting the annual results",
+  71.79199999999916
+ ],
+ [
+  "[Thu Mar  2 03:40:01 2023][solver][infos] Exporting the annual results",
+  71.88799999999917
+ ],
+ [
+  "[Thu Mar  2 03:40:12 2023][solver][infos] Exporting the annual results",
+  71.98399999999917
+ ],
+ [
+  "[Thu Mar  2 03:40:13 2023][solver][infos] Exporting the annual results",
+  72.07999999999917
+ ],
+ [
+  "[Thu Mar  2 03:40:28 2023][solver][infos] Exporting the annual results",
+  72.17599999999918
+ ],
+ [
+  "[Thu Mar  2 03:40:30 2023][solver][infos] Exporting the annual results",
+  72.27199999999918
+ ],
+ [
+  "[Thu Mar  2 03:40:44 2023][solver][infos] Exporting the annual results",
+  72.36799999999918
+ ],
+ [
+  "[Thu Mar  2 03:40:53 2023][solver][infos] Exporting the annual results",
+  72.46399999999919
+ ],
+ [
+  "[Thu Mar  2 03:41:01 2023][solver][infos] Exporting the annual results",
+  72.55999999999919
+ ],
+ [
+  "[Thu Mar  2 03:41:10 2023][solver][infos] Exporting the annual results",
+  72.6559999999992
+ ],
+ [
+  "[Thu Mar  2 03:41:12 2023][solver][infos] Exporting the annual results",
+  72.7519999999992
+ ],
+ [
+  "[Thu Mar  2 03:41:24 2023][solver][infos] Exporting the annual results",
+  72.8479999999992
+ ],
+ [
+  "[Thu Mar  2 03:41:29 2023][solver][infos] Exporting the annual results",
+  72.9439999999992
+ ],
+ [
+  "[Thu Mar  2 03:41:33 2023][solver][infos] Exporting the annual results",
+  73.03999999999921
+ ],
+ [
+  "[Thu Mar  2 03:52:21 2023][solver][infos] Exporting the annual results",
+  73.13599999999921
+ ],
+ [
+  "[Thu Mar  2 03:53:17 2023][solver][infos] Exporting the annual results",
+  73.23199999999922
+ ],
+ [
+  "[Thu Mar  2 03:53:30 2023][solver][infos] Exporting the annual results",
+  73.32799999999922
+ ],
+ [
+  "[Thu Mar  2 03:53:40 2023][solver][infos] Exporting the annual results",
+  73.42399999999922
+ ],
+ [
+  "[Thu Mar  2 03:53:51 2023][solver][infos] Exporting the annual results",
+  73.51999999999923
+ ],
+ [
+  "[Thu Mar  2 03:54:18 2023][solver][infos] Exporting the annual results",
+  73.61599999999923
+ ],
+ [
+  "[Thu Mar  2 03:54:25 2023][solver][infos] Exporting the annual results",
+  73.71199999999924
+ ],
+ [
+  "[Thu Mar  2 03:54:25 2023][solver][infos] Exporting the annual results",
+  73.80799999999924
+ ],
+ [
+  "[Thu Mar  2 03:54:43 2023][solver][infos] Exporting the annual results",
+  73.90399999999924
+ ],
+ [
+  "[Thu Mar  2 03:54:44 2023][solver][infos] Exporting the annual results",
+  73.99999999999925
+ ],
+ [
+  "[Thu Mar  2 03:54:45 2023][solver][infos] Exporting the annual results",
+  74.09599999999925
+ ],
+ [
+  "[Thu Mar  2 03:55:08 2023][solver][infos] Exporting the annual results",
+  74.19199999999925
+ ],
+ [
+  "[Thu Mar  2 03:55:09 2023][solver][infos] Exporting the annual results",
+  74.28799999999926
+ ],
+ [
+  "[Thu Mar  2 03:55:10 2023][solver][infos] Exporting the annual results",
+  74.38399999999926
+ ],
+ [
+  "[Thu Mar  2 03:55:11 2023][solver][infos] Exporting the annual results",
+  74.47999999999927
+ ],
+ [
+  "[Thu Mar  2 03:55:15 2023][solver][infos] Exporting the annual results",
+  74.57599999999927
+ ],
+ [
+  "[Thu Mar  2 03:55:21 2023][solver][infos] Exporting the annual results",
+  74.67199999999927
+ ],
+ [
+  "[Thu Mar  2 03:55:41 2023][solver][infos] Exporting the annual results",
+  74.76799999999928
+ ],
+ [
+  "[Thu Mar  2 03:55:45 2023][solver][infos] Exporting the annual results",
+  74.86399999999928
+ ],
+ [
+  "[Thu Mar  2 03:56:06 2023][solver][infos] Exporting the annual results",
+  74.95999999999928
+ ],
+ [
+  "[Thu Mar  2 04:07:28 2023][solver][infos] Exporting the annual results",
+  75.05599999999929
+ ],
+ [
+  "[Thu Mar  2 04:07:54 2023][solver][infos] Exporting the annual results",
+  75.15199999999929
+ ],
+ [
+  "[Thu Mar  2 04:07:56 2023][solver][infos] Exporting the annual results",
+  75.2479999999993
+ ],
+ [
+  "[Thu Mar  2 04:08:21 2023][solver][infos] Exporting the annual results",
+  75.3439999999993
+ ],
+ [
+  "[Thu Mar  2 04:08:29 2023][solver][infos] Exporting the annual results",
+  75.4399999999993
+ ],
+ [
+  "[Thu Mar  2 04:08:29 2023][solver][infos] Exporting the annual results",
+  75.5359999999993
+ ],
+ [
+  "[Thu Mar  2 04:08:35 2023][solver][infos] Exporting the annual results",
+  75.63199999999931
+ ],
+ [
+  "[Thu Mar  2 04:08:50 2023][solver][infos] Exporting the annual results",
+  75.72799999999931
+ ],
+ [
+  "[Thu Mar  2 04:09:09 2023][solver][infos] Exporting the annual results",
+  75.82399999999932
+ ],
+ [
+  "[Thu Mar  2 04:09:10 2023][solver][infos] Exporting the annual results",
+  75.91999999999932
+ ],
+ [
+  "[Thu Mar  2 04:09:14 2023][solver][infos] Exporting the annual results",
+  76.01599999999932
+ ],
+ [
+  "[Thu Mar  2 04:09:18 2023][solver][infos] Exporting the annual results",
+  76.11199999999933
+ ],
+ [
+  "[Thu Mar  2 04:09:40 2023][solver][infos] Exporting the annual results",
+  76.20799999999933
+ ],
+ [
+  "[Thu Mar  2 04:09:43 2023][solver][infos] Exporting the annual results",
+  76.30399999999933
+ ],
+ [
+  "[Thu Mar  2 04:09:49 2023][solver][infos] Exporting the annual results",
+  76.39999999999934
+ ],
+ [
+  "[Thu Mar  2 04:09:53 2023][solver][infos] Exporting the annual results",
+  76.49599999999934
+ ],
+ [
+  "[Thu Mar  2 04:10:03 2023][solver][infos] Exporting the annual results",
+  76.59199999999935
+ ],
+ [
+  "[Thu Mar  2 04:10:05 2023][solver][infos] Exporting the annual results",
+  76.68799999999935
+ ],
+ [
+  "[Thu Mar  2 04:10:18 2023][solver][infos] Exporting the annual results",
+  76.78399999999935
+ ],
+ [
+  "[Thu Mar  2 04:10:41 2023][solver][infos] Exporting the annual results",
+  76.87999999999936
+ ],
+ [
+  "[Thu Mar  2 04:21:25 2023][solver][infos] Exporting the annual results",
+  76.97599999999936
+ ],
+ [
+  "[Thu Mar  2 04:22:20 2023][solver][infos] Exporting the annual results",
+  77.07199999999936
+ ],
+ [
+  "[Thu Mar  2 04:22:42 2023][solver][infos] Exporting the annual results",
+  77.16799999999937
+ ],
+ [
+  "[Thu Mar  2 04:22:46 2023][solver][infos] Exporting the annual results",
+  77.26399999999937
+ ],
+ [
+  "[Thu Mar  2 04:22:49 2023][solver][infos] Exporting the annual results",
+  77.35999999999937
+ ],
+ [
+  "[Thu Mar  2 04:22:55 2023][solver][infos] Exporting the annual results",
+  77.45599999999938
+ ],
+ [
+  "[Thu Mar  2 04:22:57 2023][solver][infos] Exporting the annual results",
+  77.55199999999938
+ ],
+ [
+  "[Thu Mar  2 04:23:00 2023][solver][infos] Exporting the annual results",
+  77.64799999999939
+ ],
+ [
+  "[Thu Mar  2 04:23:14 2023][solver][infos] Exporting the annual results",
+  77.74399999999939
+ ],
+ [
+  "[Thu Mar  2 04:23:18 2023][solver][infos] Exporting the annual results",
+  77.83999999999939
+ ],
+ [
+  "[Thu Mar  2 04:23:29 2023][solver][infos] Exporting the annual results",
+  77.9359999999994
+ ],
+ [
+  "[Thu Mar  2 04:23:43 2023][solver][infos] Exporting the annual results",
+  78.0319999999994
+ ],
+ [
+  "[Thu Mar  2 04:23:50 2023][solver][infos] Exporting the annual results",
+  78.1279999999994
+ ],
+ [
+  "[Thu Mar  2 04:23:51 2023][solver][infos] Exporting the annual results",
+  78.2239999999994
+ ],
+ [
+  "[Thu Mar  2 04:24:01 2023][solver][infos] Exporting the annual results",
+  78.31999999999941
+ ],
+ [
+  "[Thu Mar  2 04:24:05 2023][solver][infos] Exporting the annual results",
+  78.41599999999941
+ ],
+ [
+  "[Thu Mar  2 04:24:06 2023][solver][infos] Exporting the annual results",
+  78.51199999999942
+ ],
+ [
+  "[Thu Mar  2 04:24:36 2023][solver][infos] Exporting the annual results",
+  78.60799999999942
+ ],
+ [
+  "[Thu Mar  2 04:24:37 2023][solver][infos] Exporting the annual results",
+  78.70399999999943
+ ],
+ [
+  "[Thu Mar  2 04:24:42 2023][solver][infos] Exporting the annual results",
+  78.79999999999943
+ ],
+ [
+  "[Thu Mar  2 04:35:22 2023][solver][infos] Exporting the annual results",
+  78.89599999999943
+ ],
+ [
+  "[Thu Mar  2 04:35:41 2023][solver][infos] Exporting the annual results",
+  78.99199999999944
+ ],
+ [
+  "[Thu Mar  2 04:35:53 2023][solver][infos] Exporting the annual results",
+  79.08799999999944
+ ],
+ [
+  "[Thu Mar  2 04:36:14 2023][solver][infos] Exporting the annual results",
+  79.18399999999944
+ ],
+ [
+  "[Thu Mar  2 04:36:24 2023][solver][infos] Exporting the annual results",
+  79.27999999999945
+ ],
+ [
+  "[Thu Mar  2 04:37:12 2023][solver][infos] Exporting the annual results",
+  79.37599999999945
+ ],
+ [
+  "[Thu Mar  2 04:37:16 2023][solver][infos] Exporting the annual results",
+  79.47199999999945
+ ],
+ [
+  "[Thu Mar  2 04:37:16 2023][solver][infos] Exporting the annual results",
+  79.56799999999946
+ ],
+ [
+  "[Thu Mar  2 04:37:24 2023][solver][infos] Exporting the annual results",
+  79.66399999999946
+ ],
+ [
+  "[Thu Mar  2 04:37:24 2023][solver][infos] Exporting the annual results",
+  79.75999999999947
+ ],
+ [
+  "[Thu Mar  2 04:37:30 2023][solver][infos] Exporting the annual results",
+  79.85599999999947
+ ],
+ [
+  "[Thu Mar  2 04:37:30 2023][solver][infos] Exporting the annual results",
+  79.95199999999947
+ ],
+ [
+  "[Thu Mar  2 04:37:46 2023][solver][infos] Exporting the annual results",
+  80.04799999999948
+ ],
+ [
+  "[Thu Mar  2 04:37:47 2023][solver][infos] Exporting the annual results",
+  80.14399999999948
+ ],
+ [
+  "[Thu Mar  2 04:37:47 2023][solver][infos] Exporting the annual results",
+  80.23999999999948
+ ],
+ [
+  "[Thu Mar  2 04:37:48 2023][solver][infos] Exporting the annual results",
+  80.33599999999949
+ ],
+ [
+  "[Thu Mar  2 04:37:55 2023][solver][infos] Exporting the annual results",
+  80.43199999999949
+ ],
+ [
+  "[Thu Mar  2 04:37:56 2023][solver][infos] Exporting the annual results",
+  80.5279999999995
+ ],
+ [
+  "[Thu Mar  2 04:38:31 2023][solver][infos] Exporting the annual results",
+  80.6239999999995
+ ],
+ [
+  "[Thu Mar  2 04:39:05 2023][solver][infos] Exporting the annual results",
+  80.7199999999995
+ ],
+ [
+  "[Thu Mar  2 04:50:12 2023][solver][infos] Exporting the annual results",
+  80.8159999999995
+ ],
+ [
+  "[Thu Mar  2 04:50:13 2023][solver][infos] Exporting the annual results",
+  80.91199999999951
+ ],
+ [
+  "[Thu Mar  2 04:50:15 2023][solver][infos] Exporting the annual results",
+  81.00799999999951
+ ],
+ [
+  "[Thu Mar  2 04:50:31 2023][solver][infos] Exporting the annual results",
+  81.10399999999952
+ ],
+ [
+  "[Thu Mar  2 04:50:37 2023][solver][infos] Exporting the annual results",
+  81.19999999999952
+ ],
+ [
+  "[Thu Mar  2 04:50:48 2023][solver][infos] Exporting the annual results",
+  81.29599999999952
+ ],
+ [
+  "[Thu Mar  2 04:51:00 2023][solver][infos] Exporting the annual results",
+  81.39199999999953
+ ],
+ [
+  "[Thu Mar  2 04:51:02 2023][solver][infos] Exporting the annual results",
+  81.48799999999953
+ ],
+ [
+  "[Thu Mar  2 04:51:06 2023][solver][infos] Exporting the annual results",
+  81.58399999999953
+ ],
+ [
+  "[Thu Mar  2 04:51:08 2023][solver][infos] Exporting the annual results",
+  81.67999999999954
+ ],
+ [
+  "[Thu Mar  2 04:51:09 2023][solver][infos] Exporting the annual results",
+  81.77599999999954
+ ],
+ [
+  "[Thu Mar  2 04:51:21 2023][solver][infos] Exporting the annual results",
+  81.87199999999955
+ ],
+ [
+  "[Thu Mar  2 04:51:23 2023][solver][infos] Exporting the annual results",
+  81.96799999999955
+ ],
+ [
+  "[Thu Mar  2 04:52:01 2023][solver][infos] Exporting the annual results",
+  82.06399999999955
+ ],
+ [
+  "[Thu Mar  2 04:52:16 2023][solver][infos] Exporting the annual results",
+  82.15999999999956
+ ],
+ [
+  "[Thu Mar  2 04:52:20 2023][solver][infos] Exporting the annual results",
+  82.25599999999956
+ ],
+ [
+  "[Thu Mar  2 04:52:37 2023][solver][infos] Exporting the annual results",
+  82.35199999999956
+ ],
+ [
+  "[Thu Mar  2 04:52:43 2023][solver][infos] Exporting the annual results",
+  82.44799999999957
+ ],
+ [
+  "[Thu Mar  2 04:52:54 2023][solver][infos] Exporting the annual results",
+  82.54399999999957
+ ],
+ [
+  "[Thu Mar  2 04:53:10 2023][solver][infos] Exporting the annual results",
+  82.63999999999957
+ ],
+ [
+  "[Thu Mar  2 05:04:20 2023][solver][infos] Exporting the annual results",
+  82.73599999999958
+ ],
+ [
+  "[Thu Mar  2 05:04:31 2023][solver][infos] Exporting the annual results",
+  82.83199999999958
+ ],
+ [
+  "[Thu Mar  2 05:04:42 2023][solver][infos] Exporting the annual results",
+  82.92799999999959
+ ],
+ [
+  "[Thu Mar  2 05:05:07 2023][solver][infos] Exporting the annual results",
+  83.02399999999959
+ ],
+ [
+  "[Thu Mar  2 05:05:17 2023][solver][infos] Exporting the annual results",
+  83.11999999999959
+ ],
+ [
+  "[Thu Mar  2 05:05:20 2023][solver][infos] Exporting the annual results",
+  83.2159999999996
+ ],
+ [
+  "[Thu Mar  2 05:05:23 2023][solver][infos] Exporting the annual results",
+  83.3119999999996
+ ],
+ [
+  "[Thu Mar  2 05:05:24 2023][solver][infos] Exporting the annual results",
+  83.4079999999996
+ ],
+ [
+  "[Thu Mar  2 05:05:41 2023][solver][infos] Exporting the annual results",
+  83.5039999999996
+ ],
+ [
+  "[Thu Mar  2 05:05:42 2023][solver][infos] Exporting the annual results",
+  83.59999999999961
+ ],
+ [
+  "[Thu Mar  2 05:05:49 2023][solver][infos] Exporting the annual results",
+  83.69599999999961
+ ],
+ [
+  "[Thu Mar  2 05:05:54 2023][solver][infos] Exporting the annual results",
+  83.79199999999962
+ ],
+ [
+  "[Thu Mar  2 05:05:54 2023][solver][infos] Exporting the annual results",
+  83.88799999999962
+ ],
+ [
+  "[Thu Mar  2 05:06:06 2023][solver][infos] Exporting the annual results",
+  83.98399999999963
+ ],
+ [
+  "[Thu Mar  2 05:06:07 2023][solver][infos] Exporting the annual results",
+  84.07999999999963
+ ],
+ [
+  "[Thu Mar  2 05:06:07 2023][solver][infos] Exporting the annual results",
+  84.17599999999963
+ ],
+ [
+  "[Thu Mar  2 05:06:14 2023][solver][infos] Exporting the annual results",
+  84.27199999999964
+ ],
+ [
+  "[Thu Mar  2 05:06:15 2023][solver][infos] Exporting the annual results",
+  84.36799999999964
+ ],
+ [
+  "[Thu Mar  2 05:06:49 2023][solver][infos] Exporting the annual results",
+  84.46399999999964
+ ],
+ [
+  "[Thu Mar  2 05:07:02 2023][solver][infos] Exporting the annual results",
+  84.55999999999965
+ ],
+ [
+  "[Thu Mar  2 05:17:53 2023][solver][infos] Exporting the annual results",
+  84.65599999999965
+ ],
+ [
+  "[Thu Mar  2 05:17:56 2023][solver][infos] Exporting the annual results",
+  84.75199999999965
+ ],
+ [
+  "[Thu Mar  2 05:18:09 2023][solver][infos] Exporting the annual results",
+  84.84799999999966
+ ],
+ [
+  "[Thu Mar  2 05:18:21 2023][solver][infos] Exporting the annual results",
+  84.94399999999966
+ ],
+ [
+  "[Thu Mar  2 05:18:25 2023][solver][infos] Exporting the annual results",
+  85.03999999999967
+ ],
+ [
+  "[Thu Mar  2 05:18:48 2023][solver][infos] Exporting the annual results",
+  85.13599999999967
+ ],
+ [
+  "[Thu Mar  2 05:19:02 2023][solver][infos] Exporting the annual results",
+  85.23199999999967
+ ],
+ [
+  "[Thu Mar  2 05:19:11 2023][solver][infos] Exporting the annual results",
+  85.32799999999968
+ ],
+ [
+  "[Thu Mar  2 05:19:31 2023][solver][infos] Exporting the annual results",
+  85.42399999999968
+ ],
+ [
+  "[Thu Mar  2 05:19:37 2023][solver][infos] Exporting the annual results",
+  85.51999999999968
+ ],
+ [
+  "[Thu Mar  2 05:19:42 2023][solver][infos] Exporting the annual results",
+  85.61599999999969
+ ],
+ [
+  "[Thu Mar  2 05:19:43 2023][solver][infos] Exporting the annual results",
+  85.71199999999969
+ ],
+ [
+  "[Thu Mar  2 05:19:49 2023][solver][infos] Exporting the annual results",
+  85.8079999999997
+ ],
+ [
+  "[Thu Mar  2 05:19:53 2023][solver][infos] Exporting the annual results",
+  85.9039999999997
+ ],
+ [
+  "[Thu Mar  2 05:19:57 2023][solver][infos] Exporting the annual results",
+  85.9999999999997
+ ],
+ [
+  "[Thu Mar  2 05:19:58 2023][solver][infos] Exporting the annual results",
+  86.0959999999997
+ ],
+ [
+  "[Thu Mar  2 05:19:59 2023][solver][infos] Exporting the annual results",
+  86.19199999999971
+ ],
+ [
+  "[Thu Mar  2 05:20:04 2023][solver][infos] Exporting the annual results",
+  86.28799999999971
+ ],
+ [
+  "[Thu Mar  2 05:20:15 2023][solver][infos] Exporting the annual results",
+  86.38399999999972
+ ],
+ [
+  "[Thu Mar  2 05:20:56 2023][solver][infos] Exporting the annual results",
+  86.47999999999972
+ ],
+ [
+  "[Thu Mar  2 05:32:18 2023][solver][infos] Exporting the annual results",
+  86.57599999999972
+ ],
+ [
+  "[Thu Mar  2 05:32:49 2023][solver][infos] Exporting the annual results",
+  86.67199999999973
+ ],
+ [
+  "[Thu Mar  2 05:32:50 2023][solver][infos] Exporting the annual results",
+  86.76799999999973
+ ],
+ [
+  "[Thu Mar  2 05:33:05 2023][solver][infos] Exporting the annual results",
+  86.86399999999973
+ ],
+ [
+  "[Thu Mar  2 05:33:07 2023][solver][infos] Exporting the annual results",
+  86.95999999999974
+ ],
+ [
+  "[Thu Mar  2 05:33:10 2023][solver][infos] Exporting the annual results",
+  87.05599999999974
+ ],
+ [
+  "[Thu Mar  2 05:33:20 2023][solver][infos] Exporting the annual results",
+  87.15199999999975
+ ],
+ [
+  "[Thu Mar  2 05:33:24 2023][solver][infos] Exporting the annual results",
+  87.24799999999975
+ ],
+ [
+  "[Thu Mar  2 05:33:24 2023][solver][infos] Exporting the annual results",
+  87.34399999999975
+ ],
+ [
+  "[Thu Mar  2 05:33:41 2023][solver][infos] Exporting the annual results",
+  87.43999999999976
+ ],
+ [
+  "[Thu Mar  2 05:33:49 2023][solver][infos] Exporting the annual results",
+  87.53599999999976
+ ],
+ [
+  "[Thu Mar  2 05:34:09 2023][solver][infos] Exporting the annual results",
+  87.63199999999976
+ ],
+ [
+  "[Thu Mar  2 05:34:12 2023][solver][infos] Exporting the annual results",
+  87.72799999999977
+ ],
+ [
+  "[Thu Mar  2 05:34:16 2023][solver][infos] Exporting the annual results",
+  87.82399999999977
+ ],
+ [
+  "[Thu Mar  2 05:34:18 2023][solver][infos] Exporting the annual results",
+  87.91999999999977
+ ],
+ [
+  "[Thu Mar  2 05:34:18 2023][solver][infos] Exporting the annual results",
+  88.01599999999978
+ ],
+ [
+  "[Thu Mar  2 05:34:22 2023][solver][infos] Exporting the annual results",
+  88.11199999999978
+ ],
+ [
+  "[Thu Mar  2 05:34:29 2023][solver][infos] Exporting the annual results",
+  88.20799999999979
+ ],
+ [
+  "[Thu Mar  2 05:34:50 2023][solver][infos] Exporting the annual results",
+  88.30399999999979
+ ],
+ [
+  "[Thu Mar  2 05:35:03 2023][solver][infos] Exporting the annual results",
+  88.39999999999979
+ ],
+ [
+  "[Thu Mar  2 05:45:54 2023][solver][infos] Exporting the annual results",
+  88.4959999999998
+ ],
+ [
+  "[Thu Mar  2 05:46:31 2023][solver][infos] Exporting the annual results",
+  88.5919999999998
+ ],
+ [
+  "[Thu Mar  2 05:46:41 2023][solver][infos] Exporting the annual results",
+  88.6879999999998
+ ],
+ [
+  "[Thu Mar  2 05:46:48 2023][solver][infos] Exporting the annual results",
+  88.7839999999998
+ ],
+ [
+  "[Thu Mar  2 05:47:05 2023][solver][infos] Exporting the annual results",
+  88.87999999999981
+ ],
+ [
+  "[Thu Mar  2 05:47:12 2023][solver][infos] Exporting the annual results",
+  88.97599999999981
+ ],
+ [
+  "[Thu Mar  2 05:47:21 2023][solver][infos] Exporting the annual results",
+  89.07199999999982
+ ],
+ [
+  "[Thu Mar  2 05:47:34 2023][solver][infos] Exporting the annual results",
+  89.16799999999982
+ ],
+ [
+  "[Thu Mar  2 05:47:35 2023][solver][infos] Exporting the annual results",
+  89.26399999999983
+ ],
+ [
+  "[Thu Mar  2 05:48:10 2023][solver][infos] Exporting the annual results",
+  89.35999999999983
+ ],
+ [
+  "[Thu Mar  2 05:48:21 2023][solver][infos] Exporting the annual results",
+  89.45599999999983
+ ],
+ [
+  "[Thu Mar  2 05:48:29 2023][solver][infos] Exporting the annual results",
+  89.55199999999984
+ ],
+ [
+  "[Thu Mar  2 05:48:30 2023][solver][infos] Exporting the annual results",
+  89.64799999999984
+ ],
+ [
+  "[Thu Mar  2 05:48:38 2023][solver][infos] Exporting the annual results",
+  89.74399999999984
+ ],
+ [
+  "[Thu Mar  2 05:48:56 2023][solver][infos] Exporting the annual results",
+  89.83999999999985
+ ],
+ [
+  "[Thu Mar  2 05:48:58 2023][solver][infos] Exporting the annual results",
+  89.93599999999985
+ ],
+ [
+  "[Thu Mar  2 05:49:04 2023][solver][infos] Exporting the annual results",
+  90.03199999999985
+ ],
+ [
+  "[Thu Mar  2 05:49:07 2023][solver][infos] Exporting the annual results",
+  90.12799999999986
+ ],
+ [
+  "[Thu Mar  2 05:49:30 2023][solver][infos] Exporting the annual results",
+  90.22399999999986
+ ],
+ [
+  "[Thu Mar  2 05:49:37 2023][solver][infos] Exporting the annual results",
+  90.31999999999987
+ ],
+ [
+  "[Thu Mar  2 05:59:50 2023][solver][infos] Exporting the annual results",
+  90.41599999999987
+ ],
+ [
+  "[Thu Mar  2 06:01:11 2023][solver][infos] Exporting the annual results",
+  90.51199999999987
+ ],
+ [
+  "[Thu Mar  2 06:01:43 2023][solver][infos] Exporting the annual results",
+  90.60799999999988
+ ],
+ [
+  "[Thu Mar  2 06:01:45 2023][solver][infos] Exporting the annual results",
+  90.70399999999988
+ ],
+ [
+  "[Thu Mar  2 06:01:53 2023][solver][infos] Exporting the annual results",
+  90.79999999999988
+ ],
+ [
+  "[Thu Mar  2 06:01:59 2023][solver][infos] Exporting the annual results",
+  90.89599999999989
+ ],
+ [
+  "[Thu Mar  2 06:02:18 2023][solver][infos] Exporting the annual results",
+  90.99199999999989
+ ],
+ [
+  "[Thu Mar  2 06:02:20 2023][solver][infos] Exporting the annual results",
+  91.0879999999999
+ ],
+ [
+  "[Thu Mar  2 06:02:20 2023][solver][infos] Exporting the annual results",
+  91.1839999999999
+ ],
+ [
+  "[Thu Mar  2 06:02:51 2023][solver][infos] Exporting the annual results",
+  91.2799999999999
+ ],
+ [
+  "[Thu Mar  2 06:02:53 2023][solver][infos] Exporting the annual results",
+  91.3759999999999
+ ],
+ [
+  "[Thu Mar  2 06:02:55 2023][solver][infos] Exporting the annual results",
+  91.47199999999991
+ ],
+ [
+  "[Thu Mar  2 06:03:08 2023][solver][infos] Exporting the annual results",
+  91.56799999999991
+ ],
+ [
+  "[Thu Mar  2 06:03:17 2023][solver][infos] Exporting the annual results",
+  91.66399999999992
+ ],
+ [
+  "[Thu Mar  2 06:03:23 2023][solver][infos] Exporting the annual results",
+  91.75999999999992
+ ],
+ [
+  "[Thu Mar  2 06:03:23 2023][solver][infos] Exporting the annual results",
+  91.85599999999992
+ ],
+ [
+  "[Thu Mar  2 06:03:25 2023][solver][infos] Exporting the annual results",
+  91.95199999999993
+ ],
+ [
+  "[Thu Mar  2 06:03:31 2023][solver][infos] Exporting the annual results",
+  92.04799999999993
+ ],
+ [
+  "[Thu Mar  2 06:03:35 2023][solver][infos] Exporting the annual results",
+  92.14399999999993
+ ],
+ [
+  "[Thu Mar  2 06:04:12 2023][solver][infos] Exporting the annual results",
+  92.23999999999994
+ ],
+ [
+  "[Thu Mar  2 06:15:04 2023][solver][infos] Exporting the annual results",
+  92.33599999999994
+ ],
+ [
+  "[Thu Mar  2 06:16:04 2023][solver][infos] Exporting the annual results",
+  92.43199999999995
+ ],
+ [
+  "[Thu Mar  2 06:16:19 2023][solver][infos] Exporting the annual results",
+  92.52799999999995
+ ],
+ [
+  "[Thu Mar  2 06:16:20 2023][solver][infos] Exporting the annual results",
+  92.62399999999995
+ ],
+ [
+  "[Thu Mar  2 06:16:25 2023][solver][infos] Exporting the annual results",
+  92.71999999999996
+ ],
+ [
+  "[Thu Mar  2 06:16:28 2023][solver][infos] Exporting the annual results",
+  92.81599999999996
+ ],
+ [
+  "[Thu Mar  2 06:16:46 2023][solver][infos] Exporting the annual results",
+  92.91199999999996
+ ],
+ [
+  "[Thu Mar  2 06:16:59 2023][solver][infos] Exporting the annual results",
+  93.00799999999997
+ ],
+ [
+  "[Thu Mar  2 06:17:10 2023][solver][infos] Exporting the annual results",
+  93.10399999999997
+ ],
+ [
+  "[Thu Mar  2 06:17:15 2023][solver][infos] Exporting the annual results",
+  93.19999999999997
+ ],
+ [
+  "[Thu Mar  2 06:17:21 2023][solver][infos] Exporting the annual results",
+  93.29599999999998
+ ],
+ [
+  "[Thu Mar  2 06:17:28 2023][solver][infos] Exporting the annual results",
+  93.39199999999998
+ ],
+ [
+  "[Thu Mar  2 06:17:31 2023][solver][infos] Exporting the annual results",
+  93.48799999999999
+ ],
+ [
+  "[Thu Mar  2 06:17:40 2023][solver][infos] Exporting the annual results",
+  93.58399999999999
+ ],
+ [
+  "[Thu Mar  2 06:17:45 2023][solver][infos] Exporting the annual results",
+  93.67999999999999
+ ],
+ [
+  "[Thu Mar  2 06:17:53 2023][solver][infos] Exporting the annual results",
+  93.776
+ ],
+ [
+  "[Thu Mar  2 06:17:54 2023][solver][infos] Exporting the annual results",
+  93.872
+ ],
+ [
+  "[Thu Mar  2 06:18:11 2023][solver][infos] Exporting the annual results",
+  93.968
+ ],
+ [
+  "[Thu Mar  2 06:18:19 2023][solver][infos] Exporting the annual results",
+  94.06400000000001
+ ],
+ [
+  "[Thu Mar  2 06:18:49 2023][solver][infos] Exporting the annual results",
+  94.16000000000001
+ ],
+ [
+  "[Thu Mar  2 06:28:30 2023][solver][infos] Exporting the annual results",
+  94.25600000000001
+ ],
+ [
+  "[Thu Mar  2 06:29:15 2023][solver][infos] Exporting the annual results",
+  94.35200000000002
+ ],
+ [
+  "[Thu Mar  2 06:30:09 2023][solver][infos] Exporting the annual results",
+  94.44800000000002
+ ],
+ [
+  "[Thu Mar  2 06:30:45 2023][solver][infos] Exporting the annual results",
+  94.54400000000003
+ ],
+ [
+  "[Thu Mar  2 06:30:55 2023][solver][infos] Exporting the annual results",
+  94.64000000000003
+ ],
+ [
+  "[Thu Mar  2 06:31:02 2023][solver][infos] Exporting the annual results",
+  94.73600000000003
+ ],
+ [
+  "[Thu Mar  2 06:31:18 2023][solver][infos] Exporting the annual results",
+  94.83200000000004
+ ],
+ [
+  "[Thu Mar  2 06:31:27 2023][solver][infos] Exporting the annual results",
+  94.92800000000004
+ ],
+ [
+  "[Thu Mar  2 06:31:34 2023][solver][infos] Exporting the annual results",
+  95.02400000000004
+ ],
+ [
+  "[Thu Mar  2 06:31:34 2023][solver][infos] Exporting the annual results",
+  95.12000000000005
+ ],
+ [
+  "[Thu Mar  2 06:31:38 2023][solver][infos] Exporting the annual results",
+  95.21600000000005
+ ],
+ [
+  "[Thu Mar  2 06:31:45 2023][solver][infos] Exporting the annual results",
+  95.31200000000005
+ ],
+ [
+  "[Thu Mar  2 06:31:54 2023][solver][infos] Exporting the annual results",
+  95.40800000000006
+ ],
+ [
+  "[Thu Mar  2 06:32:24 2023][solver][infos] Exporting the annual results",
+  95.50400000000006
+ ],
+ [
+  "[Thu Mar  2 06:32:30 2023][solver][infos] Exporting the annual results",
+  95.60000000000007
+ ],
+ [
+  "[Thu Mar  2 06:32:31 2023][solver][infos] Exporting the annual results",
+  95.69600000000007
+ ],
+ [
+  "[Thu Mar  2 06:32:36 2023][solver][infos] Exporting the annual results",
+  95.79200000000007
+ ],
+ [
+  "[Thu Mar  2 06:32:49 2023][solver][infos] Exporting the annual results",
+  95.88800000000008
+ ],
+ [
+  "[Thu Mar  2 06:32:58 2023][solver][infos] Exporting the annual results",
+  95.98400000000008
+ ],
+ [
+  "[Thu Mar  2 06:33:02 2023][solver][infos] Exporting the annual results",
+  96.08000000000008
+ ],
+ [
+  "[Thu Mar  2 06:43:27 2023][solver][infos] Exporting the annual results",
+  96.17600000000009
+ ],
+ [
+  "[Thu Mar  2 06:43:51 2023][solver][infos] Exporting the annual results",
+  96.27200000000009
+ ],
+ [
+  "[Thu Mar  2 06:44:36 2023][solver][infos] Exporting the annual results",
+  96.3680000000001
+ ],
+ [
+  "[Thu Mar  2 06:44:49 2023][solver][infos] Exporting the annual results",
+  96.4640000000001
+ ],
+ [
+  "[Thu Mar  2 06:44:57 2023][solver][infos] Exporting the annual results",
+  96.5600000000001
+ ],
+ [
+  "[Thu Mar  2 06:44:58 2023][solver][infos] Exporting the annual results",
+  96.6560000000001
+ ],
+ [
+  "[Thu Mar  2 06:45:19 2023][solver][infos] Exporting the annual results",
+  96.75200000000011
+ ],
+ [
+  "[Thu Mar  2 06:45:19 2023][solver][infos] Exporting the annual results",
+  96.84800000000011
+ ],
+ [
+  "[Thu Mar  2 06:45:31 2023][solver][infos] Exporting the annual results",
+  96.94400000000012
+ ],
+ [
+  "[Thu Mar  2 06:45:40 2023][solver][infos] Exporting the annual results",
+  97.04000000000012
+ ],
+ [
+  "[Thu Mar  2 06:45:57 2023][solver][infos] Exporting the annual results",
+  97.13600000000012
+ ],
+ [
+  "[Thu Mar  2 06:46:00 2023][solver][infos] Exporting the annual results",
+  97.23200000000013
+ ],
+ [
+  "[Thu Mar  2 06:46:06 2023][solver][infos] Exporting the annual results",
+  97.32800000000013
+ ],
+ [
+  "[Thu Mar  2 06:46:06 2023][solver][infos] Exporting the annual results",
+  97.42400000000013
+ ],
+ [
+  "[Thu Mar  2 06:46:11 2023][solver][infos] Exporting the annual results",
+  97.52000000000014
+ ],
+ [
+  "[Thu Mar  2 06:46:17 2023][solver][infos] Exporting the annual results",
+  97.61600000000014
+ ],
+ [
+  "[Thu Mar  2 06:46:19 2023][solver][infos] Exporting the annual results",
+  97.71200000000015
+ ],
+ [
+  "[Thu Mar  2 06:46:30 2023][solver][infos] Exporting the annual results",
+  97.80800000000015
+ ],
+ [
+  "[Thu Mar  2 06:47:05 2023][solver][infos] Exporting the annual results",
+  97.90400000000015
+ ],
+ [
+  "[Thu Mar  2 06:47:09 2023][solver][infos] Exporting the annual results",
+  98.00000000000016
+ ],
+ [
+  "[Thu Mar  2 06:47:25 2023][solver][check] Exporting the survey results...",
+  99.0
+ ],
+ [
+  "[Thu Mar  2 06:48:15 2023][solver][infos] [UI] Quitting the solver gracefully",
+  100.0
+ ]
+]

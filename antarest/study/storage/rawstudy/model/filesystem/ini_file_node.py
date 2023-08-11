@@ -1,34 +1,65 @@
+import contextlib
+import functools
+import io
+import json
+import logging
 import os
 import tempfile
+import zipfile
+from json import JSONDecodeError
 from pathlib import Path
-from typing import List, Optional, cast, Dict, Any, Union
-
-from filelock import FileLock
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import (
-    IniWriter,
-)
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from filelock import FileLock
 
 
-class IniReaderError(Exception):
+class IniFileNodeWarning(UserWarning):
     """
-    Left node to handle .ini file behavior
+    Custom User Warning subclass for INI file-related warnings.
+
+    This warning class is designed to provide more informative warning messages for INI file errors.
+
+    Args:
+        config: The configuration associated with the INI file.
+        message: The specific warning message.
     """
 
-    def __init__(self, name: str, mes: str):
-        super(IniReaderError, self).__init__(f"Error read node {name} = {mes}")
+    def __init__(self, config: FileStudyTreeConfig, message: str) -> None:
+        relpath = config.path.relative_to(config.study_path).as_posix()
+        super().__init__(f"INI File error '{relpath}': {message}")
+
+
+def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Decorator to suppress `UserWarning` exceptions by logging them as warnings.
+
+    Args:
+        f: The function or method to be decorated.
+
+    Returns:
+        Callable[..., Any]: The decorated function.
+    """
+
+    @functools.wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return f(*args, **kwargs)
+        except UserWarning as w:
+            # noinspection PyUnresolvedReferences
+            logging.getLogger(f.__module__).warning(str(w))
+
+    return wrapper
 
 
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
@@ -65,26 +96,26 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
 
         if self.config.zip_path:
-            file_path, tmp_dir = self._extract_file_to_tmp_dir()
-            try:
-                json = self.reader.read(file_path)
-            except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e))
-            finally:
-                tmp_dir.cleanup()
+            with zipfile.ZipFile(
+                self.config.zip_path, mode="r"
+            ) as zipped_folder:
+                inside_zip_path = self.config.path.relative_to(
+                    self.config.zip_path.with_suffix("")
+                ).as_posix()
+                with io.TextIOWrapper(
+                    zipped_folder.open(inside_zip_path)
+                ) as f:
+                    data = self.reader.read(f)
         else:
-            try:
-                json = self.reader.read(self.path)
-            except Exception as e:
-                raise IniReaderError(self.__class__.__name__, str(e))
+            data = self.reader.read(self.path)
 
         if len(url) == 2:
-            json = json[url[0]][url[1]]
+            data = data[url[0]][url[1]]
         elif len(url) == 1:
-            json = json[url[0]]
+            data = data[url[0]]
         else:
-            json = {k: {} for k in json} if depth == 1 else json
-        return cast(SUB_JSON, json)
+            data = {k: {} for k in data} if depth == 1 else data
+        return cast(SUB_JSON, data)
 
     def get(
         self,
@@ -114,45 +145,84 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            json = self.reader.read(self.path) if self.path.exists() else {}
-            formatted_data = data
+            info = self.reader.read(self.path) if self.path.exists() else {}
+            obj = data
             if isinstance(data, str):
-                formatted_data = IniReader.parse_value(data)
+                with contextlib.suppress(JSONDecodeError):
+                    obj = json.loads(data)
             if len(url) == 2:
-                if url[0] not in json:
-                    json[url[0]] = {}
-                json[url[0]][url[1]] = formatted_data
+                if url[0] not in info:
+                    info[url[0]] = {}
+                info[url[0]][url[1]] = obj
             elif len(url) == 1:
-                json[url[0]] = formatted_data
+                info[url[0]] = obj
             else:
-                json = cast(JSON, formatted_data)
-            self.writer.write(json, self.path)
+                info = cast(JSON, obj)
+            self.writer.write(info, self.path)
 
+    @log_warning
     def delete(self, url: Optional[List[str]] = None) -> None:
-        url = url or []
-        if len(url) == 0:
-            if self.config.path.exists():
-                self.config.path.unlink()
-        elif len(url) > 0:
-            json = self.reader.read(self.path) if self.path.exists() else {}
+        """
+        Deletes the specified section or key from the INI file,
+        or the entire INI file if no URL is provided.
+
+        Args:
+            url: A list containing the URL components [section_name, key_name].
+
+        Raises:
+            IniFileNodeWarning:
+                If the specified section or key cannot be deleted due to errors such as
+                missing configuration file, non-resolved URL, or non-existent section/key.
+        """
+        if not self.path.exists():
+            raise IniFileNodeWarning(
+                self.config,
+                "fCannot delete item {url!r}: Config file not found",
+            )
+
+        if not url:
+            self.config.path.unlink()
+            return
+
+        url_len = len(url)
+        if url_len > 2:
+            raise IniFileNodeWarning(
+                self.config,
+                f"Cannot delete item {url!r}: URL should be fully resolved",
+            )
+
+        data = self.reader.read(self.path)
+
+        if url_len == 1:
             section_name = url[0]
-            if len(url) == 1:
-                try:
-                    del json[section_name]
-                except KeyError:
-                    pass
-            elif len(url) == 2:
-                # remove dict key
-                key_name = url[1]
-                try:
-                    del json[section_name][key_name]
-                except KeyError:
-                    pass
+            try:
+                del data[section_name]
+            except KeyError:
+                raise IniFileNodeWarning(
+                    self.config,
+                    f"Cannot delete section: Section [{section_name}] not found",
+                ) from None
+
+        elif url_len == 2:
+            section_name, key_name = url
+            try:
+                section = data[section_name]
+            except KeyError:
+                raise IniFileNodeWarning(
+                    self.config,
+                    f"Cannot delete key: Section [{section_name}] not found",
+                ) from None
             else:
-                raise ValueError(
-                    f"url should be fully resolved when arrives on {self.__class__.__name__}"
-                )
-            self.writer.write(json, self.path)
+                try:
+                    del section[key_name]
+                except KeyError:
+                    raise IniFileNodeWarning(
+                        self.config,
+                        f"Cannot delete key: Key '{key_name}'"
+                        f" not found in section [{section_name}]",
+                    ) from None
+
+        self.writer.write(data, self.path)
 
     def check_errors(
         self,
@@ -160,7 +230,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        errors = list()
+        errors = []
         for section, params in self.types.items():
             if section not in data:
                 msg = f"section {section} not in {self.__class__.__name__}"
@@ -194,9 +264,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 if raising:
                     raise ValueError(msg)
                 errors.append(msg)
-            else:
-                if not isinstance(data[param], typing):
-                    msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                    if raising:
-                        raise ValueError(msg)
-                    errors.append(msg)
+            elif not isinstance(data[param], typing):
+                msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
+                if raising:
+                    raise ValueError(msg)
+                errors.append(msg)

@@ -182,6 +182,8 @@ class VariantCommandsExtractor:
             elif (
                 command_obj.command_name == CommandName.REMOVE_LINK
                 or command_obj.command_name == CommandName.REMOVE_CLUSTER
+                or command_obj.command_name
+                == CommandName.REMOVE_RENEWABLES_CLUSTER
             ):
                 command_list = first_commands
                 priority = 1
@@ -197,13 +199,14 @@ class VariantCommandsExtractor:
                 priority = 3
             elif (
                 command_obj.command_name == CommandName.CREATE_CLUSTER
+                or command_obj.command_name
+                == CommandName.CREATE_RENEWABLES_CLUSTER
                 or command_obj.command_name == CommandName.CREATE_LINK
             ):
                 command_list = last_commands
                 priority = 2
             elif (
-                command_obj.command_name == CommandName.CREATE_LINK
-                or command_obj.command_name
+                command_obj.command_name
                 == CommandName.CREATE_BINDING_CONSTRAINT
                 or command_obj.command_name == CommandName.CREATE_DISTRICT
             ):

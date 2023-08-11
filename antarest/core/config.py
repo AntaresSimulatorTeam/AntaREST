@@ -2,10 +2,9 @@ import logging
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import yaml
-
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
@@ -162,7 +161,7 @@ class StorageConfig:
 
 @dataclass(frozen=True)
 class LocalConfig:
-    binaries: Dict[str, Path] = field(default_factory=lambda: {})
+    binaries: Dict[str, Path] = field(default_factory=dict)
 
     @staticmethod
     def from_dict(data: JSON) -> Optional["LocalConfig"]:
@@ -186,9 +185,7 @@ class SlurmConfig:
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     max_cores: int = 64
-    antares_versions_on_remote_server: List[str] = field(
-        default_factory=lambda: []
-    )
+    antares_versions_on_remote_server: List[str] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: JSON) -> "SlurmConfig":

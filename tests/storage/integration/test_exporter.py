@@ -1,13 +1,10 @@
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from antarest.core.config import (
     Config,
     SecurityConfig,
@@ -20,14 +17,15 @@ from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.service import StudyService
 from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 from tests.storage.conftest import (
-    SimpleSyncTaskService,
     SimpleFileTransferManager,
+    SimpleSyncTaskService,
 )
 
 
@@ -104,20 +102,16 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     assert_data(data)
 
 
+@pytest.mark.parametrize("outputs", [True, False, "prout"])
 @pytest.mark.parametrize(
-    "outputs,outputlist,denormalize",
-    [
-        (True, None, True),
-        (True, [], False),
-        (True, ["20201014-1427eco"], False),
-        (False, ["20201014-1427eco"], False),
-    ],
+    "output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]]
 )
+@pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
     tmp_path: Path,
     sta_mini_zip_path: Path,
     outputs: bool,
-    outputlist: Optional[List[str]],
+    output_list: Optional[List[str]],
     denormalize: bool,
 ):
     path_studies = tmp_path / "studies"
@@ -134,18 +128,18 @@ def test_export_flat(
         export_path / "STA-mini-export",
         Mock(),
         outputs,
-        outputlist,
+        output_list,
         denormalize=denormalize,
     )
 
     export_output_path = export_path / "STA-mini-export" / "output"
     if outputs:
         assert export_output_path.exists()
-        if outputlist is not None:
-            if len(outputlist) == 0:
+        if output_list is not None:
+            if len(output_list) == 0:
                 assert len(os.listdir(export_output_path)) == 0
             else:
-                for item in outputlist:
+                for item in output_list:
                     assert (export_output_path / item).exists()
         else:
             assert len(os.listdir(export_output_path)) == 5

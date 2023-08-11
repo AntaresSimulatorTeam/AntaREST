@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -32,22 +32,22 @@ import {
 } from "../../../common/types";
 import {
   getLauncherLoad,
+  getLauncherVersions,
   getStudyOutputs,
   launchStudy,
 } from "../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy, getStudyVersionsFormatted } from "../../../redux/selectors";
+import { getStudy } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
-import { fetchStudyVersions } from "../../../redux/ducks/studies";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+import { convertVersions } from "../../../services/utils";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
-const LAUNCH_LOAD_DEFAULT = 12;
+const LAUNCH_LOAD_DEFAULT = 22;
 const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
@@ -73,8 +73,6 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual
   );
-  const dispatch = useAppDispatch();
-  const versionList = useAppSelector(getStudyVersionsFormatted);
 
   const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
     errorMessage: t("study.error.launchLoad"),
@@ -86,13 +84,10 @@ function LauncherDialog(props: Props) {
     { errorMessage: t("study.error.listOutputs"), deps: [studyIds] }
   );
 
-  useEffect(() => {
-    (async () => {
-      if (!versionList || versionList.length === 0) {
-        dispatch(fetchStudyVersions());
-      }
-    })();
-  }, [versionList, dispatch]);
+  const { data: launcherVersions = [] } = usePromiseWithSnackbarError(
+    async () => convertVersions(await getLauncherVersions()),
+    { errorMessage: t("study.error.launcherVersions") }
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -508,7 +503,7 @@ function LauncherDialog(props: Props) {
             </FormControl>
             <SelectSingle
               name={t("global.version")}
-              list={versionList}
+              list={launcherVersions}
               data={solverVersion}
               setValue={setSolverVersion}
               sx={{ width: 1, mt: 2 }}
