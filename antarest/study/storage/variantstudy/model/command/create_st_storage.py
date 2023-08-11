@@ -253,7 +253,11 @@ class CreateSTStorage(ICommand):
             ["input", "st-storage", "clusters", self.area_id, "list"]
         )
         config[self.storage_id] = json.loads(
-            self.parameters.json(by_alias=True, exclude={"id"})
+            self.parameters.json(
+                by_alias=True,
+                exclude={"id"},
+                exclude_defaults=True,
+            )
         )
 
         new_data: JSON = {

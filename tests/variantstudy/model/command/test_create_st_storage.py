@@ -345,7 +345,7 @@ class TestCreateSTStorage:
             "storage1": {
                 "efficiency": 0.94,
                 "group": "Battery",
-                "initiallevel": 0,
+                # "initiallevel": 0,  # default value is 0
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
                 "name": "Storage1",
