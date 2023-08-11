@@ -1843,6 +1843,7 @@ def create_study_data_routes(
         - `storage_id`: The storage id of the study that we want to update.
         - `form`: The characteristic of the storage that we can update:
              - `name`: The name of the updated storage.
+             - `group`: The group of the updated storage.
              - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
              - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
              - `reservoirCapacity`:  The reservoir capacity of the updated storage.

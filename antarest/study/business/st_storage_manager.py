@@ -81,6 +81,9 @@ class STStorageInputForm(FormFieldsBaseModel):
         description="Short-term storage name",
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
+    group: Optional[STStorageGroup] = Field(
+        description="Energy storage system group (mandatory)",
+    )
     injection_nominal_capacity: Optional[float] = Field(
         None,
         description="Injection nominal capacity (MW)",
@@ -117,6 +120,7 @@ class STStorageInputForm(FormFieldsBaseModel):
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = STStorageInputForm(
                 name="Siemens Battery",
+                group="Battery",
                 injection_nominal_capacity=150,
                 withdrawal_nominal_capacity=150,
                 reservoir_capacity=600,
