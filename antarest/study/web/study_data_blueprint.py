@@ -1587,7 +1587,6 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the storage",
-        response_model=STStorageOutputForm,
     )
     def get_st_storage(
         uuid: str,
@@ -1722,10 +1721,9 @@ def create_study_data_routes(
         )
 
     @bp.post(
-        "/studies/{uuid}/areas/{area_id}/st-storage",
+        path="/studies/{uuid}/areas/{area_id}/st-storage",
         tags=[APITag.study_data],
         summary="Create a new storage",
-        response_model=str,
     )
     def create_st_storage(
         uuid: str,
@@ -1746,10 +1744,9 @@ def create_study_data_routes(
         )
 
     @bp.put(
-        "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Set short storage  form values for a given study",
-        response_model=STStorageOutputForm,
     )
     def update_st_storage(
         uuid: str,
@@ -1771,7 +1768,7 @@ def create_study_data_routes(
         )
 
     @bp.delete(
-        "/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Remove a storage from a study",
     )
