@@ -1,29 +1,48 @@
 Antares Web Changelog
 =====================
 
-v2.14.5 (unreleased)
+v2.14.5 (2023-08-11)
 --------------------
+
+### Features
+
+*  **ui-i18n:** add missing adequacy patch translations (#1680) ([8a06461](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8a06461f4118227b94be7f587d37ea2430c70505))
+*  **ui:** removed the "patch" number from the list of versions in the simulation launch dialog when it's equal to 0 (#1698) ([1bc0156](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1bc0156c3e08e321e9ccc396b95cadeabf1c1fc7))
+
 
 ### Bug Fixes
 
-*  **web:** change API response_model to avoid ValidationError (#1526) ([47b5346](https://github.com/AntaresSimulatorTeam/AntaREST/commit/47b5346069f58c2634647625056a1b339da37c72))
-*  **xpansion:** correct Xpansion settings field types ([edaa140](https://github.com/AntaresSimulatorTeam/AntaREST/commit/edaa1403edfec221681662ecff6accc4e774c0e2))
-*  **variant:** correct implementation of `VariantCommandsExtractor.diff` method ([289fb2f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/289fb2f1de28dbb40b24d3741fc972a17f462780))
-*  **ui-i18n:** add missing adequacy patch translations (#1680) ([a254b5e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a254b5e2a80d8a7229e8b002329921bc62165db1))
-*  **api:** add missing `use_leeway` field and validation rules (#1650) ([e62f41e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e62f41e5a33a1520f8d8bcc4171b9e4e9b5d8902))
-*  **export:** ZIP outputs are now uncompressed before export (#1656) ([247d110](https://github.com/AntaresSimulatorTeam/AntaREST/commit/247d11080fe98d80b64cc344db2aa0e2eca613cf))
-*  **log-parser:** simplify parsing and make it accurate (#1682) ([5d20d6d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/5d20d6dd4e70f45aaa8ed8bf17b01ae810d5d162))
+*  **web:** modified API response model to prevent Watcher's ValidationError (#1526) ([b0e48d1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b0e48d1bd31463cb6ce5e9aefeff761c016d0b35))
+*  **xpansion:** corrected field types for Xpansion parameters (sensitivity analysis) ([3e481b9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3e481b9c8866ecc3dc42e351552e1ded036f62ad))
+*  **variant:** fixed implementation of the method for extracting the difference between two studies ([c534785](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c5347851da867a19b990e05c6516bedc7508c8ce))
+*  **api:** added missing `use_leeway` field and validation rules in the hydro configuration form (#1650) ([27e46e5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27e46e5bda77aed65c84e82931d426b4b69a43bd))
+*  **export:** ZIP outputs are no longer compressed before export (used by Xpansion) (#1656) ([cba6261](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cba62613e19712240f74f417854e95bd588ba95d))
+*  **log-parser:** simplified analysis and improved accuracy in displaying simulation progress for a study (#1682) ([2442674](https://github.com/AntaresSimulatorTeam/AntaREST/commit/24426749e9b6100eb3ab4b7159f615444242b95a))
+*  **table-mode:** corrected reading of UI information when the study has only one area (#1674) ([55c4181](https://github.com/AntaresSimulatorTeam/AntaREST/commit/55c4181b64959c5e191fed2256437fc95787199f))
+*  **table-mode:** issue to read area information in the case where the study has only one area (#1690) ([87d9617](https://github.com/AntaresSimulatorTeam/AntaREST/commit/87d961703cebdc037671fe73988903eb14dd9547))
+*  **command:** improve INI reader to support API PUT `/v1/studies/{uuid}/raw` (#1461) ([9e5cf25](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e5cf25b2f69890016ea36f3be0e9ac03c7695b6))
+*  **variant:** fixed time series deletion of renewable clusters (#1693) ([4ba1b17](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4ba1b17dd3c1b8ea62a5a02f39d15e94a4b9a331))
+*  **launcher:** fixing launcher versions display and creation of the endpoint `/v1/launcher/versions` ([410afc2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/410afc2e4ecbb296878985839ee27f84bc70d9d8))
+   and (#1672) ([a76f3a9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a76f3a9f01df0225d7fb54b20ba3ff599d749138))
+*  **launcher:** set the default number of cores to 22 (instead of 12) (#1695) ([2c89799](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c8979916d46a0ed46a67bc75ac9a2e365e3f164))
 
 
 ### Continuous Integration
 
-* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting (#1685) ([d5535b3](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d5535b30a8f5eee167ddbfcbb187194028c4790f))
+* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting (#1685) ([7cff8c5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7cff8c56c38728a1b29eae0221bcc8226e9ca80c))
+
+
+### Tests
+
+* enhanced integration tests: refactored fixtures and resources ([70af9b1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/70af9b167bf54d534696da8b781edda56ccee788))
 
 
 ### Contributors
 
 <a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
-<a href="https://github.com/MartinBelthle">MartinBelthle</a>
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>,
+<a href="https://github.com/hdinia">hdinia</a>,
+<a href="https://github.com/skamril">skamril</a>
 
 
 v2.14.4 (2023-06-28)
