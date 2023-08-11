@@ -1586,7 +1586,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
-        summary="Get the storage",
+        summary="Get the short-term storage properties",
     )
     def get_st_storage(
         uuid: str,
@@ -1630,7 +1630,7 @@ def create_study_data_routes(
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/st-storage",
         tags=[APITag.study_data],
-        summary="Get the storages",
+        summary="Get the list of short-term storage properties",
         response_model=Sequence[STStorageOutputForm],
     )
     def get_st_storages(
@@ -1785,7 +1785,7 @@ def create_study_data_routes(
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/st-storage",
         tags=[APITag.study_data],
-        summary="Create a new storage",
+        summary="Create a new short-term storage in an area",
     )
     def create_st_storage(
         uuid: str,
@@ -1823,7 +1823,7 @@ def create_study_data_routes(
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
-        summary="Set short storage  form values for a given study",
+        summary="Update the short-term storage properties",
     )
     def update_st_storage(
         uuid: str,
@@ -1881,7 +1881,7 @@ def create_study_data_routes(
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
-        summary="Remove a storage from a study",
+        summary="Remove a short-term storage from an area",
         status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_st_storage(
