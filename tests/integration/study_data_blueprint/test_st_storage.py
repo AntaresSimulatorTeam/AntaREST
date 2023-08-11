@@ -92,15 +92,37 @@ class TestSTStorage:
             "withdrawalNominalCapacity": 0.0,
         }
 
+        # updating the matrix of a short-term storage
+        array = np.random.rand(8760, 1) * 1000
+        res = client.put(
+            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/series/inflows",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "index": list(range(array.shape[0])),
+                "columns": list(range(array.shape[1])),
+                "data": array.tolist(),
+            },
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json() is None
+
         # reading the matrix of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/inflows",
+            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/series/inflows",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.raise_for_status()
+        assert res.status_code == 200, res.json()
         matrix = res.json()
-        array = np.array(matrix["data"], dtype=np.float64)
-        assert array.all() == 0
+        actual = np.array(matrix["data"], dtype=np.float64)
+        assert actual.all() == array.all()
+
+        # validating the matrices of a short-term storage
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json() is True
 
         # todo: reading the list of short-term storages
         # res = client.get(

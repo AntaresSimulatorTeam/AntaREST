@@ -1609,10 +1609,9 @@ def create_study_data_routes(
 
     # Manage Study Data
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/{ts_name}",
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
-        summary="Get time series from a short-term storage",
-        response_model=STStorageMatrix,
+        summary="Get a short-term storage time series",
     )
     def get_st_storage_matrix(
         uuid: str,
@@ -1648,6 +1647,78 @@ def create_study_data_routes(
         )
         return study_service.st_storage_manager.get_matrix(
             study, area_id, storage_id, ts_name
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/series/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Update a short-term storage time series",
+    )
+    def update_st_storage_matrix(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        ts: STStorageMatrix,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Update the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+        - `ts_name`: The name of the time series to retrieve.
+        - `ts`: The time series matrix to update.
+
+        Permissions:
+        - User must have WRITE permission on the study.
+        """
+        logger.info(
+            f"Update time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.WRITE, params
+        )
+        study_service.st_storage_manager.update_matrix(
+            study, area_id, storage_id, ts_name, ts
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/validate",
+        tags=[APITag.study_data],
+        summary="Validate all the short-term storage time series",
+    )
+    def validate_st_storage_matrices(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Validate the consistency of all time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+
+        Permissions:
+        - User must have READ permission on the study.
+        """
+        logger.info(
+            f"Validating time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.validate_matrices(
+            study, area_id, storage_id
         )
 
     @bp.post(
