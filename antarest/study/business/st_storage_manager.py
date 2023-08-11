@@ -425,12 +425,23 @@ class STStorageManager:
         else:
             old_config = STStorageConfig(**values)
 
-        # use snake_case values
-        old_values = old_config.dict(exclude={"id"}, exclude_defaults=True)
+        # use Python values to synchronize Config and Form values
+        old_values = old_config.dict(exclude={"id"})
         new_values = form.dict(by_alias=False, exclude_none=True)
         updated = {**old_values, **new_values}
         new_config = STStorageConfig(**updated, id=storage_id)
-        data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+        new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+
+        # create the dict containing the old values (excluding defaults),
+        # the updated values (including defaults)
+        data: Dict[str, Any] = {}
+        for field_name, field in new_config.__fields__.items():
+            if field_name in {"id"}:
+                continue
+            value = getattr(new_config, field_name)
+            if field_name in new_values or value != field.get_default():
+                # use the JSON-converted value
+                data[field.alias] = new_data[field.alias]
 
         # create the update config command with the modified data
         command = UpdateConfig(

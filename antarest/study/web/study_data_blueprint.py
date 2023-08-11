@@ -1584,7 +1584,7 @@ def create_study_data_routes(
 
     # Manage Study Data
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the short-term storage properties",
     )
@@ -1603,6 +1603,7 @@ def create_study_data_routes(
         - `storage_id`: The storage ID of the study.
 
         Returns: One storage with the following attributes:
+        - `id`: The storage ID of the study.
         - `name`: The name of the  storage.
         - `group`: The group of the  storage.
         - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
@@ -1628,7 +1629,7 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/st-storage",
+        path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Get the list of short-term storage properties",
         response_model=Sequence[STStorageOutputForm],
@@ -1639,13 +1640,14 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Sequence[STStorageOutputForm]:
         """
-        Retrieve the storages by given uuid and area id of a study.
+        Retrieve the short-term storages by given uuid and area ID of a study.
 
         Args:
         - `uuid`: The UUID of the study.
         - `area_id`: The area ID.
 
         Returns: A list of storages with the following attributes:
+        - `id`: The storage ID of the study.
         - `name`: The name of the  storage.
         - `group`: The group of the  storage.
         - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
@@ -1670,7 +1672,7 @@ def create_study_data_routes(
 
     # Manage Study Data
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/series/{ts_name}",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
         summary="Get a short-term storage time series",
     )
@@ -1711,7 +1713,7 @@ def create_study_data_routes(
         )
 
     @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/series/{ts_name}",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
         summary="Update a short-term storage time series",
     )
@@ -1749,7 +1751,7 @@ def create_study_data_routes(
         )
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}/validate",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/validate",
         tags=[APITag.study_data],
         summary="Validate all the short-term storage time series",
     )
@@ -1783,7 +1785,7 @@ def create_study_data_routes(
         )
 
     @bp.post(
-        path="/studies/{uuid}/areas/{area_id}/st-storage",
+        path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Create a new short-term storage in an area",
     )
@@ -1794,7 +1796,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        Create a new storage /studies/{uuid}/areas/{area_id}/st-storage of a study.
+        Create a new short-term storage in an area.
 
         Args:
         - `uuid`: The UUID of the study.
@@ -1820,8 +1822,8 @@ def create_study_data_routes(
             study, area_id, form
         )
 
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Update the short-term storage properties",
     )
@@ -1833,7 +1835,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutputForm:
         """
-         Update /studies/{uuid}/areas/{area_id}/st-storage/{storage_id} storage of a study.
+        Update short-term storage of a study.
 
         Args:
         - `uuid`: The UUID of the study.
@@ -1841,15 +1843,12 @@ def create_study_data_routes(
         - `storage_id`: The storage id of the study that we want to update.
         - `form`: The characteristic of the storage that we can update:
              - `name`: The name of the updated storage.
-             - `group`: The group of the updated storage.
              - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
              - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
              - `reservoirCapacity`:  The reservoir capacity of the updated storage.
              - `efficiency`: The efficiency of the updated storage
              - `initialLevel`: The initial Level of the updated storage
              - `initialLevelOptim`: The initial Level Optim of the updated storage
-
-
 
         Returns: The updated storage with the following attributes:
          - `name`: The name of the updated storage.
@@ -1860,7 +1859,7 @@ def create_study_data_routes(
          - `efficiency`: The efficiency of the updated storage
          - `initialLevel`: The initial Level of the updated storage
          - `initialLevelOptim`: The initial Level Optim of the updated storage
-         - `storage_id`: The storage id of the study that we want to update.
+         - `id`: The storage ID of the study that we want to update.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1879,7 +1878,7 @@ def create_study_data_routes(
         )
 
     @bp.delete(
-        path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Remove a short-term storage from an area",
         status_code=HTTPStatus.NO_CONTENT,
@@ -1891,7 +1890,7 @@ def create_study_data_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-         Delete /studies/{uuid}/areas/{area_id}/st-storage/{storage_id} storage of a study.
+        Delete a short-term storage from an area.
 
         Args:
         - `uuid`: The UUID of the study.

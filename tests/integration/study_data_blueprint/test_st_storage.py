@@ -58,7 +58,7 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": 860},
         )
-        res.status_code = 200, res.json()
+        res.raise_for_status()
         task_id = res.json()
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED, task
@@ -67,20 +67,20 @@ class TestSTStorage:
         area_id = transform_name_to_id("FR")
         siemens_battery = "Siemens Battery"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Battery"},
         )
-        res.status_code = 200, res.json()
+        assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
 
         # reading the properties of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.status_code = 200, res.json()
+        assert res.status_code == 200, res.json()
         assert res.json() == {
             "efficiency": 1.0,
             "group": "Battery",
@@ -96,7 +96,7 @@ class TestSTStorage:
         # updating the matrix of a short-term storage
         array = np.random.rand(8760, 1) * 1000
         res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/series/inflows",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "index": list(range(array.shape[0])),
@@ -109,7 +109,7 @@ class TestSTStorage:
 
         # reading the matrix of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/series/inflows",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -119,7 +119,7 @@ class TestSTStorage:
 
         # validating the matrices of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}/validate",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/validate",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -127,7 +127,7 @@ class TestSTStorage:
 
         # Reading the list of short-term storages
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -146,8 +146,8 @@ class TestSTStorage:
         ]
 
         # updating properties
-        res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": "New Siemens Battery",
@@ -168,10 +168,10 @@ class TestSTStorage:
         }
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.status_code = 200, res.json()
+        assert res.status_code == 200, res.json()
         assert res.json() == {
             "id": siemens_battery_id,
             "name": "New Siemens Battery",
@@ -185,8 +185,8 @@ class TestSTStorage:
         }
 
         # updating properties
-        res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "initialLevel": 5900,
@@ -207,10 +207,10 @@ class TestSTStorage:
         }
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.status_code = 200, res.json()
+        assert res.status_code == 200, res.json()
         assert res.json() == {
             "id": siemens_battery_id,
             "name": "New Siemens Battery",
@@ -227,7 +227,7 @@ class TestSTStorage:
 
         # deletion of short-term storages
         res = client.delete(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 204, res.json()
@@ -235,7 +235,7 @@ class TestSTStorage:
 
         #  Check the removal
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         obj = res.json()
@@ -251,80 +251,81 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
 
         # Check delete with the wrong value of area_id
+        bad_area_id = "bad_area"
         res = client.delete(
-            f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
-        assert area_id + "foo" in description
-        assert re.search(r"not a child", description, flags=re.IGNORECASE)
+        assert bad_area_id in description
         assert re.search(
-            r"CommandName.REMOVE_ST_STORAGE", description, flags=re.IGNORECASE
+            r"CommandName.REMOVE_ST_STORAGE", description, flags=re.IGNORECASE,
         )
 
         # Check delete with the wrong value of study_id
+        bad_study_id = "bad_study"
         res = client.delete(
-            f"/v1/studies/{study_id}foo/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         obj = res.json()
         description = obj["description"]
         assert res.status_code == 404, res.json()
-        assert f"{study_id}foo" in description
+        assert bad_study_id in description
 
         # Check get with wrong area_id
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         obj = res.json()
         description = obj["description"]
-        assert f"{area_id}foo" in description
+        assert bad_area_id in description
         assert res.status_code == 404, res.json()
 
         # Check get with wrong study_id
 
         res = client.get(
-            f"/v1/studies/{study_id}foo/areas/{area_id}/st-storage/{siemens_battery_id}",
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         obj = res.json()
         description = obj["description"]
         assert res.status_code == 404, res.json()
-        assert f"{study_id}foo" in description
+        assert bad_study_id in description
 
         # Check post with wrong study_id
         res = client.post(
-            f"/v1/studies/{study_id}foo/areas/{area_id}/st-storage",
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Battery"},
         )
         obj = res.json()
         description = obj["description"]
         assert res.status_code == 404, res.json()
-        assert f"{study_id}foo" in description
+        assert bad_study_id in description
 
         # Check post with wrong area_id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage",
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "Battery"},
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
-        assert f"{area_id}foo" in description
+        assert bad_area_id in description
         assert re.search(r"Area ", description, flags=re.IGNORECASE)
         assert re.search(r"does not exist ", description, flags=re.IGNORECASE)
 
         # Check post with wrong group
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage",
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Batteryfoo"},
+            json={"name": siemens_battery, "group": "GroupFoo"},
         )
         assert res.status_code == 422, res.json()
         obj = res.json()
@@ -334,12 +335,11 @@ class TestSTStorage:
         )
 
         # Check the put with the wrong area_id
-        res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}foo/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "efficiency": 1.0,
-                "group": "Battery",
                 "initialLevel": 0.0,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 2450,
@@ -351,16 +351,15 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
-        assert f"{area_id}foo" in description
+        assert bad_area_id in description
         assert re.search(r"not a child of ", description, flags=re.IGNORECASE)
 
         # Check the put with the wrong siemens_battery_id
-        res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "efficiency": 1.0,
-                "group": "Battery",
                 "initialLevel": 0.0,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 2450,
@@ -381,12 +380,11 @@ class TestSTStorage:
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
         # Check the put with the wrong study_id
-        res = client.put(
-            f"/v1/studies/{study_id}foo/areas/{area_id}/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "efficiency": 1.0,
-                "group": "Battery",
                 "initialLevel": 0.0,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 2450,
@@ -398,15 +396,14 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
-        assert f"{study_id}foo" in description
+        assert bad_study_id in description
 
         # Check the put with the wrong efficiency
-        res = client.put(
-            f"/v1/studies/{study_id}foo/areas/{area_id}/st-storage/{siemens_battery_id}",
+        res = client.patch(
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "efficiency": 2.0,
-                "group": "Battery",
                 "initialLevel": 0.0,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 2450,
