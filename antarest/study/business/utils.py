@@ -36,9 +36,7 @@ def execute_or_add_commands(
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
-                raise CommandApplicationError(
-                    result.message, result.status_code
-                )
+                raise CommandApplicationError(result.message)
             executed_commands.append(command)
         storage_service.variant_study_service.invalidate_cache(study)
         if not is_managed(study):

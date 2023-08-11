@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast, Sequence
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -1594,6 +1594,27 @@ def create_study_data_routes(
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutputForm:
+        """
+        Retrieve the storages by given uuid and area id of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID of the study.
+        - `storage_id`: The storage ID of the study.
+
+        Returns: One storage with the following attributes:
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
+
+        Permissions:
+          The user must have READ permission on the study.
+        """
         logger.info(
             f"Getting values for study {uuid} and short term storage {storage_id}",
             extra={"user": current_user.id},
@@ -1605,6 +1626,47 @@ def create_study_data_routes(
         return study_service.st_storage_manager.get_st_storage(
             study, area_id, storage_id
         )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/st-storage",
+        tags=[APITag.study_data],
+        summary="Get the storages",
+        response_model=Sequence[STStorageOutputForm],
+    )
+    def get_st_storages(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[STStorageOutputForm]:
+        """
+        Retrieve the storages by given uuid and area id of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+
+        Returns: A list of storages with the following attributes:
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
+
+        Permissions:
+          The user must have READ permission on the study.
+        """
+        logger.info(
+            f"Getting storages for study {uuid} in a given area {area_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(
+            uuid, StudyPermissionType.READ, params
+        )
+        return study_service.st_storage_manager.get_st_storages(study, area_id)
 
     # Manage Study Data
     @bp.get(
@@ -1731,6 +1793,21 @@ def create_study_data_routes(
         form: STStorageCreateForm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        """
+        Create a new storage /studies/{uuid}/areas/{area_id}/st-storage of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `form`: The name and the group(PSP_open, PSP_closed, Pondage, Battery, Other1, Other2, Other3, Other4, Other5)
+        of the storage that we want to create.
+
+        Returns: The name of the new storage
+
+        Permissions:
+        - User must have READ/WRITE permission on the study.
+        """
+
         logger.info(
             f"Create storage short term from {area_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -1755,6 +1832,40 @@ def create_study_data_routes(
         form: STStorageInputForm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutputForm:
+        """
+         Update /studies/{uuid}/areas/{area_id}/st-storage/{storage_id} storage of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The storage id of the study that we want to update.
+        - `form`: The characteristic of the storage that we can update:
+             - `name`: The name of the updated storage.
+             - `group`: The group of the updated storage.
+             - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+             - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+             - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+             - `efficiency`: The efficiency of the updated storage
+             - `initialLevel`: The initial Level of the updated storage
+             - `initialLevelOptim`: The initial Level Optim of the updated storage
+
+
+
+        Returns: The updated storage with the following attributes:
+         - `name`: The name of the updated storage.
+         - `group`: The group of the updated storage.
+         - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+         - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+         - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+         - `efficiency`: The efficiency of the updated storage
+         - `initialLevel`: The initial Level of the updated storage
+         - `initialLevelOptim`: The initial Level Optim of the updated storage
+         - `storage_id`: The storage id of the study that we want to update.
+
+        Permissions:
+        - User must have READ/WRITE permission on the study.
+        """
+
         logger.info(
             f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
             extra={"user": current_user.id},
@@ -1771,6 +1882,7 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/st-storage/{storage_id}",
         tags=[APITag.study_data],
         summary="Remove a storage from a study",
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_st_storage(
         uuid: str,
@@ -1778,6 +1890,19 @@ def create_study_data_routes(
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """
+         Delete /studies/{uuid}/areas/{area_id}/st-storage/{storage_id} storage of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The storage id of the study that we want to delete.
+
+        Returns:  An empty content
+
+        Permissions:
+        - User must have READ/WRITE permission on the study.
+        """
         logger.info(
             f"Delete storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
             extra={"user": current_user.id},

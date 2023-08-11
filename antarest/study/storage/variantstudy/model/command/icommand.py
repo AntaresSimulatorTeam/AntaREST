@@ -91,16 +91,12 @@ class ICommand(ABC, BaseModel):
                 f"Failed to execute variant command {self.command_name}",
                 exc_info=e,
             )
-            status_code = None
-            if " not a child " in str(e):
-                status_code = 404
             return CommandOutput(
                 status=False,
                 message=(
                     f"Unexpected exception occurred when trying"
                     f" to apply command {self.command_name}: {e}"
                 ),
-                status_code=status_code,
             )
 
     @abstractmethod

@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 
 @dataclass
 class CommandOutput:
     status: bool
     message: str = ""
-    status_code: Optional[int] = None
 
 
 class TimeStep(Enum):
