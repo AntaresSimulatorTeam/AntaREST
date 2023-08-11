@@ -148,8 +148,17 @@ export const exportText = (fileData: string, filename: string): void => {
   link.remove();
 };
 
-export const displayVersionName = (version: string): string =>
-  version.split("").join(".");
+/**
+ * Gets the appropriate version name to display.
+ * The patch version is not displayed because it is not relevant.
+ * Its value is always 0 from the server.
+ *
+ * Ex: '820' -> '8.2'
+ *
+ * @param v Version in format '[major][minor]0' (ex: '820').
+ * @returns Version in format '[major].[minor]' (ex: '8.2').
+ */
+export const displayVersionName = (v: string): string => `${v[0]}.${v[1]}`;
 
 export const convertVersions = (versions: Array<string>): Array<GenericInfo> =>
   versions.map((version) => ({
