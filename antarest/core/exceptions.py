@@ -11,12 +11,8 @@ class ShouldNotHappenException(Exception):
 class STStorageFieldsNotFoundError(HTTPException):
     """Fields of the short-term storage are not found"""
 
-    def __init__(self, study_id: str, area_id: str, storage_id: str) -> None:
-        detail = (
-            f"Error in the study '{study_id}',"
-            f" the short-term storage configuration of area '{area_id}' is invalid:"
-            f" fields of storage '{storage_id}' not found"
-        )
+    def __init__(self, storage_id: str) -> None:
+        detail = f" fields of storage '{storage_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:

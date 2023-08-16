@@ -344,7 +344,7 @@ def create_study_data_routes(
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.WRITE, params
+            uuid, StudyPermissionType.DELETE, params
         )
         study_service.areas.remove_layer(study, layer_id)
 
@@ -1582,7 +1582,6 @@ def create_study_data_routes(
             study, area_id, cluster_id, form_fields
         )
 
-    # Manage Study Data
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
@@ -1670,7 +1669,6 @@ def create_study_data_routes(
         )
         return study_service.st_storage_manager.get_st_storages(study, area_id)
 
-    # Manage Study Data
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
@@ -1811,7 +1809,7 @@ def create_study_data_routes(
         """
 
         logger.info(
-            f"Create storage short term from {area_id} for study {uuid}",
+            f"Create short-term storage from {area_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -1867,7 +1865,7 @@ def create_study_data_routes(
         """
 
         logger.info(
-            f"Set storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
+            f"Update short-term storage {storage_id} from {area_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -1904,12 +1902,12 @@ def create_study_data_routes(
         - User must have READ/WRITE permission on the study.
         """
         logger.info(
-            f"Delete storage short term from {area_id} for study {uuid} by giving his id:{storage_id}",
+            f"Delete short-term storage {storage_id} from {area_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
-            uuid, StudyPermissionType.WRITE, params
+            uuid, StudyPermissionType.DELETE, params
         )
         study_service.st_storage_manager.delete_st_storage(
             study, area_id, storage_id

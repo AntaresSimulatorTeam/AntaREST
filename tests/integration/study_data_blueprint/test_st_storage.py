@@ -240,11 +240,9 @@ class TestSTStorage:
         )
         obj = res.json()
         description = obj["description"]
-        assert study_id in description
-        assert area_id in description
         assert siemens_battery_id in description
         assert re.search(
-            r"short-term storage", description, flags=re.IGNORECASE
+            r"fields of storage", description, flags=re.IGNORECASE
         )
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
@@ -261,7 +259,9 @@ class TestSTStorage:
         description = obj["description"]
         assert bad_area_id in description
         assert re.search(
-            r"CommandName.REMOVE_ST_STORAGE", description, flags=re.IGNORECASE,
+            r"CommandName.REMOVE_ST_STORAGE",
+            description,
+            flags=re.IGNORECASE,
         )
 
         # Check delete with the wrong value of study_id
@@ -371,11 +371,9 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
-        assert study_id in description
-        assert area_id in description
         assert siemens_battery_id in description
         assert re.search(
-            r"short-term storage", description, flags=re.IGNORECASE
+            r"fields of storage", description, flags=re.IGNORECASE
         )
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 

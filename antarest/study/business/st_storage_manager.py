@@ -394,11 +394,9 @@ class STStorageManager:
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageFieldsNotFoundError(
-                study.id, area_id, storage_id
+            raise STStorageFieldsNotFoundError(storage_id
             ) from None
         return STStorageOutputForm.from_config(storage_id, config)
-        # fmt: on
 
     def update_st_storage(
         self,
@@ -423,9 +421,7 @@ class STStorageManager:
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageFieldsNotFoundError(
-                study.id, area_id, storage_id
-            ) from None
+            raise STStorageFieldsNotFoundError(storage_id) from None
         else:
             old_config = STStorageConfig(**values)
 
