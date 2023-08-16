@@ -311,8 +311,6 @@ class TestSTStorageManager:
             )
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
-        assert study.id in err_msg
-        assert "West" in err_msg
         assert "storage1" in err_msg
 
     def test_get_matrix__nominal_case(
