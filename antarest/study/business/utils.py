@@ -7,6 +7,8 @@ from typing import (
     TypedDict,
 )
 
+import pydantic
+
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
@@ -86,3 +88,19 @@ class FieldInfo(TypedDict, total=False):
     encode: Optional[Callable[[Any], Any]]
     # (encoded_value, current_value) -> decoded_value
     decode: Optional[Callable[[Any, Optional[Any]], Any]]
+
+
+class AllOptional(pydantic.main.ModelMetaclass):
+    """
+    Make every field as optional
+    """
+
+    def __new__(cls, name, bases, namespaces, **kwargs):
+        annotations = namespaces.get("__annotations__", {})
+        for base in bases:
+            annotations.update(base.__annotations__)
+        for field in annotations:
+            if not field.startswith("__"):
+                annotations[field] = Optional[annotations[field]]
+        namespaces["__annotations__"] = annotations
+        return super().__new__(cls, name, bases, namespaces, **kwargs)

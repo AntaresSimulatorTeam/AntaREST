@@ -4,6 +4,8 @@ import operator
 from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
+import pydantic
+
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
@@ -11,6 +13,7 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.utils import (
     FormFieldsBaseModel as UtilsFormFieldsBaseModel,
+    AllOptional,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -50,7 +53,7 @@ class STStorageCreateForm(FormFieldsBaseModel):
     """
 
     name: str = Field(
-        description="Short-term storage name",
+        description="Short-term storage name (mandatory)",
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
@@ -71,47 +74,39 @@ class STStorageCreateForm(FormFieldsBaseModel):
         return STStorageConfig(**values)
 
 
-class STStorageInputForm(FormFieldsBaseModel):
+class UpdatedItem(STStorageCreateForm, metaclass=AllOptional):
+    """set name, group as optional fields"""
+
+    pass
+
+
+class STStorageInputForm(UpdatedItem):
     """
     Form used to **Edit** a short-term storage
     """
 
-    name: Optional[str] = Field(
-        None,
-        description="Short-term storage name",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
-    group: Optional[STStorageGroup] = Field(
-        description="Energy storage system group (mandatory)",
-    )
     injection_nominal_capacity: Optional[float] = Field(
-        None,
         description="Injection nominal capacity (MW)",
         ge=0,
     )
     withdrawal_nominal_capacity: Optional[float] = Field(
-        None,
         description="Withdrawal nominal capacity (MW)",
         ge=0,
     )
     reservoir_capacity: Optional[float] = Field(
-        None,
         description="Reservoir capacity (MWh)",
         ge=0,
     )
     efficiency: Optional[float] = Field(
-        None,
         description="Efficiency of the storage system",
         ge=0,
         le=1,
     )
     initial_level: Optional[float] = Field(
-        None,
         description="Initial level of the storage system",
         ge=0,
     )
     initial_level_optim: Optional[bool] = Field(
-        None,
         description="Flag indicating if the initial level is optimized",
     )
 
@@ -138,9 +133,6 @@ class STStorageOutputForm(STStorageInputForm):
     id: str = Field(
         description="Short-term storage ID",
         regex=r"[a-zA-Z0-9_(),& -]+",
-    )
-    group: STStorageGroup = Field(
-        description="Energy storage system group (mandatory)",
     )
 
     class Config:
@@ -395,7 +387,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageFieldsNotFoundError(storage_id
-            ) from None
+                                               ) from None
         return STStorageOutputForm.from_config(storage_id, config)
 
     def update_st_storage(
