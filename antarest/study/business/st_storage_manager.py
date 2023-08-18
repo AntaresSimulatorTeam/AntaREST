@@ -52,11 +52,11 @@ class StorageCreation(FormBaseModel):
     """
 
     name: str = Field(
-        description="Name of the storage. (mandatory)",
+        description="Name of the storage.",
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
-        description="Energy storage system group (mandatory)",
+        description="Energy storage system group.",
     )
 
     class Config:
@@ -244,7 +244,7 @@ class STStorageMatrices(BaseModel):
         return matrix
 
     @root_validator()
-    def check_rule_curve(
+    def validate_rule_curve(
         cls, values: MutableMapping[str, STStorageMatrix]
     ) -> MutableMapping[str, STStorageMatrix]:
         """
