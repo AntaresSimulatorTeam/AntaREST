@@ -72,8 +72,19 @@ class TestSTStorage:
             json={"name": siemens_battery, "group": "Battery"},
         )
         assert res.status_code == 200, res.json()
-        siemens_battery_id = res.json()
+        siemens_battery_id = res.json()["id"]
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
+        assert res.json() == {
+            "efficiency": 1.0,
+            "group": "Battery",
+            "id": siemens_battery_id,
+            "initialLevel": 0.0,
+            "initialLevelOptim": False,
+            "injectionNominalCapacity": 0.0,
+            "name": siemens_battery,
+            "reservoirCapacity": 0.0,
+            "withdrawalNominalCapacity": 0.0,
+        }
 
         # reading the properties of a short-term storage
         res = client.get(

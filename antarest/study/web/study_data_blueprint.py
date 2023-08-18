@@ -57,9 +57,9 @@ from antarest.study.business.optimization_management import (
 )
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.st_storage_manager import (
-    STStorageCreateForm,
-    STStorageInputForm,
-    STStorageOutputForm,
+    StorageCreation,
+    StorageInput,
+    StorageOutput,
     STStorageMatrix,
     STStorageTimeSeries,
 )
@@ -1586,13 +1586,14 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the short-term storage properties",
+        response_model=StorageOutput,
     )
     def get_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageOutputForm:
+    ) -> StorageOutput:
         """
         Retrieve the storages by given uuid and area id of a study.
 
@@ -1623,7 +1624,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.st_storage_manager.get_st_storage(
+        return study_service.st_storage_manager.get_storage(
             study, area_id, storage_id
         )
 
@@ -1631,13 +1632,13 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Get the list of short-term storage properties",
-        response_model=Sequence[STStorageOutputForm],
+        response_model=Sequence[StorageOutput],
     )
     def get_st_storages(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[STStorageOutputForm]:
+    ) -> Sequence[StorageOutput]:
         """
         Retrieve the short-term storages by given uuid and area ID of a study.
 
@@ -1667,12 +1668,13 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.READ, params
         )
-        return study_service.st_storage_manager.get_st_storages(study, area_id)
+        return study_service.st_storage_manager.get_storages(study, area_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
         summary="Get a short-term storage time series",
+        response_model=STStorageMatrix,
     )
     def get_st_storage_matrix(
         uuid: str,
@@ -1786,13 +1788,14 @@ def create_study_data_routes(
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Create a new short-term storage in an area",
+        response_model=StorageOutput,
     )
     def create_st_storage(
         uuid: str,
         area_id: str,
-        form: STStorageCreateForm,
+        form: StorageCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
+    ) -> StorageOutput:
         """
         Create a new short-term storage in an area.
 
@@ -1802,7 +1805,16 @@ def create_study_data_routes(
         - `form`: The name and the group(PSP_open, PSP_closed, Pondage, Battery, Other1, Other2, Other3, Other4, Other5)
         of the storage that we want to create.
 
-        Returns: The name of the new storage
+        Returns: New storage with the following attributes:
+        - `id`: The storage ID of the study.
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1816,7 +1828,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        return study_service.st_storage_manager.create_st_storage(
+        return study_service.st_storage_manager.create_storage(
             study, area_id, form
         )
 
@@ -1829,9 +1841,9 @@ def create_study_data_routes(
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: STStorageInputForm,
+        form: StorageInput,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageOutputForm:
+    ) -> StorageOutput:
         """
         Update short-term storage of a study.
 

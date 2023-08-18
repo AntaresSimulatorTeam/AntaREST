@@ -119,7 +119,7 @@ class TestSTStorageManager:
         study_uuid: str,
     ) -> None:
         """
-        This unit test is to verify the behavior of the `get_st_storages`
+        This unit test is to verify the behavior of the `get_storages`
         method in the `STStorageManager` class under nominal conditions.
         It checks whether the method returns the expected storage list
         based on a specific configuration.
@@ -139,7 +139,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        groups = manager.get_st_storages(study, area_id="West")
+        groups = manager.get_storages(study, area_id="West")
 
         # Check
         actual = [form.dict(by_alias=True) for form in groups]
@@ -187,7 +187,7 @@ class TestSTStorageManager:
         study_uuid: str,
     ) -> None:
         """
-        This test verifies that when the `get_st_storages` method is called
+        This test verifies that when the `get_storages` method is called
         with a study and area ID, and the corresponding configuration is not found
         (indicated by the `KeyError` raised by the mock), it correctly
         raises the `STStorageConfigNotFoundError` exception with the expected error
@@ -211,7 +211,7 @@ class TestSTStorageManager:
         with pytest.raises(
             STStorageConfigNotFoundError, match="missing configuration"
         ) as ctx:
-            manager.get_st_storages(study, area_id="West")
+            manager.get_storages(study, area_id="West")
 
         # ensure the error message contains at least the study ID and area ID
         err_msg = str(ctx.value)
@@ -251,7 +251,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested
-        edit_form = manager.get_st_storage(
+        edit_form = manager.get_storage(
             study, area_id="West", storage_id="storage1"
         )
 
@@ -306,9 +306,7 @@ class TestSTStorageManager:
         with pytest.raises(
             STStorageFieldsNotFoundError, match="not found"
         ) as ctx:
-            manager.get_st_storage(
-                study, area_id="West", storage_id="storage1"
-            )
+            manager.get_storage(study, area_id="West", storage_id="storage1")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
         assert "storage1" in err_msg

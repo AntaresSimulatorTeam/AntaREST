@@ -4,7 +4,6 @@ import operator
 from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
-import pydantic
 
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
@@ -12,7 +11,7 @@ from antarest.core.exceptions import (
     STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import (
-    FormFieldsBaseModel as UtilsFormFieldsBaseModel,
+    FormFieldsBaseModel,
     AllOptional,
 )
 from antarest.study.business.utils import execute_or_add_commands
@@ -34,26 +33,26 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from pydantic import BaseModel, Extra, Field, root_validator, validator
 from typing_extensions import Literal
 
+HOURS_IN_YEAR = 8760
 
-class FormFieldsBaseModel(UtilsFormFieldsBaseModel):
+
+class FormBaseModel(FormFieldsBaseModel):
     """
-    Pydantic Model for TableGroup
+    A foundational model for all form-based models, providing common configurations.
     """
 
     class Config:
-        # alias_generator = to_camel_case
-        # extra = Extra.forbid
         validate_assignment = True
         allow_population_by_field_name = True
 
 
-class STStorageCreateForm(FormFieldsBaseModel):
+class StorageCreation(FormBaseModel):
     """
-    Form used to **Create** a new short-term storage
+    Model representing the form used to create a new short-term storage entry.
     """
 
     name: str = Field(
-        description="Short-term storage name (mandatory)",
+        description="Name of the storage. (mandatory)",
         regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
@@ -63,7 +62,7 @@ class STStorageCreateForm(FormFieldsBaseModel):
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = STStorageCreateForm(
+            schema["example"] = StorageCreation(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
             )
@@ -74,15 +73,15 @@ class STStorageCreateForm(FormFieldsBaseModel):
         return STStorageConfig(**values)
 
 
-class UpdatedItem(STStorageCreateForm, metaclass=AllOptional):
+class UpdatedItem(StorageCreation, metaclass=AllOptional):
     """set name, group as optional fields"""
 
     pass
 
 
-class STStorageInputForm(UpdatedItem):
+class StorageInput(UpdatedItem):
     """
-    Form used to **Edit** a short-term storage
+    Model representing the form used to edit existing short-term storage details.
     """
 
     injection_nominal_capacity: Optional[float] = Field(
@@ -113,21 +112,20 @@ class STStorageInputForm(UpdatedItem):
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = STStorageInputForm(
+            schema["example"] = StorageInput(
                 name="Siemens Battery",
                 group="Battery",
                 injection_nominal_capacity=150,
                 withdrawal_nominal_capacity=150,
                 reservoir_capacity=600,
                 efficiency=0.94,
-                # initial_level is missing in this example ;-)
                 initial_level_optim=True,
             )
 
 
-class STStorageOutputForm(STStorageInputForm):
+class StorageOutput(StorageInput):
     """
-    Form used to **Edit** a short-term storage
+    Model representing the form used to display the details of a short-term storage entry.
     """
 
     id: str = Field(
@@ -138,7 +136,7 @@ class STStorageOutputForm(STStorageInputForm):
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = STStorageOutputForm(
+            schema["example"] = StorageOutput(
                 id="siemens_battery",
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
@@ -152,9 +150,9 @@ class STStorageOutputForm(STStorageInputForm):
     @classmethod
     def from_config(
         cls, storage_id: str, config: Mapping[str, Any]
-    ) -> "STStorageOutputForm":
-        st_storage_config = STStorageConfig(**config, id=storage_id)
-        values = st_storage_config.dict(by_alias=False)
+    ) -> "StorageOutput":
+        storage = STStorageConfig(**config, id=storage_id)
+        values = storage.dict(by_alias=False)
         return cls(**values)
 
 
@@ -197,8 +195,10 @@ class STStorageMatrix(BaseModel):
         array = np.array(data)
         if array.size == 0:
             raise ValueError("time series must not be empty")
-        if array.shape != (8760, 1):
-            raise ValueError("time series must have shape (8760, 1)")
+        if array.shape != (HOURS_IN_YEAR, 1):
+            raise ValueError(
+                f"time series must have shape ({HOURS_IN_YEAR}, 1)"
+            )
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
         return data
@@ -239,7 +239,7 @@ class STStorageMatrices(BaseModel):
         Validator to check if matrix values are within the range [0, 1].
         """
         array = np.array(matrix.data)
-        if np.any(array < 0) or np.any(array > 1):
+        if np.any((array < 0) | (array > 1)):
             raise ValueError("Matrix values should be between 0 and 1")
         return matrix
 
@@ -278,10 +278,11 @@ STStorageTimeSeries = Literal[
 #  Short-term storage manager
 # ============================
 
-# Note: in the directory tree, there are directories called "clusters",
-# but in reality they are short term storage.
-_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+
+STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+STORAGE_SERIES_PATH = (
+    "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+)
 
 
 class STStorageManager:
@@ -292,12 +293,12 @@ class STStorageManager:
     def __init__(self, storage_service: StudyStorageService):
         self.storage_service = storage_service
 
-    def create_st_storage(
+    def create_storage(
         self,
         study: Study,
         area_id: str,
-        form: STStorageCreateForm,
-    ) -> str:
+        form: StorageCreation,
+    ) -> StorageOutput:
         """
         Create a new short-term storage configuration for the given `study`, `area_id`, and `storage_name`.
 
@@ -309,28 +310,27 @@ class STStorageManager:
         Returns:
             The ID of the newly created short-term storage.
         """
-        st_storage_config = form.to_config
+        storage = form.to_config
         command = CreateSTStorage(
             area_id=area_id,
-            parameters=st_storage_config,
+            parameters=storage,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        # todo: The `execute_or_add_commands` command should return a JSON object.
-        #  Here, the JSON object should simply be the created short term storage ID.
         execute_or_add_commands(
             study,
             file_study,
             [command],
             self.storage_service,
         )
-        return st_storage_config.id
 
-    def get_st_storages(
+        return self.get_storage(study, area_id, storage_id=storage.id)
+
+    def get_storages(
         self,
         study: Study,
         area_id: str,
-    ) -> Sequence[STStorageOutputForm]:
+    ) -> Sequence[StorageOutput]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -343,7 +343,7 @@ class STStorageManager:
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
+        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
@@ -359,16 +359,16 @@ class STStorageManager:
             key=order_by,
         )
         return tuple(
-            STStorageOutputForm(**config.dict(by_alias=False))
+            StorageOutput(**config.dict(by_alias=False))
             for config in all_configs
         )
 
-    def get_st_storage(
+    def get_storage(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-    ) -> STStorageOutputForm:
+    ) -> StorageOutput:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -382,21 +382,21 @@ class STStorageManager:
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageFieldsNotFoundError(storage_id
                                                ) from None
-        return STStorageOutputForm.from_config(storage_id, config)
+        return StorageOutput.from_config(storage_id, config)
 
     def update_st_storage(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-        form: STStorageInputForm,
-    ) -> STStorageOutputForm:
+        form: StorageInput,
+    ) -> StorageOutput:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -406,10 +406,8 @@ class STStorageManager:
             storage_id: The ID of the short-term storage.
             form: Form used to Update a short-term storage.
         """
-        # todo: We should have a more simple implementation based on
-        #  a new `update_st_storage` command similar to `create_st_storage`.
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
@@ -447,7 +445,7 @@ class STStorageManager:
         )
 
         values = new_config.dict(by_alias=False)
-        return STStorageOutputForm(**values)
+        return StorageOutput(**values)
 
     def delete_st_storage(
         self,
@@ -504,7 +502,7 @@ class STStorageManager:
     ) -> MutableMapping[str, Any]:
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
@@ -547,7 +545,7 @@ class STStorageManager:
     ) -> None:
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        path = _SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             file_study.tree.save(matrix_obj, path.split("/"))
         except KeyError:
