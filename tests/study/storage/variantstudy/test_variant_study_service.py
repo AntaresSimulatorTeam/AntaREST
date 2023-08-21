@@ -68,6 +68,7 @@ EXPECTED_DENORMALIZED = {
     "input/load/prepro/fr/translation.txt.link",
     "input/load/series/load_fr.txt.link",
     "input/misc-gen/miscgen-fr.txt.link",
+    "input/renewables/clusters/fr/list.ini",
     "input/reserves/fr.txt.link",
     "input/solar/prepro/correlation.ini",
     "input/solar/prepro/fr/conversion.txt.link",
