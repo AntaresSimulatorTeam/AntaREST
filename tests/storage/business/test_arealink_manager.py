@@ -5,6 +5,7 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -51,7 +52,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 from tests.storage.business.assets import ASSETS_DIR
 
 

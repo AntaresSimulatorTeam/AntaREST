@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import (
@@ -20,7 +21,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 PATCH_CONTENT = """ 
 {

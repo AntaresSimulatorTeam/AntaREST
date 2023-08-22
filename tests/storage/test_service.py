@@ -8,6 +8,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
+
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
@@ -84,7 +85,7 @@ from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 def build_study_service(

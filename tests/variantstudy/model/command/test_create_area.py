@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    ENR_MODELLING,
     transform_name_to_id,
     ENR_MODELLING,
 )

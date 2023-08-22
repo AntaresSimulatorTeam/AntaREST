@@ -7,12 +7,15 @@ import pytest
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.core.model import PublicMode
-from antarest.login.model import User, Group
+from antarest.login.model import Group, User
 from antarest.study.business.allocation_management import (
+    AllocationField,
+    AllocationFormFields,
+    AllocationManager,
     AllocationMatrix,
 )
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
-from antarest.study.model import Study, StudyContentStatus, RawStudy
+from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -31,12 +34,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
-)
-
-from antarest.study.business.allocation_management import (
-    AllocationManager,
-    AllocationField,
-    AllocationFormFields,
 )
 
 

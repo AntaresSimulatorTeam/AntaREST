@@ -28,7 +28,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 def test_service() -> None:
