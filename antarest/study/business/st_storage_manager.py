@@ -12,7 +12,7 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.utils import (
     FormFieldsBaseModel,
-    AllOptional,
+    AllOptionalMetaclass,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -73,7 +73,11 @@ class StorageCreation(FormBaseModel):
         return STStorageConfig(**values)
 
 
-class UpdatedItem(StorageCreation, metaclass=AllOptional):
+class UpdatedItem(
+    StorageCreation,
+    metaclass=AllOptionalMetaclass,
+    mandatory=["name", "group"],
+):
     """set name, group as optional fields"""
 
     pass
@@ -300,7 +304,7 @@ class STStorageManager:
         form: StorageCreation,
     ) -> StorageOutput:
         """
-        Create a new short-term storage configuration for the given `study`, `area_id`, and `storage_name`.
+        Create a new short-term storage configuration for the given `study`, `area_id`, and `form fields`.
 
         Args:
             study: The study object.
@@ -378,7 +382,7 @@ class STStorageManager:
             storage_id: The ID of the short-term storage.
 
         Returns:
-            Form used to Update a short-term storage.
+            Form used to display and edit a short-term storage.
         """
         # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -390,7 +394,7 @@ class STStorageManager:
                                                ) from None
         return StorageOutput.from_config(storage_id, config)
 
-    def update_st_storage(
+    def update_storage(
         self,
         study: Study,
         area_id: str,
@@ -405,6 +409,8 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_id: The ID of the short-term storage.
             form: Form used to Update a short-term storage.
+        Returns:
+            Updated form of short-term storage.
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
@@ -447,7 +453,7 @@ class STStorageManager:
         values = new_config.dict(by_alias=False)
         return StorageOutput(**values)
 
-    def delete_st_storage(
+    def delete_storage(
         self,
         study: Study,
         area_id: str,
@@ -488,7 +494,7 @@ class STStorageManager:
             ts_name: Name of the time series to get.
 
         Returns:
-            STStorageMatrix object containing the short-term storage configuration.
+            STStorageMatrix object containing the short-term storage time series.
         """
         matrix = self._get_matrix_obj(study, area_id, storage_id, ts_name)
         return STStorageMatrix(**matrix)

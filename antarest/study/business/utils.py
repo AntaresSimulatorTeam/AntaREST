@@ -5,6 +5,9 @@ from typing import (
     Optional,
     Sequence,
     TypedDict,
+    Type,
+    Tuple,
+    Dict,
 )
 
 import pydantic
@@ -90,17 +93,37 @@ class FieldInfo(TypedDict, total=False):
     decode: Optional[Callable[[Any, Optional[Any]], Any]]
 
 
-class AllOptional(pydantic.main.ModelMetaclass):
+class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
     """
-    Make every field as optional
+    Metaclass that makes all fields of a Pydantic model optional.
+
+    This metaclass modifies the class's annotations to make all fields
+    optional by wrapping them with the `Optional` type.
+
+    Usage:
+        class MyModel(BaseModel, metaclass=AllOptionalMetaclass):
+            field1: str
+            field2: int
+            ...
+
+    The fields defined in the model will be automatically converted to optional
+    fields, allowing instances of the model to be created even if not all fields
+    are provided during initialization.
     """
 
-    def __new__(cls, name, bases, namespaces, **kwargs):
+    def __new__(
+        cls: Type["AllOptionalMetaclass"],
+        name: str,
+        bases: Tuple[Type[Any], ...],
+        namespaces: Dict[str, Any],
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
             annotations.update(base.__annotations__)
+        mandatory = list(kwargs.values())[0] if kwargs.values() else []
         for field in annotations:
-            if not field.startswith("__"):
+            if not field.startswith("__") and field in mandatory:
                 annotations[field] = Optional[annotations[field]]
         namespaces["__annotations__"] = annotations
-        return super().__new__(cls, name, bases, namespaces, **kwargs)
+        return super().__new__(cls, name, bases, namespaces)

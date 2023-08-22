@@ -1884,7 +1884,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.WRITE, params
         )
-        return study_service.st_storage_manager.update_st_storage(
+        return study_service.st_storage_manager.update_storage(
             study, area_id, storage_id, form
         )
 
@@ -1908,10 +1908,8 @@ def create_study_data_routes(
         - `area_id`: The area ID.
         - `storage_id`: The storage id of the study that we want to delete.
 
-        Returns:  An empty content
-
         Permissions:
-        - User must have READ/WRITE permission on the study.
+        - User must have DELETED permission on the study.
         """
         logger.info(
             f"Delete short-term storage {storage_id} from {area_id} for study {uuid}",
@@ -1921,7 +1919,7 @@ def create_study_data_routes(
         study = study_service.check_study_access(
             uuid, StudyPermissionType.DELETE, params
         )
-        study_service.st_storage_manager.delete_st_storage(
+        study_service.st_storage_manager.delete_storage(
             study, area_id, storage_id
         )
 
