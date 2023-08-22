@@ -256,21 +256,23 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self, metadata: T, target: Path, outputs: bool = True
     ) -> Path:
         """
-        Export and compresses study inside zip
+        Export and compress the study inside a ZIP file.
+
         Args:
-            metadata: study
-            target: path of the file to export to
-            outputs: ask to integrated output folder inside exportation
+            metadata: Study metadata object.
+            target: Path of the file to export to.
+            outputs: Flag to indicate whether to include the output folder inside the exportation.
 
-        Returns: zip file with study files compressed inside
-
+        Returns:
+            The ZIP file containing the study files compressed inside.
         """
         path_study = Path(metadata.path)
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
-            logger.info(f"Exporting study {metadata.id} to tmp path {tmpdir}")
-            assert_this(target.name.endswith(".zip"))
+            logger.info(
+                f"Exporting study {metadata.id} to temporary path {tmpdir}"
+            )
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()

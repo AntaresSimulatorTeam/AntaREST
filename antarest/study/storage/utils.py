@@ -390,26 +390,29 @@ def export_study_flat(
 
     shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
 
-    if outputs and output_src_path.is_dir():
-        if output_dest_path.is_dir():
-            shutil.rmtree(output_dest_path)
-        if output_list_filter is not None:
-            os.mkdir(output_dest_path)
-            for output in output_list_filter:
-                zip_path = output_src_path / f"{output}.zip"
-                if zip_path.exists():
-                    with ZipFile(zip_path) as zf:
-                        zf.extractall(output_dest_path / output)
-                else:
-                    shutil.copytree(
-                        src=output_src_path / output,
-                        dst=output_dest_path / output,
-                    )
-        else:
-            shutil.copytree(
-                src=output_src_path,
-                dst=output_dest_path,
+    if outputs and output_src_path.exists():
+        if output_list_filter is None:
+            # Retrieve all directories or ZIP files without duplicates
+            output_list_filter = list(
+                {
+                    f.with_suffix("").name
+                    for f in output_src_path.iterdir()
+                    if f.is_dir() or f.suffix == ".zip"
+                }
             )
+        # Copy each folder or uncompress each ZIP file to the destination dir.
+        shutil.rmtree(output_dest_path, ignore_errors=True)
+        output_dest_path.mkdir()
+        for output in output_list_filter:
+            zip_path = output_src_path / f"{output}.zip"
+            if zip_path.exists():
+                with ZipFile(zip_path) as zf:
+                    zf.extractall(output_dest_path / output)
+            else:
+                shutil.copytree(
+                    src=output_src_path / output,
+                    dst=output_dest_path / output,
+                )
 
     stop_time = time.time()
     duration = "{:.3f}".format(stop_time - start_time)

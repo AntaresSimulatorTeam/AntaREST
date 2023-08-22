@@ -1,32 +1,13 @@
 import unittest.mock
 
 import pytest
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.dbmodel import Base
+
 from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
     MatrixRepository,
 )
 from antarest.matrixstore.service import MatrixService
-from sqlalchemy import create_engine
-
-
-@pytest.fixture(name="db_engine")
-def db_engine_fixture():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(name="db_middleware", autouse=True)
-def db_middleware_fixture(db_engine):
-    yield DBSessionMiddleware(
-        None,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
 
 
 @pytest.fixture(name="matrix_repo")
