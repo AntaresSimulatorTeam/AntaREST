@@ -1,20 +1,19 @@
 import functools
 import json
 import operator
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
-
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
     AllOptionalMetaclass,
+    FormFieldsBaseModel,
+    execute_or_add_commands,
 )
-from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfig,
@@ -73,14 +72,8 @@ class StorageCreation(FormBaseModel):
         return STStorageConfig(**values)
 
 
-class StorageUpdate(
-    StorageCreation,
-    metaclass=AllOptionalMetaclass,
-    mandatory=["name", "group"],
-):
+class StorageUpdate(StorageCreation, metaclass=AllOptionalMetaclass):
     """set name, group as optional fields"""
-
-    pass
 
 
 class StorageInput(StorageUpdate):
@@ -88,28 +81,28 @@ class StorageInput(StorageUpdate):
     Model representing the form used to edit existing short-term storage details.
     """
 
-    injection_nominal_capacity: Optional[float] = Field(
+    injection_nominal_capacity: float = Field(
         description="Injection nominal capacity (MW)",
         ge=0,
     )
-    withdrawal_nominal_capacity: Optional[float] = Field(
+    withdrawal_nominal_capacity: float = Field(
         description="Withdrawal nominal capacity (MW)",
         ge=0,
     )
-    reservoir_capacity: Optional[float] = Field(
+    reservoir_capacity: float = Field(
         description="Reservoir capacity (MWh)",
         ge=0,
     )
-    efficiency: Optional[float] = Field(
+    efficiency: float = Field(
         description="Efficiency of the storage system",
         ge=0,
         le=1,
     )
-    initial_level: Optional[float] = Field(
+    initial_level: float = Field(
         description="Initial level of the storage system",
         ge=0,
     )
-    initial_level_optim: Optional[bool] = Field(
+    initial_level_optim: bool = Field(
         description="Flag indicating if the initial level is optimized",
     )
 
@@ -118,7 +111,7 @@ class StorageInput(StorageUpdate):
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = StorageInput(
                 name="Siemens Battery",
-                group="Battery",
+                group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=150,
                 withdrawal_nominal_capacity=150,
                 reservoir_capacity=600,

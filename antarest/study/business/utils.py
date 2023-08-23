@@ -121,9 +121,9 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
             annotations.update(base.__annotations__)
-        mandatory = list(kwargs.values())[0] if kwargs.values() else []
-        for field in annotations:
-            if not field.startswith("__") and field in mandatory:
+        for field, field_type in annotations.items():
+            if not field.startswith("__"):
+                # Optional fields are correctly handled
                 annotations[field] = Optional[annotations[field]]
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces)
