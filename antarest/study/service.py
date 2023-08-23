@@ -229,16 +229,28 @@ class StudyUpgraderTask:
                 file_study.tree.denormalize()
             try:
                 # sourcery skip: extract-method
-                if is_variant:
-                    self.storage_service.variant_study_service.clear_snapshot(
-                        study_to_upgrade
-                    )
-                else:
+                if not is_variant:
                     study_path = Path(study_to_upgrade.path)
                     upgrade_study(study_path, target_version)
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = target_version
-                self.repository.save(study_to_upgrade)
+                    remove_from_cache(self.cache_service, study_to_upgrade.id)
+                    study_to_upgrade.version = target_version
+                    self.repository.save(study_to_upgrade)
+
+                variants = self.storage_service.variant_study_service.repository.get_children(
+                    study_id
+                )
+                while variants:
+                    for variant in variants:
+                        self.storage_service.variant_study_service.clear_snapshot(
+                            variant
+                        )
+                        variant.version = target_version
+                        self.repository.save(variant)
+                        variants.remove(variant)
+                        variants += self.storage_service.variant_study_service.repository.get_children(
+                            variant.id
+                        )
+
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
