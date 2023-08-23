@@ -7,6 +7,7 @@ from typing import Union
 from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
+import mock.mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -1703,6 +1704,9 @@ def test_upgrade_study__raw_study__nominal(
     # It is used to `denormalize`/`normalize` the study.
     # For a variant study, the  `clear_snapshot` is also called
     storage_service = Mock()
+    storage_service.variant_study_service.repository.get_children.return_value = (
+        []
+    )
 
     # The `IEventBus` service is used to send event notifications.
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
@@ -1792,6 +1796,9 @@ def test_upgrade_study__variant_study__nominal(
     # It is used to `denormalize`/`normalize` the study.
     # For a variant study, the  `clear_snapshot` is also called
     storage_service = Mock()
+    storage_service.variant_study_service.repository.get_children.return_value = (
+        []
+    )
 
     # The `IEventBus` service is used to send event notifications.
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
