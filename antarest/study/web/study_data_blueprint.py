@@ -1852,25 +1852,25 @@ def create_study_data_routes(
         - `area_id`: The area ID.
         - `storage_id`: The storage id of the study that we want to update.
         - `form`: The characteristic of the storage that we can update:
-             - `name`: The name of the updated storage.
-             - `group`: The group of the updated storage.
-             - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-             - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
-             - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-             - `efficiency`: The efficiency of the updated storage
-             - `initialLevel`: The initial Level of the updated storage
-             - `initialLevelOptim`: The initial Level Optim of the updated storage
+          - `name`: The name of the updated storage.
+          - `group`: The group of the updated storage.
+          - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+          - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+          - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+          - `efficiency`: The efficiency of the updated storage
+          - `initialLevel`: The initial Level of the updated storage
+          - `initialLevelOptim`: The initial Level Optim of the updated storage
 
         Returns: The updated storage with the following attributes:
-         - `name`: The name of the updated storage.
-         - `group`: The group of the updated storage.
-         - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-         - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
-         - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-         - `efficiency`: The efficiency of the updated storage
-         - `initialLevel`: The initial Level of the updated storage
-         - `initialLevelOptim`: The initial Level Optim of the updated storage
-         - `id`: The storage ID of the study that we want to update.
+        - `name`: The name of the updated storage.
+        - `group`: The group of the updated storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+        - `efficiency`: The efficiency of the updated storage
+        - `initialLevel`: The initial Level of the updated storage
+        - `initialLevelOptim`: The initial Level Optim of the updated storage
+        - `id`: The storage ID of the study that we want to update.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
