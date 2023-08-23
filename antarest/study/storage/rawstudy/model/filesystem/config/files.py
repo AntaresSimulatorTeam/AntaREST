@@ -399,7 +399,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
         file_type=FileType.SIMPLE_INI,
     )
     return [
-        STStorageConfig(**dict(values, id=storage_id))
+        STStorageConfig(**values, id=storage_id)
         for storage_id, values in config_dict.items()
     ]
 

@@ -214,7 +214,7 @@ class FileStudyTreeConfig(DTO):
             ],
         )
 
-    def get_st_storage_names(self, area: str) -> List[str]:
+    def get_st_storage_ids(self, area: str) -> List[str]:
         return self.cache.get(
             f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages]
         )

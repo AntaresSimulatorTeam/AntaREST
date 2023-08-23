@@ -253,7 +253,11 @@ class CreateSTStorage(ICommand):
             ["input", "st-storage", "clusters", self.area_id, "list"]
         )
         config[self.storage_id] = json.loads(
-            self.parameters.json(by_alias=True)
+            self.parameters.json(
+                by_alias=True,
+                exclude={"id"},
+                exclude_defaults=True,
+            )
         )
 
         new_data: JSON = {
@@ -283,7 +287,9 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = json.loads(self.parameters.json(by_alias=True))
+        parameters = json.loads(
+            self.parameters.json(by_alias=True, exclude={"id"})
+        )
         return CommandDTO(
             action=self.command_name.value,
             args={
@@ -359,7 +365,7 @@ class CreateSTStorage(ICommand):
         ]
         if self.parameters != other.parameters:
             data: Dict[str, Any] = json.loads(
-                other.parameters.json(by_alias=True)
+                other.parameters.json(by_alias=True, exclude={"id"})
             )
             commands.append(
                 UpdateConfig(

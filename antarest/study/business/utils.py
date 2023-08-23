@@ -1,12 +1,22 @@
-from typing import List, Sequence, TypedDict, Any, Optional, Callable
+from typing import (
+    Any,
+    Callable,
+    MutableSequence,
+    Optional,
+    Sequence,
+    TypedDict,
+    Type,
+    Tuple,
+    Dict,
+)
 
-from pydantic import BaseModel, Extra
+import pydantic
 
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.string import to_camel_case
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
@@ -14,7 +24,9 @@ from antarest.study.storage.variantstudy.business.utils import (
     transform_command_to_dto,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from pydantic import BaseModel, Extra
 
+# noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
 
 
@@ -25,7 +37,7 @@ def execute_or_add_commands(
     storage_service: StudyStorageService,
 ) -> None:
     if isinstance(study, RawStudy):
-        executed_commands: List[ICommand] = []
+        executed_commands: MutableSequence[ICommand] = []
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
@@ -79,3 +91,39 @@ class FieldInfo(TypedDict, total=False):
     encode: Optional[Callable[[Any], Any]]
     # (encoded_value, current_value) -> decoded_value
     decode: Optional[Callable[[Any, Optional[Any]], Any]]
+
+
+class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
+    """
+    Metaclass that makes all fields of a Pydantic model optional.
+
+    This metaclass modifies the class's annotations to make all fields
+    optional by wrapping them with the `Optional` type.
+
+    Usage:
+        class MyModel(BaseModel, metaclass=AllOptionalMetaclass):
+            field1: str
+            field2: int
+            ...
+
+    The fields defined in the model will be automatically converted to optional
+    fields, allowing instances of the model to be created even if not all fields
+    are provided during initialization.
+    """
+
+    def __new__(
+        cls: Type["AllOptionalMetaclass"],
+        name: str,
+        bases: Tuple[Type[Any], ...],
+        namespaces: Dict[str, Any],
+        **kwargs: Dict[str, Any],
+    ) -> Any:
+        annotations = namespaces.get("__annotations__", {})
+        for base in bases:
+            annotations.update(base.__annotations__)
+        for field, field_type in annotations.items():
+            if not field.startswith("__"):
+                # Optional fields are correctly handled
+                annotations[field] = Optional[annotations[field]]
+        namespaces["__annotations__"] = annotations
+        return super().__new__(cls, name, bases, namespaces)

@@ -40,12 +40,11 @@ class STStorageConfig(BaseModel):
         extra = Extra.forbid
         allow_population_by_field_name = True
 
-    # The `id` field is a calculated field that is excluded when converting
-    # the model to a dictionary or JSON format (`model_dump`).
+    # The `id` field is a calculated from the `name` if not provided.
+    # This value must be stored in the config cache.
     id: str = Field(
         description="Short-term storage ID",
         regex=r"[a-zA-Z0-9_(),& -]+",
-        exclude=True,
     )
     name: str = Field(
         description="Short-term storage name",
