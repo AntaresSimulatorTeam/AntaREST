@@ -12,7 +12,7 @@ class STStorageFieldsNotFoundError(HTTPException):
     """Fields of the short-term storage are not found"""
 
     def __init__(self, storage_id: str) -> None:
-        detail = f" fields of storage '{storage_id}' not found"
+        detail = f"Fields of storage '{storage_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
