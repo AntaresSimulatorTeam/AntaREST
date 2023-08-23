@@ -26,6 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
+from antarest.study.storage.variantstudy.model.command.common import TimeStep
 
 logger = logging.getLogger(__name__)
 
@@ -143,8 +144,12 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
         area_set = set()
         # contains a set of strings in the following format: "area.cluster"
         cluster_set = set()
+        # Default value for time_step
+        time_step = TimeStep.HOURLY
         for key in bind:
-            if "%" in key:
+            if key == "type":
+                time_step = TimeStep(bind[key])
+            elif "%" in key:
                 areas = key.split("%", 1)
                 area_set.add(areas[0])
                 area_set.add(areas[1])
@@ -152,7 +157,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
                 cluster_set.add(key)
                 area_set.add(key.split(".", 1)[0])
 
-        output_list.append(BindingConstraintDTO(id=bind["id"], areas=area_set, clusters=cluster_set))
+        output_list.append(BindingConstraintDTO(id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step))
 
     return output_list
 

@@ -32,7 +32,7 @@ def apply_binding_constraint(
     filter_year_by_year: Optional[str] = None,
     filter_synthesis: Optional[str] = None,
 ) -> CommandOutput:
-    binding_constraints[str(new_key)] = {
+    binding_constraints[new_key] = {
         "name": name,
         "id": bd_id,
         "enabled": enabled,
@@ -41,11 +41,11 @@ def apply_binding_constraint(
     }
     if study_data.config.version >= 830:
         if filter_year_by_year:
-            binding_constraints[str(new_key)]["filter-year-by-year"] = filter_year_by_year
+            binding_constraints[new_key]["filter-year-by-year"] = filter_year_by_year
         if filter_synthesis:
-            binding_constraints[str(new_key)]["filter-synthesis"] = filter_synthesis
+            binding_constraints[new_key]["filter-synthesis"] = filter_synthesis
     if comments is not None:
-        binding_constraints[str(new_key)]["comments"] = comments
+        binding_constraints[new_key]["comments"] = comments
 
     for link_or_thermal in coeffs:
         if "%" in link_or_thermal:
@@ -67,7 +67,7 @@ def apply_binding_constraint(
         if len(coeffs[link_or_thermal]) == 2:
             coeffs[link_or_thermal][1] = int(coeffs[link_or_thermal][1])
 
-        binding_constraints[str(new_key)][link_or_thermal] = "%".join(
+        binding_constraints[new_key][link_or_thermal] = "%".join(
             [str(coeff_val) for coeff_val in coeffs[link_or_thermal]]
         )
     parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, coeffs)
@@ -89,14 +89,18 @@ def parse_bindings_coeffs_and_save_into_config(
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
         clusters_set = set()
-        for k, v in coeffs.items():
+        # Default time_step value
+        time_step = TimeStep.HOURLY
+        for k in coeffs:
+            if k == "type":
+                time_step = TimeStep(coeffs[k])
             if "%" in k:
                 areas_set.add(k.split("%")[0])
                 areas_set.add(k.split("%")[1])
             elif "." in k:
                 clusters_set.add(k)
                 areas_set.add(k.split(".")[0])
-        study_data_config.bindings.append(BindingConstraintDTO(id=bd_id, areas=areas_set, clusters=clusters_set))
+        study_data_config.bindings.append(BindingConstraintDTO(id=bd_id, areas=areas_set, clusters=clusters_set, time_step=time_step))
 
 
 def remove_area_cluster_from_binding_constraints(

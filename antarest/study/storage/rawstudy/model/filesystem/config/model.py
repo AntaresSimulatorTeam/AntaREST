@@ -9,6 +9,7 @@ from pydantic.main import BaseModel
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 
+from antarest.study.storage.variantstudy.model.command.common import TimeStep
 from .st_storage import STStorageConfig
 
 
@@ -110,6 +111,7 @@ class BindingConstraintDTO(BaseModel):
     id: str
     areas: Set[str]
     clusters: Set[str]
+    time_step: TimeStep
 
 
 class FileStudyTreeConfig(DTO):
