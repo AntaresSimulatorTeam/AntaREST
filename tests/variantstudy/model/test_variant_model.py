@@ -154,13 +154,13 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         assert commands[0].action == "replace_matrix"
 
         # Generate
-        service.generate_snapshot = Mock()
+        service._generate_snapshot = Mock()
         service._read_additional_data_from_files = Mock()
         service._read_additional_data_from_files.return_value = (
             StudyAdditionalData()
         )
         expected_result = GenerationResultInfoDTO(success=True, details=[])
-        service.generate_snapshot.return_value = expected_result
+        service._generate_snapshot.return_value = expected_result
         results = service._generate(saved_id, SADMIN, False)
         assert results == expected_result
         assert study.snapshot.id == study.id
