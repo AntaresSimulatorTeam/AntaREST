@@ -5,8 +5,6 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
@@ -28,26 +26,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-from sqlalchemy import create_engine
 from tests.variantstudy.assets import ASSETS_DIR
-
-
-@pytest.fixture(name="db_engine")
-def db_engine_fixture():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(name="db_middleware", autouse=True)
-def db_middleware_fixture(db_engine):
-    # noinspection SpellCheckingInspection
-    yield DBSessionMiddleware(
-        None,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
 
 
 @pytest.fixture(name="matrix_service")

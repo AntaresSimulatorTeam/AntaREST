@@ -2,7 +2,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import (
     MultipleSameKeysIniReader,

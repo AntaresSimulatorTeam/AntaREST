@@ -199,7 +199,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=LauncherEnginesDTO,
     )
     def get_engines() -> Any:
-        logger.info(f"Listing launch engines")
+        logger.info("Listing launch engines")
         return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
@@ -223,7 +223,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_solver_versions(
         solver: str = Query(
-            "local",
+            "default",
             examples={
                 "Default solver": {
                     "description": "Get the solver versions of the default configuration",
