@@ -33,7 +33,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 from pydantic import BaseModel, Extra, Field, root_validator, validator
 from typing_extensions import Literal
 
-HOURS_IN_YEAR = 8760
+_HOURS_IN_YEAR = 8760
 
 
 class FormBaseModel(FormFieldsBaseModel):
@@ -73,7 +73,7 @@ class StorageCreation(FormBaseModel):
         return STStorageConfig(**values)
 
 
-class UpdatedItem(
+class StorageUpdate(
     StorageCreation,
     metaclass=AllOptionalMetaclass,
     mandatory=["name", "group"],
@@ -83,7 +83,7 @@ class UpdatedItem(
     pass
 
 
-class StorageInput(UpdatedItem):
+class StorageInput(StorageUpdate):
     """
     Model representing the form used to edit existing short-term storage details.
     """
@@ -199,9 +199,9 @@ class STStorageMatrix(BaseModel):
         array = np.array(data)
         if array.size == 0:
             raise ValueError("time series must not be empty")
-        if array.shape != (HOURS_IN_YEAR, 1):
+        if array.shape != (_HOURS_IN_YEAR, 1):
             raise ValueError(
-                f"time series must have shape ({HOURS_IN_YEAR}, 1)"
+                f"time series must have shape ({_HOURS_IN_YEAR}, 1)"
             )
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
@@ -390,8 +390,7 @@ class STStorageManager:
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageFieldsNotFoundError(storage_id
-                                               ) from None
+            raise STStorageFieldsNotFoundError(storage_id) from None
         return StorageOutput.from_config(storage_id, config)
 
     def update_storage(

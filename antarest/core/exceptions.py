@@ -25,9 +25,7 @@ class STStorageMatrixNotFoundError(HTTPException):
     def __init__(
         self, study_id: str, area_id: str, storage_id: str, ts_name: str
     ) -> None:
-        detail = (
-            f" time series '{ts_name}' of storage '{storage_id}' not found"
-        )
+        detail = f"Time series '{ts_name}' of storage '{storage_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
@@ -38,7 +36,7 @@ class STStorageConfigNotFoundError(HTTPException):
     """Configuration for short-term storage is not found"""
 
     def __init__(self, study_id: str, area_id: str) -> None:
-        detail = f" the short-term storage configuration of area '{area_id}' not found:"
+        detail = f"The short-term storage configuration of area '{area_id}' not found:"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
