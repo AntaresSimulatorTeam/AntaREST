@@ -234,8 +234,6 @@ class TestSTStorage:
             "reservoirCapacity": 0,
         }
 
-        # todo: updating a matrix
-
         # deletion of short-term storages
         res = client.delete(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
@@ -244,7 +242,7 @@ class TestSTStorage:
         assert res.status_code == 204, res.json()
         assert res.text == "null"
 
-        #  Check the removal
+        # Check the removal
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
