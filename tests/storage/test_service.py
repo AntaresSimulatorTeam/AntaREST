@@ -7,7 +7,6 @@ from typing import Union
 from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
-import mock.mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
