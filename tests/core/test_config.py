@@ -247,7 +247,7 @@ class TestConfig:
     def test_from_yaml_file(self, config_name: str) -> None:
         yaml_path = ASSETS_DIR.joinpath("config", config_name)
         config = Config.from_yaml_file(yaml_path)
-        assert config.security.admin_pwd == "admin"
+        assert config.security.admin_pwd == ""
         assert config.storage.workspaces["default"].path == Path("/home/john/antares_data/internal_studies")
         assert not config.logging.json
         assert config.logging.level == "INFO"
