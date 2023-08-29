@@ -2,8 +2,6 @@ security:
   disabled: true
   jwt:
     key: super-secret
-  external_auth:
-    url: ""
 
 db:
   url: "sqlite:///database.db"
@@ -15,7 +13,7 @@ storage:
   workspaces:
     default:
       path: ./examples/internal_studies/
-    tmp:
+    studies:
       path: ./examples/studies/
 
 launcher:
