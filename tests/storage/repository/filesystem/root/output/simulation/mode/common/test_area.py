@@ -14,45 +14,45 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 # noinspection SpellCheckingInspection
 MC_ALL_TRUE = {
-    "details-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "details-daily": {"time_step": MatrixFrequency.DAILY},
-    "details-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "details-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "details-res-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "details-res-daily": {"time_step": MatrixFrequency.DAILY},
-    "details-res-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "details-res-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "details-res-weekly": {"time_step": MatrixFrequency.WEEKLY},
-    "details-weekly": {"time_step": MatrixFrequency.WEEKLY},
-    "id-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "id-daily": {"time_step": MatrixFrequency.DAILY},
-    "id-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "id-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "id-weekly": {"time_step": MatrixFrequency.WEEKLY},
-    "values-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "values-daily": {"time_step": MatrixFrequency.DAILY},
-    "values-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "values-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "values-weekly": {"time_step": MatrixFrequency.WEEKLY},
+    "details-annual": {"freq": MatrixFrequency.ANNUAL},
+    "details-daily": {"freq": MatrixFrequency.DAILY},
+    "details-hourly": {"freq": MatrixFrequency.HOURLY},
+    "details-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "details-res-annual": {"freq": MatrixFrequency.ANNUAL},
+    "details-res-daily": {"freq": MatrixFrequency.DAILY},
+    "details-res-hourly": {"freq": MatrixFrequency.HOURLY},
+    "details-res-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "details-res-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "details-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "id-annual": {"freq": MatrixFrequency.ANNUAL},
+    "id-daily": {"freq": MatrixFrequency.DAILY},
+    "id-hourly": {"freq": MatrixFrequency.HOURLY},
+    "id-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "id-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "values-annual": {"freq": MatrixFrequency.ANNUAL},
+    "values-daily": {"freq": MatrixFrequency.DAILY},
+    "values-hourly": {"freq": MatrixFrequency.HOURLY},
+    "values-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "values-weekly": {"freq": MatrixFrequency.WEEKLY},
 }
 
 # noinspection SpellCheckingInspection
 MC_ALL_FALSE = {
-    "details-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "details-daily": {"time_step": MatrixFrequency.DAILY},
-    "details-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "details-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "details-res-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "details-res-daily": {"time_step": MatrixFrequency.DAILY},
-    "details-res-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "details-res-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "details-res-weekly": {"time_step": MatrixFrequency.WEEKLY},
-    "details-weekly": {"time_step": MatrixFrequency.WEEKLY},
-    "values-annual": {"time_step": MatrixFrequency.ANNUAL},
-    "values-daily": {"time_step": MatrixFrequency.DAILY},
-    "values-hourly": {"time_step": MatrixFrequency.HOURLY},
-    "values-monthly": {"time_step": MatrixFrequency.MONTHLY},
-    "values-weekly": {"time_step": MatrixFrequency.WEEKLY},
+    "details-annual": {"freq": MatrixFrequency.ANNUAL},
+    "details-daily": {"freq": MatrixFrequency.DAILY},
+    "details-hourly": {"freq": MatrixFrequency.HOURLY},
+    "details-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "details-res-annual": {"freq": MatrixFrequency.ANNUAL},
+    "details-res-daily": {"freq": MatrixFrequency.DAILY},
+    "details-res-hourly": {"freq": MatrixFrequency.HOURLY},
+    "details-res-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "details-res-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "details-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "values-annual": {"freq": MatrixFrequency.ANNUAL},
+    "values-daily": {"freq": MatrixFrequency.DAILY},
+    "values-hourly": {"freq": MatrixFrequency.HOURLY},
+    "values-monthly": {"freq": MatrixFrequency.MONTHLY},
+    "values-weekly": {"freq": MatrixFrequency.WEEKLY},
 }
 
 
@@ -91,7 +91,7 @@ class TestOutputSimulationAreaItem:
 
         # check the result
         value: AreaOutputSeriesMatrix
-        actual_obj = {key: {"time_step": value.freq} for key, value in actual.items()}
+        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
         assert actual_obj == expected
 
         new_config = FileStudyTreeConfig(
@@ -110,19 +110,12 @@ class TestOutputSimulationAreaItem:
         )
         new_actual = new_node.build()
         # check the result
-        actual_obj = {key: {"time_step": value.freq} for key, value in new_actual.items()}
-        expected["details-STstorage-annual"] = {
-            "time_step": MatrixFrequency.ANNUAL
+        actual_obj = {key: {"freq": value.freq} for key, value in new_actual.items()
         }
-        expected["details-STstorage-daily"] = {
-            "time_step": MatrixFrequency.DAILY
-        }
-        expected["details-STstorage-hourly"] = {
-            "time_step": MatrixFrequency.HOURLY
-        }
-        expected["details-STstorage-monthly"] = {"time_step": MatrixFrequency.MONTHLY}
-        expected["details-STstorage-weekly"] = {
-            "time_step": MatrixFrequency.WEEKLY
-        }
+        expected["details-STstorage-annual"] = {"freq": MatrixFrequency.ANNUAL}
+        expected["details-STstorage-daily"] = {"freq": MatrixFrequency.DAILY}
+        expected["details-STstorage-hourly"] = {"freq": MatrixFrequency.HOURLY}
+        expected["details-STstorage-monthly"] = {"freq": MatrixFrequency.MONTHLY}
+        expected["details-STstorage-weekly"] = {"freq": MatrixFrequency.WEEKLY}
 
         assert actual_obj == expected

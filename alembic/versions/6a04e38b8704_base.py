@@ -45,7 +45,7 @@ def upgrade():
     )
     op.create_table('matrix',
     sa.Column('id', sa.String(length=64), nullable=False),
-    sa.Column('time_step', sa.Enum('HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL', name='matrixfreq'), nullable=True),
+    sa.Column('freq', sa.Enum('HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL', name='matrixfreq'), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
