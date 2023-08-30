@@ -1,4 +1,4 @@
-# Documentation about this file can be found in this file : /docs/install/1-CONFIG.md
+# Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
 
 security:
   disabled: true
