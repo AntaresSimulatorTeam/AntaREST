@@ -21,7 +21,7 @@ storage:
 launcher:
   local:
     binaries:
-      700: path/to/700
+      VER: ANTARES_SOLVER_PATH
 
 #  slurm:
 #    local_workspace: /path/to/slurm_workspace  # Path to the local SLURM workspace
