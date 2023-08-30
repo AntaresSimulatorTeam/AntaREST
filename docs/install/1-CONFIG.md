@@ -22,11 +22,11 @@ the application will try to look for files in the following location (in order):
 This section concerns application security, authentication and groups
 ## **disabled**
   - **Type:** Boolean
-  - **Default value:** False
-  - **Description:** If value is `False`, user identification is required when launching the app
+  - **Default value:** false
+  - **Description:** If value is `false`, user identification is required when launching the app
 ## **jwt**
 ### **key**
-- **Type:** String
+- **Type:** String (usually a Base64-encoded one)
 - **Default value:** Empty String
 - **Description:** JWT(Json Web Token) secret key for authentication
 ## **login**
@@ -38,15 +38,15 @@ This section concerns application security, authentication and groups
 ## **external_auth**
 ### **url**
 - **Type:** String
-- **Default value:** None
+- **Default value:** Empty String
 - **Description:** External authentication URL. If you want to enable local authentication, you should write an Empty String. To enable authentication via RTE "NNI", you should register http://antarestgaia:8080
 ### **default_group_role**
-- **Type:** Integer, possible values: 10, 20, 30, 40
+- **Type:** Integer
 - **Default value:** 10
 - **Description:** Default user role for external authentication. ADMIN = 40, WRITER = 30, RUNNER = 20, READER = 10
 ### **add_ext_groups**
 - **Type:** Boolean
-- **Default value:** False
+- **Default value:** false
 - **Description:** Whether to add external groups to user roles
 ### **group_mapping**
 - **Type:** Dictionary
@@ -69,8 +69,8 @@ This section concerns application's database information
 - **Description:** The URL you can use to directly access your database.
 ## **pool_use_null**
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** If `True`, the Pool does not pool connections. This parameter should stay at `False` to avoid issues.
+- **Default value:** false
+- **Description:** If `true`, the Pool does not pool connections. This parameter should stay at `false` to avoid issues.
 ## **db_connect_timeout**
 - **Type:** Integer
 - **Default value:** 10
@@ -85,11 +85,11 @@ This section concerns application's database information
 - **Description:** Maximum number of permanent connections to keep. *Not used for SQLite DB*
 ## **pool_use_lifo**
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** Should Database use Last-in First-out method. It is commonly used in cases where the most recent data entry is the most important and that applies to the application context. Therefore, it's better to set this parameter to `True`. *Not used for SQLite DB*
+- **Default value:** false
+- **Description:** Should Database use Last-in First-out method. It is commonly used in cases where the most recent data entry is the most important and that applies to the application context. Therefore, it's better to set this parameter to `true`. *Not used for SQLite DB*
 ## **pool_pre_ping**
 - **Type:** Boolean
-- **Default value:** False
+- **Default value:** false
 - **Description:** Connections which are closed from the server side are gracefully handled by the connection pool and replaced with a new connection. *Not used for SQLite DB*
 ## **pool_max_overflow**
 - **Type:** Integer
@@ -156,7 +156,7 @@ default:
 ```
 ## **allow_deletion**
 - **Type:** Boolean
-- **Default value:** False
+- **Default value:** false
 - **Description:** Indicates if studies found in non-default workspace can be deleted by the application
 ## **matrix_gc_sleeping_time**
 - **Type:** Integer
@@ -164,16 +164,16 @@ default:
 - **Description:** Time in seconds to sleep between two garbage collections (which means matrix suppression)
 ## **matrix_gc_dry_run**
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** If `True`, matrices will never be removed. Else, the ones that are unused will.
+- **Default value:** false
+- **Description:** If `true`, matrices will never be removed. Else, the ones that are unused will.
 ## **auto_archive_sleeping_time**
 - **Type:** Integer
 - **Default value:** 3600 (corresponds to 1 hour)
 - **Description:** Time in seconds to sleep between two auto_archiver tasks (which means zipping unused studies)
 ## **auto_archive_dry_run**
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** If `True`, studies will never be archived. Else, the ones that no one has accessed for a while will.
+- **Default value:** false
+- **Description:** If `true`, studies will never be archived. Else, the ones that no one has accessed for a while will.
 ## **auto_archive_threshold_days**
 - **Type:** Integer
 - **Default value:** 60
@@ -184,8 +184,8 @@ default:
 - **Description:** Max auto archival tasks in parallel
 ## **watcher_lock**
 - **Type:** Boolean
-- **Default value:** True
-- **Description:** If False, it will scan without any delay. Else, its delay will be the value of the field `watcher_lock_delay`
+- **Default value:** true
+- **Description:** If false, it will scan without any delay. Else, its delay will be the value of the field `watcher_lock_delay`
 ## **watcher_lock_delay**
 - **Type:** Integer
 - **Default value:** 10
@@ -204,7 +204,7 @@ This section concerns the launcher used, its options and the solver binaries.
 ## **local**
 ### **enable_nb_cores_detection**
 - **Type:** Boolean
-- **Default value:** False
+- **Default value:** false
 - **Description:** Enables detection of available CPUs for the solver. If so, the default value used will be max(1, multiprocessing.cpu_count() - 2). Else, it will be 22. To maximize the solver's performance, it is recommended to activate this option.
 ### **binaries**
 - **Type:** Dictionary
@@ -266,7 +266,7 @@ port: 22
 - **Default value:** Empty String
 - **Description:** An optional password to use to decrypt the key file, if it's encrypted
 ### **default_wait_time**
-*NB: Deprecated as the app is launched with wait_mode=False*
+*NB: Deprecated as the app is launched with wait_mode=false*
 - **Type:** Integer
 - **Default value:** 0
 - **Description:** Default delay (in seconds) of the SLURM loop checking the status of the tasks and recovering those completed in the loop. Often used value: 900 (15 minutes)
@@ -276,7 +276,7 @@ port: 22
 - **Description:** Time_limit for SLURM jobs (in seconds). If a jobs exceed this time_limit, SLURM kills the job and it is considered failed. Often used value: 172800 (48 hours)
 ### **enable_nb_cores_detection**
 - **Type:** Boolean
-- **Default value:** False
+- **Default value:** false
 - **Description:** Enables detection of available CPUs for the solver. It is not implemented yet but when it will, the command `sinfo` will be used via SSH to collect this information.
 ### **nb_cores**
 #### **min**
@@ -325,8 +325,8 @@ This section concerns the application logs
 - **Description:** Path to the application log file. Often used value : `.tmp/antarest.log`
 ## **json**
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** If `True`, logging format will be `JSON`, else it is `console`
+- **Default value:** false
+- **Description:** If `true`, logging format will be `JSON`, else it is `console`
 
 # root_path
 - **Type:** String
@@ -338,8 +338,8 @@ This section concerns the application logs
 
 # debug
 - **Type:** Boolean
-- **Default value:** False
-- **Description:** If `True`, it tells the engine object to log all the SQL it executed to `sys.stdout`
+- **Default value:** false
+- **Description:** If `true`, it tells the engine object to log all the SQL it executed to `sys.stdout`
 
 # cache
 ## **checker_delay**
