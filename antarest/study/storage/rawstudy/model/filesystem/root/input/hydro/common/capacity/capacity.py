@@ -22,7 +22,7 @@ class MatrixInfo(TypedDict, total=False):
 MATRICES_INFO: List[MatrixInfo] = [
     {
         "name": "maxpower",
-        "freq": MatrixFrequency.HOURLY,
+        "freq": MatrixFrequency.DAILY,
         "start_version": 0,
     },
     {
