@@ -1,7 +1,7 @@
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from pydantic import Extra
 from pydantic.main import BaseModel
@@ -9,7 +9,7 @@ from pydantic.main import BaseModel
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 
-from antarest.study.storage.variantstudy.model.command.common import TimeStep
+from .binding_constraint import BindingConstraintDTO
 from .st_storage import STStorageConfig
 
 
@@ -105,13 +105,6 @@ class Simulation(BaseModel):
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
-
-
-class BindingConstraintDTO(BaseModel):
-    id: str
-    areas: Set[str]
-    clusters: Set[str]
-    time_step: TimeStep
 
 
 class FileStudyTreeConfig(DTO):

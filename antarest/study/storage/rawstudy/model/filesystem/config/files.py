@@ -10,13 +10,13 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintDTO, BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     Cluster,
     DistrictSet,
     FileStudyTreeConfig,
@@ -26,7 +26,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.variantstudy.model.command.common import TimeStep
 
 logger = logging.getLogger(__name__)
 
@@ -145,10 +144,10 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
         # contains a set of strings in the following format: "area.cluster"
         cluster_set = set()
         # Default value for time_step
-        time_step = TimeStep.HOURLY
+        time_step = BindingConstraintFrequency.HOURLY
         for key in bind:
             if key == "type":
-                time_step = TimeStep(bind[key])
+                time_step = BindingConstraintFrequency(bind[key])
             elif "%" in key:
                 areas = key.split("%", 1)
                 area_set.add(areas[0])

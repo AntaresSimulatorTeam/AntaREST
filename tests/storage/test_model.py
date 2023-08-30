@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     BindingConstraintDTO,
@@ -8,7 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
     Simulation,
 )
-from antarest.study.storage.variantstudy.model.command.common import TimeStep
 
 
 def test_file_study_tree_config_dto():
@@ -44,7 +46,10 @@ def test_file_study_tree_config_dto():
         },
         bindings=[
             BindingConstraintDTO(
-                id="b1", areas=[], clusters=[], time_step=TimeStep.DAILY
+                id="b1",
+                areas=set(),
+                clusters=set(),
+                time_step=BindingConstraintFrequency.DAILY,
             )
         ],
         store_new_set=False,

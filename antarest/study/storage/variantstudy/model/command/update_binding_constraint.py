@@ -5,6 +5,9 @@ from pydantic import validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -12,8 +15,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
     CommandName,
-    CommandOutput,
-    TimeStep,
+    CommandOutput
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -22,7 +24,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 class UpdateBindingConstraint(ICommand):
     id: str
     enabled: bool = True
-    time_step: TimeStep
+    time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
     coeffs: Dict[str, List[float]]
     values: Optional[Union[List[List[MatrixData]], str]] = None

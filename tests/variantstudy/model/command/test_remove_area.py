@@ -1,9 +1,10 @@
 import pytest
 
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, TimeStep
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -125,7 +126,7 @@ class TestRemoveArea:
 
         bind1_cmd = CreateBindingConstraint(
             name="BD 2",
-            time_step=TimeStep.HOURLY,
+            time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.LESS,
             coeffs={
                 f"{area_id}%{area_id2}": [400, 30],

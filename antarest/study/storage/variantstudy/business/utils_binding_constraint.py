@@ -1,10 +1,12 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Mapping, Literal, Sequence
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput, TimeStep
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput
 
 
 def cluster_does_not_exist(study_data: FileStudy, area: str, thermal_id: str) -> bool:
@@ -25,7 +27,7 @@ def apply_binding_constraint(
     name: str,
     comments: Optional[str],
     enabled: bool,
-    time_step: TimeStep,
+    freq: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
     coeffs: Dict[str, List[float]],
     values: Optional[Union[List[List[MatrixData]], str]],
@@ -36,7 +38,7 @@ def apply_binding_constraint(
         "name": name,
         "id": bd_id,
         "enabled": enabled,
-        "type": time_step.value,
+        "type": freq.value,
         "operator": operator.value,
     }
     if study_data.config.version >= 830:
@@ -84,19 +86,20 @@ def apply_binding_constraint(
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: Dict[str, List[float]],
+    coeffs: Mapping[
+        str, Union[Literal["hourly", "daily", "weekly"], Sequence[float]]
+    ],
 ) -> None:
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
         clusters_set = set()
         # Default time_step value
-        time_step = TimeStep.HOURLY
-        for k in coeffs:
+        time_step = BindingConstraintFrequency.HOURLY
+        for k, v in coeffs.items():
             if k == "type":
-                time_step = TimeStep(coeffs[k])
+                time_step = BindingConstraintFrequency(v)
             if "%" in k:
-                areas_set.add(k.split("%")[0])
-                areas_set.add(k.split("%")[1])
+                areas_set |= set(k.split("%"))
             elif "." in k:
                 clusters_set.add(k)
                 areas_set.add(k.split(".")[0])

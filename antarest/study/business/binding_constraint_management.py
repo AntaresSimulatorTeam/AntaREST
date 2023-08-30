@@ -12,8 +12,9 @@ from antarest.core.exceptions import (
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, TimeStep
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
 
@@ -43,7 +44,7 @@ class BindingConstraintDTO(BaseModel):
     id: str
     name: str
     enabled: bool = True
-    time_step: TimeStep
+    time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
     values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None

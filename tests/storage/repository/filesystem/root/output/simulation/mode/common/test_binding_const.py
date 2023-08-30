@@ -16,11 +16,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 # noinspection SpellCheckingInspection
 NOMINAL_CASE = {
-    "binding-constraints-annual": {"freq": MatrixFrequency.ANNUAL},
-    "binding-constraints-daily": {"freq": MatrixFrequency.DAILY},
-    "binding-constraints-hourly": {"freq": MatrixFrequency.HOURLY},
-    "binding-constraints-monthly": {"freq": MatrixFrequency.MONTHLY},
-    "binding-constraints-weekly": {"freq": MatrixFrequency.WEEKLY},
+    "binding-constraints-annual": {"time_step": MatrixFrequency.ANNUAL},
+    "binding-constraints-daily": {"time_step": MatrixFrequency.DAILY},
+    "binding-constraints-hourly": {"time_step": MatrixFrequency.HOURLY},
+    "binding-constraints-monthly": {"time_step": MatrixFrequency.MONTHLY},
+    "binding-constraints-weekly": {"time_step": MatrixFrequency.WEEKLY},
 }
 
 
@@ -56,5 +56,5 @@ class TestOutputSimulationBindingConstraintItem:
 
         # check the result
         value: BindingConstraintOutputSeriesMatrix
-        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
+        actual_obj = {key: {"time_step": value.freq} for key, value in actual.items()}
         assert actual_obj == expected

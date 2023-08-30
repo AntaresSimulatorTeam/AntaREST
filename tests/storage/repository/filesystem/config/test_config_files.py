@@ -4,6 +4,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links,
     _parse_outputs,
@@ -22,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
-from antarest.study.storage.variantstudy.model.command.common import TimeStep
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -74,6 +74,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
     
     [bindB]
     id = bindB
+    type = weekly
     """
     (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(content)
 
@@ -82,8 +83,17 @@ def test_parse_bindings(tmp_path: Path) -> None:
         path=study_path,
         version=-1,
         bindings=[
-            BindingConstraintDTO(id="bindA", areas=[], clusters=[], time_step=TimeStep.HOURLY),
-            BindingConstraintDTO(id="bindB", areas=[], clusters=[], time_step=TimeStep.HOURLY),
+            BindingConstraintDTO(
+                id="bindA",
+                areas=set(),
+                clusters=set(),
+                time_step=BindingConstraintFrequency.HOURLY,
+            ),
+            BindingConstraintDTO(
+                id="bindB",
+                areas=set(),
+                clusters=set(),
+                time_step=BindingConstraintFrequency.WEEKLY,),
         ],
         study_id="id",
         output_path=study_path / "output",

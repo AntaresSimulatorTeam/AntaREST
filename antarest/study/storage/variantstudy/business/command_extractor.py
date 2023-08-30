@@ -9,16 +9,17 @@ from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, TimeStep
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint,
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.create_district import DistrictBaseFilter, CreateDistrict
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -348,7 +349,7 @@ class CommandExtractor(ICommandExtractor):
         binding_constraint_command = CreateBindingConstraint(
             name=binding["name"],
             enabled=binding["enabled"],
-            time_step=TimeStep(binding["type"]),
+            time_step=BindingConstraintFrequency(binding["type"]),
             operator=BindingConstraintOperator(binding["operator"]),
             coeffs={
                 coeff: [float(el) for el in str(value).split("%")]
