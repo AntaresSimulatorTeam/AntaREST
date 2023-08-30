@@ -27,19 +27,20 @@ This section concerns application security, authentication and groups
 ## **jwt**
 ### **key**
 - **Type:** String (usually a Base64-encoded one)
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** JWT(Json Web Token) secret key for authentication
 ## **login**
 ### **admin**
 #### **pwd**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** Admin user's password
 ## **external_auth**
+This subsection is about setting up an external authentication service that lets you connect to an LDAP using a web service. The group names and their IDs are obtained from the LDAP directory.
 ### **url**
 - **Type:** String
-- **Default value:** Empty String
-- **Description:** External authentication URL. If you want to enable local authentication, you should write an Empty String. To enable authentication via RTE "NNI", you should register http://antarestgaia:8080
+- **Default value:** ""
+- **Description:** External authentication URL. If you want to enable local authentication, you should write "". To enable authentication via RTE "NNI", you should register http://antarestgaia:8080
 ### **default_group_role**
 - **Type:** Integer
 - **Default value:** 10
@@ -50,7 +51,7 @@ This section concerns application security, authentication and groups
 - **Description:** Whether to add external groups to user roles
 ### **group_mapping**
 - **Type:** Dictionary
-- **Default value:** Empty Dictionary
+- **Default value:** {}
 - **Description:** Groups of the application: Keys = Ids, Values = Names. Example:
   - 00000001: espace_commun
   - 00001188: drd
@@ -58,10 +59,10 @@ This section concerns application security, authentication and groups
 
 
 # database
-This section concerns application's database information
+This section relates to configuring the application's database connection.
 ## **url**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** Database URL. Example: `sqlite:///database.db`for a local SQLite DB or `postgresql://postgres_user:postgres_password@postgres_host:postgres_port/postgres_db` for a PostgreSQL DB.
 ## **admin_url**
 - **Type:** String
@@ -113,15 +114,15 @@ This section concerns application Paths and Services options
 - **Description:** Directory for archived (which means zipped) studies
 ## **workspaces**
 - **Type:** Dictionary
-- **Default value:** Empty Dictionary
+- **Default value:** {}
 - **Description:** Different workspaces where the application expects to find studies.
 Keys = Folder names, Values = WorkspaceConfig object. Such an object has 4 fields:
-  - groups: List of groups corresponding to the workspace (default Empty List)
+  - groups: List of groups corresponding to the workspace (default [])
   - path: Path of the workspace (default Path())
   - filter_in: List of regex. If a folder does not contain a file whose name matches one of the regex , it's not scanned (default [".*"])
-  - filter_out: List of regex. If a folder contains any file whose name matches one of the regex, it's not scanned (default Empty List)
+  - filter_out: List of regex. If a folder contains any file whose name matches one of the regex, it's not scanned (default [])
   
-*NB: If a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside*
+> NOTE: If a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
 
 Examples:
 ```
@@ -145,6 +146,7 @@ default:
       - .*RECYCLE.BIN
       - .Rproj.*
       - ^.git$
+      - ^areas$
 "aws_share_2":
   path: /mounts/aws_share_2
   groups:
@@ -208,7 +210,7 @@ This section concerns the launcher used, its options and the solver binaries.
 - **Description:** Enables detection of available CPUs for the solver. If so, the default value used will be max(1, multiprocessing.cpu_count() - 2). Else, it will be 22. To maximize the solver's performance, it is recommended to activate this option.
 ### **binaries**
 - **Type:** Dictionary
-- **Default value:** Empty Dictionary
+- **Default value:** {}
 - **Description:** Binary paths for various versions of the launcher. Example:
 ```
 700: /home/john/Antares/antares_web_data/antares-solver/antares-8.0-solver
@@ -220,7 +222,7 @@ This section concerns the launcher used, its options and the solver binaries.
 850: /home/john/Antares/antares_web_data/antares-solver/antares-8.5-solver
 860: /home/john/Antares/antares_web_data/antares-solver/antares-8.6-solver
 ```
-*NB: As you can see, you can use newer solver for older study version thanks to the solver retro-compatibility*
+> NOTE: As you can see, you can use newer solver for older study version thanks to the solver retro-compatibility
 ## **slurm** 
 SLURM (Simple Linux Utility for Resource Management) is used to interact with a remote environment (for Antares it's Calin) as a workload manager.
 ### **local_workspace**
@@ -229,11 +231,11 @@ SLURM (Simple Linux Utility for Resource Management) is used to interact with a 
 - **Description:** Path to the local SLURM workspace
 ### **username**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** Username for SLURM to connect itself with SSH protocol to Calin.
 ### **hostname**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** IP address for SLURM to connect itself with SSH protocol to Calin.
 ### **port**
 - **Type:** Integer
@@ -259,14 +261,14 @@ port: 22
 - **Description:** SSH private key file. If you do not have one, you have to fill the `password` field.
 ### **password**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** SSH password for the remote server. You need it or a private key file for SLURM to connect itself.
 ### **key_password**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** An optional password to use to decrypt the key file, if it's encrypted
 ### **default_wait_time**
-*NB: Deprecated as the app is launched with wait_mode=false*
+> NOTE: Deprecated as the app is launched with wait_mode=false*
 - **Type:** Integer
 - **Default value:** 0
 - **Description:** Default delay (in seconds) of the SLURM loop checking the status of the tasks and recovering those completed in the loop. Often used value: 900 (15 minutes)
@@ -277,7 +279,7 @@ port: 22
 ### **enable_nb_cores_detection**
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Enables detection of available CPUs for the solver. It is not implemented yet but when it will, the command `sinfo` will be used via SSH to collect this information.
+- **Description:** Enables detection of available CPUs for the solver (Not implemented yet).
 ### **nb_cores**
 #### **min**
 - **Type:** Integer
@@ -286,24 +288,24 @@ port: 22
 #### **default**
 - **Type:** Integer
 - **Default value:** 22
-- **Description:** Default amount of CPUs to use when launching a simulation. Used when not specified by the user.
+- **Description:** Default amount of CPUs to use when launching a simulation. The user can override this value in the launch dialog box.
 #### **max**
 - **Type:** Integer
 - **Default value:** 24
 - **Description:** Maximum amount of CPUs to use when launching a simulation.
 ### **default_json_db_name**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** SLURM local DB name. Often used value : `launcher_db.json`
 ### **slurm_script_path**
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** Bash script path to execute on remote server.
   - If SLURM is connected to `calinfrprdif201` (production), use this path: `/applis/antares/launchAntares.sh`
   - If SLURM is connected to `PF9SOCALIN019` (recette and integration), use this path: `/applis/antares/launchAntaresRec.sh`
 ### **antares_versions_on_remote_server**
 - **Type:** List of String
-- **Default value:** Empty List
+- **Default value:** []
 - **Description:** List of Antares solver versions available on the remote server. Examples:
 ```
   antares_versions_on_remote_server:
@@ -316,7 +318,7 @@ port: 22
 # logging
 This section concerns the application logs
 ## **level**
-- **Type:** String, possible values: "INFO", "WARNING", "ERROR", "DEBUG"
+- **Type:** String, possible values: "DEBUG", "INFO", "WARNING", "ERROR"
 - **Default value:** `INFO`
 - **Description:** Logging level of the application (INFO, DEBUG, etc.)
 ## **logfile**
@@ -326,20 +328,22 @@ This section concerns the application logs
 ## **json**
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, logging format will be `JSON`, else it is `console`
+- **Description:** If `true`, logging format will be `json`, else it is `console`
+  - `console`: default format used for console output, suitable for Desktop versions or development environments.
+  - `json`: specific JSON format suitable for consumption by monitoring tools via a web service.
+
 
 # root_path
 - **Type:** String
-- **Default value:** Empty String
+- **Default value:** ""
 - **Description:** Root path for FastAPI. To use a remote server, use `/api` and for local environment: `api`.
-"api"  
 
-## `From now on, every section is optional`
+## `Extra optional configuration`
 
 # debug
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, it tells the engine object to log all the SQL it executed to `sys.stdout`
+- **Description:** This flag, determines whether the engine will log all the SQL statements it executes to the console. If you turn this on by setting it to `true` you'll see a detailed log of the database queries.
 
 # cache
 ## **checker_delay**
@@ -354,7 +358,7 @@ This section concerns the application logs
 - **Description:** Number of threads for Tasks in the ThreadPoolExecutor
 ## **remote_workers**
 - **Type:** List
-- **Default value:** Empty List
+- **Default value:** []
 - **Description:** Example:
 ```
 remote_workers:
@@ -375,12 +379,12 @@ remote_workers:
 - **Default value:** 5
 - **Description:** Number of threads of the Server in the ThreadPoolExecutor
 ## **services**
-- **Type:** List of possible Strings: "watcher", "matrix_gc", "archive_worker", "auto_archiver", "simulator_worker"
-- **Default value:** Empty List
-- **Description:** # Services to enable when launching the application
+- **Type:** List of Strings
+- **Default value:** []
+- **Description:** # Services to enable when launching the application. Possible values: "watcher", "matrix_gc", "archive_worker", "auto_archiver", "simulator_worker".
 
 # redis
-This sections concerns the redis backend to handle eventbus. It is recommended to use it in production but not for local environment.
+This sections concerns the Redis backend, which is used for managing the event bus and in-memory caching.
 ## **host**
 - **Type:** String
 - **Default value:** `localhost`
