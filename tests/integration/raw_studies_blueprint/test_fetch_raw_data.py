@@ -41,6 +41,7 @@ class TestFetchRawData:
         with db():
             study: RawStudy = db.session.get(Study, study_id)
             study_dir = pathlib.Path(study.path)
+        headers = {"Authorization": f"Bearer {user_access_token}"}
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -55,7 +56,7 @@ class TestFetchRawData:
             query_string = urlencode({"path": f"/{rel_path}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
-                headers={"Authorization": f"Bearer {user_access_token}"},
+                headers=headers,
             )
             res.raise_for_status()
             if file_path.suffix == ".json":
@@ -81,7 +82,7 @@ class TestFetchRawData:
             query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
-                headers={"Authorization": f"Bearer {user_access_token}"},
+                headers=headers,
             )
             res.raise_for_status()
             actual = res.content
@@ -95,7 +96,7 @@ class TestFetchRawData:
             query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
-                headers={"Authorization": f"Bearer {user_access_token}"},
+                headers=headers,
             )
             assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -104,7 +105,7 @@ class TestFetchRawData:
         query_string = urlencode({"path": "/input/areas/list", "depth": 1})
         res = client.get(
             f"/v1/studies/{study_id}/raw?{query_string}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            headers=headers,
         )
         res.raise_for_status()
         assert res.json() == ["DE", "ES", "FR", "IT"]

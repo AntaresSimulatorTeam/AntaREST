@@ -136,7 +136,14 @@ def create_raw_study_routes(
                 # because it's better to avoid raising an exception.
                 return Response(content=output, media_type="application/octet-stream")
 
-        return JSONResponse(content=output)
+        json_response = json.dumps(
+            output,
+            ensure_ascii=False,
+            allow_nan=True,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return Response(content=json_response, media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/raw",
