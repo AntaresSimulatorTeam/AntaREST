@@ -172,18 +172,14 @@ def test_dataset_lifecycle():
     dataset_repo = Mock()
     user_service = Mock()
 
-    service = MatrixService(
-        repo, dataset_repo, content, Mock(), Mock(), Mock(), user_service
-    )
+    service = MatrixService(repo, dataset_repo, content, Mock(), Mock(), Mock(), user_service)
 
     userA = RequestParameters(
         user=JWTUser(
             id=1,
             type="users",
             impersonator=1,
-            groups=[
-                JWTGroup(id="groupA", name="groupA", role=RoleType.READER)
-            ],
+            groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
         )
     )
     userB = RequestParameters(
@@ -191,9 +187,7 @@ def test_dataset_lifecycle():
             id=2,
             type="users",
             impersonator=2,
-            groups=[
-                JWTGroup(id="groupB", name="groupB", role=RoleType.READER)
-            ],
+            groups=[JWTGroup(id="groupB", name="groupB", role=RoleType.READER)],
         )
     )
     botA = RequestParameters(
@@ -201,9 +195,7 @@ def test_dataset_lifecycle():
             id=3,
             type="bots",
             impersonator=1,
-            groups=[
-                JWTGroup(id="groupA", name="groupA", role=RoleType.READER)
-            ],
+            groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
         )
     )
 
@@ -395,8 +387,6 @@ def test_import():
         output_data.writestr("matrix.txt", file_str)
 
     zip_content.seek(0)
-    zip_file = UploadFile(
-        filename="Matrix.zip", file=zip_content, content_type="application/zip"
-    )
+    zip_file = UploadFile(filename="Matrix.zip", file=zip_content, content_type="application/zip")
     matrix = service.create_by_importation(zip_file)
     assert matrix == exp_matrix_info

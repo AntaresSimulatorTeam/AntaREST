@@ -20,9 +20,7 @@ def build_config(root: Path) -> Config:
     return Config(
         storage=StorageConfig(
             workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(
-                    path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]
-                ),
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
                 "diese": WorkspaceConfig(
                     path=root / "diese",
                     groups=["tata"],
@@ -85,9 +83,7 @@ def test_scan(tmp_path: Path):
     (f / "study.antares").touch()
 
     service = Mock()
-    watcher = Watcher(
-        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
-    )
+    watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
     watcher.scan()
 
@@ -124,14 +120,10 @@ def test_partial_scan(tmp_path: Path):
     (c / "study.antares").touch()
 
     service = Mock()
-    watcher = Watcher(
-        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
-    )
+    watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
     with pytest.raises(CannotScanInternalWorkspace):
-        watcher.scan(
-            workspace_name="default", workspace_directory_path=default
-        )
+        watcher.scan(workspace_name="default", workspace_directory_path=default)
 
     watcher.scan(workspace_name="test", workspace_directory_path=default)
 

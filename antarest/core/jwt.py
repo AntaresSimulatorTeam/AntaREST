@@ -66,10 +66,7 @@ class JWTUser(BaseModel):
 
         """
         if isinstance(groups, Group):
-            return any(
-                g.id == groups.id and g.role == RoleType.ADMIN
-                for g in self.groups
-            )
+            return any(g.id == groups.id and g.role == RoleType.ADMIN for g in self.groups)
 
         return any(self.is_group_admin(g) for g in groups)
 

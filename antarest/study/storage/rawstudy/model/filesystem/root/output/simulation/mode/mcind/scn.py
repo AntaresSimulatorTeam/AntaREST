@@ -14,12 +14,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationModeMcIndScn(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "areas": OutputSimulationAreas(
-                self.context, self.config.next_file("areas"), mc_all=False
-            ),
-            "links": OutputSimulationLinks(
-                self.context, self.config.next_file("links"), mc_all=False
-            ),
+            "areas": OutputSimulationAreas(self.context, self.config.next_file("areas"), mc_all=False),
+            "links": OutputSimulationLinks(self.context, self.config.next_file("links"), mc_all=False),
             "binding_constraints": OutputSimulationBindingConstraintItem(
                 self.context, self.config.next_file("binding_constraints")
             ),

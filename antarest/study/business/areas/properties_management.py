@@ -32,9 +32,7 @@ def encode_color(ui: Dict[str, Any]) -> str:
     return f"{data['color_r']},{data['color_g']},{data['color_b']}"
 
 
-def decode_color(
-    encoded_color: str, current_ui: Optional[Dict[str, int]]
-) -> Dict[str, Any]:
+def decode_color(encoded_color: str, current_ui: Optional[Dict[str, int]]) -> Dict[str, Any]:
     r, g, b = map(int, encoded_color.split(","))
     return {**(current_ui or {}), "color_r": r, "color_g": g, "color_b": b}
 
@@ -51,9 +49,7 @@ def encode_filter(value: str) -> Set[str]:
     return set(re.split(r"\s*,\s*", stripped) if stripped else [])
 
 
-def decode_filter(
-    encoded_value: Set[str], current_filter: Optional[str] = None
-) -> str:
+def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
     return ", ".join(sort_filter_options(encoded_value))
 
 
@@ -64,9 +60,7 @@ class AdequacyPatchMode(EnumIgnoreCase):
 
 
 class PropertiesFormFields(FormFieldsBaseModel):
-    color: Optional[str] = Field(
-        regex="^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$"
-    )
+    color: Optional[str] = Field(regex="^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$")
     pos_x: Optional[float]
     pos_y: Optional[float]
     energy_cost_unsupplied: Optional[float]
@@ -170,18 +164,14 @@ class PropertiesManager:
                 return None
 
             try:
-                val = file_study.tree.get(
-                    field_info["path"].format(area=area_id).split("/")
-                )
+                val = file_study.tree.get(field_info["path"].format(area=area_id).split("/"))
             except (ChildNotFoundError, KeyError):
                 return field_info["default_value"]
 
             encode = field_info.get("encode") or (lambda x: x)
             return encode(val)
 
-        return PropertiesFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return PropertiesFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(
         self,
@@ -191,9 +181,7 @@ class PropertiesManager:
     ) -> None:
         commands: List[UpdateConfig] = []
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        context = self.storage_service.variant_study_service.command_factory.command_context
 
         for field_name, value in field_values.__iter__():
             if value is not None:
@@ -218,6 +206,4 @@ class PropertiesManager:
                 )
 
         if commands:
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)

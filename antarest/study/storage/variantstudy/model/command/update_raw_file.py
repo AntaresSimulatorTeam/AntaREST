@@ -14,13 +14,9 @@ class UpdateRawFile(ICommand):
     b64Data: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_FILE, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_FILE, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -32,9 +28,7 @@ class UpdateRawFile(ICommand):
                 message=f"Study node at path {self.target} is invalid",
             )
 
-        study_data.tree.save(
-            base64.decodebytes(self.b64Data.encode("utf-8")), url
-        )
+        study_data.tree.save(base64.decodebytes(self.b64Data.encode("utf-8")), url)
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
@@ -44,9 +38,7 @@ class UpdateRawFile(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateRawFile):

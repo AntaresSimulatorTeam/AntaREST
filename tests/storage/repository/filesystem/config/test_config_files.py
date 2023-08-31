@@ -71,9 +71,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
     [bindB]
     id = bindB
     """
-    (
-        study_path / "input/bindingconstraints/bindingconstraints.ini"
-    ).write_text(content)
+    (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(content)
 
     config = FileStudyTreeConfig(
         study_path=study_path,
@@ -194,9 +192,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
         ),
     ],
 )
-def test_parse_outputs__nominal(
-    tmp_path: Path, assets_name: str, expected: dict
-) -> None:
+def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: dict) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
     into a temporary directory and executes the parsing of the outputs.
@@ -220,9 +216,7 @@ output = true
 """
     (study_path / "input/areas/sets.ini").write_text(content)
 
-    assert _parse_sets(study_path) == {
-        "hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)
-    }
+    assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
 
 
 def test_parse_area(tmp_path: Path) -> None:

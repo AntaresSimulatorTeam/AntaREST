@@ -33,35 +33,25 @@ logger = logging.getLogger(__name__)
 
 
 class CommandExtractor(ICommandExtractor):
-    def __init__(
-        self, matrix_service: ISimpleMatrixService, patch_service: PatchService
-    ):
+    def __init__(self, matrix_service: ISimpleMatrixService, patch_service: PatchService):
         self.matrix_service = matrix_service
-        self.generator_matrix_constants = GeneratorMatrixConstants(
-            self.matrix_service
-        )
+        self.generator_matrix_constants = GeneratorMatrixConstants(self.matrix_service)
         self.patch_service = patch_service
         self.command_context = CommandContext(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
             patch_service=self.patch_service,
         )
-        self.null_matrix_id = strip_matrix_protocol(
-            self.generator_matrix_constants.get_null_matrix()
-        )
+        self.null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
 
-    def extract_area(
-        self, study: FileStudy, area_id: str
-    ) -> Tuple[List[ICommand], List[ICommand]]:
+    def extract_area(self, study: FileStudy, area_id: str) -> Tuple[List[ICommand], List[ICommand]]:
         stopwatch = StopWatch()
         study_commands: List[ICommand] = []
         links_commands: List[ICommand] = []
         study_tree = study.tree
         study_config = study.config
         area = study_config.areas[area_id]
-        optimization_data = study_tree.get(
-            ["input", "areas", area_id, "optimization"]
-        )
+        optimization_data = study_tree.get(["input", "areas", area_id, "optimization"])
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
         area_command = CreateArea(
             area_name=area.name,
@@ -82,34 +72,20 @@ class CommandExtractor(ICommandExtractor):
                 command_context=self.command_context,
             )
         )
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Area command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Area command extraction done in {x}s"))
 
         links_data = study_tree.get(["input", "links", area_id, "properties"])
         for link in area.links:
-            links_commands += self.extract_link(
-                study, area_id, link, links_data
-            )
+            links_commands += self.extract_link(study, area_id, link, links_data)
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Link command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Link command extraction done in {x}s"))
         for thermal in area.thermals:
             study_commands += self.extract_cluster(study, area_id, thermal.id)
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Thermal command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Thermal command extraction done in {x}s"))
 
         for renewable in area.renewables:
-            study_commands += self.extract_renewables_cluster(
-                study, area_id, renewable.id
-            )
-        stopwatch.log_elapsed(
-            lambda x: logger.info(
-                f"Renewables command extraction done in {x}s"
-            )
-        )
+            study_commands += self.extract_renewables_cluster(study, area_id, renewable.id)
+        stopwatch.log_elapsed(lambda x: logger.info(f"Renewables command extraction done in {x}s"))
 
         # load, wind, solar
         for type in ["load", "wind", "solar"]:
@@ -133,16 +109,10 @@ class CommandExtractor(ICommandExtractor):
                     self.null_matrix_id,
                 )
             )
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Prepro command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Prepro command extraction done in {x}s"))
 
         # misc gen / reserves
-        study_commands.append(
-            self.generate_replace_matrix(
-                study_tree, ["input", "reserves", area_id]
-            )
-        )
+        study_commands.append(self.generate_replace_matrix(study_tree, ["input", "reserves", area_id]))
         study_commands.append(
             self.generate_replace_matrix(
                 study_tree,
@@ -150,14 +120,10 @@ class CommandExtractor(ICommandExtractor):
             )
         )
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Misc command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Misc command extraction done in {x}s"))
         # hydro
         study_commands += self.extract_hydro(study, area_id)
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Hydro command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Hydro command extraction done in {x}s"))
         return study_commands, links_commands
 
     def extract_link(
@@ -226,22 +192,16 @@ class CommandExtractor(ICommandExtractor):
 
         return commands
 
-    def _extract_cluster(
-        self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool
-    ) -> List[ICommand]:
+    def _extract_cluster(self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool) -> List[ICommand]:
         study_commands: List[ICommand] = []
         study_tree = study.tree
         cluster_name = cluster_id
 
         cluster_type = "renewables" if renewables else "thermal"
         cluster_list = (
-            study.config.areas[area_id].thermals
-            if not renewables
-            else study.config.areas[area_id].renewables
+            study.config.areas[area_id].thermals if not renewables else study.config.areas[area_id].renewables
         )
-        create_cluster_command = (
-            CreateCluster if not renewables else CreateRenewablesCluster
-        )
+        create_cluster_command = CreateCluster if not renewables else CreateRenewablesCluster
 
         for cluster in cluster_list:
             if cluster.id == cluster_id:
@@ -281,9 +241,7 @@ class CommandExtractor(ICommandExtractor):
                     cluster_id,
                     "series",
                 ],
-                strip_matrix_protocol(
-                    self.generator_matrix_constants.get_null_matrix()
-                ),
+                strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix()),
             )
         )
         if not renewables:
@@ -298,9 +256,7 @@ class CommandExtractor(ICommandExtractor):
                         cluster_id,
                         "data",
                     ],
-                    strip_matrix_protocol(
-                        self.generator_matrix_constants.get_null_matrix()
-                    ),
+                    strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix()),
                 )
             )
             study_commands.append(
@@ -314,21 +270,15 @@ class CommandExtractor(ICommandExtractor):
                         cluster_id,
                         "modulation",
                     ],
-                    strip_matrix_protocol(
-                        self.generator_matrix_constants.get_null_matrix()
-                    ),
+                    strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix()),
                 )
             )
         return study_commands
 
-    def extract_cluster(
-        self, study: FileStudy, area_id: str, thermal_id: str
-    ) -> List[ICommand]:
+    def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> List[ICommand]:
         return self._extract_cluster(study, area_id, thermal_id, False)
 
-    def extract_renewables_cluster(
-        self, study: FileStudy, area_id: str, renewables_id: str
-    ) -> List[ICommand]:
+    def extract_renewables_cluster(self, study: FileStudy, area_id: str, renewables_id: str) -> List[ICommand]:
         return self._extract_cluster(study, area_id, renewables_id, True)
 
     def extract_hydro(self, study: FileStudy, area_id: str) -> List[ICommand]:
@@ -354,21 +304,11 @@ class CommandExtractor(ICommandExtractor):
                     f"reservoir_{area_id}",
                 ],
             ),
-            self.generate_replace_matrix(
-                study_tree, ["input", "hydro", "prepro", area_id, "energy"]
-            ),
-            self.generate_replace_matrix(
-                study_tree, ["input", "hydro", "series", area_id, "mod"]
-            ),
-            self.generate_replace_matrix(
-                study_tree, ["input", "hydro", "series", area_id, "ror"]
-            ),
-            self.generate_update_config(
-                study_tree, ["input", "hydro", "prepro", area_id, "prepro"]
-            ),
-            self.generate_update_config(
-                study_tree, ["input", "hydro", "allocation", area_id]
-            ),
+            self.generate_replace_matrix(study_tree, ["input", "hydro", "prepro", area_id, "energy"]),
+            self.generate_replace_matrix(study_tree, ["input", "hydro", "series", area_id, "mod"]),
+            self.generate_replace_matrix(study_tree, ["input", "hydro", "series", area_id, "ror"]),
+            self.generate_update_config(study_tree, ["input", "hydro", "prepro", area_id, "prepro"]),
+            self.generate_update_config(study_tree, ["input", "hydro", "allocation", area_id]),
         ]
 
         if study_tree.config.version > 650:
@@ -417,16 +357,12 @@ class CommandExtractor(ICommandExtractor):
 
         return commands
 
-    def extract_district(
-        self, study: FileStudy, district_id: str
-    ) -> List[ICommand]:
+    def extract_district(self, study: FileStudy, district_id: str) -> List[ICommand]:
         study_commands: List[ICommand] = []
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]
-        district_fetched_config = study_tree.get(
-            ["input", "areas", "sets", district_id]
-        )
+        district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
         study_commands.append(
             CreateDistrict(
                 name=district_config.name,
@@ -461,9 +397,7 @@ class CommandExtractor(ICommandExtractor):
         study_tree = study.tree
         binding = bindings_data
         if not bindings_data:
-            for binding_config in study_tree.get(
-                ["input", "bindingconstraints", "bindingconstraints"]
-            ).values():
+            for binding_config in study_tree.get(["input", "bindingconstraints", "bindingconstraints"]).values():
                 if binding_config["id"] == binding_id:
                     binding = binding_config
                     break
@@ -502,9 +436,7 @@ class CommandExtractor(ICommandExtractor):
             command_context=self.command_context,
         )
 
-    def generate_update_rawfile(
-        self, study_tree: FileStudyTree, url: List[str]
-    ) -> ICommand:
+    def generate_update_rawfile(self, study_tree: FileStudyTree, url: List[str]) -> ICommand:
         data = study_tree.get(url)
         return UpdateRawFile(
             target="/".join(url),
@@ -531,9 +463,7 @@ class CommandExtractor(ICommandExtractor):
         playlist = get_playlist(config)
         return UpdatePlaylist(
             items=playlist.keys() if playlist else None,
-            weights={year for year, weight in playlist.items() if weight != 1}
-            if playlist
-            else None,
+            weights={year for year, weight in playlist.items() if weight != 1} if playlist else None,
             active=True if playlist and len(playlist) > 0 else False,
             reverse=False,
             command_context=self.command_context,
@@ -577,15 +507,11 @@ class CommandExtractor(ICommandExtractor):
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]
-        district_fetched_config = study_tree.get(
-            ["input", "areas", "sets", district_id]
-        )
+        district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
         return UpdateDistrict(
             name=district_config.name,
             metadata={},
-            base_filter=DistrictBaseFilter.add_all
-            if district_config.inverted_set
-            else DistrictBaseFilter.remove_all,
+            base_filter=DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all,
             filter_items=district_config.areas or [],
             output=district_config.output,
             comments=district_fetched_config.get("comments", None),

@@ -94,9 +94,7 @@ class TestMatrixRepository:
             dataset.matrices.append(matrix_relation)
 
             dataset = dataset_repo.save(dataset)
-            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(
-                dataset.id
-            )
+            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(dataset.id)
             assert dataset_query_result is not None
             assert dataset_query_result.name == "some name"
             assert len(dataset_query_result.matrices) == 2
@@ -108,9 +106,7 @@ class TestMatrixRepository:
                 updated_at=datetime.now(),
             )
             dataset_repo.save(dataset_update)
-            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(
-                dataset.id
-            )
+            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(dataset.id)
             assert dataset_query_result is not None
             assert dataset_query_result.name == "some name change"
             assert dataset_query_result.owner_id == user.id
@@ -122,9 +118,7 @@ class TestMatrixRepository:
             # noinspection PyArgumentList
             user1 = user_repo.save(User(name="foo", password=Password("bar")))
             # noinspection PyArgumentList
-            user2 = user_repo.save(
-                User(name="hello", password=Password("world"))
-            )
+            user2 = user_repo.save(User(name="hello", password=Password("world")))
 
             repo = MatrixRepository()
             m1 = Matrix(
@@ -182,9 +176,7 @@ class TestMatrixRepository:
             assert repo.get(m1.id) is not None
             assert (
                 len(
-                    db.session.query(MatrixDataSetRelation)
-                    .filter(MatrixDataSetRelation.dataset_id == dataset.id)
-                    .all()
+                    db.session.query(MatrixDataSetRelation).filter(MatrixDataSetRelation.dataset_id == dataset.id).all()
                 )
                 == 0
             )
@@ -204,9 +196,7 @@ class TestMatrixContentRepository:
         matrix_hash = matrix_content_repo.save(data)
         # then a TSV file is created in the repo directory
         matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        array = np.loadtxt(
-            matrix_file, delimiter="\t", dtype=np.float64, ndmin=2
-        )
+        array = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
         assert array.tolist() == data
         modif_time = matrix_file.stat().st_mtime
 

@@ -4,7 +4,6 @@ from typing import Sequence
 
 import pytest
 
-
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")

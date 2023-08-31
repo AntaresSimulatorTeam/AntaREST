@@ -22,13 +22,9 @@ def test_thematic_trimming_config():
     command_factory_mock = Mock()
     command_factory_mock.command_context = command_context
     raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(
-        spec=VariantStudyService, command_factory=command_factory_mock
-    )
+    variant_study_service = Mock(spec=VariantStudyService, command_factory=command_factory_mock)
     thematic_trimming_manager = ThematicTrimmingManager(
-        storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
+        storage_service=StudyStorageService(raw_study_service, variant_study_service),
     )
 
     study = VariantStudy(version="820")
@@ -41,9 +37,7 @@ def test_thematic_trimming_config():
         sets={},
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    variant_study_service.get_raw.return_value = FileStudy(
-        config=config, tree=file_tree_mock
-    )
+    variant_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
     file_tree_mock.get.side_effect = [
         {},
         {"variables selection": {"select_var -": ["AVL DTG"]}},

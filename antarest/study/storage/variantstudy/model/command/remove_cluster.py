@@ -15,20 +15,14 @@ class RemoveCluster(ICommand):
     cluster_id: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REMOVE_CLUSTER, version=1, **data
-        )
+        super().__init__(command_name=CommandName.REMOVE_CLUSTER, version=1, **data)
 
     def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
         study_data.areas[self.area_id].thermals = [
-            cluster
-            for cluster in study_data.areas[self.area_id].thermals
-            if cluster.id != self.cluster_id.lower()
+            cluster for cluster in study_data.areas[self.area_id].thermals if cluster.id != self.cluster_id.lower()
         ]
 
-    def _apply_config(
-        self, study_data_config: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area_id not in study_data_config.areas:
             return (
                 CommandOutput(
@@ -42,9 +36,7 @@ class RemoveCluster(ICommand):
             len(
                 [
                     cluster
-                    for cluster in study_data_config.areas[
-                        self.area_id
-                    ].thermals
+                    for cluster in study_data_config.areas[self.area_id].thermals
                     if cluster.id == self.cluster_id.lower()
                 ]
             )
@@ -58,9 +50,7 @@ class RemoveCluster(ICommand):
                 dict(),
             )
         self._remove_cluster(study_data_config)
-        remove_area_cluster_from_binding_constraints(
-            study_data_config, self.area_id, self.cluster_id.lower()
-        )
+        remove_area_cluster_from_binding_constraints(study_data_config, self.area_id, self.cluster_id.lower())
 
         return (
             CommandOutput(
@@ -90,9 +80,7 @@ class RemoveCluster(ICommand):
             )
         cluster = cluster_query_result[0]
 
-        cluster_list = study_data.tree.get(
-            ["input", "thermal", "clusters", self.area_id, "list"]
-        )
+        cluster_list = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
 
         cluster_list_id = self.cluster_id
         if cluster_list.get(cluster.name, None):
@@ -153,10 +141,7 @@ class RemoveCluster(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveCluster):
             return False
-        return (
-            self.cluster_id == other.cluster_id
-            and self.area_id == other.area_id
-        )
+        return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
@@ -164,12 +149,8 @@ class RemoveCluster(ICommand):
     def get_inner_matrices(self) -> List[str]:
         return []
 
-    def _remove_cluster_from_binding_constraints(
-        self, study_data: FileStudy
-    ) -> None:
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+    def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         id_to_remove = []
 
@@ -186,15 +167,7 @@ class RemoveCluster(ICommand):
                 ]
             )
             study_data.config.bindings.remove(
-                next(
-                    iter(
-                        [
-                            bind
-                            for bind in study_data.config.bindings
-                            if bind.id == binding_constraints[id]["id"]
-                        ]
-                    )
-                )
+                next(iter([bind for bind in study_data.config.bindings if bind.id == binding_constraints[id]["id"]]))
             )
 
             del binding_constraints[id]

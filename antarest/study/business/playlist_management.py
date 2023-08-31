@@ -27,9 +27,7 @@ class PlaylistManager:
     ) -> Dict[int, PlaylistColumns]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         playlist = FileStudyHelpers.get_playlist(file_study) or {}
-        nb_years = file_study.tree.get(
-            FIELDS_INFO["nb_years"]["path"].split("/")
-        ) or len(playlist)
+        nb_years = file_study.tree.get(FIELDS_INFO["nb_years"]["path"].split("/")) or len(playlist)
 
         return {
             year: PlaylistColumns.construct(
@@ -51,15 +49,9 @@ class PlaylistManager:
         for year, col in data.items():
             years_by_bool[col.status].append(year - 1)
 
-        active_playlists = [
-            year for year, col in data.items() if col.status is True
-        ]
+        active_playlists = [year for year, col in data.items() if col.status is True]
 
-        weights = {
-            year: col.weight
-            for year, col in data.items()
-            if col.weight != DEFAULT_WEIGHT
-        }
+        weights = {year: col.weight for year, col in data.items() if col.weight != DEFAULT_WEIGHT}
 
         execute_or_add_commands(
             study,

@@ -32,9 +32,7 @@ def matrix_service() -> MatrixService:
     )
 
     matrix_service = Mock(spec=MatrixService)
-    matrix_service.create.side_effect = (
-        lambda data: data if isinstance(data, str) else "matrix_id"
-    )
+    matrix_service.create.side_effect = lambda data: data if isinstance(data, str) else "matrix_id"
 
     return matrix_service
 
@@ -43,13 +41,9 @@ def matrix_service() -> MatrixService:
 def command_context(matrix_service: MatrixService) -> CommandContext:
     # sourcery skip: inline-immediately-returned-variable
     command_context = CommandContext(
-        generator_matrix_constants=GeneratorMatrixConstants(
-            matrix_service=matrix_service
-        ),
+        generator_matrix_constants=GeneratorMatrixConstants(matrix_service=matrix_service),
         matrix_service=matrix_service,
-        patch_service=PatchService(
-            repository=Mock(spec=StudyMetadataRepository)
-        ),
+        patch_service=PatchService(repository=Mock(spec=StudyMetadataRepository)),
     )
     return command_context
 
@@ -57,9 +51,7 @@ def command_context(matrix_service: MatrixService) -> CommandContext:
 @pytest.fixture
 def command_factory(matrix_service: MatrixService) -> CommandFactory:
     return CommandFactory(
-        generator_matrix_constants=GeneratorMatrixConstants(
-            matrix_service=matrix_service
-        ),
+        generator_matrix_constants=GeneratorMatrixConstants(matrix_service=matrix_service),
         matrix_service=matrix_service,
         patch_service=PatchService(),
     )

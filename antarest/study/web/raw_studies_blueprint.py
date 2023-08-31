@@ -122,9 +122,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
-        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def validate(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(
             f"Validating data for study {uuid}",
             extra={"user": current_user.id},

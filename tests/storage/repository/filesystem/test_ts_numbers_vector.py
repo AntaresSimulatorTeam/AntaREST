@@ -13,9 +13,7 @@ def test_get(tmp_path: Path) -> None:
 
     node = TsNumbersVector(
         context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=file, path=file, version=-1, study_id="id"
-        ),
+        config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     assert node.get() == [4, 5, 100, 8, 1]
 
@@ -26,9 +24,7 @@ def test_save(tmp_path: Path) -> None:
 
     node = TsNumbersVector(
         context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=file, path=file, version=-1, study_id="id"
-        ),
+        config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     node.save([4, 5, 100, 8, 2, 10])
     assert file.read_text() == "size:1x6\n4\n5\n100\n8\n2\n10\n"

@@ -14,9 +14,7 @@ class MockLazyNode(LazyNode[str, str, str]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig
-    ) -> None:
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
             context=context,
@@ -34,9 +32,7 @@ class MockLazyNode(LazyNode[str, str, str]):
     def dump(self, data: str, url: Optional[List[str]] = None) -> None:
         self.config.path.write_text(data)
 
-    def check_errors(
-        self, data: str, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used
 
 
@@ -45,9 +41,7 @@ def test_get_no_expanded_txt(tmp_path: Path):
     file.parent.mkdir()
     file.touch()
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id="my-study"
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
         context=ContextServer(matrix=Mock(), resolver=Mock()),
@@ -63,9 +57,7 @@ def test_get_no_expanded_link(tmp_path: Path):
     file.parent.mkdir()
     (file.parent / "lazy.txt.link").write_text(uri)
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id="my-study"
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     resolver = Mock()
     resolver.resolve.return_value = "Mock Matrix Content"
@@ -83,9 +75,7 @@ def test_get_expanded_txt(tmp_path: Path):
     file.parent.mkdir()
     file.touch()
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id="my-study"
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
         context=ContextServer(matrix=Mock(), resolver=Mock()),
@@ -101,9 +91,7 @@ def test_get_expanded_link(tmp_path: Path):
     file.parent.mkdir()
     (file.parent / "lazy.txt.link").write_text(uri)
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id="my-study"
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
         context=ContextServer(matrix=Mock(), resolver=Mock()),
@@ -120,9 +108,7 @@ def test_save_uri(tmp_path: Path):
     resolver = Mock()
     resolver.resolve.return_value = "Lazy"
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id=""
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
     context = ContextServer(matrix=Mock(), resolver=resolver)
     node = MockLazyNode(context=context, config=config)
 
@@ -143,9 +129,7 @@ def test_save_txt(tmp_path: Path):
     resolver = Mock()
     resolver.resolve.return_value = None
 
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, version=-1, study_id=""
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
     context = ContextServer(matrix=Mock(), resolver=resolver)
     node = MockLazyNode(context=context, config=config)
 

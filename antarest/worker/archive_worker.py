@@ -59,11 +59,7 @@ class ArchiveWorker(AbstractWorker):
                 src,
                 remove_source_zip=archive_args.remove_src,
             )
-            stopwatch.log_elapsed(
-                lambda t: logger.info(
-                    f"Successfully extracted {src} into {dest} in {t}s"
-                )
-            )
+            stopwatch.log_elapsed(lambda t: logger.info(f"Successfully extracted {src} into {dest} in {t}s"))
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(

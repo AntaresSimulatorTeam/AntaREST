@@ -148,40 +148,28 @@ def test_validate_section():
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=Path(), path=Path(), version=-1, study_id="id"
-        ),
+        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"wrong-section": {}},
     )
-    assert node.check_errors(data=data) == [
-        "section wrong-section not in IniFileNode"
-    ]
+    assert node.check_errors(data=data) == ["section wrong-section not in IniFileNode"]
     with pytest.raises(ValueError):
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=Path(), path=Path(), version=-1, study_id="id"
-        ),
+        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"section": {"wrong-params": 42}},
     )
-    assert node.check_errors(data=data) == [
-        "param wrong-params of section section not in IniFileNode"
-    ]
+    assert node.check_errors(data=data) == ["param wrong-params of section section not in IniFileNode"]
     with pytest.raises(ValueError):
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(
-            study_path=Path(), path=Path(), version=-1, study_id="id"
-        ),
+        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"section": {"params": str}},
     )
-    assert node.check_errors(data=data) == [
-        "param params of section section in IniFileNode bad type"
-    ]
+    assert node.check_errors(data=data) == ["param params of section section in IniFileNode bad type"]
 
 
 @pytest.mark.unit_test

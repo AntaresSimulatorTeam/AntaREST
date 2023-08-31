@@ -73,11 +73,7 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         if not isinstance(other, StudyAdditionalData):
             return False
-        return bool(
-            other.author == self.author
-            and other.horizon == self.horizon
-            and other.patch == self.patch
-        )
+        return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
 
 @dataclass
@@ -103,9 +99,7 @@ class Study(Base):  # type: ignore
     last_access = Column(DateTime)
     path = Column(String())
     folder = Column(String, nullable=True)
-    parent_id = Column(
-        String(36), ForeignKey("study.id", name="fk_study_study_id")
-    )
+    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"))
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     archived = Column(Boolean(), default=False)

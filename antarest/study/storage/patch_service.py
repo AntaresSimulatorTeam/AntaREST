@@ -14,9 +14,7 @@ class PatchService:
     def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
-    def get(
-        self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False
-    ) -> Patch:
+    def get(self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False) -> Patch:
         if not get_from_file:
             # the `study.additional_data.patch` field is optional
             if patch_data := study.additional_data.patch:
@@ -51,9 +49,7 @@ class PatchService:
 
     def save(self, study: Union[RawStudy, VariantStudy], patch: Patch) -> None:
         if self.repository:
-            study.additional_data = (
-                study.additional_data or StudyAdditionalData()
-            )
+            study.additional_data = study.additional_data or StudyAdditionalData()
             study.additional_data.patch = patch.json()
             self.repository.save(study)
 

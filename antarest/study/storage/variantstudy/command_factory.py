@@ -160,9 +160,7 @@ class CommandFactory:
                 command_context=self.command_context,
             )
         elif action == CommandName.UPDATE_SCENARIO_BUILDER.value:
-            return UpdateScenarioBuilder(
-                **args, command_context=self.command_context
-            )
+            return UpdateScenarioBuilder(**args, command_context=self.command_context)
         raise NotImplementedError()
 
     def to_icommand(self, command_dto: CommandDTO) -> List[ICommand]:
@@ -173,9 +171,7 @@ class CommandFactory:
         elif isinstance(args, list):
             output_list = []
             for argument in args:
-                output_list.append(
-                    self._to_single_icommand(command_dto.action, argument)
-                )
+                output_list.append(self._to_single_icommand(command_dto.action, argument))
             return output_list
 
         raise NotImplementedError()

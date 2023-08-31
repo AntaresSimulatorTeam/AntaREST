@@ -14,13 +14,9 @@ class UpdateComments(ICommand):
     comments: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_COMMENTS, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_COMMENTS, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (
             CommandOutput(
                 status=True,
@@ -30,9 +26,7 @@ class UpdateComments(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        replace_comment_data: JSON = {
-            "settings": {"comments": self.comments.encode("utf-8")}
-        }
+        replace_comment_data: JSON = {"settings": {"comments": self.comments.encode("utf-8")}}
 
         study_data.tree.save(replace_comment_data)
 

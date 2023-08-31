@@ -21,15 +21,9 @@ class FileStudyTree(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            "Desktop": Desktop(
-                self.context, self.config.next_file("Desktop.ini")
-            ),
-            "study": StudyAntares(
-                self.context, self.config.next_file("study.antares")
-            ),
-            "settings": Settings(
-                self.context, self.config.next_file("settings")
-            ),
+            "Desktop": Desktop(self.context, self.config.next_file("Desktop.ini")),
+            "study": StudyAntares(self.context, self.config.next_file("study.antares")),
+            "settings": Settings(self.context, self.config.next_file("settings")),
             "layers": Layers(self.context, self.config.next_file("layers")),
             "logs": Logs(self.context, self.config.next_file("logs")),
             "input": Input(self.context, self.config.next_file("input")),

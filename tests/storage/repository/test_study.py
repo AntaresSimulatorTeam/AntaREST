@@ -90,9 +90,7 @@ def test_cyclelife():
 
 def test_study_inheritance():
     engine = create_engine("sqlite:///:memory:", echo=True)
-    sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    )
+    sess = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")

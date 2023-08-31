@@ -19,12 +19,8 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
         ws_manager = ConnectionManager()
 
         user = JWTUser(id=1, type="user", impersonator=1, groups=[])
-        subscribe_message = WebsocketMessage(
-            action=WebsocketMessageAction.SUBSCRIBE, payload="foo"
-        )
-        unsubscribe_message = WebsocketMessage(
-            action=WebsocketMessageAction.UNSUBSCRIBE, payload="foo"
-        )
+        subscribe_message = WebsocketMessage(action=WebsocketMessageAction.SUBSCRIBE, payload="foo")
+        unsubscribe_message = WebsocketMessage(action=WebsocketMessageAction.UNSUBSCRIBE, payload="foo")
         mock_connection = AsyncMock(spec=WebSocket)
         await ws_manager.connect(mock_connection, user)
         assert len(ws_manager.active_connections) == 1
@@ -41,9 +37,7 @@ class ConnectionManagerTest(IsolatedAsyncioTestCase):
         # the event manager must not send events if the channel does not correspond to any subscriber channel
         await ws_manager.broadcast("msg3", PermissionInfo(), channel="bar")
 
-        mock_connection.send_text.assert_has_calls(
-            [call("msg1"), call("msg2")]
-        )
+        mock_connection.send_text.assert_has_calls([call("msg1"), call("msg2")])
 
         ws_manager.process_message(unsubscribe_message.json(), mock_connection)
         assert len(connections.channel_subscriptions) == 0

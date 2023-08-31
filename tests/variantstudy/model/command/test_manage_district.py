@@ -13,9 +13,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_manage_district(
-    empty_study: FileStudy, command_context: CommandContext
-):
+def test_manage_district(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
@@ -57,9 +55,7 @@ def test_manage_district(
         study_data=empty_study,
     )
     assert output_d1.status
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("two added zone")
     assert set(set_config["+"]) == {area1_id, area2_id}
     assert set_config["output"]
@@ -76,9 +72,7 @@ def test_manage_district(
         study_data=empty_study,
     )
     assert output_d2.status
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
@@ -93,9 +87,7 @@ def test_manage_district(
     output_ud2 = update_district2_command.apply(study_data=empty_study)
     assert output_ud2.status
 
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
     assert set_config["+"] == [area2_id]
     assert set_config["apply-filter"] == "remove-all"
@@ -111,9 +103,7 @@ def test_manage_district(
     )
     assert output_d3.status
     assert output_d2.status
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("empty district without output")
     assert not set_config["output"]
 
@@ -128,17 +118,13 @@ def test_manage_district(
     remove_district3_command: ICommand = RemoveDistrict(
         id="empty district without output", command_context=command_context
     )
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 4
     remove_output_d3 = remove_district3_command.apply(
         study_data=empty_study,
     )
     assert remove_output_d3.status
-    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(
-        empty_study.config.study_path / "input/areas/sets.ini"
-    )
+    sets_config = MultipleSameKeysIniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 3
 
 
@@ -155,9 +141,7 @@ def test_match(command_context: CommandContext):
         filter_items=["a", "b"],
         command_context=command_context,
     )
-    other_not_match = CreateDistrict(
-        name="foo2", command_context=command_context
-    )
+    other_not_match = CreateDistrict(name="foo2", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
     assert base.match(other_match, True)
     assert not base.match(other_not_match)
@@ -183,9 +167,7 @@ def test_revert(command_context: CommandContext):
         filter_items=["a", "b"],
         command_context=command_context,
     )
-    assert CommandReverter().revert(base, [], None) == [
-        RemoveDistrict(id="foo", command_context=command_context)
-    ]
+    assert CommandReverter().revert(base, [], None) == [RemoveDistrict(id="foo", command_context=command_context)]
 
 
 def test_create_diff(command_context: CommandContext):

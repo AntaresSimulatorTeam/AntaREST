@@ -28,9 +28,7 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(
-    tmp_path: Path, command_factory: CommandFactory
-) -> VariantStudyService:
+def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> VariantStudyService:
     engine = create_engine(
         "sqlite:///:memory:",
         echo=True,
@@ -49,13 +47,7 @@ def test_commands_service(
         task_service=Mock(),
         command_factory=command_factory,
         study_factory=Mock(),
-        config=Config(
-            storage=StorageConfig(
-                workspaces={
-                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)
-                }
-            )
-        ),
+        config=Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)})),
         repository=repository,
         event_bus=Mock(),
         patch_service=Mock(),
@@ -88,20 +80,14 @@ def test_commands_service(
         assert len(commands) == 2
 
         # Append multiple commands
-        command_3 = CommandDTO(
-            action="create_area", args={"area_name": "Maybe"}
-        )
-        command_4 = CommandDTO(
-            action="create_link", args={"area1": "No", "area2": "Yes"}
-        )
+        command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"})
+        command_4 = CommandDTO(action="create_link", args={"area1": "No", "area2": "Yes"})
         service.append_commands(saved_id, [command_3, command_4], SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 4
 
         # Get command
-        assert commands[0] == service.get_command(
-            saved_id, commands[0].id, SADMIN
-        )
+        assert commands[0] == service.get_command(saved_id, commands[0].id, SADMIN)
 
         # Remove command
         service.remove_command(saved_id, commands[2].id, SADMIN)
@@ -136,9 +122,7 @@ def test_commands_service(
         # Generate
         service._generate_snapshot = Mock()
         service._read_additional_data_from_files = Mock()
-        service._read_additional_data_from_files.return_value = (
-            StudyAdditionalData()
-        )
+        service._read_additional_data_from_files.return_value = StudyAdditionalData()
         expected_result = GenerationResultInfoDTO(success=True, details=[])
         service._generate_snapshot.return_value = expected_result
         results = service._generate(saved_id, SADMIN, False)
@@ -146,9 +130,7 @@ def test_commands_service(
         assert study.snapshot.id == study.id
 
 
-def test_smart_generation(
-    tmp_path: Path, command_factory: CommandFactory
-) -> None:
+def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
         echo=True,
@@ -167,13 +149,7 @@ def test_smart_generation(
         task_service=Mock(),
         command_factory=command_factory,
         study_factory=Mock(),
-        config=Config(
-            storage=StorageConfig(
-                workspaces={
-                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)
-                }
-            )
-        ),
+        config=Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)})),
         repository=repository,
         event_bus=Mock(),
         patch_service=Mock(),
@@ -210,20 +186,9 @@ def test_smart_generation(
         )
         repository.save(origin_study)
 
-        variant_id = service.create_variant_study(
-            origin_id, "my variant", SADMIN
-        )
-        assert (
-            service._get_variant_study(variant_id, SADMIN).folder
-            == "some_place"
-        )
-        unmanaged_user_config_path = (
-            tmp_path
-            / variant_id
-            / SNAPSHOT_RELATIVE_PATH
-            / "user"
-            / "some_unmanaged_config"
-        )
+        variant_id = service.create_variant_study(origin_id, "my variant", SADMIN)
+        assert service._get_variant_study(variant_id, SADMIN).folder == "some_place"
+        unmanaged_user_config_path = tmp_path / variant_id / SNAPSHOT_RELATIVE_PATH / "user" / "some_unmanaged_config"
         assert not unmanaged_user_config_path.exists()
 
         service.append_command(
@@ -232,34 +197,21 @@ def test_smart_generation(
             SADMIN,
         )
         service._read_additional_data_from_files = Mock()
-        service._read_additional_data_from_files.return_value = (
-            StudyAdditionalData()
-        )
+        service._read_additional_data_from_files.return_value = StudyAdditionalData()
         service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with(
-            [ANY], ANY, ANY, notifier=ANY
-        )
+        service.generator.generate.assert_called_with([ANY], ANY, ANY, notifier=ANY)
 
         service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with(
-            [], ANY, ANY, notifier=ANY
-        )
+        service.generator.generate.assert_called_with([], ANY, ANY, notifier=ANY)
 
         service.append_command(
             variant_id,
             CommandDTO(action="create_area", args={"area_name": "b"}),
             SADMIN,
         )
-        assert (
-            service._get_variant_study(
-                variant_id, SADMIN
-            ).snapshot.last_executed_command
-            is not None
-        )
+        assert service._get_variant_study(variant_id, SADMIN).snapshot.last_executed_command is not None
         service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with(
-            [ANY], ANY, ANY, notifier=ANY
-        )
+        service.generator.generate.assert_called_with([ANY], ANY, ANY, notifier=ANY)
 
         service.replace_commands(
             variant_id,
@@ -273,7 +225,5 @@ def test_smart_generation(
         assert unmanaged_user_config_path.exists()
         unmanaged_user_config_path.write_text("hello")
         service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with(
-            [ANY, ANY], ANY, ANY, notifier=ANY
-        )
+        service.generator.generate.assert_called_with([ANY, ANY], ANY, ANY, notifier=ANY)
         assert unmanaged_user_config_path.read_text() == "hello"

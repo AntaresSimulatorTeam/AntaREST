@@ -10,20 +10,10 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.se
 class InputHydro(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "allocation": InputHydroAllocation(
-                self.context, self.config.next_file("allocation")
-            ),
-            "common": InputHydroCommon(
-                self.context, self.config.next_file("common")
-            ),
-            "prepro": InputHydroPrepro(
-                self.context, self.config.next_file("prepro")
-            ),
-            "series": InputHydroSeries(
-                self.context, self.config.next_file("series")
-            ),
-            "hydro": InputHydroIni(
-                self.context, self.config.next_file("hydro.ini")
-            ),
+            "allocation": InputHydroAllocation(self.context, self.config.next_file("allocation")),
+            "common": InputHydroCommon(self.context, self.config.next_file("common")),
+            "prepro": InputHydroPrepro(self.context, self.config.next_file("prepro")),
+            "series": InputHydroSeries(self.context, self.config.next_file("series")),
+            "hydro": InputHydroIni(self.context, self.config.next_file("hydro.ini")),
         }
         return children

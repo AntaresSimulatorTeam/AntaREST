@@ -25,9 +25,7 @@ class AllocationFormFields(FormFieldsBaseModel):
     allocation: List[AllocationField]
 
     @root_validator
-    def check_allocation(
-        cls, values: Dict[str, List[AllocationField]]
-    ) -> Dict[str, List[AllocationField]]:
+    def check_allocation(cls, values: Dict[str, List[AllocationField]]) -> Dict[str, List[AllocationField]]:
         allocation = values.get("allocation", [])
 
         if not allocation:
@@ -38,14 +36,10 @@ class AllocationFormFields(FormFieldsBaseModel):
 
         for a in allocation:
             if a.coefficient < 0:
-                raise ValueError(
-                    "allocation must not contain negative coefficients"
-                )
+                raise ValueError("allocation must not contain negative coefficients")
 
             if numpy.isnan(a.coefficient):
-                raise ValueError(
-                    "allocation must not contain NaN coefficients"
-                )
+                raise ValueError("allocation must not contain NaN coefficients")
 
         if sum(a.coefficient for a in allocation) <= 0:
             raise ValueError("sum of allocation coefficients must be positive")
@@ -91,17 +85,11 @@ class AllocationMatrix(FormFieldsBaseModel):
         if array.shape != (rows, cols):
             raise ValueError("allocation matrix must have square shape")
         if np.any(array < 0):
-            raise ValueError(
-                "allocation matrix must not contain negative coefficients"
-            )
+            raise ValueError("allocation matrix must not contain negative coefficients")
         if np.any(np.isnan(array)):
-            raise ValueError(
-                "allocation matrix must not contain NaN coefficients"
-            )
+            raise ValueError("allocation matrix must not contain NaN coefficients")
         if np.all(array == 0):
-            raise ValueError(
-                "allocation matrix must not contain only null values"
-            )
+            raise ValueError("allocation matrix must not contain only null values")
 
         return data
 
@@ -114,9 +102,7 @@ class AllocationManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_allocation_data(
-        self, study: Study, area_id: str
-    ) -> Dict[str, List[AllocationField]]:
+    def get_allocation_data(self, study: Study, area_id: str) -> Dict[str, List[AllocationField]]:
         """
         Get hydraulic allocation data.
 
@@ -133,9 +119,7 @@ class AllocationManager:
         # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        allocation_data = file_study.tree.get(
-            f"input/hydro/allocation/{area_id}".split("/"), depth=2
-        )
+        allocation_data = file_study.tree.get(f"input/hydro/allocation/{area_id}".split("/"), depth=2)
 
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
@@ -163,11 +147,7 @@ class AllocationManager:
         areas_ids = {area.id for area in all_areas}
         allocations = self.get_allocation_data(study, area_id)
 
-        filtered_allocations = {
-            area: value
-            for area, value in allocations.items()
-            if area in areas_ids
-        }
+        filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
 
         return AllocationFormFields.construct(
             allocation=[
@@ -203,15 +183,9 @@ class AllocationManager:
             # sort for deterministic error message and testing
             raise AreaNotFound(*sorted(invalid_ids))
 
-        filtered_allocations = [
-            f
-            for f in data.allocation
-            if f.coefficient > 0 and f.area_id in areas_ids
-        ]
+        filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
 
-        command_context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",
             data={f.area_id: f.coefficient for f in filtered_allocations},
@@ -220,9 +194,7 @@ class AllocationManager:
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         updated_allocations = self.get_allocation_data(study, area_id)
 
@@ -233,9 +205,7 @@ class AllocationManager:
             ]
         )
 
-    def get_allocation_matrix(
-        self, study: Study, all_areas: List[AreaInfoDTO]
-    ) -> AllocationMatrix:
+    def get_allocation_matrix(self, study: Study, all_areas: List[AreaInfoDTO]) -> AllocationMatrix:
         """
         Get the hydraulic allocation matrix for all areas in the study.
 
@@ -251,9 +221,7 @@ class AllocationManager:
         """
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        allocation_cfg = file_study.tree.get(
-            "input/hydro/allocation/*".split("/"), depth=2
-        )
+        allocation_cfg = file_study.tree.get("input/hydro/allocation/*".split("/"), depth=2)
 
         if not allocation_cfg:
             areas_ids = {area.id for area in all_areas}
@@ -270,6 +238,4 @@ class AllocationManager:
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
 
-        return AllocationMatrix.construct(
-            index=rows, columns=columns, data=array.tolist()
-        )
+        return AllocationMatrix.construct(index=rows, columns=columns, data=array.tolist())

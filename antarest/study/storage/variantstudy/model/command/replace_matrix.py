@@ -19,18 +19,12 @@ class ReplaceMatrix(ICommand):
     target: str
     matrix: Union[List[List[MatrixData]], str]
 
-    _validate_matrix = validator(
-        "matrix", each_item=True, always=True, allow_reuse=True
-    )(validate_matrix)
+    _validate_matrix = validator("matrix", each_item=True, always=True, allow_reuse=True)(validate_matrix)
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REPLACE_MATRIX, version=1, **data
-        )
+        super().__init__(command_name=CommandName.REPLACE_MATRIX, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (
             CommandOutput(
                 status=True,
@@ -80,9 +74,7 @@ class ReplaceMatrix(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, ReplaceMatrix):

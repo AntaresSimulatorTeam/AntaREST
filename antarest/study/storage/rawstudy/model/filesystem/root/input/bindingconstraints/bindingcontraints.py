@@ -9,9 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstrai
 class BindingConstraints(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            binding.id: InputSeriesMatrix(
-                self.context, self.config.next_file(f"{binding.id}.txt")
-            )
+            binding.id: InputSeriesMatrix(self.context, self.config.next_file(f"{binding.id}.txt"))
             # todo get the freq of binding to set the default empty matrix
             for binding in self.config.bindings
         }

@@ -27,22 +27,16 @@ class CreateDistrict(ICommand):
     comments: str = ""
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_DISTRICT, version=1, **data
-        )
+        super().__init__(command_name=CommandName.CREATE_DISTRICT, version=1, **data)
 
     @validator("name")
     def validate_district_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
-            raise ValueError(
-                "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
-            )
+            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.sets:
             return (
@@ -76,9 +70,7 @@ class CreateDistrict(ICommand):
         study_data.tree.save(
             {
                 "caption": self.name,
-                "apply-filter": (
-                    self.base_filter or DistrictBaseFilter.remove_all
-                ).value,
+                "apply-filter": (self.base_filter or DistrictBaseFilter.remove_all).value,
                 item_key: self.filter_items or [],
                 "output": study_data.config.sets[district_id].output,
                 "comments": self.comments,
@@ -93,9 +85,7 @@ class CreateDistrict(ICommand):
             action=CommandName.CREATE_DISTRICT.value,
             args={
                 "name": self.name,
-                "base_filter": self.base_filter.value
-                if self.base_filter
-                else None,
+                "base_filter": self.base_filter.value if self.base_filter else None,
                 "filter_items": self.filter_items,
                 "output": self.output,
                 "comments": self.comments,
@@ -103,9 +93,7 @@ class CreateDistrict(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateDistrict):
@@ -134,9 +122,7 @@ class CreateDistrict(ICommand):
                 target=f"input/areas/sets/{district_id}",
                 data={
                     "caption": other.name,
-                    "apply-filter": (
-                        other.base_filter or DistrictBaseFilter.remove_all
-                    ).value,
+                    "apply-filter": (other.base_filter or DistrictBaseFilter.remove_all).value,
                     item_key: other.filter_items or [],
                     "output": other.output,
                     "comments": other.comments,

@@ -48,9 +48,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         self.config.path.write_bytes(data)
 
-    def check_errors(
-        self, data: str, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         if not self.config.path.exists():
             msg = f"{self.config.path} not exist"
             if raising:

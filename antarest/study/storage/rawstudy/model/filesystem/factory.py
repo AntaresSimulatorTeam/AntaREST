@@ -47,9 +47,7 @@ class StudyFactory:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfigDTO.parse_obj(
-                    from_cache
-                ).to_build_config()
+                config = FileStudyTreeConfigDTO.parse_obj(from_cache).to_build_config()
                 return FileStudy(config, FileStudyTree(self.context, config))
         start_time = time.time()
         config = build(path, study_id, output_path)

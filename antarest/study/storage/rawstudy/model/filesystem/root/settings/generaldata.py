@@ -131,7 +131,6 @@ class GeneralData(IniFileNode):
         if config.version >= 840:
             del optimization["include-split-exported-mps"]
         if config.version >= 850:
-            
             adequacy = types["adequacy patch"]
             adequacy["price-taking-order"] = str
             adequacy["include-hurdle-cost-csr"] = bool
@@ -139,7 +138,6 @@ class GeneralData(IniFileNode):
             adequacy["threshold-initiate-curtailment-sharing-rule"] = float
             adequacy["threshold-display-local-matching-rule-violations"] = float
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
-            
 
         IniFileNode.__init__(
             self,

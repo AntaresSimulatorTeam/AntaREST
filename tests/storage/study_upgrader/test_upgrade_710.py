@@ -14,8 +14,6 @@ def test_nominal_case(study_assets: StudyAssets):
     # compare generaldata.ini
     actual_path = study_assets.study_dir.joinpath("settings/generaldata.ini")
     actual = IniReader().read(actual_path)
-    expected_path = study_assets.expected_dir.joinpath(
-        "settings/generaldata.ini"
-    )
+    expected_path = study_assets.expected_dir.joinpath("settings/generaldata.ini")
     expected = IniReader().read(expected_path)
     assert actual == expected

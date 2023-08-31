@@ -49,9 +49,7 @@ def test_ldap():
     repo.save.side_effect = lambda x: x
     group_repo = Mock()
     role_repo = Mock()
-    ldap = LdapService(
-        config=config, users=repo, groups=group_repo, roles=role_repo
-    )
+    ldap = LdapService(config=config, users=repo, groups=group_repo, roles=role_repo)
 
     # Start server
     httpd = HTTPServer(("localhost", 8869), MockServerHandler)
@@ -60,9 +58,7 @@ def test_ldap():
 
     role_repo.get_all_by_user.return_value = [Role(group_id="groupA")]
     group_repo.save.side_effect = lambda x: x
-    group_repo.get.side_effect = (
-        lambda x: Group(id="D", name="groupD") if x == "D" else None
-    )
+    group_repo.get.side_effect = lambda x: Group(id="D", name="groupD") if x == "D" else None
     role_repo.save.side_effect = lambda x: x
 
     res = ldap.login(name="extid", password="pwd")

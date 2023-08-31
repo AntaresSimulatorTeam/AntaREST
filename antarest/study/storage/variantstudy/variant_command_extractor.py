@@ -17,37 +17,25 @@ logger = logging.getLogger(__name__)
 
 
 class VariantCommandsExtractor:
-    def __init__(
-        self, matrix_service: ISimpleMatrixService, patch_service: PatchService
-    ):
+    def __init__(self, matrix_service: ISimpleMatrixService, patch_service: PatchService):
         self.matrix_service = matrix_service
-        self.generator_matrix_constants = GeneratorMatrixConstants(
-            self.matrix_service
-        )
-        self.command_extractor = CommandExtractor(
-            self.matrix_service, patch_service=patch_service
-        )
+        self.generator_matrix_constants = GeneratorMatrixConstants(self.matrix_service)
+        self.command_extractor = CommandExtractor(self.matrix_service, patch_service=patch_service)
 
     def extract(self, study: FileStudy) -> List[CommandDTO]:
         stopwatch = StopWatch()
         study_tree = study.tree
         study_config = study.config
         study_commands: List[ICommand] = [
-            self.command_extractor.generate_update_config(
-                study_tree, ["settings", "generaldata"]
-            ),
+            self.command_extractor.generate_update_config(study_tree, ["settings", "generaldata"]),
             self.command_extractor.generate_update_config(
                 study_tree,
                 ["settings", "scenariobuilder"],
             ),
-            self.command_extractor.generate_update_config(
-                study_tree, ["layers", "layers"]
-            ),
+            self.command_extractor.generate_update_config(study_tree, ["layers", "layers"]),
         ]
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"General command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"General command extraction done in {x}s"))
 
         all_links_commands: List[ICommand] = []
         for area_id in study_config.areas:
@@ -76,28 +64,16 @@ class VariantCommandsExtractor:
             )
         )
         for set_id in study_config.sets:
-            study_commands += self.command_extractor.extract_district(
-                study, set_id
-            )
+            study_commands += self.command_extractor.extract_district(study, set_id)
 
         # binding constraints
-        binding_config = study_tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        binding_config = study_tree.get(["input", "bindingconstraints", "bindingconstraints"])
         for binding_id, binding_data in binding_config.items():
-            study_commands += (
-                self.command_extractor.extract_binding_constraint(
-                    study, binding_id, binding_data
-                )
-            )
+            study_commands += self.command_extractor.extract_binding_constraint(study, binding_id, binding_data)
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Binding command extraction done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Binding command extraction done in {x}s"))
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Command extraction done in {x}s"), True
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Command extraction done in {x}s"), True)
 
         study_commands += self.command_extractor.extract_comments(study=study)
         return [command.to_dto() for command in study_commands]
@@ -118,15 +94,11 @@ class VariantCommandsExtractor:
         base_commands: List[ICommand] = []
         for command in base:
             base_commands += command_factory.to_icommand(command)
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Base commands parsed in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Base commands parsed in {x}s"))
         variant_commands: List[ICommand] = []
         for command in variant:
             variant_commands += command_factory.to_icommand(command)
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Variant commands parsed in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Variant commands parsed in {x}s"))
 
         logger.info("Computing commands diff")
         added_commands: List[Tuple[int, ICommand]] = []
@@ -139,28 +111,19 @@ class VariantCommandsExtractor:
             for base_command in base_commands:
                 if variant_command.match(base_command):
                     if not variant_command.match(base_command, True):
-                        modified_commands.append(
-                            (order, variant_command, base_command)
-                        )
+                        modified_commands.append((order, variant_command, base_command))
                     found = True
                     break
             if not found:
                 added_commands.append((order, variant_command))
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"First diff pass done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"First diff pass done in {x}s"))
         logger.info(f"Found {len(added_commands)} added commands")
         logger.info(f"Found {len(modified_commands)} modified commands")
         for index, base_command in enumerate(base_commands):
-            found = any(
-                base_command.match(variant_command)
-                for variant_command in variant_commands
-            )
+            found = any(base_command.match(variant_command) for variant_command in variant_commands)
             if not found:
                 missing_commands.append((base_command, index))
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Second diff pass done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Second diff pass done in {x}s"))
         logger.info(f"Found {len(missing_commands)} missing commands")
 
         first_commands: List[Tuple[int, ICommand]] = []
@@ -174,8 +137,7 @@ class VariantCommandsExtractor:
             elif (
                 command_obj.command_name == CommandName.REMOVE_LINK
                 or command_obj.command_name == CommandName.REMOVE_CLUSTER
-                or command_obj.command_name
-                == CommandName.REMOVE_RENEWABLES_CLUSTER
+                or command_obj.command_name == CommandName.REMOVE_RENEWABLES_CLUSTER
             ):
                 command_list = first_commands
                 priority = 1
@@ -191,15 +153,13 @@ class VariantCommandsExtractor:
                 priority = 3
             elif (
                 command_obj.command_name == CommandName.CREATE_CLUSTER
-                or command_obj.command_name
-                == CommandName.CREATE_RENEWABLES_CLUSTER
+                or command_obj.command_name == CommandName.CREATE_RENEWABLES_CLUSTER
                 or command_obj.command_name == CommandName.CREATE_LINK
             ):
                 command_list = last_commands
                 priority = 2
             elif (
-                command_obj.command_name
-                == CommandName.CREATE_BINDING_CONSTRAINT
+                command_obj.command_name == CommandName.CREATE_BINDING_CONSTRAINT
                 or command_obj.command_name == CommandName.CREATE_DISTRICT
             ):
                 command_list = last_commands
@@ -220,22 +180,17 @@ class VariantCommandsExtractor:
                 ]
             )
         for order, variant_command, base_command in modified_commands:
-            logger.info(
-                f"Generating diff command for {variant_command.match_signature()}"
-            )
-            first_commands += [
-                (order, command)
-                for command in base_command.create_diff(variant_command)
-            ]
+            logger.info(f"Generating diff command for {variant_command.match_signature()}")
+            first_commands += [(order, command) for command in base_command.create_diff(variant_command)]
         for ordered_command in added_commands:
             first_commands.append(ordered_command)
 
         first_commands.sort(key=lambda x: x[0])
         last_commands.sort(key=lambda x: x[0])
 
-        diff_commands = [
-            ordered_command[1] for ordered_command in first_commands
-        ] + [ordered_command[1] for ordered_command in last_commands]
+        diff_commands = [ordered_command[1] for ordered_command in first_commands] + [
+            ordered_command[1] for ordered_command in last_commands
+        ]
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Diff commands generation done in {x}s"),
             since_start=True,

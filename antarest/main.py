@@ -208,13 +208,9 @@ class URLRewriterMiddleware(BaseHTTPMiddleware):
         dispatch = self.dispatch if dispatch is None else dispatch
         super().__init__(app, dispatch)
         self.root_path = f"/{root_path}" if root_path else ""
-        self.known_prefixes = {
-            re.findall(r"/(?:(?!/).)*", p)[0] for p in route_paths if p != "/"
-        }
+        self.known_prefixes = {re.findall(r"/(?:(?!/).)*", p)[0] for p in route_paths if p != "/"}
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Any:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
         """
         Intercepts the incoming request and rewrites the URL path if necessary.
         Passes the modified or original request to the next middleware or endpoint handler.
@@ -264,9 +260,7 @@ def fastapi_app(
 
         @application.get("/", include_in_schema=False)
         def home(request: Request) -> Any:
-            return templates.TemplateResponse(
-                "index.html", {"request": request}
-            )
+            return templates.TemplateResponse("index.html", {"request": request})
 
     else:
         # noinspection PyUnusedLocal
@@ -280,11 +274,7 @@ def fastapi_app(
         from concurrent.futures import ThreadPoolExecutor
 
         loop = asyncio.get_running_loop()
-        loop.set_default_executor(
-            ThreadPoolExecutor(
-                max_workers=config.server.worker_threadpool_size
-            )
-        )
+        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -330,9 +320,7 @@ def fastapi_app(
 
     # noinspection PyUnusedLocal
     @application.exception_handler(RequestValidationError)
-    async def handle_validation_exception(
-        request: Request, exc: RequestValidationError
-    ) -> Any:
+    async def handle_validation_exception(request: Request, exc: RequestValidationError) -> Any:
         """
         Custom exception handler to return JSON response for `RequestValidationError`.
 
@@ -357,9 +345,7 @@ def fastapi_app(
 
     # noinspection PyUnusedLocal
     @application.exception_handler(pydantic.ValidationError)
-    def handle_validation_error(
-        request: Request, exc: pydantic.ValidationError
-    ) -> Any:
+    def handle_validation_error(request: Request, exc: pydantic.ValidationError) -> Any:
         """
         Custom exception handler to return JSON response for `ValidationError`.
 
@@ -409,9 +395,7 @@ def fastapi_app(
     application.add_middleware(
         RateLimitMiddleware,
         authenticate=auth_manager.create_auth_function(),
-        backend=RedisBackend(
-            config.redis.host, config.redis.port, 1, config.redis.password
-        )
+        backend=RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
         if config.redis is not None
         else MemoryBackend(),
         config=RATE_LIMIT_CONFIG,
@@ -431,24 +415,15 @@ def fastapi_app(
             route_paths=route_paths,
         )
 
-    if (
-        config.server.services
-        and Module.WATCHER.value in config.server.services
-    ):
+    if config.server.services and Module.WATCHER.value in config.server.services:
         watcher = cast(Watcher, services["watcher"])
         watcher.start()
 
-    if (
-        config.server.services
-        and Module.MATRIX_GC.value in config.server.services
-    ):
+    if config.server.services and Module.MATRIX_GC.value in config.server.services:
         matrix_gc = cast(MatrixGarbageCollector, services["matrix_gc"])
         matrix_gc.start()
 
-    if (
-        config.server.services
-        and Module.AUTO_ARCHIVER.value in config.server.services
-    ):
+    if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services:
         auto_archiver = cast(AutoArchiveService, services["auto_archiver"])
         auto_archiver.start()
 
@@ -458,21 +433,13 @@ def fastapi_app(
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
 # noinspection SpellCheckingInspection
-LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
-    
-    "[%(asctime)s] [%(process)s]"
-    " %(levelprefix)s"
-    "  %(message)s"
-    
-)
+LOGGING_CONFIG["formatters"]["default"]["fmt"] = "[%(asctime)s] [%(process)s] %(levelprefix)s  %(message)s"
 # noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
-    
     "[%(asctime)s] [%(process)s] [%(name)s]"
     " %(levelprefix)s"
-    " %(client_addr)s - \"%(request_line)s\""
+    ' %(client_addr)s - "%(request_line)s"'
     " %(status_code)s"
-    
 )
 
 

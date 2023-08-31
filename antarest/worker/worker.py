@@ -47,9 +47,7 @@ class _WorkerTaskEndedCallback:
         result = future.result()
         event = Event(
             type=EventType.WORKER_TASK_ENDED,
-            payload=WorkerTaskResult(
-                task_id=self._task_id, task_result=result
-            ),
+            payload=WorkerTaskResult(task_id=self._task_id, task_result=result),
             # Use `NONE` for internal events
             permissions=PermissionInfo(public_mode=PublicMode.NONE),
         )
@@ -92,9 +90,7 @@ class AbstractWorker(IService):
 
     def _loop(self) -> None:
         for task_type in self.accept:
-            self.event_bus.add_queue_consumer(
-                self._listen_for_tasks, task_type
-            )
+            self.event_bus.add_queue_consumer(self._listen_for_tasks, task_type)
 
         # All the work is actually performed by callbacks
         # on events.
@@ -113,11 +109,10 @@ class AbstractWorker(IService):
                 permissions=PermissionInfo(public_mode=PublicMode.NONE),
             )
         )
-        
+
         future = self.threadpool.submit(self._safe_execute_task, task_info)
         callback = _WorkerTaskEndedCallback(self.event_bus, task_info.task_id)
         future.add_done_callback(callback)
-        
 
     def _safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         try:

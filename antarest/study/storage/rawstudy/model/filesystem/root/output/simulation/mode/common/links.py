@@ -47,8 +47,6 @@ class OutputSimulationLinks(FolderNode):
         children: TREE = {}
 
         for area in self.config.area_names():
-            children[area] = _OutputSimulationModeMcAllLinksBis(
-                self.context, self.config, area, self.mc_all
-            )
+            children[area] = _OutputSimulationModeMcAllLinksBis(self.context, self.config, area, self.mc_all)
 
         return children

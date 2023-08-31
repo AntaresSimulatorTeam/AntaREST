@@ -93,15 +93,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
 
         if self.config.zip_path:
-            with zipfile.ZipFile(
-                self.config.zip_path, mode="r"
-            ) as zipped_folder:
-                inside_zip_path = self.config.path.relative_to(
-                    self.config.zip_path.with_suffix("")
-                ).as_posix()
-                with io.TextIOWrapper(
-                    zipped_folder.open(inside_zip_path)
-                ) as f:
+            with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
+                inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
+                with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
                     data = self.reader.read(f)
         else:
             data = self.reader.read(self.path)
@@ -215,8 +209,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 except KeyError:
                     raise IniFileNodeWarning(
                         self.config,
-                        f"Cannot delete key: Key '{key_name}'"
-                        f" not found in section [{section_name}]",
+                        f"Cannot delete key: Key '{key_name}' not found in section [{section_name}]",
                     ) from None
 
         self.writer.write(data, self.path)
@@ -235,9 +228,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                     raise ValueError(msg)
                 errors.append(msg)
             else:
-                self._validate_param(
-                    section, params, data[section], errors, raising
-                )
+                self._validate_param(section, params, data[section], errors, raising)
 
         return errors
 

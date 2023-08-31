@@ -135,9 +135,7 @@ def test_roles():
     with db():
         repo = RoleRepository()
 
-        a = Role(
-            type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
-        )
+        a = Role(type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group"))
 
         a = repo.save(a)
         assert a == repo.get(user=0, group="group")

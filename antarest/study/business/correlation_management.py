@@ -46,23 +46,19 @@ class CorrelationFormFields(FormFieldsBaseModel):
 
     # noinspection PyMethodParameters
     @validator("correlation")
-    def check_correlation(
-        cls, correlation: List[AreaCoefficientItem]
-    ) -> List[AreaCoefficientItem]:
+    def check_correlation(cls, correlation: List[AreaCoefficientItem]) -> List[AreaCoefficientItem]:
         if not correlation:
             raise ValueError("correlation must not be empty")
         counter = collections.Counter(field.area_id for field in correlation)
         if duplicates := {id_ for id_, count in counter.items() if count > 1}:
-            raise ValueError(
-                f"correlation must not contain duplicate area IDs: {duplicates}"
-            )
-        
+            raise ValueError(f"correlation must not contain duplicate area IDs: {duplicates}")
+
         array = np.array([a.coefficient for a in correlation], dtype=np.float64)
         if np.any((array < -100) | np.any(array > 100)):
             raise ValueError("percentage must be between -100 and 100")
         if np.any(np.isnan(array)):
             raise ValueError("correlation matrix must not contain NaN coefficients")
-        
+
         return correlation
 
 
@@ -82,9 +78,7 @@ class CorrelationMatrix(FormFieldsBaseModel):
 
     # noinspection PyMethodParameters
     @validator("data")
-    def validate_correlation_matrix(
-        cls, data: List[List[float]], values: Dict[str, List[str]]
-    ) -> List[List[float]]:
+    def validate_correlation_matrix(cls, data: List[List[float]], values: Dict[str, List[str]]) -> List[List[float]]:
         """
         Validates the correlation matrix by checking its shape and range of coefficients.
 
@@ -109,7 +103,6 @@ class CorrelationMatrix(FormFieldsBaseModel):
         rows = len(values.get("index", []))
         cols = len(values.get("columns", []))
 
-        
         if array.size == 0:
             raise ValueError("correlation matrix must not be empty")
         if array.shape != (rows, cols):
@@ -118,12 +111,9 @@ class CorrelationMatrix(FormFieldsBaseModel):
             raise ValueError("coefficients must be between -1 and 1")
         if np.any(np.isnan(array)):
             raise ValueError("correlation matrix must not contain NaN coefficients")
-        if (
-                array.shape[0] == array.shape[1]
-                and not np.array_equal(array, array.T)
-        ):
+        if array.shape[0] == array.shape[1] and not np.array_equal(array, array.T):
             raise ValueError("correlation matrix is not symmetric")
-        
+
         return data
 
     class Config:
@@ -208,17 +198,13 @@ class CorrelationManager:
         array: npt.NDArray[np.float64],
     ) -> None:
         correlation_cfg = _array_to_config(area_ids, array)
-        command_context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         command = UpdateConfig(
             target="/".join(self.url),
             data=correlation_cfg,
             command_context=command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def get_correlation_form_fields(
         self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
@@ -249,9 +235,7 @@ class CorrelationManager:
         current_area_coefficient = column[area_ids.index(area_id)]
         correlation_field.insert(
             0,
-            AreaCoefficientItem.construct(
-                area_id=area_id, coefficient=current_area_coefficient
-            ),
+            AreaCoefficientItem.construct(area_id=area_id, coefficient=current_area_coefficient),
         )
 
         return CorrelationFormFields.construct(correlation=correlation_field)
@@ -280,9 +264,7 @@ class CorrelationManager:
         """
         area_ids = [area.id for area in all_areas]
         correlation_values = collections.OrderedDict.fromkeys(area_ids, 0.0)
-        correlation_values.update(
-            {field.area_id: field.coefficient for field in data.correlation}
-        )
+        correlation_values.update({field.area_id: field.coefficient for field in data.correlation})
 
         if invalid_ids := set(correlation_values) - set(area_ids):
             # sort for deterministic error message and testing
@@ -298,11 +280,7 @@ class CorrelationManager:
 
         column = array[:, area_ids.index(area_id)] * 100
         return CorrelationFormFields.construct(
-            correlation=[
-                AreaCoefficientItem.construct(area_id=a, coefficient=c)
-                for a, c in zip(area_ids, column)
-                if c
-            ]
+            correlation=[AreaCoefficientItem.construct(area_id=a, coefficient=c) for a, c in zip(area_ids, column) if c]
         )
 
     def get_correlation_matrix(
@@ -321,19 +299,12 @@ class CorrelationManager:
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         area_ids = [area.id for area in all_areas]
-        columns = (
-            [a for a in area_ids if a in columns] if columns else area_ids
-        )
+        columns = [a for a in area_ids if a in columns] if columns else area_ids
         array = self._get_array(file_study, area_ids)
         # noinspection PyTypeChecker
-        data = [
-            [c for i, c in enumerate(row) if area_ids[i] in columns]
-            for row in array.tolist()
-        ]
+        data = [[c for i, c in enumerate(row) if area_ids[i] in columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(
-            index=area_ids, columns=columns, data=data
-        )
+        return CorrelationMatrix.construct(index=area_ids, columns=columns, data=data)
 
     def set_correlation_matrix(
         self,
@@ -369,11 +340,6 @@ class CorrelationManager:
         self._set_array(study, file_study, area_ids, array)
 
         # noinspection PyTypeChecker
-        data = [
-            [c for i, c in enumerate(row) if area_ids[i] in matrix.columns]
-            for row in array.tolist()
-        ]
+        data = [[c for i, c in enumerate(row) if area_ids[i] in matrix.columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(
-            index=area_ids, columns=matrix.columns, data=data
-        )
+        return CorrelationMatrix.construct(index=area_ids, columns=matrix.columns, data=data)

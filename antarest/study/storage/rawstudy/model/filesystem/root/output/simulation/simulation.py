@@ -31,38 +31,22 @@ class OutputSimulation(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            "about-the-study": OutputSimulationAbout(
-                self.context, self.config.next_file("about-the-study")
-            ),
-            "simulation": RawFileNode(
-                self.context, self.config.next_file("simulation.log")
-            ),
-            "info": OutputSimulationInfoAntaresOutput(
-                self.context, self.config.next_file("info.antares-output")
-            ),
-            "antares-out": RawFileNode(
-                self.context, self.config.next_file("antares-out.log")
-            ),
-            "antares-err": RawFileNode(
-                self.context, self.config.next_file("antares-err.log")
-            ),
+            "about-the-study": OutputSimulationAbout(self.context, self.config.next_file("about-the-study")),
+            "simulation": RawFileNode(self.context, self.config.next_file("simulation.log")),
+            "info": OutputSimulationInfoAntaresOutput(self.context, self.config.next_file("info.antares-output")),
+            "antares-out": RawFileNode(self.context, self.config.next_file("antares-out.log")),
+            "antares-err": RawFileNode(self.context, self.config.next_file("antares-err.log")),
         }
 
         if not self.simulation.error:
-            children["annualSystemCost"] = RawFileNode(
-                self.context, self.config.next_file("annualSystemCost.txt")
-            )
-            children["checkIntegrity"] = RawFileNode(
-                self.context, self.config.next_file("checkIntegrity.txt")
-            )
+            children["annualSystemCost"] = RawFileNode(self.context, self.config.next_file("annualSystemCost.txt"))
+            children["checkIntegrity"] = RawFileNode(self.context, self.config.next_file("checkIntegrity.txt"))
             children["simulation-comments"] = RawFileNode(
                 self.context, self.config.next_file("simulation-comments.txt")
             )
 
             if self.config.store_new_set:
-                children["ts-numbers"] = OutputSimulationTsNumbers(
-                    self.context, self.config.next_file("ts-numbers")
-                )
+                children["ts-numbers"] = OutputSimulationTsNumbers(self.context, self.config.next_file("ts-numbers"))
 
             if self.config.archive_input_series:
                 children["ts-generator"] = OutputSimulationTsGenerator(
@@ -85,11 +69,7 @@ class OutputSimulation(FolderNode):
 
             if self.simulation.xpansion:
                 children["lp"] = Lp(self.context, self.config.next_file("lp"))
-                children["expansion"] = Xpansion(
-                    self.context, self.config.next_file("expansion")
-                )
-                children["sensitivity"] = Sensitivity(
-                    self.context, self.config.next_file("sensitivity")
-                )
+                children["expansion"] = Xpansion(self.context, self.config.next_file("expansion"))
+                children["sensitivity"] = Sensitivity(self.context, self.config.next_file("sensitivity"))
 
         return children

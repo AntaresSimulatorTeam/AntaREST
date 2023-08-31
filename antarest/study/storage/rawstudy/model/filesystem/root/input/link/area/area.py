@@ -24,20 +24,13 @@ class InputLinkArea(FolderNode):
         ctx = self.context
         cfg = self.config
         if cfg.version < 820:
-            children = {
-                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"))
-                for link in cfg.get_links(self.area)
-            }
+            children = {link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt")) for link in cfg.get_links(self.area)}
         else:
             children = {
-                f"{link}_parameters": InputSeriesMatrix(
-                    ctx, cfg.next_file(f"{link}_parameters.txt")
-                )
+                f"{link}_parameters": InputSeriesMatrix(ctx, cfg.next_file(f"{link}_parameters.txt"))
                 for link in cfg.get_links(self.area)
             }
-            children["capacities"] = InputLinkAreaCapacities(
-                ctx, cfg.next_file("capacities"), area=self.area
-            )
+            children["capacities"] = InputLinkAreaCapacities(ctx, cfg.next_file("capacities"), area=self.area)
 
         children["properties"] = InputLinkAreaProperties(
             ctx,

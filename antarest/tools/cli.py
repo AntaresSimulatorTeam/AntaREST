@@ -83,9 +83,7 @@ def cli_apply_script(
         print("--study_id must be set")
         exit(1)
 
-    res = generate_study(
-        Path(input), study_id, output, host, auth_token, version
-    )
+    res = generate_study(Path(input), study_id, output, host, auth_token, version)
     print(res)
 
 
@@ -143,9 +141,7 @@ def cli_generate_script(input: str, output: str) -> None:
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
     default=NEW_DEFAULT_STUDY_VERSION,
 )
-def cli_generate_script_diff(
-    base: str, variant: str, output: str, version: str
-) -> None:
+def cli_generate_script_diff(base: str, variant: str, output: str, version: str) -> None:
     """Generate variant script commands from two variant script directories"""
     generate_diff(Path(base), Path(variant), Path(output), version)
 

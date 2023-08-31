@@ -16,9 +16,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_manage_binding_constraint(
-    empty_study: FileStudy, command_context: CommandContext
-):
+def test_manage_binding_constraint(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
 
     area1 = "area1"
@@ -74,15 +72,9 @@ def test_manage_binding_constraint(
     res2 = bind2_cmd.apply(empty_study)
     assert res2.status
 
-    assert (
-        study_path / "input" / "bindingconstraints" / "bd 1.txt.link"
-    ).exists()
-    assert (
-        study_path / "input" / "bindingconstraints" / "bd 2.txt.link"
-    ).exists()
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    assert (study_path / "input" / "bindingconstraints" / "bd 1.txt.link").exists()
+    assert (study_path / "input" / "bindingconstraints" / "bd 2.txt.link").exists()
+    bd_config = IniReader().read(study_path / "input" / "bindingconstraints" / "bindingconstraints.ini")
     assert bd_config.get("0") == {
         "name": "BD 1",
         "id": "bd 1",
@@ -112,9 +104,7 @@ def test_manage_binding_constraint(
     )
     res = bind_update.apply(empty_study)
     assert res.status
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    bd_config = IniReader().read(study_path / "input" / "bindingconstraints" / "bindingconstraints.ini")
     assert bd_config.get("0") == {
         "name": "BD 1",
         "id": "bd 1",
@@ -124,17 +114,11 @@ def test_manage_binding_constraint(
         "type": "weekly",
     }
 
-    remove_bind = RemoveBindingConstraint(
-        id="bd 1", command_context=command_context
-    )
+    remove_bind = RemoveBindingConstraint(id="bd 1", command_context=command_context)
     res3 = remove_bind.apply(empty_study)
     assert res3.status
-    assert not (
-        study_path / "input" / "bindingconstraints" / "bd 1.txt.link"
-    ).exists()
-    bd_config = IniReader().read(
-        study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    )
+    assert not (study_path / "input" / "bindingconstraints" / "bd 1.txt.link").exists()
+    bd_config = IniReader().read(study_path / "input" / "bindingconstraints" / "bindingconstraints.ini")
     assert len(bd_config) == 1
     assert bd_config.get("0") == {
         "name": "BD 2",
@@ -214,15 +198,9 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == ["matrix_id"]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(
-        id="foo", command_context=command_context
-    )
-    other_not_match = RemoveBindingConstraint(
-        id="bar", command_context=command_context
-    )
-    other_other = RemoveLink(
-        area1="id", area2="id2", command_context=command_context
-    )
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
+    other_not_match = RemoveBindingConstraint(id="bar", command_context=command_context)
+    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -330,9 +308,7 @@ def test_revert(command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     CommandReverter().revert(base, [], study)
-    mock_command_extractor.extract_binding_constraint.assert_called_with(
-        study, "foo"
-    )
+    mock_command_extractor.extract_binding_constraint.assert_called_with(study, "foo")
 
 
 def test_create_diff(command_context: CommandContext):
@@ -387,7 +363,5 @@ def test_create_diff(command_context: CommandContext):
     assert base.create_diff(other_match) == [other_match]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(
-        id="foo", command_context=command_context
-    )
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
     assert base.create_diff(other_match) == []

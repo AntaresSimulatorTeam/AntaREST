@@ -50,8 +50,6 @@ def build_matrix_service(
         )
 
     if application:
-        application.include_router(
-            create_matrix_api(service, file_transfer_manager, config)
-        )
+        application.include_router(create_matrix_api(service, file_transfer_manager, config))
 
     return service

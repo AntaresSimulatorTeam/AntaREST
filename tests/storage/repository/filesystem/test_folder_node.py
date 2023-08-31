@@ -73,9 +73,7 @@ def test_validate():
         "key=wrongChild not in ['input', 'output'] for TestMiddleNode"
     ]
 
-    assert (
-        tree.check_errors(data={"childA": {"input": 42, "output": 42}}) == []
-    )
+    assert tree.check_errors(data={"childA": {"input": 42, "output": 42}}) == []
 
 
 @pytest.mark.unit_test
@@ -126,9 +124,7 @@ def test_delete(tmp_path: Path):
     assert folder_node.exists()
     assert sub_folder.exists()
 
-    config = FileStudyTreeConfig(
-        study_path=tmp_path, path=folder_node, study_id=-1, version=-1
-    )
+    config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id=-1, version=-1)
     tree_node = TestMiddleNode(
         context=Mock(),
         config=config,
@@ -139,35 +135,25 @@ def test_delete(tmp_path: Path):
                 children={
                     "ini_node1": IniFileNode(
                         context=Mock(),
-                        config=config.next_file("sub_folder").next_file(
-                            "ini_node1.txt"
-                        ),
+                        config=config.next_file("sub_folder").next_file("ini_node1.txt"),
                         types={},
                     ),
                     "ini_node2": IniFileNode(
                         context=Mock(),
-                        config=config.next_file("sub_folder").next_file(
-                            "ini_node2.txt"
-                        ),
+                        config=config.next_file("sub_folder").next_file("ini_node2.txt"),
                         types={},
                     ),
                     "area_list": InputAreasList(
                         context=Mock(),
-                        config=config.next_file("sub_folder").next_file(
-                            "area_list.ini"
-                        ),
+                        config=config.next_file("sub_folder").next_file("area_list.ini"),
                     ),
                     "data_node": RawFileNode(
                         context=Mock(),
-                        config=config.next_file("sub_folder").next_file(
-                            "data.txt"
-                        ),
+                        config=config.next_file("sub_folder").next_file("data.txt"),
                     ),
                     "data_link_node": RawFileNode(
                         context=Mock(),
-                        config=config.next_file("sub_folder").next_file(
-                            "data_link.txt"
-                        ),
+                        config=config.next_file("sub_folder").next_file("data_link.txt"),
                     ),
                 },
             ),

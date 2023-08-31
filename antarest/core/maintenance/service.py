@@ -67,17 +67,13 @@ class MaintenanceService:
             if data_json is not None and "content" in data_json.keys():
                 return str(data_json["content"])
         except Exception as e:
-            logger.error(
-                f"Failed to retrieve cache key {cache_id}", exc_info=e
-            )
+            logger.error(f"Failed to retrieve cache key {cache_id}", exc_info=e)
 
         data: Optional[str] = None
         try:
             data = db_call()
         except Exception as e:
-            logger.error(
-                f"Failed to fetch {cache_id} from database", exc_info=e
-            )
+            logger.error(f"Failed to fetch {cache_id} from database", exc_info=e)
 
         if not data:
             data = default_value

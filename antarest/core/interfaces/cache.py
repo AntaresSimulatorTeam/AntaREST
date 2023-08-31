@@ -21,9 +21,7 @@ class ICache:
         pass
 
     @abstractmethod
-    def get(
-        self, id: str, refresh_timeout: Optional[int] = None
-    ) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
         pass
 
     @abstractmethod

@@ -35,6 +35,4 @@ class ConfigManager:
             active=active,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)

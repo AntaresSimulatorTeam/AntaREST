@@ -29,9 +29,7 @@ ADMIN = JWTUser(
 )
 
 
-def assert_url_content(
-    storage_service: StudyService, url: str, expected_output: dict
-) -> None:
+def assert_url_content(storage_service: StudyService, url: str, expected_output: dict) -> None:
     app = FastAPI(title=__name__)
     build_study_service(
         app,
@@ -57,9 +55,7 @@ def assert_with_errors(
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
-    output = storage_service.get(
-        uuid=uuid, url=url, depth=3, formatted=formatted, params=params
-    )
+    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=formatted, params=params)
     assert_study(
         output,
         expected_output,
@@ -99,9 +95,7 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_layers_layers(
-    storage_service, url: str, expected_output: str
-):
+def test_sta_mini_layers_layers(storage_service, url: str, expected_output: str):
     assert_url_content(
         storage_service=storage_service,
         url=url,
@@ -146,9 +140,7 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_study_antares(
-    storage_service, url: str, expected_output: str
-):
+def test_sta_mini_study_antares(storage_service, url: str, expected_output: str):
     assert_url_content(
         storage_service=storage_service,
         url=url,
@@ -484,17 +476,13 @@ def test_sta_mini_copy(storage_service) -> None:
         config=storage_service.storage_service.raw_study_service.config,
     )
     client = TestClient(app)
-    result = client.post(
-        f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false"
-    )
+    result = client.post(f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false")
 
     assert result.status_code == HTTPStatus.CREATED.value
     uuid = result.json()
 
     parameters = RequestParameters(user=ADMIN)
-    data_source = storage_service.get(
-        source_study_name, "/", -1, True, parameters
-    )
+    data_source = storage_service.get(source_study_name, "/", -1, True, parameters)
     data_destination = storage_service.get(uuid, "/", -1, True, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
@@ -552,9 +540,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
 
 
 @pytest.mark.integration_test
-def notest_sta_mini_with_wrong_output_folder(
-    storage_service: StudyService, sta_mini_path: Path
-) -> None:
+def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_mini_path: Path) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
 
@@ -598,14 +584,8 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     params = RequestParameters(user=ADMIN)
 
-    path_study_output = (
-        storage_service.get_study_path("STA-mini", params)
-        / "output"
-        / "20201014-1422eco-hello"
-    )
-    sta_mini_output_zip_filepath = shutil.make_archive(
-        tmp_path, "zip", path_study_output
-    )
+    path_study_output = storage_service.get_study_path("STA-mini", params) / "output" / "20201014-1422eco-hello"
+    sta_mini_output_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study_output)
 
     shutil.rmtree(path_study_output)
 

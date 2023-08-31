@@ -39,9 +39,7 @@ class HydroMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -49,12 +47,8 @@ class HydroMatrixList(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            "ror": self.matrix_class(
-                self.context, self.config.next_file("ror.txt")
-            ),
-            "storage": self.matrix_class(
-                self.context, self.config.next_file("storage.txt")
-            ),
+            "ror": self.matrix_class(self.context, self.config.next_file("ror.txt")),
+            "storage": self.matrix_class(self.context, self.config.next_file("storage.txt")),
         }
         return children
 
@@ -65,9 +59,7 @@ class ThermalMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -75,9 +67,7 @@ class ThermalMatrixList(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            thermal_cluster: self.matrix_class(
-                self.context, self.config.next_file(f"{thermal_cluster}.txt")
-            )
+            thermal_cluster: self.matrix_class(self.context, self.config.next_file(f"{thermal_cluster}.txt"))
             for thermal_cluster in self.config.get_thermal_names(self.area)
         }
         return children
@@ -100,9 +90,7 @@ class AreaMultipleMatrixList(FolderNode):
             ],
             INode[Any, Any, Any],
         ],
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.klass = klass

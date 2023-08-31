@@ -16,9 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "mc-0": AreaMatrixList(
-                self.context, self.config.next_file("mc-0")
-            ),
+            "mc-0": AreaMatrixList(self.context, self.config.next_file("mc-0")),
         }
         return children
 
@@ -62,15 +60,9 @@ class OutputSimulationTsGenerator(FolderNode):
             "hydro": OutputSimulationTsGeneratorCustomMatrixList(
                 self.context, self.config.next_file("hydro"), HydroMatrixList
             ),
-            "load": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, self.config.next_file("load")
-            ),
-            "solar": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, self.config.next_file("solar")
-            ),
-            "wind": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, self.config.next_file("wind")
-            ),
+            "load": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("load")),
+            "solar": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("solar")),
+            "wind": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("wind")),
             "thermal": OutputSimulationTsGeneratorCustomMatrixList(
                 self.context,
                 self.config.next_file("thermal"),

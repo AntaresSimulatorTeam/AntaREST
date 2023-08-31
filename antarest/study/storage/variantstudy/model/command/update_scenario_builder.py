@@ -12,9 +12,7 @@ class UpdateScenarioBuilder(ICommand):
     data: Dict[str, Any]
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_SCENARIO_BUILDER, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_SCENARIO_BUILDER, version=1, **data)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -32,9 +30,7 @@ class UpdateScenarioBuilder(ICommand):
         study_data.tree.save(new_config, url)
         return CommandOutput(status=True)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def to_dto(self) -> CommandDTO:

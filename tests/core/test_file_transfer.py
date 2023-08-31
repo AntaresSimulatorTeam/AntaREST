@@ -59,18 +59,12 @@ def test_lifecycle(tmp_path: Path):
         with pytest.raises(MustBeAuthenticatedError):
             ftm.list_downloads(params=RequestParameters())
 
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 0
 
         # creation
-        filedownload = ftm.request_download(
-            "some file", "some name", DEFAULT_ADMIN_USER
-        )
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        filedownload = ftm.request_download("some file", "some name", DEFAULT_ADMIN_USER)
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 1
 
         # fail and remove
@@ -79,9 +73,7 @@ def test_lifecycle(tmp_path: Path):
             Event(
                 type=EventType.DOWNLOAD_FAILED,
                 payload=filedownload.to_dto(),
-                permissions=PermissionInfo(
-                    owner=1, groups=[], public_mode=PublicMode.NONE
-                ),
+                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
                 channel="",
             )
         )
@@ -91,26 +83,16 @@ def test_lifecycle(tmp_path: Path):
             Event(
                 type=EventType.DOWNLOAD_EXPIRED,
                 payload=filedownload_id,
-                permissions=PermissionInfo(
-                    owner=1, groups=[], public_mode=PublicMode.NONE
-                ),
+                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
                 channel="",
             )
         )
 
         # expiration
-        filedownload = ftm.request_download(
-            "some file", "some name", DEFAULT_ADMIN_USER
-        )
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        filedownload = ftm.request_download("some file", "some name", DEFAULT_ADMIN_USER)
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 1
-        filedownload.expiration_date = datetime.datetime.now(
-            datetime.timezone.utc
-        ) - datetime.timedelta(seconds=5)
+        filedownload.expiration_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
         ftm.repository.save(filedownload)
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 0

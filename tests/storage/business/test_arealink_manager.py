@@ -56,15 +56,11 @@ def matrix_service(tmp_path: Path) -> SimpleMatrixService:
 
 
 @with_db_context
-def test_area_crud(
-    empty_study: FileStudy, matrix_service: SimpleMatrixService
-):
+def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Prepare the managers that are used in this UT
     raw_study_service = Mock(spec=RawStudyService)
     variant_study_service = Mock(spec=VariantStudyService)
-    storage_service = StudyStorageService(
-        raw_study_service, variant_study_service
-    )
+    storage_service = StudyStorageService(raw_study_service, variant_study_service)
     area_manager = AreaManager(
         storage_service=storage_service,
         repository=StudyMetadataRepository(Mock()),
@@ -91,20 +87,11 @@ def test_area_crud(
     )
     assert len(empty_study.config.areas.keys()) == 0
 
-    area_manager.create_area(
-        study, AreaCreationDTO(name="test", type=AreaType.AREA)
-    )
+    area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
     assert len(empty_study.config.areas.keys()) == 1
-    assert (
-        json.loads((empty_study.config.study_path / "patch.json").read_text())[
-            "areas"
-        ]["test"]["country"]
-        is None
-    )
+    assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
-    area_manager.update_area_ui(
-        study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100))
-    )
+    area_manager.update_area_ui(study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100)))
     assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
         "x": 100,
         "y": 200,
@@ -114,9 +101,7 @@ def test_area_crud(
         "layers": 0,
     }
 
-    area_manager.create_area(
-        study, AreaCreationDTO(name="test2", type=AreaType.AREA)
-    )
+    area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
     link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
     assert empty_study.config.areas["test"].links.get("test2") is not None
 
@@ -137,9 +122,7 @@ def test_area_crud(
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
         study,
-        AreaCreationDTO(
-            name="test", type=AreaType.AREA, metadata=PatchArea(country="FR")
-        ),
+        AreaCreationDTO(name="test", type=AreaType.AREA, metadata=PatchArea(country="FR")),
     )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
@@ -152,16 +135,9 @@ def test_area_crud(
         RequestParameters(DEFAULT_ADMIN_USER),
     )
     assert (empty_study.config.study_path / "patch.json").exists()
-    assert (
-        json.loads((empty_study.config.study_path / "patch.json").read_text())[
-            "areas"
-        ]["test"]["country"]
-        == "FR"
-    )
+    assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
 
-    area_manager.update_area_ui(
-        study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100))
-    )
+    area_manager.update_area_ui(study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100)))
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
@@ -206,9 +182,7 @@ def test_area_crud(
         RequestParameters(DEFAULT_ADMIN_USER),
     )
 
-    area_manager.create_area(
-        study, AreaCreationDTO(name="test2", type=AreaType.AREA)
-    )
+    area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
     link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
     variant_study_service.append_commands.assert_called_with(
         variant_id,
@@ -239,9 +213,7 @@ def test_area_crud(
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
-            CommandDTO(
-                action=CommandName.REMOVE_AREA.value, args={"id": "test2"}
-            ),
+            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
@@ -253,9 +225,7 @@ def test_get_all_area():
         storage_service=StudyStorageService(raw_study_service, Mock()),
         repository=Mock(spec=StudyMetadataRepository),
     )
-    link_manager = LinkManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
-    )
+    link_manager = LinkManager(storage_service=StudyStorageService(raw_study_service, Mock()))
 
     study = RawStudy()
     config = FileStudyTreeConfig(
@@ -295,9 +265,7 @@ def test_get_all_area():
         sets={"s1": DistrictSet(areas=["a1"])},
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    raw_study_service.get_raw.return_value = FileStudy(
-        config=config, tree=file_tree_mock
-    )
+    raw_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
 
     area_manager.patch_service = Mock()
     area_manager.patch_service.get.return_value = Patch(
@@ -456,18 +424,12 @@ def test_update_area():
         },
         sets={"s1": DistrictSet(areas=["a1"])},
     )
-    raw_study_service.get_raw.return_value = FileStudy(
-        config=config, tree=FileStudyTree(context=Mock(), config=config)
-    )
+    raw_study_service.get_raw.return_value = FileStudy(config=config, tree=FileStudyTree(context=Mock(), config=config))
 
     area_manager.patch_service = Mock()
-    area_manager.patch_service.get.return_value = Patch(
-        areas={"a1": PatchArea(country="fr")}
-    )
+    area_manager.patch_service.get.return_value = Patch(areas={"a1": PatchArea(country="fr")})
 
-    new_area_info = area_manager.update_area_metadata(
-        study, "a1", PatchArea(country="fr")
-    )
+    new_area_info = area_manager.update_area_metadata(study, "a1", PatchArea(country="fr"))
     assert new_area_info.id == "a1"
     assert new_area_info.metadata == {"country": "fr", "tags": []}
 
@@ -497,9 +459,7 @@ def test_update_clusters():
         },
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    raw_study_service.get_raw.return_value = FileStudy(
-        config=config, tree=file_tree_mock
-    )
+    raw_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
 
     area_manager.patch_service = Mock()
     area_manager.patch_service.get.return_value = Patch(
@@ -517,9 +477,7 @@ def test_update_clusters():
         }
     ]
 
-    new_area_info = area_manager.update_thermal_cluster_metadata(
-        study, "a1", {"a": PatchCluster(type="a")}
-    )
+    new_area_info = area_manager.update_thermal_cluster_metadata(study, "a1", {"a": PatchCluster(type="a")})
     assert len(new_area_info.thermals) == 1
     assert new_area_info.thermals[0].type == "a"
     assert new_area_info.thermals[0].code_oi is None

@@ -17,15 +17,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationModeMcAll(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "areas": OutputSimulationAreas(
-                self.context, self.config.next_file("areas")
-            ),
-            "grid": OutputSimulationModeMcAllGrid(
-                self.context, self.config.next_file("grid")
-            ),
-            "links": OutputSimulationLinks(
-                self.context, self.config.next_file("links")
-            ),
+            "areas": OutputSimulationAreas(self.context, self.config.next_file("areas")),
+            "grid": OutputSimulationModeMcAllGrid(self.context, self.config.next_file("grid")),
+            "links": OutputSimulationLinks(self.context, self.config.next_file("links")),
             "binding_constraints": OutputSimulationBindingConstraintItem(
                 self.context, self.config.next_file("binding_constraints")
             ),

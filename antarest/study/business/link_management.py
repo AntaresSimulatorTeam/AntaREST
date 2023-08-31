@@ -40,17 +40,13 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(
-        self, study: Study, with_ui: bool = False
-    ) -> List[LinkInfoDTO]:
+    def get_all_links(self, study: Study, with_ui: bool = False) -> List[LinkInfoDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result = []
         for area_id, area in file_study.config.areas.items():
             links_config: Optional[Dict[str, Any]] = None
             if with_ui:
-                links_config = file_study.tree.get(
-                    ["input", "links", area_id, "properties"]
-                )
+                links_config = file_study.tree.get(["input", "links", area_id, "properties"])
             for link in area.links:
                 ui_info: Optional[LinkUIDTO] = None
                 if with_ui and links_config and link in links_config:
@@ -59,15 +55,11 @@ class LinkManager:
                         width=links_config[link].get("link-width", 1),
                         style=links_config[link].get("link-style", "plain"),
                     )
-                result.append(
-                    LinkInfoDTO(area1=area_id, area2=link, ui=ui_info)
-                )
+                result.append(LinkInfoDTO(area1=area_id, area2=link, ui=ui_info))
 
         return result
 
-    def create_link(
-        self, study: Study, link_creation_info: LinkInfoDTO
-    ) -> LinkInfoDTO:
+    def create_link(self, study: Study, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         command = CreateLink(
@@ -75,9 +67,7 @@ class LinkManager:
             area2=link_creation_info.area2,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
         return LinkInfoDTO(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
@@ -90,6 +80,4 @@ class LinkManager:
             area2=area2_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)

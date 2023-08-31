@@ -22,9 +22,7 @@ def get_study_information(study: Study) -> StudyMetadataDTO:
     try:
         patch = Patch.parse_raw(additional_data.patch or "{}")
     except Exception as e:
-        logger.warning(
-            f"Failed to parse patch for study {study.id}", exc_info=e
-        )
+        logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)
         patch = Patch()
 
     patch_metadata = patch.study or PatchStudy()
@@ -51,9 +49,7 @@ def get_study_information(study: Study) -> StudyMetadataDTO:
         type=study.type,
         archived=study.archived if study.archived is not None else False,
         owner=owner_info,
-        groups=[
-            GroupDTO(id=group.id, name=group.name) for group in study.groups
-        ],
+        groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
         horizon=additional_data.horizon,
         scenario=patch_metadata.scenario,

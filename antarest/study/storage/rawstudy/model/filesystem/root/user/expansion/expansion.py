@@ -19,9 +19,7 @@ class Expansion(BucketNode):
             node=ExpansionCandidates,
             filename="candidates.ini",
         ),
-        RegisteredFile(
-            key="settings", node=ExpansionSettings, filename="settings.ini"
-        ),
+        RegisteredFile(key="settings", node=ExpansionSettings, filename="settings.ini"),
         RegisteredFile(key="capa", node=ExpansionMatrixResources),
         RegisteredFile(key="weights", node=ExpansionMatrixResources),
         RegisteredFile(key="constraints", node=ExpansionConstraintResources),

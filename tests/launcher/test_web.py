@@ -51,9 +51,7 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(
-        study, "local", LauncherParametersDTO(), RequestParameters(ADMIN), None
-    )
+    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), RequestParameters(ADMIN), None)
 
 
 @pytest.mark.unit_test
@@ -76,9 +74,7 @@ def test_result() -> None:
 
     assert res.status_code == 200
     assert JobResultDTO.parse_obj(res.json()) == result.to_dto()
-    service.get_result.assert_called_once_with(
-        job, RequestParameters(DEFAULT_ADMIN_USER)
-    )
+    service.get_result.assert_called_once_with(job, RequestParameters(DEFAULT_ADMIN_USER))
 
 
 @pytest.mark.unit_test
@@ -135,7 +131,6 @@ def test_get_solver_versions() -> None:
 @pytest.mark.parametrize(
     "solver, status_code, expected",
     [
-
         pytest.param(
             "",
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -151,7 +146,6 @@ def test_get_solver_versions() -> None:
             {"detail": "Unknown solver configuration: 'remote'"},
             id="remote",
         ),
-
     ],
 )
 def test_get_solver_versions__with_query_string(
@@ -182,9 +176,7 @@ def test_get_job_log() -> None:
     client = TestClient(app)
     res = client.get(f"/v1/launcher/jobs/{job_id}/logs")
     assert res.status_code == 200
-    service.get_log.assert_called_once_with(
-        job_id, LogType.STDOUT, RequestParameters(user=DEFAULT_ADMIN_USER)
-    )
+    service.get_log.assert_called_once_with(job_id, LogType.STDOUT, RequestParameters(user=DEFAULT_ADMIN_USER))
 
 
 @pytest.mark.unit_test
@@ -197,6 +189,4 @@ def test_kill_job() -> None:
     client = TestClient(app)
     res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
     assert res.status_code == 200
-    service.kill_job.assert_called_once_with(
-        job_id=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER)
-    )
+    service.kill_job.assert_called_once_with(job_id=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER))

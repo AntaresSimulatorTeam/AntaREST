@@ -9,9 +9,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_update_rawfile(
-    empty_study: FileStudy, command_context: CommandContext
-) -> None:
+def test_update_rawfile(empty_study: FileStudy, command_context: CommandContext) -> None:
     data_path = Path(os.path.dirname(__file__)) / "data.png"
     data = base64.b64encode(data_path.read_bytes()).decode("utf-8")
 
@@ -24,18 +22,14 @@ def test_update_rawfile(
     )
 
     reverted_commands = CommandReverter().revert(command, [], empty_study)
-    assert cast(
-        UpdateRawFile, reverted_commands[0]
-    ).b64Data == base64.b64encode(original_data).decode("utf-8")
+    assert cast(UpdateRawFile, reverted_commands[0]).b64Data == base64.b64encode(original_data).decode("utf-8")
 
     alt_command = UpdateRawFile(
         target="settings/resources/study",
         b64Data="",
         command_context=command_context,
     )
-    reverted_commands = CommandReverter().revert(
-        command, [alt_command], empty_study
-    )
+    reverted_commands = CommandReverter().revert(command, [alt_command], empty_study)
     assert cast(UpdateRawFile, reverted_commands[0]).b64Data == ""
 
     assert command.match(alt_command)

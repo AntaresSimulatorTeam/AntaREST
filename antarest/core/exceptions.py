@@ -81,9 +81,7 @@ class NotAManagedStudyException(HTTPException):
 
 class TaskAlreadyRunning(HTTPException):
     def __init__(self) -> None:
-        super(TaskAlreadyRunning, self).__init__(
-            HTTPStatus.EXPECTATION_FAILED, "Task is already running"
-        )
+        super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
 class StudyDeletionNotAllowed(HTTPException):

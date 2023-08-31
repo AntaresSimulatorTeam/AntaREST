@@ -34,18 +34,14 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
 
         session_args = session_args or {}
         if not custom_engine and not db_url:
-            raise ValueError(
-                "You need to pass a db_url or a custom_engine parameter."
-            )
+            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
         if not custom_engine:
             engine = create_engine(db_url, **engine_args)
         else:
             engine = custom_engine
         _Session = sessionmaker(bind=engine, **session_args)
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with db(commit_on_exit=self.commit_on_exit):
             response = await call_next(request)
         return response

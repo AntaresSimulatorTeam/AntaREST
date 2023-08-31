@@ -96,15 +96,11 @@ class TestPatchService:
         raw_study: RawStudy = db.session.query(Study).get(study_id)
 
         # Create a PatchService which use a StudyMetadataRepository with a mocked cache
-        patch_service = PatchService(
-            repository=StudyMetadataRepository(Mock())
-        )
+        patch_service = PatchService(repository=StudyMetadataRepository(Mock()))
         patch = patch_service.get(raw_study, get_from_file=get_from_file)
 
         # check the result
-        if (get_from_file and file_data) or (
-            not get_from_file and (patch_data or file_data)
-        ):
+        if (get_from_file and file_data) or (not get_from_file and (patch_data or file_data)):
             expected_patch = Patch(
                 study=PatchStudy(scenario="BAU2025"),
                 areas={"a1": PatchArea(country="FR")},
@@ -149,9 +145,7 @@ class TestPatchService:
         raw_study: RawStudy = db.session.query(Study).get(study_id)
 
         # Create a PatchService which use a StudyMetadataRepository with a mocked cache
-        patch_service = PatchService(
-            repository=StudyMetadataRepository(Mock())
-        )
+        patch_service = PatchService(repository=StudyMetadataRepository(Mock()))
 
         patch = Patch(
             study=PatchStudy(scenario="BAU2025"),
@@ -161,9 +155,7 @@ class TestPatchService:
         patch_service.save(raw_study, patch)
 
         # check the result
-        actual_obj = json.loads(
-            tmp_path.joinpath("patch.json").read_text(encoding="utf-8")
-        )
+        actual_obj = json.loads(tmp_path.joinpath("patch.json").read_text(encoding="utf-8"))
         expected_obj = json.loads(PATCH_CONTENT)
         assert actual_obj == expected_obj
 
@@ -203,17 +195,13 @@ class TestPatchService:
         raw_study: RawStudy = db.session.query(Study).get(study_id)
 
         # Create a PatchService which use a StudyMetadataRepository with a mocked cache
-        patch_service = PatchService(
-            repository=StudyMetadataRepository(Mock())
-        )
+        patch_service = PatchService(repository=StudyMetadataRepository(Mock()))
 
         # run with status=True
         patch_service.set_reference_output(raw_study, "output-id", status=True)
 
         # check the result
-        actual_obj = json.loads(
-            tmp_path.joinpath("patch.json").read_text(encoding="utf-8")
-        )
+        actual_obj = json.loads(tmp_path.joinpath("patch.json").read_text(encoding="utf-8"))
         expected_obj = json.loads(
             """
             {
@@ -229,12 +217,8 @@ class TestPatchService:
         assert actual_obj == expected_obj
 
         # run with status=False
-        patch_service.set_reference_output(
-            raw_study, "output-id", status=False
-        )
-        actual_obj = json.loads(
-            tmp_path.joinpath("patch.json").read_text(encoding="utf-8")
-        )
+        patch_service.set_reference_output(raw_study, "output-id", status=False)
+        actual_obj = json.loads(tmp_path.joinpath("patch.json").read_text(encoding="utf-8"))
         expected_obj = json.loads(
             """
             {

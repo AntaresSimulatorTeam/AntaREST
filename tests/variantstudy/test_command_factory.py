@@ -16,16 +16,12 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class TestCommandFactory:
     def setup_class(self):
-        for module_loader, name, ispkg in pkgutil.iter_modules(
-            ["antarest/study/storage/variantstudy/model/command"]
-        ):
+        for module_loader, name, ispkg in pkgutil.iter_modules(["antarest/study/storage/variantstudy/model/command"]):
             importlib.import_module(
                 "." + name,
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        self.command_class_set = set(
-            [command.__name__ for command in ICommand.__subclasses__()]
-        )
+        self.command_class_set = set([command.__name__ for command in ICommand.__subclasses__()])
 
     @pytest.mark.parametrize(
         "command_dto",
@@ -340,6 +336,4 @@ def test_unknown_command():
             matrix_service=Mock(spec=MatrixService),
             patch_service=Mock(spec=PatchService),
         )
-        command_factory.to_icommand(
-            command_dto=CommandDTO(action="unknown_command", args={})
-        )
+        command_factory.to_icommand(command_dto=CommandDTO(action="unknown_command", args={}))

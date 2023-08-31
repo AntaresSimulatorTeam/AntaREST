@@ -30,23 +30,17 @@ class RedisCache(ICache):
         self.redis.set(redis_key, redis_element.json())
         self.redis.expire(redis_key, duration)
 
-    def get(
-        self, id: str, refresh_timeout: Optional[int] = None
-    ) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
         redis_key = f"cache:{id}"
         result = self.redis.get(redis_key)
         logger.info(f"Trying to retrieve cache key {id}")
         if result is not None:
             logger.info(f"Cache key {id} found")
             json_result = json.loads(result)
-            redis_element = RedisCacheElement(
-                duration=json_result["duration"], data=json_result["data"]
-            )
+            redis_element = RedisCacheElement(duration=json_result["duration"], data=json_result["data"])
             self.redis.expire(
                 redis_key,
-                redis_element.duration
-                if refresh_timeout is None
-                else refresh_timeout,
+                redis_element.duration if refresh_timeout is None else refresh_timeout,
             )
             return redis_element.data
         logger.info(f"Cache key {id} not found")

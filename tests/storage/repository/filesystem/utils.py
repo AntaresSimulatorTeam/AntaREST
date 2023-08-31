@@ -42,9 +42,7 @@ class TestSubNode(INode[int, int, int]):
     def delete(self, url: Optional[List[str]] = None) -> None:
         pass
 
-    def check_errors(
-        self, data: int, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: int, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         return []
 
 

@@ -94,11 +94,7 @@ class InputSeriesMatrix(MatrixNode):
 
         errors = []
         if not self.config.path.exists():
-            errors.append(
-                f"Input Series Matrix f{self.config.path} not exists"
-            )
+            errors.append(f"Input Series Matrix f{self.config.path} not exists")
         if self.nb_columns and len(data) != self.nb_columns:
-            errors.append(
-                f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
-            )
+            errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
         return errors

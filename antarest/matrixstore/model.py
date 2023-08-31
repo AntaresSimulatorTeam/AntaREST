@@ -61,9 +61,7 @@ class MatrixDataSetDTO(BaseModel):
 groups_dataset_relation = Table(
     "matrix_dataset_group",
     Base.metadata,
-    Column(
-        "dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True
-    ),
+    Column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
     Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
 )
 
@@ -92,9 +90,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
             return False
 
         res: bool = (
-            self.matrix_id == other.matrix_id
-            and self.dataset_id == other.dataset_id
-            and self.name == other.name
+            self.matrix_id == other.matrix_id and self.dataset_id == other.dataset_id and self.name == other.name
         )
 
         return res
@@ -142,22 +138,15 @@ class MatrixDataSet(Base):  # type: ignore
         "Group",
         secondary=lambda: groups_dataset_relation,
     )
-    matrices = relationship(
-        MatrixDataSetRelation, cascade="all, delete, delete-orphan"
-    )
+    matrices = relationship(MatrixDataSetRelation, cascade="all, delete, delete-orphan")
 
     def to_dto(self) -> MatrixDataSetDTO:
         return MatrixDataSetDTO(
             id=self.id,
             name=self.name,
-            matrices=[
-                MatrixInfoDTO(name=matrix.name, id=matrix.matrix.id)
-                for matrix in self.matrices
-            ],
+            matrices=[MatrixInfoDTO(name=matrix.name, id=matrix.matrix.id) for matrix in self.matrices],
             owner=UserInfo(id=self.owner.id, name=self.owner.name),
-            groups=[
-                GroupDTO(id=group.id, name=group.name) for group in self.groups
-            ],
+            groups=[GroupDTO(id=group.id, name=group.name) for group in self.groups],
             public=self.public,
             created_at=str(self.created_at),
             updated_at=str(self.updated_at),

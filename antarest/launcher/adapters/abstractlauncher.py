@@ -23,9 +23,7 @@ class LauncherInitException(Exception):
     def __init__(self, reason: str) -> None:
         from antarest.core.utils import utils
 
-        if config_path := (
-            os.getenv("ANTAREST_CONF") or utils.get_default_config_path()
-        ):
+        if config_path := (os.getenv("ANTAREST_CONF") or utils.get_default_config_path()):
             msg = f"Invalid configuration '{config_path}': {reason}"
         else:
             msg = f"Invalid configuration: {reason}"
@@ -34,9 +32,7 @@ class LauncherInitException(Exception):
 
 class LauncherCallbacks(NamedTuple):
     # args: job_id, job status, message, output_id
-    update_status: Callable[
-        [str, JobStatus, Optional[str], Optional[str]], None
-    ]
+    update_status: Callable[[str, JobStatus, Optional[str], Optional[str]], None]
     # args: job_id, study_id, study_export_path, launcher_params
     export_study: Callable[[str, str, Path, LauncherParametersDTO], None]
     append_before_log: Callable[[str, str], None]
@@ -91,12 +87,8 @@ class AbstractLauncher(ABC):
                 )
             )
 
-            launch_progress_json = (
-                self.cache.get(id=f"Launch_Progress_{job_id}") or {}
-            )
-            launch_progress_dto = LaunchProgressDTO.parse_obj(
-                launch_progress_json
-            )
+            launch_progress_json = self.cache.get(id=f"Launch_Progress_{job_id}") or {}
+            launch_progress_dto = LaunchProgressDTO.parse_obj(launch_progress_json)
             if launch_progress_dto.parse_log_lines(log_line.splitlines()):
                 self.event_bus.push(
                     Event(
@@ -106,14 +98,10 @@ class AbstractLauncher(ABC):
                             "progress": launch_progress_dto.progress,
                             "message": "",
                         },
-                        permissions=PermissionInfo(
-                            public_mode=PublicMode.READ
-                        ),
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )
-                self.cache.put(
-                    f"Launch_Progress_{job_id}", launch_progress_dto.dict()
-                )
+                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.dict())
 
         return update_log
