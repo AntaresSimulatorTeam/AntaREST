@@ -62,7 +62,6 @@ from antarest.study.business.st_storage_manager import (
     StorageOutput,
     STStorageMatrix,
     STStorageTimeSeries,
-    InputPayload,
 )
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
@@ -78,7 +77,6 @@ from fastapi import APIRouter, Body, Depends
 from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
-_default_value = InputPayload(storges_id=["toto"])
 
 
 def create_study_data_routes(

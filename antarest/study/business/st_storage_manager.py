@@ -45,16 +45,6 @@ class FormBaseModel(FormFieldsBaseModel):
         allow_population_by_field_name = True
 
 
-class InputPayload(FormBaseModel):
-    """
-    Model representing the form used to delete  new short-term storages entry
-    """
-
-    storges_id: List[str] = Field(
-        description="storage id of a short storage", alias="storgesId"
-    )
-
-
 class StorageCreation(FormBaseModel):
     """
     Model representing the form used to create a new short-term storage entry.
