@@ -25,6 +25,16 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 
 
+class _LogScanDuration:
+    """Functional object use to log the scanning duration of a workspace."""
+
+    def __init__(self, workspace_name: str) -> None:
+        self.workspace_name = workspace_name
+
+    def __call__(self, duration: float) -> None:
+        logger.info(f"Workspace {self.workspace_name} scanned in {duration}s")
+
+
 class WorkspaceNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
@@ -152,6 +162,7 @@ class Watcher(IService):
             path: relative path to folder to scan
         """
 
+        # noinspection PyUnusedLocal
         def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
             self.scan(workspace, path)
             return TaskResult(success=True, message="Scan completed")
@@ -208,7 +219,7 @@ class Watcher(IService):
                         workspace.filter_in,
                         workspace.filter_out,
                     )
-                    stopwatch.log_elapsed(lambda x: logger.info(f"Workspace {name} scanned in {x}s"))
+                    stopwatch.log_elapsed(_LogScanDuration(name))
         else:
             raise ValueError("Both workspace_name and directory_path must be specified")
         with db():
