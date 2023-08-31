@@ -62,6 +62,7 @@ from antarest.study.business.st_storage_manager import (
     StorageOutput,
     STStorageMatrix,
     STStorageTimeSeries,
+    InputPayload,
 )
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
@@ -77,6 +78,7 @@ from fastapi import APIRouter, Body, Depends
 from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
+_default_value = InputPayload(storges_id=["toto"])
 
 
 def create_study_data_routes(
@@ -1889,38 +1891,37 @@ def create_study_data_routes(
         )
 
     @bp.delete(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
+        path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
-        summary="Remove a short-term storage from an area",
+        summary="Remove  short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
     )
-    def delete_st_storage(
+    def delete_st_storages(
         uuid: str,
         area_id: str,
-        storage_id: str,
+        form: List[str],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Delete a short-term storage from an area.
+        Delete  short-term storages from an area.
 
         Args:
         - `uuid`: The UUID of the study.
         - `area_id`: The area ID.
-        - `storage_id`: The storage id of the study that we want to delete.
+        - `form`:   List of storages id of the study that we want to delete.
 
         Permissions:
         - User must have DELETED permission on the study.
         """
-        logger.info(
-            f"Delete short-term storage {storage_id} from {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        for storage_id in form:
+            logger.info(
+                f"Delete short-term storage {storage_id} from {area_id} for study {uuid}",
+                extra={"user": current_user.id},
+            )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
             uuid, StudyPermissionType.DELETE, params
         )
-        study_service.st_storage_manager.delete_storage(
-            study, area_id, storage_id
-        )
+        study_service.st_storage_manager.delete_storages(study, area_id, form)
 
     return bp

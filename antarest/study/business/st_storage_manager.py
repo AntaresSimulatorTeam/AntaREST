@@ -45,6 +45,16 @@ class FormBaseModel(FormFieldsBaseModel):
         allow_population_by_field_name = True
 
 
+class InputPayload(FormBaseModel):
+    """
+    Model representing the form used to delete  new short-term storages entry
+    """
+
+    storges_id: List[str] = Field(
+        description="storage id of a short storage", alias="storgesId"
+    )
+
+
 class StorageCreation(FormBaseModel):
     """
     Model representing the form used to create a new short-term storage entry.
@@ -445,29 +455,30 @@ class STStorageManager:
         values = new_config.dict(by_alias=False)
         return StorageOutput(**values)
 
-    def delete_storage(
+    def delete_storages(
         self,
         study: Study,
         area_id: str,
-        storage_id: str,
+        form: List[str],
     ) -> None:
         """
-        Delete a short-term storage configuration form the given study and area_id.
+        Delete  short-term storages configuration form the given study and area_id.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage to remove.
+            form: list ID of  short-term storages to remove.
         """
-        command = RemoveSTStorage(
-            area_id=area_id,
-            storage_id=storage_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        for storage_id in form:
+            command = RemoveSTStorage(
+                area_id=area_id,
+                storage_id=storage_id,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            )
+            file_study = self.storage_service.get_storage(study).get_raw(study)
+            execute_or_add_commands(
+                study, file_study, [command], self.storage_service
+            )
 
     def get_matrix(
         self,

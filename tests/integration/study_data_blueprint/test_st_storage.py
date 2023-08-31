@@ -236,8 +236,45 @@ class TestSTStorage:
 
         # deletion of short-term storages
         res = client.delete(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[siemens_battery_id],
+        )
+        assert res.status_code == 204, res.json()
+        assert res.text == "null"
+
+        # deletion of short-term storages with empty list
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[],
+        )
+        assert res.status_code == 204, res.json()
+        assert res.text == "null"
+
+        # deletion of short-term storages with multiple IDs
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": siemens_battery, "group": "Battery"},
+        )
+        assert res.status_code == 200, res.json()
+        siemens_battery_id1 = res.json()["id"]
+
+        siemens_battery_del = siemens_battery + "del"
+
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": siemens_battery_del, "group": "Battery"},
+        )
+        assert res.status_code == 200, res.json()
+        siemens_battery_id2 = res.json()["id"]
+
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[siemens_battery_id1, siemens_battery_id2],
         )
         assert res.status_code == 204, res.json()
         assert res.text == "null"
@@ -260,8 +297,9 @@ class TestSTStorage:
         # Check delete with the wrong value of area_id
         bad_area_id = "bad_area"
         res = client.delete(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[siemens_battery_id],
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
@@ -276,8 +314,9 @@ class TestSTStorage:
         # Check delete with the wrong value of study_id
         bad_study_id = "bad_study"
         res = client.delete(
-            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[siemens_battery_id],
         )
         obj = res.json()
         description = obj["description"]
