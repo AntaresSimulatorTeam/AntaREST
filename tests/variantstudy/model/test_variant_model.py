@@ -11,7 +11,6 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,

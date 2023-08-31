@@ -7,13 +7,11 @@ from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
-from starlette.background import BackgroundTasks
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,

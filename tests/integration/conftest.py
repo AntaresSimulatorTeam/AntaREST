@@ -1,6 +1,5 @@
 from pathlib import Path
-from typing import Any, Mapping, cast
-from unittest.mock import Mock
+from typing import cast
 from zipfile import ZipFile
 
 import jinja2

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
