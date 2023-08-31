@@ -4,6 +4,7 @@ import pathlib
 import shutil
 from urllib.parse import urlencode
 
+import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
@@ -109,3 +110,11 @@ class TestFetchRawData:
         )
         res.raise_for_status()
         assert res.json() == ["DE", "ES", "FR", "IT"]
+
+        # asserts that the GET /raw endpoint is able to read matrix containing NaN values
+        res = client.get(
+            f"/v1/studies/{study_id}/raw?path=output/20201014-1427eco/economy/mc-all/areas/de/id-monthly",
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert np.isnan(res.json()["data"][0]).any()
