@@ -11,18 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    strip_matrix_protocol,
-    validate_matrix,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -183,12 +174,8 @@ class CreateCluster(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateCluster, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-            ReplaceMatrix,
-        )
-        from antarest.study.storage.variantstudy.model.command.update_config import (
-            UpdateConfig,
-        )
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         cluster_id = transform_name_to_id(self.cluster_name)
         commands: List[ICommand] = []

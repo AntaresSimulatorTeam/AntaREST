@@ -10,13 +10,7 @@ from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import Group, User
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    PublicMode,
-    RawStudy,
-    Study,
-    StudyContentStatus,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, PublicMode, RawStudy, Study, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest import with_db_context

@@ -1,43 +1,19 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.areas import (
-    InputAreas,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.areas import InputAreas
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingcontraints import (
     BindingConstraints,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro import (
-    InputHydro,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.link.link import (
-    InputLink,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load import (
-    InputLoad,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import (
-    InputMiscGen,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.renewable import (
-    ClusteredRenewables,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import (
-    InputReserves,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.solar import (
-    InputSolar,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.thermal import (
-    InputThermal,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind import (
-    InputWind,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro import InputHydro
+from antarest.study.storage.rawstudy.model.filesystem.root.input.link.link import InputLink
+from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load import InputLoad
+from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import InputMiscGen
+from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.renewable import ClusteredRenewables
+from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import InputReserves
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.solar import InputSolar
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.thermal import InputThermal
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind import InputWind
 
 
 class Input(FolderNode):

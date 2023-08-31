@@ -32,9 +32,7 @@ from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
-from antarest.matrixstore.matrix_garbage_collector import (
-    MatrixGarbageCollector,
-)
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService

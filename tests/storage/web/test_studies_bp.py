@@ -11,17 +11,9 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-)
+from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
-from antarest.core.filetransfer.model import (
-    FileDownloadDTO,
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType

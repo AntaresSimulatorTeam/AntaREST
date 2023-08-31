@@ -13,10 +13,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, cast
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
-from antareslauncher.main_option_parser import (
-    MainOptionParser,
-    ParserParameters,
-)
+from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
 
@@ -26,18 +23,9 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import assert_this, unzip
-from antarest.launcher.adapters.abstractlauncher import (
-    AbstractLauncher,
-    LauncherCallbacks,
-    LauncherInitException,
-)
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import (
-    JobStatus,
-    LauncherParametersDTO,
-    LogType,
-    XpansionParametersDTO,
-)
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 

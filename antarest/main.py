@@ -16,11 +16,7 @@ from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    DispatchFunction,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -37,9 +33,7 @@ from antarest.core.swagger import customize_openapi
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.login.auth import Auth, JwtSettings
-from antarest.matrixstore.matrix_garbage_collector import (
-    MatrixGarbageCollector,
-)
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.singleton_services import SingletonServices
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher

@@ -5,18 +5,9 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, Union, cast
 from zipfile import ZipFile
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    G,
-    INode,
-    S,
-    V,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 
 
 @dataclass

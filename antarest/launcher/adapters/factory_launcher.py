@@ -4,16 +4,9 @@ from typing import Dict
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.launcher.adapters.abstractlauncher import (
-    AbstractLauncher,
-    LauncherCallbacks,
-)
-from antarest.launcher.adapters.local_launcher.local_launcher import (
-    LocalLauncher,
-)
-from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
-    SlurmLauncher,
-)
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
+from antarest.launcher.adapters.slurm_launcher.slurm_launcher import SlurmLauncher
 
 logger = logging.getLogger(__name__)
 

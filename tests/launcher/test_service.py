@@ -11,32 +11,16 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import (
-    Config,
-    LauncherConfig,
-    LocalConfig,
-    SlurmConfig,
-    StorageConfig,
-)
+from antarest.core.config import Config, LauncherConfig, LocalConfig, SlurmConfig, StorageConfig
 from antarest.core.exceptions import StudyNotFoundError
-from antarest.core.filetransfer.model import (
-    FileDownload,
-    FileDownloadDTO,
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
-from antarest.launcher.model import (
-    JobLog,
-    JobLogType,
-    JobResult,
-    JobStatus,
-    LogType,
-)
+from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus, LogType
 from antarest.launcher.service import (
     EXECUTION_INFO_FILE,
     LAUNCHER_PARAM_NAME_SUFFIX,

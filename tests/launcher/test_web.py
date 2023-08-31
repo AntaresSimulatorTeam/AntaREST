@@ -12,13 +12,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
-from antarest.launcher.model import (
-    JobResult,
-    JobResultDTO,
-    JobStatus,
-    LauncherParametersDTO,
-    LogType,
-)
+from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
 
 ADMIN = JWTUser(
     id=1,

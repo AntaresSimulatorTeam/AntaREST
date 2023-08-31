@@ -5,11 +5,7 @@ from sqlalchemy import create_engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 
 

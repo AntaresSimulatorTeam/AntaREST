@@ -5,15 +5,8 @@ from typing import IO, Generic, List, Optional, TypeVar, Union
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import (
-    Study,
-    StudyMetadataDTO,
-    StudyMetadataPatchDTO,
-    StudySimResultDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 T = TypeVar("T", bound=Study)

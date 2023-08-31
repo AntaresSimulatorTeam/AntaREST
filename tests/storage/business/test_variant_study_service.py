@@ -13,16 +13,9 @@ from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    CommandBlock,
-    VariantStudy,
-)
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 def build_config(study_path: Path):

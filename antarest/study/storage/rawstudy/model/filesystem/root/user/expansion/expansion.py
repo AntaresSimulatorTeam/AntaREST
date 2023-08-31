@@ -1,28 +1,15 @@
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
-    BucketNode,
-    RegisteredFile,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import (
-    ExpansionCandidates,
-)
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import ExpansionCandidates
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.constraint_resources import (
     ExpansionConstraintResources,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.matrix_resources import (
     ExpansionMatrixResources,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.sensitivity import (
-    SensitivityConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settings import (
-    ExpansionSettings,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.sensitivity import SensitivityConfig
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settings import ExpansionSettings
 
 
 class Expansion(BucketNode):

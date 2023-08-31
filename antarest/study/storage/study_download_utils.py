@@ -22,25 +22,13 @@ from antarest.study.model import (
     StudyDownloadType,
     TimeSerie,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
-    Area,
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-    FilterError,
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError, FilterError, FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    OutputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import get_start_date
 
 logger = logging.getLogger(__name__)

@@ -1,31 +1,15 @@
 import logging
 
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.desktop import (
-    Desktop,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.input import (
-    Input,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.layers.layers import (
-    Layers,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.desktop import Desktop
+from antarest.study.storage.rawstudy.model.filesystem.root.input.input import Input
+from antarest.study.storage.rawstudy.model.filesystem.root.layers.layers import Layers
 from antarest.study.storage.rawstudy.model.filesystem.root.logs import Logs
-from antarest.study.storage.rawstudy.model.filesystem.root.output.output import (
-    Output,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings import (
-    Settings,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import (
-    StudyAntares,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.user.user import (
-    User,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings import Settings
+from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import StudyAntares
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 logger = logging.getLogger(__name__)
 

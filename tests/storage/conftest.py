@@ -13,13 +13,7 @@ from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import (
-    CustomTaskEventMessages,
-    TaskDTO,
-    TaskListFilter,
-    TaskStatus,
-    TaskType,
-)
+from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 
 project_dir: Path = Path(__file__).parent.parent.parent

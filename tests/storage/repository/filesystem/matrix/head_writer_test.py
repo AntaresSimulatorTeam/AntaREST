@@ -1,7 +1,4 @@
-from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
-    AreaHeadWriter,
-    LinkHeadWriter,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter, LinkHeadWriter
 
 
 def test_area():

@@ -4,15 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
-    SimulationParsingError,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    parse_simulation_zip,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Simulation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
+from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_simulation_zip
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 
 PARSE_SIMULATION_NAME = "antarest.study.storage.rawstudy.model.filesystem.config.files.parse_simulation"
 

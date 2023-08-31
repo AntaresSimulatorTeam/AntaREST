@@ -7,24 +7,16 @@ from sqlalchemy import create_engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
-from antarest.matrixstore.matrix_garbage_collector import (
-    MatrixGarbageCollector,
-)
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.model import MatrixDataSet, MatrixDataSetRelation
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
 @pytest.fixture

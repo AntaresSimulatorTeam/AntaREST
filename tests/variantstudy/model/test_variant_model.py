@@ -11,24 +11,12 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    SNAPSHOT_RELATIVE_PATH,
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_RELATIVE_PATH, VariantStudyService
 
 SADMIN = RequestParameters(
     user=JWTUser(

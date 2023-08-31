@@ -5,11 +5,7 @@ from starlette.websockets import WebSocket
 
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo
-from antarest.eventbus.web import (
-    ConnectionManager,
-    WebsocketMessage,
-    WebsocketMessageAction,
-)
+from antarest.eventbus.web import ConnectionManager, WebsocketMessage, WebsocketMessageAction
 
 
 class AsyncMock(MagicMock):

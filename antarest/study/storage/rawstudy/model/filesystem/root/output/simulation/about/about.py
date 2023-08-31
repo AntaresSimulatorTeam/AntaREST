@@ -1,16 +1,10 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.study import (
     OutputSimulationAboutStudy,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    GeneralData,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import GeneralData
 
 
 class OutputSimulationAbout(FolderNode):

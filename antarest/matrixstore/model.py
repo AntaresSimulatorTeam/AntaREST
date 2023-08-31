@@ -3,15 +3,7 @@ import uuid
 from typing import Any, List, Union
 
 from pydantic import BaseModel
-from sqlalchemy import (  # type: ignore
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    Table,
-)
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base

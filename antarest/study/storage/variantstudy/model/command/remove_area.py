@@ -3,24 +3,14 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     remove_area_cluster_from_binding_constraints,
 )
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)

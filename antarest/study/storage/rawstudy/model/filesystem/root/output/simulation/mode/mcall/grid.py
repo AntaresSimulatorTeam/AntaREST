@@ -1,10 +1,6 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
 
 class OutputSimulationModeMcAllGrid(FolderNode):

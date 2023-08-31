@@ -16,9 +16,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 logger = logging.getLogger(__name__)
 

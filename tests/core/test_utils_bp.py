@@ -7,12 +7,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest import __version__
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-)
+from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 

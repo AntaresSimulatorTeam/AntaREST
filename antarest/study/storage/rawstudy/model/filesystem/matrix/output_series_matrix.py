@@ -6,15 +6,9 @@ import pandas as pd
 from pandas import DataFrame
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -26,9 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
     HeadWriter,
     LinkHeadWriter,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 logger = logging.getLogger(__name__)
 

@@ -3,10 +3,7 @@ from typing import List
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    CommandBlock,
-    VariantStudy,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 
 
 class VariantStudyRepository(StudyMetadataRepository):

@@ -2,14 +2,7 @@ import json
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import (  # type: ignore
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    Table,
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base

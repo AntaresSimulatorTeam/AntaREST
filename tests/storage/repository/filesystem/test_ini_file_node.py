@@ -7,12 +7,8 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
 def build_dataset(study_dir: Path) -> Tuple[Path, JSON]:

@@ -3,9 +3,7 @@ from typing import Any, List, Optional, Sequence, Union
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    MATRIX_PROTOCOL_PREFIX,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import MATRIX_PROTOCOL_PREFIX
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

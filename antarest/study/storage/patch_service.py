@@ -2,12 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from antarest.study.model import (
-    Patch,
-    PatchOutputs,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy

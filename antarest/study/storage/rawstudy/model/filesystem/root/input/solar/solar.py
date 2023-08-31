@@ -1,16 +1,8 @@
-from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
-    AreaMatrixList,
-)
-from antarest.study.storage.rawstudy.model.filesystem.common.prepro import (
-    InputPrepro,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import AreaMatrixList
+from antarest.study.storage.rawstudy.model.filesystem.common.prepro import InputPrepro
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_scenario_hourly,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly
 
 
 class InputSolar(FolderNode):

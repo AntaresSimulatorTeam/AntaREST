@@ -2,11 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    DistrictAlreadyExist,
-    DistrictNotFound,
-)
+from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.district_manager import (
     DistrictCreationDTO,
     DistrictInfoDTO,
@@ -14,31 +10,17 @@ from antarest.study.business.district_manager import (
     DistrictUpdateDTO,
 )
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DistrictSet,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 # noinspection SpellCheckingInspection
 EXECUTE_OR_ADD_COMMANDS = (

@@ -4,9 +4,7 @@ from typing import List, Optional, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 
 class ICommandExtractor(abc.ABC):

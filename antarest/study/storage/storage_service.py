@@ -5,9 +5,7 @@ from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 class StudyStorageService:

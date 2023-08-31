@@ -4,9 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig
-from antarest.launcher.extensions.adequacy_patch.extension import (
-    AdequacyPatchExtension,
-)
+from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from tests.conftest import with_db_context
 
 

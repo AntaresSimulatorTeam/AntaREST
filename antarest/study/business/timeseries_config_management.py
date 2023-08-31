@@ -4,20 +4,12 @@ from pydantic import StrictBool, StrictInt, root_validator, validator
 
 from antarest.core.model import JSON
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    GENERAL_DATA_PATH,
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import GENERAL_DATA_PATH, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class TSType(EnumIgnoreCase):

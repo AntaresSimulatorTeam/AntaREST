@@ -10,12 +10,7 @@ from sqlalchemy import and_, exists  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import (
-    Matrix,
-    MatrixContent,
-    MatrixData,
-    MatrixDataSet,
-)
+from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
 
 logger = logging.getLogger(__name__)
 

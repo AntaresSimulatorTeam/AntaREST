@@ -3,11 +3,7 @@ from typing import List, Tuple
 import pandas as pd
 import pytest
 
-from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstruction,
-    MatrixSlice,
-    Operation,
-)
+from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
     MatrixEditError,

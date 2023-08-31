@@ -1,19 +1,9 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.areas_ini import (
-    InputThermalAreasIni,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.cluster import (
-    InputThermalClusters,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.prepro import (
-    InputThermalPrepro,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.series.series import (
-    InputThermalSeries,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.areas_ini import InputThermalAreasIni
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.cluster import InputThermalClusters
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.prepro import InputThermalPrepro
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.series.series import InputThermalSeries
 
 
 class InputThermal(FolderNode):

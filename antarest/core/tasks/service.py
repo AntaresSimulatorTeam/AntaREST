@@ -9,19 +9,10 @@ from typing import Awaitable, Callable, Dict, List, Optional, Union
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import (
-    Event,
-    EventChannelDirectory,
-    EventType,
-    IEventBus,
-)
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import (
-    MustBeAuthenticatedError,
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
