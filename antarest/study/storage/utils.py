@@ -7,7 +7,6 @@ import time
 from datetime import datetime, timedelta
 from math import ceil
 from pathlib import Path
-from time import strptime
 from typing import Callable, List, Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
@@ -19,7 +18,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import StopWatch

@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from pydantic import Field, validator
+from pydantic import Field
 
 from antarest.study.business.utils import (
     FieldInfo,

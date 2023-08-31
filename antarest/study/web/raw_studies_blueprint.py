@@ -3,7 +3,7 @@ import logging
 from http import HTTPStatus
 from typing import Any, List
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, Depends, File
 from fastapi.params import Param
 from starlette.responses import Response
 

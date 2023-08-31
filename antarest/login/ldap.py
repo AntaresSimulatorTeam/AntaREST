@@ -6,7 +6,7 @@ import requests
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
-from antarest.login.model import Group, GroupDTO, Role, UserLdap
+from antarest.login.model import Group, Role, UserLdap
 from antarest.login.repository import (
     GroupRepository,
     RoleRepository,

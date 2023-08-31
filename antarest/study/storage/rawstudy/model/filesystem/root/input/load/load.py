@@ -4,9 +4,6 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import (
     InputPrepro,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )

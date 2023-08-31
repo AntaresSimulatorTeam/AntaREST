@@ -1,5 +1,3 @@
-from functools import reduce
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Simulation,

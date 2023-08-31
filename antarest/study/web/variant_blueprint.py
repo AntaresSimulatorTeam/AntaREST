@@ -13,13 +13,9 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
 )
 
 logger = logging.getLogger(__name__)

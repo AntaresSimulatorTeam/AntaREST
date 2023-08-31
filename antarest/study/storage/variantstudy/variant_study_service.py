@@ -32,12 +32,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import (
-    JSON,
-    PermissionInfo,
-    PublicMode,
-    StudyPermissionType,
-)
+from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,

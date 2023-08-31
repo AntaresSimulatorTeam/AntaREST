@@ -1,6 +1,5 @@
 import re
 from builtins import sorted
-from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
 from pydantic import Field, root_validator

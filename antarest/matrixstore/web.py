@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Body, Depends, File, UploadFile
-from starlette.requests import Request
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from sqlalchemy.orm import with_polymorphic  # type: ignore
 

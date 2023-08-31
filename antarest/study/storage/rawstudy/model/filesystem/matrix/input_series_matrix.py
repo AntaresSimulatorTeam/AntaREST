@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-import numpy as np
 import pandas as pd
 from pandas.errors import EmptyDataError
 

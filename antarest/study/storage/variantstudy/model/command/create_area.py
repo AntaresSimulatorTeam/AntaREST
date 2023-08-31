@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.common.default_values import (

@@ -1,10 +1,6 @@
 import logging
-import tempfile
-from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
-from zipfile import ZipFile
+from typing import Optional
 
-from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
 from antarest.login.model import GroupDTO
 from antarest.study.model import (

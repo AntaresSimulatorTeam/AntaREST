@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic.types import StrictBool
