@@ -137,14 +137,14 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        # fmt: off
+        
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
         data = matrix.tolist()
         index = list(range(matrix.shape[0]))
         columns = list(range(matrix.shape[1]))
         return MatrixContent.construct(data=data, columns=columns, index=index)
-        # fmt: on
+        
 
     def exists(self, matrix_hash: str) -> bool:
         """

@@ -81,10 +81,10 @@ class SlurmLauncher(AbstractLauncher):
             self.local_workspace = self._init_workspace(use_private_workspace)
         self.log_tail_manager = LogTailManager(local_workspace_dir)
 
-        # fmt: off
+        
         self.launcher_args = self._init_launcher_arguments(self.local_workspace)
         self.launcher_params = self._init_launcher_parameters(self.local_workspace)
-        # fmt: on
+        
 
         self.data_repo_tinydb = DataRepoTinydb(
             database_file_path=(
@@ -360,14 +360,14 @@ class SlurmLauncher(AbstractLauncher):
             # Re-fetching the study list is necessary as new studies may have been added
             # during the `import_output` process. Afterward, we clean up the list to ensure
             # that any removed studies are removed from the database.
-            # fmt: off
+            
             cleanup_list = [s for s in study_list if s.with_error or s.done]
             for study in cleanup_list:
                 self._clean_up_study(study.name)
             updated_list = self.data_repo_tinydb.get_list_of_studies()
             if {s.name for s in updated_list} == {s.name for s in cleanup_list}:
                 self.stop()
-            # fmt: on
+            
 
     def _handle_failure(self, study: StudyDTO) -> None:
         """

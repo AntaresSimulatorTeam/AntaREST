@@ -105,14 +105,14 @@ class TestCorrelationMatrix:
 
     def test_validation__coefficients_non_empty_array(self):
         """Check that the coefficients matrix is a non-empty array"""
-        # fmt: off
+        
         with pytest.raises(ValueError, match="must not be empty"):
             CorrelationMatrix(
                 index=[],
                 columns=[],
                 data=[],
             )
-        # fmt: off
+        
 
     def test_validation__coefficients_array_shape(self):
         """Check that the coefficients matrix is an array of shape 2×1"""
@@ -126,7 +126,7 @@ class TestCorrelationMatrix:
     @pytest.mark.parametrize("coefficient", [-1.1, 1.1, np.nan])
     def test_validation__coefficients_invalid_value(self, coefficient):
         """Check that all coefficients matrix has positive or nul coefficients"""
-        # fmt: off
+        
         with pytest.raises(ValueError, match="between -1 and 1|must not contain NaN"):
             CorrelationMatrix(
                 index=["fr", "de"],
@@ -136,7 +136,7 @@ class TestCorrelationMatrix:
                     [0.2, 0],
                 ],
             )
-        # fmt: on
+        
 
     def test_validation__matrix_not_symmetric(self):
         """Check that the correlation matrix is not symmetric"""

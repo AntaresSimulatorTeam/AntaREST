@@ -23,14 +23,14 @@ class RenewableFormFields(FormFieldsBaseModel):
     Pydantic model representing renewable cluster configuration form fields.
     """
 
-    # fmt: off
+    
     group: Optional[str]
     name: Optional[str]
     ts_interpretation: Optional[TimeSeriesInterpretation]
     unit_count: Optional[int] = Field(description="Unit count", ge=1)
     enabled: Optional[bool] = Field(description="Enable flag")
     nominal_capacity: Optional[float] = Field(description="Nominal capacity (MW)", ge=0)
-    # fmt: on
+    
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {

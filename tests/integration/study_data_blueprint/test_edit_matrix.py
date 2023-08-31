@@ -237,10 +237,10 @@ class TestEditMatrix:
         res.raise_for_status()
         new_data = res.json()["data"]
         assert new_data != initial_data
-        # fmt: off
+
         assert [[a[i] for a in new_data[2:4]] for i in range(2, 4)] == [[42] * 2] * 2
         assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [[42] * 6] * 2
-        # fmt: on
+
 
     def test_edit_matrix__thermal_cluster(
         self,

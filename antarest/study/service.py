@@ -1508,9 +1508,9 @@ class StudyService:
         Returns: ICommand that replaces the data
 
         """
-        # fmt: off
+        
         context = self.storage_service.variant_study_service.command_factory.command_context
-        # fmt: on
+        
         if isinstance(tree_node, IniFileNode):
             return UpdateConfig(
                 target=url,

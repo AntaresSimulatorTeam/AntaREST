@@ -10,7 +10,7 @@ class TestMatrixSlice:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
+
             pytest.param(
                 {"column_from": "5", "column_to": "8", "row_from": "0", "row_to": "8760"},
                 {"column_from": 5, "column_to": 8, "row_from": 0, "row_to": 8760},
@@ -67,7 +67,7 @@ class TestMatrixSlice:
                 id="row_from-is-negative-BAD",
                 marks=pytest.mark.xfail(reason="negative value", raises=ValidationError, strict=True),
             ),
-            # fmt: on
+
         ],
     )
     def test_init(
@@ -81,7 +81,7 @@ class TestOperation:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
+
             pytest.param(
                 {"operation": "=", "value": "120"},
                 {"operation": "=", "value": 120.0},
@@ -98,7 +98,7 @@ class TestOperation:
                 id="operation-unknown",
                 marks=pytest.mark.xfail(reason="unknown operation", raises=ValidationError, strict=True),
             ),
-            # fmt: on
+
         ],
     )
     def test_init(
@@ -130,7 +130,7 @@ class TestMatrixEditInstruction:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
+
             pytest.param(
                 {
                     "operation": {"operation": "=", "value": 120.0},
@@ -197,7 +197,7 @@ class TestMatrixEditInstruction:
                 id="coordinates-negative-row-BAD",
                 marks=pytest.mark.xfail(reason="negative value", raises=ValidationError, strict=True),
             ),
-            # fmt: on
+
         ],
     )
     def test_init(

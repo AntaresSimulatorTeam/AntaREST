@@ -174,12 +174,12 @@ class MatrixEditInstruction(BaseModel):
         """
         slices = values.get("slices")
         coordinates = values.get("coordinates")
-        # fmt: off
+        
         if slices is None and coordinates is None:
             raise ValueError("At least 'slices' or 'coordinates' must be defined.")
         if slices is not None and coordinates is not None:
             raise ValueError("Only 'slices' or 'coordinates' could be defined, but not both.")
-        # fmt: on
+        
         return values
 
     @validator("coordinates")
@@ -210,10 +210,10 @@ class MatrixEditInstruction(BaseModel):
 
     def __str__(self) -> str:
         """Returns a string representation used in error messages."""
-        # fmt: off
+        
         if self.slices:
             return f"slices={self.slices}, operation={self.operation}"
         elif self.coordinates:
             return f"coordinates={self.coordinates}, operation={self.operation}"
-        # fmt: on
+        
         raise NotImplementedError
