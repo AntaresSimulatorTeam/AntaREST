@@ -19,9 +19,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveLink:
-    def test_validation(self, empty_study: FileStudy):
-        pass
-
     @staticmethod
     def make_study(tmpdir: Path, version: int) -> FileStudy:
         study_dir: Path = (
@@ -38,7 +35,7 @@ class TestRemoveLink:
         config = build(study_path, "1")
         return FileStudy(config, FileStudyTree(Mock(), config))
 
-    @pytest.mark.parametrize("version", [(810), (820)])
+    @pytest.mark.parametrize("version", [810, 820])
     @pytest.mark.unit_test
     def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int):
         empty_study = self.make_study(tmpdir, version)
