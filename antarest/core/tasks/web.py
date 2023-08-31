@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskListFilter, TaskJobLog
+from antarest.core.tasks.model import TaskJobLog, TaskListFilter
 from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth

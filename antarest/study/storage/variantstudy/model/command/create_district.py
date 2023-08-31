@@ -1,21 +1,21 @@
 from enum import Enum
-from typing import Any, Optional, List, cast, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from pydantic import validator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     DistrictSet,
     FileStudyTreeConfig,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

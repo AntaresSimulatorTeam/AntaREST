@@ -5,10 +5,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from antarest.core.exceptions import ShouldNotHappenException
-from antarest.core.model import PublicMode
-from antarest.core.persistence import Base
-from antarest.login.model import Group, GroupDTO, Identity
 from pydantic import BaseModel
 from sqlalchemy import (  # type: ignore
     Boolean,
@@ -21,6 +17,11 @@ from sqlalchemy import (  # type: ignore
     Table,
 )
 from sqlalchemy.orm import relationship  # type: ignore
+
+from antarest.core.exceptions import ShouldNotHappenException
+from antarest.core.model import PublicMode
+from antarest.core.persistence import Base
+from antarest.login.model import Group, GroupDTO, Identity
 
 DEFAULT_WORKSPACE_NAME = "default"
 

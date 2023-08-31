@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Optional, List
+from typing import List, Optional, Union
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode

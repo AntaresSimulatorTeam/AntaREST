@@ -8,14 +8,14 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User, Group
+from antarest.login.model import Group, User
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
-    Study,
-    RawStudy,
     DEFAULT_WORKSPACE_NAME,
-    StudyContentStatus,
     PublicMode,
+    RawStudy,
+    Study,
+    StudyContentStatus,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy

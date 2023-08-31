@@ -5,6 +5,9 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.model import PublicMode
 from antarest.dbmodel import Base
@@ -36,8 +39,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 
 class TestCorrelationField:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

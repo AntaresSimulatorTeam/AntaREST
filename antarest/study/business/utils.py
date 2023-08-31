@@ -1,4 +1,4 @@
-from typing import List, Sequence, TypedDict, Any, Optional, Callable
+from typing import Any, Callable, List, Optional, Sequence, TypedDict
 
 from pydantic import BaseModel, Extra
 
@@ -6,7 +6,7 @@ from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.string import to_camel_case
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed

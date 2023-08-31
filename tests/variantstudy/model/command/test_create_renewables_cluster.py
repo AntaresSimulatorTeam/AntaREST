@@ -1,8 +1,8 @@
 import configparser
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     ENR_MODELLING,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import (

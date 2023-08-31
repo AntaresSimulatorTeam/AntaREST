@@ -11,14 +11,14 @@ from pandas.errors import ParserError
 
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
-    XpansionManager,
-    XpansionSettingsDTO,
-    XpansionCandidateDTO,
-    LinkNotFound,
-    XpansionFileNotFoundError,
-    XpansionResourceFileType,
     FileCurrentlyUsedInSettings,
+    LinkNotFound,
+    XpansionCandidateDTO,
+    XpansionFileNotFoundError,
+    XpansionManager,
+    XpansionResourceFileType,
     XpansionSensitivitySettingsDTO,
+    XpansionSettingsDTO,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build

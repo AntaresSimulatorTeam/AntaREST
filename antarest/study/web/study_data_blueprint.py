@@ -2,15 +2,16 @@ import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union, cast
 
+from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body, Query
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstruction,
-)
+from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import (
     AdequacyPatchFormFields,
 )
@@ -28,9 +29,16 @@ from antarest.study.business.area_management import (
     AreaUI,
     LayerInfoDTO,
 )
+from antarest.study.business.areas.hydro_management import (
+    ManagementOptionsFormFields,
+)
 from antarest.study.business.areas.properties_management import (
     PropertiesFormFields,
 )
+from antarest.study.business.areas.renewable_management import (
+    RenewableFormFields,
+)
+from antarest.study.business.areas.thermal_management import ThermalFormFields
 from antarest.study.business.binding_constraint_management import (
     ConstraintTermDTO,
     UpdateBindingConstProps,
@@ -46,17 +54,11 @@ from antarest.study.business.district_manager import (
     DistrictUpdateDTO,
 )
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.areas.hydro_management import (
-    ManagementOptionsFormFields,
-)
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import (
     OptimizationFormFields,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.areas.renewable_management import (
-    RenewableFormFields,
-)
 from antarest.study.business.table_mode_management import (
     ColumnsModelTypes,
     TableTemplateType,
@@ -64,12 +66,9 @@ from antarest.study.business.table_mode_management import (
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
 )
-from antarest.study.business.areas.thermal_management import ThermalFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Body, Depends
-from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
 

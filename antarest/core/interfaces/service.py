@@ -1,5 +1,5 @@
 import threading
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 
 class IService(ABC):

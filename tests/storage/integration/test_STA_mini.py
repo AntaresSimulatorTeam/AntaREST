@@ -7,6 +7,9 @@ from typing import Union
 from unittest.mock import Mock
 
 import pytest
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
@@ -14,8 +17,6 @@ from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (

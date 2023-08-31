@@ -9,23 +9,6 @@ import pydantic
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 import uvicorn.config  # type: ignore
-from antarest import __version__
-from antarest.core.config import Config
-from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.logging.utils import LoggingMiddleware, configure_logger
-from antarest.core.requests import RATE_LIMIT_CONFIG
-from antarest.core.swagger import customize_openapi
-from antarest.core.utils.utils import get_local_path
-from antarest.core.utils.web import tags_metadata
-from antarest.login.auth import Auth, JwtSettings
-from antarest.matrixstore.matrix_garbage_collector import (
-    MatrixGarbageCollector,
-)
-from antarest.singleton_services import SingletonServices
-from antarest.study.storage.auto_archive_service import AutoArchiveService
-from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.tools.admin_lib import clean_locks
-from antarest.utils import Module, create_services, init_db
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -44,6 +27,24 @@ from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.types import ASGIApp
+
+from antarest import __version__
+from antarest.core.config import Config
+from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.logging.utils import LoggingMiddleware, configure_logger
+from antarest.core.requests import RATE_LIMIT_CONFIG
+from antarest.core.swagger import customize_openapi
+from antarest.core.utils.utils import get_local_path
+from antarest.core.utils.web import tags_metadata
+from antarest.login.auth import Auth, JwtSettings
+from antarest.matrixstore.matrix_garbage_collector import (
+    MatrixGarbageCollector,
+)
+from antarest.singleton_services import SingletonServices
+from antarest.study.storage.auto_archive_service import AutoArchiveService
+from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.tools.admin_lib import clean_locks
+from antarest.utils import Module, create_services, init_db
 
 logger = logging.getLogger(__name__)
 

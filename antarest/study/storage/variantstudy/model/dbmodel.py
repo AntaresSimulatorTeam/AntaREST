@@ -2,13 +2,18 @@ import json
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.study.model import (
-    Study,
-)
+from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 

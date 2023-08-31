@@ -5,22 +5,20 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import Optional, IO, List
+from typing import IO, List, Optional
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antarest.core.config import Config
-from antarest.core.exceptions import (
-    StudyDeletionNotAllowed,
-)
+from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
-    RawStudy,
     DEFAULT_WORKSPACE_NAME,
-    Study,
     Patch,
+    RawStudy,
+    Study,
     StudyAdditionalData,
 )
 from antarest.study.storage.abstract_storage_service import (
@@ -28,22 +26,22 @@ from antarest.study.storage.abstract_storage_service import (
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
     FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
     FileStudy,
+    StudyFactory,
 )
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.utils import (
-    update_antares_info,
-    get_default_workspace_path,
-    fix_study_root,
-    is_managed,
-    remove_from_cache,
     create_new_empty_study,
     export_study_flat,
+    fix_study_root,
+    get_default_workspace_path,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
 )
 
 logger = logging.getLogger(__name__)

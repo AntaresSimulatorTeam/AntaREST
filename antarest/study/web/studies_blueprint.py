@@ -2,32 +2,28 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Request
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
+    CommentsDto,
+    ExportFormat,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
-    StudyMetadataDTO,
-    CommentsDto,
-    StudyDownloadDTO,
-    MatrixIndex,
-    ExportFormat,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

@@ -2,6 +2,7 @@ import re
 from unittest.mock import patch
 
 import pytest
+
 from antarest.core.version_info import get_commit_id, get_dependencies
 
 

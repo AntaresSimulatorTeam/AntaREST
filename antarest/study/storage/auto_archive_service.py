@@ -9,7 +9,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy

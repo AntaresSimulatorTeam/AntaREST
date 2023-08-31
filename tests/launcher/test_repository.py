@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
-from antarest.launcher.model import JobResult, JobStatus, JobLog, JobLogType
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository

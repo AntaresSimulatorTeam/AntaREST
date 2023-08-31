@@ -1,31 +1,31 @@
-from typing import Dict, List, Union, Any, Optional, cast, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
     FileStudyTreeConfig,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import (
-    validate_matrix,
     strip_matrix_protocol,
+    validate_matrix,
 )
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     apply_binding_constraint,
     parse_bindings_coeffs_and_save_into_config,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
     BindingConstraintOperator,
+    CommandName,
+    CommandOutput,
     TimeStep,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

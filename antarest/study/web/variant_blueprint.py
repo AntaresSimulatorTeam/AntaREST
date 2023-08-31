@@ -1,14 +1,12 @@
 import logging
 from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag

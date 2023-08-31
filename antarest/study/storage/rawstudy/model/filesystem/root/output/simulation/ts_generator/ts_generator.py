@@ -1,10 +1,10 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
-    AreaMultipleMatrixList,
-    ThermalMatrixList,
-    HydroMatrixList,
     AreaMatrixList,
+    AreaMultipleMatrixList,
+    HydroMatrixList,
+    ThermalMatrixList,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

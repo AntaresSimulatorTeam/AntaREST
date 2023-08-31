@@ -8,33 +8,24 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
-from zipfile import ZipFile, ZIP_DEFLATED
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from fastapi import HTTPException
 
 from antarest.study.model import (
+    ExportFormat,
     MatrixAggregationResult,
+    MatrixAggregationResultDTO,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
-    ExportFormat,
-    MatrixAggregationResultDTO,
     TimeSerie,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Area,
     ENR_MODELLING,
+    Area,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (

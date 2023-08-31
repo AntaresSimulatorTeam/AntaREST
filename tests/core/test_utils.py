@@ -1,15 +1,15 @@
 from pathlib import Path
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.utils.utils import (
-    retry,
     concat_files,
-    suppress_exception,
     concat_files_to_str,
     read_in_zip,
+    retry,
+    suppress_exception,
 )
 
 

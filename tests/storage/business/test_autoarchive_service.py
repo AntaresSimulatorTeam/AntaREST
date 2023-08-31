@@ -6,7 +6,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.study.model import RawStudy, DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest import with_db_context

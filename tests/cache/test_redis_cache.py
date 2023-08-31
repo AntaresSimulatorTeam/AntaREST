@@ -7,8 +7,8 @@ from antarest.core.cache.business.redis_cache import (
     RedisCacheElement,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
+    FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
 )
 

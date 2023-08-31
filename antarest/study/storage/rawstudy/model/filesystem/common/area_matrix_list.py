@@ -1,4 +1,4 @@
-from typing import Callable, Any, Optional, Dict
+from typing import Any, Callable, Dict, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

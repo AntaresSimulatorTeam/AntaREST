@@ -5,6 +5,8 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
+
 from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -13,7 +15,6 @@ from antarest.launcher.adapters.local_launcher.local_launcher import (
     LocalLauncher,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
-from sqlalchemy import create_engine
 
 
 @pytest.mark.unit_test

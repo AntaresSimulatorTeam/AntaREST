@@ -9,13 +9,13 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.model import (
+    ExportFormat,
+    MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadLevelDTO,
-    ExportFormat,
-    TimeSeriesData,
     StudyDownloadType,
     TimeSerie,
-    MatrixAggregationResultDTO,
+    TimeSeriesData,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_start_date

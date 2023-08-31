@@ -6,8 +6,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
 from antarest.study.storage.variantstudy.model.command.common import (
-    TimeStep,
     BindingConstraintOperator,
+    TimeStep,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,

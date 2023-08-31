@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pytest
+
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Password, User

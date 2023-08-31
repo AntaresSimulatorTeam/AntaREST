@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import List, Tuple
 from zipfile import ZipFile
 
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_4_fixed_hourly,
@@ -27,8 +30,6 @@ from antarest.tools.lib import (
     generate_study,
     parse_commands,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 test_dir: Path = Path(__file__).parent
 

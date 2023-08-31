@@ -7,6 +7,10 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
+from fastapi import FastAPI
+from markupsafe import Markup
+from starlette.testclient import TestClient
+
 from antarest.core.config import (
     Config,
     SecurityConfig,
@@ -39,9 +43,6 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from fastapi import FastAPI
-from markupsafe import Markup
-from starlette.testclient import TestClient
 from tests.storage.conftest import SimpleFileTransferManager
 
 ADMIN = JWTUser(

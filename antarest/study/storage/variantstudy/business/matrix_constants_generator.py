@@ -7,10 +7,10 @@ from filelock import FileLock
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
-    NULL_MATRIX,
-    NULL_SCENARIO_MATRIX,
     FIXED_4_COLUMNS,
     FIXED_8_COLUMNS,
+    NULL_MATRIX,
+    NULL_SCENARIO_MATRIX,
 )
 
 # TODO: put index into variable

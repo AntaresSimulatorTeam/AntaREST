@@ -2,15 +2,15 @@ import os
 import platform
 import stat
 from pathlib import Path
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 
 from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.worker.simulator_worker import (
-    SimulatorWorker,
     GENERATE_KIRSHOFF_CONSTRAINTS_TASK_NAME,
     GENERATE_TIMESERIES_TASK_NAME,
+    SimulatorWorker,
 )
 from antarest.worker.worker import WorkerTaskCommand
 from tests.conftest import with_db_context

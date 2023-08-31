@@ -29,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.user import (
     User,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

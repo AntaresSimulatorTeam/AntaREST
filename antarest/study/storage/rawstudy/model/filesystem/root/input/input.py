@@ -1,6 +1,6 @@
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     ENR_MODELLING,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,

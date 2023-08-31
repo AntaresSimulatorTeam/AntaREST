@@ -3,7 +3,7 @@ import datetime
 import sys
 import uuid
 from pathlib import Path
-from typing import Callable, Optional, List, Dict, Union
+from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -16,13 +16,12 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
-    TaskListFilter,
-    TaskDTO,
     CustomTaskEventMessages,
+    TaskDTO,
+    TaskListFilter,
     TaskStatus,
     TaskType,
 )
-
 from antarest.core.tasks.service import ITaskService, Task
 
 project_dir: Path = Path(__file__).parent.parent.parent

@@ -5,6 +5,9 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.core.config import (
     Config,
     SecurityConfig,
@@ -21,8 +24,6 @@ from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 from tests.storage.conftest import (
     SimpleFileTransferManager,
     SimpleSyncTaskService,

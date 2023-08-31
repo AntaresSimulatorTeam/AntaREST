@@ -4,6 +4,9 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
@@ -16,8 +19,6 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LogType,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 ADMIN = JWTUser(
     id=1,

@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    DailyMatrixSerializer,
-    MonthlyMatrixSerializer,
-    HourlyMatrixSerializer,
-    WeeklyMatrixSerializer,
     AnnualMatrixSerializer,
+    DailyMatrixSerializer,
+    HourlyMatrixSerializer,
+    MonthlyMatrixSerializer,
+    WeeklyMatrixSerializer,
     rename_unnamed,
 )
 

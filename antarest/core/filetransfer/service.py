@@ -4,7 +4,7 @@ import os
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from starlette.background import BackgroundTasks
 
@@ -16,12 +16,12 @@ from antarest.core.filetransfer.model import (
     FileDownloadNotReady,
 )
 from antarest.core.filetransfer.repository import FileDownloadRepository
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import (
-    RequestParameters,
     MustBeAuthenticatedError,
+    RequestParameters,
     UserHasNotPermissionError,
 )
 

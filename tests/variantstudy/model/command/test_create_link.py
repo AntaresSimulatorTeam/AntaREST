@@ -3,6 +3,10 @@ import configparser
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.common.default_values import (
+    FilteringOptions,
+    LinkProperties,
+)
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -10,10 +14,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import (
     CommandReverter,
-)
-from antarest.study.common.default_values import (
-    FilteringOptions,
-    LinkProperties,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,

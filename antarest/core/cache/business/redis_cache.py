@@ -1,12 +1,12 @@
 import json
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import BaseModel
 from redis.client import Redis
 
-from antarest.core.model import JSON
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import JSON
 
 logger = logging.getLogger(__name__)
 

@@ -8,9 +8,9 @@ from antarest.core.exceptions import (
     DistrictNotFound,
 )
 from antarest.study.business.district_manager import (
+    DistrictCreationDTO,
     DistrictInfoDTO,
     DistrictManager,
-    DistrictCreationDTO,
     DistrictUpdateDTO,
 )
 from antarest.study.model import Study

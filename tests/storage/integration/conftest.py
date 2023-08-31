@@ -8,11 +8,11 @@ from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
+    CacheConfig,
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
-    CacheConfig,
 )
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware

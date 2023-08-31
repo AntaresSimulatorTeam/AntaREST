@@ -1,6 +1,6 @@
 import abc
 from abc import abstractmethod
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

@@ -2,14 +2,15 @@ import logging
 import threading
 import time
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor, Future
-from typing import Dict, List, Union, Any
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Any, Dict, List, Union
+
+from pydantic import BaseModel
 
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

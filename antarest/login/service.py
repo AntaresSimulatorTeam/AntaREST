@@ -1,40 +1,37 @@
 import logging
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
 from fastapi import HTTPException
 
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
-    User,
-    Group,
-    Role,
-    BotCreateDTO,
     Bot,
-    Identity,
-    UserCreateDTO,
-    Password,
-    IdentityDTO,
-    RoleDTO,
-    RoleCreationDTO,
+    BotCreateDTO,
     BotIdentityDTO,
+    Group,
     GroupDetailDTO,
-    UserRoleDTO,
     GroupDTO,
+    Identity,
+    IdentityDTO,
+    Password,
+    Role,
+    RoleCreationDTO,
+    RoleDTO,
+    User,
+    UserCreateDTO,
     UserInfo,
     UserLdap,
+    UserRoleDTO,
 )
 from antarest.login.repository import (
-    UserRepository,
+    BotRepository,
     GroupRepository,
     RoleRepository,
-    BotRepository,
+    UserRepository,
 )
 
 logger = logging.getLogger(__name__)

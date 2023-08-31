@@ -17,8 +17,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list impo
     InputAreasList,
 )
 from tests.storage.repository.filesystem.utils import (
-    TestSubNode,
     TestMiddleNode,
+    TestSubNode,
 )
 
 

@@ -6,7 +6,7 @@ from html import escape
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from time import time, sleep
+from time import sleep, time
 from typing import List, Optional
 
 from filelock import FileLock
@@ -20,7 +20,7 @@ from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
-from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)

@@ -4,6 +4,7 @@ from typing import List
 from unittest.mock import MagicMock
 
 import pytest
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode

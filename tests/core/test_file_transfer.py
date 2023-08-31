@@ -3,17 +3,17 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.eventbus import EventType, Event
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters, MustBeAuthenticatedError
+from antarest.core.requests import MustBeAuthenticatedError, RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
 

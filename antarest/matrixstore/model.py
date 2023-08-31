@@ -2,8 +2,6 @@ import datetime
 import uuid
 from typing import Any, List, Union
 
-from antarest.core.persistence import Base
-from antarest.login.model import GroupDTO, Identity, UserInfo
 from pydantic import BaseModel
 from sqlalchemy import (  # type: ignore
     Boolean,
@@ -15,6 +13,9 @@ from sqlalchemy import (  # type: ignore
     Table,
 )
 from sqlalchemy.orm import relationship  # type: ignore
+
+from antarest.core.persistence import Base
+from antarest.login.model import GroupDTO, Identity, UserInfo
 
 
 class Matrix(Base):  # type: ignore

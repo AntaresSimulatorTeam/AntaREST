@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Generic, Union, cast, Tuple, Any, Dict
+from typing import Any, Dict, Generic, List, Optional, Tuple, Union, cast
 from zipfile import ZipFile
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -12,9 +12,9 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
+    G,
     INode,
     S,
-    G,
     V,
 )
 

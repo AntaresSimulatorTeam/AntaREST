@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def merge_deep(a: Dict[Any, Any], b: Dict[Any, Any]) -> Dict[Any, Any]:

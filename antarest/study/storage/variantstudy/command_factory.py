@@ -74,9 +74,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-)
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CommandFactory:

@@ -2,7 +2,7 @@ import logging
 import time
 from os import listdir
 from pathlib import Path
-from typing import Set, List
+from typing import List, Set
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService

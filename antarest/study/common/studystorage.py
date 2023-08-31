@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar, Generic, List, Union, Optional, IO
+from typing import IO, Generic, List, Optional, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.study.model import (
     Study,
-    StudySimResultDTO,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudySimResultDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,

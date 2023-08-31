@@ -8,6 +8,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
+
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO

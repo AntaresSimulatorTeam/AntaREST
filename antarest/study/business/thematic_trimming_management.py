@@ -1,11 +1,11 @@
-from typing import Optional, Dict, Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic.types import StrictBool
 
 from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    FieldInfo,
     GENERAL_DATA_PATH,
+    FieldInfo,
+    FormFieldsBaseModel,
     execute_or_add_commands,
 )
 from antarest.study.model import Study

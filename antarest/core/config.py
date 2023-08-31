@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
+
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 

@@ -11,23 +11,23 @@ from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.login.main import build_login
 from antarest.login.model import (
-    User,
-    RoleType,
-    Password,
-    Group,
-    Role,
-    BotCreateDTO,
     Bot,
-    UserCreateDTO,
-    IdentityDTO,
+    BotCreateDTO,
     BotRoleCreateDTO,
-    RoleDetailDTO,
-    UserInfo,
+    Group,
     GroupDTO,
+    IdentityDTO,
+    Password,
+    Role,
+    RoleDetailDTO,
+    RoleType,
+    User,
+    UserCreateDTO,
+    UserInfo,
 )
 from antarest.main import JwtSettings
 

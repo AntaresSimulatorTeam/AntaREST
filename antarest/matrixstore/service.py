@@ -9,6 +9,9 @@ from typing import List, Optional, Sequence, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
+from fastapi import UploadFile
+from numpy import typing as npt
+
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -36,8 +39,6 @@ from antarest.matrixstore.repository import (
     MatrixDataSetRepository,
     MatrixRepository,
 )
-from fastapi import UploadFile
-from numpy import typing as npt
 
 logger = logging.getLogger(__name__)
 

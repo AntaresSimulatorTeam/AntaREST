@@ -11,6 +11,10 @@ from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
+from fastapi import HTTPException, UploadFile
+from markupsafe import escape
+from starlette.responses import FileResponse, Response
+
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
@@ -181,9 +185,6 @@ from antarest.study.storage.variantstudy.variant_study_service import (
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
-from fastapi import HTTPException, UploadFile
-from markupsafe import escape
-from starlette.responses import FileResponse, Response
 
 logger = logging.getLogger(__name__)
 

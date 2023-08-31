@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Callable, Any
+from typing import Any, Callable, Dict, List, Optional
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

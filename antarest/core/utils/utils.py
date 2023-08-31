@@ -9,6 +9,7 @@ from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 import redis
+
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
 

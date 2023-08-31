@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict, Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
@@ -11,8 +10,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,

@@ -1,6 +1,8 @@
 import unittest.mock
 
 import pytest
+from sqlalchemy import create_engine
+
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.matrixstore.repository import (
@@ -9,7 +11,6 @@ from antarest.matrixstore.repository import (
     MatrixRepository,
 )
 from antarest.matrixstore.service import MatrixService
-from sqlalchemy import create_engine
 
 
 @pytest.fixture(name="db_engine")

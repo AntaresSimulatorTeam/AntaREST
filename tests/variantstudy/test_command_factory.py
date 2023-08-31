@@ -9,9 +9,7 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.business.utils import (
-    remove_none_args,
-)
+from antarest.study.storage.variantstudy.business.utils import remove_none_args
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,

@@ -5,16 +5,17 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi_jwt_auth import AuthJWT  # type: ignore
+from pydantic import BaseModel
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.login.auth import Auth
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi_jwt_auth import AuthJWT  # type: ignore
-from pydantic import BaseModel
-from starlette.websockets import WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 

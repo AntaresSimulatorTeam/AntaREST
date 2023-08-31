@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study

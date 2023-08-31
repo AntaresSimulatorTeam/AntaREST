@@ -2,8 +2,9 @@ from http import HTTPStatus
 from typing import List
 
 import pytest
-from antarest.study.business.area_management import AreaInfoDTO
 from starlette.testclient import TestClient
+
+from antarest.study.business.area_management import AreaInfoDTO
 
 
 @pytest.mark.unit_test

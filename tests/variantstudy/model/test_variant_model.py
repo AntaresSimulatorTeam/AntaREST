@@ -1,12 +1,12 @@
 import datetime
 from pathlib import Path
-from unittest.mock import Mock, ANY
+from unittest.mock import ANY, Mock
 
 from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
@@ -27,8 +27,8 @@ from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
     SNAPSHOT_RELATIVE_PATH,
+    VariantStudyService,
 )
 
 SADMIN = RequestParameters(

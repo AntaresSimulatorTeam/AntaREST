@@ -3,10 +3,8 @@ from pathlib import Path
 
 import click
 
-from antarest.tools.admin_lib import (
-    clean_locks as do_clean_locks,
-    reindex_table as do_reindex_table,
-)
+from antarest.tools.admin_lib import clean_locks as do_clean_locks
+from antarest.tools.admin_lib import reindex_table as do_reindex_table
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

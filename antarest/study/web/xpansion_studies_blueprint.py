@@ -2,19 +2,19 @@ import json
 import logging
 from typing import Any, List, Optional, Union
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import StudyPermissionType, JSON
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
-    XpansionSettingsDTO,
     XpansionCandidateDTO,
     XpansionResourceFileType,
+    XpansionSettingsDTO,
 )
 from antarest.study.service import StudyService
 

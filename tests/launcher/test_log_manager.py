@@ -2,9 +2,7 @@ import logging
 import time
 from pathlib import Path
 
-from antarest.launcher.adapters.log_manager import (
-    LogTailManager,
-)
+from antarest.launcher.adapters.log_manager import LogTailManager
 
 logging.basicConfig(level=logging.DEBUG)
 

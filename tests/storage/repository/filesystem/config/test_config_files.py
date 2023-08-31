@@ -4,21 +4,20 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    build,
-    _parse_outputs,
-    _parse_thermal,
-    _parse_sets,
     _parse_links,
+    _parse_outputs,
+    _parse_sets,
+    _parse_thermal,
+    build,
 )
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
+    BindingConstraintDTO,
+    Cluster,
+    DistrictSet,
+    FileStudyTreeConfig,
     Link,
     Simulation,
-    DistrictSet,
-    Cluster,
-    BindingConstraintDTO,
 )
 from tests.storage.business.assets import ASSETS_DIR
 

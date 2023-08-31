@@ -1,10 +1,11 @@
-from typing import Optional, Dict, Any, List, Union
+from typing import Any, Dict, List, Optional, Union
+
 from pydantic import Field, validator
 
 from antarest.study.business.utils import (
+    FieldInfo,
     FormFieldsBaseModel,
     execute_or_add_commands,
-    FieldInfo,
 )
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService

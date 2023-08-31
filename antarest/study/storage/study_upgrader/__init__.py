@@ -1,12 +1,12 @@
-from http import HTTPStatus
-from http.client import HTTPException
-from pathlib import Path
-from typing import NamedTuple, Callable
 import logging
 import re
 import shutil
 import tempfile
 import time
+from http import HTTPStatus
+from http.client import HTTPException
+from pathlib import Path
+from typing import Callable, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -18,7 +18,6 @@ from .upgrader_820 import upgrade_820
 from .upgrader_830 import upgrade_830
 from .upgrader_840 import upgrade_840
 from .upgrader_850 import upgrade_850
-
 
 logger = logging.getLogger(__name__)
 

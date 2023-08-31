@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Sequence, Optional
+from typing import Any, List, Optional, Sequence, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData

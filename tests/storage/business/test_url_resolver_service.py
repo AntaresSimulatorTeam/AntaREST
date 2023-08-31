@@ -2,9 +2,7 @@ import os
 from unittest.mock import Mock
 
 from antarest.matrixstore.model import MatrixDTO
-from antarest.matrixstore.uri_resolver_service import (
-    UriResolverService,
-)
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],

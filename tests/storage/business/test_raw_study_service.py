@@ -6,14 +6,14 @@ import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import (
-    StudyNotFoundError,
     StudyDeletionNotAllowed,
+    StudyNotFoundError,
 )
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.model import (
@@ -22,9 +22,7 @@ from antarest.study.model import (
     StudyAdditionalData,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import get_default_workspace_path
 
 

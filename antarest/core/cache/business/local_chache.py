@@ -1,13 +1,13 @@
 import logging
 import threading
 import time
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
 from antarest.core.config import CacheConfig
-from antarest.core.model import JSON
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import JSON
 
 logger = logging.getLogger(__name__)
 

@@ -3,16 +3,14 @@ import logging
 from http import HTTPStatus
 from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, File, Depends, Body
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param
 from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag

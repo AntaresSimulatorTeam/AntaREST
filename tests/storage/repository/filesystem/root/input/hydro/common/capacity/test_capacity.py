@@ -23,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.ca
     capacity,
 )
 
-
 # noinspection SpellCheckingInspection
 BEFORE_650 = {
     # fmt: off

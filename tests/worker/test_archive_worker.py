@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest.mock import Mock
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.worker.archive_worker import ArchiveWorker

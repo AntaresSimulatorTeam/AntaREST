@@ -6,6 +6,8 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
 import pytest
+from fastapi import UploadFile
+
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
@@ -21,7 +23,6 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.service import MatrixService
-from fastapi import UploadFile
 
 
 class TestMatrixService:

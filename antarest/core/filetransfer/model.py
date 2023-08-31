@@ -4,7 +4,13 @@ from http.client import HTTPException
 from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, DateTime, Boolean  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    String,
+)
 
 from antarest.core.persistence import Base
 

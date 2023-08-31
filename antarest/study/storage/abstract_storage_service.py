@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union, Optional, IO
+from typing import IO, List, Optional, Union
 from uuid import uuid4
 
 from antarest.core.config import Config
@@ -11,22 +11,22 @@ from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON
 from antarest.core.utils.utils import (
-    extract_zip,
     StopWatch,
     assert_this,
-    zip_dir,
+    extract_zip,
     unzip,
+    zip_dir,
 )
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
-    StudyMetadataDTO,
-    StudySimResultDTO,
-    StudySimSettingsDTO,
     PatchOutputs,
     PatchStudy,
-    StudyMetadataPatchDTO,
     StudyAdditionalData,
+    StudyMetadataDTO,
+    StudyMetadataPatchDTO,
+    StudySimResultDTO,
+    StudySimSettingsDTO,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -36,14 +36,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
     FileStudy,
+    StudyFactory,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
+    extract_output_name,
     fix_study_root,
     remove_from_cache,
-    extract_output_name,
 )
 
 logger = logging.getLogger(__name__)

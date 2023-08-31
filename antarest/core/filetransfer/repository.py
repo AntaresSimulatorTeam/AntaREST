@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List, Optional
 
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.utils.fastapi_sqlalchemy import db

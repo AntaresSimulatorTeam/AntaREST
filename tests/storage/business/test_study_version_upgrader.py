@@ -10,15 +10,14 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     DUPLICATE_KEYS,
 )
 from antarest.study.storage.study_upgrader import (
-    upgrade_study,
-    InvalidUpgrade,
     UPGRADE_METHODS,
+    InvalidUpgrade,
+    upgrade_study,
 )
 from antarest.study.storage.study_upgrader.upgrader_840 import (
     MAPPING_TRANSMISSION_CAPACITIES,

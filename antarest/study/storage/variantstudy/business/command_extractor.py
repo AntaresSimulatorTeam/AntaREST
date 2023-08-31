@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Optional, List, Tuple, Union, cast
+from typing import List, Optional, Tuple, Union, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch, assert_this
@@ -34,8 +34,8 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
 from antarest.study.storage.variantstudy.model.command.create_district import (
-    DistrictBaseFilter,
     CreateDistrict,
+    DistrictBaseFilter,
 )
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,

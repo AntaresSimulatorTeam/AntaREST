@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, cast, List, Dict
+from typing import Any, Dict, List, cast
 
 import yaml
 

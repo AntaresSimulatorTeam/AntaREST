@@ -5,6 +5,7 @@ from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

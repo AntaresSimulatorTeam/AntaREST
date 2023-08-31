@@ -8,9 +8,9 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.repository import (
-    MatrixRepository,
     MatrixContentRepository,
     MatrixDataSetRepository,
+    MatrixRepository,
 )
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.web import create_matrix_api

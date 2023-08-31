@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import cast, IO
+from typing import IO, cast
 
 from pydantic import BaseModel
 
@@ -19,7 +19,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-
 
 logger = logging.getLogger(__name__)
 
