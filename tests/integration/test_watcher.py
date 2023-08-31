@@ -4,17 +4,26 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskResult
 
 
-def test_scan_dir__no_path(app: FastAPI, admin_access_token: str) -> None:
+def test_scan_dir__nominal_case(app: FastAPI, admin_access_token: str) -> None:
     client = TestClient(app)
     headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    res = client.post("/v1/watcher/_scan", headers=headers)
-    assert res.status_code == 422
-    assert res.json() == {
-        "description": "field required",
-        "exception": "RequestValidationError",
-        "body": None,
-    }
+    task_id = client.post(
+        "/v1/watcher/_scan?path=ext",
+        headers=headers,
+    )
+
+    # asserts that the POST request succeeded
+    assert task_id.status_code == 200
+
+    # asserts that the task succeeded
+    res = client.get(
+        f"v1/tasks/{task_id.json()}?wait_for_completion=true", headers=headers
+    )
+    task_result = TaskResult.parse_obj(res.json()["result"])
+    assert task_result.success
+    assert task_result.message == "Scan completed"
+    assert task_result.return_value is None
 
 
 def test_scan_dir__default_workspace(
@@ -73,23 +82,14 @@ def test_scan_dir__unknown_folder(
     assert task_result.return_value is None
 
 
-def test_scan_dir__nominal_case(app: FastAPI, admin_access_token: str) -> None:
+def test_scan_dir__no_path(app: FastAPI, admin_access_token: str) -> None:
     client = TestClient(app)
     headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    task_id = client.post(
-        "/v1/watcher/_scan?path=ext",
-        headers=headers,
-    )
-
-    # asserts that the POST request succeeded
-    assert task_id.status_code == 200
-
-    # asserts that the task succeeded
-    res = client.get(
-        f"v1/tasks/{task_id.json()}?wait_for_completion=true", headers=headers
-    )
-    task_result = TaskResult.parse_obj(res.json()["result"])
-    assert task_result.success
-    assert task_result.message == "Scan completed"
-    assert task_result.return_value is None
+    res = client.post("/v1/watcher/_scan", headers=headers)
+    assert res.status_code == 422
+    assert res.json() == {
+        "description": "field required",
+        "exception": "RequestValidationError",
+        "body": None,
+    }
