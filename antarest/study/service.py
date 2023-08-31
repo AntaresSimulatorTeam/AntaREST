@@ -1785,7 +1785,7 @@ class StudyService:
 
         def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            archived_path = self.storage_service.raw_study_service.archive(study_to_archive)
+            self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
             self.event_bus.push(

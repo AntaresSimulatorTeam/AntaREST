@@ -53,7 +53,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Importing new matrix dataset", extra={"user": current_user.id})
+        logger.info("Importing new matrix dataset", extra={"user": current_user.id})
         if current_user.id is not None:
             return service.create_by_importation(file, json)
         raise UserHasNotPermissionError()
@@ -102,7 +102,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         filter_own: bool = False,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Searching matrix dataset metadata", extra={"user": user.id})
+        logger.info("Searching matrix dataset metadata", extra={"user": user.id})
         request_params = RequestParameters(user=user)
         return service.list(name, filter_own, request_params)
 
