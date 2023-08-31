@@ -39,6 +39,10 @@ class OutputArchivedError(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class ExportException(Exception):
+    """Exception raised during export when a matrix data is empty (no rows)."""
+
+
 class StudyDownloader:
     """Service to manage studies download"""
 
@@ -60,7 +64,7 @@ class StudyDownloader:
             for index, column in enumerate(columns):
                 if len(column) > 0:
                     column_name = column[0]
-                    if data.columns and len(data.columns) > 0 and not (column_name in data.columns):
+                    if data.columns and len(data.columns) > 0 and column_name not in data.columns:
                         continue
 
                     if target not in matrix.data:
@@ -281,7 +285,7 @@ class StudyDownloader:
         if file_study.config.outputs and output_id in file_study.config.outputs:
             sim = file_study.config.outputs[output_id]
             if sim:
-                url += f"/{sim.mode}" if sim.mode != "draft" else f"/adequacy-draft"
+                url += f"/{sim.mode}" if sim.mode != "draft" else "/adequacy-draft"
 
                 if data.synthesis:
                     url += "/mc-all"
@@ -344,7 +348,7 @@ class StudyDownloader:
                     writer = csv.writer(output, quoting=csv.QUOTE_NONE)
                     nb_rows, csv_titles = StudyDownloader.export_infos(ts_data.data)
                     if nb_rows == -1:
-                        raise Exception(f"Outputs export:  No rows for  {ts_data.name} csv")
+                        raise ExportException(f"Outputs export: No rows for {ts_data.name} CSV")
                     writer.writerow(csv_titles)
                     row_date = datetime.strptime(matrix.index.start_date, "%Y-%m-%d %H:%M:%S")
                     for year in ts_data.data:

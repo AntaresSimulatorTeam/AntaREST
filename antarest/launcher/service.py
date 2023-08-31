@@ -489,7 +489,7 @@ class LauncherService:
             if not output_is_zipped and job_launch_params.archive_output:
                 logger.info("Re zipping output for transfer")
                 zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-                zip_dir(output_true_path, zip_path=zip_path)  # TODO: remove source dir ?
+                zip_dir(output_true_path, zip_path=zip_path)
                 stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
 
             final_output_path = zip_path or output_true_path
