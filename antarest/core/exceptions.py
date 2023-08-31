@@ -269,11 +269,3 @@ class DistrictAlreadyExist(HTTPException):
 class BadEditInstructionException(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
-
-
-class CannotScanInternalWorkspace(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            HTTPStatus.BAD_REQUEST,
-            "You cannot scan the default internal workspace",
-        )

@@ -7,12 +7,14 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
 from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
-from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.rawstudy.watcher import (
+    Watcher,
+    CannotScanInternalWorkspace,
+)
 from tests.storage.conftest import SimpleSyncTaskService
 
 

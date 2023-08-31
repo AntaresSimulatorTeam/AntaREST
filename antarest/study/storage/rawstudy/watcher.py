@@ -1,7 +1,6 @@
 import logging
 import re
 import tempfile
-import threading
 from html import escape
 from http import HTTPStatus
 from http.client import HTTPException
@@ -12,7 +11,6 @@ from typing import List, Optional
 from filelock import FileLock
 
 from antarest.core.config import Config
-from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.interfaces.service import IService
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -29,6 +27,11 @@ logger = logging.getLogger(__name__)
 class WorkspaceNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CannotScanInternalWorkspace(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
 
 
 class Watcher(IService):
@@ -128,7 +131,7 @@ class Watcher(IService):
                 return [StudyFolder(path, workspace, groups)]
 
             else:
-                folders: List[StudyFolder] = list()
+                folders: List[StudyFolder] = []
                 if path.is_dir():
                     for child in path.iterdir():
                         try:
@@ -179,7 +182,13 @@ class Watcher(IService):
         """
 
         def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
-            self.scan(workspace, path)
+            try:
+                self.scan(workspace, path)
+            except CannotScanInternalWorkspace as e:
+                logger.warning(e)
+                return TaskResult(
+                    success=False, message=f"Scan failed: {str(e)}"
+                )
             return TaskResult(success=True, message="Scan completed")
 
         return self.task_service.add_task(
@@ -202,11 +211,13 @@ class Watcher(IService):
 
         """
         stopwatch = StopWatch()
-        studies: List[StudyFolder] = list()
+        studies: List[StudyFolder] = []
         directory_path: Optional[Path] = None
         if workspace_directory_path is not None and workspace_name:
             if workspace_name == DEFAULT_WORKSPACE_NAME:
-                raise CannotScanInternalWorkspace
+                raise CannotScanInternalWorkspace(
+                    "You cannot scan the default internal workspace"
+                )
             try:
                 workspace = self.config.storage.workspaces[workspace_name]
             except KeyError:
