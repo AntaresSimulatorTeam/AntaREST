@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning

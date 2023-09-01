@@ -8,7 +8,6 @@ from antarest.core.cache.business.redis_cache import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
 )
 

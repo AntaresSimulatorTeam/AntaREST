@@ -9,7 +9,6 @@ from antarest.core.cache.business.local_chache import (
 from antarest.core.config import CacheConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
 )
 
