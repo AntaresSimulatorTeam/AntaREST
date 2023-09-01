@@ -445,29 +445,33 @@ class STStorageManager:
         values = new_config.dict(by_alias=False)
         return StorageOutput(**values)
 
-    def delete_storage(
+    def delete_storages(
         self,
         study: Study,
         area_id: str,
-        storage_id: str,
+        storage_ids: Sequence[str],
     ) -> None:
         """
-        Delete a short-term storage configuration form the given study and area_id.
+        Delete short-term storage configuration form the given study and area_id.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage to remove.
+            storage_ids: IDs list of short-term storages to remove.
         """
-        command = RemoveSTStorage(
-            area_id=area_id,
-            storage_id=storage_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        command_context = (
+            self.storage_service.variant_study_service.command_factory.command_context
         )
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        for storage_id in storage_ids:
+            command = RemoveSTStorage(
+                area_id=area_id,
+                storage_id=storage_id,
+                command_context=command_context,
+            )
+            file_study = self.storage_service.get_storage(study).get_raw(study)
+            execute_or_add_commands(
+                study, file_study, [command], self.storage_service
+            )
 
     def get_matrix(
         self,
