@@ -14,11 +14,11 @@ from antarest.main import fastapi_app
 from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.integration.assets import ASSETS_DIR
 
-# fmt: off
+
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
-# fmt: on
+
 
 
 @pytest.fixture(name="app")

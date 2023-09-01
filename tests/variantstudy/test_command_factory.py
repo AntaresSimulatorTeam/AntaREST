@@ -410,14 +410,14 @@ class TestCommandFactory:
         )
         commands = command_factory.to_command(command_dto=command_dto)
 
-        # fmt: off
+        
         if isinstance(args := command_dto.args, dict):
             exp_action_args_list = [(command_dto.action, command_dto.args)]
         else:
             exp_action_args_list = [(command_dto.action, args) for args in command_dto.args]
-        # fmt: on
+        
 
-        # fmt: off
+        
         actual_cmd: ICommand
         for actual_cmd, exp_action_args in itertools.zip_longest(commands, exp_action_args_list):
             assert actual_cmd is not None, f"Missing action/args for {exp_action_args=}"
@@ -427,7 +427,7 @@ class TestCommandFactory:
             actual_args = {k:v for k,v in actual_dto.args.items() if v is not None}
             assert actual_dto.action == expected_action
             assert actual_args == expected_args
-        # fmt: on
+        
 
         self.command_class_set.discard(type(commands[0]).__name__)
 

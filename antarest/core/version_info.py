@@ -85,7 +85,7 @@ def get_dependencies() -> Dict[str, str]:
         # when trying to obtain the list of installed packages using `pip freeze`.
         return {}
 
-    # fmt: off
+    
     args = [sys.executable, "-m", "pip", "freeze"]
     output = subprocess.check_output(args, encoding="utf-8")
     lines = (

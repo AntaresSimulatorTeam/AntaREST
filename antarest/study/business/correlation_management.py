@@ -56,13 +56,13 @@ class CorrelationFormFields(FormFieldsBaseModel):
             raise ValueError(
                 f"correlation must not contain duplicate area IDs: {duplicates}"
             )
-        # fmt: off
+        
         array = np.array([a.coefficient for a in correlation], dtype=np.float64)
         if np.any((array < -100) | np.any(array > 100)):
             raise ValueError("percentage must be between -100 and 100")
         if np.any(np.isnan(array)):
             raise ValueError("correlation matrix must not contain NaN coefficients")
-        # fmt: on
+        
         return correlation
 
 
@@ -109,7 +109,7 @@ class CorrelationMatrix(FormFieldsBaseModel):
         rows = len(values.get("index", []))
         cols = len(values.get("columns", []))
 
-        # fmt: off
+        
         if array.size == 0:
             raise ValueError("correlation matrix must not be empty")
         if array.shape != (rows, cols):
@@ -123,7 +123,7 @@ class CorrelationMatrix(FormFieldsBaseModel):
                 and not np.array_equal(array, array.T)
         ):
             raise ValueError("correlation matrix is not symmetric")
-        # fmt: on
+        
         return data
 
     class Config:

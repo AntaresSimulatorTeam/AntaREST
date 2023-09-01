@@ -14,7 +14,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
 )
 
 # TODO: put index into variable
-# fmt: off
+
 HYDRO_COMMON_CAPACITY_MAX_POWER_V7 = "hydro/common/capacity/max_power/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V6 = "hydro/common/capacity/reservoir/v6"
@@ -33,7 +33,7 @@ LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
-# fmt: on
+
 
 # Short-term storage aliases
 ST_STORAGE_PMAX_INJECTION = ONES_SCENARIO_MATRIX
@@ -180,7 +180,7 @@ class GeneratorMatrixConstants:
     def get_default_miscgen(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]
 
-    # fmt: off
+    
     def get_st_storage_pmax_injection(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_INJECTION]
@@ -200,4 +200,4 @@ class GeneratorMatrixConstants:
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
-    # fmt: on
+    

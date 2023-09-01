@@ -113,7 +113,7 @@ class RemoveSTStorage(ICommand):
         # It is required to delete the files and folders that correspond to the short-term storage
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of short-term storages from the configuration.
-        # fmt: off
+        
         paths = [
             ["input", "st-storage", "clusters", self.area_id, "list", self.storage_id],
             ["input", "st-storage", "series", self.area_id, self.storage_id],
@@ -121,7 +121,7 @@ class RemoveSTStorage(ICommand):
         area: Area = study_data.config.areas[self.area_id]
         if len(area.st_storages) == 1:
             paths.append(["input", "st-storage", "series", self.area_id])
-        # fmt: on
+        
         for path in paths:
             study_data.tree.delete(path)
         # Deleting the short-term storage in the configuration must be done AFTER

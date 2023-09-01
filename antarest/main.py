@@ -459,20 +459,20 @@ def fastapi_app(
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
 # noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
-    # fmt: off
+    
     "[%(asctime)s] [%(process)s]"
     " %(levelprefix)s"
     "  %(message)s"
-    # fmt: on
+    
 )
 # noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
-    # fmt: off
+    
     "[%(asctime)s] [%(process)s] [%(name)s]"
     " %(levelprefix)s"
     " %(client_addr)s - \"%(request_line)s\""
     " %(status_code)s"
-    # fmt: on
+    
 )
 
 

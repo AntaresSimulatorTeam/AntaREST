@@ -31,7 +31,7 @@ def validate_matrix(
         TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
         ValueError: If the matrix ID does not exist.
     """
-    # fmt: off
+    
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
         return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=matrix)
@@ -42,7 +42,7 @@ def validate_matrix(
             raise ValueError(f"Matrix with id {matrix} does not exist")
     else:
         raise TypeError(f"The data {matrix} is neither a matrix nor a link to a matrix")
-    # fmt: on
+    
 
 
 def get_or_create_section(json_ini: JSON, section: str) -> JSON:

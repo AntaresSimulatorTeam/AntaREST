@@ -70,14 +70,14 @@ class RemoveArea(ICommand):
                         ["input", "links", area_name, "properties", self.id]
                     )
                     try:
-                        # fmt: off
+                        
                         if study_data.config.version < 820:
                             study_data.tree.delete(["input", "links", area_name, self.id])
                         else:
                             study_data.tree.delete(["input", "links", area_name, f"{self.id}_parameters"])
                             study_data.tree.delete(["input", "links", area_name, "capacities", f"{self.id}_indirect"])
                             study_data.tree.delete(["input", "links", area_name, "capacities", f"{self.id}_direct"])
-                        # fmt: on
+                        
                     except ChildNotFoundError as e:
                         logger.warning(
                             f"Failed to clean link data when deleting area {self.id}"
@@ -88,7 +88,7 @@ class RemoveArea(ICommand):
     def _remove_area_from_binding_constraints(
         self, study_data: FileStudy
     ) -> None:
-        # fmt: off
+        
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         id_to_remove = {
@@ -105,7 +105,7 @@ class RemoveArea(ICommand):
             del binding_constraints[bc_id]
 
         study_data.tree.save(binding_constraints, ["input", "bindingconstraints", "bindingconstraints"])
-        # fmt: on
+        
 
     def _remove_area_from_hydro_allocation(
         self, study_data: FileStudy
@@ -177,7 +177,7 @@ class RemoveArea(ICommand):
 
     # noinspection SpellCheckingInspection
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        # fmt: off
+        
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -198,10 +198,10 @@ class RemoveArea(ICommand):
         study_data.tree.delete(["input", "wind", "prepro", self.id])
         study_data.tree.delete(["input", "wind", "series", f"wind_{self.id}"])
         study_data.tree.delete(["input", "links", self.id])
-        # fmt: on
+        
 
         if study_data.config.version > 650:
-            # fmt: off
+            
             study_data.tree.delete(["input", "hydro", "hydro", "initialize reservoir date", self.id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway low", self.id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway up", self.id])
@@ -209,7 +209,7 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"creditmodulations_{self.id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{self.id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
-            # fmt: on
+            
 
         if study_data.config.version >= 860:
             study_data.tree.delete(

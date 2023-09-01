@@ -22,7 +22,7 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 
 # noinspection SpellCheckingInspection
-# fmt: off
+
 CONTENT_TYPES = {
     # (Portable Document Format)
     ".pdf": ("application/pdf", None),
@@ -47,7 +47,7 @@ CONTENT_TYPES = {
     # (JSON)
     ".json": ("application/json", "utf-8"),
 }
-# fmt: on
+
 
 
 def create_raw_study_routes(
@@ -116,11 +116,11 @@ def create_raw_study_routes(
                     ) from None
             elif encoding:
                 try:
-                    # fmt: off
+                    
                     response = PlainTextResponse(output, media_type=content_type)
                     response.charset = encoding
                     return response
-                    # fmt: on
+                    
                 except ValueError as exc:
                     raise HTTPException(
                         status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,

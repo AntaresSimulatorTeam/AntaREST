@@ -96,7 +96,7 @@ class RemoveRenewablesCluster(ICommand):
         # It is required to delete the files and folders that correspond to the renewable cluster
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
-        # fmt: off
+        
         paths = [
             ["input", "renewables", "clusters", self.area_id, "list", self.cluster_id],
             ["input", "renewables", "series", self.area_id, self.cluster_id],
@@ -104,7 +104,7 @@ class RemoveRenewablesCluster(ICommand):
         area: Area = study_data.config.areas[self.area_id]
         if len(area.renewables) == 1:
             paths.append(["input", "renewables", "series", self.area_id])
-        # fmt: on
+        
         for path in paths:
             study_data.tree.delete(path)
         # Deleting the renewable cluster in the configuration must be done AFTER

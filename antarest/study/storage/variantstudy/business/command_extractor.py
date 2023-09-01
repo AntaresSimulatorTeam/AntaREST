@@ -73,7 +73,7 @@ class CommandExtractor(ICommandExtractor):
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
 
         study_commands: List[ICommand] = [
-            # fmt: off
+            
             CreateArea(
                 area_name=area.name,
                 command_context=self.command_context,
@@ -88,7 +88,7 @@ class CommandExtractor(ICommandExtractor):
                 data=ui_data,
                 command_context=self.command_context,
             ),
-            # fmt: on
+            
         ]
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Area command extraction done in {x}s")
@@ -212,7 +212,7 @@ class CommandExtractor(ICommandExtractor):
         else:
             commands.extend(
                 [
-                    # fmt: off
+                    
                     self.generate_replace_matrix(
                         study_tree,
                         ["input", "links", area1, f"{area2}_parameters"],
@@ -228,7 +228,7 @@ class CommandExtractor(ICommandExtractor):
                         ["input", "links", area1, "capacities", f"{area2}_indirect"],
                         null_matrix_id,
                     ),
-                    # fmt: on
+                    
                 ]
             )
         return commands
@@ -261,7 +261,7 @@ class CommandExtractor(ICommandExtractor):
             self.generator_matrix_constants.get_null_matrix()
         )
         study_commands: List[ICommand] = [
-            # fmt: off
+            
             create_cluster_command(
                 area_id=area_id,
                 cluster_name=cluster_name,
@@ -277,12 +277,12 @@ class CommandExtractor(ICommandExtractor):
                 ["input", cluster_type, "series", area_id, cluster_id, "series"],
                 null_matrix_id,
             ),
-            # fmt: on
+            
         ]
         if not renewables:
             study_commands.extend(
                 [
-                    # fmt: off
+                    
                     self.generate_replace_matrix(
                         study_tree,
                         ["input", cluster_type, "prepro", area_id, cluster_id, "data"],
@@ -293,7 +293,7 @@ class CommandExtractor(ICommandExtractor):
                         ["input", cluster_type, "prepro", area_id, cluster_id, "modulation"],
                         null_matrix_id,
                     ),
-                    # fmt: on
+                    
                 ]
             )
         return study_commands
@@ -311,7 +311,7 @@ class CommandExtractor(ICommandExtractor):
     def extract_hydro(self, study: FileStudy, area_id: str) -> List[ICommand]:
         study_tree = study.tree
         commands = [
-            # fmt: off
+            
             self.generate_replace_matrix(
                 study_tree,
                 ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"],
@@ -340,12 +340,12 @@ class CommandExtractor(ICommandExtractor):
                 study_tree,
                 ["input", "hydro", "allocation", area_id],
             ),
-            # fmt: on
+            
         ]
 
         if study_tree.config.version > 650:
             commands += [
-                # fmt: off
+                
                 self.generate_replace_matrix(
                     study_tree,
                     ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"],
@@ -358,7 +358,7 @@ class CommandExtractor(ICommandExtractor):
                     study_tree,
                     ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"],
                 ),
-                # fmt: on
+                
             ]
 
         hydro_config = study_tree.get(["input", "hydro", "hydro"])
@@ -433,13 +433,13 @@ class CommandExtractor(ICommandExtractor):
             command_context=self.command_context,
         )
         study_commands: List[ICommand] = [
-            # fmt: off
+            
             binding_constraint_command,
             self.generate_replace_matrix(
                 study_tree,
                 ["input", "bindingconstraints", binding["id"]],
             ),
-            # fmt: on
+            
         ]
         return study_commands
 

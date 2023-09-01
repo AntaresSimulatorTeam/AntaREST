@@ -85,14 +85,14 @@ class TestCreateSTStorage:
         assert cmd.parameters == STStorageConfig(**expected_parameters)
 
         # check the matrices links
-        # fmt: off
+        
         constants = command_context.generator_matrix_constants
         assert cmd.pmax_injection != constants.get_st_storage_pmax_injection()
         assert cmd.pmax_withdrawal == constants.get_st_storage_pmax_withdrawal()
         assert cmd.lower_rule_curve == constants.get_st_storage_lower_rule_curve()
         assert cmd.upper_rule_curve == constants.get_st_storage_upper_rule_curve()
         assert cmd.inflows != constants.get_st_storage_inflows()
-        # fmt: on
+        
 
     def test_init__invalid_storage_name(
         self, recent_study: FileStudy, command_context: CommandContext

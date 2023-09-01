@@ -113,11 +113,11 @@ class AbstractWorker(IService):
                 permissions=PermissionInfo(public_mode=PublicMode.NONE),
             )
         )
-        # fmt: off
+        
         future = self.threadpool.submit(self._safe_execute_task, task_info)
         callback = _WorkerTaskEndedCallback(self.event_bus, task_info.task_id)
         future.add_done_callback(callback)
-        # fmt: on
+        
 
     def _safe_execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         try:

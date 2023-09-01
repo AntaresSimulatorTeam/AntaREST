@@ -326,14 +326,14 @@ class STStorageManager:
         Returns:
             The list of forms used to display the short-term storages.
         """
-        # fmt: off
+        
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
-        # fmt: on
+        
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
         all_configs = sorted(
@@ -365,7 +365,7 @@ class STStorageManager:
         Returns:
             Form used to display and edit a short-term storage.
         """
-        # fmt: off
+        
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
@@ -490,7 +490,7 @@ class STStorageManager:
         storage_id: str,
         ts_name: STStorageTimeSeries,
     ) -> MutableMapping[str, Any]:
-        # fmt: off
+        
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
@@ -500,7 +500,7 @@ class STStorageManager:
                 study.id, area_id, storage_id, ts_name
             ) from None
         return matrix
-        # fmt: on
+        
 
     def update_matrix(
         self,
@@ -533,7 +533,7 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
         matrix_obj: Dict[str, Any],
     ) -> None:
-        # fmt: off
+        
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
@@ -542,7 +542,7 @@ class STStorageManager:
             raise STStorageMatrixNotFoundError(
                 study.id, area_id, storage_id, ts_name
             ) from None
-        # fmt: on
+        
 
     def validate_matrices(
         self,

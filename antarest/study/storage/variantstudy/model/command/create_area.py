@@ -79,13 +79,13 @@ class CreateArea(ICommand):
         area_id = data["area_id"]
         version = study_data.config.version
 
-        # fmt: off
+        
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
         hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
         hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
         hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
         hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
-        # fmt: on
+        
 
         new_area_data: JSON = {
             "input": {
@@ -214,14 +214,14 @@ class CreateArea(ICommand):
         }
 
         # Ensure the "annual" key exists in the hydro correlation configuration to avoid incorrect setup
-        # fmt: off
+        
         new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
         new_correlation.setdefault("annual", {})
         new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
-        # fmt: on
+        
 
         if version > 650:
-            # fmt: off
+            
             hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
             hydro_config.setdefault("leeway low", {})[area_id] = 1
             hydro_config.setdefault("leeway up", {})[area_id] = 1
@@ -236,7 +236,7 @@ class CreateArea(ICommand):
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_null_matrix()
             )
-            # fmt: on
+            
 
         if (
             version >= 810

@@ -90,9 +90,9 @@ class XpansionSettingsDTO(BaseModel):
     """
 
     optimality_gap: Optional[float] = Field(default=1, ge=0)
-    # fmt: off
+    
     max_iteration: Optional[Union[int, MaxIteration]] = Field(default=MaxIteration.INF, ge=0)
-    # fmt: on
+    
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
     yearly_weights: Optional[str] = Field(None, alias="yearly-weights")

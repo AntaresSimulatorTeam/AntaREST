@@ -456,13 +456,13 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            # fmt: off
+            
             "pmax_injection": np.random.rand(8760, 1),
             "pmax_withdrawal": np.random.rand(8760, 1),
             "lower_rule_curve": np.random.rand(8760, 1) / 2,
             "upper_rule_curve": np.random.rand(8760, 1) / 2 + 0.5,
             "inflows": np.random.rand(8760, 1) * 1000,
-            # fmt: on
+            
         }
 
         # Prepare the mocks
@@ -497,13 +497,13 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            # fmt: off
+            
             "pmax_injection": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "pmax_withdrawal": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "lower_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "upper_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "inflows": np.random.rand(8760, 1) * 1000,
-            # fmt: on
+            
         }
 
         # Prepare the mocks
@@ -567,13 +567,13 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            # fmt: off
+            
             "pmax_injection": np.random.rand(8760, 1),
             "pmax_withdrawal": np.random.rand(8760, 1),
             "lower_rule_curve": np.random.rand(8760, 1),
             "upper_rule_curve": np.random.rand(8760, 1),
             "inflows": np.random.rand(8760, 1) * 1000,
-            # fmt: on
+            
         }
 
         # Prepare the mocks

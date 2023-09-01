@@ -290,7 +290,7 @@ class TestGroupBySlices:
         "cells, expected",
         [
             # Each tuple contains the (row, col) coordinates of a cell.
-            # fmt: off
+            
             pytest.param([], [], id="empty-cells-list"),
             pytest.param(
                 [(3, 7)],
@@ -332,7 +332,7 @@ class TestGroupBySlices:
                 ],
                 id="square-with-centered-hole",
             ),
-            # fmt: on
+            
         ],
     )
     def test_group_by_slices(
@@ -371,7 +371,7 @@ class TestMergeEditInstructions:
         )
         actual = merge_edit_instructions([instr1, instr2, instr3])
         assert actual == [
-            # fmt: off
+            
             MEI(
                 coordinates=[(1, 0)],
                 operation=Operation(operation="/", value=314.0),
@@ -384,7 +384,7 @@ class TestMergeEditInstructions:
                 coordinates=[(0, 1)],
                 operation=Operation(operation="=", value=628.0),
             ),
-            # fmt: on
+            
         ]
 
     def test_merge_edit_instructions__slice_created(self) -> None:
@@ -393,12 +393,12 @@ class TestMergeEditInstructions:
         instr2 = MEI(coordinates=[(1, 0), (2, 0)], operation=op)
         actual = merge_edit_instructions([instr1, instr2])
         assert actual == [
-            # fmt: off
+            
             MEI(
                 slices=[MatrixSlice(row_from=0, row_to=2, column_from=0, column_to=0)],
                 operation=op,
             )
-            # fmt: on
+            
         ]
 
     def test_merge_edit_instructions__big_column(self) -> None:
@@ -408,10 +408,10 @@ class TestMergeEditInstructions:
         ]
         actual = merge_edit_instructions(instructions)
         assert actual == [
-            # fmt: off
+            
             MEI(
                 slices=[MatrixSlice(row_from=0, row_to=8759, column_from=0, column_to=0)],
                 operation=op,
             )
-            # fmt: on
+            
         ]

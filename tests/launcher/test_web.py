@@ -135,7 +135,7 @@ def test_get_solver_versions() -> None:
 @pytest.mark.parametrize(
     "solver, status_code, expected",
     [
-        # fmt: off
+        
         pytest.param(
             "",
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -151,7 +151,7 @@ def test_get_solver_versions() -> None:
             {"detail": "Unknown solver configuration: 'remote'"},
             id="remote",
         ),
-        # fmt: on
+        
     ],
 )
 def test_get_solver_versions__with_query_string(
