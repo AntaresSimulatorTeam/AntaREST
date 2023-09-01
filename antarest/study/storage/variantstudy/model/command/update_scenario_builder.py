@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.utils.dict import merge_deep
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

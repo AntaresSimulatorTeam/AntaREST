@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore

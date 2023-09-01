@@ -1,11 +1,10 @@
-import datetime
 import logging
 from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobLog, JobLogType, JobResult
+from antarest.launcher.model import JobResult
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)

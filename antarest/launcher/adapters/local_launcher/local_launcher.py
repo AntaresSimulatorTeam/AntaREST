@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import IO, Callable, Dict, List, Optional, Tuple, cast
+from typing import IO, Callable, Dict, Optional, Tuple, cast
 from uuid import UUID
 
 from antarest.core.config import Config

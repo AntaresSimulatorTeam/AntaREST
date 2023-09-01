@@ -1,7 +1,6 @@
 import logging
 import re
 import tempfile
-import threading
 from html import escape
 from http import HTTPStatus
 from http.client import HTTPException

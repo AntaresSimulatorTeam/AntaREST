@@ -1,5 +1,4 @@
 import logging
-import threading
 import time
 from abc import abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor

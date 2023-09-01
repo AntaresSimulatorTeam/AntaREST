@@ -1,4 +1,3 @@
-from enum import Enum
 from pathlib import PurePosixPath
 from typing import Any, Dict, List, Optional, cast
 

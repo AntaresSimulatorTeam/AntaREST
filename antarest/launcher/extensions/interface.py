@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
-
-from antarest.core.model import JSON
+from typing import Any
 
 
 class ILauncherExtension(ABC):

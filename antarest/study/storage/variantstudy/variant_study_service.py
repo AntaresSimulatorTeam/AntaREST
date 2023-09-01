@@ -79,9 +79,6 @@ from antarest.study.storage.variantstudy.business.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudy,

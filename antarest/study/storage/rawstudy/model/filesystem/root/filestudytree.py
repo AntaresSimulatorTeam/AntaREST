@@ -1,7 +1,5 @@
 import logging
-from threading import Thread
 
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )

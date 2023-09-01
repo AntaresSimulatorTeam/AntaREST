@@ -2,8 +2,6 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from pydantic import ValidationError
-
 from antarest.study.model import (
     Patch,
     PatchOutputs,
