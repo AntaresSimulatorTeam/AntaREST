@@ -10,7 +10,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON
-from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, assert_this, extract_zip, unzip, zip_dir
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
