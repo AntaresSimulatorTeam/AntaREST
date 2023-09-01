@@ -261,7 +261,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_battery_id1 = res.json()["id"]
 
-        siemens_battery_del = siemens_battery + "del"
+        siemens_battery_del = f"{siemens_battery}del"
 
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",

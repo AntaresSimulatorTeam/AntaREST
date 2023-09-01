@@ -1891,35 +1891,36 @@ def create_study_data_routes(
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
-        summary="Remove  short-term storages from an area",
+        summary="Remove short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_st_storages(
         uuid: str,
         area_id: str,
-        form: List[str],
+        storage_ids: Sequence[str],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Delete  short-term storages from an area.
+        Delete short-term storages from an area.
 
         Args:
         - `uuid`: The UUID of the study.
         - `area_id`: The area ID.
-        - `form`:   List of storages id of the study that we want to delete.
+        - `storage_ids`: List of IDs of the storages to remove from the area.
 
         Permissions:
         - User must have DELETED permission on the study.
         """
-        for storage_id in form:
-            logger.info(
-                f"Delete short-term storage {storage_id} from {area_id} for study {uuid}",
-                extra={"user": current_user.id},
-            )
+        logger.info(
+            f"Delete short-term storage ID's {storage_ids} from {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(
             uuid, StudyPermissionType.DELETE, params
         )
-        study_service.st_storage_manager.delete_storages(study, area_id, form)
+        study_service.st_storage_manager.delete_storages(
+            study, area_id, storage_ids
+        )
 
     return bp
