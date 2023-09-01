@@ -208,13 +208,15 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
+        groups: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
         Copy study to a new destination
         Args:
             src_meta: source study
-            dest_meta: destination study
+            dest_name: destination study
+            groups: groups to assign to the destination study
             with_outputs: indicate weither to copy the output or not
 
         Returns: destination study
@@ -240,8 +242,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             updated_at=datetime.utcnow(),
             version=src_meta.version,
             additional_data=additional_data,
-            public_mode=PublicMode.NONE,
-            groups=src_meta.groups,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
+            groups=groups,
         )
 
         src_path = self.get_study_path(src_meta)

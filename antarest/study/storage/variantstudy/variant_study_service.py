@@ -27,7 +27,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
+from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
@@ -906,6 +906,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         src_meta: VariantStudy,
         dst_name: str,
+        groups: List[str],
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
@@ -913,6 +914,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Args:
             src_meta: source study
             dst_name: destination study
+            groups: groups to assign to the destination study
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
@@ -933,11 +935,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             name=dst_name,
             parent_id=src_meta.parent_id,
             path=study_path,
-            public_mode=src_meta.public_mode,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=src_meta.version,
-            groups=src_meta.groups,  # Create inherit_group boolean
+            groups=groups,
             snapshot=None,
             additional_data=additional_data,
         )

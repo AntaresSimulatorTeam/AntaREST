@@ -6,6 +6,7 @@ from unittest.mock import ANY
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.model import PublicMode
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
@@ -2674,3 +2675,31 @@ def test_binding_constraint_manager(app: FastAPI):
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
     assert constraints is None
+
+
+def test_copy(app: FastAPI, admin_access_token: str, study_id: str) -> None:
+    client, _ = init_test(app)
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Copy a study with admin user who belongs to a group
+    copied = client.post(f"/v1/studies/{study_id}/copy?dest=copied&use_task=false", headers=admin_headers)
+    assert copied.status_code == 201
+    # asserts that it has admin groups and PublicMode to NONE
+    res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
+    assert res["groups"] == [{"id": "admin", "name": "admin"}]
+    assert res["public_mode"] == PublicMode.NONE
+
+    # Connect with user George who belongs to no group
+    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    george_credentials = res.json()
+
+    # George copies a study
+    copied = client.post(
+        f"/v1/studies/{study_id}/copy?dest=copied&use_task=false",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert copied.status_code == 201
+    # asserts that it has no groups and PublicMode to READ
+    res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
+    assert res["groups"] == []
+    assert res["public_mode"] == PublicMode.READ

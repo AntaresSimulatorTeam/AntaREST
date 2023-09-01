@@ -31,7 +31,7 @@ class MyStorageService(AbstractStorageService):
         raise NotImplementedError
 
     # noinspection SpellCheckingInspection
-    def copy(self, src_meta: Study, dest_name: str, with_outputs: bool = False) -> Study:
+    def copy(self, src_meta: Study, dest_name: str, groups: List[str], with_outputs: bool = False) -> Study:
         raise NotImplementedError
 
     def get_raw(

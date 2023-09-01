@@ -435,19 +435,20 @@ def test_copy_study(
         path_resources=Path(),
         patch_service=Mock(),
     )
+    groups = ["fake_group_1", "fake_group_2"]
 
     src_md = RawStudy(
         id=source_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
         additional_data=StudyAdditionalData(),
-        groups=["fake_group_1", "fake_group_2"],
+        groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name")
+    md = study_service.copy(src_md, "dst_name", groups)
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE
-    assert md.groups == src_md.groups
+    assert md.groups == groups
     study.get.assert_called_once_with(["study"])
 
 

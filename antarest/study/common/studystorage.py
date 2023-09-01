@@ -59,7 +59,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: List[str], with_outputs: bool = False) -> T:
         """
         Copy study to a new destination
         Args:

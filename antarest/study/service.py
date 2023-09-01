@@ -813,7 +813,7 @@ class StudyService:
         with_outputs: bool = False,
     ) -> str:
         """
-        Copy study to an other location.
+        Copy study to another location.
 
         Args:
             src_uuid: source study
@@ -835,6 +835,7 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
                 dest_study_name,
+                group_ids,
                 with_outputs,
             )
             self._save_study(study, params.user, group_ids)
@@ -1896,15 +1897,14 @@ class StudyService:
         if isinstance(study, RawStudy):
             study.content_status = content_status
 
-        if owner:
-            study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
-            groups = []
-            for gid in group_ids:
-                group = next(filter(lambda g: g.id == gid, owner.groups), None)
-                if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
-                    raise UserHasNotPermissionError()
-                groups.append(Group(id=group.id, name=group.name))
-            study.groups = groups
+        study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
+        groups = []
+        for gid in group_ids:
+            group = next(filter(lambda g: g.id == gid, owner.groups), None)
+            if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
+                raise UserHasNotPermissionError()
+            groups.append(Group(id=group.id, name=group.name))
+        study.groups = groups
 
         self.repository.save(study)
 
