@@ -21,10 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Simulation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from tests.storage.business.assets import ASSETS_DIR
 
 

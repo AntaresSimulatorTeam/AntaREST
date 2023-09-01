@@ -1,13 +1,7 @@
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
-    BucketNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation import (
-    OutputSimulation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation import OutputSimulation
 
 
 class Output(FolderNode):

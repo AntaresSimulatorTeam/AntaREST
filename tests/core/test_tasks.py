@@ -13,15 +13,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.model import (
-    TaskDTO,
-    TaskJob,
-    TaskJobLog,
-    TaskListFilter,
-    TaskResult,
-    TaskStatus,
-    TaskType,
-)
+from antarest.core.tasks.model import TaskDTO, TaskJob, TaskJobLog, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db

@@ -1,41 +1,22 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Simulation,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import (
-    OutputSimulationAbout,
-)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import OutputSimulationAbout
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.economy import (
-    OutputSimulationMode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.economy import OutputSimulationMode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_generator.ts_generator import (
     OutputSimulationTsGenerator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
     OutputSimulationTsNumbers,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.lp import (
-    Lp,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.sensitivity import (
-    Sensitivity,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.xpansion import (
-    Xpansion,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.lp import Lp
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.sensitivity import Sensitivity
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.xpansion import Xpansion
 
 
 class OutputSimulation(FolderNode):

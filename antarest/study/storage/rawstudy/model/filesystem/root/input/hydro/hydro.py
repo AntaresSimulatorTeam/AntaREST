@@ -1,22 +1,10 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.allocation.allocation import (
-    InputHydroAllocation,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.common import (
-    InputHydroCommon,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro_ini import (
-    InputHydroIni,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.prepro import (
-    InputHydroPrepro,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.series import (
-    InputHydroSeries,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.allocation.allocation import InputHydroAllocation
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.common import InputHydroCommon
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro_ini import InputHydroIni
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.prepro import InputHydroPrepro
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.series import InputHydroSeries
 
 
 class InputHydro(FolderNode):

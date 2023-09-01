@@ -13,17 +13,10 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import suppress_exception
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
-    BucketNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-    FolderNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import (
-    Expansion,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError, FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import Expansion
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
 

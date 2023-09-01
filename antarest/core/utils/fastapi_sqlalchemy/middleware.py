@@ -5,18 +5,12 @@ from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from antarest.core.utils.fastapi_sqlalchemy.exceptions import (
-    MissingSessionError,
-    SessionNotInitialisedError,
-)
+from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
 _Session: sessionmaker = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)

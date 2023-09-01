@@ -2,19 +2,10 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import Field
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # minimum required version.

@@ -15,31 +15,17 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    Event,
-    EventChannelDirectory,
-    EventType,
-    IEventBus,
-)
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import (
-    StopWatch,
-    concat_files,
-    concat_files_to_str,
-    is_zip,
-    read_in_zip,
-    zip_dir,
-)
+from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, is_zip, read_in_zip, zip_dir
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.extensions.adequacy_patch.extension import (
-    AdequacyPatchExtension,
-)
+from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
     JobLog,
@@ -52,11 +38,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import (
-    assert_permission,
-    extract_output_name,
-    find_single_output_path,
-)
+from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
 

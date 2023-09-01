@@ -5,12 +5,8 @@ from pydantic import BaseModel
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
-from antarest.study.storage.variantstudy.model.command.remove_link import (
-    RemoveLink,
-)
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 
 
 class LinkUIDTO(BaseModel):

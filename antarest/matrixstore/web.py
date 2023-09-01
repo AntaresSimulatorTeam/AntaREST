@@ -11,13 +11,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.model import (
-    MatrixData,
-    MatrixDataSetDTO,
-    MatrixDataSetUpdateDTO,
-    MatrixDTO,
-    MatrixInfoDTO,
-)
+from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixDTO, MatrixInfoDTO
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)

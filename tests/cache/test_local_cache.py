@@ -2,15 +2,9 @@ import time
 from pathlib import Path
 from unittest import mock
 
-from antarest.core.cache.business.local_chache import (
-    LocalCache,
-    LocalCacheElement,
-)
+from antarest.core.cache.business.local_chache import LocalCache, LocalCacheElement
 from antarest.core.config import CacheConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))

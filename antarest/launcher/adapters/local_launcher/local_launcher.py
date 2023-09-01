@@ -13,11 +13,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
-from antarest.launcher.adapters.abstractlauncher import (
-    AbstractLauncher,
-    LauncherCallbacks,
-    LauncherInitException,
-)
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 

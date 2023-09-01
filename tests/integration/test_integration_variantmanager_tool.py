@@ -14,13 +14,8 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_daily,
     default_scenario_hourly,
 )
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.tools.lib import (
     COMMAND_FILE,
     MATRIX_STORE_DIR,

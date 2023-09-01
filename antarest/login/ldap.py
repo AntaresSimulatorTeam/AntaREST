@@ -7,11 +7,7 @@ import requests
 from antarest.core.config import Config
 from antarest.core.model import JSON
 from antarest.login.model import Group, Role, UserLdap
-from antarest.login.repository import (
-    GroupRepository,
-    RoleRepository,
-    UserLdapRepository,
-)
+from antarest.login.repository import GroupRepository, RoleRepository, UserLdapRepository
 
 logger = logging.getLogger(__name__)
 

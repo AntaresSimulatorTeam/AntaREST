@@ -1,13 +1,9 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.clusters import (
     ClusteredRenewableAreaCluster,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.series import (
-    ClusteredRenewableAreaSeries,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.series import ClusteredRenewableAreaSeries
 
 
 class ClusteredRenewables(FolderNode):

@@ -5,12 +5,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    Event,
-    EventChannelDirectory,
-    EventType,
-    IEventBus,
-)
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO

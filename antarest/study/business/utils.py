@@ -1,14 +1,4 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    MutableSequence,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypedDict,
-)
+from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Tuple, Type, TypedDict
 
 import pydantic
 from pydantic import BaseModel, Extra
@@ -21,9 +11,7 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
-from antarest.study.storage.variantstudy.business.utils import (
-    transform_command_to_dto,
-)
+from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 # noinspection SpellCheckingInspection

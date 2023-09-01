@@ -2,9 +2,7 @@ from typing import Dict, List, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    get_playlist,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 

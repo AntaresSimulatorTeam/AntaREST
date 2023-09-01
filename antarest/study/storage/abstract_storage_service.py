@@ -23,22 +23,11 @@ from antarest.study.model import (
     StudySimSettingsDTO,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    get_playlist,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Simulation,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.utils import (
-    extract_output_name,
-    fix_study_root,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
 

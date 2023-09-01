@@ -7,11 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.exceptions import BadZipBinary, StudyValidationError
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root

@@ -32,81 +32,39 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
-from antarest.core.model import (
-    JSON,
-    SUB_JSON,
-    PermissionInfo,
-    PublicMode,
-    StudyPermissionType,
-)
+from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import (
-    TaskListFilter,
-    TaskResult,
-    TaskStatus,
-    TaskType,
-)
-from antarest.core.tasks.service import (
-    ITaskService,
-    TaskUpdateNotifier,
-    noop_notifier,
-)
+from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import (
-    AdequacyPatchManager,
-)
-from antarest.study.business.advanced_parameters_management import (
-    AdvancedParamsManager,
-)
+from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
+from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
-from antarest.study.business.area_management import (
-    AreaCreationDTO,
-    AreaInfoDTO,
-    AreaManager,
-    AreaType,
-    AreaUI,
-)
+from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, AreaUI
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import (
-    PropertiesManager,
-)
+from antarest.study.business.areas.properties_management import PropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import (
-    BindingConstraintManager,
-)
+from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
-from antarest.study.business.matrix_management import (
-    MatrixManager,
-    MatrixManagerError,
-)
+from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
-from antarest.study.business.scenario_builder_management import (
-    ScenarioBuilderManager,
-)
+from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.st_storage_manager import STStorageManager
 from antarest.study.business.table_mode_management import TableModeManager
-from antarest.study.business.thematic_trimming_management import (
-    ThematicTrimmingManager,
-)
-from antarest.study.business.timeseries_config_management import (
-    TimeSeriesConfigManager,
-)
+from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
+from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.business.xpansion_management import (
-    XpansionCandidateDTO,
-    XpansionManager,
-    XpansionSettingsDTO,
-)
+from antarest.study.business.xpansion_management import XpansionCandidateDTO, XpansionManager, XpansionSettingsDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -129,35 +87,17 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    OutputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_download_utils import (
-    StudyDownloader,
-    get_output_variables_information,
-)
-from antarest.study.storage.study_upgrader import (
-    find_next_version,
-    upgrade_study,
-)
+from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
+from antarest.study.storage.study_upgrader import find_next_version, upgrade_study
 from antarest.study.storage.utils import (
     assert_permission,
     get_default_workspace_path,
@@ -167,23 +107,13 @@ from antarest.study.storage.utils import (
     study_matcher,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_comments import (
-    UpdateComments,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command.update_raw_file import (
-    UpdateRawFile,
-)
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 

@@ -5,10 +5,7 @@ import uuid
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type
 
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 

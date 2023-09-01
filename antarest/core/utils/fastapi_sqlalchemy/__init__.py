@@ -1,7 +1,4 @@
-from antarest.core.utils.fastapi_sqlalchemy.middleware import (
-    DBSessionMiddleware,
-    db,
-)
+from antarest.core.utils.fastapi_sqlalchemy.middleware import DBSessionMiddleware, db
 
 __all__ = ["db", "DBSessionMiddleware"]
 

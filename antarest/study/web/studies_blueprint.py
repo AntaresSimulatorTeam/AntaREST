@@ -26,9 +26,7 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
 logger = logging.getLogger(__name__)
 

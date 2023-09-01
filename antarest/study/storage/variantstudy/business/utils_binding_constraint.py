@@ -2,16 +2,9 @@ from typing import Dict, List, Optional, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    BindingConstraintDTO,
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    BindingConstraintOperator,
-    CommandOutput,
-    TimeStep,
-)
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput, TimeStep
 
 
 def cluster_does_not_exist(

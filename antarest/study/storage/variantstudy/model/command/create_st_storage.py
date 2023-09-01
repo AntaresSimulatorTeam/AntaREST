@@ -7,29 +7,13 @@ from pydantic.fields import ModelField
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.business.utils import (
-    strip_matrix_protocol,
-    validate_matrix,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # noinspection SpellCheckingInspection
@@ -347,12 +331,8 @@ class CreateSTStorage(ICommand):
             A list of commands representing the differences between
             the two `ICommand` objects.
         """
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-            ReplaceMatrix,
-        )
-        from antarest.study.storage.variantstudy.model.command.update_config import (
-            UpdateConfig,
-        )
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         other = cast(CreateSTStorage, other)
         commands: List[ICommand] = [

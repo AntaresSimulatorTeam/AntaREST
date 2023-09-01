@@ -28,9 +28,7 @@ from antarest.study.business.table_mode_management import (
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.utils import wait_for
 
 

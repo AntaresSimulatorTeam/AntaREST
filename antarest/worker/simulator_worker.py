@@ -15,9 +15,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 
 logger = logging.getLogger(__name__)

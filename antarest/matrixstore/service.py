@@ -34,11 +34,7 @@ from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixInfoDTO,
 )
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 logger = logging.getLogger(__name__)
 

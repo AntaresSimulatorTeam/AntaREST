@@ -27,12 +27,7 @@ from antarest.login.model import (
     UserLdap,
     UserRoleDTO,
 )
-from antarest.login.repository import (
-    BotRepository,
-    GroupRepository,
-    RoleRepository,
-    UserRepository,
-)
+from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserRepository
 
 logger = logging.getLogger(__name__)
 

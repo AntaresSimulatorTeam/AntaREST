@@ -9,14 +9,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -130,9 +124,7 @@ class CreateDistrict(ICommand):
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateDistrict, other)
         district_id = transform_name_to_id(self.name)
-        from antarest.study.storage.variantstudy.model.command.update_config import (
-            UpdateConfig,
-        )
+        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         base_filter = other.base_filter or DistrictBaseFilter.remove_all
         inverted_set = base_filter == DistrictBaseFilter.add_all

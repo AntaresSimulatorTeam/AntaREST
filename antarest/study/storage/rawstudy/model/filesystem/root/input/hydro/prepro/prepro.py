@@ -1,13 +1,7 @@
-from antarest.study.storage.rawstudy.model.filesystem.common.prepro import (
-    PreproCorrelation,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.common.prepro import PreproCorrelation
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import (
-    InputHydroPreproArea,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import InputHydroPreproArea
 
 
 class InputHydroPrepro(FolderNode):

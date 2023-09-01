@@ -102,9 +102,7 @@ class STStorageConfig(BaseModel):
             The updated values.
         """
         # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-            transform_name_to_id,
-        )
+        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
         if values.get("id") or not values.get("name"):
             return values

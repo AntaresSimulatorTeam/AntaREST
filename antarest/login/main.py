@@ -12,13 +12,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.ldap import LdapService
-from antarest.login.repository import (
-    BotRepository,
-    GroupRepository,
-    RoleRepository,
-    UserLdapRepository,
-    UserRepository,
-)
+from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
 

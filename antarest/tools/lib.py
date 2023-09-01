@@ -17,30 +17,16 @@ from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.model import (
-    NEW_DEFAULT_STUDY_VERSION,
-    STUDY_REFERENCE_TEMPLATES,
-)
+from antarest.study.model import NEW_DEFAULT_STUDY_VERSION, STUDY_REFERENCE_TEMPLATES
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
-from antarest.study.storage.variantstudy.variant_command_extractor import (
-    VariantCommandsExtractor,
-)
-from antarest.study.storage.variantstudy.variant_command_generator import (
-    VariantCommandGenerator,
-)
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
+from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"

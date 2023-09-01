@@ -6,21 +6,11 @@ import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    AreaOutputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import (
-    set,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import AreaOutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import set
 
 # noinspection SpellCheckingInspection
 MC_ALL_TRUE = {

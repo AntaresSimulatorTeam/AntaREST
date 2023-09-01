@@ -1,22 +1,10 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.item import (
-    InputAreasItem,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
-    InputAreasList,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets import (
-    InputAreasSets,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.item import InputAreasItem
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets import InputAreasSets
 
 
 class InputAreas(FolderNode):

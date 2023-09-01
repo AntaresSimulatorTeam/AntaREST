@@ -1,12 +1,8 @@
 from typing import List
 
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.json_file_node import (
-    JsonFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.json_file_node import JsonFileNode
 
 
 class SensitivityConfig(FolderNode):

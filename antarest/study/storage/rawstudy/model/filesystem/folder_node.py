@@ -6,12 +6,8 @@ from typing import Dict, List, Optional, Tuple, Union
 from fastapi import HTTPException
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 

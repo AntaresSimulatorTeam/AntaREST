@@ -1,16 +1,7 @@
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
-    BucketNode,
-    RegisteredFile,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import (
-    Expansion,
-)
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import Expansion
 
 
 class User(BucketNode):

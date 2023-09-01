@@ -1,13 +1,9 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.clusters.clusters import (
     InputSTStorageClusters,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.series.series import (
-    InputSTStorageSeries,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.series.series import InputSTStorageSeries
 
 
 class InputSTStorage(FolderNode):

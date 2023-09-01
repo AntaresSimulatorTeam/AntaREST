@@ -9,17 +9,8 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
-from antarest.matrixstore.model import (
-    Matrix,
-    MatrixContent,
-    MatrixDataSet,
-    MatrixDataSetRelation,
-)
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
+from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 
 class TestMatrixRepository:

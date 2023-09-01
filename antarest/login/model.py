@@ -4,15 +4,7 @@ from typing import Any, List, Optional
 
 import bcrypt
 from pydantic.main import BaseModel
-from sqlalchemy import (  # type: ignore
-    Boolean,
-    Column,
-    Enum,
-    ForeignKey,
-    Integer,
-    Sequence,
-    String,
-)
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 

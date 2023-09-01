@@ -9,10 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.io.reader import (
-    IniReader,
-    MultipleSameKeysIniReader,
-)
+from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -27,12 +24,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     transform_name_to_id,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
 

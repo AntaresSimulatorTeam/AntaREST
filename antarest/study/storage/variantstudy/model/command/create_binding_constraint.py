@@ -4,15 +4,9 @@ from pydantic import validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    strip_matrix_protocol,
-    validate_matrix,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     apply_binding_constraint,
     parse_bindings_coeffs_and_save_into_config,
@@ -23,10 +17,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     TimeStep,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -131,9 +122,7 @@ class CreateBindingConstraint(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateBindingConstraint, other)
-        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-            UpdateBindingConstraint,
-        )
+        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
         bd_id = transform_name_to_id(self.name)
         return [

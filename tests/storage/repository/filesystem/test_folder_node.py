@@ -3,23 +3,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
-    InputAreasList,
-)
-from tests.storage.repository.filesystem.utils import (
-    TestMiddleNode,
-    TestSubNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
+from tests.storage.repository.filesystem.utils import TestMiddleNode, TestSubNode
 
 
 def build_tree() -> INode:

@@ -5,27 +5,12 @@ from pydantic import root_validator, validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.common.default_values import (
-    FilteringOptions,
-    LinkProperties,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Link,
-)
+from antarest.study.common.default_values import FilteringOptions, LinkProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    strip_matrix_protocol,
-    validate_matrix,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -301,12 +286,8 @@ class CreateLink(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateLink, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-            ReplaceMatrix,
-        )
-        from antarest.study.storage.variantstudy.model.command.update_config import (
-            UpdateConfig,
-        )
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
