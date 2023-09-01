@@ -1,6 +1,58 @@
 Antares Web Changelog
 =====================
 
+v2.14.6 (2023-09-01)
+--------------------
+
+> 🚩 NOTE
+> 
+> From a user perspective, this release does not include any new features or bug fixes.
+> 
+> This release is solely focused on developers and aims to enhance code quality and readability by organizing imports and extending line width to 120 characters.
+> We will now be using [iSort](https://isort.readthedocs.io/en/latest/) for import sorting.
+> The configuration for [Black](https://black.readthedocs.io/en/stable/) code formatting has been updated.
+
+### Styles
+
+* add configuration for iSort ([0b20e5d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0b20e5de8290e59b40edf74f54b16405eeadb30f))
+* sort imports in project base code and unit tests using iSort ([ec8b757](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ec8b757f1b89cf80ec9558ca2def52c5bdc9b348))
+* ignore unused imports in `dbmodel.py` ([175b7fe](https://github.com/AntaresSimulatorTeam/AntaREST/commit/175b7fe89c6cd96acc89797a447711a61f8b4d3a))
+* remove unused imports in production base code ([3d98f93](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3d98f936b20b278bebf9f2ea61223f3aa214ce89))
+* remove unused imports in unit tests ([6ea3370](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6ea3370e755a6b2abf7f217662cd89f24ad627f0))
+* sort imports in project base code and unit tests using `line_length = 120` ([c0daaf7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c0daaf7fc44b9c53411c9e54986c276c5e8b26f7))
+* reindent project base code and unit tests using `line-length = 120` ([2280d27](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2280d276191c0d88eaadacfda2854873d0591f2f))
+* reindent `scripts/` directory using `line-length = 120` ([c125fc7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c125fc75caec604809f7ed3414a261547458a633))
+
+
+### Chore
+
+* increase line length limit to 120 characters for Black and iSort ([f8d45d4](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f8d45d400dcba601a5e8bf360fda60dd0d3d1064))
+* remove `# fmt: off`/`# fmt: on` Black directives ([c29dcac](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c29dcac2d1eedd547a2c6cef50b41c6ec0816046))
+
+
+### Build System
+
+* add iSort in the `requirements-dev.txt` ([b3ff6b9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b3ff6b9f84642d5927c8ec715356f52bfda25a74))
+
+
+### Continuous Integration
+
+* change the main GitHub action to run iSort for code style checking ([b2efeab](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b2efeab51586fffdbb4fc28c6d555004759e6e3e))
+* correct the main GitHub action to use `Black~=23.7.0` ([c72d0d5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c72d0d5d25984cd0b9a1bef90c58c1db698438b5))
+
+
+### Code Refactoring
+
+* fix lambda capturing `name` variable reported by SonarCloud ([42d2213](https://github.com/AntaresSimulatorTeam/AntaREST/commit/42d2213e4682e35da40931cd50190f368ecac951))
+* correct SonarCloud issues ([693ae07](https://github.com/AntaresSimulatorTeam/AntaREST/commit/693ae07c122e8bdf81932a7fc618e80c1fa9aa45))
+* avoid always returning the same value (reported by SonarCloud) ([314da0b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/314da0b3d9151a0c5cdd8d27f3e52af2732b389e))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>
+
+
 v2.14.5 (2023-08-11)
 --------------------
 
